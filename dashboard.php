@@ -24,3 +24,5 @@ include 'header.php';
 </div>
 </div>
 </body>
+<script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="dropship.js?var=<?php echo rand(0,999); ?>"></script>
