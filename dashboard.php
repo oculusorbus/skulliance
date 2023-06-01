@@ -25,4 +25,4 @@ include 'header.php';
 </div>
 </body>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
-<script type="text/javascript" src="dropship.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
