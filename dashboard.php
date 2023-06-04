@@ -63,6 +63,8 @@ foreach($addresses AS $index => $address){
 							}*/
 							$asset_names[] = $nft_data->AssetName;
 							$collection_id = getCollectionId($conn, $policy);
+							print_r($token);
+							exit;
 							if(checkNFT($conn, $token->fingerprint)){
 								// update NFT
 							}else{
