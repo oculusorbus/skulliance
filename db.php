@@ -110,7 +110,7 @@ function getAddresses($conn) {
 
 // Get all collection policies
 function getPolicies($conn){
-	$sql = "SELECT policy_id FROM collections";
+	$sql = "SELECT policy FROM collections";
 	$result = $conn->query($sql);
 	
     $policies = array();
