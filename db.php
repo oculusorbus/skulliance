@@ -152,4 +152,18 @@ function createNFT($conn, $asset_name, $name, $ipfs, $collection_id){
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
+
+// Check if NFT already exists
+function checkNFT($conn, $ipfs){
+	$sql = "SELECT ipfs FROM nfts WHERE ipfs='".$ipfs."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  return true;
+	} else {
+	  //echo "0 results";
+	  return false;
+	}
+}
 ?>

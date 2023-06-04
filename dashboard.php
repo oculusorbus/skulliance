@@ -63,7 +63,11 @@ foreach($addresses AS $index => $address){
 							}*/
 							$asset_names[] = $nft_data->AssetName;
 							$collection_id = getCollectionId($conn, $policy);
-							createNFT($conn, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+							if(checkNFT($conn, $ipfs)){
+								// update NFT
+							}else{
+								createNFT($conn, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+							}
 						} // End foreach
 					}// End if
 				} // End if
