@@ -48,7 +48,7 @@ foreach($addresses AS $index => $address){
 							$policy_id = $token->policy_id;
 							$asset_name = $tokenresponse[0]->asset_name_ascii;
 							$nft = $metadata->$policy_id;
-							print_r($nft);
+							print_r($token);
 							exit;
 							$nft_data = $nft->$asset_name;
 							$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
