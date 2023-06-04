@@ -47,7 +47,7 @@ foreach($addresses AS $index => $address){
 						foreach($tokenresponse[0]->minting_tx_metadata AS $metadata){
 							$counter++;
 							$policy_id = $token->policy_id;
-							if(isset($tokenresponse[0]->asset_name_ascii)){
+							if(is_array($tokenresponse)){
 								$asset_name = $tokenresponse[0]->asset_name_ascii;
 								$nft = $metadata->$policy_id;
 								$nft_data = $nft->$asset_name;
