@@ -13,6 +13,7 @@ $addresses = array();
 $addresses = getAddresses($conn);
 $policies = array();
 $policies = getPolicies($conn);
+print_r($policies);
 
 foreach($addresses AS $index => $address){
 	
