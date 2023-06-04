@@ -11,7 +11,10 @@ if(isset($_POST['address'])){
 
 $addresses = array();
 $addresses = getAddresses($conn);
-print_r($addresses);
+
+foreach($addresses AS $index => $address){
+	
+}
 ?>
 
 <a name="dashboard" id="dashboard"></a>

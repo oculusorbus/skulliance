@@ -107,4 +107,22 @@ function getAddresses($conn) {
 	}
 	return $addresses;
 }
+
+// Get all collection policies
+function getPolicies($conn){
+	$sql = "SELECT policy_id FROM collections";
+	$result = $conn->query($sql);
+	
+    $policies = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$policies[] = $row["policy"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $policies;
+}
 ?>
