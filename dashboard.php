@@ -3,6 +3,33 @@ include 'db.php';
 include 'skulliance.php';
 //include 'webhooks.php';
 include 'header.php';
+
+// Handle wallet changes
+$address_changed = "false";
+if(!isset($_SESSION['userData']['address'])){
+	$address = checkAddress($conn);
+	if(isset($address)){
+		if($address != ""){
+			$_SESSION['userData']['address'] = $address;
+			$address_changed = "true";
+		}
+	}
+}
+
+// Handle wallet selection
+if(isset($_POST['address'])){
+	if(isset($_SESSION['userData']['address'])){
+		if($_SESSION['userData']['address'] != $_POST['address']){
+			$address_changed = "true";
+			updateAddress($conn, $_POST['address']);
+		}
+	}else{
+		$address_changed = "true";
+		updateAddress($conn, $_POST['address']);
+	}
+	$_SESSION['userData']['address'] = $_POST['address'];
+	$_SESSION['userData']['wallet'] = $_POST['wallet'];
+}
 ?>
 
 <a name="dashboard" id="dashboard"></a>
@@ -14,6 +41,24 @@ include 'header.php';
     </div>
   </div>
   <div class="side">
+		<h2>Skulliance Staking</h2>
+		<div class="content" id="player-stats">
+			<ul>
+				<div class="wallet-connect">
+				<li class="role"><img class="icon" src="icons/wallet.png"/>
+					<label for="wallets"><strong>Connect</strong>&nbsp;</label>
+					<select onchange="javascript:connectWallet(this.options[this.selectedIndex].value);" name="wallets" id="wallets">
+						<option value="none">Wallet</option>
+					</select>
+					<form id="addressForm" action="dashboard.php#barracks" method="post">
+					  <input type="hidden" id="wallet" name="wallet" value="">	
+					  <input type="hidden" id="address" name="address" value="">
+					  <input type="submit" value="Submit" style="display:none;">
+					</form>
+				</li>
+				</div>
+			</ul>
+		</div>
   </div>
 </div>
 
