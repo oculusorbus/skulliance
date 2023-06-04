@@ -46,27 +46,29 @@ foreach($addresses AS $index => $address){
 						foreach($tokenresponse[0]->minting_tx_metadata AS $metadata){
 							$counter++;
 							$policy_id = $token->policy_id;
-							$asset_name = $tokenresponse[0]->asset_name_ascii;
-							$nft = $metadata->$policy_id;
-							$nft_data = $nft->$asset_name;
-							$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
-							// Account for NFT with NaN value for asset name
-							if($asset_name == "NaN"){
-								$nft_data->AssetName = "DROPSHIP012";
-							}else{
-								$nft_data->AssetName = $asset_name;
-							}
-							//renderNFT($nft_data, $ipfs);
-							/* Removing to rely on database now
-							if($_SESSION['userData']['project_id'] != 1){
-								$_SESSION['userData']['nfts'][] = $nft_data;
-							}*/
-							$asset_names[] = $nft_data->AssetName;
-							$collection_id = getCollectionId($conn, $policy);
-							if(checkNFT($conn, $token->fingerprint)){
-								updateNFT($conn, $token->fingerprint);
-							}else{
-								createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+							if(isset($tokenresponse[0]->asset_name_ascii)){
+								$asset_name = $tokenresponse[0]->asset_name_ascii;
+								$nft = $metadata->$policy_id;
+								$nft_data = $nft->$asset_name;
+								$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
+								// Account for NFT with NaN value for asset name
+								if($asset_name == "NaN"){
+									$nft_data->AssetName = "DROPSHIP012";
+								}else{
+									$nft_data->AssetName = $asset_name;
+								}
+								//renderNFT($nft_data, $ipfs);
+								/* Removing to rely on database now
+								if($_SESSION['userData']['project_id'] != 1){
+									$_SESSION['userData']['nfts'][] = $nft_data;
+								}*/
+								$asset_names[] = $nft_data->AssetName;
+								$collection_id = getCollectionId($conn, $policy);
+								if(checkNFT($conn, $token->fingerprint)){
+									updateNFT($conn, $token->fingerprint);
+								}else{
+									createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+								}
 							}
 						} // End foreach
 					}// End if
