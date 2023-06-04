@@ -154,7 +154,7 @@ $_SESSION['userData'] = [
 	// Get single guild role
     //'roles'=>getUsersGuildRoles($result['id'],$access_token,$guild_ID)
 	// Get multiple guild roles
-	'roles'=>getUsersGuildsRoles($result['id'],$access_token,$guild_IDs)
+	'roles'=>getUsersGuildRoles($result['id'],$access_token,$guild_ID)
 /*	'guilds'=>getUsersGuilds($access_token)*/
 ];
 
