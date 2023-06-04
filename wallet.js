@@ -3,7 +3,7 @@ window.Lucid=Lucid;
 
 async function connectWallet(wallet){
 	if(wallet != "none"){
-		document.getElementById('loading').style.display = "block";
+		//document.getElementById('loading').style.display = "block";
 		const lucid = await Lucid.new(
 		        new Blockfrost("https://mainnet.blockfrost.io/api/v0", "mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo"),
 		        "Mainnet",
