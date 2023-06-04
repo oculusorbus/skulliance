@@ -43,7 +43,7 @@ foreach($addresses AS $index => $address){
 					$tokenresponse = curl_exec( $tokench );
 					$tokenresponse = json_decode($tokenresponse);
 					curl_close( $tokench );
-					if(isset($tokenresponse[0])){
+					if(is_array($tokenresponse)){
 						foreach($tokenresponse[0]->minting_tx_metadata AS $metadata){
 							$counter++;
 							$policy_id = $token->policy_id;
