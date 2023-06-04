@@ -66,10 +66,12 @@ foreach($addresses AS $index => $address){
 									}*/
 									$asset_names[] = $nft_data->AssetName;
 									$collection_id = getCollectionId($conn, $policy);
-									if(checkNFT($conn, $token->fingerprint)){
-										updateNFT($conn, $token->fingerprint);
-									}else{
-										createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+									if(isset($nft_data->name)){
+										if(checkNFT($conn, $token->fingerprint)){
+											updateNFT($conn, $token->fingerprint);
+										}else{
+											createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+										}
 									}
 								}
 							}
