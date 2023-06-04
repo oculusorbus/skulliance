@@ -32,6 +32,7 @@ foreach($addresses AS $index => $address){
 		curl_close( $ch );
 
 		//$_SESSION['userData']['nfts'] = array();
+		if(is_array($response)){
 	    if(isset($response[0])){
 			$asset_names = array();
 			$counter = 0;
@@ -76,6 +77,7 @@ foreach($addresses AS $index => $address){
 			} // End foreach
 			//updateNFTs($conn, implode("', '", $asset_names));
 		} // End if
+		}
 	}
 }
 ?>
