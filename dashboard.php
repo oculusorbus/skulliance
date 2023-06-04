@@ -4,6 +4,7 @@ include 'skulliance.php';
 //include 'webhooks.php';
 include 'header.php';
 
+/*
 // Handle wallet changes
 $address_changed = "false";
 if(!isset($_SESSION['userData']['address'])){
@@ -29,7 +30,7 @@ if(isset($_POST['address'])){
 	}
 	$_SESSION['userData']['address'] = $_POST['address'];
 	$_SESSION['userData']['wallet'] = $_POST['wallet'];
-}
+}*/
 ?>
 
 <a name="dashboard" id="dashboard"></a>
