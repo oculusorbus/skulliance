@@ -179,7 +179,7 @@ function checkNFT($conn, $asset_id){
 
 // Get NFTs
 function getNFTs($conn){
-	$sql = "SELECT asset_name, name, ipfs, nfts.id AS nfts_id FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT asset_name, name, ipfs, collection_id, nfts.id AS nfts_id FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
