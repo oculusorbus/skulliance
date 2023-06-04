@@ -56,7 +56,7 @@ if(isset($_POST['address'])){
 					<select onchange="javascript:connectWallet(this.options[this.selectedIndex].value);" name="wallets" id="wallets">
 						<option value="none">Wallet</option>
 					</select>
-					<form id="addressForm" action="dashboard.php#barracks" method="post">
+					<form id="addressForm" action="dashboard.php" method="post">
 					  <input type="hidden" id="wallet" name="wallet" value="">	
 					  <input type="hidden" id="address" name="address" value="">
 					  <input type="submit" value="Submit" style="display:none;">
