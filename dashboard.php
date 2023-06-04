@@ -49,6 +49,8 @@ foreach($addresses AS $index => $address){
 							$asset_name = $tokenresponse[0]->asset_name_ascii;
 							$nft = $metadata->$policy_id;
 							$nft_data = $nft->$asset_name;
+							print_r($nft_data);
+							exit;
 							$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
 							// Account for NFT with NaN value for asset name
 							if($asset_name == "NaN"){
