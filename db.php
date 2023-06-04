@@ -89,4 +89,22 @@ function checkAddress($conn, $address) {
 		}
 	}
 }
+
+// Get user wallet addresses
+function getAddresses($conn) {
+	$sql = "SELECT address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+    $addresses = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$addresses[] = $row["address"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $addresses;
+}
 ?>

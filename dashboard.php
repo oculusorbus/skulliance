@@ -8,6 +8,10 @@ include 'header.php';
 if(isset($_POST['address'])){
 	checkAddress($conn, $_POST['address']);
 }
+
+$addresses = array();
+$addresses = getAddresses($conn);
+print_r($addresses);
 ?>
 
 <a name="dashboard" id="dashboard"></a>
