@@ -63,4 +63,30 @@ function updateUser($conn) {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
+
+// Create address for user
+function createAddress($conn, $address) {
+	$sql = "INSERT INTO wallets (address, user_id)
+	VALUES ('".$address."', '".$_SESSION['userData']['user_id']."')";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+// Check user's Cardano address
+function checkAddress($conn, $address) {
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' AND address='".$address."'";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		} else {
+		  //echo "0 results";
+			createAddress($conn, $address);
+		}
+	}
+}
 ?>
