@@ -62,8 +62,8 @@ foreach($addresses AS $index => $address){
 								$_SESSION['userData']['nfts'][] = $nft_data;
 							}*/
 							$asset_names[] = $nft_data->AssetName;
-							print_r($nft_data);
-							//createNFT($conn, $nft_data->AssetName, $nft_data->name, $ipfs);
+							$collection_id = getCollectionId($conn, $policy);
+							createNFT($conn, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
 						} // End foreach
 					}// End if
 				} // End if

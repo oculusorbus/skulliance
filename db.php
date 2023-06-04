@@ -125,4 +125,31 @@ function getPolicies($conn){
 	}
 	return $policies;
 }
+
+// Get collection id
+function getCollectionId($conn, $policy){
+	$sql = "SELECT id FROM collections WHERE policy='".$policy."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return $row["id"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Create NFT
+function createNFT($conn, $asset_name, $name, $ipfs, $collection_id){
+	$sql = "INSERT INTO nfts (asset_name, name, ipfs, collection_id, user_id)
+	VALUES ('".$asset_name."', '".$name."', '".$ipfs."', '".$collection_id."', '".$_SESSION['userData']['user_id']."')";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
 ?>
