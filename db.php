@@ -153,6 +153,16 @@ function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id){
 	}
 }
 
+// Update NFT for user
+function updateNFT($conn, $asset_id) {
+	$sql = "UPDATE nfts SET user_id='".$_SESSION['userData']['user_id']."' WHERE asset_id='".$asset_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Check if NFT already exists
 function checkNFT($conn, $asset_id){
 	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."'";
@@ -164,6 +174,26 @@ function checkNFT($conn, $asset_id){
 	} else {
 	  //echo "0 results";
 	  return false;
+	}
+}
+
+// Get NFTs
+function getNFTs($conn){
+	$sql = "SELECT asset_name, name, ipfs, nfts.id AS nfts_id FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  $nftcounter = 0;
+	  while($row = $result->fetch_assoc()) {
+		$nftcounter++;
+	    echo "<div class='nft'><div class='nft-data'>";
+		echo "<span class='nft-name'>".substr($row["name"], 0, 19)."</span>";
+		echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
+		echo "</div></div>";
+	  }
+	} else {
+	  //echo "0 results";
 	}
 }
 ?>

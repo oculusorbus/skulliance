@@ -64,7 +64,7 @@ foreach($addresses AS $index => $address){
 							$asset_names[] = $nft_data->AssetName;
 							$collection_id = getCollectionId($conn, $policy);
 							if(checkNFT($conn, $token->fingerprint)){
-								// update NFT
+								updateNFT($conn, $token->fingerprint);
 							}else{
 								createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
 							}
@@ -83,7 +83,11 @@ foreach($addresses AS $index => $address){
 <div class="row" id="row1">
   <div class="main">
     <div class="content">
-	
+		<div id="nfts" class="nfts">
+			<?php 
+			getNFTs($conn); 
+			?>
+		</div>
     </div>
   </div>
   <div class="side">
