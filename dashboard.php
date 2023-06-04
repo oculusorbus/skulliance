@@ -11,6 +11,8 @@ if(isset($_POST['address'])){
 
 $addresses = array();
 $addresses = getAddresses($conn);
+$policies = array();
+$policies = getPolicies($conn);
 
 foreach($addresses AS $index => $address){
 	
