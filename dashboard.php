@@ -92,15 +92,6 @@ function verifyNFTs($addresses, $policies){
 <a name="dashboard" id="dashboard"></a>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
-  <div class="main">
-    <div class="content">
-		<div id="nfts" class="nfts">
-			<?php 
-			getNFTs($conn); 
-			?>
-		</div>
-    </div>
-  </div>
   <div class="side">
 		<h2>Skulliance Staking</h2>
 		<div class="content" id="player-stats">
@@ -120,6 +111,15 @@ function verifyNFTs($addresses, $policies){
 				</div>
 			</ul>
 		</div>
+  </div>
+  <div class="main">
+    <div class="content">
+		<div id="nfts" class="nfts">
+			<?php 
+			getNFTs($conn); 
+			?>
+		</div>
+    </div>
   </div>
 </div>
 
