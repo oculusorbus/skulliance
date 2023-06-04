@@ -143,9 +143,9 @@ function getCollectionId($conn, $policy){
 }
 
 // Create NFT
-function createNFT($conn, $asset_name, $name, $ipfs, $collection_id){
-	$sql = "INSERT INTO nfts (asset_name, name, ipfs, collection_id, user_id)
-	VALUES ('".$asset_name."', '".$name."', '".$ipfs."', '".$collection_id."', '".$_SESSION['userData']['user_id']."')";
+function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id){
+	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id)
+	VALUES ('".$asset_id."', '".$asset_name."', '".$name."', '".$ipfs."', '".$collection_id."', '".$_SESSION['userData']['user_id']."')";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
@@ -154,8 +154,8 @@ function createNFT($conn, $asset_name, $name, $ipfs, $collection_id){
 }
 
 // Check if NFT already exists
-function checkNFT($conn, $ipfs){
-	$sql = "SELECT ipfs FROM nfts WHERE ipfs='".$ipfs."'";
+function checkNFT($conn, $asset_id){
+	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {

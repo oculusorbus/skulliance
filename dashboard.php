@@ -48,8 +48,6 @@ foreach($addresses AS $index => $address){
 							$policy_id = $token->policy_id;
 							$asset_name = $tokenresponse[0]->asset_name_ascii;
 							$nft = $metadata->$policy_id;
-							print_r($token);
-							exit;
 							$nft_data = $nft->$asset_name;
 							$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
 							// Account for NFT with NaN value for asset name
@@ -65,10 +63,10 @@ foreach($addresses AS $index => $address){
 							}*/
 							$asset_names[] = $nft_data->AssetName;
 							$collection_id = getCollectionId($conn, $policy);
-							if(checkNFT($conn, $ipfs)){
+							if(checkNFT($conn, $token->fingerprint)){
 								// update NFT
 							}else{
-								createNFT($conn, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
+								createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id);
 							}
 						} // End foreach
 					}// End if
