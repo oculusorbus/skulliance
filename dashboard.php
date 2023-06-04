@@ -11,11 +11,10 @@ if(isset($_POST['address'])){
 	$addresses = getAddresses($conn);
 	$policies = array();
 	$policies = getPolicies($conn);
-	verifyNFTs($addresses, $policies);
+	verifyNFTs($conn, $addresses, $policies);
 }
 
-function verifyNFTs($addresses, $policies){
-	global $conn;
+function verifyNFTs($conn, $addresses, $policies){
 	foreach($addresses AS $index => $address){
 		foreach($policies AS $index => $policy){
 			$ch = curl_init("https://api.koios.rest/api/v0/account_assets");
