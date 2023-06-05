@@ -224,7 +224,7 @@ function checkNFT($conn, $asset_id){
 
 // Get NFTs
 function getNFTs($conn){
-	$sql = "SELECT asset_name, name, ipfs, collection_id, nfts.id AS nfts_id FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT asset_name, name, ipfs, collection_id, nfts.id AS nfts_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -239,6 +239,7 @@ function getNFTs($conn){
 		}else{
 			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}
+		echo "<span class='nft-level'><strong>Rate</strong><br>".$row["collections.rate"]."</span>";
 		echo "</div></div>";
 	  }
 	} else {
