@@ -275,9 +275,9 @@ function displayRound(project_id) {
 	currentRound++;
 }
 
-function filterTroops(criteria){
+function filterNFTs(criteria){
 	document.getElementById('filterby').value = criteria;
-	document.getElementById("filterTroopsForm").submit();
+	document.getElementById("filterNFTsForm").submit();
 }
 
 function selectProject(criteria){

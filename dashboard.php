@@ -15,6 +15,33 @@ if(isset($_POST['address'])){
 	$policies = getPolicies($conn);
 	verifyNFTs($conn, $addresses, $policies, $_SESSION['userData']['user_id']);
 }
+
+
+function filterNFTs($page){
+	$barracks = "";
+	if($page == "dashboard"){
+		$barracks = "#barracks";
+	}
+	echo'
+	<div id="filter-nfts">
+		<label for="filterNFTs"><strong>Filter By:</strong></label>
+		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<option value="None">Attribute</option>
+			<option value="None">All</option>
+			<option value="1">Galactico</option>
+			<option value="2">Ohh Meed</option>
+			<option value="3">HYPE</option>
+			<option value="4">Sinder Skullz</option>
+			<option value="5">Kimosabe Art</option>
+			<option value="6">Crypties</option>
+			<option value="7">Skulliance</option>
+		</select>
+		<form id="filterNFTsForm" action="'.$page.'.php'.$barracks.'" method="post">
+		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>
+	</div>';
+}
 ?>
 
 <a name="dashboard" id="dashboard"></a>
@@ -54,9 +81,10 @@ if(isset($_POST['address'])){
   </div>
   <div class="main">
     <div class="content">
+		<?php filterNFTs("dashboard"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
-			getNFTs($conn); 
+			getNFTs($conn, $filterby); 
 			?>
 		</div>
     </div>
@@ -70,5 +98,12 @@ if(isset($_POST['address'])){
 </div>
 </div>
 </body>
+<?php
+// Close DB Connection
+$conn->close();
+if($filterby != ""){
+	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
+}?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+</html>
