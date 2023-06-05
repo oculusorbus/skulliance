@@ -1,5 +1,7 @@
 <?php
 include_once 'db.php';
 
-updateBalances($conn);
+if(isset($_GET['deploy'])){
+	updateBalances($conn);
+}
 ?>
