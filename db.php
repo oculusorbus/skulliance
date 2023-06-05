@@ -269,7 +269,6 @@ function initializeBalances($conn){
 	} else {
 	  //echo "0 results";
 	}
-	// Loop thru projects and insert default balance for each
 }
 
 
@@ -296,7 +295,7 @@ function updateBalances($conn){
 	}
     processSubtotals($conn, $subtotals);
 }
-
+/*
 // Cycle through user ids and submit subtotals for each project to current balances
 function processSubtotals($conn, $subtotals){
 	$sql = "SELECT id AS user_id FROM users";
@@ -340,5 +339,5 @@ function updateBalance($conn, $user_id, $project_id, $subtotal){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
-}
+}*/
 ?>
