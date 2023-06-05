@@ -40,8 +40,14 @@ if(isset($_POST['address'])){
 			<ul>
 		<?php
 		$balances = getBalances($conn);
-		foreach($balances AS $currency => $balance){ ?>
-			<li class="role"><img class="icon" src="icons/currency.png"/>
+		foreach($balances AS $currency => $balance){ 
+			if($currency == "/$DIAMONDS"){
+				$icon = "diamond";
+			}else{
+				$icon = "currency";
+			}
+			?>
+			<li class="role"><img class="icon" src="icons/<?php echo $icon;?>.png"/>
 				<?php
 				echo $balance." ".$currency;
 				?>
