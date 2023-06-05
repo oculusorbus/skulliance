@@ -10,7 +10,7 @@ html {
 body {
   font-family: Arial;
   margin: 0;
-  background-color: #36393F;
+  background-color: #000;
   height:100%;
   /*background-image: url("../images/dropshipbackground.jpg");  The image used */
   background-position: center; /* Center the image */
