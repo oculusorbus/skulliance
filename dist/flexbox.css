@@ -191,7 +191,7 @@ body {
 	border-top: 1px solid #2F3136;
 }
 
-#filter-troops {
+#filter-nfts {
 	color: #D6DDDE;
 	text-align: right;
 	position: relative;
@@ -199,7 +199,7 @@ body {
 	font-size: 20px;
 }
 
-#filterTroops {
+#filterNFTs {
     width: 130px;
     border-radius: 0.5rem;
     height: 30px;
