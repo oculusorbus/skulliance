@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+include_once 'db.php';
 include 'skulliance.php';
 //include 'webhooks.php';
 include 'header.php';
