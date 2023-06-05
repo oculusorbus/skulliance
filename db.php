@@ -20,6 +20,22 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
+// Get user ID by stake address for cron job verification
+function getUserId($conn, $address){
+	$sql = "SELECT user_id FROM wallets WHERE address='".$address."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return strval($row["user_id"]);
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){
@@ -108,6 +124,24 @@ function getAddresses($conn) {
 	return $addresses;
 }
 
+// Get all addresses 
+function getAllAddresses($conn){
+	$sql = "SELECT address FROM wallets";
+	$result = $conn->query($sql);
+	
+    $addresses = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$addresses[] = $row["address"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $addresses;
+}
+
 // Get all collection policies
 function getPolicies($conn){
 	$sql = "SELECT policy FROM collections";
@@ -143,9 +177,9 @@ function getCollectionId($conn, $policy){
 }
 
 // Create NFT
-function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id){
+function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, $user_id){
 	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id)
-	VALUES ('".$asset_id."', '".$asset_name."', '".$name."', '".$ipfs."', '".$collection_id."', '".$_SESSION['userData']['user_id']."')";
+	VALUES ('".$asset_id."', '".$asset_name."', '".$name."', '".$ipfs."', '".$collection_id."', '".$user_id."')";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
@@ -154,8 +188,8 @@ function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id){
 }
 
 // Update NFT for user
-function updateNFT($conn, $asset_id) {
-	$sql = "UPDATE nfts SET user_id='".$_SESSION['userData']['user_id']."' WHERE asset_id='".$asset_id."'";
+function updateNFT($conn, $asset_id, $user_id) {
+	$sql = "UPDATE nfts SET user_id='".$user_id."' WHERE asset_id='".$asset_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
