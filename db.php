@@ -295,7 +295,7 @@ function updateBalances($conn){
 	}
     processSubtotals($conn, $subtotals);
 }
-/*
+
 // Cycle through user ids and submit subtotals for each project to current balances
 function processSubtotals($conn, $subtotals){
 	$sql = "SELECT id AS user_id FROM users";
@@ -313,7 +313,7 @@ function processSubtotals($conn, $subtotals){
 	  //echo "0 results";
 	}
 }
-
+/*
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
 	$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id"'";
