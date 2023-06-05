@@ -272,7 +272,7 @@ function initializeBalances($conn){
 	// Loop thru projects and insert default balance for each
 }
 
-/*
+
 // Deploy staking daily staking rewards
 function updateBalances($conn){
 	$sql = "SELECT user_id, collection_id, collections.rate AS rate, collections.project_id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id";
@@ -289,7 +289,7 @@ function updateBalances($conn){
 			$subtotals[$row["user_id"]][$row["project_id"]] = 0;
 		}
 		$current_rate = $subtotals[$row["user_id"]][$row["project_id"]];
-		$subtotals[$row["user_id"]][$row["project_id"]] = $current_rate+$row["rate"];
+		$subtotals[$row["user_id"]][$row["project_id"]] = strval($current_rate) + strval($row["rate"]);
 	  }
 	} else {
 	  //echo "0 results";
@@ -299,7 +299,7 @@ function updateBalances($conn){
 
 // Cycle through user ids and submit subtotals for each project to current balances
 function processSubtotals($conn, $subtotals){
-	$sql = "SELECT id FROM users";
+	$sql = "SELECT id AS user_id FROM users";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -340,5 +340,5 @@ function updateBalance($conn, $user_id, $project_id, $subtotal){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
-}*/
+}
 ?>
