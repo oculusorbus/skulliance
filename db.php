@@ -247,7 +247,7 @@ function getNFTs($conn){
 	  //echo "0 results";
 	}
 }
-
+/*
 // Zero out all currency upon user creation
 function initializeBalances($conn){
 	$sql = "SELECT id FROM projects";
@@ -271,8 +271,6 @@ function initializeBalances($conn){
 	}
 	// Loop thru projects and insert default balance for each
 }
-
-
 
 // Deploy staking daily staking rewards
 function updateBalances($conn){
@@ -341,5 +339,5 @@ function updateBalance($conn, $user_id, $project_id, $subtotal){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
-}
+}*/
 ?>
