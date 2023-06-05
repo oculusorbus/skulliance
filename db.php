@@ -333,7 +333,7 @@ function getCurrentBalance($conn, $user_id, $project_id){
 function updateBalance($conn, $user_id, $project_id, $subtotal){
 	$current_balance = getCurrentBalance($conn, $user_id, $project_id);
 	$total = $subtotal + $current_balance;
-	$sql = "UPDATE balances SET balance = '".$total."' WHERE user_id='".$row["user_id"]."' AND project_id='".$row["project_id"]."'";
+	$sql = "UPDATE balances SET balance = '".$total."' WHERE user_id='".$user_id."' AND project_id='".$project_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
