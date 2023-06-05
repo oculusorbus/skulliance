@@ -234,7 +234,7 @@ function getNFTs($conn){
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
 	    echo "<div class='nft'><div class='nft-data'>";
-		echo "<span class='nft-name'>".substr($row["nfts_name"], 0, 19)."</span>";
+		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		if($row["collection_id"] == 4){
 			echo "<span class='nft-image'><img src='https://ipfs2.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}else{
