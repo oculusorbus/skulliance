@@ -887,7 +887,7 @@ input:checked + .slider:before {
   font-size: 18px;
   border: none;
   outline: none;
-  background-color: #2D7D46;
+  background-color: #000;
   color: white;
   cursor: pointer;
   padding-bottom: 0px;
