@@ -1,13 +1,13 @@
 <?php
 include_once 'db.php';
 
-echo $_SERVER['REQUEST_URI'];
-exit;
-$addresses = array();
-$addresses = getAllAddresses($conn);
-$policies = array();
-$policies = getPolicies($conn);
-verifyNFTs($conn, $addresses, $policies);
+if($_SERVER['REQUEST_URI'] == "/staking/verify.php"){
+	$addresses = array();
+	$addresses = getAllAddresses($conn);
+	$policies = array();
+	$policies = getPolicies($conn);
+	verifyNFTs($conn, $addresses, $policies);
+}
 
 function verifyNFTs($conn, $addresses, $policies, $user_id=0){
 	foreach($addresses AS $index => $address){
