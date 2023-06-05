@@ -79,6 +79,7 @@ function createUser($conn) {
 	}
 	// Immediately check user to set session variable and prevent first run errors
 	checkUser($conn);
+	initializeBalances($conn);
 }
 
 // Update user to maintain current username
@@ -249,13 +250,29 @@ function getNFTs($conn){
 
 // Zero out all currency upon user creation
 function initializeBalances($conn){
+	$sql = "SELECT id FROM projects";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+		$sql = "INSERT INTO balances (balance, user_id, project_id)
+		VALUES ('0', '".$_SESSION['userData']['user_id']."', '".$row["project_id"]."')";
+
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	  }
+	} else {
+	  //echo "0 results";
+	}
 	// Loop thru projects and insert default balance for each
 }
 
-// Get current balance for user for a specific project
-function getCurrentBalance($conn, $user_id, $project_id){
-	
-}
+
 
 // Deploy staking daily staking rewards
 function updateBalances($conn){
@@ -278,13 +295,47 @@ function updateBalances($conn){
 	} else {
 	  //echo "0 results";
 	}
-	print_r($subtotals);
+    processSubtotals($conn, $subtotals);
+}
+
+// Cycle through user ids and submit subtotals for each project to current balances
+function processSubtotals($conn, $subtotals){
+	$sql = "SELECT id FROM users";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	foreach($subtotals[$row["user_id"]] AS $project_id => $subtotal){
+			updateBalance($conn, $row["user_id"], $project_id, $subtotal);
+		}
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Get current balance for user for a specific project
+function getCurrentBalance($conn, $user_id, $project_id){
+	$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id"'";
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return $row["rate"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
 }
 
 // Update specific user balance for a project
 function updateBalance($conn, $user_id, $project_id, $subtotal){
-	// Get current balance and add subtotal to it
-	$sql = "UPDATE balances SET balance = '' WHERE user_id='".$row["user_id"]."' AND project_id='".$row["project_id"]."'";
+	$current_balance = getCurrentBalance($conn, $user_id, $project_id);
+	$total = $subtotal + $current_balance;
+	$sql = "UPDATE balances SET balance = '".$total."' WHERE user_id='".$row["user_id"]."' AND project_id='".$row["project_id"]."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
