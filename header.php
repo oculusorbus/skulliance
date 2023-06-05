@@ -15,9 +15,6 @@
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
 		  <a href="https://discord.gg/DHbGU9ZDyG"><?php echo $name;?></a>
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
-    	  <a href="leaderboards.php">Leaderboards</a>
-    	  <a href="achievements.php">Achievements</a>
-    	  <a href="transactions.php">Transactions</a>
 		  <a href="logout.php">Logout</a>
 		</div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
