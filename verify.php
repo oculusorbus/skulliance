@@ -7,6 +7,8 @@ if($_SERVER['REQUEST_URI'] == "/staking/verify.php"){
 	$addresses = getAllAddresses($conn);
 	$policies = array();
 	$policies = getPolicies($conn);
+	// Remove all user ids from NFTs before running cron job verification
+	removeUsers($conn);
 	verifyNFTs($conn, $addresses, $policies);
 }
 
