@@ -3,6 +3,7 @@ include_once 'db.php';
 
 // Distinguish between a logged in user and verification cron job
 if(!isset($_SESSION['userData']['user_id'])){
+	echo "here";
 	set_time_limit(0);
 	$addresses = array();
 	$addresses = getAllAddresses($conn);
