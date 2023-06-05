@@ -316,7 +316,7 @@ function processSubtotals($conn, $subtotals){
 
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
-	$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id"'";
+	$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
