@@ -9,7 +9,8 @@ include 'verify.php';
 if(isset($_POST['address'])){
 	checkAddress($conn, $_POST['address']);
 	$addresses = array();
-	$addresses = getAddresses($conn);
+	//$addresses = getAddresses($conn);
+	$addresses[0] = $_POST['address'];
 	$policies = array();
 	$policies = getPolicies($conn);
 	verifyNFTs($conn, $addresses, $policies, $_SESSION['userData']['user_id']);
