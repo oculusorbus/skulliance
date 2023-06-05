@@ -246,4 +246,48 @@ function getNFTs($conn){
 	  //echo "0 results";
 	}
 }
+
+// Zero out all currency upon user creation
+function initializeBalances($conn){
+	// Loop thru projects and insert default balance for each
+}
+
+// Get current balance for user for a specific project
+function getCurrentBalance($conn, $user_id, $project_id){
+	
+}
+
+// Deploy staking daily staking rewards
+function updateBalances($conn){
+	$sql = "SELECT user_id, collection_id, collections.rate AS rate, collections.project_id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id";
+	$result = $conn->query($sql);
+	
+	$subtotals = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		if(!isset($subtotals[$row["user_id"]])){
+			$subtotals[$row["user_id"]] = array();
+		}
+		if(!isset($subtotals[$row["user_id"]][$row["project_id"]])){
+			$subtotals[$row["user_id"]][$row["project_id"]] = array();
+		}
+		$subtotals[$row["user_id"]][$row["project_id"]] += $row["rate"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	print_r($subtotals);
+}
+
+// Update specific user balance for a project
+function updateBalance($conn, $user_id, $project_id, $subtotal){
+	// Get current balance and add subtotal to it
+	$sql = "UPDATE balances SET balance = '' WHERE user_id='".$row["user_id"]."' AND project_id='".$row["project_id"]."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
 ?>
