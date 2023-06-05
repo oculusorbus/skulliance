@@ -328,7 +328,7 @@ function getCurrentBalance($conn, $user_id, $project_id){
 	  //echo "0 results";
 	}
 }
-/*
+
 // Update specific user balance for a project
 function updateBalance($conn, $user_id, $project_id, $subtotal){
 	$current_balance = getCurrentBalance($conn, $user_id, $project_id);
@@ -339,5 +339,5 @@ function updateBalance($conn, $user_id, $project_id, $subtotal){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
-}*/
+}
 ?>
