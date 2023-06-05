@@ -239,7 +239,7 @@ function getNFTs($conn){
 		}else{
 			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}
-		echo "<span class='nft-level'><strong>Rate</strong><br>".$row["rate"]." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
 		echo "</div></div>";
 	  }
 	} else {
