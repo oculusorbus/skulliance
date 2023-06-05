@@ -2,6 +2,7 @@
 include_once 'db.php';
 
 if($_SERVER['REQUEST_URI'] == "/staking/verify.php"){
+	set_time_limit(0);
 	$addresses = array();
 	$addresses = getAllAddresses($conn);
 	$policies = array();
