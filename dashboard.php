@@ -39,9 +39,14 @@ if(isset($_POST['address'])){
 			</ul>
 			<ul>
 		<?php
-		$balances = array();
 		$balances = getBalances($conn);
-		
+		foreach($balances AS $currency => $balance){ ?>
+			<li class="role"><img class="icon" src="icons/currency.png"/>
+				<?php
+				echo $balance." ".$currency;
+				?>
+			</li>
+		<?php } ?>
 			</ul>
 		</div>
   </div>
