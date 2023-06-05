@@ -322,7 +322,7 @@ function getCurrentBalance($conn, $user_id, $project_id){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	return $row["rate"];
+    	return $row["balance"];
 	  }
 	} else {
 	  //echo "0 results";
