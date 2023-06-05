@@ -37,10 +37,18 @@ if(isset($_POST['address'])){
 				</li>
 				</div>
 			</ul>
-		</div>
+			<ul>
 		<?php
-		print_r(getBalances($conn));
+	    foreach(getBalances($conn) AS $currency => $balance){?>
+			<li class="role"><img class="icon" src="icons/currency.png"/>
+				<?php
+				echo $balance." ".$currency;
+				?>
+			</li>
+		<?php}
 		?>
+			</ul>
+		</div>
   </div>
   <div class="main">
     <div class="content">
