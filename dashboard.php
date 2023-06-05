@@ -38,6 +38,9 @@ if(isset($_POST['address'])){
 				</div>
 			</ul>
 		</div>
+		<?php
+		print_r(getBalances($conn));
+		?>
   </div>
   <div class="main">
     <div class="content">
