@@ -41,13 +41,8 @@ if(isset($_POST['address'])){
 		<?php
 		$balances = getBalances($conn);
 		foreach($balances AS $currency => $balance){ 
-			if($currency == "\$DIAMONDS"){
-				$icon = "diamond";
-			}else{
-				$icon = "currency";
-			}
 			?>
-			<li class="role"><img class="icon" src="icons/<?php echo $icon;?>.png"/>
+			<li class="role"><img class="icon" src="icons/<?php echo str_replace("$", "", $currency);?>.png"/>
 				<?php
 				echo $balance." ".$currency;
 				?>
