@@ -258,7 +258,7 @@ function initializeBalances($conn){
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
 		$sql = "INSERT INTO balances (balance, user_id, project_id)
-		VALUES ('0', '".$_SESSION['userData']['user_id']."', '".$row["project_id"]."')";
+		VALUES ('0', '".$_SESSION['userData']['user_id']."', '".$row["id"]."')";
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
