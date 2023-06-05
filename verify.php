@@ -1,6 +1,8 @@
 <?php
 include_once 'db.php';
 
+echo $_SERVER['REQUEST_URI'];
+exit;
 $addresses = array();
 $addresses = getAllAddresses($conn);
 $policies = array();
