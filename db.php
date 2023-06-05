@@ -242,7 +242,7 @@ function getNFTs($conn){
 		}
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
-		echo "<span class='nft-level'><strong>Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
 		echo "</div></div>";
 	  }
 	} else {
