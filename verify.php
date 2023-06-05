@@ -1,6 +1,7 @@
 <?php
 include_once 'db.php';
 
+parse_str(implode('&', array_slice($argv, 1)), $_GET);
 // Distinguish between a logged in user and verification cron job
 if(isset($_GET['verify'])){
 	set_time_limit(0);
