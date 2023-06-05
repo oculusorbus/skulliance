@@ -1,5 +1,5 @@
 <?php
-include 'db.php';
+include_once 'db.php';
 
 $addresses = array();
 $addresses = getAllAddresses($conn);
