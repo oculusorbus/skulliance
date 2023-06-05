@@ -79,7 +79,7 @@ function createUser($conn) {
 	}
 	// Immediately check user to set session variable and prevent first run errors
 	checkUser($conn);
-	initializeBalances($conn);
+	//initializeBalances($conn);
 }
 
 // Update user to maintain current username
