@@ -225,7 +225,7 @@ function removeUsers($conn){
 
 // Get NFTs
 function getNFTs($conn, $filterby=""){
-	if($filterby != "None"){
+	if($filterby != "None" && $filterby != ""){
 		$filterby = "AND project_id = '".$filterby."' ";
 	}else{
 		$filterby = "";
