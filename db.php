@@ -56,17 +56,6 @@ function checkUser($conn) {
 	}
 }
 
-// Remove all NFT user ids in preparation for cron job verification
-function removeUsers($conn){
-	$sql = "UPDATE nfts set	user_id = 0";
-	
-	if ($conn->query($sql) === TRUE) {
-	  //echo "New record created successfully";
-	} else {
-	  //echo "Error: " . $sql . "<br>" . $conn->error;
-	}
-}
-
 // Create a user that has visited the site for the first time.
 function createUser($conn) {
 	$sql = "INSERT INTO users (discord_id, avatar, username)
@@ -220,6 +209,17 @@ function checkNFT($conn, $asset_id){
 	} else {
 	  //echo "0 results";
 	  return false;
+	}
+}
+
+// Remove all NFT user ids in preparation for cron job verification
+function removeUsers($conn){
+	$sql = "UPDATE nfts set	user_id = 0";
+	
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
 
