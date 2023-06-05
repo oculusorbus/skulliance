@@ -59,11 +59,6 @@ function verifyNFTs($conn, $addresses, $policies, $user_id=0){
 										}else{
 											$nft_data->AssetName = $asset_name;
 										}
-										//renderNFT($nft_data, $ipfs);
-										/* Removing to rely on database now
-										if($_SESSION['userData']['project_id'] != 1){
-											$_SESSION['userData']['nfts'][] = $nft_data;
-										}*/
 										$asset_names[] = $nft_data->AssetName;
 										$collection_id = getCollectionId($conn, $policy);
 										if($user_id == 0){
