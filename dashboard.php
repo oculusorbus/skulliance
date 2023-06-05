@@ -16,6 +16,10 @@ if(isset($_POST['address'])){
 	verifyNFTs($conn, $addresses, $policies, $_SESSION['userData']['user_id']);
 }
 
+$filterby = "";
+if(isset($_POST['filterby'])){
+	$filterby = $_POST['filterby'];
+}
 
 function filterNFTs($page){
 	$barracks = "";
