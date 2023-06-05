@@ -225,7 +225,7 @@ function removeUsers($conn){
 
 // Get NFTs
 function getNFTs($conn){
-	$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ORDER BY project_id THEN BY collection_id";
+	$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ORDER BY project_id, collection_id";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
