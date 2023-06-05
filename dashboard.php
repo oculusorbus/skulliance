@@ -38,7 +38,10 @@ if(isset($_POST['address'])){
 				</div>
 			</ul>
 			<ul>
-
+		<?php
+		$balances = array();
+		$balances = getBalances($conn);
+		
 			</ul>
 		</div>
   </div>
