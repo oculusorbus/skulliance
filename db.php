@@ -272,7 +272,8 @@ function updateBalances($conn){
 		if(!isset($subtotals[$row["user_id"]][$row["project_id"]])){
 			$subtotals[$row["user_id"]][$row["project_id"]] = array();
 		}
-		$subtotals[$row["user_id"]][$row["project_id"]] += strval($row["rate"]);
+		$current_rate = strval($subtotals[$row["user_id"]][$row["project_id"]]);
+		$subtotals[$row["user_id"]][$row["project_id"]] = $current_rate+$row["rate"];
 	  }
 	} else {
 	  //echo "0 results";
