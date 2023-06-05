@@ -1,7 +1,6 @@
 <?php
 include_once 'db.php';
 
-echo $_SERVER['REQUEST_URI'];
 if($_SERVER['REQUEST_URI'] == "/staking/verify.php"){
 	$addresses = array();
 	$addresses = getAllAddresses($conn);
