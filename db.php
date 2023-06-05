@@ -79,7 +79,7 @@ function createUser($conn) {
 	}
 	// Immediately check user to set session variable and prevent first run errors
 	checkUser($conn);
-	//initializeBalances($conn);
+	initializeBalances($conn);
 }
 
 // Update user to maintain current username
@@ -247,7 +247,7 @@ function getNFTs($conn){
 	  //echo "0 results";
 	}
 }
-/*
+
 // Zero out all currency upon user creation
 function initializeBalances($conn){
 	$sql = "SELECT id FROM projects";
@@ -272,6 +272,7 @@ function initializeBalances($conn){
 	// Loop thru projects and insert default balance for each
 }
 
+/*
 // Deploy staking daily staking rewards
 function updateBalances($conn){
 	$sql = "SELECT user_id, collection_id, collections.rate AS rate, collections.project_id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id";
