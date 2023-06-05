@@ -84,6 +84,7 @@ function filterNFTs($page){
 		</div>
   </div>
   <div class="main">
+	<h2>NFTs</h2>
     <div class="content">
 		<?php filterNFTs("dashboard"); ?>
 		<div id="nfts" class="nfts">
