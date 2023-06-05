@@ -30,7 +30,7 @@ function filterNFTs($page){
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
-			<option value="None">Attribute</option>
+			<option value="None">Project</option>
 			<option value="None">All</option>
 			<option value="1">Galactico</option>
 			<option value="2">Ohh Meed</option>
