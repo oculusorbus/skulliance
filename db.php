@@ -259,7 +259,7 @@ function getNFTs($conn, $filterby=""){
 
 // Get items for store
 function getItems($conn){
-	$sql = "SELECT name, image_url, price, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id";
+	$sql = "SELECT items.name AS item_name, image_url, price, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -268,7 +268,7 @@ function getItems($conn){
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
 	    echo "<div class='nft'><div class='nft-data'>";
-		echo "<span class='nft-name'>".substr($row["name"], 0, 19)."</span>";
+		echo "<span class='nft-name'>".substr($row["item_name"], 0, 19)."</span>";
 		echo "<span class='nft-image'><img src='".$row["image_url"]."'/></span>";
 		echo "<span class='nft-level'><strong>Price</strong><br>".$row["price"].$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
