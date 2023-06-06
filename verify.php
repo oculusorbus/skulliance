@@ -67,8 +67,6 @@ function verifyNFTs($conn, $addresses, $policies, $user_id="0"){
 										$collection_id = getCollectionId($conn, $policy);
 										if($user_id == "0"){
 											$user_id = getUserId($conn, $address);
-											echo $user_id;
-											exit;
 										}
 										if(isset($nft_data->name)){
 											if(checkNFT($conn, $token->fingerprint)){
