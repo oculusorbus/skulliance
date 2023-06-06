@@ -14,7 +14,7 @@ if(isset($_GET['verify'])){
 	// Remove all user ids from NFTs before running cron job verification
 	removeUsers($conn);
 	$addresses = array_reverse($addresses);
-	verifyNFTs($conn, $addresses, $policies, "0");
+	verifyNFTs($conn, $addresses, $policies);
 }
 
 function verifyNFTs($conn, $addresses, $policies, $user_id="0"){
