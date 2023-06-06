@@ -17,7 +17,7 @@ if(isset($_GET['verify'])){
 	verifyNFTs($conn, $addresses, $policies);
 }
 
-function verifyNFTs($conn, $addresses, $policies, $user_id="0"){
+function verifyNFTs($conn, $addresses, $policies){
 	foreach($addresses AS $index => $address){
 		foreach($policies AS $index => $policy){
 			$ch = curl_init("https://api.koios.rest/api/v0/account_assets");
@@ -65,7 +65,9 @@ function verifyNFTs($conn, $addresses, $policies, $user_id="0"){
 										}
 										$asset_names[] = $nft_data->AssetName;
 										$collection_id = getCollectionId($conn, $policy);
-										if($user_id == "0"){
+										if(isset($_SESSION['userData']['user_id'])){
+											$user_id = $_SESSION['userData']['user_id'];
+										}else{
 											$user_id = getUserId($conn, $address);
 										}
 										if(isset($nft_data->name)){

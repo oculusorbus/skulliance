@@ -13,7 +13,7 @@ if(isset($_POST['address'])){
 	$addresses[0] = $_POST['address'];
 	$policies = array();
 	$policies = getPolicies($conn);
-	verifyNFTs($conn, $addresses, $policies, $_SESSION['userData']['user_id']);
+	verifyNFTs($conn, $addresses, $policies);
 }
 
 $filterby = "";
