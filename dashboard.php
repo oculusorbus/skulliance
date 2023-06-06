@@ -68,8 +68,6 @@ function filterNFTs($page){
 					</form>
 				</li>
 				</div>
-			</ul>
-			<ul>
 		<?php
 		$balances = getBalances($conn);
 		foreach($balances AS $currency => $balance){ 
@@ -81,6 +79,9 @@ function filterNFTs($page){
 			</li>
 		<?php } ?>
 			</ul>
+		</div>
+		<h2>Store</h2>
+		<div class="content">
 		</div>
   </div>
   <div class="main">
