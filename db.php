@@ -267,7 +267,7 @@ function getItems($conn){
 	  $nftcounter = 0;
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
-	    echo "<div class='offering'><div class='nft-data'>";
+	    echo "<div class='nft'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img src='".$row["image_url"]."'/></span>";
 		echo "<span class='nft-level'><strong>Price</strong><br>".$row["price"].$row["currency"]."</span>";
