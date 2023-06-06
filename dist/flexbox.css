@@ -629,6 +629,10 @@ li form {
 	font-size: 12px;
 }
 
+.offering {
+	width: 100%;
+}
+
 .nft-data{
 	background-color: #36393F;
 	border: 1px solid #43464D;
