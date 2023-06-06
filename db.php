@@ -190,8 +190,6 @@ function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, 
 
 // Update NFT for user
 function updateNFT($conn, $asset_id, $user_id) {
-	echo $user_id;
-	exit;
 	$sql = "UPDATE nfts SET user_id='".$user_id."' WHERE asset_id='".$asset_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
