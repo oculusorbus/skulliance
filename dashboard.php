@@ -82,6 +82,11 @@ function filterNFTs($page){
 		</div>
 		<h2>Store</h2>
 		<div class="content">
+			<div id="nfts" class="nfts">
+				<?php 
+				getItems($conn); 
+				?>
+			</div>
 		</div>
   </div>
   <div class="main">
