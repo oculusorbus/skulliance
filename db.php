@@ -242,6 +242,8 @@ function getNFTs($conn, $filterby=""){
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		if($row["collection_id"] == 4){
 			echo "<span class='nft-image'><img src='https://ipfs2.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
+		}else if($row["collection_id"] == 20){
+			echo "<span class='nft-image'><img src='https://storage.googleapis.com/jpeg-optim-files/".$row["ipfs"]."'/></span>";
 		}else{
 			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}

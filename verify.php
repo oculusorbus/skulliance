@@ -56,7 +56,11 @@ function verifyNFTs($conn, $addresses, $policies){
 									if(isset($metadata->$policy_id)){
 										$nft = $metadata->$policy_id;
 										$nft_data = $nft->$asset_name;
-										$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
+										if(isset($nft_data->image)){
+											$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
+										}else{
+											$ipfs = "";
+										}
 										// Account for NFT with NaN value for asset name
 										if($asset_name == "NaN"){
 											$nft_data->AssetName = "DROPSHIP012";
