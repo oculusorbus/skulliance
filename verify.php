@@ -13,10 +13,12 @@ if(isset($_GET['verify'])){
 	$policies = getPolicies($conn);
 	// Remove all user ids from NFTs before running cron job verification
 	removeUsers($conn);
-	verifyNFTs($conn, $addresses, $policies);
+	verifyNFTs($conn, $addresses, $policies, "0");
 }
 
 function verifyNFTs($conn, $addresses, $policies, $user_id="0"){
+	echo $user_id;
+	exit;
 	foreach($addresses AS $index => $address){
 		foreach($policies AS $index => $policy){
 			$ch = curl_init("https://api.koios.rest/api/v0/account_assets");
