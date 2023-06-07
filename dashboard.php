@@ -32,6 +32,8 @@ if(isset($_POST['item_id'])) {
 		if(isset($newDM["id"])) {
 		    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. \r\n https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
 		}
+	}else{
+		alert("You cannot purchase this item because it is out of stock.");
 	}
 
 	// Check to make sure there's still enough quantity
