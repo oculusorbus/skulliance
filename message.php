@@ -23,7 +23,7 @@ function MakeRequest($endpoint, $data) {
         CURLOPT_FOLLOWLOCATION => 1,
         CURLOPT_VERBOSE        => 1,
         CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_POSTFIELDS => $data
+        CURLOPT_POSTFIELDS => $data,
         CURLOPT_STDERR         => $f,
     ));
 
