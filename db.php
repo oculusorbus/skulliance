@@ -273,8 +273,8 @@ function getItems($conn){
 		echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."<br>or<br>".number_format($row["price"]/10)." \$DIAMOND</span>";
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
-		renderBuyButton($row["item_id"], $row["project_id"], "BUY - ".number_format($row["price"])." $".$row["currency"]);
-		renderBuyButton($row["item_id"], 7, "BUY - ".number_format($row["price"]/10)." \$DIAMOND");
+		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"]);
+		renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/10)." \$DIAMOND");
 		echo "</div></div>";
 	  }
 	} else {
