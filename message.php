@@ -1,6 +1,6 @@
 <?php
 function MakeRequest($endpoint, $data) {
-	global $client_secret;
+	global $bot_token;
     # Set endpoint
     $url = "https://discord.com/api/v9/".$endpoint."";
 
