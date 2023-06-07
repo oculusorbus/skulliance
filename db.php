@@ -259,7 +259,7 @@ function getNFTs($conn, $filterby=""){
 
 // Get items for store
 function getItems($conn){
-	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id";
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -271,6 +271,7 @@ function getItems($conn){
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img src='".$row["image_url"]."'/></span>";
 		echo "<span class='nft-level'><strong>Price</strong><br>".$row["price"]." $".$row["currency"]."<br>or<br>".($row["price"]/10)." \$DIAMOND</span>";
+		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		renderBuyButton($row["item_id"], "BUY WITH ".$row["price"]." $".$row["currency"]);
 		renderBuyButton($row["item_id"], "BUY WITH ".($row["price"]/10)." \$DIAMOND");
