@@ -7,11 +7,11 @@ include 'header.php';
 include 'verify.php';
 
 // Handle wallet selection
-if(isset($_POST['address'])){
-	checkAddress($conn, $_POST['address']);
+if(isset($_POST['stakeaddress'])){
+	checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
 	$addresses = array();
 	//$addresses = getAddresses($conn);
-	$addresses[0] = $_POST['address'];
+	$addresses[0] = $_POST['stakeaddress'];
 	$policies = array();
 	$policies = getPolicies($conn);
 	verifyNFTs($conn, $addresses, $policies);
@@ -31,45 +31,26 @@ if(isset($_POST['item_id'])) {
 			$price = $price/10;
 		}
 		$balance = getBalance($conn, $_POST['project_id']);
-		
 		if($balance >= $price){
 			updateBalance($conn, $user_id, $_POST['project_id'], -$price);
 			updateQuantity($conn, $_POST['item_id']);
 			$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
-			$title = $item["name"]." purchased";
+			$title = $item["name"]." Purchased";
 			$description = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn);
 			$imageurl = $item["image_url"];
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+			# Open the DM first
+			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
+			# Check if DM is created, if yes, let's send a message to this channel.
+			if(isset($newDM["id"])) {
+			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. \r\n https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
+			}
 		}else{
 			alert("You do not have enough currency to purchase this item.");
-		}
-		
-		# Open the DM first
-		$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
-		# Check if DM is created, if yes, let's send a message to this channel.
-		if(isset($newDM["id"])) {
-		    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. \r\n https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
 		}
 	}else{
 		alert("You cannot purchase this item because it is out of stock.");
 	}
-
-	// Check to make sure there's still enough quantity
-	// Check if user has the correct balance
-	// Check what currency they purchased with
-	
-	// Reduce quantity by 1 upon successful purchase
-	// Send webhook announcing purchase to discord
-	// Send private message to project owner to fulfill purchase with user address
-	/*
-	// Disable purchasing of items if the game has already been played. This is a fallback error in case someone tried to hack the HTML.
-	if(!isset($_SESSION['userData']['current_score']) || checkSquadCount($conn) > 0){
-		// Buy item and pass false flag since it's not a Drop Box transaction
-		buyItem($conn, $_POST['item_id'], false);
-	}else{
-		?><script type="text/javascript">alert("You've already played Drop Ship. You cannot purchase items until a new game is live.");</script><?php
-	}*/
-	//alert("");
 }
 
 function filterNFTs($page){
@@ -115,6 +96,7 @@ function filterNFTs($page){
 					<form id="addressForm" action="dashboard.php" method="post">
 					  <input type="hidden" id="wallet" name="wallet" value="">	
 					  <input type="hidden" id="address" name="address" value="">
+					  <input type="hidden" id="stakeaddress" name="stakeaddress" value="">
 					  <input type="submit" value="Submit" style="display:none;">
 					</form>
 				</li>

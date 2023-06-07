@@ -19,16 +19,17 @@ async function connectWallet(wallet){
 			sendAddress(address, wallet);
 		}*/
 		if(stakeAddress != ""){
-			sendAddress(stakeAddress, wallet);
+			sendAddress(address, stakeAddress, wallet);
 		}
 	}
 }
 
 window.connectWallet = connectWallet;
 
-function sendAddress(address, wallet){
+function sendAddress(address, stakeaddress, wallet){
 	document.getElementById('wallet').value = wallet;
 	document.getElementById('address').value = address;
+	document.getElementById('stakeaddress').value = stakeaddress;
 	document.getElementById("addressForm").submit();
 }
 

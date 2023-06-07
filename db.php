@@ -98,9 +98,9 @@ function updateUser($conn) {
 }
 
 // Create address for user
-function createAddress($conn, $address) {
-	$sql = "INSERT INTO wallets (address, user_id)
-	VALUES ('".$address."', '".$_SESSION['userData']['user_id']."')";
+function createAddress($conn, $stake_address, $address) {
+	$sql = "INSERT INTO wallets (stake_address, address, user_id)
+	VALUES ('".$stake_address."', '".$address."', '".$_SESSION['userData']['user_id']."')";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
@@ -109,9 +109,9 @@ function createAddress($conn, $address) {
 }
 
 // Check user's Cardano address
-function checkAddress($conn, $address) {
+function checkAddress($conn, $stake_address, $address) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' AND address='".$address."'";
+		$sql = "SELECT stake_address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' AND stake_address='".$stake_address."'";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
