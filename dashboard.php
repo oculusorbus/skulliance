@@ -38,7 +38,7 @@ if(isset($_POST['item_id'])) {
 			$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 			$title = $item["name"]." purchased";
 			$description = $item["name"]." purchased for ".$item["price"]." $".$item["currency"];
-			$image_url = $item["image_url"];
+			$imageurl = $item["image_url"];
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}else{
 			alert("You do not have enough currency to purchase this item.");
