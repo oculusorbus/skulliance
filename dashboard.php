@@ -22,9 +22,9 @@ if(isset($_POST['filterby'])){
 }
 
 function filterNFTs($page){
-	$barracks = "";
+	$anchor = "";
 	if($page == "dashboard"){
-		$barracks = "#barracks";
+		$anchor = "#holdings";
 	}
 	echo'
 	<div id="filter-nfts">
@@ -40,7 +40,7 @@ function filterNFTs($page){
 			<option value="6">Crypties</option>
 			<option value="7">Skulliance</option>
 		</select>
-		<form id="filterNFTsForm" action="'.$page.'.php'.$barracks.'" method="post">
+		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
 		  <input type="hidden" id="filterby" name="filterby" value="">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>
@@ -91,6 +91,7 @@ function filterNFTs($page){
   </div>
   <div class="main">
 	<h2>Qualifying NFTs</h2>
+	<a name="holdings" id="holdings"></a>
     <div class="content">
 		<?php filterNFTs("dashboard"); ?>
 		<div id="nfts" class="nfts">
