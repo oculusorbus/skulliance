@@ -270,7 +270,7 @@ function getItems($conn){
 	    echo "<div class='nft offering'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img src='".$row["image_url"]."'/></span>";
-		echo "<span class='nft-level'><strong>Price</strong><br>".$row["price"]." $".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Price</strong><br>".$row["price"]." $".$row["currency"]."<br>OR ".($row["price"]/4)." \$DIAMOND</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		echo "</div></div>";
 	  }
