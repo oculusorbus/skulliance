@@ -4,7 +4,6 @@ include('credentials/webhooks_credentials.php');
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
     function discordmsg($title, $description, $imageurl, $project_id, $url="") {
-		global $prefix;
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -63,7 +62,7 @@ include('credentials/webhooks_credentials.php');
 
 		            // thumbnail
 		            "thumbnail" => [
-		                "url" => "https://www.madballs.net/".$prefix."/images/vip.gif"
+		                "url" => "https://www.madballs.net/drop-ship/images/vip.gif"
 		            ],
 
 		            // Author name & url
