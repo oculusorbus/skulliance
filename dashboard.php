@@ -25,14 +25,15 @@ if(isset($_POST['filterby'])){
 //Item purchases
 if(isset($_POST['item_id'])) {
 	$quantity = checkItemQuantity($conn, $_POST['item_id']);
-	echo $quantity;
-	# Open the DM first
-	$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
-
-	# Check if DM is created, if yes, let's send a message to this channel.
-	if(isset($newDM["id"])) {
-	    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World."));
+	if($quantity >= 1){
+		# Open the DM first
+		$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
+		# Check if DM is created, if yes, let's send a message to this channel.
+		if(isset($newDM["id"])) {
+		    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
+		}
 	}
+
 	// Check to make sure there's still enough quantity
 	// Check if user has the correct balance
 	// Check what currency they purchased with
