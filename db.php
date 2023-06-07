@@ -312,7 +312,7 @@ function getItemQuantity($conn, $item_id){
 function updateQuantity($conn, $item_id){
 	$quantity = getItemQuantity($conn, $item_id);
 	$quantity = $quantity - 1;
-	$sql = "UPDATE items SET quantity = '".$quantity."' WHERE item_id='".$item_id."'";
+	$sql = "UPDATE items SET quantity = '".$quantity."' WHERE id='".$item_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
