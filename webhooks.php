@@ -62,7 +62,7 @@ include('credentials/webhooks_credentials.php');
 
 		            // thumbnail
 		            "thumbnail" => [
-		                "url" => "https://www.madballs.net/drop-ship/images/vip.gif"
+		                "url" => "https://skulliance.io/staking/icons/skulliance.png"
 		            ],
 
 		            // Author name & url
