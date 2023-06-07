@@ -300,7 +300,9 @@ function checkItemQuantity($conn, $item_id){
 	
 	if ($result->num_rows > 0) {
 	  // output data of each row
-	  return $row["quantity"];
+	  while($row = $result->fetch_assoc()) {  
+		return $row["quantity"];
+	  }
 	} else {
 	  //echo "0 results";
 	}
