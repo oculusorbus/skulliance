@@ -22,7 +22,7 @@ if ($conn->connect_error) {
 
 // Get user ID by stake address for cron job verification
 function getUserId($conn, $address){
-	$sql = "SELECT user_id FROM wallets WHERE address='".$address."'";
+	$sql = "SELECT user_id FROM wallets WHERE stake_address='".$address."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {

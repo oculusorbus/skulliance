@@ -39,12 +39,13 @@ if(isset($_POST['item_id'])) {
 			$description = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn);
 			$imageurl = $item["image_url"];
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+			/*
 			# Open the DM first
 			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
 			# Check if DM is created, if yes, let's send a message to this channel.
 			if(isset($newDM["id"])) {
 			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. \r\n https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
-			}
+			}*/
 		}else{
 			alert("You do not have enough currency to purchase this item.");
 		}
