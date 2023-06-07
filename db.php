@@ -118,7 +118,7 @@ function checkAddress($conn, $stake_address, $address) {
 		  // output data of each row
 		} else {
 		  //echo "0 results";
-			createAddress($conn, $address);
+			createAddress($conn, $stake_address, $address);
 		}
 	}
 }
