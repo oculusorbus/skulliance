@@ -26,12 +26,10 @@ if(isset($_POST['filterby'])){
 if(isset($_POST['item_id'])) {
 	# Open the DM first
 	$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
-	print_r($newDM);
 
 	# Check if DM is created, if yes, let's send a message to this channel.
 	if(isset($newDM["id"])) {
 	    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World."));
-	    print_r($newMessage);
 	}
 	// Check to make sure there's still enough quantity
 	// Check if user has the correct balance
