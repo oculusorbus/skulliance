@@ -312,7 +312,6 @@ function getItemInfo($conn, $item_id, $project_id){
 			$item["currency"] = $row["currency"];
 		}
 		$item["project"] = $row["project_name"];
-		
 		return $item;
 	  }
 	} else {
