@@ -259,7 +259,7 @@ function getNFTs($conn, $filterby=""){
 
 // Get items for store
 function getItems($conn){
-	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0";
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
