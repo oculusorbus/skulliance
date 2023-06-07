@@ -295,7 +295,7 @@ function renderBuyButton($id, $project_id, $verbiage){
 
 // Get item information
 function getItemInfo($conn, $item_id, $project_id){
-	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, project_id, projects.name AS project_name, currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE id = '".$item_id."'";
+	$sql = "SELECT items.id AS item_id, projects.id AS project_id, items.name AS item_name, image_url, price, projects.name AS project_name, currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE id = '".$item_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
