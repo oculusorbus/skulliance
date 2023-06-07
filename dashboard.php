@@ -33,7 +33,7 @@ if(isset($_POST['item_id'])) {
 		$balance = getBalance($conn, $_POST['project_id']);
 		
 		if($balance >= $price){
-			updateBalance($conn, $user_id, $_POST['project_id'], $price);
+			updateBalance($conn, $user_id, $_POST['project_id'], -$price);
 		}else{
 			alert("You do not have enough currency to purchase this item.");
 		}
