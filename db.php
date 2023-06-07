@@ -259,7 +259,7 @@ function getNFTs($conn, $filterby=""){
 
 // Get items for store
 function getItems($conn){
-	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id";
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -291,6 +291,11 @@ function renderBuyButton($id, $project_id, $verbiage){
 	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
 	  <input class='small-button' type='submit' value='".$verbiage."'>
 	</form>";
+}
+
+// Render JS alert message
+function alert($message){
+	echo "<script type='text/javascript'>alert('".$message."');</script>";
 }
 
 // Zero out all currency upon user creation

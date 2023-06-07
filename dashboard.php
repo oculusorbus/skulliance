@@ -23,6 +23,13 @@ if(isset($_POST['filterby'])){
 
 //Item purchases
 if(isset($_POST['item_id'])) {
+	// Check to make sure there's still enough quantity
+	// Check if user has the correct balance
+	// Check what currency they purchased with
+	
+	// Reduce quantity by 1 upon successful purchase
+	// Send webhook announcing purchase to discord
+	// Send private message to project owner to fulfill purchase with user address
 	/*
 	// Disable purchasing of items if the game has already been played. This is a fallback error in case someone tried to hack the HTML.
 	if(!isset($_SESSION['userData']['current_score']) || checkSquadCount($conn) > 0){
@@ -31,6 +38,7 @@ if(isset($_POST['item_id'])) {
 	}else{
 		?><script type="text/javascript">alert("You've already played Drop Ship. You cannot purchase items until a new game is live.");</script><?php
 	}*/
+	//alert("");
 }
 
 function filterNFTs($page){

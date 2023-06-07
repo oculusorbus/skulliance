@@ -8,7 +8,7 @@ include('credentials/webhooks_credentials.php');
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
 		}
-		$webhook = getWebhook($project_id);
+		$webhook = getWebhook();
 	    $timestamp = date("c", strtotime("now"));
 	    $msg = json_encode([
 	    // Message
