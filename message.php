@@ -2,7 +2,7 @@
 function MakeRequest($endpoint, $data) {
 	global $client_secret;
     # Set endpoint
-    $url = "https://discord.com/api/".$endpoint."";
+    $url = "https://discord.com/api/v9/".$endpoint."";
 
     # Encode data, as Discord requires you to send json data.
     $data = json_encode($data);
