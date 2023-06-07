@@ -31,7 +31,6 @@ if(isset($_POST['item_id'])) {
 	if(isset($newDM["id"])) {
 	    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World."));
 	}
-	exit;
 	// Check to make sure there's still enough quantity
 	// Check if user has the correct balance
 	// Check what currency they purchased with
