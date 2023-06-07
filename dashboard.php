@@ -30,7 +30,7 @@ if(isset($_POST['item_id'])) {
 		$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
 		# Check if DM is created, if yes, let's send a message to this channel.
 		if(isset($newDM["id"])) {
-		    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
+		    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World. \r\n https://image-optimizer.jpgstoreapis.com/QmSJMAdXhMbk5n2YvGkcZ1bhGSxrStoQkJCvpGEGeNPeQV?width=600"));
 		}
 	}
 
