@@ -26,7 +26,7 @@ function MakeRequest($endpoint, $data) {
         CURLOPT_POSTFIELDS => $data,
         CURLOPT_STDERR         => $f,
     ));
-
+print_r($ch);
     $request = curl_exec($ch);
     print_r($request);
     curl_close($ch);
