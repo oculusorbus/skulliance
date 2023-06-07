@@ -27,7 +27,6 @@ function MakeRequest($endpoint, $data) {
         CURLOPT_STDERR         => $f,
     ));
     $request = curl_exec($ch);
-    print_r($request);
     curl_close($ch);
     return json_decode($request, true);
 }
