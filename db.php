@@ -270,11 +270,11 @@ function getItems($conn){
 	    echo "<div class='nft offering'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img src='".$row["image_url"]."'/></span>";
-		echo "<span class='nft-level'><strong>Price</strong><br>".$row["price"]." $".$row["currency"]."<br>or<br>".($row["price"]/10)." \$DIAMOND</span>";
+		echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."<br>or<br>".number_format($row["price"]/10)." \$DIAMOND</span>";
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
-		renderBuyButton($row["item_id"], "BUY WITH ".$row["price"]." $".$row["currency"]);
-		renderBuyButton($row["item_id"], "BUY WITH ".($row["price"]/10)." \$DIAMOND");
+		renderBuyButton($row["item_id"], $row["project_id"], "BUY WITH ".number_format($row["price"])." $".$row["currency"]);
+		renderBuyButton($row["item_id"], 7, "BUY WITH ".number_format($row["price"]/10)." \$DIAMOND");
 		echo "</div></div>";
 	  }
 	} else {
@@ -283,11 +283,12 @@ function getItems($conn){
 }
 
 // Render buy button for item
-function renderBuyButton($id, $verbiage){
+function renderBuyButton($id, $project_id, $verbiage){
 	global $conn;
 	echo "
 	<form action='dashboard.php#store' method='post'>
 	  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
+	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
 	  <input class='small-button' type='submit' value='".$verbiage."'>
 	</form>";
 }
