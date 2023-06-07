@@ -125,7 +125,7 @@ function checkAddress($conn, $stake_address, $address) {
 
 // Get user wallet addresses
 function getAddresses($conn) {
-	$sql = "SELECT address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT stake_address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	
     $addresses = array();
@@ -133,7 +133,7 @@ function getAddresses($conn) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	$addresses[] = $row["address"];
+    	$addresses[] = $row["stake_address"];
 	  }
 	} else {
 	  //echo "0 results";
@@ -143,7 +143,7 @@ function getAddresses($conn) {
 
 // Get all addresses 
 function getAllAddresses($conn){
-	$sql = "SELECT address FROM wallets";
+	$sql = "SELECT stake_address FROM wallets";
 	$result = $conn->query($sql);
 	
     $addresses = array();
@@ -151,7 +151,7 @@ function getAllAddresses($conn){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	$addresses[] = $row["address"];
+    	$addresses[] = $row["stake_address"];
 	  }
 	} else {
 	  //echo "0 results";
