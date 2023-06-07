@@ -293,6 +293,19 @@ function renderBuyButton($id, $project_id, $verbiage){
 	</form>";
 }
 
+// Check item quantity to make sure it's in stock
+function checkItemQuantity($conn, $item_id){
+	$sql = "SELECT id, quantity FROM items WHERE id = '".$item_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  return $row["quantity"];
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Render JS alert message
 function alert($message){
 	echo "<script type='text/javascript'>alert('".$message."');</script>";

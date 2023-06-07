@@ -24,6 +24,8 @@ if(isset($_POST['filterby'])){
 
 //Item purchases
 if(isset($_POST['item_id'])) {
+	$quantity = checkItemQuantity($conn, $_POST['item_id']);
+	echo $quantity;
 	# Open the DM first
 	$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
 
