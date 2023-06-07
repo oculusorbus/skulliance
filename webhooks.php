@@ -3,7 +3,7 @@ include('credentials/webhooks_credentials.php');
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $project_id, $url="") {
+    function discordmsg($title, $description, $imageurl, $url="") {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";

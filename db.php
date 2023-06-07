@@ -293,6 +293,31 @@ function renderBuyButton($id, $project_id, $verbiage){
 	</form>";
 }
 
+// Get item information
+function getItemInfo($conn, $item_id, $project_id){
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, project_id, projects.name AS project_name, currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE id = '".$item_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  $item = array();
+	  while($row = $result->fetch_assoc()) {  
+		$item["name"] = $row["item_name"];
+		$item["image_url"] = $row["image_url"];
+		if($project_id == 7){
+			$item["price"] = $row["price"]/10;
+		}else{
+			$item["price"] = $row["price"];
+		}
+		$item["project"] = $row["project_name"];
+		$item["currency"] = $row["currency"];
+		return $item;
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Get item quantity
 function getItemQuantity($conn, $item_id){
 	$sql = "SELECT id, quantity FROM items WHERE id = '".$item_id."'";
