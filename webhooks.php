@@ -19,7 +19,7 @@ include('credentials/webhooks_credentials.php');
 
 	    // Avatar URL.
 	    // Uncomment to use custom avatar instead of bot's pic
-	    "avatar_url" => "https://cdn.discordapp.com/app-icons/983993436694794261/8c3b958cac5369b56486c326d8c3e5d1.png?size=256",
+	    //"avatar_url" => "https://cdn.discordapp.com/app-icons/983993436694794261/8c3b958cac5369b56486c326d8c3e5d1.png?size=256",
 
 	    // text-to-speech
 	    "tts" => false,
