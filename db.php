@@ -293,8 +293,8 @@ function renderBuyButton($id, $project_id, $verbiage){
 	</form>";
 }
 
-// Check item quantity to make sure it's in stock
-function checkItemQuantity($conn, $item_id){
+// Get item quantity
+function getItemQuantity($conn, $item_id){
 	$sql = "SELECT id, quantity FROM items WHERE id = '".$item_id."'";
 	$result = $conn->query($sql);
 	
@@ -302,6 +302,36 @@ function checkItemQuantity($conn, $item_id){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {  
 		return $row["quantity"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Get item price
+function getItemPrice($conn, $item_id){
+	$sql = "SELECT id, price FROM items WHERE id = '".$item_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {  
+		return $row["price"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Get user balance
+function getBalance($conn, $project_id){
+	$sql = "SELECT balance FROM balances WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id = '".$project_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {  
+		return $row["balance"];
 	  }
 	} else {
 	  //echo "0 results";

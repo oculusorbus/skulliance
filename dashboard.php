@@ -24,8 +24,20 @@ if(isset($_POST['filterby'])){
 
 //Item purchases
 if(isset($_POST['item_id'])) {
-	$quantity = checkItemQuantity($conn, $_POST['item_id']);
+	$quantity = getItemQuantity($conn, $_POST['item_id']);
 	if($quantity >= 1){
+		$price = getItemPrice($conn, $_POST['item_id']);
+		if($_POST['project_id'] == 7){
+			$price = $price/10;
+		}
+		$balance = getBalance($conn, $_POST['project_id']);
+		
+		if($balance >= $price){
+			
+		}else{
+			alert("You do not have enough currency to purchase this item.");
+		}
+		
 		# Open the DM first
 		$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
 		# Check if DM is created, if yes, let's send a message to this channel.
