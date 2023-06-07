@@ -15,7 +15,7 @@ function MakeRequest($endpoint, $data) {
     curl_setopt_array($ch, array(
         CURLOPT_URL            => $url, 
         CURLOPT_HTTPHEADER     => array(
-            'Authorization: Bot '.$client_secret,
+            'Authorization: Bot '.$bot_token,
             "Content-Type: application/json",
             "Accept: application/json"
         ),
