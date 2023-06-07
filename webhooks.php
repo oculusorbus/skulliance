@@ -19,7 +19,7 @@ include('credentials/webhooks_credentials.php');
 
 	    // Avatar URL.
 	    // Uncomment to use custom avatar instead of bot's pic
-	    "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
+	    //"avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
 
 	    // text-to-speech
 	    "tts" => false,
