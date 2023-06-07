@@ -308,6 +308,18 @@ function getItemQuantity($conn, $item_id){
 	}
 }
 
+// Update item quantity
+function updateQuantity($conn, $item_id){
+	$quantity = getItemQuantity($conn, $item_id);
+	$quantity = $quantity - 1;
+	$sql = "UPDATE items SET quantity = '".$quantity."' WHERE item_id='".$item_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Get item price
 function getItemPrice($conn, $item_id){
 	$sql = "SELECT id, price FROM items WHERE id = '".$item_id."'";
