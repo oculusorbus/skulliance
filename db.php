@@ -73,7 +73,7 @@ function createUser($conn) {
 
 // Get username
 function getUsername($conn) {
-	$sql = "SELECT username FROM users WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT username FROM users WHERE id='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
