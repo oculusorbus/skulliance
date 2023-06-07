@@ -21,6 +21,18 @@ if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
 }
 
+//Item purchases
+if(isset($_POST['item_id'])) {
+	/*
+	// Disable purchasing of items if the game has already been played. This is a fallback error in case someone tried to hack the HTML.
+	if(!isset($_SESSION['userData']['current_score']) || checkSquadCount($conn) > 0){
+		// Buy item and pass false flag since it's not a Drop Box transaction
+		buyItem($conn, $_POST['item_id'], false);
+	}else{
+		?><script type="text/javascript">alert("You've already played Drop Ship. You cannot purchase items until a new game is live.");</script><?php
+	}*/
+}
+
 function filterNFTs($page){
 	$anchor = "";
 	if($page == "dashboard"){

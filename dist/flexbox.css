@@ -460,7 +460,7 @@ body {
 }
 
 .small-button {
-  background-color: #2D7D46; /* Green */
+  background-color: #000; /* Green */
   border: none;
   color: white;
   padding: 3px 10px;
@@ -471,7 +471,7 @@ body {
   cursor:pointer;
   border-radius: 0.5rem;
   font-weight: bold;
-  box-shadow: 0 4px #1c4f2a;
+  box-shadow: 0 4px #222;
   font-family: Courier;
 }
 
