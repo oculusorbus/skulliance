@@ -27,6 +27,8 @@ if(isset($_POST['item_id'])) {
 	$quantity = getItemQuantity($conn, $_POST['item_id']);
 	if($quantity >= 1){
 		$price = getItemPrice($conn, $_POST['item_id']);
+		echo $_POST['primary_project_id'];
+		exit;
 		if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
 			$price = $price/10;
 		}
