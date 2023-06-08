@@ -135,7 +135,8 @@ function filterNFTs($page){
 			}else{
 				?>
 				<form id="craftingForm" action="dashboard.php" method="post">
-				  <input type="text" id="balance" name="balance" value="<?php echo min($balances);?>">	
+				  MAX&nbsp;
+				  <input type="text" size="10" id="balance" name="balance" value="<?php echo min($balances);?>">	
 				  <input type="submit" value="Submit">
 				</form>
 				<?php
