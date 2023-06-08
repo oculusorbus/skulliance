@@ -118,6 +118,8 @@ function filterNFTs($page){
 		</div>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">
+			<ul>
+			<li class="role">
 			<?php 
 			$balances = array();
 			$balances = getBalances($conn);
@@ -135,6 +137,8 @@ function filterNFTs($page){
 			}
 			echo min($balances);
 			?>
+			</li>
+			</ul>
 		</div>
 		<h2>Store</h2>
 		<a name="store" id="store"></a>
