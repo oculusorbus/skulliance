@@ -137,7 +137,7 @@ function filterNFTs($page){
 				<form id="craftingForm" action="dashboard.php" method="post">
 				  Convert the following amount of every currency to $DIAMOND<br><br>
 				  MAX&nbsp;
-				  <input type="text" size="10" id="balance" name="balance" value="<?php echo min($balances);?>">	
+				  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
 				  <input type="submit" value="Submit">
 				</form>
 				<?php
