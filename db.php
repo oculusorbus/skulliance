@@ -36,6 +36,42 @@ function getUserId($conn, $address){
 	}
 }
 
+// Get first user wallet address to send purchases to
+function getAddress($conn){
+	$sql = "SELECT address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return $row["address"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Get project info
+function getProjectInfo($conn, $project_id){
+	$sql = "SELECT name, currency, discord_id FROM projects WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  $project = array();
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$project["name"] = $row["name"];
+		$project["currency"] = $row["currency"];
+		$project["discord_id"] = $row["discord_id"];
+		return $project;
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){
@@ -289,8 +325,8 @@ function getItems($conn){
 		echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."<br>or<br>".number_format($row["price"]/10)." \$DIAMOND</span>";
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
-		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"]);
-		renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/10)." \$DIAMOND");
+		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"], $row["project_id"]);
+		renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/10)." \$DIAMOND", $row["project_id"]);
 		echo "</div></div>";
 	  }
 	} else {
@@ -299,12 +335,13 @@ function getItems($conn){
 }
 
 // Render buy button for item
-function renderBuyButton($id, $project_id, $verbiage){
+function renderBuyButton($id, $project_id, $verbiage, $primary_project_id){
 	global $conn;
 	echo "
 	<form action='dashboard.php#store' method='post'>
 	  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
 	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
+	  <input type='hidden' id='primary_project_id' name='primary_project_id' value='".$primary_project_id."'>
 	  <input class='small-button' type='submit' value='".$verbiage."'>
 	</form>";
 }
