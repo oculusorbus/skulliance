@@ -45,7 +45,8 @@ if(isset($_POST['item_id'])) {
 			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
 			# Check if DM is created, if yes, let's send a message to this channel.
 			if(isset($newDM["id"])) {
-			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => "Hello World."));
+				$content = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn). "/r/n ".$imageurl."/r/n Please send NFT to ".getAddress($conn);
+			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 			}
 		}else{
 			alert("You do not have enough currency to purchase this item.");
