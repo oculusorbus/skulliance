@@ -325,7 +325,7 @@ function getItems($conn){
 		if($row["project_id"] != 7){
 			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."<br>or<br>".number_format($row["price"]/10)." \$DIAMOND</span>";
 		}else{
-			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"]/10)." \$DIAMOND</span>";
+			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."</span>";
 		}
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
