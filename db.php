@@ -54,7 +54,7 @@ function getAddress($conn){
 
 // Get project info
 function getProjectInfo($conn, $project_id){
-	$sql = "SELECT name, currency, discord_id FROM projects WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT name, currency, discord_id FROM projects WHERE project_id='".$project_id."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
