@@ -129,9 +129,9 @@ function filterNFTs($page){
 				}
 			}
 			if($zero){
-				echo "zero";
+				echo "You do not have balances for all currency to craft.";
 			}else{
-				echo "no zero";
+				
 			}
 			echo min($balances);
 			?>
