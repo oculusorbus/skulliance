@@ -117,7 +117,7 @@ function filterNFTs($page){
 			</ul>
 		</div>
 		<h2>Crafting</h2>
-		<div class="content">
+		<div class="content" id="player-stats">
 			<?php 
 			$balances = array();
 			$balances = getBalances($conn);
