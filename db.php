@@ -551,7 +551,7 @@ function getBalances($conn){
 
 // Get minimum balance for crafting
 function getMinimumBalance($conn){
-	$sql = "SELECT balance FROM balances WHERE user_id = '".$_SESSION['userData']['user_id']."' ORDER BY balance ASC LIMIT 1";
+	$sql = "SELECT balance FROM balances WHERE user_id = '".$_SESSION['userData']['user_id']."' WHERE project_id != 7 ORDER BY balance ASC LIMIT 1";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
