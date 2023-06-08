@@ -27,7 +27,7 @@ if(isset($_POST['item_id'])) {
 	$quantity = getItemQuantity($conn, $_POST['item_id']);
 	if($quantity >= 1){
 		$price = getItemPrice($conn, $_POST['item_id']);
-		if($_POST['project_id'] == 7){
+		if($_POST['project_id'] == 7 && $_POST['primaryproject_id'] != 7){
 			$price = $price/10;
 		}
 		$balance = getBalance($conn, $_POST['project_id']);
@@ -45,7 +45,7 @@ if(isset($_POST['item_id'])) {
 			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
 			# Check if DM is created, if yes, let's send a message to this channel.
 			if(isset($newDM["id"])) {
-				$content = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn). "/r/n ".$imageurl."/r/n Please send NFT to ".getAddress($conn);
+				$content = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 			}
 		}else{
