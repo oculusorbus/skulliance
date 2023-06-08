@@ -364,10 +364,8 @@ function getItemInfo($conn, $item_id, $project_id){
 		$item["name"] = $row["item_name"];
 		$item["image_url"] = $row["image_url"];
 		if($project_id == 7){
-			$item["price"] = $row["price"]/10;
 			$item["currency"] = "DIAMOND";
 		}else{
-			$item["price"] = $row["price"];
 			$item["currency"] = $row["currency"];
 		}
 		$item["project"] = $row["project_name"];
