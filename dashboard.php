@@ -133,9 +133,14 @@ function filterNFTs($page){
 			if($zero){
 				echo "You do not have balances for all currency to craft.";
 			}else{
-				
+				?>
+				<form id="craftingForm" action="dashboard.php" method="post">
+				  <input type="text" id="balance" name="balance" value="<?php echo min($balances);?>">	
+				  <input type="submit" value="Submit">
+				</form>
+				<?php
 			}
-			echo min($balances);
+			
 			?>
 			</li>
 			</ul>
