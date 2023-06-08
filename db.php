@@ -548,19 +548,4 @@ function getBalances($conn){
 	}
 	return $balances;
 }
-
-// Get minimum balance for crafting
-function getMinimumBalance($conn){
-	$sql = "SELECT balance, project_id FROM balances WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id != '7' ORDER BY balance ASC LIMIT 1";
-	$result = $conn->query($sql);
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	return $row["balance"];
-	  }
-	} else {
-	  //echo "0 results";
-	}
-}
 ?>
