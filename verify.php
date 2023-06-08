@@ -14,7 +14,10 @@ if(isset($_GET['verify'])){
 	// Remove all user ids from NFTs before running cron job verification
 	removeUsers($conn);
 	$addresses = array_reverse($addresses);
+	// Verify all NFTs from wallets in the DB
 	verifyNFTs($conn, $addresses, $policies);
+	// Deploy rewards for all users of the platform
+	updateBalances($conn);
 }
 
 function verifyNFTs($conn, $addresses, $policies){
