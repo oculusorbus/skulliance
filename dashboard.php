@@ -22,6 +22,16 @@ if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
 }
 
+// Crafting
+if(isset($_POST['balance'])){
+	$minbalance = 0;
+	$minbalance = getMinimumBalance($conn);
+	// Double check submitted balance before crafting
+	if($_POST['balance'] > 0 && $_POST['balance'] <= $minbalance){
+		craft($conn, $_POST['balance']);
+	}
+}
+
 //Item purchases
 if(isset($_POST['item_id'])) {
 	$quantity = getItemQuantity($conn, $_POST['item_id']);
