@@ -121,7 +121,7 @@ function filterNFTs($page){
 			<?php 
 			$balances = array();
 			$balances = getBalances($conn);
-			print_r($balances);
+			unset($balances["\$DIAMOND"]);
 			echo min($balances);
 			?>
 		</div>
