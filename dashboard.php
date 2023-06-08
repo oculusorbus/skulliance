@@ -27,8 +27,6 @@ if(isset($_POST['item_id'])) {
 	$quantity = getItemQuantity($conn, $_POST['item_id']);
 	if($quantity >= 1){
 		$price = getItemPrice($conn, $_POST['item_id']);
-		echo $_POST['primary_project_id'];
-		exit;
 		if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
 			$price = $price/10;
 		}
@@ -38,7 +36,7 @@ if(isset($_POST['item_id'])) {
 			updateQuantity($conn, $_POST['item_id']);
 			$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 			$title = $item["name"]." Purchased";
-			$description = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn);
+			$description = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn);
 			$imageurl = $item["image_url"];
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 			$project = array();
@@ -47,7 +45,7 @@ if(isset($_POST['item_id'])) {
 			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
 			# Check if DM is created, if yes, let's send a message to this channel.
 			if(isset($newDM["id"])) {
-				$content = $item["name"]." purchased for ".$item["price"]." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
+				$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 			}
 		}else{
