@@ -8,8 +8,9 @@ include 'header.php';
 			<div class="main">
 				<h2>Transaction History</h2>
 					<div class="content" id="transactions-pane">
+						<?php
 						transactionHistory($conn);
-						echo "</table>";
+						?>
 				</div>
 			</div>
 		</div>
