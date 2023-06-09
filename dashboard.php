@@ -67,7 +67,7 @@ if(isset($_POST['item_id'])) {
 			alert("You cannot purchase this item because it is out of stock.");
 		}
 	}else{
-		alert("You\re purchase has been prevented because you\'ve already purchased this item before. Don\'t be greedy.");
+		alert("Your purchase has been prevented because you\'ve already purchased this item before. Don\'t be greedy.");
 	}
 }
 
