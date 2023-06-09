@@ -626,7 +626,7 @@ function transactionHistory($conn) {
 				echo "</td>";
 			}else if ($row["type"] == "debit"){
 				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td>";
-				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td><td>NFT: ".$row["name"]."</td>";
+				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td><td>NFT Purchase: ".$row["name"]."</td>";
 			}
 			echo "</tr>";
 	  	}
