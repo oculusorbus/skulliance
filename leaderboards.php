@@ -9,7 +9,7 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 				    <?php
-						if($filterby != null){
+						if($filterby != null && $filterby != 0){
 							$project = getProjectInfo($conn, $filterby);
 							$title = $project["name"];
 						}else{
