@@ -660,7 +660,11 @@ function checkTransaction($conn, $item_id){
 
 // Check leaderboard for discord and site display
 function checkLeaderboard($conn, $clean, $project_id=0) {
-	$sql = "SELECT nfts.id, nfts.user_id, COUNT(nfts.id) as total, users.username, users.discord_id AS discord_id, avatar, projects.id AS project_id FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE collections.project_id = '".$project_id."' GROUP BY nfts.user_id ORDER BY total DESC";
+	$where = "";
+	if($project_id != 0){
+		$where = "WHERE collections.project_id = '".$project_id."'";
+	}
+	$sql = "SELECT nfts.id, nfts.user_id, COUNT(nfts.id) as total, users.username, users.discord_id AS discord_id, avatar, projects.id AS project_id FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$where." GROUP BY nfts.user_id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {

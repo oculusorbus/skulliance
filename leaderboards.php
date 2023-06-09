@@ -9,16 +9,16 @@ include 'header.php';
 			<div class="col1of2">
 			    <div class="content">
 				    <?php
-						echo "<h2>Skulliance</h2>";
-						checkLeaderboard($conn, false, 7);
+						echo "<h2>All Projects</h2>";
+						checkLeaderboard($conn, false);
 					?>
 				</div>
 			</div>
 			<div class="col1of2">
 				<div class="content">
 				    <?php
-						echo "<h2>Galactico</h2>";
-						checkLeaderboard($conn, false, 1);
+						echo "<h2>Skulliance</h2>";
+						checkLeaderboard($conn, false, 7);
 					?>
 				</div>
 			</div>
