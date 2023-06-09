@@ -6,6 +6,7 @@ include 'header.php';
 ?>
 		<a name="leaderboards" id="leaderboards"></a>
 		<div class="row" id="row1">
+			<div class="col1of1">
 			    <div class="content">
 				    <?php
 						$project = getProjectInfo($conn, $filterby);
@@ -14,6 +15,7 @@ include 'header.php';
 						checkLeaderboard($conn, false, $filterby);
 					?>
 				</div>
+			</div>
 		</div>
 		<!-- Footer -->
 		<div class="footer">
