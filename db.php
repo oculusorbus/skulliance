@@ -604,4 +604,33 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id) {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
+
+// Display transaction history for user
+function transactionHistory($conn) {
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT transactions.type, amount, items.name, transactions.date_created, projects.currency, projects.name AS project_name AS currency FROM transactions LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id WHERE transactions.user_id='".$_SESSION['userData']['user_id']." ORDER BY date_created DESC";
+		$result = $conn->query($sql);
+	
+		echo "<table cellspacing='0' id='transactions'><tr><th>Date</th><th>Time</th><th align='center'>Type</th><th align='center'>\$".evaluateText("SCRIP")."</th><th align='center'>Icon</th><th>Description</th><th align='center'>Score</th></tr>";
+		$currency = "<img class='icon' src='icons/".$row["currency"].".png'/>";
+		while($row = $result->fetch_assoc()) {
+			$type = "<img class='icon' src='icons/".$row["type"].".png'/>";
+			echo "<tr class='".$row["type"]."'>";
+			$date = date("n-j-Y",strtotime("-1 hour", strtotime($row["date_created"])));
+			$time = date("g:ia",strtotime("-1 hour", strtotime($row["date_created"])));
+			if ($row["type"] == "credit"){
+	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]."</td><td align='center'>";
+				echo $currency;
+				echo "</td><td>";
+				echo "$".$row["currency"];
+				echo "</td><td align='center'>".$row["amount"]."</td>";
+			}else if ($row["type"] == "debit"){
+				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]."</td>";
+				echo "<td align='center'><img class='icon' src='icons/".$row["currency"].".png'/></td><td>".$row["name"]."</td><td>&nbsp;</td>";
+			}
+			echo "</tr>";
+	  	}
+		echo "</table>";
+	}
+}
 ?>
