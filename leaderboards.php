@@ -10,7 +10,7 @@ include 'header.php';
 			    <div class="content">
 				    <?php
 						echo "<h2>Skulliance</h2>";
-						checkATHLeaderboard($conn, false, 7);
+						checkLeaderboard($conn, false, 7);
 					?>
 				</div>
 			</div>
