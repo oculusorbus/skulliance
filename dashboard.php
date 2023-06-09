@@ -125,7 +125,7 @@ function filterNFTs($page){
 			?>
 			<li class="role"><img class="icon" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.png"/>
 				<?php
-				echo $balance." ".$currency;
+				echo number_format($balance)." ".$currency;
 				?>
 			</li>
 		<?php } ?>
