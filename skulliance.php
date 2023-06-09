@@ -35,7 +35,7 @@ function filterNFTs($page){
 			<option value="None">All</option>
 			<option value="1">Galactico</option>
 			<option value="2">Ohh Meed</option>
-			<option value="3">HYPE</option>
+			<option value="3">H.Y.P.E.</option>
 			<option value="4">Sinder Skullz</option>
 			<option value="5">Kimosabe Art</option>
 			<option value="6">Crypties</option>
@@ -58,7 +58,7 @@ function filterLeaderboard($page){
 			<option value="0">All</option>
 			<option value="1">Galactico</option>
 			<option value="2">Ohh Meed</option>
-			<option value="3">HYPE</option>
+			<option value="3">H.Y.P.E.</option>
 			<option value="4">Sinder Skullz</option>
 			<option value="5">Kimosabe Art</option>
 			<option value="6">Crypties</option>
