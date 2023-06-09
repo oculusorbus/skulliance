@@ -10,28 +10,10 @@ include 'header.php';
 		<div class="row" id="row3">
 			<div class="col1of3">
 			    <div class="content">
-					<?php if(isset($_SESSION['userData']['game_id']) && $hideLeaderboard == "false") {
-						echo "<h2>Current Game</h2>";
-						checkLeaderboard($conn, false);
-					} else {
-						echo "<h2>No Active Game</h2>";
-					}?>
-				</div>
-			</div>
-			<div class="col1of3">
-			    <div class="content">
-					<?php if($hideLeaderboard == "false") {
-						echo "<h2>All Time High</h2>";
-						checkATHLeaderboard($conn, false);
-					}?>
-				</div>
-			</div>
-			<div class="col1of3">
-				<div class="content">
-					<?php if($hideLeaderboard == "false") {
-						echo "<h2>Levels / XP</h2>";
-						checkXPLeaderboard($conn, false);
-					}?>
+				    <?php
+						echo "<h2>Skulliance</h2>";
+						checkATHLeaderboard($conn, false, 7);
+					?>
 				</div>
 			</div>
 		</div>

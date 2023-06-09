@@ -657,4 +657,39 @@ function checkTransaction($conn, $item_id){
 	  return false;
 	}
 }
+
+// Check leaderboard for discord and site display
+function checkLeaderboard($conn, $clean, $project_id=0) {
+	$sql = "SELECT nfts.id, nfts.user_id, SUM(nfts.id) as total, users.username, discord_id, avatar FROM nfts INNER JOIN users ON nfts.user_id=users.id WHERE nfts.project_id = '".$project_id."' GROUP BY results.user_id ORDER BY total DESC";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+		// Clean output for discord leaderboard
+		if($clean == "true") {
+			$leaderboardCounter = 0;
+			while($row = $result->fetch_assoc()) {
+				$leaderboardCounter++;
+				//$level = floor($row["total"]/100);
+				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]."\n";
+			}
+		// Formatted output for website leaderboard
+		} else {
+			$leaderboardCounter = 0;
+		  	echo "<ul id='leaderboard'>";
+		  	while($row = $result->fetch_assoc()) {
+				$leaderboardCounter++;
+				//$level = floor($row["xp"]/100);
+				$avatar = "";
+				if($row["avatar"] != ""){
+					$avatar = "<img onError='this.src=\"/drop-ship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+				}
+		    	echo "<li>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]."</li>";
+		  	}
+			echo "</ul>";
+		}
+	} else {
+	  //echo "0 results";
+	}
+}
 ?>
