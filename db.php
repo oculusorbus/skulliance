@@ -671,7 +671,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				//$level = floor($row["total"]/100);
-				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]."\n";
+				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]." NFTs\n";
 			}
 		// Formatted output for website leaderboard
 		} else {
@@ -684,7 +684,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($row["avatar"] != ""){
 					$avatar = "<img onError='this.src=\"/drop-ship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
-		    	echo "<li>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]."</li>";
+		    	echo "<li>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs</li>";
 		  	}
 			echo "</ul>";
 		}
