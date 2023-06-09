@@ -624,7 +624,7 @@ function transactionHistory($conn) {
 	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td><td align='center'>";
 				echo $currency;
 				echo "</td><td>";
-				if($row["crafting" == 0]){
+				if($row["crafting"] == 0){
 					echo "Staking Reward - ".$row["project_name"];
 				}else{
 					echo "Crafting";
@@ -633,7 +633,7 @@ function transactionHistory($conn) {
 			}else if ($row["type"] == "debit"){
 				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td>";
 				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td>";
-				if($row["crafting" == 0]){
+				if($row["crafting"] == 0){
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
 				}else{
 					echo "<td>Crafting</td>";
