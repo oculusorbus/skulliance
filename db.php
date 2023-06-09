@@ -612,8 +612,8 @@ function transactionHistory($conn) {
 		$result = $conn->query($sql);
 	
 		echo "<table cellspacing='0' id='transactions'><tr><th>Date</th><th>Time</th><th align='center'>Type</th><th align='center'>Currency</th><th align='center'>Icon</th><th>Description</th><th align='center'>Score</th></tr>";
-		$currency = "<img class='icon' src='icons/".$row["currency"].".png'/>";
 		while($row = $result->fetch_assoc()) {
+			$currency = "<img class='icon' src='icons/".$row["currency"].".png'/>";
 			$type = "<img class='icon' src='icons/".$row["type"].".png'/>";
 			echo "<tr class='".$row["type"]."'>";
 			$date = date("n-j-Y",strtotime("-1 hour", strtotime($row["date_created"])));
