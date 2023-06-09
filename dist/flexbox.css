@@ -465,7 +465,7 @@ input {
 }
 
 .small-button {
-  background-color: #502466; /* Green */
+  background-color: #243e66; /* Green */
   border: none;
   color: white;
   padding: 3px 10px;
@@ -481,11 +481,11 @@ input {
 }
 
 .small-button:hover {
-	background-color: #243e66;
+	background-color: #502466;
 }
 
 .small-button:active {
-  background-color: #243e66;
+  background-color: #502466;
   box-shadow: 0 2px #1c4f2a;
   transform: translateY(2px);
 }
