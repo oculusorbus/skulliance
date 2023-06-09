@@ -34,36 +34,40 @@ if(isset($_POST['balance'])){
 
 //Item purchases
 if(isset($_POST['item_id'])) {
-	$quantity = getItemQuantity($conn, $_POST['item_id']);
-	if($quantity >= 1){
-		$price = getItemPrice($conn, $_POST['item_id']);
-		if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
-			$price = $price/10;
-		}
-		$balance = getBalance($conn, $_POST['project_id']);
-		if($balance >= $price){
-			updateBalance($conn, $user_id, $_POST['project_id'], -$price);
-			updateQuantity($conn, $_POST['item_id']);
-			logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
-			$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
-			$title = $item["name"]." Purchased";
-			$description = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn);
-			$imageurl = $item["image_url"];
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
-			$project = array();
-			$project = getProjectInfo($conn, $_POST['primary_project_id']);
-			# Open the DM first
-			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
-			# Check if DM is created, if yes, let's send a message to this channel.
-			if(isset($newDM["id"])) {
-				$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
-			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
+	if(!checkTransaction($conn, $item_id)){
+		$quantity = getItemQuantity($conn, $_POST['item_id']);
+		if($quantity >= 1){
+			$price = getItemPrice($conn, $_POST['item_id']);
+			if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
+				$price = $price/10;
+			}
+			$balance = getBalance($conn, $_POST['project_id']);
+			if($balance >= $price){
+				updateBalance($conn, $user_id, $_POST['project_id'], -$price);
+				updateQuantity($conn, $_POST['item_id']);
+				logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
+				$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
+				$title = $item["name"]." Purchased";
+				$description = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn);
+				$imageurl = $item["image_url"];
+				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+				$project = array();
+				$project = getProjectInfo($conn, $_POST['primary_project_id']);
+				# Open the DM first
+				$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
+				# Check if DM is created, if yes, let's send a message to this channel.
+				if(isset($newDM["id"])) {
+					$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
+				    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
+				}
+			}else{
+				alert("You do not have enough currency to purchase this item.");
 			}
 		}else{
-			alert("You do not have enough currency to purchase this item.");
+			alert("You cannot purchase this item because it is out of stock.");
 		}
 	}else{
-		alert("You cannot purchase this item because it is out of stock.");
+		alert("You've already purchased this item before. Don't be greedy.");
 	}
 }
 
