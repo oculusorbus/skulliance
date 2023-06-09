@@ -44,7 +44,7 @@ if(isset($_POST['item_id'])) {
 		if($balance >= $price){
 			updateBalance($conn, $user_id, $_POST['project_id'], -$price);
 			updateQuantity($conn, $_POST['item_id']);
-			logDebit($conn, $user_id, $_POST['item_id'], $price, $project_id);
+			logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
 			$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 			$title = $item["name"]." Purchased";
 			$description = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn);
