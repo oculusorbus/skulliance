@@ -574,17 +574,19 @@ function craft($conn, $balance){
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	updateBalance($conn, $_SESSION['userData']['user_id'], $row["project_id"], -$balance);
+		logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, $row["project_id"], 1);
 	  }
 	} else {
 	  //echo "0 results";
 	}
 	updateBalance($conn, $_SESSION['userData']['user_id'], 7, $balance);
+	logCredit($conn, $_SESSION['userData']['user_id'], $balance, 7, 1);
 }
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -594,9 +596,9 @@ function logCredit($conn, $user_id, $amount, $project_id) {
 }
 
 // Log a specific user debit for an item purchase
-function logDebit($conn, $user_id, $item_id, $amount, $project_id) {
-	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id)
-	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."')";
+function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0) {
+	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting)
+	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -608,7 +610,7 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id) {
 // Display transaction history for user
 function transactionHistory($conn) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT transactions.type, amount, items.name, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC";
+		$sql = "SELECT transactions.type, amount, items.name, crafting, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC";
 		$result = $conn->query($sql);
 	
 		echo "<table cellspacing='0' id='transactions'><tr><th>Date</th><th>Time</th><th align='center'>Type</th><th align='center'>Amount</th><th align='center'>Icon</th><th>Description</th></tr>";
@@ -622,11 +624,20 @@ function transactionHistory($conn) {
 	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td><td align='center'>";
 				echo $currency;
 				echo "</td><td>";
-				echo "Staking Reward - ".$row["project_name"];
+				if($row["crafting" == 0]){
+					echo "Staking Reward - ".$row["project_name"];
+				}else{
+					echo "Crafting";
+				}
 				echo "</td>";
 			}else if ($row["type"] == "debit"){
 				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td>";
-				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td><td>NFT Purchase: ".$row["name"]."</td>";
+				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td>";
+				if($row["crafting" == 0]){
+					echo "<td>NFT Purchase: ".$row["name"]."</td>";
+				}else{
+					echo "<td>Crafting</td>";
+				}
 			}
 			echo "</tr>";
 	  	}
