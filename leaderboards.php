@@ -6,7 +6,7 @@ include 'header.php';
 ?>
 		<a name="leaderboards" id="leaderboards"></a>
 		<div class="row" id="row1">
-			<div class="col1of1">
+			<div class="col1of3">
 			    <div class="content">
 				    <?php
 						if($filterby != 0){
