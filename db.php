@@ -651,11 +651,10 @@ function checkTransaction($conn, $item_id){
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	  	return $row["id"];
-	  }
-	} else {
+	  return true;
 	  //echo "0 results";
+	}else{
+	  return false;
 	}
 }
 ?>
