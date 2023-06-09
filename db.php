@@ -497,6 +497,7 @@ function processSubtotals($conn, $subtotals){
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	foreach($subtotals[$row["user_id"]] AS $project_id => $subtotal){
 			updateBalance($conn, $row["user_id"], $project_id, $subtotal);
+			logCredit($conn, $row["user_id"], $subtotal, $project_id);
 		}
 	  }
 	} else {
@@ -578,5 +579,29 @@ function craft($conn, $balance){
 	  //echo "0 results";
 	}
 	updateBalance($conn, $_SESSION['userData']['user_id'], 7, $balance);
+}
+
+// Log a specific user credit for nightly rewards
+function logCredit($conn, $user_id, $amount, $project_id) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."')";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+// Log a specific user debit for an item purchase
+function logDebit($conn, $user_id, $item_id, $amount, $project_id) {
+	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id)
+	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."')";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
 }
 ?>
