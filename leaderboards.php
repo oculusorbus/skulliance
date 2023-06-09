@@ -9,7 +9,7 @@ include 'header.php';
 			    <div class="content">
 				    <?php
 						echo "<h2>All Projects</h2>";
-						filterLeaderboard("leaderboard");
+						filterLeaderboard("leaderboards");
 						checkLeaderboard($conn, false, $filterby);
 					?>
 				</div>
