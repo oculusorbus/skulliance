@@ -611,7 +611,7 @@ function transactionHistory($conn) {
 		$sql = "SELECT transactions.type, amount, items.name, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC";
 		$result = $conn->query($sql);
 	
-		echo "<table cellspacing='0' id='transactions'><tr><th>Date</th><th>Time</th><th align='center'>Type</th><th align='center'>Currency</th><th align='center'>Icon</th><th>Description</th><th align='center'>Score</th></tr>";
+		echo "<table cellspacing='0' id='transactions'><tr><th>Date</th><th>Time</th><th align='center'>Type</th><th align='center'>Amount</th><th align='center'>Icon</th><th>Description</th></tr>";
 		while($row = $result->fetch_assoc()) {
 			$currency = "<img class='icon' src='icons/".strtolower($row["currency"]).".png'/>";
 			$type = "<img class='icon' src='icons/".$row["type"].".png'/>";
@@ -623,10 +623,10 @@ function transactionHistory($conn) {
 				echo $currency;
 				echo "</td><td>";
 				echo "$".$row["currency"];
-				echo "</td><td align='center'>".$row["amount"]."</td>";
+				echo "</td>";
 			}else if ($row["type"] == "debit"){
 				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]."</td>";
-				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td><td>".$row["name"]."</td><td>&nbsp;</td>";
+				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td><td>".$row["name"]."</td>";
 			}
 			echo "</tr>";
 	  	}
