@@ -476,12 +476,12 @@ input {
   cursor:pointer;
   border-radius: 0.5rem;
   font-weight: bold;
-  box-shadow: 0 4px #222;
+  box-shadow: 0 4px #333;
   font-family: Courier;
 }
 
 .small-button:hover {
-	background-color: #222;
+	background-color: #333;
 }
 
 .small-button:active {
