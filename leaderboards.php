@@ -25,7 +25,7 @@ include 'header.php';
 // Close DB Connection
 $conn->close();
 if($filterby != ""){
-	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
+	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
 ?>
 <script type="text/javascript" src="skulliance.js"></script>
