@@ -8,7 +8,8 @@ include 'header.php';
 		<div class="row" id="row1">
 			    <div class="content">
 				    <?php
-						echo "<h2>All Projects</h2>";
+						$project = getProjectInfo($conn, $filterby);
+						echo "<h2>".$project["name"]."</h2>";
 						filterLeaderboard("leaderboards");
 						checkLeaderboard($conn, false, $filterby);
 					?>
