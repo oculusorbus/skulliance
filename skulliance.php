@@ -17,4 +17,58 @@ $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 // Call initial DB functions
 checkUser($conn);
 
+$filterby = "";
+if(isset($_POST['filterby'])){
+	$filterby = $_POST['filterby'];
+}
+
+function filterNFTs($page){
+	$anchor = "";
+	if($page == "dashboard"){
+		$anchor = "#holdings";
+	}
+	echo'
+	<div id="filter-nfts">
+		<label for="filterNFTs"><strong>Filter By:</strong></label>
+		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<option value="None">Project</option>
+			<option value="None">All</option>
+			<option value="1">Galactico</option>
+			<option value="2">Ohh Meed</option>
+			<option value="3">HYPE</option>
+			<option value="4">Sinder Skullz</option>
+			<option value="5">Kimosabe Art</option>
+			<option value="6">Crypties</option>
+			<option value="7">Skulliance</option>
+		</select>
+		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
+		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>
+	</div>';
+}
+
+function filterLeaderboard($page){
+	$anchor = "";
+	echo'
+	<div id="filter-nfts">
+		<label for="filterNFTs"><strong>Filter By:</strong></label>
+		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<option value="None">Project</option>
+			<option value="None">All</option>
+			<option value="1">Galactico</option>
+			<option value="2">Ohh Meed</option>
+			<option value="3">HYPE</option>
+			<option value="4">Sinder Skullz</option>
+			<option value="5">Kimosabe Art</option>
+			<option value="6">Crypties</option>
+			<option value="7">Skulliance</option>
+		</select>
+		<form id="filterLeaderboardForm" action="'.$page.'.php'.$anchor.'" method="post">
+		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>
+	</div>';
+}
+
 ?>
