@@ -17,11 +17,6 @@ if(isset($_POST['stakeaddress'])){
 	verifyNFTs($conn, $addresses, $policies);
 }
 
-$filterby = "";
-if(isset($_POST['filterby'])){
-	$filterby = $_POST['filterby'];
-}
-
 // Crafting
 if(isset($_POST['balance'])){
 	$minbalance = 0;
@@ -71,31 +66,6 @@ if(isset($_POST['item_id'])) {
 	}
 }
 
-function filterNFTs($page){
-	$anchor = "";
-	if($page == "dashboard"){
-		$anchor = "#holdings";
-	}
-	echo'
-	<div id="filter-nfts">
-		<label for="filterNFTs"><strong>Filter By:</strong></label>
-		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
-			<option value="None">Project</option>
-			<option value="None">All</option>
-			<option value="1">Galactico</option>
-			<option value="2">Ohh Meed</option>
-			<option value="3">HYPE</option>
-			<option value="4">Sinder Skullz</option>
-			<option value="5">Kimosabe Art</option>
-			<option value="6">Crypties</option>
-			<option value="7">Skulliance</option>
-		</select>
-		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
-		  <input type="hidden" id="filterby" name="filterby" value="">
-		  <input type="submit" value="Submit" style="display:none;">
-		</form>
-	</div>';
-}
 ?>
 
 <a name="dashboard" id="dashboard"></a>

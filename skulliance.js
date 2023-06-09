@@ -280,6 +280,11 @@ function filterNFTs(criteria){
 	document.getElementById("filterNFTsForm").submit();
 }
 
+function filterLeaderboard(criteria){
+	document.getElementById('filterby').value = criteria;
+	document.getElementById("filterLeaderboardForm").submit();
+}
+
 function selectProject(criteria){
 	if(criteria == "none"){
 		alert("Please select a project from the dropdown.");
