@@ -53,9 +53,9 @@ function filterLeaderboard($page){
 	echo'
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
-		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
-			<option value="None">Project</option>
-			<option value="None">All</option>
+		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
+			<option value="0">Project</option>
+			<option value="0">All</option>
 			<option value="1">Galactico</option>
 			<option value="2">Ohh Meed</option>
 			<option value="3">HYPE</option>
