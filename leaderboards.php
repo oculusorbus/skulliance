@@ -11,8 +11,12 @@ include 'header.php';
 				    <?php
 						if(isset($filterby)){
 							$project = getProjectInfo($conn, $filterby);
+							$title = $project["name"];
+						}else{
+							$title = "All Projects";
+							$filterby = 0;
 						}
-						echo "<h2>".$project["name"]."</h2>";
+						echo "<h2>".$title."</h2>";
 						filterLeaderboard("leaderboards");
 						checkLeaderboard($conn, false, $filterby);
 					?>
