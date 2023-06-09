@@ -647,7 +647,7 @@ function transactionHistory($conn) {
 
 // Check transaction history for previous item purchase
 function checkTransaction($conn, $item_id){
-	$sql = "SELECT id, item_id FROM transactions WHERE item_id='".$item_id."'";
+	$sql = "SELECT id, item_id FROM transactions WHERE user_id = '".$_SESSION['userData']['user_id']."' AND item_id='".$item_id."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
