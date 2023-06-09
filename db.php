@@ -626,7 +626,7 @@ function transactionHistory($conn) {
 				echo "</td><td align='center'>".$row["amount"]."</td>";
 			}else if ($row["type"] == "debit"){
 				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]."</td>";
-				echo "<td align='center'><img class='icon' src='icons/".$row["currency"].".png'/></td><td>".$row["name"]."</td><td>&nbsp;</td>";
+				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td><td>".$row["name"]."</td><td>&nbsp;</td>";
 			}
 			echo "</tr>";
 	  	}
