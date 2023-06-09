@@ -34,7 +34,7 @@ if(isset($_POST['balance'])){
 
 //Item purchases
 if(isset($_POST['item_id'])) {
-	if(!checkTransaction($conn, $_POST['item_id']){
+	if(!checkTransaction($conn, $_POST['item_id'])){
 		$quantity = getItemQuantity($conn, $_POST['item_id']);
 		if($quantity >= 1){
 			$price = getItemPrice($conn, $_POST['item_id']);
