@@ -36,6 +36,5 @@ $conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
-?>
 <script type="text/javascript" src="skulliance.js"></script>
 </html>
