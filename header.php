@@ -13,7 +13,7 @@
 		<!-- Navigation Bar -->
 		<div class="navbar">
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
-		  <a href="https://discord.gg/DHbGU9ZDyG"><?php echo $name;?></a>
+		  <a href="http://discord.gg/JqqBZBrph2"><?php echo $name;?></a>
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="transactions.php">Transactions</a>
