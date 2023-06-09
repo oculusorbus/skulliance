@@ -625,7 +625,7 @@ function transactionHistory($conn) {
 				echo $currency;
 				echo "</td><td>";
 				if($row["crafting"] == 0){
-					echo "Staking Reward - ".$row["project_name"];
+					echo "Staking Reward: ".$row["project_name"];
 				}else{
 					echo "Crafting";
 				}
