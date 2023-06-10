@@ -91,6 +91,8 @@ function verifyNFTs($conn, $addresses, $policies){
 							}else{
 								$user_id = getUserId($conn, $address);
 							}
+							echo $tokenresponsedata->fingerprint;
+							exit;
 							if(isset($nft_data->name)){
 								if(checkNFT($conn, $tokenresponsedata->fingerprint)){
 									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
