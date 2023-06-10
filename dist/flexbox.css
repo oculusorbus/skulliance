@@ -413,10 +413,11 @@ body {
 }
 
 .icon {
-	width: 55px;
-	padding-right: 20px;
+	width: 40px;
+/*	padding-right: 20px;*/
 	-webkit-filter: drop-shadow(5px 5px 5px #202225);
     filter: drop-shadow(5px 5px 5px #202225);
+	margin-right: 15px;
 }
 
 .avatar {
