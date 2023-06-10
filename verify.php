@@ -68,8 +68,6 @@ function verifyNFTs($conn, $addresses, $policies){
 			curl_close( $tokench );
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
-				print_r($tokenresponsedata);
-				exit;
 				foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
 					$policy_id = $tokenresponsedata->policy_id;
 					if(isset($tokenresponsedata->asset_name_ascii)){
