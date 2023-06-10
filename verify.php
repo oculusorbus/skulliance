@@ -53,7 +53,6 @@ function verifyNFTs($conn, $addresses, $policies){
 				} // End if
 			} // End foreach
 			print_r($asset_list);
-			exit;
 			/*
 			$tokench = curl_init("https://api.koios.rest/api/v0/asset_info");
 			curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
