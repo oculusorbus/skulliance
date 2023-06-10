@@ -75,6 +75,8 @@ function verifyNFTs($conn, $addresses, $policies){
 						if(isset($metadata->$policy_id)){
 							$nft = $metadata->$policy_id;
 							$nft_data = $nft->$asset_name;
+							print_r($nft_data);
+							exit;
 							if(isset($nft_data->image)){
 								$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
 							}else{
@@ -91,8 +93,6 @@ function verifyNFTs($conn, $addresses, $policies){
 							}else{
 								$user_id = getUserId($conn, $address);
 							}
-							echo $tokenresponsedata->fingerprint;
-							exit;
 							if(isset($nft_data->name)){
 								if(checkNFT($conn, $tokenresponsedata->fingerprint)){
 									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
