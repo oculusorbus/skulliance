@@ -71,4 +71,29 @@ function filterLeaderboard($page){
 	</div>';
 }
 
+// Initiate variables
+$member = false;
+$roles = $_SESSION['userData']['roles'];
+foreach ($roles as $key => $roleData) {
+	switch ($roleData) {
+	  case "949930195584954378":
+		$member = true;
+		break;
+	  default:
+		/*
+		$dropship = 'false';
+		$heavy = 'false';
+		$medium = 'false';
+		$light = 'false';
+		$base = 'false';
+		$melee = 'false';
+		$demolition = 'false';
+		$extralife = 'false';
+		$features = 0;*/
+		break;
+	}
+}
+
+echo $member;
+
 ?>
