@@ -86,18 +86,17 @@ function verifyNFTs($conn, $addresses, $policies){
 							}else{
 								$nft_data->AssetName = $asset_name;
 							}
-							$asset_names[] = $nft_data->AssetName;
 							if(isset($_SESSION['userData']['user_id'])){
 								$user_id = $_SESSION['userData']['user_id'];
 							}else{
 								$user_id = getUserId($conn, $address);
 							}
 							if(isset($nft_data->name)){
-								if(checkNFT($conn, $token->fingerprint)){
-									updateNFT($conn, $token->fingerprint, $user_id);
+								if(checkNFT($conn, $tokenresponsedata->fingerprint)){
+									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 								}else{
 									$collection_id = getCollectionId($conn, $policy_id);
-									createNFT($conn, $token->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
+									createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
 								}
 							}
 						}
