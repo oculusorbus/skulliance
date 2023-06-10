@@ -121,7 +121,7 @@ if(isset($_POST['item_id'])) {
 				?>
 				<form id="craftingForm" action="dashboard.php" method="post">
 				  Convert the following amount of every project currency to $DIAMOND:<br><br>
-				  <img class="icon rounded-full" src="icons/diamond.webp">MAX&nbsp;
+				  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 				  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
 				  <input type="submit" value="Submit" class="small-button">
 				</form>
