@@ -68,6 +68,8 @@ function verifyNFTs($conn, $addresses, $policies){
 			curl_close( $tokench );
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
+				print_r($tokenresponsedata);
+				exit;
 				foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
 					$policy_id = $tokenresponsedata->policy_id;
 					if(isset($tokenresponsedata->asset_name_ascii)){
@@ -93,9 +95,6 @@ function verifyNFTs($conn, $addresses, $policies){
 							}
 							if(isset($nft_data->name)){
 								if(checkNFT($conn, $tokenresponsedata->fingerprint)){
-									echo $tokenresponsedata->fingerprint;
-									echo $user_id;
-									exit;
 									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 								}else{
 									$collection_id = getCollectionId($conn, $policy_id);
