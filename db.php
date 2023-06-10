@@ -483,7 +483,7 @@ function updateBalances($conn){
 	} else {
 	  //echo "0 results";
 	}
-    processSubtotals($conn, $subtotals);
+   	processSubtotals($conn, $subtotals);
 }
 
 // Cycle through user ids and submit subtotals for each project to current balances
@@ -495,9 +495,11 @@ function processSubtotals($conn, $subtotals){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	foreach($subtotals[$row["user_id"]] AS $project_id => $subtotal){
-			updateBalance($conn, $row["user_id"], $project_id, $subtotal);
-			logCredit($conn, $row["user_id"], $subtotal, $project_id);
+		if(isset($subtotals[$row["user_id"]])){
+	    	foreach($subtotals[$row["user_id"]] AS $project_id => $subtotal){
+				updateBalance($conn, $row["user_id"], $project_id, $subtotal);
+				logCredit($conn, $row["user_id"], $subtotal, $project_id);
+			}
 		}
 	  }
 	} else {
