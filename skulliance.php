@@ -14,6 +14,32 @@ extract($_SESSION['userData']);
 
 $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 
+// Initiate variables
+$member = false;
+$roles = $_SESSION['userData']['roles'];
+foreach ($roles as $key => $roleData) {
+	switch ($roleData) {
+	  case "949930195584954378":
+		$member = true;
+		break;
+	  default:
+		/*
+		$dropship = 'false';
+		$heavy = 'false';
+		$medium = 'false';
+		$light = 'false';
+		$base = 'false';
+		$melee = 'false';
+		$demolition = 'false';
+		$extralife = 'false';
+		$features = 0;*/
+		break;
+	}
+}
+if(!$member){
+	header("Location: https://discord.com/invite/JqqBZBrph2");
+}
+
 // Call initial DB functions
 checkUser($conn);
 
@@ -70,30 +96,5 @@ function filterLeaderboard($page){
 		</form>
 	</div>';
 }
-
-// Initiate variables
-$member = false;
-$roles = $_SESSION['userData']['roles'];
-foreach ($roles as $key => $roleData) {
-	switch ($roleData) {
-	  case "949930195584954378":
-		$member = true;
-		break;
-	  default:
-		/*
-		$dropship = 'false';
-		$heavy = 'false';
-		$medium = 'false';
-		$light = 'false';
-		$base = 'false';
-		$melee = 'false';
-		$demolition = 'false';
-		$extralife = 'false';
-		$features = 0;*/
-		break;
-	}
-}
-
-echo $member;
 
 ?>
