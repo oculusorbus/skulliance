@@ -52,22 +52,23 @@ function verifyNFTs($conn, $addresses, $policies){
 					
 				} // End if
 			} // End foreach
-			print_r($asset_list);
-			/*
+			
 			$tokench = curl_init("https://api.koios.rest/api/v0/asset_info");
-			curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-			curl_setopt( $ch, CURLOPT_POST, 1);
-			curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode($asset_list));
-			curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-			curl_setopt( $ch, CURLOPT_HEADER, 0);
-			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+			curl_setopt( $tokench, CURLOPT_POST, 1);
+			curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($asset_list));
+			curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
+			curl_setopt( $tokench, CURLOPT_HEADER, 0);
+			curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
 			
 			//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
-			curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+			//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
 			$tokenresponse = curl_exec( $tokench );
 			$tokenresponse = json_decode($tokenresponse);
 			curl_close( $tokench );
 			if(is_array($tokenresponse)){
+				print_r($tokenresponse);
+				exit;
 				foreach($tokenresponse[0]->minting_tx_metadata AS $metadata){
 					$policy_id = $token->policy_id;
 					if(isset($tokenresponse[0]->asset_name_ascii)){
@@ -103,7 +104,7 @@ function verifyNFTs($conn, $addresses, $policies){
 						}
 					}
 				} // End foreach
-			}// End if*/
+			}// End if
 			//updateNFTs($conn, implode("', '", $asset_names));
 		} // End if
 		}
