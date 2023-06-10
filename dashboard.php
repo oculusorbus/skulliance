@@ -93,7 +93,7 @@ if(isset($_POST['item_id'])) {
 		$balances = getBalances($conn);
 		foreach($balances AS $currency => $balance){ 
 			?>
-			<li class="role"><img class="icon" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.webp"/>
+			<li class="role"><img class="icon rounded-full" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.webp"/>
 				<?php
 				echo number_format($balance)." ".$currency;
 				?>
