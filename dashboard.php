@@ -139,6 +139,22 @@ if(isset($_POST['item_id'])) {
 				<?php 
 				getItems($conn); 
 				?>
+				<form id="itemForm" action="dashboard.php" method="post">
+				  NFT Name: <input type="text" id="name">
+				  Image URL: <input type="text" id="image_url">
+				  Price: <input type="text" id="price">
+				  Project:
+				  <select id="currency">
+						<option value="1">Galactico</option>
+						<option value="2">Ohh Meed</option>
+						<option value="3">H.Y.P.E.</option>
+						<option value="4">Sinder Skullz</option>
+						<option value="5">Kimosabe Art</option>
+						<option value="6">Crypties</option>
+						<option value="7">Skulliance</option>
+				  </select>
+				  <input type="submit" value="Submit" class="small-button">
+				</form>
 			</div>
 		</div>
   </div>
