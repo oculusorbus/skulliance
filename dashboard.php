@@ -141,11 +141,14 @@ if(isset($_POST['item_id'])) {
 				?>
 				<div class="nft offering">
 				<form id="itemForm" action="dashboard.php" method="post" class="nft-data">
-				  NFT Name: <input type="text" id="name"><br>
-				  Image URL: <input type="text" id="image_url"><br>
-				  Price: <input type="text" id="price"><br>
-				  Project:
-				  <select id="currency">
+ 				  <label for="name">NFT Name:</label>
+				  <input type="text" id="name"><br>
+				  <label for="image_url">Image URL:</label>
+				  <input type="text" id="image_url"><br>
+				  <label for="price">Price:</label>
+				  <input type="text" id="price"><br>
+				  <label for="project">Project:</label>
+				  <select id="project">
 						<option value="1">Galactico</option>
 						<option value="2">Ohh Meed</option>
 						<option value="3">H.Y.P.E.</option>
