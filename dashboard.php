@@ -6,6 +6,8 @@ include 'message.php';
 include 'header.php';
 include 'verify.php';
 
+print_r($_POST);
+
 // Handle wallet selection
 if(isset($_POST['stakeaddress'])){
 	checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
