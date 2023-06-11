@@ -139,8 +139,8 @@ if(isset($_POST['item_id'])) {
 				<?php 
 				getItems($conn); 
 				?>
-				
 				<?php
+				print_r($creators);
 				if(in_array($_SESSION['userData']['discord_id'], $creators)){
 				?>
 				<div class="nft offering">
