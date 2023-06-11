@@ -167,8 +167,8 @@ if(isset($_POST['item_id'])) {
 				  </select></td>
 				  	 </tr>
 				     <tr>	
-				  <td><input type="submit" value="Submit" class="small-button"></td>
 				  <td>&nbsp;</td>
+				  <td><input type="submit" value="Submit" class="small-button"></td>
 				    </tr>
 				  </table>
 				</form>
