@@ -321,7 +321,7 @@ function getItems($conn){
 		$nftcounter++;
 	    echo "<div class='nft offering'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
-		echo "<span class='nft-image'><img src='".$row["image_url"]."'/></span>";
+		echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
 		if($row["project_id"] != 7){
 			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."<br>or<br>".number_format($row["price"]/10)." \$DIAMOND</span>";
 		}else{
