@@ -6,7 +6,7 @@ include 'message.php';
 include 'header.php';
 include 'verify.php';
 
-print_r($_POST["name"]);
+print_r($_POST);
 
 // Handle wallet selection
 if(isset($_POST['stakeaddress'])){
@@ -151,23 +151,23 @@ if(isset($_POST['item_id'])) {
 				  <table>
 					<tr>
  				  <td><label for="name">NFT Name:</label></td>
-				  <td><input type="text" id="name"></td>
+				  <td><input type="text" id="name" name="name"></td>
 				    </tr>
 					<tr>
 				  <td><label for="image_url">Image URL:</label></td>
-				  <td><input type="text" id="image_url"></td>
+				  <td><input type="text" id="image_url" name="image_url"></td>
 				    </tr>
 				    <tr>
 				  <td><label for="price">Price:</label></td>
-				  <td><input type="number" id="price"></td>
+				  <td><input type="number" id="price" name="price"></td>
 				    </tr>
 				    <tr>
 				  <td><label for="quantity">Quantity:</label></td>
-				  <td><input type="number" id="quantity"></td>
+				  <td><input type="number" id="quantity" name="quantity"></td>
 				    </tr>
 				    <tr>
 				  <td><label for="project">Project:</label></td>
-				  <td><select id="project">
+				  <td><select id="project" name="project">
 						<option value="1">Galactico</option>
 						<option value="2">Ohh Meed</option>
 						<option value="3">H.Y.P.E.</option>
