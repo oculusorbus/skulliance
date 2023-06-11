@@ -10,6 +10,11 @@ include 'verify.php';
 if(isset($_POST['name'])){
 	if($_POST['name'] != "" && $_POST['image_url'] != "" && $_POST['price'] != "" && $_POST['quantity'] != "" && $_POST['project_id'] != ""){
 		createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id']);
+		$title = $_POST['name']." Listed";
+		$project = getProjectInfo($conn, $_POST['project_id']);
+		$description = $_POST['name']." listed for ".$_POST['price']." $".$project["currency"]." by ".getUsername($conn);
+		$imageurl = $_POST['image_url'];
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 	}else{
 		alert("Please fill out all the fields in the item submission form.");
 	}
