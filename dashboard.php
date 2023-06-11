@@ -140,7 +140,7 @@ if(isset($_POST['item_id'])) {
 				getItems($conn); 
 				?>
 				<?php
-				if(in_array($_SESSION['userData']['discord_id']), $creators){
+				if(in_array($_SESSION['userData']['discord_id']), $creators)){
 				?>
 				<div class="nft offering">
 				<h2>Item Submission</h2>
