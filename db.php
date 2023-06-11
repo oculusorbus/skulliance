@@ -86,8 +86,8 @@ function getProjects($conn){
     	$projects[$row["id"]]["name"] = $row["name"];
 		$projects[$row["id"]]["currency"] = $row["currency"];
 		$projects[$row["id"]]["discord_id"] = $row["discord_id"];
-		return $projects;
 	  }
+	  return $projects;
 	} else {
 	  //echo "0 results";
 	}
