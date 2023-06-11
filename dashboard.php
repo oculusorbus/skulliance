@@ -144,15 +144,15 @@ if(isset($_POST['item_id'])) {
 				  <table>
 					<tr>
  				  <td><label for="name">NFT Name:</label></td>
-				  <td><input type="text" id="name"><br><br></td>
+				  <td><input type="text" id="name"></td>
 				    </tr>
 					<tr>
 				  <td><label for="image_url">Image URL:</label></td>
-				  <td><input type="text" id="image_url"><br><br></td>
+				  <td><input type="text" id="image_url"></td>
 				    </tr>
 				    <tr>
 				  <td><label for="price">Price:</label></td>
-				  <td><input type="number" id="price"><br><br></td>
+				  <td><input type="number" id="price"></td>
 				    </tr>
 				    <tr>
 				  <td><label for="project">Project:</label></td>
@@ -164,7 +164,7 @@ if(isset($_POST['item_id'])) {
 						<option value="5">Kimosabe Art</option>
 						<option value="6">Crypties</option>
 						<option value="7">Skulliance</option>
-				  </select><br><br></td>
+				  </select></td>
 				    </tr>
 				  </table>
 				  <input type="submit" value="Submit" class="small-button">
