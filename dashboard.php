@@ -139,6 +139,7 @@ if(isset($_POST['item_id'])) {
 				<?php 
 				getItems($conn); 
 				?>
+				
 				<?php
 				if(in_array($_SESSION['userData']['discord_id'], $creators)){
 				?>
@@ -176,10 +177,10 @@ if(isset($_POST['item_id'])) {
 				    </tr>
 				  </table>
 				</form>
+				</div>
 				<?php
 				}
 				?>
-				</div>
 			</div>
 		</div>
   </div>
