@@ -379,6 +379,11 @@ body {
 	font-family: arial;
 }
 
+.itemForm table{
+	margin: 0 auto;
+	text-align: left;
+}
+
 .role {
 	font-size: 1.3rem;
 	display: flex;
