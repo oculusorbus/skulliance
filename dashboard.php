@@ -173,8 +173,8 @@ if(isset($_POST['item_id'])) {
 				  <td><input type="number" id="quantity" name="quantity"></td>
 				    </tr>
 				    <tr>
-				  <td><label for="project">Project:</label></td>
-				  <td><select id="project" name="project">
+				  <td><label for="project_id">Project:</label></td>
+				  <td><select id="project_id" name="project_id">
 						<option value="1">Galactico</option>
 						<option value="2">Ohh Meed</option>
 						<option value="3">H.Y.P.E.</option>
