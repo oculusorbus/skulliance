@@ -72,6 +72,27 @@ function getProjectInfo($conn, $project_id){
 	}
 }
 
+// Get projects
+function getProjects($conn){
+	$sql = "SELECT id, name, currency, discord_id FROM projects";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  $projects = array();
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+	    $projects[$row["id"]] = array();
+    	$projects[$row["id"]]["name"] = $row["name"];
+		$projects[$row["id"]]["currency"] = $row["currency"];
+		$projects[$row["id"]]["discord_id"] = $row["discord_id"];
+		return $projects;
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){
