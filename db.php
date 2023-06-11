@@ -330,6 +330,28 @@ function getNFTs($conn, $filterby=""){
 	}
 }
 
+// Create item
+function createItem($conn, $name, $image_url, $price, $quantity, $project_id){
+	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id)
+	VALUES ('".$name."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."')";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+// Update item
+function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $project_id){
+	$sql = "UPDATE items SET name='".$name."', image_url='".$image_url."', price='".$price."', quantity='".$quantity."' WHERE id='".$item_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Get items for store
 function getItems($conn){
 	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0";

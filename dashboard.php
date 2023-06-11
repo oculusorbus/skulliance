@@ -6,7 +6,14 @@ include 'message.php';
 include 'header.php';
 include 'verify.php';
 
-print_r($_POST);
+// Item submission to store
+if(isset($_POST['name'])){
+	if(isset($_POST['name']) && isset($_POST['image_url']) && isset($_POST['price']) && isset($_POST['quantity']) && isset($_POST['project_id'])){
+		createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id']);
+	}else{
+		alert("Please fill out all the fields in the item submission form.");
+	}
+}
 
 // Handle wallet selection
 if(isset($_POST['stakeaddress'])){
