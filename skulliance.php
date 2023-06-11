@@ -43,6 +43,13 @@ if(!$member){
 // Call initial DB functions
 checkUser($conn);
 
+$projects = array();
+$projects = getProjects($conn);
+$creators = array();
+foreach($projects AS $id => $project){
+	$creators[$id] = $project["discord_id"];
+}
+
 $filterby = "";
 if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
