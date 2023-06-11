@@ -139,7 +139,7 @@ if(isset($_POST['item_id'])) {
 				<?php 
 				getItems($conn); 
 				?>
-				<form id="itemForm" action="dashboard.php" method="post">
+				<form id="itemForm" action="dashboard.php" method="post" class="nft">
 				  NFT Name: <input type="text" id="name"><br>
 				  Image URL: <input type="text" id="image_url"><br>
 				  Price: <input type="text" id="price"><br>
