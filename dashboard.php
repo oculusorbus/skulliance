@@ -146,7 +146,7 @@ if(isset($_POST['item_id'])) {
 				  <label for="image_url">Image URL:</label>
 				  <input type="text" id="image_url"><br>
 				  <label for="price">Price:</label>
-				  <input type="text" id="price"><br>
+				  <input type="number" id="price"><br>
 				  <label for="project">Project:</label>
 				  <select id="project">
 						<option value="1">Galactico</option>
