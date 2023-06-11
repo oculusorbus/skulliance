@@ -139,7 +139,9 @@ if(isset($_POST['item_id'])) {
 				<?php 
 				getItems($conn); 
 				?>
-
+				<?php
+				if(in_array($_SESSION['userData']['discord_id'], $creators)){
+				?>
 				<div class="nft offering">
 				<h2>Item Submission</h2>
 				<form id="itemForm" action="dashboard.php" method="post" class="nft-data">
@@ -174,7 +176,9 @@ if(isset($_POST['item_id'])) {
 				    </tr>
 				  </table>
 				</form>
-	
+				<?php
+				}
+				?>
 				</div>
 			</div>
 		</div>
