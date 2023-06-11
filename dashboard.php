@@ -191,7 +191,7 @@ if(isset($_POST['item_id'])) {
 				  	 </tr>
 				     <tr>	
 				  <td>&nbsp;</td>
-				  <td><input type="submit" value="Submit" class="small-button"><button class="small-button">Clear</button></td>
+				  <td><input type="submit" value="Submit" class="small-button"><!--<button class="small-button">Clear</button>--></td>
 				    </tr>
 				  </table>
 				</form>
