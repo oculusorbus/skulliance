@@ -140,9 +140,9 @@ if(isset($_POST['item_id'])) {
 				getItems($conn); 
 				?>
 				<form id="itemForm" action="dashboard.php" method="post">
-				  NFT Name: <input type="text" id="name">
-				  Image URL: <input type="text" id="image_url">
-				  Price: <input type="text" id="price">
+				  NFT Name: <input type="text" id="name"><br>
+				  Image URL: <input type="text" id="image_url"><br>
+				  Price: <input type="text" id="price"><br>
 				  Project:
 				  <select id="currency">
 						<option value="1">Galactico</option>
@@ -152,7 +152,7 @@ if(isset($_POST['item_id'])) {
 						<option value="5">Kimosabe Art</option>
 						<option value="6">Crypties</option>
 						<option value="7">Skulliance</option>
-				  </select>
+				  </select><br>
 				  <input type="submit" value="Submit" class="small-button">
 				</form>
 			</div>
