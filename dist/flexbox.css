@@ -379,7 +379,7 @@ body {
 	font-family: arial;
 }
 
-.item-form table{
+#itemForm table{
 	margin: 0 auto;
 	text-align: left;
 }
