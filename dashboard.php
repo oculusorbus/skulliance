@@ -165,9 +165,12 @@ if(isset($_POST['item_id'])) {
 						<option value="6">Crypties</option>
 						<option value="7">Skulliance</option>
 				  </select></td>
+				  	 </tr>
+				     <tr>	
+				  <td><input type="submit" value="Submit" class="small-button"></td>
+				  <td>&nbsp;</td>
 				    </tr>
 				  </table>
-				  <input type="submit" value="Submit" class="small-button">
 				</form>
 				</div>
 			</div>
