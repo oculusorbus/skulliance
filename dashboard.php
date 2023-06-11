@@ -140,7 +140,7 @@ if(isset($_POST['item_id'])) {
 				getItems($conn); 
 				?>
 				<?php
-				print_r($creators);
+				// Check if user has permissions to submit store items
 				if(in_array($_SESSION['userData']['discord_id'], $creators)){
 				?>
 				<div class="nft offering">
