@@ -96,6 +96,9 @@ body {
 
 .rounded-full {
   border-radius: 9999px;
+}
+
+.role .rounded-full{
   outline: 2px solid black;
   outline-offset: -1px;
 }
