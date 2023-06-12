@@ -38,7 +38,7 @@ if(isset($_POST['balance'])){
 	// Double check submitted balance before crafting
 	if($_POST['balance'] > 0 && $_POST['balance'] <= $minbalance){
 		craft($conn, $_POST['balance']);
-		alert("You've successfully crafted ".$_POST['balance']." /$DIAMOND. ".$_POST['balance']." of every other project currency has been deducted from your balances.");
+		alert("You've successfully crafted ".$_POST['balance']." \$DIAMOND. ".$_POST['balance']." of every other project currency has been deducted from your balances.");
 	}
 }
 
