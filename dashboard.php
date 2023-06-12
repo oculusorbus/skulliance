@@ -83,6 +83,54 @@ if(isset($_POST['item_id'])) {
 	}
 }
 
+function renderItemSubmissionForm(){
+	global $creators;
+	// Check if user has permissions to submit store items
+	if(in_array($_SESSION['userData']['discord_id'], $creators)){
+	?>
+	<div class="nft offering">
+	<h2>Item Submission</h2>
+	<form id="itemForm" action="dashboard.php" method="post" class="nft-data">
+	  <table>
+		<tr>
+	  <td><label for="name">NFT Name:</label></td>
+	  <td><input type="text" id="name" name="name"></td>
+	    </tr>
+		<tr>
+	  <td><label for="image_url">Image URL:</label></td>
+	  <td><input type="text" id="image_url" name="image_url"></td>
+	    </tr>
+	    <tr>
+	  <td><label for="price">Price:</label></td>
+	  <td><input type="number" id="price" name="price"></td>
+	    </tr>
+	    <tr>
+	  <td><label for="quantity">Quantity:</label></td>
+	  <td><input type="number" id="quantity" name="quantity"></td>
+	    </tr>
+	    <tr>
+	  <td><label for="project_id">Project:</label></td>
+	  <td><select id="project_id" name="project_id">
+			<option value="1" <?php echo ($_SESSION['userData']['discord_id'] == $creators["1"])?"selected":""; ?> >Galactico</option>
+			<option value="2" <?php echo ($_SESSION['userData']['discord_id'] == $creators["2"])?"selected":""; ?>>Ohh Meed</option>
+			<option value="3" <?php echo ($_SESSION['userData']['discord_id'] == $creators["3"])?"selected":""; ?>>H.Y.P.E.</option>
+			<option value="4" <?php echo ($_SESSION['userData']['discord_id'] == $creators["4"])?"selected":""; ?>>Sinder Skullz</option>
+			<option value="5" <?php echo ($_SESSION['userData']['discord_id'] == $creators["5"])?"selected":""; ?>>Kimosabe Art</option>
+			<option value="6" <?php echo ($_SESSION['userData']['discord_id'] == $creators["6"])?"selected":""; ?>>Crypties</option>
+			<option value="7" <?php echo ($_SESSION['userData']['discord_id'] == $creators["7"])?"selected":""; ?>>Skulliance</option>
+	  </select></td>
+	  	 </tr>
+	     <tr>	
+	  <td>&nbsp;</td>
+	  <td><input type="submit" value="Submit" class="small-button"><!--<button class="small-button">Clear</button>--></td>
+	    </tr>
+	  </table>
+	</form>
+	</div>
+	<?php
+	}
+}
+
 ?>
 
 <a name="dashboard" id="dashboard"></a>
@@ -154,54 +202,9 @@ if(isset($_POST['item_id'])) {
 		<div class="content">
 			<div id="nfts" class="nfts">
 				<?php 
-				getItems($conn); 
-				?>
-				<?php
-				// Check if user has permissions to submit store items
-				if(in_array($_SESSION['userData']['discord_id'], $creators)){
-				?>
-				<div class="nft offering">
-				<h2>Item Submission</h2>
-				<form id="itemForm" action="dashboard.php" method="post" class="nft-data">
-				  <table>
-					<tr>
- 				  <td><label for="name">NFT Name:</label></td>
-				  <td><input type="text" id="name" name="name"></td>
-				    </tr>
-					<tr>
-				  <td><label for="image_url">Image URL:</label></td>
-				  <td><input type="text" id="image_url" name="image_url"></td>
-				    </tr>
-				    <tr>
-				  <td><label for="price">Price:</label></td>
-				  <td><input type="number" id="price" name="price"></td>
-				    </tr>
-				    <tr>
-				  <td><label for="quantity">Quantity:</label></td>
-				  <td><input type="number" id="quantity" name="quantity"></td>
-				    </tr>
-				    <tr>
-				  <td><label for="project_id">Project:</label></td>
-				  <td><select id="project_id" name="project_id">
-						<option value="1" <?php echo ($_SESSION['userData']['discord_id'] == $creators["1"])?"selected":""; ?> >Galactico</option>
-						<option value="2" <?php echo ($_SESSION['userData']['discord_id'] == $creators["2"])?"selected":""; ?>>Ohh Meed</option>
-						<option value="3" <?php echo ($_SESSION['userData']['discord_id'] == $creators["3"])?"selected":""; ?>>H.Y.P.E.</option>
-						<option value="4" <?php echo ($_SESSION['userData']['discord_id'] == $creators["4"])?"selected":""; ?>>Sinder Skullz</option>
-						<option value="5" <?php echo ($_SESSION['userData']['discord_id'] == $creators["5"])?"selected":""; ?>>Kimosabe Art</option>
-						<option value="6" <?php echo ($_SESSION['userData']['discord_id'] == $creators["6"])?"selected":""; ?>>Crypties</option>
-						<option value="7" <?php echo ($_SESSION['userData']['discord_id'] == $creators["7"])?"selected":""; ?>>Skulliance</option>
-				  </select></td>
-				  	 </tr>
-				     <tr>	
-				  <td>&nbsp;</td>
-				  <td><input type="submit" value="Submit" class="small-button"><!--<button class="small-button">Clear</button>--></td>
-				    </tr>
-				  </table>
-				</form>
-				</div>
-				<?php
-				}
-				?>
+				getItems($conn);
+				renderItemSubmissionForm();
+				?>				
 			</div>
 		</div>
   </div>
