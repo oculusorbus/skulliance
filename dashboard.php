@@ -1,13 +1,10 @@
 <?php
 include_once 'db.php';
-include 'skulliance.php';
 include 'webhooks.php';
 include 'message.php';
+include 'skulliance.php';
 include 'header.php';
 include 'verify.php';
-
-
-
 ?>
 
 <a name="dashboard" id="dashboard"></a>
