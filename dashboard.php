@@ -38,6 +38,7 @@ if(isset($_POST['balance'])){
 	// Double check submitted balance before crafting
 	if($_POST['balance'] > 0 && $_POST['balance'] <= $minbalance){
 		craft($conn, $_POST['balance']);
+		alert("You've successfully crafted ".$_POST['balance']." \$DIAMOND. ".$_POST['balance']." of every other project currency has been deducted from your balances.");
 	}
 }
 
@@ -69,6 +70,7 @@ if(isset($_POST['item_id'])) {
 					$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 				    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 				}
+				alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
 			}else{
 				alert("You do not have enough currency to purchase this item.");
 			}
