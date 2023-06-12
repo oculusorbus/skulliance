@@ -361,7 +361,7 @@ function getItems($conn, $page){
 	  // output data of each row
 	  $nftcounter = 0;
 	  $uri = $_SERVER['REQUEST_URI'];
-	  if($uri == "/staking/store.php"){
+	  if($uri == "/staking/store.php" || $uri == "/staking/store.php#store"){
 		$class = "store-item";
 	  }else{
 		$class = "offering";
