@@ -649,6 +649,10 @@ li form {
 	font-size: 12px;
 }
 
+.store-item{
+	width: 33%;
+}
+
 .offering {
 	width: 100%;
 	text-align: center;
