@@ -58,7 +58,7 @@ if(isset($_POST['item_id'])) {
 				logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
 				$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 				$title = $item["name"]." Purchased";
-				$description = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn);
+				$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by ".getUsername($conn);
 				$imageurl = $item["image_url"];
 				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 				$project = array();
