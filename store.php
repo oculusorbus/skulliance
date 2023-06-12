@@ -8,13 +8,18 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="side">
 				<div class="content">
+					<h2>Store</h2>
+					<div class="content" id="player-stats">
+							<?php renderWalletConnection(); ?>
+							<?php renderCurrency($conn); ?>
+					</div>
 					<?php
 					renderItemSubmissionForm($creators);
 					?>
 				</div>
 			</div>
     		<div class="main">
-		    	<h2>Store</h2>
+		    	<h2>Items</h2>
 				<a name="store" id="store"></a>
 				<div class="content">
 					<div id="nfts" class="nfts">
