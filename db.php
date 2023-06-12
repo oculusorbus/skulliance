@@ -353,7 +353,7 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 }
 
 // Get items for store
-function getItems($conn){
+function getItems($conn, $page){
 	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0";
 	$result = $conn->query($sql);
 	
@@ -378,9 +378,9 @@ function getItems($conn){
 		}
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
-		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"], $row["project_id"]);
+		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"], $row["project_id"], $page);
 		if($row["project_id"] != 7){
-			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/10)." \$DIAMOND", $row["project_id"]);
+			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/10)." \$DIAMOND", $row["project_id"], $page);
 		}
 		echo "</div></div>";
 	  }
@@ -390,10 +390,10 @@ function getItems($conn){
 }
 
 // Render buy button for item
-function renderBuyButton($id, $project_id, $verbiage, $primary_project_id){
+function renderBuyButton($id, $project_id, $verbiage, $primary_project_id, $page){
 	global $conn;
 	echo "
-	<form action='dashboard.php#store' method='post'>
+	<form action='".$page.".php#store' method='post'>
 	  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
 	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
 	  <input type='hidden' id='primary_project_id' name='primary_project_id' value='".$primary_project_id."'>

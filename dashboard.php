@@ -28,7 +28,7 @@ include 'verify.php';
 		<div class="content">
 			<div id="nfts" class="nfts">
 				<?php 
-				getItems($conn);
+				getItems($conn, "dashboard");
 				renderItemSubmissionForm($creators, "dashboard");
 				?>				
 			</div>

@@ -28,7 +28,7 @@ include 'header.php';
 				<div class="content">
 					<div id="nfts" class="nfts">
 						<?php 
-						getItems($conn);
+						getItems($conn, "store");
 						?>				
 					</div>
 				</div>
