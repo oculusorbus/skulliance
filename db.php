@@ -362,9 +362,9 @@ function getItems($conn){
 	  $nftcounter = 0;
 	  $uri = $_SERVER['REQUEST_URI'];
 	  if($uri == "/staking/store.php"){
-		$offering = "";
+		$class = "store-item";
 	  }else{
-		$offering = "offering";
+		$class = "offering";
 	  }
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
