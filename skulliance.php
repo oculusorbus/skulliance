@@ -159,6 +159,39 @@ function renderCurrency($conn){
 	<?php
 }
 
+function renderCrafting($conn){
+	?>
+	<ul>
+	<li class="role">
+	<?php 
+	$balances = array();
+	$balances = getBalances($conn);
+	unset($balances["\$DIAMOND"]);
+	$zero = false;
+	foreach($balances AS $currency => $balance){
+		if($balance == 0){
+			$zero = true;
+		}
+	}
+	if($zero){
+		echo "You do not have balances for all currency to craft.";
+	}else{
+		?>
+		<form id="craftingForm" action="dashboard.php" method="post">
+		  Convert the following amount of every project currency to $DIAMOND:<br><br>
+		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
+		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
+		  <input type="submit" value="Submit" class="small-button">
+		</form>
+		<?php
+	}
+	
+	?>
+	</li>
+	</ul>
+	<?php
+}
+
 function renderItemSubmissionForm($creators){
 	// Check if user has permissions to submit store items
 	if(in_array($_SESSION['userData']['discord_id'], $creators)){
