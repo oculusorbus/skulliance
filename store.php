@@ -1,7 +1,7 @@
 <?php
 include 'db.php';
-include 'webhooks.php';
 include 'skulliance.php';
+include 'webhooks.php';
 include 'header.php';
 ?>
 		<a name="store" id="store"></a>
