@@ -7,7 +7,7 @@ include 'header.php';
 		<a name="store" id="store"></a>
 		<div class="row" id="row1">
 			<div class="side">
-				<div class="content" id="player-stats">
+				<div class="content">
 					<?php
 					renderItemSubmissionForm($creators);
 					?>
