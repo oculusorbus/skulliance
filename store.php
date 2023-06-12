@@ -44,8 +44,7 @@ include 'header.php';
 <?php
 // Close DB Connection
 $conn->close();
-if($filterby != ""){
-	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
-}?>
+?>
+<script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js"></script>
 </html>
