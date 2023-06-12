@@ -13,6 +13,10 @@ include 'header.php';
 							<?php renderWalletConnection(); ?>
 							<?php renderCurrency($conn); ?>
 					</div>
+					<h2>Crafting</h2>
+					<div class="content" id="player-stats">
+						<?php renderCrafting($conn); ?>
+					</div>
 					<?php
 					renderItemSubmissionForm($creators);
 					?>
