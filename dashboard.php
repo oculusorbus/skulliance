@@ -2,9 +2,9 @@
 include_once 'db.php';
 include 'webhooks.php';
 include 'message.php';
+include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
-include 'verify.php';
 ?>
 
 <a name="dashboard" id="dashboard"></a>

@@ -2,6 +2,7 @@
 include 'db.php';
 include 'webhooks.php';
 include 'message.php';
+include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 ?>
