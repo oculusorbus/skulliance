@@ -127,7 +127,7 @@ if(isset($_POST['balance'])){
 	}
 }
 
-function renderWalletConnection(){
+function renderWalletConnection($page){
 	echo '<ul>
 	<div class="wallet-connect">
 	<li class="role"><img class="icon" src="icons/wallet.png"/>
@@ -135,7 +135,7 @@ function renderWalletConnection(){
 		<select onchange="javascript:connectWallet(this.options[this.selectedIndex].value);" name="wallets" id="wallets">
 			<option value="none">Wallet</option>
 		</select>
-		<form id="addressForm" action="dashboard.php" method="post">
+		<form id="addressForm" action="'.$page.'.php" method="post">
 		  <input type="hidden" id="wallet" name="wallet" value="">	
 		  <input type="hidden" id="address" name="address" value="">
 		  <input type="hidden" id="stakeaddress" name="stakeaddress" value="">
@@ -159,7 +159,7 @@ function renderCurrency($conn){
 	<?php
 }
 
-function renderCrafting($conn){
+function renderCrafting($conn, $page){
 	?>
 	<ul>
 	<li class="role">
@@ -177,7 +177,7 @@ function renderCrafting($conn){
 		echo "You do not have balances for all currency to craft.";
 	}else{
 		?>
-		<form id="craftingForm" action="dashboard.php" method="post">
+		<form id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 		  Convert the following amount of every project currency to $DIAMOND:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
@@ -192,13 +192,13 @@ function renderCrafting($conn){
 	<?php
 }
 
-function renderItemSubmissionForm($creators){
+function renderItemSubmissionForm($creators, $page){
 	// Check if user has permissions to submit store items
 	if(in_array($_SESSION['userData']['discord_id'], $creators)){
 	?>
 	<div class="nft offering">
 	<h2>Item Submission</h2>
-	<form id="itemForm" action="dashboard.php" method="post" class="nft-data">
+	<form id="itemForm" action="<?php echo $page; ?>.php" method="post" class="nft-data">
 	  <table>
 		<tr>
 	  <td><label for="name">NFT Name:</label></td>

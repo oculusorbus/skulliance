@@ -10,15 +10,15 @@ include 'header.php';
 				<div class="content">
 					<h2>Store</h2>
 					<div class="content" id="player-stats">
-							<?php renderWalletConnection(); ?>
+							<?php renderWalletConnection("store"); ?>
 							<?php renderCurrency($conn); ?>
 					</div>
 					<h2>Crafting</h2>
 					<div class="content" id="player-stats">
-						<?php renderCrafting($conn); ?>
+						<?php renderCrafting($conn, "store"); ?>
 					</div>
 					<?php
-					renderItemSubmissionForm($creators);
+					renderItemSubmissionForm($creators, "store");
 					?>
 				</div>
 			</div>

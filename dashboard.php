@@ -16,12 +16,12 @@ include 'verify.php';
   <div class="side">
 		<h2>Skulliance Staking</h2>
 		<div class="content" id="player-stats">
-				<?php renderWalletConnection(); ?>
+				<?php renderWalletConnection("dashboard"); ?>
 				<?php renderCurrency($conn); ?>
 		</div>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">
-			<?php renderCrafting($conn); ?>
+			<?php renderCrafting($conn, "dashboard"); ?>
 		</div>
 		<h2>Store</h2>
 		<a name="store" id="store"></a>
@@ -29,7 +29,7 @@ include 'verify.php';
 			<div id="nfts" class="nfts">
 				<?php 
 				getItems($conn);
-				renderItemSubmissionForm($creators);
+				renderItemSubmissionForm($creators, "dashboard");
 				?>				
 			</div>
 		</div>
