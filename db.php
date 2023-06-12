@@ -360,6 +360,8 @@ function getItems($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  $nftcounter = 0;
+	  $uri = $_SERVER['REQUEST_URI'];
+	  echo $uri;
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
 	    echo "<div class='nft offering'><div class='nft-data'>";
