@@ -361,10 +361,14 @@ function getItems($conn){
 	  // output data of each row
 	  $nftcounter = 0;
 	  $uri = $_SERVER['REQUEST_URI'];
-	  echo $uri;
+	  if($uri == "/staking/store.php"){
+		$offering = "";
+	  }else{
+		$offering = "offering";
+	  }
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
-	    echo "<div class='nft offering'><div class='nft-data'>";
+	    echo "<div class='nft ".$offering."'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
 		if($row["project_id"] != 7){
