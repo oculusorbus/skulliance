@@ -6,42 +6,7 @@ include 'message.php';
 include 'header.php';
 include 'verify.php';
 
-// Item submission to store
-if(isset($_POST['name'])){
-	if($_POST['name'] != "" && $_POST['image_url'] != "" && $_POST['price'] != "" && $_POST['quantity'] != "" && $_POST['project_id'] != ""){
-		createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id']);
-		$title = "New Store Listing: ".$_POST['name'];
-		$project = getProjectInfo($conn, $_POST['project_id']);
-		$description = $_POST['name']." listed for ".$_POST['price']." $".$project["currency"]." by ".getUsername($conn)."\r\nQuantity: ".$_POST['quantity'];
-		$imageurl = $_POST['image_url'];
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
-	}else{
-		alert("Please fill out all the fields in the item submission form.");
-	}
-}
 
-// Handle wallet selection
-if(isset($_POST['stakeaddress'])){
-	checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
-	$addresses = array();
-	//$addresses = getAddresses($conn);
-	$addresses[0] = $_POST['stakeaddress'];
-	$policies = array();
-	$policies = getPolicies($conn);
-	verifyNFTs($conn, $addresses, $policies);
-	alert("Your wallet with stake address: ".$_POST['stakeaddress']." has been successfully connected. The qualifying NFTs in your wallet have now been verified.");
-}
-
-// Crafting
-if(isset($_POST['balance'])){
-	$minbalance = 0;
-	$minbalance = getMinimumBalance($conn);
-	// Double check submitted balance before crafting
-	if($_POST['balance'] > 0 && $_POST['balance'] <= $minbalance){
-		craft($conn, $_POST['balance']);
-		alert("You have successfully crafted ".$_POST['balance']." \$DIAMOND. ".$_POST['balance']." of every other project currency has been deducted from your balances.");
-	}
-}
 
 ?>
 
@@ -51,32 +16,8 @@ if(isset($_POST['balance'])){
   <div class="side">
 		<h2>Skulliance Staking</h2>
 		<div class="content" id="player-stats">
-			<ul>
-				<div class="wallet-connect">
-				<li class="role"><img class="icon" src="icons/wallet.png"/>
-					<label for="wallets"><strong>Connect</strong>&nbsp;</label>
-					<select onchange="javascript:connectWallet(this.options[this.selectedIndex].value);" name="wallets" id="wallets">
-						<option value="none">Wallet</option>
-					</select>
-					<form id="addressForm" action="dashboard.php" method="post">
-					  <input type="hidden" id="wallet" name="wallet" value="">	
-					  <input type="hidden" id="address" name="address" value="">
-					  <input type="hidden" id="stakeaddress" name="stakeaddress" value="">
-					  <input type="submit" value="Submit" style="display:none;">
-					</form>
-				</li>
-				</div>
-		<?php
-		$balances = getBalances($conn);
-		foreach($balances AS $currency => $balance){ 
-			?>
-			<li class="role"><img class="icon rounded-full" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.webp"/>
-				<?php
-				echo number_format($balance)." ".$currency;
-				?>
-			</li>
-		<?php } ?>
-			</ul>
+				<?php renderWalletConnection(); ?>
+				<?php renderCurrency($conn); ?>
 		</div>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">
