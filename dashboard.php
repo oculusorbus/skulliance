@@ -29,6 +29,7 @@ if(isset($_POST['stakeaddress'])){
 	$policies = array();
 	$policies = getPolicies($conn);
 	verifyNFTs($conn, $addresses, $policies);
+	alert("Your wallet with stake address: ".$_POST['stakeaddress']." has been successfully connected. The qualifying NFTs in your wallet have now been verified.");
 }
 
 // Crafting
