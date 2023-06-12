@@ -649,7 +649,7 @@ li form {
 	font-size: 12px;
 }
 
-.store-item{
+.store-item {
 	width: 33%;
 }
 
@@ -667,6 +667,10 @@ li form {
 	-webkit-filter: drop-shadow(5px 5px 5px #202225);
     filter: drop-shadow(5px 5px 5px #202225);
 	min-height: 300px;
+}
+
+.store-item .nft-data {
+	min-height: 475px;
 }
 
 .nft-image{
