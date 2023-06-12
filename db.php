@@ -368,7 +368,7 @@ function getItems($conn){
 	  }
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
-	    echo "<div class='nft ".$offering."'><div class='nft-data'>";
+	    echo "<div class='nft ".$class."'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
 		if($row["project_id"] != 7){
