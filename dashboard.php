@@ -43,94 +43,6 @@ if(isset($_POST['balance'])){
 	}
 }
 
-//Item purchases
-if(isset($_POST['item_id'])) {
-	if(!checkTransaction($conn, $_POST['item_id'])){
-		$quantity = getItemQuantity($conn, $_POST['item_id']);
-		if($quantity >= 1){
-			$price = getItemPrice($conn, $_POST['item_id']);
-			if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
-				$price = $price/10;
-			}
-			$balance = getBalance($conn, $_POST['project_id']);
-			if($balance >= $price){
-				updateBalance($conn, $user_id, $_POST['project_id'], -$price);
-				updateQuantity($conn, $_POST['item_id']);
-				logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
-				$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
-				$title = $item["name"]." Purchased";
-				$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by ".getUsername($conn);
-				$imageurl = $item["image_url"];
-				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
-				$project = array();
-				$project = getProjectInfo($conn, $_POST['primary_project_id']);
-				# Open the DM first
-				$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
-				# Check if DM is created, if yes, let's send a message to this channel.
-				if(isset($newDM["id"])) {
-					$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
-				    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
-				}
-				alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
-			}else{
-				alert("You do not have enough currency to purchase this item.");
-			}
-		}else{
-			alert("You cannot purchase this item because it is out of stock.");
-		}
-	}else{
-		alert("Your purchase has been prevented because you\'ve already purchased this item before. Don\'t be greedy. Let others have a chance to redeem NFT rewards.");
-	}
-}
-
-function renderItemSubmissionForm(){
-	global $creators;
-	// Check if user has permissions to submit store items
-	if(in_array($_SESSION['userData']['discord_id'], $creators)){
-	?>
-	<div class="nft offering">
-	<h2>Item Submission</h2>
-	<form id="itemForm" action="dashboard.php" method="post" class="nft-data">
-	  <table>
-		<tr>
-	  <td><label for="name">NFT Name:</label></td>
-	  <td><input type="text" id="name" name="name"></td>
-	    </tr>
-		<tr>
-	  <td><label for="image_url">Image URL:</label></td>
-	  <td><input type="text" id="image_url" name="image_url"></td>
-	    </tr>
-	    <tr>
-	  <td><label for="price">Price:</label></td>
-	  <td><input type="number" id="price" name="price"></td>
-	    </tr>
-	    <tr>
-	  <td><label for="quantity">Quantity:</label></td>
-	  <td><input type="number" id="quantity" name="quantity"></td>
-	    </tr>
-	    <tr>
-	  <td><label for="project_id">Project:</label></td>
-	  <td><select id="project_id" name="project_id">
-			<option value="1" <?php echo ($_SESSION['userData']['discord_id'] == $creators["1"])?"selected":""; ?> >Galactico</option>
-			<option value="2" <?php echo ($_SESSION['userData']['discord_id'] == $creators["2"])?"selected":""; ?>>Ohh Meed</option>
-			<option value="3" <?php echo ($_SESSION['userData']['discord_id'] == $creators["3"])?"selected":""; ?>>H.Y.P.E.</option>
-			<option value="4" <?php echo ($_SESSION['userData']['discord_id'] == $creators["4"])?"selected":""; ?>>Sinder Skullz</option>
-			<option value="5" <?php echo ($_SESSION['userData']['discord_id'] == $creators["5"])?"selected":""; ?>>Kimosabe Art</option>
-			<option value="6" <?php echo ($_SESSION['userData']['discord_id'] == $creators["6"])?"selected":""; ?>>Crypties</option>
-			<option value="7" <?php echo ($_SESSION['userData']['discord_id'] == $creators["7"])?"selected":""; ?>>Skulliance</option>
-	  </select></td>
-	  	 </tr>
-	     <tr>	
-	  <td>&nbsp;</td>
-	  <td><input type="submit" value="Submit" class="small-button"><!--<button class="small-button">Clear</button>--></td>
-	    </tr>
-	  </table>
-	</form>
-	</div>
-	<?php
-	}
-}
-
 ?>
 
 <a name="dashboard" id="dashboard"></a>
@@ -203,7 +115,7 @@ function renderItemSubmissionForm(){
 			<div id="nfts" class="nfts">
 				<?php 
 				getItems($conn);
-				renderItemSubmissionForm();
+				renderItemSubmissionForm($creators);
 				?>				
 			</div>
 		</div>
