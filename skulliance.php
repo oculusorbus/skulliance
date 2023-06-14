@@ -71,8 +71,13 @@ if(isset($_POST['item_id'])) {
 				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 				$project = array();
 				$project = getProjectInfo($conn, $_POST['primary_project_id']);
+				if($item["override"] == 1)
+					$discord_id = $project["discord_id"];
+				}else{
+					$discord_id = "772831523899965440";
+				}
 				# Open the DM first
-				$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $project["discord_id"]));
+				$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
 				# Check if DM is created, if yes, let's send a message to this channel.
 				if(isset($newDM["id"])) {
 					$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
@@ -93,7 +98,11 @@ if(isset($_POST['item_id'])) {
 // Item submission to store
 if(isset($_POST['name'])){
 	if($_POST['name'] != "" && $_POST['image_url'] != "" && $_POST['price'] != "" && $_POST['quantity'] != "" && $_POST['project_id'] != ""){
-		createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id']);
+		if(isset($_POST['override'])){
+			createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id'], $_POST['override']);
+		}else{
+			createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id']);
+		}
 		$title = "New Store Listing: ".$_POST['name'];
 		$project = getProjectInfo($conn, $_POST['project_id']);
 		$description = $_POST['name']." listed for ".$_POST['price']." $".$project["currency"]." by ".getUsername($conn)."\r\nQuantity: ".$_POST['quantity'];
@@ -227,8 +236,17 @@ function renderItemSubmissionForm($creators, $page){
 			<option value="6" <?php echo ($_SESSION['userData']['discord_id'] == $creators["6"])?"selected":""; ?>>Crypties</option>
 			<option value="7" <?php echo ($_SESSION['userData']['discord_id'] == $creators["7"])?"selected":""; ?>>Skulliance</option>
 	  </select></td>
-	  	 </tr>
-	     <tr>	
+	  </tr>
+	  <?php
+	  if($_SESSION['userData']['discord_id'] == "772831523899965440"){
+	  ?>
+	  <tr>
+	  <td><input type="checkbox" id="override" name="override" value="0">
+          <label for="override">Override to Skulliance DM</label><br>
+      </td>
+	  </tr>
+	  <?php } ?>
+	  <tr>	
 	  <td>&nbsp;</td>
 	  <td><input type="submit" value="Submit" class="small-button"><!--<button class="small-button">Clear</button>--></td>
 	    </tr>

@@ -331,9 +331,9 @@ function getNFTs($conn, $filterby=""){
 }
 
 // Create item
-function createItem($conn, $name, $image_url, $price, $quantity, $project_id){
-	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id)
-	VALUES ('".$name."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."')";
+function createItem($conn, $name, $image_url, $price, $quantity, $project_id, $override=0){
+	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id, $override)
+	VALUES ('".$name."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."', '".$override."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -403,7 +403,7 @@ function renderBuyButton($id, $project_id, $verbiage, $primary_project_id, $page
 
 // Get item information
 function getItemInfo($conn, $item_id, $project_id){
-	$sql = "SELECT items.id AS item_id, projects.id AS project_id, items.name AS item_name, image_url, price, projects.name AS project_name, currency FROM items INNER JOIN projects ON projects.id = items.project_id WHERE items.id = '".$item_id."'";
+	$sql = "SELECT items.id AS item_id, projects.id AS project_id, items.name AS item_name, image_url, price, projects.name AS project_name, currency, override FROM items INNER JOIN projects ON projects.id = items.project_id WHERE items.id = '".$item_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -418,6 +418,7 @@ function getItemInfo($conn, $item_id, $project_id){
 			$item["currency"] = $row["currency"];
 		}
 		$item["project"] = $row["project_name"];
+		$item["override"] = $row["override"];
 		return $item;
 	  }
 	} else {
