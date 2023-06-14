@@ -71,7 +71,7 @@ if(isset($_POST['item_id'])) {
 				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 				$project = array();
 				$project = getProjectInfo($conn, $_POST['primary_project_id']);
-				if($item["override"] == 1){
+				if($item["override"] == "1"){
 					$discord_id = $project["discord_id"];
 				}else{
 					$discord_id = "772831523899965440";
@@ -242,7 +242,7 @@ function renderItemSubmissionForm($creators, $page){
 	  ?>
 	  <tr>
 		  <td><label for="override">Override:</label></td>
-		  <td><input type="checkbox" id="override" name="override" value="0"></td>
+		  <td><input type="checkbox" id="override" name="override" value="1"></td>
 	  </tr>
 	  <?php } ?>
 	  <tr>	
