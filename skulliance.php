@@ -241,9 +241,8 @@ function renderItemSubmissionForm($creators, $page){
 	  if($_SESSION['userData']['discord_id'] == "772831523899965440"){
 	  ?>
 	  <tr>
-	  <td><input type="checkbox" id="override" name="override" value="0">
-          <label for="override">Override to Skulliance DM</label><br>
-      </td>
+		  <td><label for="override">Override to Skulliance DM</label></td>
+		  <td><input type="checkbox" id="override" name="override" value="0"></td>
 	  </tr>
 	  <?php } ?>
 	  <tr>	
