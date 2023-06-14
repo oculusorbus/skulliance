@@ -393,7 +393,7 @@ function getItems($conn, $page){
 function renderBuyButton($id, $project_id, $verbiage, $primary_project_id, $page){
 	global $conn;
 	echo "
-	<form action='".$page.".php#store' method='post'>
+	<form onsubmit='return confirm(\"Do you really want to purchase this item?\");' action='".$page.".php#store' method='post'>
 	  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
 	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
 	  <input type='hidden' id='primary_project_id' name='primary_project_id' value='".$primary_project_id."'>

@@ -186,7 +186,7 @@ function renderCrafting($conn, $page){
 		echo "You do not have balances for all currency to craft.<br><br>Purchase NFTs from every project in the Skulliance in order to craft \$DIAMOND.";
 	}else{
 		?>
-		<form id="craftingForm" action="<?php echo $page; ?>.php" method="post">
+		<form onsubmit="return confirm('Do you really want to craft this currency?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 		  Convert the following amount of every project currency to $DIAMOND:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
