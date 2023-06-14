@@ -332,7 +332,7 @@ function getNFTs($conn, $filterby=""){
 
 // Create item
 function createItem($conn, $name, $image_url, $price, $quantity, $project_id, $override=0){
-	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id, $override)
+	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id, override)
 	VALUES ('".$name."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."', '".$override."')";
 
 	if ($conn->query($sql) === TRUE) {
