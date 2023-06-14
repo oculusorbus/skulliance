@@ -333,7 +333,7 @@ function getNFTs($conn, $filterby=""){
 // Create item
 function createItem($conn, $name, $image_url, $price, $quantity, $project_id, $override=0){
 	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id, override)
-	VALUES ('".$name."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."', '".$override."')";
+	VALUES ('".mysql_real_escape_string($name)."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."', '".$override."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -344,7 +344,7 @@ function createItem($conn, $name, $image_url, $price, $quantity, $project_id, $o
 
 // Update item
 function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $project_id){
-	$sql = "UPDATE items SET name='".$name."', image_url='".$image_url."', price='".$price."', quantity='".$quantity."' WHERE id='".$item_id."'";
+	$sql = "UPDATE items SET name='".mysql_real_escape_string($name)."', image_url='".$image_url."', price='".$price."', quantity='".$quantity."' WHERE id='".$item_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
