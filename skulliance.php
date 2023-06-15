@@ -55,9 +55,11 @@ if(isset($_POST['item_id'])) {
 	if(!checkTransaction($conn, $_POST['item_id'])){
 		$quantity = getItemQuantity($conn, $_POST['item_id']);
 		if($quantity >= 1){
+			$project = array();
+			$project = getProjectInfo($conn, $_POST['primary_project_id']);
 			$price = getItemPrice($conn, $_POST['item_id']);
 			if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
-				$price = $price/10;
+				$price = $price/$project["divider"];
 			}
 			$balance = getBalance($conn, $_POST['project_id']);
 			if($balance >= $price){
@@ -69,8 +71,6 @@ if(isset($_POST['item_id'])) {
 				$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by ".getUsername($conn);
 				$imageurl = $item["image_url"];
 				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
-				$project = array();
-				$project = getProjectInfo($conn, $_POST['primary_project_id']);
 				if($item["override"] == "0"){
 					$discord_id = $project["discord_id"];
 				}else{
