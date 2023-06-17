@@ -311,4 +311,27 @@ function filterLeaderboard($page){
 	</div>';
 }
 
+function filterPolicies($page){
+	$anchor = "";
+	echo'
+	<div id="filter-nfts">
+		<label for="filterPolicies"><strong>Filter By:</strong></label>
+		<select onchange="javascript:filterPolicies(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<option value="0">Project</option>
+			<option value="0">All</option>
+			<option value="1">Galactico</option>
+			<option value="2">Ohh Meed</option>
+			<option value="3">H.Y.P.E.</option>
+			<option value="4">Sinder Skullz</option>
+			<option value="5">Kimosabe Art</option>
+			<option value="6">Crypties</option>
+			<option value="7">Skulliance</option>
+		</select>
+		<form id="filterPoliciesForm" action="'.$page.'.php'.$anchor.'" method="post">
+		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>
+	</div>';
+}
+
 ?>

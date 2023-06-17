@@ -280,6 +280,11 @@ function filterNFTs(criteria){
 	document.getElementById("filterNFTsForm").submit();
 }
 
+function filterPolicies(criteria){
+	document.getElementById('filterby').value = criteria;
+	document.getElementById("filterPoliciesForm").submit();
+}
+
 function filterLeaderboard(criteria){
 	document.getElementById('filterby').value = criteria;
 	document.getElementById("filterLeaderboardForm").submit();
