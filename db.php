@@ -751,6 +751,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 // Get policy IDs
+/*
 function getPolicies($conn, $project_id=0) {
 	$where = "";
 	if($project_id != 0){
@@ -764,11 +765,11 @@ function getPolicies($conn, $project_id=0) {
 		$leaderboardCounter = 0;
 	  	echo "<ul id='policies'>";
 	  	while($row = $result->fetch_assoc()) {
-	    	echo "<li><strong>".$row["collection_name"]. "</strong>: ".$row["policy_id"]."</li>";
+	    	echo "<li><strong>".$row["collection_name"]."</strong>: ".$row["policy_id"]."</li>";
 	  	}
 		echo "</ul>";
 	} else {
 	  //echo "0 results";
 	}
-}
+}*/
 ?>
