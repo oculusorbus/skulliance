@@ -758,7 +758,7 @@ function getPolicies($conn, $project_id=0) {
 	}
 	$sql = "SELECT collections.name AS collection_name, policy_id FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id";
 	$result = $conn->query($sql);
-
+/*
 	if ($result->num_rows > 0) {
 	  // output data of each row
 		$leaderboardCounter = 0;
@@ -769,6 +769,6 @@ function getPolicies($conn, $project_id=0) {
 		echo "</ul>";
 	} else {
 	  //echo "0 results";
-	}
+	}*/
 }
 ?>
