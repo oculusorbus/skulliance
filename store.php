@@ -2,7 +2,7 @@
 include 'db.php';
 include 'webhooks.php';
 include 'message.php';
-include 'role.php';
+//include 'role.php';
 include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
