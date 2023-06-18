@@ -750,5 +750,8 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 	}
 }
 
+// Get policy IDs
+function getPolicies($conn, $project_id=0) {
 
+}
 ?>
