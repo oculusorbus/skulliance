@@ -105,7 +105,7 @@ if(isset($_POST['name'])){
 		}
 		$title = "New Store Listing: ".$_POST['name'];
 		$project = getProjectInfo($conn, $_POST['project_id']);
-		$description = $_POST['name']." listed for ".$_POST['price']." $".$project["currency"]." by ".getUsername($conn)."\r\nQuantity: ".$_POST['quantity'];
+		$description = $_POST['name']." listed for ".number_format($_POST['price'])." $".$project["currency"]." by ".getUsername($conn)."\r\nQuantity: ".$_POST['quantity'];
 		$imageurl = $_POST['image_url'];
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 	}else{
