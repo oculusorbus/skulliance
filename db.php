@@ -764,7 +764,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
-		  	echo "<tr>";
+		  	echo "<tr class='credit'>";
 			echo "<td align='center'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["collection_name"]."</a>"."</td>";
 			echo "<td align='center'>".$row["rate"]." $".$row["currency"]."</td>";
 			echo "<td align='center'>".$row["project_name"]."</td>";
