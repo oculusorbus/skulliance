@@ -756,7 +756,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	if($project_id != 0){
 		$where = "WHERE collections.project_id = '".$project_id."'";
 	}
-	$sql = "SELECT collections.name AS collection_name, policy, rate, projects.name AS project_name, currency FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id";
+	$sql = "SELECT collections.name AS collection_name, policy, rate, projects.name AS project_name, currency FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id, collections.name ASC";
 	$result = $conn->query($sql);
 	
 	echo "<table cellspacing='0' id='transactions'>";
