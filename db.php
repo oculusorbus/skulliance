@@ -674,7 +674,7 @@ function transactionHistory($conn) {
 			$date = date("n-j-Y",strtotime("-1 hour", strtotime($row["date_created"])));
 			$time = date("g:ia",strtotime("-1 hour", strtotime($row["date_created"])));
 			if ($row["type"] == "credit"){
-	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td><td align='center'>";
+	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".number_format($row["amount"])." $".$row["currency"]."</td><td align='center'>";
 				echo $currency;
 				echo "</td><td>";
 				if($row["crafting"] == 0){
@@ -684,7 +684,7 @@ function transactionHistory($conn) {
 				}
 				echo "</td>";
 			}else if ($row["type"] == "debit"){
-				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".$row["amount"]." $".$row["currency"]."</td>";
+				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".number_format($row["amount"])." $".$row["currency"]."</td>";
 				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td>";
 				if($row["crafting"] == 0){
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
