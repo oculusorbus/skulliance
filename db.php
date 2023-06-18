@@ -756,14 +756,14 @@ function getPoliciesListing($conn, $project_id=0) {
 	if($project_id != 0){
 		$where = "WHERE collections.project_id = '".$project_id."'";
 	}
-	$sql = "SELECT collections.name AS collection_name, policy_id FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id";
+	$sql = "SELECT collections.name AS collection_name, policy FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	echo "<ul id='policies'>";
 	  	while($row = $result->fetch_assoc()) {
-	    	echo "<li><strong>".$row["collection_name"]."</strong>: ".$row["policy_id"]."</li>";
+	    	echo "<li><strong>".$row["collection_name"]."</strong>: ".$row["policy"]."</li>";
 	  	}
 		echo "</ul>";
 	} else {
