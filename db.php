@@ -756,17 +756,18 @@ function getPoliciesListing($conn, $project_id=0) {
 	if($project_id != 0){
 		$where = "WHERE collections.project_id = '".$project_id."'";
 	}
-	$sql = "SELECT collections.name AS collection_name, policy, projects.name AS project_name FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id";
+	$sql = "SELECT collections.name AS collection_name, policy, rate, projects.name AS project_name, currency FROM collections INNER JOIN projects ON projects.id = collections.project_id ".$where." ORDER BY projects.id";
 	$result = $conn->query($sql);
 	
 	echo "<table cellspacing='0' id='transactions'>";
-	echo "<tr><th>Collection</th><th>Project</th><th>Policy ID</th></tr>";
+	echo "<tr><th>Collection</th><th>Project</th><th>Reward Rate</th><th>Policy ID</th></tr>";
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
 		  	echo "<tr>";
 			echo "<td align='center'>".$row["collection_name"]."</td>";
 			echo "<td align='center'>".$row["project_name"]."</td>";
+			echo "<td align='center'>".$row["rate"]." ".$row["currency"]."</td>";
 			echo "<td align='center'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["policy"]."</a>"."</td>";
 			echo "</tr>";
 	  	}
