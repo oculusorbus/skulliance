@@ -18,7 +18,7 @@ include 'header.php';
 						}
 						echo "<h2>".$title."</h2>";
 						filterPolicies("policies");
-						getPolicies($conn, $filterby);
+						getPoliciesListing($conn, $filterby);
 					?>
 				</div>
 			</div>
