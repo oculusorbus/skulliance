@@ -55,6 +55,13 @@ body {
   color: white;
 }
 
+a{
+  color: white;
+  padding: 14px 20px;
+  text-decoration: none;
+  text-align: center;
+}
+
 /* Style the top navigation bar */
 .navbar {
   display: flex;
