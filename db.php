@@ -767,7 +767,7 @@ function getPoliciesListing($conn, $project_id=0) {
 		  	echo "<tr>";
 			echo "<td align='center'>".$row["collection_name"]."</td>";
 			echo "<td align='center'>".$row["project_name"]."</td>";
-			echo "<td align='center'>".$row["rate"]." ".$row["currency"]."</td>";
+			echo "<td align='center'>".$row["rate"]." $".$row["currency"]."</td>";
 			echo "<td align='center'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["policy"]."</a>"."</td>";
 			echo "</tr>";
 	  	}
