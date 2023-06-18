@@ -763,7 +763,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	  // output data of each row
 	  	echo "<ul id='policies'>";
 	  	while($row = $result->fetch_assoc()) {
-	    	echo "<li><strong>".$row["project_name"]." - ".$row["collection_name"]."</strong>: <a href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["policy"]."</a></li>";
+	    	echo "<li><strong>".strtoupper($row["project_name"]).": ".$row["collection_name"]."</strong> - <a href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["policy"]."</a></li>";
 	  	}
 		echo "</ul>";
 	} else {
