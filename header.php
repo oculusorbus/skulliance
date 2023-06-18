@@ -17,6 +17,7 @@
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
 		  <a href="store.php">Store</a>
 		  <a href="leaderboards.php">Leaderboards</a>
+		  <a href="policies.php">Policies</a>
 		  <a href="transactions.php">Transactions</a>
 		  <a href="logout.php">Logout</a>
 		</div>
