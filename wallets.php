@@ -17,12 +17,13 @@ include 'header.php';
 							?>
 							<li class="role">
 								<?php
-								echo $wallet_counter.".&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -20)."</a>&nbsp;";
+								echo $wallet_counter."&nbsp;";
 								if($main == "0"){
 									echo "<form id='walletForm' action='wallets.php' method='post'>";
 									echo "<input type='submit' value='Make Primary' class='small-button'>";
 									echo "</form>";
 								}
+								echo ".&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -20)."</a>&nbsp;";
 								?>
 							</li>
 						<?php 
