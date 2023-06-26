@@ -13,7 +13,7 @@ if(isset($_POST['wallet_id'])){
 			<div class="main">
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
-						<?php renderWalletConnection("dashboard"); ?>
+						<?php renderWalletConnection("wallets"); ?>
 						<?php
 						$wallets = getWallets($conn);
 						$wallet_counter = 1;
