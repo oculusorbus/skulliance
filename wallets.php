@@ -16,7 +16,7 @@ include 'header.php';
 							?>
 							<li class="role">
 								<?php
-								echo $wallet_counter.". <a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -10)."</a>";
+								echo $wallet_counter.".&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -10)."</a>";
 								?>
 							</li>
 						<?php 
