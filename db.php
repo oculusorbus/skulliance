@@ -52,6 +52,24 @@ function getAddress($conn){
 	}
 }
 
+// Get all wallets for user
+function getWallets($conn){
+	$sql = "SELECT stake_address, address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+    $wallets = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$wallets[$row["stake_address"]] = $row["address"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $wallets;
+}
+
 // Get project info
 function getProjectInfo($conn, $project_id){
 	$sql = "SELECT name, currency, discord_id, divider FROM projects WHERE id='".$project_id."'";
