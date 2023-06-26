@@ -38,7 +38,7 @@ function getUserId($conn, $address){
 
 // Get first user wallet address to send purchases to
 function getAddress($conn){
-	$sql = "SELECT address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' ORDER BY main DESC";
+	$sql = "SELECT address, main FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' ORDER BY main DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -54,7 +54,7 @@ function getAddress($conn){
 
 // Get all wallets for user
 function getWallets($conn){
-	$sql = "SELECT stake_address, address, main FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT id, stake_address, address, main FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	
     $wallets = array();
@@ -62,7 +62,10 @@ function getWallets($conn){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	$wallets[$row["address"]] = $row["main"];
+	    $wallet = array();
+	    $wallet["address"] = $row["address"];
+		$wallet["main"] = $row["main"];
+    	$wallets[$row["id"]] = $wallet;
 	  }
 	} else {
 	  //echo "0 results";

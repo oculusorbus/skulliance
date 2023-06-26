@@ -13,19 +13,20 @@ include 'header.php';
 						<?php
 						$wallets = getWallets($conn);
 						$wallet_counter = 1;
-						foreach($wallets AS $address => $main){ 
+						foreach($wallets AS $id => $wallet){ 
 							?>
 							<li class="role">
 								<?php
 								echo $wallet_counter.".&nbsp;";
-								if($main == "0"){
+								if($wallet["main"] == "0"){
 									echo "<form id='walletForm' action='wallets.php' method='post'>";
+									echo "<input type='hidden' id='wallet_id' name='wallet_id' value='".$id."'>";
 									echo "<input type='submit' value='Make Primary' class='small-button'>";
 									echo "</form>";
 								}else{
 									echo "Primary Address: ";
 								}
-								echo "&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -20)."</a>&nbsp;";
+								echo "&nbsp;<a href='https://pool.pm/".$wallet["address"]."' target='_blank'>".substr($wallet["address"], -20)."</a>&nbsp;";
 								?>
 							</li>
 						<?php 
