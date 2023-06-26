@@ -1,6 +1,7 @@
 <?php
 include 'db.php';
 include 'webhooks.php';
+include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
