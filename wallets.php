@@ -22,6 +22,8 @@ include 'header.php';
 									echo "<form id='walletForm' action='wallets.php' method='post'>";
 									echo "<input type='submit' value='Make Primary' class='small-button'>";
 									echo "</form>";
+								}else{
+									echo "Primary Address: ";
 								}
 								echo "&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -20)."</a>&nbsp;";
 								?>
