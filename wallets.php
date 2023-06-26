@@ -15,7 +15,7 @@ include 'header.php';
 							?>
 							<li class="role">
 								<?php
-								echo "<a href='https://pool.pm/".$address."'>".substr($address, -4)."</a>";
+								echo "<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -10)."</a>";
 								?>
 							</li>
 						<?php } ?>
