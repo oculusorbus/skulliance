@@ -3,6 +3,11 @@ include 'db.php';
 include 'webhooks.php';
 include 'skulliance.php';
 include 'header.php';
+
+// Set primary wallet
+if(isset($_POST['wallet_id'])){
+	setPrimaryWallet($conn, $_POST['wallet_id']);
+}
 ?>
 		<div class="row" id="row4">
 			<div class="main">

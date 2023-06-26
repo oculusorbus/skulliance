@@ -73,6 +73,24 @@ function getWallets($conn){
 	return $wallets;
 }
 
+// Set primary wallet
+function setPrimaryWallet($conn, $wallet_id){
+	// Reset all wallets
+	$sql = "UPDATE wallets SET main='0' WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+	// Set primary wallet
+	$sql = "UPDATE wallets SET main='1' WHERE wallet_id='".$wallet_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Get project info
 function getProjectInfo($conn, $project_id){
 	$sql = "SELECT name, currency, discord_id, divider FROM projects WHERE id='".$project_id."'";
