@@ -83,7 +83,7 @@ function setPrimaryWallet($conn, $wallet_id){
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 	// Set primary wallet
-	$sql = "UPDATE wallets SET main='1' WHERE wallet_id='".$wallet_id."'";
+	$sql = "UPDATE wallets SET main='1' WHERE id='".$wallet_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
