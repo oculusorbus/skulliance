@@ -53,5 +53,6 @@ if(isset($_POST['wallet_id'])){
 // Close DB Connection
 $conn->close();
 ?>
+<script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js"></script>
 </html>
