@@ -17,7 +17,7 @@ include 'header.php';
 							?>
 							<li class="role">
 								<?php
-								echo $wallet_counter."&nbsp;";
+								echo $wallet_counter.".&nbsp;";
 								if($main == "0"){
 									echo "<form id='walletForm' action='wallets.php' method='post'>";
 									echo "<input type='submit' value='Make Primary' class='small-button'>";
