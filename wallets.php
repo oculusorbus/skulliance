@@ -23,7 +23,7 @@ include 'header.php';
 									echo "<input type='submit' value='Make Primary' class='small-button'>";
 									echo "</form>";
 								}
-								echo ".&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -20)."</a>&nbsp;";
+								echo "&nbsp;<a href='https://pool.pm/".$address."' target='_blank'>".substr($address, -20)."</a>&nbsp;";
 								?>
 							</li>
 						<?php 
