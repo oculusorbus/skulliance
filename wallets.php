@@ -13,7 +13,7 @@ if(isset($_POST['wallet_id'])){
 			<div class="main">
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
-						<ul>
+						<?php renderWalletConnection("dashboard"); ?>
 						<li class="role">Address ending in...</li>
 						<?php
 						$wallets = getWallets($conn);
