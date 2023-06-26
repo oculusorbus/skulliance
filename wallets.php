@@ -14,7 +14,6 @@ if(isset($_POST['wallet_id'])){
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
 						<?php renderWalletConnection("dashboard"); ?>
-						<li class="role">Address ending in...</li>
 						<?php
 						$wallets = getWallets($conn);
 						$wallet_counter = 1;
