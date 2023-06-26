@@ -19,6 +19,7 @@
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="collections.php">Collections</a>
 		  <a href="transactions.php">Transactions</a>
+    	  <a href="wallets.php">Wallets</a>
 		  <a href="logout.php">Logout</a>
 		</div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
