@@ -9,7 +9,7 @@ include 'header.php';
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
 						<ul>
-						<li class="role">Wallets ending in...</li>
+						<li class="role">Address(es) ending in...</li>
 						<?php
 						$wallets = getWallets($conn);
 						$wallet_counter = 1;
