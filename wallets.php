@@ -15,7 +15,7 @@ include 'header.php';
 							?>
 							<li class="role">
 								<?php
-								echo "<a href='https://www.pool.pm/".$address."'>".$stake_address."</a>";
+								echo "<a href='https://pool.pm/".$address."'>".$stake_address."</a>";
 								?>
 							</li>
 						<?php } ?>
