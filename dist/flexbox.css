@@ -20,6 +20,10 @@ body {
   background-blend-mode: multiply;
 }
 
+form {
+	margin: 0px;
+}
+
 #loading {
   position: fixed;
   display: block;
