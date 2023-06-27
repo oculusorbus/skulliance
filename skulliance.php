@@ -38,10 +38,10 @@ foreach ($roles as $key => $roleData) {
 }
 if(!$member){
 	header("Location: https://discord.com/invite/JqqBZBrph2");
+}else{
+	// Call initial DB functions
+	checkUser($conn);
 }
-
-// Call initial DB functions
-checkUser($conn);
 
 $projects = array();
 $projects = getProjects($conn);
