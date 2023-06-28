@@ -750,6 +750,23 @@ function checkTransaction($conn, $item_id){
 	}
 }
 
+// Get total NFTs staked
+function getTotalNFTs($conn, $project_id=0){
+	$where = "";
+	if($project_id != 0){
+		$where = "WHERE collections.project_id = '".$project_id."'";
+	}
+	$sql = "SELECT COUNT(nfts.id) as total FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$where." WHERE nfts.user_id != '0'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		echo "<ul><li>".$row["total"]."</li></ul>";
+	  }
+	}
+}
+
 // Check leaderboard for discord and site display
 function checkLeaderboard($conn, $clean, $project_id=0) {
 	$where = "";

@@ -18,6 +18,7 @@ include 'header.php';
 						}
 						echo "<h2>".$title."</h2>";
 						filterLeaderboard("leaderboards");
+						getTotalNFTs($conn, $filterby);
 						checkLeaderboard($conn, false, $filterby);
 					?>
 				</div>
