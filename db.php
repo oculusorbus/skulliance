@@ -780,7 +780,11 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($row["avatar"] != ""){
 					$avatar = "<img onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
-		    	echo "<li>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs</li>";
+				$highlight = "";
+				if($row["user_id"] == $_SESSION['userData']['user_id']){
+					$highlight = "highlight";
+				}
+		    	echo "<li class='".$highlight."'>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs</li>";
 		  	}
 			echo "</ul>";
 		}

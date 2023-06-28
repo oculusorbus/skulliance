@@ -389,6 +389,10 @@ a{
 	font-family: arial;
 }
 
+.highlight {
+	background-color: black;
+}
+
 #itemForm table{
 	margin: 0 auto;
 	text-align: left;
