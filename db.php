@@ -762,7 +762,7 @@ function getTotalNFTs($conn, $project_id=0){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		echo "<ul id='leaderboard'><li><strong>Total NFTs Staked:</strong>".$row["total"]."</li></ul>";
+		echo "<ul id='leaderboard'><li><strong>Total Staked: </strong>".$row["total"]." NFTs</li></ul>";
 	  }
 	}
 }
