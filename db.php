@@ -801,7 +801,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($row["user_id"] == $_SESSION['userData']['user_id']){
 					$highlight = "highlight";
 				}
-		    	echo "<li class='".$highlight."'>".($leaderboarCounter<10)?"&nbsp;":"".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs</li>";
+		    	echo "<li class='".$highlight."'>".($leaderboardCounter<10)?"&nbsp;":"".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs</li>";
 		  	}
 			echo "</ul>";
 		}
