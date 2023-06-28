@@ -762,7 +762,7 @@ function getTotalNFTs($conn, $project_id=0){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		echo "<ul id='leaderboard'><li><strong>Total Staked: </strong>".$row["total"]." NFTs</li></ul>";
+		echo "<ul class='leaderboard'><li><strong>Total Staked: </strong>".$row["total"]." NFTs</li></ul>";
 	  }
 	}
 }
@@ -789,7 +789,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		// Formatted output for website leaderboard
 		} else {
 			$leaderboardCounter = 0;
-		  	echo "<ul id='leaderboard'>";
+		  	echo "<ul class='leaderboard'>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				//$level = floor($row["xp"]/100);
