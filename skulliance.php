@@ -316,7 +316,7 @@ function filterPolicies($page){
 			<option value="0">Project</option>
 			<option value="0">All</option>';
 			foreach($projects AS $id => $project){
-				echo '<option value="'.$id.'>'.$project["name"].'</option>';
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
 			}
 		echo '
 		</select>
