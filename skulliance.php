@@ -315,7 +315,7 @@ function filterPolicies($page){
 		<select onchange="javascript:filterPolicies(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
 			<option value="0">All</option>';
-			foreach($projecs AS $id => $project){
+			foreach($projects AS $id => $project){
 				echo '<option value="'.$id.'>'.$project["name"].'</option>';
 			}
 		echo '
