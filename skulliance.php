@@ -197,6 +197,8 @@ function renderCrafting($conn, $page){
 }
 
 function renderItemSubmissionForm($creators, $page){
+	global $conn;
+	$projects = getProjects($conn);
 	// Check if user has permissions to submit store items
 	if(in_array($_SESSION['userData']['discord_id'], $creators)){
 	?>
@@ -223,13 +225,15 @@ function renderItemSubmissionForm($creators, $page){
 	    <tr>
 	  <td><label for="project_id">Project:</label></td>
 	  <td><select id="project_id" name="project_id">
-			<option value="1" <?php echo ($_SESSION['userData']['discord_id'] == $creators["1"])?"selected":""; ?> >Galactico</option>
-			<option value="2" <?php echo ($_SESSION['userData']['discord_id'] == $creators["2"])?"selected":""; ?>>Ohh Meed</option>
-			<option value="3" <?php echo ($_SESSION['userData']['discord_id'] == $creators["3"])?"selected":""; ?>>H.Y.P.E.</option>
-			<option value="4" <?php echo ($_SESSION['userData']['discord_id'] == $creators["4"])?"selected":""; ?>>Sinder Skullz</option>
-			<option value="5" <?php echo ($_SESSION['userData']['discord_id'] == $creators["5"])?"selected":""; ?>>Kimosabe Art</option>
-			<option value="6" <?php echo ($_SESSION['userData']['discord_id'] == $creators["6"])?"selected":""; ?>>Crypties</option>
-			<option value="7" <?php echo ($_SESSION['userData']['discord_id'] == $creators["7"])?"selected":""; ?>>Skulliance</option>
+			<?php
+	  		foreach($projects AS $id => $project){
+				if($_SESSION['userData']['discord_id'] == $project["discord_id"]){
+					echo '<option value="'.$id.'" selected>'.$project["name"].'</option>';
+				}else{
+					echo '<option value="'.$id.'">'.$project["name"].'</option>';
+				}
+			}
+	  		?>
 	  </select></td>
 	  </tr>
 	  <?php
