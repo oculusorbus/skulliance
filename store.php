@@ -9,7 +9,7 @@ include 'header.php';
 ?>
 		<a name="store" id="store"></a>
 		<div class="row" id="row1">
-			<div class="side">
+			<div class="main">
 				<div class="content">
 					<h2>Store</h2>
 					<div class="content" id="player-stats">
