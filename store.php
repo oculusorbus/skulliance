@@ -20,6 +20,10 @@ include 'header.php';
 					<div class="content" id="player-stats">
 						<?php renderCrafting($conn, "store"); ?>
 					</div>
+					<h2>Partner Projects</h2>
+					<div class="content" id="player-stats">
+						<?php renderCurrency($conn, false); ?>
+					</div>
 					<?php
 					renderItemSubmissionForm($creators, "store");
 					?>
