@@ -25,16 +25,6 @@ include 'header.php';
 		<div class="content" id="player-stats">
 			<?php renderCurrency($conn, false); ?>
 		</div>
-		<h2>Store</h2>
-		<a name="store" id="store"></a>
-		<div class="content">
-			<div id="nfts" class="nfts">
-				<?php 
-				getItems($conn, "dashboard");
-				renderItemSubmissionForm($creators, "dashboard");
-				?>				
-			</div>
-		</div>
   </div>
   <div class="main">
 	<h2>Qualifying NFTs</h2>
