@@ -393,7 +393,7 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 }
 
 // Get items for store
-function getItems($conn, $page, $filterby="")){
+function getItems($conn, $page, $filterby=""){
 	if($filterby != "None" && $filterby != ""){
 		$filterby = "AND project_id = '".$filterby."' ";
 	}else{
