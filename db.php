@@ -430,7 +430,7 @@ function getItems($conn, $page, $filterby=""){
 		echo "</div></div>";
 	  }
 	} else {
-	  echo "There are no items available. Please contact the project to request more staking incentives.";
+	  echo "<p>There are no items available.</p><p>Please contact the project to request more staking incentives.</p>";
 	}
 }
 
