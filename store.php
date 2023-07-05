@@ -40,7 +40,6 @@ include 'header.php';
 				}
 				echo "<h2>".$title."</h2>";
 				filterItems("store");?>
-		    	<h2>Items</h2>
 				<a name="store" id="store"></a>
 				<div class="content">
 					<div id="nfts" class="nfts">
