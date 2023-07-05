@@ -609,18 +609,30 @@ function getCurrentBalance($conn, $user_id, $project_id){
 	  }
 	} else {
 	  //echo "0 results";
+	    return false;
 	}
 }
 
 // Update specific user balance for a project
 function updateBalance($conn, $user_id, $project_id, $subtotal){
 	$current_balance = getCurrentBalance($conn, $user_id, $project_id);
-	$total = $subtotal + $current_balance;
-	$sql = "UPDATE balances SET balance = '".$total."' WHERE user_id='".$user_id."' AND project_id='".$project_id."'";
-	if ($conn->query($sql) === TRUE) {
-	  //echo "New record created successfully";
-	} else {
-	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	if($current_balance != false){
+		$total = $subtotal + $current_balance;
+		$sql = "UPDATE balances SET balance = '".$total."' WHERE user_id='".$user_id."' AND project_id='".$project_id."'";
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}else{
+		$sql = "INSERT INTO balances (balance, user_id, project_id)
+		VALUES ('".$subtotal."', '".$user_id."', '".$project_id."')";
+
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
 	}
 }
 
@@ -644,7 +656,7 @@ function getBalances($conn){
 
 // Get minimum balance for crafting
 function getMinimumBalance($conn){
-	$sql = "SELECT balance, project_id FROM balances WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id != '7' ORDER BY balance ASC LIMIT 1";
+	$sql = "SELECT balance, project_id FROM balances WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id < '7' ORDER BY balance ASC LIMIT 1";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
@@ -659,7 +671,7 @@ function getMinimumBalance($conn){
 
 // Craft $DIAMOND
 function craft($conn, $balance){
-	$sql = "SELECT balance, project_id FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id != '7'";
+	$sql = "SELECT balance, project_id FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id < '7'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
