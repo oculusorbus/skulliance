@@ -155,8 +155,12 @@ function renderWalletConnection($page){
 	</div>';
 }
 
-function renderCurrency($conn){
-	$balances = getBalances($conn);
+function renderCurrency($conn, $skulliance=true){
+	if($skulliance == true){
+		$balances = getBalances($conn);
+	}else{
+		$balances = getBalances($conn, false);
+	}
 	foreach($balances AS $currency => $balance){ 
 		?>
 		<li class="role"><img class="icon rounded-full" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.webp"/>

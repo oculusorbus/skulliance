@@ -637,8 +637,14 @@ function updateBalance($conn, $user_id, $project_id, $subtotal){
 }
 
 // Get user balances for all projects
-function getBalances($conn){
-	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+function getBalances($conn, $skulliance=true){
+	$project_filter = "";
+	if($skulliance == true){
+		$project_filter = " AND project_id <= '7'";
+	}else{
+		$project_filter = " AND project_id > '7'";
+	}
+	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ".$project_filter;
 	$result = $conn->query($sql);
 	
 	$balances = array();
