@@ -257,6 +257,8 @@ if(isset($_POST['filterby'])){
 }
 
 function filterNFTs($page){
+	global $conn;
+	$projects = getProjects($conn);
 	$anchor = "";
 	if($page == "dashboard"){
 		$anchor = "#holdings";
@@ -266,14 +268,11 @@ function filterNFTs($page){
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="None">Project</option>
-			<option value="None">All</option>
-			<option value="1">Galactico</option>
-			<option value="2">Ohh Meed</option>
-			<option value="3">H.Y.P.E.</option>
-			<option value="4">Sinder Skullz</option>
-			<option value="5">Kimosabe Art</option>
-			<option value="6">Crypties</option>
-			<option value="7">Skulliance</option>
+			<option value="None">All</option>';
+			foreach($projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+		echo '
 		</select>
 		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
 		  <input type="hidden" id="filterby" name="filterby" value="">
@@ -283,20 +282,19 @@ function filterNFTs($page){
 }
 
 function filterLeaderboard($page){
+	global $conn;
+	$projects = getProjects($conn);
 	$anchor = "";
 	echo'
 	<div id="filter-nfts">
 		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
-			<option value="0">All</option>
-			<option value="1">Galactico</option>
-			<option value="2">Ohh Meed</option>
-			<option value="3">H.Y.P.E.</option>
-			<option value="4">Sinder Skullz</option>
-			<option value="5">Kimosabe Art</option>
-			<option value="6">Crypties</option>
-			<option value="7">Skulliance</option>
+			<option value="0">All</option>';
+			foreach($projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+		echo '
 		</select>
 		<form id="filterLeaderboardForm" action="'.$page.'.php'.$anchor.'" method="post">
 		  <input type="hidden" id="filterby" name="filterby" value="">
