@@ -9,7 +9,7 @@ include 'header.php';
 ?>
 		<a name="store" id="store"></a>
 		<div class="row" id="row1">
-			<div class="main">
+			<div class="side">
 				<div class="content">
 					<h2>Store</h2>
 					<div class="content" id="player-stats">
@@ -19,10 +19,6 @@ include 'header.php';
 					<h2>Crafting</h2>
 					<div class="content" id="player-stats">
 						<?php renderCrafting($conn, "store"); ?>
-					</div>
-					<h2>Partner Projects</h2>
-					<div class="content" id="player-stats">
-						<?php renderCurrency($conn, false); ?>
 					</div>
 					<?php
 					renderItemSubmissionForm($creators, "store");
