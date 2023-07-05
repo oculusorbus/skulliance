@@ -25,7 +25,7 @@ include 'header.php';
 						<?php renderCurrency($conn, false); ?>
 					</div>
 					<?php
-					renderItemSubmissionForm($creators, "store", $filterby);
+					renderItemSubmissionForm($creators, "store");
 					?>
 				</div>
 			</div>
@@ -45,7 +45,7 @@ include 'header.php';
 				<div class="content">
 					<div id="nfts" class="nfts">
 						<?php 
-						getItems($conn, "store");
+						getItems($conn, "store", $filterby);
 						?>				
 					</div>
 				</div>
