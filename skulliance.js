@@ -290,6 +290,11 @@ function filterLeaderboard(criteria){
 	document.getElementById("filterLeaderboardForm").submit();
 }
 
+function filterItems(criteria){
+	document.getElementById('filterby').value = criteria;
+	document.getElementById("filterItemsForm").submit();
+}
+
 function selectProject(criteria){
 	if(criteria == "none"){
 		alert("Please select a project from the dropdown.");
