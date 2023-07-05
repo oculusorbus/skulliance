@@ -306,6 +306,7 @@ function filterLeaderboard($page){
 }
 
 function filterPolicies($page){
+	global $conn;
 	$projects = getProjects($conn);
 	$anchor = "";
 	echo '
