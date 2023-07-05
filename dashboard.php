@@ -23,7 +23,7 @@ include 'header.php';
 		</div>
 		<h2>Partner Projects</h2>
 		<div class="content" id="player-stats">
-			<?php renderCurrency($conn); ?>
+			<?php renderCurrency($conn, false); ?>
 		</div>
 		<h2>Store</h2>
 		<a name="store" id="store"></a>
