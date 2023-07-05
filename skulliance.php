@@ -325,4 +325,26 @@ function filterPolicies($page){
 	</div>';
 }
 
+function filterItems($page){
+	global $conn;
+	$projects = getProjects($conn);
+	$anchor = "";
+	echo '
+	<div id="filter-nfts">
+		<label for="filterItems"><strong>Filter By:</strong></label>
+		<select onchange="javascript:filterItems(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<option value="0">Project</option>
+			<option value="0">All</option>';
+			foreach($projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+		echo '
+		</select>
+		<form id="filterItemsForm" action="'.$page.'.php'.$anchor.'" method="post">
+		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>
+	</div>';
+}
+
 ?>
