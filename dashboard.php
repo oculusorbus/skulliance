@@ -21,6 +21,10 @@ include 'header.php';
 		<div class="content" id="player-stats">
 			<?php renderCrafting($conn, "dashboard"); ?>
 		</div>
+		<h2>Partner Projects</h2>
+		<div class="content" id="player-stats">
+			<?php renderCurrency($conn); ?>
+		</div>
 		<h2>Store</h2>
 		<a name="store" id="store"></a>
 		<div class="content">
