@@ -824,7 +824,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($row["user_id"] == $_SESSION['userData']['user_id']){
 					$highlight = "highlight";
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs"..(($project_id != 0)?" (".getCurrentBalance($conn, $row["user_id"], $project_id).")":"")."</li>";
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".getCurrentBalance($conn, $row["user_id"], $project_id).")":"")."</li>";
 		  	}
 			echo "</ul>";
 		}
