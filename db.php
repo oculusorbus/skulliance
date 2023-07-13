@@ -807,7 +807,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				//$level = floor($row["total"]/100);
-				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]." NFTs\n";
+				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]." NFTs\n".(($project_id != 0)?" (".getBalance($conn, $project_id).")":"");
 			}
 		// Formatted output for website leaderboard
 		} else {
