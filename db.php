@@ -807,7 +807,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				//$level = floor($row["total"]/100);
-				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]." NFTs\n".(($project_id != 0)?" (".getBalance($conn, $project_id).")":"");
+				echo $leaderboardCounter.". ".$row["username"].": ".$row["total"]." NFTs\n";
 			}
 		// Formatted output for website leaderboard
 		} else {
@@ -824,7 +824,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($row["user_id"] == $_SESSION['userData']['user_id']){
 					$highlight = "highlight";
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs</li>";
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs"..(($project_id != 0)?" (".getCurrentBalance($conn, $row["user_id"], $project_id).")":"")."</li>";
 		  	}
 			echo "</ul>";
 		}
