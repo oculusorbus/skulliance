@@ -10,7 +10,7 @@ include 'header.php';
 					In order to stake with Skulliance, you will need to become a member.
 				</p>
 				<p>
-					Membership requires owning 1 NFT from the following projects:
+					Membership requires owning at least 1 NFT from ALL of the following projects:
 					<ul>
 						<li>Crypties</li>
 						<li>Kimosabe Art</li>
