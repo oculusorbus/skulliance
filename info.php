@@ -11,11 +11,12 @@ include 'header.php';
 				</p>
 				<p>
 					Membership requires owning at least 1 NFT from ALL of the following projects:
-					<ul>
-						<li><a href="https://twitter.com/cryptiesnft" target="_blank">Crypties</a></li>
-						<li><a href="https://twitter.com/Nft4R" target="_blank">Kimosabe Art</a></li>
-						<li><a href="https://twitter.com/SinderSkullz" target="_blank">Sinder Skullz</a></li>
-					</ul>
+					<table>
+						<tr>
+						<td><a href="https://twitter.com/cryptiesnft" target="_blank"><img src="images/flyers/crypties.jpg" /></a></td>
+						<td><a href="https://twitter.com/Nft4R" target="_blank"><img src="images/flyers/kimo.jpg" /><</a></td>
+						<td><a href="https://twitter.com/SinderSkullz" target="_blank"><img src="images/flyers/sinder.jpg" /><</a></td>
+					</table>
 				</p>
 				<p>
 					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership. The minimum total cost for all the required NFTs for membership is approx 40 ADA.
