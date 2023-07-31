@@ -12,7 +12,9 @@
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
+		  <?php if(isset($avatar_url)){?>
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
+		  <?php } ?>
 		  <a href="http://discord.gg/JqqBZBrph2"><?php echo (isset($name))?$name:"";?></a>
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
 		  <a href="store.php">Store</a>
