@@ -18,7 +18,7 @@ include 'header.php';
 					</ul>
 				</p>
 				<p>
-					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership.
+					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership. The required NFTs for membership can cost as little as 40 ADA in total.
 				</p>
 				<p>
 					Once the necessary NFTs are verified in Discord and you've claimed your membership, you will be able to stake with Skulliance, earn off-chain currency, and claim NFT/FT rewards.
