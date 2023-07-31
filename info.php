@@ -12,13 +12,13 @@ include 'header.php';
 				<p>
 					Membership requires owning at least 1 NFT from ALL of the following projects:
 					<ul>
-						<li>Crypties</li>
-						<li>Kimosabe Art</li>
-						<li>Sinder Skullz</li>
+						<li><a href="https://twitter.com/cryptiesnft" target="_blank">Crypties</a></li>
+						<li><a href="https://twitter.com/Nft4R" target="_blank">Kimosabe Art</a></li>
+						<li><a href="https://twitter.com/SinderSkullz" target="_blank">Sinder Skullz</a></li>
 					</ul>
 				</p>
 				<p>
-					<a href="http://discord.gg/JqqBZBrph2">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership.
+					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership.
 				</p>
 			</div>
 		</div>
