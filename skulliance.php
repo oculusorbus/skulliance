@@ -27,7 +27,7 @@ foreach ($roles as $key => $roleData) {
 	}
 }
 if(!$member){
-	header("Location: https://discord.com/invite/JqqBZBrph2");
+	header("Location: https://skulliance.io/staking/info.php");
 }else{
 	// Call initial DB functions
 	checkUser($conn);
