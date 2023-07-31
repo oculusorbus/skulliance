@@ -12,6 +12,7 @@
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
+		  <?php if(isset($name)){?>
 		  <?php if(isset($avatar_url)){?>
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
 		  <?php } ?>
@@ -23,5 +24,6 @@
 		  <a href="transactions.php">Transactions</a>
     	  <a href="wallets.php">Wallets</a>
 		  <a href="logout.php">Logout</a>
+		  <?php } ?>
 		</div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
