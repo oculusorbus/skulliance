@@ -18,8 +18,5 @@ include 'header.php';
 	</div>
   </div>
 </body>
-<?php
-// Close DB Connection
-$conn->close();
-?>
+
 </html>
