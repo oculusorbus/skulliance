@@ -11,11 +11,11 @@ include 'header.php';
 				</p>
 				<p>
 					Membership requires owning at least 1 NFT from ALL of the following projects:
-					<table>
+					<table style="background-color:black">
 						<tr>
-						<td width="33%"><a href="https://twitter.com/cryptiesnft" target="_blank"><img width="100%" src="images/flyers/crypties.jpg" /></a></td>
-						<td width="33%"><a href="https://twitter.com/Nft4R" target="_blank"><img width="100%" src="images/flyers/kimo.jpg" /></a></td>
-						<td width="33%"><a href="https://twitter.com/SinderSkullz" target="_blank"><img width="100%" src="images/flyers/sinder.jpg" /></a></td>
+						<td width="33%" valign="top"><a href="https://twitter.com/cryptiesnft" target="_blank"><img width="100%" src="images/flyers/crypties.jpg" /></a></td>
+						<td width="33%" valign="top"><a href="https://twitter.com/Nft4R" target="_blank"><img width="100%" src="images/flyers/kimo.jpg" /></a></td>
+						<td width="33%" valign="top"><a href="https://twitter.com/SinderSkullz" target="_blank"><img width="100%" src="images/flyers/sinder.jpg" /></a></td>
 					</table>
 				</p>
 				<p>
