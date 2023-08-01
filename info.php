@@ -5,7 +5,7 @@ include 'header.php';
 ?>
 		<div class="row" id="row4">
 			<div class="main">
-				<h2><img src="images/flyers/skulliancelogoweb.png"/></h2>
+				<h2><img src="images/skulliancelogoweb.png"/></h2>
 				<p>
 					In order to stake with Skulliance, you will need to become a member.
 				</p>
