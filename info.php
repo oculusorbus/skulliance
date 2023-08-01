@@ -24,7 +24,7 @@ include 'header.php';
 				<p>
 					Once the necessary NFTs are verified in Discord and you've claimed your membership, you will be able to stake with Skulliance, earn off-chain currency, and claim NFT/FT rewards.
 				</p>
-				<video width="100%" controls>
+				<video width="100%" style="background-color:black" controls>
 				  <source src="images/staking.mp4" type="video/mp4">
 				Your browser does not support the video tag.
 				</video>
