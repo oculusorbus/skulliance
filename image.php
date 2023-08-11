@@ -5,6 +5,8 @@ $percent = 0.25; // percentage of resize
 
 // Get image filetype
 $filetype = exif_imagetype($filename);
+echo $filetype;
+exit;
 
 // Content type
 if($filetype == "IMAGETYPE_JPEG"){
