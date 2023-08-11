@@ -2,11 +2,11 @@
 // The file
 $filename = 'https://ipfs.io/ipfs/'.$_GET['ipfs'];
 $percent = 0.25; // percentage of resize
-echo $filename;
-exit;
 
 // Get image filetype
 $filetype = exif_imagetype($filename);
+echo $filetype;
+exit;
 
 // Content type
 if($filetype == 2){
