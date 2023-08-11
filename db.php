@@ -354,11 +354,11 @@ function getNFTs($conn, $filterby=""){
 	    echo "<div class='nft'><div class='nft-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		if($row["collection_id"] == 4 || $row["collection_id"] == 23){
-			echo "<span class='nft-image'><img onError='this.src=image.php?ipfs=".$row["ipfs"].";' src='https://ipfs2.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
+			echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$row["ipfs"]."\";' src='https://ipfs2.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}else if($row["collection_id"] == 20 || $row["collection_id"] == 21 || $row["collection_id"] == 30 || $row["collection_id"] == 42){
-			echo "<span class='nft-image'><img onError='this.src=image.php?ipfs=".$row["ipfs"].";' src='https://storage.googleapis.com/jpeg-optim-files/".str_replace("ipfs/", "", $row["ipfs"])."'/></span>";
+			echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$row["ipfs"]."\";' src='https://storage.googleapis.com/jpeg-optim-files/".str_replace("ipfs/", "", $row["ipfs"])."'/></span>";
 		}else{
-			echo "<span class='nft-image'><img onError='this.src=image.php?ipfs=".$row["ipfs"].";' src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
+			echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$row["ipfs"]."\";' src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
