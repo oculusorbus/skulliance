@@ -1,7 +1,7 @@
 <?php
 // The file
 $filename = 'https://ipfs.io/ipfs/'.$_GET['ipfs'];
-$percent = 0.1; // percentage of resize
+$percent = 0.2; // percentage of resize
 
 // Get image filetype
 $filetype = exif_imagetype($filename);
