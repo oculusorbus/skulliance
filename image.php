@@ -1,6 +1,5 @@
 <?php
-echo $_GET["ipfs"];
-exit;
+echo '<img src="https://ipfs.io/ipfs'.$_GET['ipfs'].'"/>';
 // The file
 $filename = 'https://ipfs.io/ipfs'.$_GET['ipfs'];
 $percent = 0.25; // percentage of resize
