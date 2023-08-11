@@ -31,7 +31,7 @@ if($filetype == 2){
 }
 
 imagecopyresampled($image_p, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-exit;
+
 // Output
 if($filetype == 2){
 	imagejpeg($image_p, null, 100);
