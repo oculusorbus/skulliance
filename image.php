@@ -4,7 +4,7 @@ $filename = 'https://ipfs.io/ipfs/'.$_GET['ipfs'];
 $percent = 0.25; // percentage of resize
 
 // Content type
-header('Content-type: image/jpeg');
+header('Content-type: image/gif');
 
 // Get new dimensions
 list($width, $height) = getimagesize($filename);
