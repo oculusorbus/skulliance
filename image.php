@@ -5,8 +5,6 @@ $percent = 0.25; // percentage of resize
 
 // Get image filetype
 $filetype = exif_imagetype($filename);
-echo $filetype;
-exit;
 
 // Content type
 if($filetype == 2){
@@ -35,5 +33,11 @@ if($filetype == 2){
 imagecopyresampled($image_p, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
 
 // Output
-imagejpeg($image_p, null, 100);
+if($filetype == 2){
+	imagejpeg($image_p, null, 100);
+}else if($filetype == 1){
+	imagegif($image_p, null, 100);
+}else if($filetype == 3){
+	imagepng($image_p, null, 100);
+}
 ?>
