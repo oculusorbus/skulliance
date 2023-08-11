@@ -9,11 +9,11 @@ echo $filetype;
 exit;
 
 // Content type
-if($filetype == "IMAGETYPE_JPEG"){
+if($filetype == 2){
 	header('Content-type: image/jpeg');
-}else if($filetype == "IMAGETYPE_GIF"){
+}else if($filetype == 1){
 	header('Content-type: image/gif');
-}else if($filetype == "IMAGETYPE_PNG"){
+}else if($filetype == 3){
 	header('Content-type: image/png');
 }
 
@@ -24,11 +24,11 @@ $new_height = $height * $percent;
 
 // Resample
 $image_p = imagecreatetruecolor($new_width, $new_height);
-if($filetype == "IMAGETYPE_JPEG"){
+if($filetype == 2){
 	$image = imagecreatefromjpeg($filename);
-}else if($filetype == "IMAGETYPE_GIF"){
+}else if($filetype == 1){
 	$image = imagecreatefromgif($filename);
-}else if($filetype == "IMAGETYPE_PNG"){
+}else if($filetype == 3){
 	$image = imagecreatefrompng($filename);
 }
 
