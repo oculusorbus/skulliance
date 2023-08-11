@@ -355,7 +355,7 @@ function getNFTs($conn, $filterby=""){
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		$ipfs = str_replace("ipfs/", "", $row["ipfs"]);
 		if($row["collection_id"] == 4 || $row["collection_id"] == 23){
-			echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='https://ipfs2.jpgstoreapis.com/".$ipfs."'/></span>";
+			echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
 		}else if($row["collection_id"] == 20 || $row["collection_id"] == 21 || $row["collection_id"] == 30 || $row["collection_id"] == 42){
 			echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
 		}else{
