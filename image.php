@@ -36,7 +36,7 @@ imagecopyresampled($image_p, $image, 0, 0, 0, 0, $new_width, $new_height, $width
 if($filetype == 2){
 	imagejpeg($image_p, null, 100);
 }else if($filetype == 1){
-	imagegif($image_p, null, 100);
+	imagegif($image_p, null);
 }else if($filetype == 3){
 	imagepng($image_p, null, 100);
 }
