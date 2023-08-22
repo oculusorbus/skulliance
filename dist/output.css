@@ -71,6 +71,7 @@ body {
 body{
     background-image: url('https://www.skulliance.io/staking/images/og.jpg');
     background-size: contain;
+	background-color: black;
 }
 
 @media screen and (max-width: 1400px) {
