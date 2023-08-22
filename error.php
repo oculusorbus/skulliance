@@ -7,7 +7,7 @@
   <style>
 	  .text-3xl, .mt-3 {
 	  	  background-color: black;
-		  padding: 10px;
+		  padding: 20px;
 	  }
   </style>
 </head>
