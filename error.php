@@ -12,6 +12,7 @@
 	  .mt-3 {
 	  	  background-color: purple;
 		  padding: 20px;
+		  border: 10px solid black;
 	  }
   </style>
 </head>
