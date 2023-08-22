@@ -22,7 +22,7 @@
 <body>
     <div class="flex items-center justify-center h-screen bg-discord-gray flex-col">
         <span class="text-white text-3xl">Sorry, you need to be logged in to view this page.</span>
-        <a href="index.php" class="mt-3 text-white underline">Back to home</a>
+        <a href="index.php" class="mt-3 text-white underline">Back to Login</a>
     </div>
 
 </body>
