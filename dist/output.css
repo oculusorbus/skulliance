@@ -74,6 +74,11 @@ body{
 	background-color: black;
 }
 
+.transition {
+	background-color: black;
+	border: 1px solid purple;
+}
+
 @media screen and (max-width: 1400px) {
 	body{
 		background-size: cover;
