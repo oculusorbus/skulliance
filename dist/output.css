@@ -76,7 +76,7 @@ body{
 
 .transition {
 	background-color: purple !important;
-	border: 10px solid black;
+	border: 20px solid black;
 }
 
 .transition:hover {

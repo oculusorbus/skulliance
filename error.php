@@ -12,7 +12,7 @@
 	  .mt-3 {
 	  	  background-color: purple;
 		  padding: 20px;
-		  border: 10px solid black;
+		  border: 20px solid black;
 	  }
 	  .mt-3:hover {
 	  	background-color: gray;
