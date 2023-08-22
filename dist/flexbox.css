@@ -13,7 +13,7 @@ body {
   background-color: #36393F;
   height:100%;
   /*background-image: url("../images/dropshipbackground.jpg");  The image used */
-  background-position: center; /* Center the image */
+  background-position: top; /* Center the image */
   background-repeat: no-repeat; /* Do not repeat the image */
   background-size: cover; /* Resize the background image to cover the entire container */
   background-attachment: fixed;
