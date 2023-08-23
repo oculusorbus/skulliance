@@ -958,7 +958,7 @@ input:checked + .slider:before {
 
 @media screen and (max-width: 1780px) {
 	body{
-  	  background-position: bottom;
+  	  background-position: -200px;
 	}
 }
 
