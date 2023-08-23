@@ -958,7 +958,7 @@ input:checked + .slider:before {
 
 @media screen and (max-width: 1780px) {
 	body{
-  	  background-position: center;
+  	  display: none;
 	}
 }
 
