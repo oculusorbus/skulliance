@@ -956,6 +956,12 @@ input:checked + .slider:before {
   background: #202225;
 }
 
+@media screen and (max-width: 1780px) {
+	body{
+  	  background-position: center;
+	}
+}
+
 @media screen and (max-width: 1400px) {
 	.achievement{
 		max-width: 100%;
