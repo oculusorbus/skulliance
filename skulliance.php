@@ -198,7 +198,7 @@ function renderCrafting($conn, $page){
 		  Convert the following amount of all project currency to $DIAMOND:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
-		  <input type="submit" value="Submit" class="small-button">
+		  <input type="submit" value="Convert" class="small-button">
 		</form>
 		<?php
 	}
@@ -210,7 +210,7 @@ function renderCrafting($conn, $page){
 		  <br>Shatter the following amount of $DIAMOND to equal parts project currency:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
-		  <input type="submit" value="Submit" class="small-button">
+		  <input type="submit" value="Shatter" class="small-button">
 		</form>
 		<?php
 	}
