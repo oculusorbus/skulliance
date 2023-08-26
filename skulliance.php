@@ -127,7 +127,7 @@ if(isset($_POST['balance'])){
 	}
 }
 
-//Shattering
+// Shattering
 if(isset($_POST['diamond'])){
 	$balances = array();
 	$balances = getBalances($conn);
