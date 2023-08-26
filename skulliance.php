@@ -192,6 +192,7 @@ function renderCrafting($conn, $page){
 	}
 	if($diamond > 0){
 		?>
+		<br>
 		<form onsubmit="return confirm('Do you really want to shatter this diamond?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 		  Shatter the following amount of $DIAMOND to equal parts project currency:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
