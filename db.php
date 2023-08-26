@@ -708,13 +708,13 @@ function shatter($conn, $balance){
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	updateBalance($conn, $_SESSION['userData']['user_id'], $row["project_id"], $balance);
-		logCredit($conn, $_SESSION['userData']['user_id'], $balance, $row["project_id"], 2);
+		logCredit($conn, $_SESSION['userData']['user_id'], $balance, $row["project_id"], 1);
 	  }
 	} else {
 	  //echo "0 results";
 	}
 	updateBalance($conn, $_SESSION['userData']['user_id'], 7, -$balance);
-	logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, 7, 2);
+	logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, 7, 1);
 }
 
 // Log a specific user credit for nightly rewards
@@ -760,10 +760,8 @@ function transactionHistory($conn) {
 				echo "</td><td>";
 				if($row["crafting"] == 0){
 					echo "Staking Reward: ".$row["project_name"];
-				}else if($row["crafting"] == 1){
+				}else{
 					echo "Crafting";
-				}else if($row["crafting"] == 2){
-					echo "Shattering";
 				}
 				echo "</td>";
 			}else if ($row["type"] == "debit"){
@@ -771,10 +769,8 @@ function transactionHistory($conn) {
 				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td>";
 				if($row["crafting"] == 0){
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
-				}else if($row["crafting"] == 1){
+				}else{
 					echo "<td>Crafting</td>";
-				}else if($row["crafting"] == 2){
-					echo "<td>Shattering</td>";
 				}
 			}
 			echo "</tr>";
