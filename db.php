@@ -699,6 +699,24 @@ function craft($conn, $balance){
 	logCredit($conn, $_SESSION['userData']['user_id'], $balance, 7, 1);
 }
 
+// Shatter $DIAMOND
+function shatter($conn, $balance){
+	$sql = "SELECT balance, project_id FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id < '7'";
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	updateBalance($conn, $_SESSION['userData']['user_id'], $row["project_id"], $balance);
+		logCredit($conn, $_SESSION['userData']['user_id'], 0, $balance, $row["project_id"], 1);
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	updateBalance($conn, $_SESSION['userData']['user_id'], 7, -$balance);
+	logDebit($conn, $_SESSION['userData']['user_id'], $balance, 7, 1);
+}
+
 // Log a specific user credit for nightly rewards
 function logCredit($conn, $user_id, $amount, $project_id, $crafting=0) {
 	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting)
