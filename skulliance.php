@@ -170,6 +170,7 @@ function renderCrafting($conn, $page){
 	<?php 
 	$balances = array();
 	$balances = getBalances($conn);
+	$diamond = $balances["\$DIAMOND"];
 	unset($balances["\$DIAMOND"]);
 	$zero = false;
 	foreach($balances AS $currency => $balance){
@@ -185,6 +186,16 @@ function renderCrafting($conn, $page){
 		  Convert the following amount of all project currency to $DIAMOND:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
+		  <input type="submit" value="Submit" class="small-button">
+		</form>
+		<?php
+	}
+	if($diamond > 0){
+		?>
+		<form onsubmit="return confirm('Do you really want to shatter this diamond?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
+		  Shatter the following amount of $DIAMOND to equal parts project currency:<br><br>
+		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
+		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
 		  <input type="submit" value="Submit" class="small-button">
 		</form>
 		<?php
