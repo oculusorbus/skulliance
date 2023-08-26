@@ -761,9 +761,9 @@ function transactionHistory($conn) {
 				if($row["crafting"] == 0){
 					echo "Staking Reward: ".$row["project_name"];
 				}else if($row["crafting"] == 1){
-					echo "<td>Crafting</td>";
+					echo "Crafting";
 				}else if($row["crafting"] == 2){
-					echo "<td>Shattering</td>";
+					echo "Shattering";
 				}
 				echo "</td>";
 			}else if ($row["type"] == "debit"){
