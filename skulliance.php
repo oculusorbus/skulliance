@@ -135,7 +135,7 @@ if(isset($_POST['diamond'])){
 	// Double check submitted balance before crafting
 	if($_POST['diamond'] > 0 && $_POST['diamond'] <= $diamond){
 		shatter($conn, $_POST['diamond']);
-		alert("You have successfully shatter ".$_POST['diamond']." \$DIAMOND. ".$_POST['diamond']." of every other project currency has been added to your balances.");
+		alert("You have successfully shattered ".$_POST['diamond']." \$DIAMOND. ".$_POST['diamond']." of every other project currency has been added to your balances.");
 	}
 }
 
@@ -205,7 +205,7 @@ function renderCrafting($conn, $page){
 	if($diamond > 0){
 		?>
 		</li>
-		<li class="role">
+		<li class="role"><br>
 		<form onsubmit="return confirm('Do you really want to shatter this diamond?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 		  Shatter the following amount of $DIAMOND to equal parts project currency:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
