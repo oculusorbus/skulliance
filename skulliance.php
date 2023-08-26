@@ -123,7 +123,7 @@ if(isset($_POST['balance'])){
 	// Double check submitted balance before crafting
 	if($_POST['balance'] > 0 && $_POST['balance'] <= $minbalance){
 		craft($conn, $_POST['balance']);
-		alert("You have successfully crafted ".$_POST['balance']." \$DIAMOND. ".$_POST['balance']." of every other project currency has been deducted from your balances.");
+		alert("You have successfully crafted ".number_format($_POST['balance'])." \$DIAMOND. ".number_format($_POST['balance'])." of every other project currency has been deducted from your balances.");
 	}
 }
 
@@ -135,7 +135,7 @@ if(isset($_POST['diamond'])){
 	// Double check submitted balance before crafting
 	if($_POST['diamond'] > 0 && $_POST['diamond'] <= $diamond){
 		shatter($conn, $_POST['diamond']);
-		alert("You have successfully shattered ".$_POST['diamond']." \$DIAMOND. ".$_POST['diamond']." of every other project currency has been added to your balances.");
+		alert("You have successfully shattered ".number_format($_POST['diamond'])." \$DIAMOND. ".number_format($_POST['diamond'])." of every other project currency has been added to your balances.");
 	}
 }
 
@@ -194,7 +194,7 @@ function renderCrafting($conn, $page){
 		echo "You do not have balances for all currency to craft.<br><br>Purchase NFTs from every project in the Skulliance in order to craft \$DIAMOND.";
 	}else{
 		?>
-		<form onsubmit="return confirm('Do you really want to craft this currency?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
+		<form onsubmit="return confirm('Do you really want to convert all currency to $DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 		  Convert the following amount of all project currency to $DIAMOND:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
@@ -206,7 +206,7 @@ function renderCrafting($conn, $page){
 		?>
 		</li>
 		<li class="role">
-		<form onsubmit="return confirm('Do you really want to shatter this diamond?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
+		<form onsubmit="return confirm('Do you really want to shatter this $DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 		  <br>Shatter the following amount of $DIAMOND to equal parts project currency:<br><br>
 		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 		  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
