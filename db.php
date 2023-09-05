@@ -238,6 +238,24 @@ function getAddresses($conn) {
 	return $addresses;
 }
 
+// Get user wallet addresses based on discord ID
+function getAddressesDiscord($conn) {
+	$sql = "SELECT stake_address FROM wallets INNER JOIN users ON wallets.user_id = users.user_id WHERE users.discord_id='".$_SESSION['userData']['discord_id']."'";
+	$result = $conn->query($sql);
+	
+    $addresses = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$addresses[] = $row["stake_address"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $addresses;
+}
+
 // Get all addresses 
 function getAllAddresses($conn){
 	$sql = "SELECT stake_address FROM wallets";

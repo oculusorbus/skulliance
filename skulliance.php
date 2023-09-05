@@ -26,10 +26,16 @@ foreach ($roles as $key => $roleData) {
 		break;
 	}
 }
+/*
 if(!$member){
 	header("Location: https://skulliance.io/staking/info.php");
 }else{
 	// Call initial DB functions
+	checkUser($conn);
+}*/
+
+// Call initial DB functions
+if(sizeof(getAddressesDiscord($conn) != 0){
 	checkUser($conn);
 }
 
