@@ -454,7 +454,8 @@ function renderBuyButton($id, $project_id, $verbiage, $primary_project_id, $page
 
 // Get item information
 function getItemInfo($conn, $item_id, $project_id){
-	$sql = "SELECT items.id AS item_id, projects.id AS project_id, items.name AS item_name, image_url, price, projects.name AS project_name, currency, override FROM items INNER JOIN projects ON projects.id = items.project_id WHERE items.id = '".$item_id."'";
+	global $conn;
+	$sql = "SELECT items.id AS item_id, projects.id AS project_id, secondary_project_id, items.name AS item_name, image_url, price, projects.name AS project_name, currency, override FROM items INNER JOIN projects ON projects.id = items.project_id WHERE items.id = '".$item_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -465,7 +466,11 @@ function getItemInfo($conn, $item_id, $project_id){
 		$item["image_url"] = $row["image_url"];
 		if($project_id == 7){
 			$item["currency"] = "DIAMOND";
-		}else{
+		}else if($project_id == $row["secondary_project_id"]){
+			$project = getProjectInfo($conn, $row["secondary_project_id"]);
+			$item["currency"] = $project["currency"];
+		}
+		else{
 			$item["currency"] = $row["currency"];
 		}
 		$item["project"] = $row["project_name"];
