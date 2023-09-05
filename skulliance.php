@@ -91,7 +91,7 @@ if(isset($_POST['item_id'])) {
 			alert("Your purchase has been prevented because you\'ve already purchased this item before. Don\'t be greedy. Let others have a chance to redeem NFT rewards.");
 		}
 	}else{
-		alert("You must become a member of Skulliance in order to purchase items from the staking store.");
+		// Redirect non-members to the splash page for membership information
 		header("Location: info.php");
 	}	
 }
