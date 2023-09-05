@@ -8,7 +8,7 @@ include 'header.php';
 			<div class="main">
 				<h2><img style="max-width:300px;width:100%;" src="images/skulliancelogoweb.png"/></h2>
 				<p>
-					Your claim has been prevented. In order to claim items in the Skulliance staking store, you will need to become a member.
+					In order to claim items in the Skulliance staking store, you will need to become a member.
 				</p>
 				<p>
 					Membership requires owning at least 1 NFT from ALL of the following projects:
