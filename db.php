@@ -395,12 +395,13 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 
 // Get items for store
 function getItems($conn, $page, $filterby=""){
+	global $conn;
 	if($filterby != "0"){
 		$filterby = "AND project_id = '".$filterby."' ";
 	}else{
 		$filterby = "";
 	}
-	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, projects.name AS project_name, projects.currency AS currency, divider FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY projects.id, items.name ASC";
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, secondary_project_id, projects.name AS project_name, projects.currency AS currency, divider FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY projects.id, items.name ASC";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -425,7 +426,11 @@ function getItems($conn, $page, $filterby=""){
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"], $row["project_id"], $page);
-		if($row["project_id"] != 7){
+		if($row["secondary_project_id"] != 0){
+			$project = getProjectInfo($conn, $row["secondary_project_id"]);
+			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY for ".number_format($row["price"])." $".$project["currency"], $row["secondary_project_id"], $page);
+		}
+		if($row["project_id"] != 7 && $row["secondary_project_id"] == 0){
 			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/$row["divider"])." \$DIAMOND", $row["project_id"], $page);
 		}
 		echo "</div></div>";
