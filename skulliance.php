@@ -189,37 +189,39 @@ function renderCrafting($conn, $page){
 	<?php 
 	$balances = array();
 	$balances = getBalances($conn);
-	$diamond = $balances["\$DIAMOND"];
-	unset($balances["\$DIAMOND"]);
-	$zero = false;
-	foreach($balances AS $currency => $balance){
-		if($balance == 0){
-			$zero = true;
+	if(sizeof(balances) != 0){
+		$diamond = $balances["\$DIAMOND"];
+		unset($balances["\$DIAMOND"]);
+		$zero = false;
+		foreach($balances AS $currency => $balance){
+			if($balance == 0){
+				$zero = true;
+			}
 		}
-	}
-	if($zero){
-		echo "You do not have balances for all currency to craft.<br><br>Purchase NFTs from every project in the Skulliance in order to craft \$DIAMOND.";
-	}else{
-		?>
-		<form onsubmit="return confirm('Do you really want to convert all currency to $DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
-		  Convert the following amount of core project currency to $DIAMOND:<br><br>
-		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
-		  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
-		  <input type="submit" value="Convert" class="small-button">
-		</form>
-		<?php
-	}
-	if($diamond > 0){
-		?>
-		</li>
-		<li class="role">
-		<form onsubmit="return confirm('Do you really want to shatter this $DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
-		  <br>Shatter the following amount of $DIAMOND to equal parts core currency:<br><br>
-		  <img class="icon" src="icons/diamond.png">MAX&nbsp;
-		  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
-		  <input type="submit" value="Shatter" class="small-button">
-		</form>
-		<?php
+		if($zero){
+			echo "You do not have balances for all currency to craft.<br><br>Purchase NFTs from every project in the Skulliance in order to craft \$DIAMOND.";
+		}else{
+			?>
+			<form onsubmit="return confirm('Do you really want to convert all currency to $DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
+			  Convert the following amount of core project currency to $DIAMOND:<br><br>
+			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
+			  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
+			  <input type="submit" value="Convert" class="small-button">
+			</form>
+			<?php
+		}
+		if($diamond > 0){
+			?>
+			</li>
+			<li class="role">
+			<form onsubmit="return confirm('Do you really want to shatter this $DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
+			  <br>Shatter the following amount of $DIAMOND to equal parts core currency:<br><br>
+			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
+			  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
+			  <input type="submit" value="Shatter" class="small-button">
+			</form>
+			<?php
+		}
 	}
 	
 	?>
