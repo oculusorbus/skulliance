@@ -15,16 +15,18 @@ include 'header.php';
 		<h2>Skulliance Staking</h2>
 		<div class="content" id="player-stats">
 				<?php renderWalletConnection("dashboard"); ?>
-				<?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn); } ?>
+				<?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn); }?>
 		</div>
+		<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">
-			<?php if(isset($_SESSION['userData']['user_id'])){ renderCrafting($conn, "dashboard"); } ?>
+			<?php renderCrafting($conn, "dashboard"); ?>
 		</div>
 		<h2>Partner Projects</h2>
 		<div class="content" id="player-stats">
-			<?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn, false); } ?>
+			<?php renderCurrency($conn, false); ?>
 		</div>
+		<?php } ?>
   </div>
   <div class="main">
 	<h2>Qualifying NFTs</h2>
@@ -33,7 +35,7 @@ include 'header.php';
 		<?php filterNFTs("dashboard"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
-			if(isset($_SESSION['userData']['user_id'])){ getNFTs($conn, $filterby); } 
+			if(isset($_SESSION['userData']['user_id'])){ getNFTs($conn, $filterby) }; 
 			?>
 		</div>
     </div>
