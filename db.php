@@ -872,8 +872,10 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$avatar = "<img onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				$highlight = "";
-				if($row["user_id"] == $_SESSION['userData']['user_id']){
-					$highlight = "highlight";
+				if(isset($_SESSION['userData']['user_id'])){
+					if($row["user_id"] == $_SESSION['userData']['user_id']){
+						$highlight = "highlight";
+					}
 				}
 		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format(getCurrentBalance($conn, $row["user_id"], $project_id))." $".$row["currency"].")":"")."</li>";
 		  	}
