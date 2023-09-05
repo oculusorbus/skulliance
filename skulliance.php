@@ -48,47 +48,51 @@ foreach($projects AS $id => $project){
 
 //Item purchases
 if(isset($_POST['item_id'])) {
-	if(!checkTransaction($conn, $_POST['item_id'])){
-		$quantity = getItemQuantity($conn, $_POST['item_id']);
-		if($quantity >= 1){
-			$project = array();
-			$project = getProjectInfo($conn, $_POST['primary_project_id']);
-			$price = getItemPrice($conn, $_POST['item_id']);
-			if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
-				$price = $price/$project["divider"];
-			}
-			$balance = getBalance($conn, $_POST['project_id']);
-			if($balance >= $price){
-				updateBalance($conn, $user_id, $_POST['project_id'], -$price);
-				updateQuantity($conn, $_POST['item_id']);
-				logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
-				$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
-				$title = $item["name"]." Purchased";
-				$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by ".getUsername($conn);
-				$imageurl = $item["image_url"];
-				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
-				if($item["override"] == "0"){
-					$discord_id = $project["discord_id"];
+	if($member){
+		if(!checkTransaction($conn, $_POST['item_id'])){
+			$quantity = getItemQuantity($conn, $_POST['item_id']);
+			if($quantity >= 1){
+				$project = array();
+				$project = getProjectInfo($conn, $_POST['primary_project_id']);
+				$price = getItemPrice($conn, $_POST['item_id']);
+				if($_POST['project_id'] == 7 && $_POST['primary_project_id'] != 7){
+					$price = $price/$project["divider"];
+				}
+				$balance = getBalance($conn, $_POST['project_id']);
+				if($balance >= $price){
+					updateBalance($conn, $user_id, $_POST['project_id'], -$price);
+					updateQuantity($conn, $_POST['item_id']);
+					logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
+					$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
+					$title = $item["name"]." Purchased";
+					$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by ".getUsername($conn);
+					$imageurl = $item["image_url"];
+					discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+					if($item["override"] == "0"){
+						$discord_id = $project["discord_id"];
+					}else{
+						$discord_id = "772831523899965440";
+					}
+					# Open the DM first
+					$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
+					# Check if DM is created, if yes, let's send a message to this channel.
+					if(isset($newDM["id"])) {
+						$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
+					    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
+					}
+					alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
 				}else{
-					$discord_id = "772831523899965440";
+					alert("You do not have enough currency to purchase this item.");
 				}
-				# Open the DM first
-				$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
-				# Check if DM is created, if yes, let's send a message to this channel.
-				if(isset($newDM["id"])) {
-					$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
-				    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
-				}
-				alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
 			}else{
-				alert("You do not have enough currency to purchase this item.");
+				alert("You cannot purchase this item because it is out of stock.");
 			}
 		}else{
-			alert("You cannot purchase this item because it is out of stock.");
+			alert("Your purchase has been prevented because you\'ve already purchased this item before. Don\'t be greedy. Let others have a chance to redeem NFT rewards.");
 		}
 	}else{
-		alert("Your purchase has been prevented because you\'ve already purchased this item before. Don\'t be greedy. Let others have a chance to redeem NFT rewards.");
-	}
+		alert("You must become a member of Skulliance in order to purchase items from the staking store.");
+	}	
 }
 
 // Item submission to store
