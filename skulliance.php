@@ -210,7 +210,7 @@ function renderCrafting($conn, $page){
 			}
 		}
 		if($zero){
-			echo "You do not have balances for all currency to craft.<br><br>Purchase NFTs from every project in the Skulliance in order to craft \$DIAMOND.";
+			echo "You do not have balances for all core currency to craft.<br><br>Purchase NFTs from every core project in the Skulliance in order to craft \$DIAMOND.";
 		}else{
 			?>
 			<form onsubmit="return confirm('Do you really want to convert all currency to $DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
