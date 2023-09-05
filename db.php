@@ -240,7 +240,7 @@ function getAddresses($conn) {
 
 // Get user wallet addresses based on discord ID
 function getAddressesDiscord($conn) {
-	$sql = "SELECT stake_address FROM wallets INNER JOIN users ON wallets.user_id = users.user_id WHERE users.discord_id='".$_SESSION['userData']['discord_id']."'";
+	$sql = "SELECT stake_address FROM wallets INNER JOIN users ON wallets.user_id = users.id WHERE users.discord_id='".$_SESSION['userData']['discord_id']."'";
 	$result = $conn->query($sql);
 	
     $addresses = array();
