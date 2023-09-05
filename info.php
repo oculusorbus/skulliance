@@ -7,7 +7,7 @@ include 'header.php';
 			<div class="main">
 				<h2><img style="max-width:300px;width:100%;" src="images/skulliancelogoweb.png"/></h2>
 				<p>
-					In order to stake with Skulliance, you will need to become a member.
+					In order to claim items in the Skulliance staking store, you will need to become a member.
 				</p>
 				<p>
 					Membership requires owning at least 1 NFT from ALL of the following projects:
@@ -19,10 +19,10 @@ include 'header.php';
 					</table>
 				</p>
 				<p>
-					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership. The minimum total cost for all the required NFTs for membership is approx 25 ADA.
+					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership. The minimum total cost for all the required NFTs for membership is approx 30 ADA.
 				</p>
 				<p>
-					Once the necessary NFTs are verified in Discord and you've claimed your membership, you will be able to stake with Skulliance, earn off-chain currency, and claim NFT/FT rewards.
+					Once the necessary NFTs are verified in Discord and you've claimed your membership, you will be able to claim NFT/FT rewards.
 				</p>
 				<video width="100%" style="background-color:black" controls>
 				  <source src="images/staking.mp4" type="video/mp4">
