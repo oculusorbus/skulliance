@@ -430,7 +430,7 @@ function getItems($conn, $page, $filterby=""){
 			$project = getProjectInfo($conn, $row["secondary_project_id"]);
 			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY for ".number_format($row["price"])." $".$project["currency"], $row["project_id"], $page);
 		}
-		if($row["project_id"] != 7 && $row["secondary_project_id"] == 0){
+		if($row["project_id"] != 7){
 			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/$row["divider"])." \$DIAMOND", $row["project_id"], $page);
 		}
 		echo "</div></div>";
