@@ -33,7 +33,7 @@ include 'header.php';
 		<?php filterNFTs("dashboard"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
-			if(isset($_SESSION['userData']['user_id'])){ getNFTs($conn, $filterby) }; 
+			if(isset($_SESSION['userData']['user_id'])){ getNFTs($conn, $filterby); } 
 			?>
 		</div>
     </div>
