@@ -27,6 +27,9 @@ if(!empty($roles)){
 			break;
 		}
 	}
+}else{
+	// Redirect non-members to the splash page for membership information
+	header("Location: info.php");	
 }
 /*
 if(!$member){
