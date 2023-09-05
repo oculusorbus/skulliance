@@ -35,6 +35,7 @@ if(!$member){
 }*/
 
 // Call initial DB functions
+echo getAddressesDiscord($conn);
 if(sizeof(getAddressesDiscord($conn) != 0){
 	checkUser($conn);
 }
