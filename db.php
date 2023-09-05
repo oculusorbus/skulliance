@@ -672,26 +672,28 @@ function updateBalance($conn, $user_id, $project_id, $subtotal){
 
 // Get user balances for all projects
 function getBalances($conn, $skulliance=true){
-	$project_filter = "";
-	if($skulliance == true){
-		$project_filter = " AND project_id <= '7'";
-	}else{
-		$project_filter = " AND project_id > '7'";
-	}
-	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ".$project_filter;
-	$result = $conn->query($sql);
+	if(isset($_SESSION['userData']['user_id'])){
+		$project_filter = "";
+		if($skulliance == true){
+			$project_filter = " AND project_id <= '7'";
+		}else{
+			$project_filter = " AND project_id > '7'";
+		}
+		$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ".$project_filter;
+		$result = $conn->query($sql);
 	
-	$balances = array();
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-        $balances["$".$row["currency"]] = $row["balance"];
-	  }
-	} else {
-	  //echo "0 results";
+		$balances = array();
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+		    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+	        $balances["$".$row["currency"]] = $row["balance"];
+		  }
+		} else {
+		  //echo "0 results";
+		}
+		return $balances;
 	}
-	return $balances;
 }
 
 // Get minimum balance for crafting
