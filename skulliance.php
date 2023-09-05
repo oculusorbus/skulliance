@@ -169,6 +169,7 @@ function renderCurrency($conn, $skulliance=true){
 	}else{
 		$balances = getBalances($conn, false);
 	}
+	if(isset($balances)){
 	foreach($balances AS $currency => $balance){ 
 		?>
 		<li class="role"><img class="icon rounded-full" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.webp"/>
@@ -176,7 +177,7 @@ function renderCurrency($conn, $skulliance=true){
 			echo number_format($balance)." ".$currency;
 			?>
 		</li>
-	<?php } ?>
+	<?php }} ?>
 		</ul>
 	<?php
 }
