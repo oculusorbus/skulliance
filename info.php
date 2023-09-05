@@ -25,7 +25,7 @@ include 'header.php';
 				<p>
 					Once the necessary NFTs are verified in Discord and you've setup your membership, you will be able to claim NFT/FT rewards from the staking store.
 				</p>
-				<video width="100%" style="background-color:black" controls>
+				<video width="100%" style="background-color:black" poster="images/og.jpg" controls>
 				  <source src="images/staking.mp4" type="video/mp4">
 				Your browser does not support the video tag.
 				</video>
