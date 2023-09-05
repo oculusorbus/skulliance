@@ -428,7 +428,7 @@ function getItems($conn, $page, $filterby=""){
 		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"], $row["project_id"], $page);
 		if($row["secondary_project_id"] != 0){
 			$project = getProjectInfo($conn, $row["secondary_project_id"]);
-			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY for ".number_format($row["price"])." $".$project["currency"], $row["secondary_project_id"], $page);
+			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY for ".number_format($row["price"])." $".$project["currency"], $row["project_id"], $page);
 		}
 		if($row["project_id"] != 7 && $row["secondary_project_id"] == 0){
 			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/$row["divider"])." \$DIAMOND", $row["project_id"], $page);
