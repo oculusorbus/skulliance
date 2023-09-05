@@ -16,6 +16,7 @@ $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 
 // Initiate variables
 $member = false;
+print_r($_SESSION);
 $roles = $_SESSION['userData']['roles'];
 foreach ($roles as $key => $roleData) {
 	switch ($roleData) {
