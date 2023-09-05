@@ -46,6 +46,9 @@ include 'header.php';
 				<div class="content">
 					<div id="nfts" class="nfts">
 						<?php 
+						if(!$member){
+							echo "<p>You must become a member of Skulliance before you can claim items from the store.</p>";
+						}
 						getItems($conn, "store", $filterby);
 						?>				
 					</div>
