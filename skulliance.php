@@ -92,7 +92,7 @@ if(isset($_POST['item_id'])) {
 		}
 	}else{
 		alert("You must become a member of Skulliance in order to purchase items from the staking store.");
-		header("Location: ../staking/info.php");
+		header("Location: /info.php");
 	}	
 }
 
