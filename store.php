@@ -16,6 +16,7 @@ include 'header.php';
 							<?php renderWalletConnection("store"); ?>
 							<?php renderCurrency($conn); ?>
 					</div>
+					<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 					<h2>Crafting</h2>
 					<div class="content" id="player-stats">
 						<?php renderCrafting($conn, "store"); ?>
@@ -26,6 +27,7 @@ include 'header.php';
 					</div>
 					<?php
 					renderItemSubmissionForm($creators, "store");
+					}
 					?>
 				</div>
 			</div>
