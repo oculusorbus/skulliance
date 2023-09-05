@@ -387,7 +387,7 @@ function getNFTs($conn, $filterby=""){
 		  }
 		} else {
 		  //echo "0 results";
-		  echo "<p>You do not have any qualifying NFTs.</p>"
+		  echo "<p>You do not have any qualifying NFTs.</p>";
 		}
 	}
 }
