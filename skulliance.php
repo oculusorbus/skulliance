@@ -29,7 +29,7 @@ if(!empty($roles)){
 	}
 }else{
 	// Redirect non-members to the splash page for membership information
-	header("Location: info.php");	
+	header("Location: http://discord.gg/JqqBZBrph2");	
 }
 /*
 if(!$member){
