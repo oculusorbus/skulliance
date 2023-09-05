@@ -38,7 +38,7 @@ include 'header.php';
 			if(isset($_SESSION['userData']['user_id'])){ 
 				getNFTs($conn, $filterby); 
 			}else{
-				echo "Please connect a Cardano wallet to view your qualifying NFTs.";
+				echo "<p>Please connect a Cardano wallet to view your qualifying NFTs.</p>";
 			} 
 			?>
 		</div>
