@@ -17,7 +17,7 @@ if(isset($_POST['wallet_id'])){
 					<div class="content" id="transactions-pane">
 						<?php renderWalletConnection("wallets"); ?>
 						<?php
-						if(isset($_SESSION['userData']['user_id']){ ?>
+						if(isset($_SESSION['userData']['user_id'])){ ?>
 							$wallets = getWallets($conn);
 							$wallet_counter = 1;
 							foreach($wallets AS $id => $wallet){ 
