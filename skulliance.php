@@ -115,6 +115,7 @@ if(isset($_POST['name'])){
 
 // Handle wallet selection
 if(isset($_POST['stakeaddress'])){
+	checkUser($conn);
 	checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
 	$addresses = array();
 	//$addresses = getAddresses($conn);
