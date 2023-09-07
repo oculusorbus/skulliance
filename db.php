@@ -879,7 +879,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					}
 				}
 				$current_balance = getCurrentBalance($conn, $row["user_id"], $project_id);
-				if($current_balance == false){
+				if(!$current_balance){
 					$current_balance = 0;
 				}
 		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." $".$row["currency"].")":"")."</li>";
