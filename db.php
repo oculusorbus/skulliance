@@ -879,6 +879,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					}
 				}
 				$current_balance = getCurrentBalance($conn, $row["user_id"], $project_id);
+				echo $current_balance;
 				if(!$current_balance){
 					$current_balance = 0;
 				}
