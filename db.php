@@ -878,7 +878,11 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$highlight = "highlight";
 					}
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format(getCurrentBalance($conn, $row["user_id"], $project_id))." $".$row["currency"].")":"")."</li>";
+				$current_balance = getCurrentBalance($conn, $row["user_id"], $project_id);
+				if($current_balance == false){
+					$current_balance = 0;
+				}
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." $".$row["currency"].")":"")."</li>";
 		  	}
 			echo "</ul>";
 		}
