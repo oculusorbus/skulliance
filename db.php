@@ -311,7 +311,7 @@ function getCollectionId($conn, $policy){
 // Create NFT
 function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, $user_id){
 	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id)
-	VALUES ('".$asset_id."', '".$asset_name."', '".$name."', '".$ipfs."', '".$collection_id."', '".$user_id."')";
+	VALUES ('".$asset_id."', '".mysqli_real_escape_string($conn, $asset_name)."', '".mysqli_real_escape_string($conn, $name)."', '".$ipfs."', '".$collection_id."', '".$user_id."')";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
