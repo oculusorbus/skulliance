@@ -339,17 +339,24 @@ function filterNFTs($page){
 
 function filterLeaderboard($page){
 	global $conn;
-	$projects = getProjects($conn);
+	$core_projects = getProjects($conn, "core");
+	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
 	echo'
 	<div id="filter-nfts">
 		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
-			<option value="0">All</option>';
-			foreach($projects AS $id => $project){
+			<option value="0">All</option>
+			<optgroup label="Core Projects">';
+			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
 			}
+			echo '</optgroup><optgroup label="Partner Projects">';
+			foreach($partner_projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+			echo '</optgroup>';
 		echo '
 		</select>
 		<form id="filterLeaderboardForm" action="'.$page.'.php'.$anchor.'" method="post">
@@ -361,17 +368,24 @@ function filterLeaderboard($page){
 
 function filterPolicies($page){
 	global $conn;
-	$projects = getProjects($conn);
+	$core_projects = getProjects($conn, "core");
+	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
 	echo '
 	<div id="filter-nfts">
 		<label for="filterPolicies"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterPolicies(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
-			<option value="0">All</option>';
-			foreach($projects AS $id => $project){
+			<option value="0">All</option>
+			<optgroup label="Core Projects">';
+			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
 			}
+			echo '</optgroup><optgroup label="Partner Projects">';
+			foreach($partner_projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+			echo '</optgroup>';
 		echo '
 		</select>
 		<form id="filterPoliciesForm" action="'.$page.'.php'.$anchor.'" method="post">
@@ -383,17 +397,24 @@ function filterPolicies($page){
 
 function filterItems($page){
 	global $conn;
-	$projects = getProjects($conn);
+	$core_projects = getProjects($conn, "core");
+	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
 	echo '
 	<div id="filter-nfts">
 		<label for="filterItems"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterItems(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
-			<option value="0">All</option>';
-			foreach($projects AS $id => $project){
+			<option value="0">All</option>
+			<optgroup label="Core Projects">';
+			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
 			}
+			echo '</optgroup><optgroup label="Partner Projects">';
+			foreach($partner_projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+			echo '</optgroup>';
 		echo '
 		</select>
 		<form id="filterItemsForm" action="'.$page.'.php'.$anchor.'" method="post">
