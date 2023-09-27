@@ -17,23 +17,17 @@ include 'header.php';
 				<?php renderWalletConnection("dashboard"); ?>
 				<?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn); }?>
 		</div>
-  </div>
-  <div class="side">
 		<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">
 			<?php renderCrafting($conn, "dashboard"); ?>
 		</div>
-  </div>
-  <div class="side">
 		<h2>Partner Projects</h2>
 		<div class="content" id="player-stats">
 			<?php renderCurrency($conn, false); ?>
 		</div>
 		<?php } ?>
   </div>
-</div>  
-<div class="row" id="row1">
   <div class="main">
 	<h2>Qualifying NFTs</h2>
 	<a name="holdings" id="holdings"></a>
