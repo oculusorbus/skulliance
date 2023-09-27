@@ -307,7 +307,8 @@ if(isset($_POST['filterby'])){
 
 function filterNFTs($page){
 	global $conn;
-	$projects = getProjects($conn);
+	$core_projects = getProjects($conn, "core");
+	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
 	if($page == "dashboard"){
 		$anchor = "#holdings";
@@ -317,10 +318,16 @@ function filterNFTs($page){
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="None">Project</option>
-			<option value="None">All</option>';
-			foreach($projects AS $id => $project){
+			<option value="None">All</option>
+			<optgroup label="Core Projects">';
+			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
 			}
+			echo '</optgroup><optgroup label="Partner Projects">';
+			foreach($partner_projects AS $id => $project){
+				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			}
+			echo '</optgroup>';
 		echo '
 		</select>
 		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
