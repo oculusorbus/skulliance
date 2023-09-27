@@ -116,7 +116,7 @@ function getProjectInfo($conn, $project_id){
 function getProjects($conn, $type=""){
 	$where = " ";
 	if($type == "core"){
-		$where = " id <= '7'";
+		$where = " id < '8'";
 	}
 	if($type == "partner"){
 		$where = " id > '7'";
