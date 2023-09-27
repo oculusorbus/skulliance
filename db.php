@@ -116,10 +116,10 @@ function getProjectInfo($conn, $project_id){
 function getProjects($conn, $type=""){
 	$where = " ";
 	if($type == "core"){
-		$where = " id <= 7";
+		$where = " WHERE id <= 7";
 	}
 	if($type == "partner"){
-		$where = " id > 7";
+		$where = " WHERE id > 7";
 	}
 	$sql = "SELECT id, name, currency, discord_id FROM projects".$where." ORDER by name ASC";
 	$result = $conn->query($sql);
