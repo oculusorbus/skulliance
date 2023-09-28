@@ -878,8 +878,12 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($leaderboardCounter == 1){
 					$width = 50;
 				}else if($leaderboardCounter == 2){
-					$width = 40;
+					$width = 45;
 				}else if($leaderboardCounter == 3){
+					$width = 40;
+				}else if($leaderboardCounter == 4){
+					$width = 35;
+				}else if($leaderboardCounter == 5){
 					$width = 30;
 				}
 				//$level = floor($row["xp"]/100);
