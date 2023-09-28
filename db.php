@@ -874,9 +874,13 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		  	echo "<ul class='leaderboard'>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
-				$width = 50-$leaderboardCounter;
-				if($width < 20){
-					$width = 20;
+				$width = 20;
+				if($leaderboardCounter == 1){
+					$width = 50;
+				}else if($leaderboardCounter == 2){
+					$width = 40;
+				}else if($leaderboardCounter == 3){
+					$width = 30;
 				}
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
