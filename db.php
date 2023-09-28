@@ -874,7 +874,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		  	echo "<ul class='leaderboard'>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
-				$width = 50/$leaderboardCounter;
+				$width = 50/$leaderboardCounter*2;
 				if($width < 20){
 					$width = 20;
 				}
