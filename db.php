@@ -874,10 +874,11 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		  	echo "<ul class='leaderboard'>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
+				$width = 75/$leaderboardCounter;
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				$highlight = "";
 				if(isset($_SESSION['userData']['user_id'])){
@@ -889,7 +890,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($current_balance == "false"){
 					$current_balance = 0;
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." $".$row["currency"].")":"")."</li>";
+		    	echo "<li style='font-size:".$width."px' class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." $".$row["currency"].")":"")."</li>";
 		  	}
 			echo "</ul>";
 		}
