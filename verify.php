@@ -123,7 +123,7 @@ function verifyNFTs($conn, $addresses, $policies){
 						if(is_object($blockfrostresponse)){
 								$metadata = $blockfrostresponse->onchain_metadata;
 								// Convert CIP68 asset name from hex to str and strip out extra b.s.
-								$asset_name = str_replace("\/n", "", str_replace("á", "", str_replace("@", "", str_replace("?", "", hex2str($blockfrostresponse->asset_name)))));
+								$asset_name = clean(hex2str($blockfrostresponse->asset_name));
 								processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address);
 						}
 					}
@@ -160,5 +160,11 @@ function hex2str($hex) {
     $str = '';
     for($i=0;$i<strlen($hex);$i+=2) $str .= chr(hexdec(substr($hex,$i,2)));
     return $str;
+}
+
+function clean($string) {
+   $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
+
+   return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
 }
 ?>
