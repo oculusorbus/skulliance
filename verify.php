@@ -115,6 +115,7 @@ function verifyNFTs($conn, $addresses, $policies){
 						$blockfrostresponse = curl_exec( $blockfrostch );
 						$blockfrostresponse = json_decode($blockfrostresponse);
 						
+						echo "https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name."?project_id=mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo";
 						print_r($blockfrostresponse);
 						exit;
 					}
