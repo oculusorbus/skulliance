@@ -108,7 +108,7 @@ function verifyNFTs($conn, $addresses, $policies){
 						$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
 						curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
 						curl_setopt( $blockfrostch, CURLOPT_POST, 1);
-						curl_setopt( $blockfrostch, CURLOPT_POSTFIELDS, http_build_query(array('project_id' => 'mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo')));
+						curl_setopt( $blockfrostch, CURLOPT_POSTFIELDS, 'project_id=mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo');
 						curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
 						curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
 						curl_setopt( $blockfrostch, CURLOPT_RETURNTRANSFER, 1);
