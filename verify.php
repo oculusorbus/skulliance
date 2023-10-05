@@ -126,7 +126,7 @@ function verifyNFTs($conn, $addresses, $policies){
 						CURLOPT_RETURNTRANSFER => true,
 						CURLOPT_FOLLOWLOCATION => true,
 						CURLOPT_POSTFIELDS    => array(
-						        'project_id' => 'mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo'
+						        'PROJEC_ID' => 'mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo'
 								)
 						);
 						curl_setopt_array($my_curl, $my_array); // use the array 
