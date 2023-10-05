@@ -107,6 +107,7 @@ function verifyNFTs($conn, $addresses, $policies){
 					}else{
 						echo "Policy ID: ".$tokenresponsedata->policy_id."<br>";
 						echo "Asset Name: ".$tokenresponsedata->asset_name;
+						print_r($tokenresponsedata);
 						exit;
 					}
 				} // End foreach
