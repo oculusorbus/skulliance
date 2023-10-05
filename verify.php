@@ -112,6 +112,8 @@ function verifyNFTs($conn, $addresses, $policies){
 					// Empty Koios metadata, Use Blockfrost for CIP68
 					}else{
 						$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
+						echo $blockfrost_project_id;
+						exit;
 						curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json', "project_id: ".$blockfrost_project_id));
 						curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
 						curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
