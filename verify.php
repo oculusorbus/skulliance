@@ -122,6 +122,8 @@ function verifyNFTs($conn, $addresses, $policies){
 						
 						if(is_object($blockfrostresponse)){
 							foreach($blockfrostresponse->onchain_metadata AS $metadata){
+								print_r($metadata);
+								exit;
 								// Convert CIP68 asset name from hex to str and strip out extra b.s.
 								$asset_name = str_replace("@", "", str_replace("?", "", hex2str($blockfrostresponse->asset_name)));
 								processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address);
