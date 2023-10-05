@@ -105,6 +105,7 @@ function verifyNFTs($conn, $addresses, $policies){
 						} // End foreach
 					// Empty Koios metadata, Use Blockfrost for CIP68
 					}else{
+						/*
 						$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
 						curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
 						curl_setopt( $blockfrostch, CURLOPT_POST, 1);
@@ -115,7 +116,25 @@ function verifyNFTs($conn, $addresses, $policies){
 						$blockfrostresponse = curl_exec( $blockfrostch );
 						$blockfrostresponse = json_decode($blockfrostresponse);
 						
-						print_r($blockfrostresponse);
+						print_r($blockfrostresponse);*/
+						
+						$my_curl = curl_init(); //new cURL handler
+
+						$my_array=array(
+						CURLOPT_URL =>"https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name,
+						CURLOPT_POST => true,
+						CURLOPT_RETURNTRANSFER => true,
+						CURLOPT_FOLLOWLOCATION => true,
+						CURLOPT_POSTFIELDS    => array(
+						        'project_id' => 'mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo'
+								)
+						);
+						curl_setopt_array($my_curl, $my_array); // use the array 
+
+						$return_str= curl_exec($my_curl); // Execute and get data
+						curl_close($my_curl); // close the handler
+
+						echo $return_str; // Display the output
 						exit;
 					}
 				} // End foreach
