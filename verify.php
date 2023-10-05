@@ -74,8 +74,10 @@ function verifyNFTs($conn, $addresses, $policies){
 							if(isset($tokenresponsedata->asset_name_ascii)){
 								$asset_name = $tokenresponsedata->asset_name_ascii;
 								if(isset($metadata->$policy_id)){
+									
 									$nft = $metadata->$policy_id;
 									$nft_data = $nft->$asset_name;
+									/*
 									if(isset($nft_data->image)){
 										$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
 									}else{
@@ -99,6 +101,9 @@ function verifyNFTs($conn, $addresses, $policies){
 											$collection_id = getCollectionId($conn, $policy_id);
 											createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
 										}
+									}*/
+									if(isset($nft_data->name)){
+										processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address);
 									}
 								}
 							}
@@ -113,9 +118,15 @@ function verifyNFTs($conn, $addresses, $policies){
 						$blockfrostresponse = curl_exec( $blockfrostch );
 						$blockfrostresponse = json_decode($blockfrostresponse);
 						
-						echo "https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name."?project_id=mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo";
-						print_r($blockfrostresponse);
-						exit;
+						curl_close( $blockfrostch );
+						
+						if(is_array($blockfrostresponse)){
+							foreach($blockfrostresponse->onchain_metadata AS $metadata){
+								// Convert CIP68 asset name from hex to str and strip out extra b.s.
+								$asset_name = str_replace("@", "", str_replace("?", "", hex2str($blockfrostresponse->asset_name)));
+								processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address);
+							}
+						}
 					}
 				} // End foreach
 			}// End if
@@ -123,5 +134,36 @@ function verifyNFTs($conn, $addresses, $policies){
 		} // End if
 		}
 	}
+}
+
+function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address){
+	if(isset($image)){
+		$ipfs = substr($image, 7, strlen($image));
+	}else{
+		$ipfs = "";
+	}
+	// Account for NFT with NaN value for asset name
+	if($asset_name == "NaN"){
+		$asset_name = "DROPSHIP012";
+	}
+	if(isset($_SESSION['userData']['user_id'])){
+		$user_id = $_SESSION['userData']['user_id'];
+	}else{
+		$user_id = getUserId($conn, $address);
+	}
+	if(isset($name)){
+		if(checkNFT($conn, $fingerprint)){
+			updateNFT($conn, $fingerprint, $user_id);
+		}else{
+			$collection_id = getCollectionId($conn, $policy_id);
+			createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+		}
+	}
+}
+
+function hex2str($hex) {
+    $str = '';
+    for($i=0;$i<strlen($hex);$i+=2) $str .= chr(hexdec(substr($hex,$i,2)));
+    return $str;
 }
 ?>
