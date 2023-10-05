@@ -77,17 +77,17 @@ function verifyNFTs($conn, $addresses, $policies){
 									
 									$nft = $metadata->$policy_id;
 									$nft_data = $nft->$asset_name;
-									/*
-									if(isset($nft_data->image)){
-										$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
-									}else{
-										$ipfs = "";
-									}
 									// Account for NFT with NaN value for asset name
 									if($asset_name == "NaN"){
 										$nft_data->AssetName = "DROPSHIP012";
 									}else{
 										$nft_data->AssetName = $asset_name;
+									}
+									/*
+									if(isset($nft_data->image)){
+										$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
+									}else{
+										$ipfs = "";
 									}
 									if(isset($_SESSION['userData']['user_id'])){
 										$user_id = $_SESSION['userData']['user_id'];
@@ -141,10 +141,6 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 		$ipfs = substr($image, 7, strlen($image));
 	}else{
 		$ipfs = "";
-	}
-	// Account for NFT with NaN value for asset name
-	if($asset_name == "NaN"){
-		$asset_name = "DROPSHIP012";
 	}
 	if(isset($_SESSION['userData']['user_id'])){
 		$user_id = $_SESSION['userData']['user_id'];
