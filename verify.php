@@ -112,6 +112,8 @@ function verifyNFTs($conn, $addresses, $policies){
 						curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
 						curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
 						curl_setopt( $blockfrostch, CURLOPT_RETURNTRANSFER, 1);
+						print_r($blockfrostch);
+						exit;
 						$blockfrostresponse = curl_exec( $blockfrostch );
 						$blockfrostresponse = json_decode($blockfrostresponse);
 						
