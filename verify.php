@@ -163,8 +163,10 @@ function hex2str($hex) {
 }
 
 function clean($string) {
-   //$string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
+   $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
+   $string = preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
+   $string = str_replace('-', ' ', $string); // Replaces all hyphens with space.
 
-   return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
+   return $string;
 }
 ?>
