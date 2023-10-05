@@ -68,40 +68,47 @@ function verifyNFTs($conn, $addresses, $policies){
 			curl_close( $tokench );
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
-				foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
-					$policy_id = $tokenresponsedata->policy_id;
-					if(isset($tokenresponsedata->asset_name_ascii)){
-						$asset_name = $tokenresponsedata->asset_name_ascii;
-						if(isset($metadata->$policy_id)){
-							$nft = $metadata->$policy_id;
-							$nft_data = $nft->$asset_name;
-							if(isset($nft_data->image)){
-								$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
-							}else{
-								$ipfs = "";
-							}
-							// Account for NFT with NaN value for asset name
-							if($asset_name == "NaN"){
-								$nft_data->AssetName = "DROPSHIP012";
-							}else{
-								$nft_data->AssetName = $asset_name;
-							}
-							if(isset($_SESSION['userData']['user_id'])){
-								$user_id = $_SESSION['userData']['user_id'];
-							}else{
-								$user_id = getUserId($conn, $address);
-							}
-							if(isset($nft_data->name)){
-								if(checkNFT($conn, $tokenresponsedata->fingerprint)){
-									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
-								}else{
-									$collection_id = getCollectionId($conn, $policy_id);
-									createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
+					if(is_array($tokenresponsedata->minting_tx_metadata)){
+						foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
+							$policy_id = $tokenresponsedata->policy_id;
+							if(isset($tokenresponsedata->asset_name_ascii)){
+								$asset_name = $tokenresponsedata->asset_name_ascii;
+								if(isset($metadata->$policy_id)){
+									$nft = $metadata->$policy_id;
+									$nft_data = $nft->$asset_name;
+									if(isset($nft_data->image)){
+										$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
+									}else{
+										$ipfs = "";
+									}
+									// Account for NFT with NaN value for asset name
+									if($asset_name == "NaN"){
+										$nft_data->AssetName = "DROPSHIP012";
+									}else{
+										$nft_data->AssetName = $asset_name;
+									}
+									if(isset($_SESSION['userData']['user_id'])){
+										$user_id = $_SESSION['userData']['user_id'];
+									}else{
+										$user_id = getUserId($conn, $address);
+									}
+									if(isset($nft_data->name)){
+										if(checkNFT($conn, $tokenresponsedata->fingerprint)){
+											updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+										}else{
+											$collection_id = getCollectionId($conn, $policy_id);
+											createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
+										}
+									}
 								}
 							}
-						}
+						} // End foreach
+					// Empty Koios metadata, Use Blockfrost for CIP68
+					}else{
+						echo "Policy ID: ".$tokenresponsedata->policy_id."<br>";
+						echo "Asset Name: ".$tokenresponsedata->asset_name;
+						exit;
 					}
-				} // End foreach
 				} // End foreach
 			}// End if
 			//updateNFTs($conn, implode("', '", $asset_names));
