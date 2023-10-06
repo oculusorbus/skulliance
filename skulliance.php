@@ -210,10 +210,10 @@ function renderCrafting($conn, $page){
 			}
 		}
 		if($zero){
-			echo "You do not have balances for all core currency listed above to craft.<br><br>Purchase NFTs from every core project in the Skulliance in order to craft \$DIAMOND.";
+			echo "You do not have balances for all core currency listed above to craft.<br><br>Purchase NFTs from every core project in the Skulliance in order to craft DIAMOND.";
 		}else{
 			?>
-			<form onsubmit="return confirm('Do you really want to convert all currency to $DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return confirm('Do you really want to convert all currency to DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 			  Convert the following amount of core project currency to $DIAMOND:<br><br>
 			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 			  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
@@ -225,7 +225,7 @@ function renderCrafting($conn, $page){
 			?>
 			</li>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to shatter this $DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return confirm('Do you really want to shatter this DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 			  <br>Shatter the following amount of $DIAMOND to equal parts core currency:<br><br>
 			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 			  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	

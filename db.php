@@ -697,7 +697,7 @@ function getBalances($conn, $skulliance=true){
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
 		    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-	        $balances["$".$row["currency"]] = $row["balance"];
+	        $balances[$row["currency"]] = $row["balance"];
 		  }
 		} else {
 		  //echo "0 results";
