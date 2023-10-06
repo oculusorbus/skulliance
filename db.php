@@ -447,19 +447,19 @@ function getItems($conn, $page, $filterby=""){
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
 		if($row["project_id"] != 7){
-			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."<br>or<br>".number_format($row["price"]/$row["divider"])." \$DIAMOND</span>";
+			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." ".$row["currency"]."<br>or<br>".number_format($row["price"]/$row["divider"])." DIAMOND</span>";
 		}else{
-			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." $".$row["currency"]."</span>";
+			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." ".$row["currency"]."</span>";
 		}
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." $".$row["currency"], $row["project_id"], $page);
 		if($row["secondary_project_id"] != 0){
 			$project = getProjectInfo($conn, $row["secondary_project_id"]);
-			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY for ".number_format($row["price"])." $".$project["currency"], $row["project_id"], $page);
+			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY for ".number_format($row["price"])." ".$project["currency"], $row["project_id"], $page);
 		}
 		if($row["project_id"] != 7){
-			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/$row["divider"])." \$DIAMOND", $row["project_id"], $page);
+			renderBuyButton($row["item_id"], 7, "BUY for ".number_format($row["price"]/$row["divider"])." DIAMOND", $row["project_id"], $page);
 		}
 		echo "</div></div>";
 	  }
@@ -795,7 +795,7 @@ function transactionHistory($conn) {
 			$date = date("n-j-Y",strtotime("-1 hour", strtotime($row["date_created"])));
 			$time = date("g:ia",strtotime("-1 hour", strtotime($row["date_created"])));
 			if ($row["type"] == "credit"){
-	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".number_format($row["amount"])." $".$row["currency"]."</td><td align='center'>";
+	    		echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".number_format($row["amount"])." ".$row["currency"]."</td><td align='center'>";
 				echo $currency;
 				echo "</td><td>";
 				if($row["crafting"] == 0){
@@ -805,7 +805,7 @@ function transactionHistory($conn) {
 				}
 				echo "</td>";
 			}else if ($row["type"] == "debit"){
-				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".number_format($row["amount"])." $".$row["currency"]."</td>";
+				echo "<td>".$date."</td><td>".$time."</td><td align='center'>".$type."</td><td align='center'>".number_format($row["amount"])." ".$row["currency"]."</td>";
 				echo "<td align='center'><img class='icon' src='icons/".strtolower($row["currency"]).".png'/></td>";
 				if($row["crafting"] == 0){
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
@@ -901,7 +901,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($current_balance == "false"){
 					$current_balance = 0;
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." $".$row["currency"].")":"")."</li>";
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"")."</li>";
 		  	}
 			echo "</ul>";
 		}
@@ -926,7 +926,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	  	while($row = $result->fetch_assoc()) {
 		  	echo "<tr>";
 			echo "<td align='center'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["collection_name"]."</a>"."</td>";
-			echo "<td align='center'>".$row["rate"]." $".$row["currency"]."</td>";
+			echo "<td align='center'>".$row["rate"]." ".$row["currency"]."</td>";
 			echo "<td align='center'>".$row["project_name"]."</td>";
 			echo "<td align='center'>".$row["total"]."</td>";
 			echo "<td align='center'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["policy"]."</a>"."</td>";

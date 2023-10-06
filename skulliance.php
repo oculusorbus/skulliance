@@ -82,7 +82,7 @@ if(isset($_POST['item_id'])) {
 					$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
 					# Check if DM is created, if yes, let's send a message to this channel.
 					if(isset($newDM["id"])) {
-						$content = $item["name"]." purchased for ".$price." $".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
+						$content = $item["name"]." purchased for ".$price." ".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 					    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 					}
 					alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
@@ -140,7 +140,7 @@ if(isset($_POST['balance'])){
 	// Double check submitted balance before crafting
 	if($_POST['balance'] > 0 && $_POST['balance'] <= $minbalance){
 		craft($conn, $_POST['balance']);
-		alert("You have successfully crafted ".number_format($_POST['balance'])." \$DIAMOND. ".number_format($_POST['balance'])." of every other project currency has been deducted from your balances.");
+		alert("You have successfully crafted ".number_format($_POST['balance'])." DIAMOND. ".number_format($_POST['balance'])." of every other project currency has been deducted from your balances.");
 	}
 }
 
@@ -152,7 +152,7 @@ if(isset($_POST['diamond'])){
 	// Double check submitted balance before crafting
 	if($_POST['diamond'] > 0 && $_POST['diamond'] <= $diamond){
 		shatter($conn, $_POST['diamond']);
-		alert("You have successfully shattered ".number_format($_POST['diamond'])." \$DIAMOND. ".number_format($_POST['diamond'])." of every other project currency has been added to your balances.");
+		alert("You have successfully shattered ".number_format($_POST['diamond'])." DIAMOND. ".number_format($_POST['diamond'])." of every other project currency has been added to your balances.");
 	}
 }
 
