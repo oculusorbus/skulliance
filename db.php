@@ -920,7 +920,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	$result = $conn->query($sql);
 	
 	echo "<table cellspacing='0' id='transactions'>";
-	echo "<tr><th>Collection</th><th>Reward Rate</th><th>Project</th><th>Total Staked</th><th>Policy ID</th></tr>";
+	echo "<tr><th>Collection</th><th>Reward Rate</th><th>Project</th><th>Total Staked</th></tr>";
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
@@ -929,7 +929,6 @@ function getPoliciesListing($conn, $project_id=0) {
 			echo "<td align='center'>".$row["rate"]." ".$row["currency"]."</td>";
 			echo "<td align='center'>".$row["project_name"]."</td>";
 			echo "<td align='center'>".$row["total"]."</td>";
-			echo "<td align='center'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["policy"]."</a>"."</td>";
 			echo "</tr>";
 	  	}
 	} else {
