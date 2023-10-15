@@ -139,7 +139,8 @@ a{
 .side {
   flex: 33%;
   /*background-color: #32353B;*/
-  background-color: #2F3136;
+  /* Side background commented out
+  background-color: #2F3136;*/
   padding: 20px;
 }
 
@@ -148,7 +149,10 @@ a{
   flex: 67%;
   /*background-color: #36393F;
 	background-color: #32353B;*/
-	background-color: #2F3136;
+  
+	/* Main background commented out
+	background-color: #2F3136;*/
+
 /*  background-color: black; */
   padding: 20px;
   text-align: center;
@@ -659,7 +663,7 @@ li form {
 }
 
 .nft {
-	background-color: #2F3136;
+	/*background-color: #2F3136;*/
 	border-radius: 2.5rem;
 	float: left;
 	width: 25%;
