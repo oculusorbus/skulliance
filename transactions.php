@@ -5,7 +5,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 		<div class="row" id="row4">
-			<div class="main">
+			<div class="col1of3">
 				<h2>Transaction History</h2>
 					<div class="content" id="transactions-pane">
 						<?php
