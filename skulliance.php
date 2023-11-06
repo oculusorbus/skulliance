@@ -148,7 +148,7 @@ if(isset($_POST['balance'])){
 if(isset($_POST['diamond'])){
 	$balances = array();
 	$balances = getBalances($conn);
-	$diamond = $balances["\$DIAMOND"];
+	$diamond = $balances["DIAMOND"];
 	// Double check submitted balance before crafting
 	if($_POST['diamond'] > 0 && $_POST['diamond'] <= $diamond){
 		shatter($conn, $_POST['diamond']);
