@@ -118,6 +118,9 @@ include 'header.php';
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
+				if($filterby == "" || $filterby == "None"){
+					$filterby = 1;
+				}
 				getNFTs($conn, $filterby); 
 			}else{
 				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
