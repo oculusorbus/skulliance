@@ -281,7 +281,7 @@ function filterNFTs(criteria){
 }
 
 function filterDiamondSkulls(criteria){
-	document.getElementById('filterby').value = criteria;
+	document.getElementById('filterbydiamond').value = criteria;
 	document.getElementById("filterDiamondSkullsForm").submit();
 }
 
