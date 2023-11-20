@@ -362,7 +362,7 @@ function removeUsers($conn){
 }
 
 // Get NFTs
-function getNFTs($conn, $filterby="", $all=false){
+function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false){
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
 			$filterby = "project_id = '".$filterby."' ";
@@ -397,9 +397,17 @@ function getNFTs($conn, $filterby="", $all=false){
 			}else{
 				echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
 			}
-			echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
-			echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
-			echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
+			if($diamond_skull == false){
+				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
+				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
+				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
+			}else{
+				?>
+				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
+				  <input type="submit" value="Select" class="small-button">
+				</form>
+				<?php
+			}
 			echo "</div></div>";
 		  }
 		} else {

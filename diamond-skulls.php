@@ -24,7 +24,7 @@ include 'header.php';
 				}else if($filterby == "ALL"){
 					$all = true;
 				}
-				getNFTs($conn, $filterby=7, $all); 
+				getNFTs($conn, $filterby=7, $all, true); 
 			}else{
 				echo "<p>Please connect a Cardano wallet to view your qualifying NFTs.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
