@@ -33,6 +33,7 @@ include 'header.php';
     </div>
   </div>
 </div>
+<?php if(isset($diamond_skull_id)){ ?>
 <div class="row" id="row1">
     <div class="main">
     <div class="content">
@@ -100,8 +101,7 @@ include 'header.php';
 	</div>
 	</div>
 </div>
-
-
+<?php } ?>
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
