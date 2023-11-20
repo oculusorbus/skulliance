@@ -20,9 +20,9 @@ include 'header.php';
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
 				if($filterby == "MY"){
-					$all = true;
-				}else if($filterby == "ALL"){
 					$all = false;
+				}else if($filterby == "ALL"){
+					$all = true;
 				}
 				getNFTs($conn, $filterby=7, $all); 
 			}else{
