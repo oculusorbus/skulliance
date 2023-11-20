@@ -347,7 +347,6 @@ function filterDiamondSkulls($page){
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
-			<option value="None">Project</option>
 			<option value="MY">My Diamond Skulls</option>
 			<option value="ALL">Diamond Skulls</option>';
 		echo '
