@@ -389,6 +389,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		renderIPFS($row["ipfs"], $row["collection_id"]);
+		// $_SESSION['userData']['user_id'] == $row["user_id"] || 
 		if($diamond_skull_owner == true){
 		?>
 			<form id="nftRemovalForm" action="diamond-skulls.php" method="post">
@@ -418,11 +419,14 @@ function verifyDiamondSkullOwner($conn, $diamond_skull_id){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  return true;
+		  if($_SESSION['userData']['user_id'] == $row["user_id"]){
+			  return true;
+	  	  }else{
+			  return false;
+	  	  }
 	  }
 	} else {
 	  //echo "0 results";
-	  return false;
 	}
 }
 
