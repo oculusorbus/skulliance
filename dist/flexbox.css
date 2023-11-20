@@ -670,6 +670,14 @@ li form {
 	font-size: 12px;
 }
 
+.nft {
+	/*background-color: #2F3136;*/
+	border-radius: 2.5rem;
+	display: inline-block;
+	width: 20%;
+	font-size: 12px;
+}
+
 .store-item {
 	width: 33%;
 }
