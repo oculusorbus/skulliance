@@ -96,7 +96,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='nft-data'>Galactico</div></div>
+			<div class='diamond'><div class='diamond-data'>Galactico</div></div>
 		</div>
 	</div>
 	</div>
