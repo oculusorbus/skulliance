@@ -15,7 +15,7 @@ include 'header.php';
 	<h2>Diamond Skulls</h2>
 	<a name="holdings" id="holdings"></a>
     <div class="content">
-		<?php filterNFTs("diamond-skulls"); ?>
+		<?php filterDiamondSkulls("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
