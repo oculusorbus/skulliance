@@ -101,7 +101,6 @@ include 'header.php';
 	</div>
 	</div>
 </div>
-<?php } ?>
 
 <div class="row" id="row1">
   <div class="main">
@@ -121,6 +120,8 @@ include 'header.php';
     </div>
   </div>
 </div>
+
+<?php } ?>
 
 	<!-- Footer -->
 	<div class="footer">
