@@ -387,12 +387,12 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
 	$projects[6] = 5;
 	
 	$project_names = array();
-	$project_name[1] = "Galactico";
-	$project_name[2] = "Ohh Meed";
-	$project_name[3] = "H.Y.P.E.";
-	$project_name[4] = "Sinder Skullz";
-	$project_name[5] = "Kimosabe Art";
-	$project_name[6] = "Crypties";
+	$project_names[1] = "Galactico";
+	$project_names[2] = "Ohh Meed";
+	$project_names[3] = "H.Y.P.E.";
+	$project_names[4] = "Sinder Skullz";
+	$project_names[5] = "Kimosabe Art";
+	$project_names[6] = "Crypties";
 	
     $nftcounter = 0;
 	if ($result->num_rows > 0) {
