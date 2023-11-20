@@ -305,6 +305,11 @@ if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
 }
 
+$filterbydiamond = "";
+if(isset($_POST['filterbydiamond'])){
+	$filterbydiamond = $_POST['filterbydiamond'];
+}
+
 $diamond_skull_id = "";
 if(isset($_POST['diamond_skull_id'])){
 	$diamond_skull_id = $_POST['diamond_skull_id'];
@@ -358,7 +363,7 @@ function filterDiamondSkulls($page){
 		echo '
 		</select>
 		<form id="filterDiamondSkullsForm" action="'.$page.'.php'.$anchor.'" method="post">
-		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="hidden" id="filterbydiamond" name="filterbydiamond" value="">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>
 	</div>';

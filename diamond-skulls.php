@@ -19,9 +19,9 @@ include 'header.php';
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
-				if($filterby == "MY" || $filterby == ""){
+				if($filterbydiamond == "MY" || $filterbydiamond == ""){
 					$all = false;
-				}else if($filterby == "ALL"){
+				}else if($filterbydiamond == "ALL"){
 					$all = true;
 				}
 				getNFTs($conn, 7, $all, true, $diamond_skull_id); 
