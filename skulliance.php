@@ -346,12 +346,12 @@ function filterDiamondSkulls($page){
 	echo'
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
-		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+		<select onchange="javascript:filterDiamondSkulls(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="MY">My Diamond Skulls</option>
 			<option value="ALL">Diamond Skulls</option>';
 		echo '
 		</select>
-		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
+		<form id="filterDiamondSkullsForm" action="'.$page.'.php'.$anchor.'" method="post">
 		  <input type="hidden" id="filterby" name="filterby" value="">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>
