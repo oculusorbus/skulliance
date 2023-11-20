@@ -102,6 +102,26 @@ include 'header.php';
 	</div>
 </div>
 <?php } ?>
+
+<div class="row" id="row1">
+  <div class="main">
+	<h2>NFTs</h2>
+	<a name="holdings" id="holdings"></a>
+    <div class="content">
+		<?php filterNFTs("diamond-skulls"); ?>
+		<div id="nfts" class="nfts">
+			<?php 
+			if(isset($_SESSION['userData']['user_id'])){ 
+				getNFTs($conn, $filterby); 
+			}else{
+				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
+			} 
+			?>
+		</div>
+    </div>
+  </div>
+</div>
+
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
