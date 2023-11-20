@@ -305,6 +305,11 @@ if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
 }
 
+$diamond_skull_id = "";
+if(isset($_POST['diamond_skull_id'])){
+	$diamond_skull_id = $_POST['diamond_skull_id'];
+}
+
 function filterNFTs($page){
 	global $conn;
 	$core_projects = getProjects($conn, "core");

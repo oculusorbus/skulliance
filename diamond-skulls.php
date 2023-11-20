@@ -24,7 +24,7 @@ include 'header.php';
 				}else if($filterby == "ALL"){
 					$all = true;
 				}
-				getNFTs($conn, $filterby=7, $all, true); 
+				getNFTs($conn, 7, $all, true, $diamond_skull_id); 
 			}else{
 				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
 			} 
