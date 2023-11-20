@@ -57,11 +57,11 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
-			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
-			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
-			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
-			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
+			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
+			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
+			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
+			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
+			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
 		</div>
 	</div>
 	</div>
