@@ -361,6 +361,19 @@ function removeUsers($conn){
 	}
 }
 
+// Render IPFS
+function renderIPFS($ipfs, $collection_id){
+	$ipfs = str_replace("ipfs/", "", $ipfs);
+	if($collection_id == 4 || $collection_id == 23){
+		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
+	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
+		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
+	}else{
+		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
+	}
+}
+
+// Get NFTs associated with a Diamond Skull
 function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
 	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, collections.id AS collection_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE diamond_skulls.diamond_skull_id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
 	$result = $conn->query($sql);
@@ -404,18 +417,6 @@ function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	  //echo "New record created successfully";
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
-	}
-}
-
-// Render IPFS
-function renderIPFS($ipfs, $collection_id){
-	$ipfs = str_replace("ipfs/", "", $ipfs);
-	if($collection_id == 4 || $collection_id == 23){
-		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
-	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
-	}else{
-		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
 	}
 }
 
