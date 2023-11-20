@@ -404,7 +404,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
 				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
-			}else{
+			}else if($diamond_skull_id = ""){
 				?>
 				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
 				  <input type="hidden" id="diamond_skull_id" name="diamond_skull_id" value="<?php echo $row["nfts_id"];?>">
