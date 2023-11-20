@@ -362,7 +362,7 @@ function removeUsers($conn){
 }
 
 function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
-	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE diamond_skulls.diamond_skull_id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
+	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, collections.id AS collection_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE diamond_skulls.diamond_skull_id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
 	$result = $conn->query($sql);
 	
 	$projects = array();
@@ -381,6 +381,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
 		$nftcounter++;
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
+		renderIPFS($row["ipfs"], $row["collection_id"]);
 		echo "</div></div>";
 	  }
 	  while($nftcounter < $projects[$project_id]){
@@ -403,6 +404,18 @@ function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	  //echo "New record created successfully";
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+// Render IPFS
+function renderIPFS($ipfs, $collection_id){
+	$ipfs = str_replace("ipfs/", "", $ipfs);
+	if($collection_id == 4 || $collection_id == 23){
+		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
+	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
+		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
+	}else{
+		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
 	}
 }
 
@@ -439,14 +452,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 			$nftcounter++;
 		    echo "<div class='nft'><div class='nft-data'>";
 			echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-			$ipfs = str_replace("ipfs/", "", $row["ipfs"]);
-			if($row["collection_id"] == 4 || $row["collection_id"] == 23){
-				echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
-			}else if($row["collection_id"] == 20 || $row["collection_id"] == 21 || $row["collection_id"] == 30 || $row["collection_id"] == 42){
-				echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
-			}else{
-				echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
-			}
+			render_ipfs($row["ipfs"], $row["collection_id"]);
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
