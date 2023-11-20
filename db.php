@@ -415,6 +415,22 @@ function getNFTProjectID($conn, $nft_id){
 	}
 }
 
+// Check whether NFT has already been delegated to a Diamond Skull
+function checkNFTDelegationStatus($conn, $nft_id){
+	$sql = "SELECT nft_id FROM diamond_skulls WHERE nft_id ='".$nft_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  return true;
+	  }
+	} else {
+	  //echo "0 results";
+	  return false;
+	}
+}
+
 // Check Diamond Skull Project Availability
 function checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project_id, $projects){
 	$sql = "SELECT COUNT(diamond_skulls.id) AS diamond_skull_index_total, nfts.id AS nft_id, projects.id AS project_id FROM diamond_skulls INNER JOIN nfts ON diamond_skulls.nft_id = nfts.id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE diamond_skull_id = '".$diamond_skull_id."' AND projects.id ='".$project_id."'";
