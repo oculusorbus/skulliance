@@ -374,25 +374,9 @@ function renderIPFS($ipfs, $collection_id){
 }
 
 // Get NFTs associated with a Diamond Skull
-function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
+function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $project_names){
 	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, collections.id AS collection_id, projects.name AS project_name FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE diamond_skulls.diamond_skull_id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
 	$result = $conn->query($sql);
-	
-	$projects = array();
-	$projects[1] = 1;
-	$projects[2] = 2;
-	$projects[3] = 3;
-	$projects[4] = 4;
-	$projects[5] = 4;
-	$projects[6] = 5;
-	
-	$project_names = array();
-	$project_names[1] = "Galactico";
-	$project_names[2] = "Ohh Meed";
-	$project_names[3] = "H.Y.P.E.";
-	$project_names[4] = "Sinder Skullz";
-	$project_names[5] = "Kimosabe Art";
-	$project_names[6] = "Crypties";
 	
     $nftcounter = 0;
 	if ($result->num_rows > 0) {
@@ -413,6 +397,33 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
 		echo "<span class='nft-name'>".$project_names[$project_id]."</span>";
 		echo "</div></div>";
 		$nftcounter++;
+	}
+}
+
+// Get NFT project ID
+function getNFTProjectID($conn, $nft_id){
+	$sql = "SELECT projects.id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id WHERE nfts.id ='".$nft_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  return $row["project_id"];
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Check Diamond Skull Project Availability
+function checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project_id, $projects){
+	$sql = "SELECT COUNT diamond_skulls.id AS diamond_skull_index_total, nfts.id AS nft_id, projects.id AS project_id FROM diamond_skulls INNER JOIN nfts ON diamond_skulls.nft_id = nfts.id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE diamond_skull_id = '".$diamond_skull_id."' AND projects.id ='".$project_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  echo $row["diamond_skull_index_total"];
+	  exit;
+	} else {
+	  //echo "0 results";
 	}
 }
 

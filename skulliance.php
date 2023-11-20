@@ -316,6 +316,22 @@ if(isset($_POST['diamond_skull_id'])){
 	$diamond_skull_id = $_POST['diamond_skull_id'];
 }
 
+$projects = array();
+$projects[1] = 1;
+$projects[2] = 2;
+$projects[3] = 3;
+$projects[4] = 4;
+$projects[5] = 4;
+$projects[6] = 5;
+
+$project_names = array();
+$project_names[1] = "Galactico";
+$project_names[2] = "Ohh Meed";
+$project_names[3] = "H.Y.P.E.";
+$project_names[4] = "Sinder Skullz";
+$project_names[5] = "Kimosabe Art";
+$project_names[6] = "Crypties";
+
 $nft_id = "";
 if(isset($_POST['nft_id'])){
 	$nft_id = $_POST['nft_id'];

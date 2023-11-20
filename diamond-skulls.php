@@ -39,13 +39,16 @@ include 'header.php';
     </div>
   </div>
 </div>
-<?php if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
+<?php 
+
+
+if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 <div class="row" id="row1">
     <div class="main-diamond">
 	<h2>Diamond Skull Activation</h2>
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 5); ?>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 5, $projects, $project_names); ?>
 		</div>
 	</div>
 	</div>
@@ -54,7 +57,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 6); ?>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 6, $projects, $project_names); ?>
 		</div>
 	</div>
 	</div>
@@ -63,7 +66,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 4); ?>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 4, $projects, $project_names); ?>
 		</div>
 	</div>
 	</div>
@@ -72,7 +75,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 3); ?>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 3, $projects, $project_names); ?>
 		</div>
 	</div>
 	</div>
@@ -81,7 +84,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 2); ?>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 2, $projects, $project_names); ?>
 		</div>
 	</div>
 	</div>
@@ -90,7 +93,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 1); ?>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 1, $projects, $project_names); ?>
 		</div>
 	</div>
 	</div>
