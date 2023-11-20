@@ -387,6 +387,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
   	    echo "<div class='diamond'><div class='diamond-data'>";
   		echo "<span class='nft-name'>Empty Slot</span>";
   		echo "</div></div>";
+		$nftcounter++;
 	  }
 	} else {
 	  //echo "0 results";
