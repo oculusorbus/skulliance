@@ -335,7 +335,9 @@ $project_names[6] = "Crypties";
 $nft_id = "";
 if(isset($_POST['nft_id'])){
 	$nft_id = $_POST['nft_id'];
-	addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
+	$project_id = getNFTProjectID($conn, $nft_id);
+	checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project_id, $projects);
+	//addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 
 function filterNFTs($page){
