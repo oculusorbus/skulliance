@@ -340,7 +340,6 @@ if(isset($_POST['nft_id'])){
 	if($availability == true){
 		addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 	}else{
-		echo "false";
 		alert("All ".$project_names[$project_id]." slots have been taken for this Diamond Skull.");
 	}
 }
