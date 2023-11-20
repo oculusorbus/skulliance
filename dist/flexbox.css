@@ -727,7 +727,7 @@ li form {
 	overflow-y: hidden;
 }
 
-.diamond-data .nft-image{
+.diamond-data .nft-image img{
 	min-height: 50px;
 	max-height: 50px;
 	width: 50px;
