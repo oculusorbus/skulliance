@@ -308,6 +308,7 @@ if(isset($_POST['filterby'])){
 $filterbydiamond = "";
 if(isset($_POST['filterbydiamond'])){
 	$filterbydiamond = $_POST['filterbydiamond'];
+	$_SESSION['userData']['diamond_skull_id'] = "";
 }
 
 $diamond_skull_id = "";
