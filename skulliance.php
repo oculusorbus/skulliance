@@ -338,12 +338,11 @@ if(isset($_POST['nft_id'])){
 	$project_id = getNFTProjectID($conn, $nft_id);
 	$availability = checkDiamondSkullProjectAvailability($conn, $_SESSION['userData']['diamond_skull_id'], $project_id, $projects);
 	if($availability == true){
-		echo "true";
+		addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 	}else{
 		echo "false";
+		alert("All ".$project_names[$project_id]." slots have been taken for this Diamond Skull.");
 	}
-	exit;
-	//addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 
 function filterNFTs($page){
