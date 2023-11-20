@@ -19,7 +19,7 @@ include 'header.php';
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
-				if($filterby == "MY"){
+				if($filterby == "MY" || $filterby == ""){
 					$all = false;
 				}else if($filterby == "ALL"){
 					$all = true;
