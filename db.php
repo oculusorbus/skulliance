@@ -375,7 +375,7 @@ function renderIPFS($ipfs, $collection_id){
 
 // Get NFTs associated with a Diamond Skull
 function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $project_names){
-	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, collections.id AS collection_id, projects.name AS project_name FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE diamond_skulls.diamond_skull_id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
+	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, collections.id AS collection_id, projects.name AS project_name, nfts.user_id = user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE diamond_skulls.diamond_skull_id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
 	$result = $conn->query($sql);
 	
     $nftcounter = 0;
@@ -388,6 +388,12 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		renderIPFS($row["ipfs"], $row["collection_id"]);
 		echo "</div></div>";
+		if($_SESSION['userData']['user_id'] == $row["user_id"]){?>
+			<form id="nftRemovalForm" action="diamond-skulls.php" method="post">
+			  <input type="hidden" id="remove_nft_id" name="remove_nft_id" value="<?php echo $row["nfts_id"];?>">
+			  <input type="submit" value="Remove" class="small-button">
+			</form>
+		<?php}
 	  }
 	} else {
 	  //echo "0 results";
