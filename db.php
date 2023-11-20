@@ -428,6 +428,8 @@ function checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project
 	  }
 	} else {
 	  //echo "0 results";
+	  echo "no results";
+	  exit;
 	}
 }
 
