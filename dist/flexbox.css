@@ -682,6 +682,7 @@ li form {
 	/*background-color: #2F3136;*/
 	border-radius: 2.5rem;
 	display: inline-block;
+	vertical-align: top;
 	width: 19%;
 	font-size: 12px;
 }
