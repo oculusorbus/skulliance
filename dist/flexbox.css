@@ -727,6 +727,12 @@ li form {
 	overflow-y: hidden;
 }
 
+.diamond-data .nft-image{
+	min-height: 50px;
+	max-height: 50px;
+	overflow-y: hidden;
+}
+
 .shorty-verse-name {
 	font-size: 5px;
 }
