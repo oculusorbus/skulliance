@@ -526,6 +526,8 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 			$user_filter = "";
 			$and = "";
 		}
+		$core_inner_join = "";
+		$core_where = "";
 		if($core_projects == true){
 			$core_inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id";
 			$core_where = "AND diamond_skulls.nft_id = NULL";
