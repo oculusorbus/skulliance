@@ -383,7 +383,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		echo "</div></div>";
 	  }
-	  while($nftcounter <= $projects[$project_id]){
+	  while($nftcounter < $projects[$project_id]){
   	    echo "<div class='diamond'><div class='diamond-data'>";
   		echo "<span class='nft-name'>Empty Slot</span>";
   		echo "</div></div>";
