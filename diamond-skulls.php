@@ -14,6 +14,7 @@ include 'header.php';
   <div class="main">
 	<h2>Diamond Skulls</h2>
 	<a name="holdings" id="holdings"></a>
+	<div class="row" id="row1">
     <div class="content">
 		<?php filterDiamondSkulls("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
@@ -31,7 +32,8 @@ include 'header.php';
 			?>
 		</div>
     </div>
-	<div class="row" id="row1">
+	</div>
+	<div class="row" id="row2">
 		<div id="nfts" class="nfts">
 			<div class='nft'><div class='nft-data'></div></div>
 			<div class='nft'><div class='nft-data'></div></div>
