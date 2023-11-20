@@ -525,7 +525,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 			$user_filter = "";
 			$and = "";
 		}
-		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter." ORDER BY project_id, collection_id";
+		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter." ORDER BY project_id, collection_id";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
@@ -541,6 +541,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
 				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
 			}else if($diamond_skull_id == ""){
+				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
 				?>
 				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
 				  <input type="hidden" id="diamond_skull_id" name="diamond_skull_id" value="<?php echo $row["nfts_id"];?>">
