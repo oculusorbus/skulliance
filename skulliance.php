@@ -337,6 +337,28 @@ function filterNFTs($page){
 	</div>';
 }
 
+function filterDiamondSkulls($page){
+	global $conn;
+	$anchor = "";
+	if($page == "dashboard"){
+		$anchor = "#holdings";
+	}
+	echo'
+	<div id="filter-nfts">
+		<label for="filterNFTs"><strong>Filter By:</strong></label>
+		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<option value="None">Project</option>
+			<option value="MY">My Diamond Skulls</option>
+			<option value="ALL">Diamond Skulls</option>';
+		echo '
+		</select>
+		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
+		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>
+	</div>';
+}
+
 function filterLeaderboard($page){
 	global $conn;
 	$core_projects = getProjects($conn, "core");

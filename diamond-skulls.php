@@ -19,7 +19,12 @@ include 'header.php';
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
-				getNFTs($conn, $filterby=7, true); 
+				if($filterby == "MY"){
+					$all = true;
+				}else if($filterby == "ALL"){
+					$all = false;
+				}
+				getNFTs($conn, $filterby=7, $all); 
 			}else{
 				echo "<p>Please connect a Cardano wallet to view your qualifying NFTs.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
