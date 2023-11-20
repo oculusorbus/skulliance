@@ -27,6 +27,9 @@ include 'header.php';
 				if($diamond_skull_id != ""){
 					$_SESSION['userData']['diamond_skull_id'] = $diamond_skull_id;
 				}
+				if(!isset($_SESSION['userData']['diamond_skull_id'])){
+					$_SESSION['userData']['diamond_skull_id'] = "";
+				}
 				getNFTs($conn, 7, $all, true, $_SESSION['userData']['diamond_skull_id']); 
 			}else{
 				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
