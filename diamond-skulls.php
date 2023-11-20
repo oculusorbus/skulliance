@@ -33,7 +33,19 @@ include 'header.php';
     </div>
   </div>
 </div>
-<div class="row" id="row2">
+<div class="row" id="row1">
+    <div class="main">
+    <div class="content">
+		<div id="nfts" class="nfts">
+			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
+		</div>
+	</div>
+	</div>
+</div>
+<div class="row" id="row1">
     <div class="main">
     <div class="content">
 		<div id="nfts" class="nfts">
