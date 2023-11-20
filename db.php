@@ -396,13 +396,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 			  <input type="submit" value="Remove" class="small-button">
 			</form>
 		<?php
-		}else{
-		?>
-			<form id="nftRemovalForm" action="diamond-skulls.php" method="post">
-			  <input type="hidden" id="remove_nft_id" name="remove_nft_id" value="<?php echo $row["nfts_id"];?>">
-			  <input type="submit" value="Fill" class="small-button">
-			</form>
-		<?php }
+		}
 		echo "</div></div>";
 	  }
 	} else {
@@ -412,6 +406,12 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".$project_names[$project_id]."</span>";
 		echo "</div></div>";
+		?>
+		<form id="nftRemovalForm" action="diamond-skulls.php" method="post">
+		  <input type="hidden" id="remove_nft_id" name="remove_nft_id" value="<?php echo $row["nfts_id"];?>">
+		  <input type="submit" value="Fill" class="small-button">
+		</form>
+		<?php
 		$nftcounter++;
 	}
 }
