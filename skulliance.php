@@ -343,7 +343,7 @@ if(isset($_POST['nft_id'])){
 		if($delegated == false){
 			addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 		}else{
-			alert("This NFT has already been delegated to a Diamond Skull.");
+			alert("Your NFT was not delegated. This NFT has already been delegated to a Diamond Skull.");
 		}
 	}else{
 		alert("All ".$project_names[$project_id]." slots have been taken for this Diamond Skull.");
