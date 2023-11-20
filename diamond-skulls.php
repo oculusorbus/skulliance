@@ -36,6 +36,7 @@ include 'header.php';
 <?php if($diamond_skull_id != ""){ ?>
 <div class="row" id="row1">
     <div class="main-diamond">
+	<h2>Diamond Skull Activation</h2>
     <div class="content">
 		<div id="nfts" class="nfts">
 			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
