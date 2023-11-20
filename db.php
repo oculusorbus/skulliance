@@ -526,13 +526,13 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 			$user_filter = "";
 			$and = "";
 		}
-		$core_inner_join = "";
+		$core_left_join = "";
 		$core_where = "";
 		if($core_projects == true){
-			$core_inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id";
+			$core_left_join = "LEFT JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id";
 			$core_where = "AND diamond_skulls.nft_id = NULL";
 		}
-		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id ".$core_inner_join." WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY project_id, collection_id";
+		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id ".$core_left_join." WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY project_id, collection_id";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
