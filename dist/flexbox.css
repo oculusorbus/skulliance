@@ -158,6 +158,13 @@ a{
   text-align: center;
 }
 
+/* Main column */
+.main-diamond {
+  flex: 67%;
+  padding: 0px;
+  text-align: center;
+}
+
 .wallet-connect select {
 	width: 148px;
     border-radius: 0.5rem;
@@ -696,6 +703,17 @@ li form {
 	-webkit-filter: drop-shadow(5px 5px 5px #202225);
     filter: drop-shadow(5px 5px 5px #202225);
 	min-height: 330px;
+}
+
+.diamond-data{
+	background-color: #36393F;
+	border: 1px solid #43464D;
+	padding: 10px;
+	margin: 10px;
+	border-radius: 1.5rem;
+	-webkit-filter: drop-shadow(5px 5px 5px #202225);
+    filter: drop-shadow(5px 5px 5px #202225);
+	min-height: 150px;
 }
 
 .store-item .nft-data {

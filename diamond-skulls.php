@@ -35,65 +35,65 @@ include 'header.php';
 </div>
 <?php if($diamond_skull_id != ""){ ?>
 <div class="row" id="row1">
-    <div class="main">
+    <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='nft-data'>Kimosabe</div></div>
-			<div class='diamond'><div class='nft-data'>Kimosabe</div></div>
-			<div class='diamond'><div class='nft-data'>Kimosabe</div></div>
-			<div class='diamond'><div class='nft-data'>Kimosabe</div></div>
+			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
+			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
+			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
+			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
 		</div>
 	</div>
 	</div>
 </div>
 <div class="row" id="row1">
-    <div class="main">
+    <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='nft-data'>Cryptie</div></div>
-			<div class='diamond'><div class='nft-data'>Cryptie</div></div>
-			<div class='diamond'><div class='nft-data'>Cryptie</div></div>
-			<div class='diamond'><div class='nft-data'>Cryptie</div></div>
-			<div class='diamond'><div class='nft-data'>Cryptie</div></div>
+			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
+			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
+			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
+			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
+			<div class='diamond'><div class='diamond-data'>Cryptie</div></div>
 		</div>
 	</div>
 	</div>
 </div>
 <div class="row" id="row1">
-    <div class="main">
+    <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='nft-data'>Sinder</div></div>
-			<div class='diamond'><div class='nft-data'>Sinder</div></div>
-			<div class='diamond'><div class='nft-data'>Sinder</div></div>
-			<div class='diamond'><div class='nft-data'>Sinder</div></div>
+			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
+			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
+			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
+			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
 		</div>
 	</div>
 	</div>
 </div>
 <div class="row" id="row1">
-    <div class="main">
+    <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='nft-data'>H.Y.P.E.</div></div>
-			<div class='diamond'><div class='nft-data'>H.Y.P.E.</div></div>
-			<div class='diamond'><div class='nft-data'>H.Y.P.E.</div></div>
+			<div class='diamond'><div class='diamond-data'>H.Y.P.E.</div></div>
+			<div class='diamond'><div class='diamond-data'>H.Y.P.E.</div></div>
+			<div class='diamond'><div class='diamond-data'>H.Y.P.E.</div></div>
 		</div>
 	</div>
 	</div>
 </div>
 <div class="row" id="row1">
-    <div class="main">
+    <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='nft-data'>Ohh Meed</div></div>
-			<div class='diamond'><div class='nft-data'>Ohh Meed</div></div>
+			<div class='diamond'><div class='diamond-data'>Ohh Meed</div></div>
+			<div class='diamond'><div class='diamond-data'>Ohh Meed</div></div>
 		</div>
 	</div>
 	</div>
 </div>
 <div class="row" id="row1">
-    <div class="main">
+    <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
 			<div class='diamond'><div class='nft-data'>Galactico</div></div>
