@@ -350,6 +350,11 @@ if(isset($_POST['nft_id'])){
 	}
 }
 
+if(isset($_POST['remove_nft_id'])){
+	$nft_id = $_POST['remove_nft_id'];
+	removeDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
+}
+
 function filterNFTs($page){
 	global $conn;
 	$core_projects = getProjects($conn, "core");
