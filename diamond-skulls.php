@@ -30,7 +30,7 @@ include 'header.php';
 				if(!isset($_SESSION['userData']['diamond_skull_id'])){
 					$_SESSION['userData']['diamond_skull_id'] = "";
 				}
-				getNFTs($conn, 7, $all, true, $_SESSION['userData']['diamond_skull_id']); 
+				getNFTs($conn, 7, $all, $diamond_skull=true, $_SESSION['userData']['diamond_skull_id']); 
 			}else{
 				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
 			} 
@@ -121,7 +121,7 @@ include 'header.php';
 				if($filterby == "" || $filterby == "None"){
 					$filterby = 1;
 				}
-				getNFTs($conn, $filterby); 
+				getNFTs($conn, $filterby, $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=true); 
 			}else{
 				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
 			} 

@@ -362,7 +362,7 @@ function removeUsers($conn){
 }
 
 // Get NFTs
-function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id=""){
+function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false){
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
 			$filterby = "project_id = '".$filterby."' ";
