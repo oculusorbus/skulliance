@@ -380,11 +380,9 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 			$and = "";
 		}
 		if($diamond_skull_id != ""){
-			$diamond_skull = " AND nfts.id = '".$diamond_skull_id."'";
-		}else{
-			$diamond_skull = "";
+			$diamond_skull_filter = " AND nfts.id = '".$diamond_skull_id."'";
 		}
-		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull." ORDER BY project_id, collection_id";
+		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter." ORDER BY project_id, collection_id";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
