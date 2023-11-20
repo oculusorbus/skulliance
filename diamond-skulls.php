@@ -39,7 +39,7 @@ include 'header.php';
     </div>
   </div>
 </div>
-<?php if($diamond_skull_id != ""){ ?>
+<?php if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 <div class="row" id="row1">
     <div class="main-diamond">
 	<h2>Diamond Skull Activation</h2>
