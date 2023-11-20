@@ -336,7 +336,8 @@ $nft_id = "";
 if(isset($_POST['nft_id'])){
 	$nft_id = $_POST['nft_id'];
 	$project_id = getNFTProjectID($conn, $nft_id);
-	checkDiamondSkullProjectAvailability($conn, $_SESSION['userData']['diamond_skull_id'], $project_id, $projects);
+	echo checkDiamondSkullProjectAvailability($conn, $_SESSION['userData']['diamond_skull_id'], $project_id, $projects);
+	exit;
 	//addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 

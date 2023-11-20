@@ -418,19 +418,20 @@ function getNFTProjectID($conn, $nft_id){
 // Check Diamond Skull Project Availability
 function checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project_id, $projects){
 	$sql = "SELECT COUNT(diamond_skulls.id) AS diamond_skull_index_total, nfts.id AS nft_id, projects.id AS project_id FROM diamond_skulls INNER JOIN nfts ON diamond_skulls.nft_id = nfts.id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE diamond_skull_id = '".$diamond_skull_id."' AND projects.id ='".$project_id."'";
-	echo $sql;
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-	  	echo $row["diamond_skull_index_total"];
-	  	exit;
+	    if($row["diamond_skull_index_total"] < $projects[$project_id]){
+	    	return true;
+	    }else{
+	    	return false;
+	    }
 	  }
 	} else {
 	  //echo "0 results";
-	  echo "no results";
-	  exit;
+	  return true;
 	}
 }
 
