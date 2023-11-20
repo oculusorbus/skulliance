@@ -338,6 +338,8 @@ if(isset($_POST['nft_id'])){
 	$project_id = getNFTProjectID($conn, $nft_id);
 	$availability = checkDiamondSkullProjectAvailability($conn, $_SESSION['userData']['diamond_skull_id'], $project_id, $projects);
 	if($availability == true){
+		// Check whether NFT id is a valid core project that can delegate to prevent hacking
+		
 		// Check whether NFT has already been delegated
 		$delegated = checkNFTDelegationStatus($conn, $nft_id);
 		if($delegated == false){
@@ -352,6 +354,10 @@ if(isset($_POST['nft_id'])){
 
 if(isset($_POST['remove_nft_id'])){
 	$nft_id = $_POST['remove_nft_id'];
+	// Verify user owns delegated NFT before removing
+	// Function here
+	
+	// Remove Diamond Skull NFT delegation
 	removeDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 
