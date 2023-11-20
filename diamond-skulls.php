@@ -30,15 +30,15 @@ include 'header.php';
 			} 
 			?>
 		</div>
-		<div class="row" id="row1">
-			<div id="nfts" class="nfts">
-				<div class='nft'><div class='nft-data'></div></div>
-				<div class='nft'><div class='nft-data'></div></div>
-				<div class='nft'><div class='nft-data'></div></div>
-				<div class='nft'><div class='nft-data'></div></div>
-			</div>
-		</div>
     </div>
+	<div class="row" id="row1">
+		<div id="nfts" class="nfts">
+			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
+		</div>
+	</div>
   </div>
 </div>
 
