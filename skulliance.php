@@ -316,6 +316,12 @@ if(isset($_POST['diamond_skull_id'])){
 	$diamond_skull_id = $_POST['diamond_skull_id'];
 }
 
+$nft_id = "";
+if(isset($_POST['nft_id'])){
+	$nft_id = $_POST['nft_id'];
+	addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
+}
+
 function filterNFTs($page){
 	global $conn;
 	$core_projects = getProjects($conn, "core");

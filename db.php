@@ -361,6 +361,18 @@ function removeUsers($conn){
 	}
 }
 
+// Add Diamond Skull NFT Association
+function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
+	$sql = "INSERT INTO diamond_skulls (diamond_skull_id, nft_id)
+	VALUES ('".$diamond_skull_id."', '".$nft_id."')";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Get NFTs
 function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false){
 	if(isset($_SESSION['userData']['user_id'])){
