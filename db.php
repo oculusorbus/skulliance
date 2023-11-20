@@ -362,9 +362,7 @@ function removeUsers($conn){
 }
 
 function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
-	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN diamond_skulls ON nfts.id = diamond_skulls.nft_id WHERE diamond_skulls.id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
-	echo $sql;
-	exit;
+	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN diamond_skulls ON nfts.id = diamond_skulls.nft_id WHERE diamond_skulls.id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
 	$result = $conn->query($sql);
 	
 	$projects = array();
