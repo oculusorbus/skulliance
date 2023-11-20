@@ -369,7 +369,7 @@ function getNFTs($conn, $filterby="", $all=false){
 		}else{
 			$filterby = "";
 		}
-		if($all == true){
+		if($all = true){
 			$user_filter = "";
 		}else{
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."' AND ";
