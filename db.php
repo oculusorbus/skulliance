@@ -530,6 +530,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 		if($core_projects == true){
 			$core_where = "AND nfts.id NOT IN(SELECT nft_id FROM diamond_skulls)";
 		}
+		$delegation_count = "";
 		if($diamond_skull == true){
 			$delegation_count = ", COUNT(diamond_skulls.nft_id) AS delegation";
 		}
