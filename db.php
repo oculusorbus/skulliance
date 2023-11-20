@@ -361,6 +361,38 @@ function removeUsers($conn){
 	}
 }
 
+function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id){
+	$sql = "SELECT nfts.id AS nfts_id, asset_name, nfts.name AS nfts_name, ipfs, FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN diamond_skulls ON nfts.id = diamond_skulls.nft_id WHERE diamond_skulls.id = '".$diamond_skull_id."' AND collections.project_id = '".$project_id."'";
+	$result = $conn->query($sql);
+	
+	$projects = array();
+	$projects[1] = 1;
+	$projects[2] = 2;
+	$projects[3] = 3;
+	$projects[4] = 4;
+	$projects[5] = 4;
+	$projects[6] = 5;
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  $nftcounter = 0;
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+		$nftcounter++;
+	    echo "<div class='diamond'><div class='diamond-data'>";
+		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
+		echo "</div></div>";
+	  }
+	  while($nftcounter <= $projects[$project_id]){
+  	    echo "<div class='diamond'><div class='diamond-data'>";
+  		echo "<span class='nft-name'>Empty Slot</span>";
+  		echo "</div></div>";
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Add Diamond Skull NFT Association
 function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	$sql = "INSERT INTO diamond_skulls (diamond_skull_id, nft_id)

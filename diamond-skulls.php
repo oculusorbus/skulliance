@@ -45,10 +45,7 @@ include 'header.php';
 	<h2>Diamond Skull Activation</h2>
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
-			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
-			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
-			<div class='diamond'><div class='diamond-data'>Kimosabe</div></div>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 5); ?>
 		</div>
 	</div>
 	</div>
@@ -57,11 +54,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
-			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
-			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
-			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
-			<div class='diamond'><div class='diamond-data'>Crypties</div></div>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 6); ?>
 		</div>
 	</div>
 	</div>
@@ -70,10 +63,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
-			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
-			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
-			<div class='diamond'><div class='diamond-data'>Sinder</div></div>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 4); ?>
 		</div>
 	</div>
 	</div>
@@ -82,9 +72,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>H.Y.P.E.</div></div>
-			<div class='diamond'><div class='diamond-data'>H.Y.P.E.</div></div>
-			<div class='diamond'><div class='diamond-data'>H.Y.P.E.</div></div>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 3); ?>
 		</div>
 	</div>
 	</div>
@@ -93,8 +81,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>Ohh Meed</div></div>
-			<div class='diamond'><div class='diamond-data'>Ohh Meed</div></div>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 2); ?>
 		</div>
 	</div>
 	</div>
@@ -103,7 +90,7 @@ include 'header.php';
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<div class='diamond'><div class='diamond-data'>Galactico</div></div>
+			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 1); ?>
 		</div>
 	</div>
 	</div>
