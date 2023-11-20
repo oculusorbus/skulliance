@@ -53,6 +53,7 @@ include 'header.php';
 			<div class='nft'><div class='nft-data'></div></div>
 			<div class='nft'><div class='nft-data'></div></div>
 			<div class='nft'><div class='nft-data'></div></div>
+			<div class='nft'><div class='nft-data'></div></div>
 		</div>
 	</div>
 	</div>
