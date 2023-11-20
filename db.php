@@ -372,9 +372,9 @@ function getNFTs($conn, $filterby="", $all=false){
 		if($all == true){
 			$user_filter = "";
 		}else{
-			$user_filter = "user_id = '".$_SESSION['userData']['user_id'];
+			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
 		}
-		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter."'".$filterby." ORDER BY project_id, collection_id";
+		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$filterby." ORDER BY project_id, collection_id";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
