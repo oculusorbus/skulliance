@@ -114,7 +114,7 @@ include 'header.php';
 	<h2>NFTs</h2>
 	<a name="holdings" id="holdings"></a>
     <div class="content">
-		<?php filterNFTs("diamond-skulls"); ?>
+		<?php filterCoreNFTs("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
