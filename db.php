@@ -374,11 +374,11 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 		}else{
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
 		}
+		$and = "";
 		if(($filterby != "None" && $filterby != "") && $all == false){
 			$and = " AND ";
-		}else{
-			$and = "";
 		}
+		$diamond_skull_filter = "";
 		if($diamond_skull_id != ""){
 			$diamond_skull_filter = " AND nfts.id = '".$diamond_skull_id."'";
 		}
