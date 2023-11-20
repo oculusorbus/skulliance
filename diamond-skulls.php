@@ -15,23 +15,25 @@ include 'header.php';
 	<h2>Diamond Skulls</h2>
 	<a name="holdings" id="holdings"></a>
 	<div class="row" id="row1">
-    <div class="content">
-		<?php filterDiamondSkulls("diamond-skulls"); ?>
-		<div id="nfts" class="nfts">
-			<?php 
-			if(isset($_SESSION['userData']['user_id'])){ 
-				if($filterby == "MY" || $filterby == ""){
-					$all = false;
-				}else if($filterby == "ALL"){
-					$all = true;
-				}
-				getNFTs($conn, 7, $all, true, $diamond_skull_id); 
-			}else{
-				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
-			} 
-			?>
+		<div class="col1of1">
+		    <div class="content">
+				<?php filterDiamondSkulls("diamond-skulls"); ?>
+				<div id="nfts" class="nfts">
+					<?php 
+					if(isset($_SESSION['userData']['user_id'])){ 
+						if($filterby == "MY" || $filterby == ""){
+							$all = false;
+						}else if($filterby == "ALL"){
+							$all = true;
+						}
+						getNFTs($conn, 7, $all, true, $diamond_skull_id); 
+					}else{
+						echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
+					} 
+					?>
+				</div>
+		    </div>
 		</div>
-    </div>
 	</div>
 	<div class="row" id="row2">
 		<div id="nfts" class="nfts">
