@@ -33,7 +33,7 @@ include 'header.php';
     </div>
   </div>
 </div>
-<?php if(isset($diamond_skull_id)){ ?>
+<?php if($diamond_skull_id != ""){ ?>
 <div class="row" id="row1">
     <div class="main">
     <div class="content">
