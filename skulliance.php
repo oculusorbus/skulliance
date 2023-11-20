@@ -359,15 +359,12 @@ function filterCoreNFTs($page){
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
-			<option value="None">Project</option>
-			<option value="None">All</option>
-			<optgroup label="Core Projects">';
+			<option value="None">Project</option>';
 			foreach($core_projects AS $id => $project){
 				if($id != 7){
 					echo '<option value="'.$id.'">'.$project["name"].'</option>';
 				}
 			}
-			echo '</optgroup>';
 		echo '
 		</select>
 		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
