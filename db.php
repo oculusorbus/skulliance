@@ -407,7 +407,9 @@ function getNFTProjectID($conn, $nft_id){
 	
 	if ($result->num_rows > 0) {
 	  // output data of each row
-	  return $row["project_id"];
+	  while($row = $result->fetch_assoc()) {
+		  return $row["project_id"];
+	  }
 	} else {
 	  //echo "0 results";
 	}
@@ -420,8 +422,10 @@ function checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project
 	
 	if ($result->num_rows > 0) {
 	  // output data of each row
-	  echo $row["diamond_skull_index_total"];
-	  exit;
+	  while($row = $result->fetch_assoc()) {
+	  	echo $row["diamond_skull_index_total"];
+	  	exit;
+	  }
 	} else {
 	  //echo "0 results";
 	}
