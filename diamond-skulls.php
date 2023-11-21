@@ -20,9 +20,11 @@ include 'header.php';
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
 				if($filterbydiamond == "MY" || $filterbydiamond == ""){
-					$all = false;
+					$all = "my";
 				}else if($filterbydiamond == "ALL"){
-					$all = true;
+					$all = "all";
+				}else if($filterbydiamond == "DELEGATED"){
+					$all = "delegated";
 				}
 				if($diamond_skull_id != ""){
 					$_SESSION['userData']['diamond_skull_id'] = $diamond_skull_id;
