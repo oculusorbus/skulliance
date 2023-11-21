@@ -578,7 +578,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					ksort($diamond_skull_totals[$row["nfts_id"]]);
-					echo "<span class='nft-level'><table>";
+					echo "<table>";
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
 						$status = "";
 						if($projects[$project_id] == $total){
@@ -586,9 +586,9 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 						}else{
 							$status = "(Open)"; 
 						}
-						echo "<tr><td>".$project_names[$project_id]."</td><td>".$total."</td><td>".$status."</td></tr>";
+						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td>".$total."</td><td>".$status."</td></tr>";
 					}
-					echo "</table></span>";
+					echo "</table>";
 				}
 				?>
 				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
