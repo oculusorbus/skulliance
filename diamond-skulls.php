@@ -108,6 +108,7 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
+				echo $_SESSION['userData']['filterby'];
 				getNFTs($conn, $_SESSION['userData']['filterby'], $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=true); 
 			}else{
 				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
