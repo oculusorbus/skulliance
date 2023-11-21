@@ -51,6 +51,8 @@ include 'header.php';
 						}
 						if(str_contains($_SERVER["REQUEST_URI"], "staking")){	
 							getItems($conn, "store", $filterby);
+						}else{
+							echo "Store is disabled on the test server";
 						}
 						?>				
 					</div>
