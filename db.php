@@ -555,9 +555,9 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}else{
 			$filterby = "";
 		}
-		if($all == "all" || $all == ""){
+		if($all == "all"){
 			$user_filter = "";
-		}else if($all == "my"){
+		}else if($all == "my" || $all == ""){
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
 		}else if($all == "delegated"){
 			$nft_ids = getDelegatedNFTs($conn);
