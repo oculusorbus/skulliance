@@ -119,7 +119,7 @@ function getProjects($conn, $type=""){
 		$where = " WHERE id <= 7";
 	}
 	if($type == "partner"){
-		$where = " WHERE id > 7";
+		$where = " WHERE id > 7 && != 15";
 	}
 	$sql = "SELECT id, name, currency, discord_id FROM projects".$where." ORDER by name ASC";
 	$result = $conn->query($sql);
