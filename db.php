@@ -520,7 +520,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	  //echo "0 results";
 	}
 	
-	$sql = "SELECT name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE nfts.id ='".$nft_id."'";
+	$sql = "SELECT name, ipfs, username, collection_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE nfts.id ='".$nft_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -529,6 +529,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 		  $nft_name = $row["name"];
 		  $nft_image = $row["ipfs"];
 		  $nft_owner = $row["username"];
+		  $collection_id = $row["collection_id"];
 	  }
 	} else {
 	  //echo "0 results";
@@ -542,7 +543,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	}
 	$title = $nft_name.$verbiage.$diamond_skull_name;
 	$description = $nft_owner."'s ".$nft_name.$verbiage.$diamond_skull_name." owned by ".$diamond_skull_owner;
-	$imageurl = $nft_image;
+	$imageurl = renderIPFS($nft_image, $$collection_id);
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
