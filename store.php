@@ -49,6 +49,7 @@ include 'header.php';
 						if(!$member){
 							echo "<p>You must become a member of Skulliance before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 						}
+						echo $_SERVER[REQUEST_URI];
 						getItems($conn, "store", $filterby);
 						?>				
 					</div>
