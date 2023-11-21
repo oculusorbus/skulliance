@@ -564,7 +564,7 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 			$user_filter = "nfts.id IN(".$nft_ids.")";
 		}
 		$and = "";
-		if(($filterby != "None" && $filterby != "") && ($all == "all" || $all == "")){
+		if(($filterby != "None" && $filterby != "") && ($all != "all" && $all != "")){
 			$and = " AND ";
 		}
 		$diamond_skull_filter = "";
