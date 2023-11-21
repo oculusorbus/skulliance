@@ -601,6 +601,12 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
 			}else if($diamond_skull_id == ""){
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
+				?>
+				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
+				  <input type="hidden" id="diamond_skull_id" name="diamond_skull_id" value="<?php echo $row["nfts_id"];?>">
+				  <input type="submit" value="Select" class="small-button">
+				</form>
+				<?php
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					ksort($diamond_skull_totals[$row["nfts_id"]]);
 					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>Total</th><th width='20%' align='left'>Status</th></tr>";
@@ -615,12 +621,6 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 					}
 					echo "</table>";
 				}
-				?>
-				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
-				  <input type="hidden" id="diamond_skull_id" name="diamond_skull_id" value="<?php echo $row["nfts_id"];?>">
-				  <input type="submit" value="Select" class="small-button">
-				</form>
-				<?php
 			}else{
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
 			}
