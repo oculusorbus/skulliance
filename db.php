@@ -581,7 +581,8 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
 						$full = "";
 						if($projects[$project_id] == $total){
-							$full = "Full"; 
+							$full = "(Full)"; 
+							$full = "(Open)"; 
 						}
 						echo $project_names[$project_id]." - ".$total." ".$full."<br>";
 					}
