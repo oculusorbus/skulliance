@@ -561,7 +561,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		}else if($advanced_filter == "my" || $advanced_filter == ""){
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
 		}else if($advanced_filter == "delegated"){
-			$diamond_skull_ids = getDelegatedNFTs($conn);
+			$diamond_skull_ids = getDelegatedDiamondSkulls($conn);
 			if($diamond_skull_ids != ""){
 				$user_filter = "nfts.id IN(".$diamond_skull_ids.")";
 			}
