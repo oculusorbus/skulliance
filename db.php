@@ -551,7 +551,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	$verbiage = "";
 	if($action == "add"){
 		$title_verbiage = "Delegation";
-		$verbiage = " added to ";
+		$verbiage = " delegated to ";
 	}else if($action == "remove"){
 		$title_verbiage = "Removal";
 		$verbiage = " removed from ";
