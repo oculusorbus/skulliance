@@ -515,7 +515,7 @@ function getDiamondSkullTotals($conn){
 		  if(!isset($diamond_skull_totals[$row["diamond_skull_id"]])){
 		  	$diamond_skull_totals[$row["diamond_skull_id"]] = array();
 	  	  }
-		  //$diamond_skull_totals[$row["diamond_skull_id"]][$row["project_id"]]++;
+		  $diamond_skull_totals[$row["diamond_skull_id"]][$row["project_id"]]++;
 	  }
 	  print_r($diamond_skull_totals);
 	  exit;
