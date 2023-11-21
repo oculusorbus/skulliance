@@ -503,8 +503,26 @@ function removeDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	}
 }
 
-function getDiamondSkullNFTs($conn){
+function getDiamondSkullTotals($conn){
+	$sql = "SELECT diamond_skull_id, nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
+	$result = $conn->query($sql);
+	
+	$diamond_skull_totals = array();
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  //if(!is_array($diamond_skull_totals[$row["diamond_skull_id"]])){
+		  	//$diamond_skull_totals[$row["diamond_skull_id"]] = array();
+	  	  //}
+		  //$diamond_skull_totals[$row["diamond_skull_id"]][$row["project_id"]]++;
+	  }
+	  print_r($diamond_skull_totals);
+	  exit;
+	} else {
+	  //echo "0 results";
 
+	}
 }
 
 // Get NFTs
