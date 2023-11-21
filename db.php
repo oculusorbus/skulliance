@@ -562,6 +562,8 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}else if($all == "delegated"){
 			$nft_ids = getDelegatedNFTs($conn);
 			$user_filter = "nfts.id IN(".$nft_ids.")";
+			echo $user_filter;
+			exit;
 		}
 		$and = "";
 		if(($filterby != "None" && $filterby != "") && $all != "all"){
