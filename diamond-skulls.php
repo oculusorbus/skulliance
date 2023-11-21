@@ -20,11 +20,11 @@ include 'header.php';
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
 				if($filterbydiamond == "MY" || $filterbydiamond == ""){
-					$all = "my";
+					$advanced_filter = "my";
 				}else if($filterbydiamond == "ALL"){
-					$all = "all";
+					$advanced_filter = "all";
 				}else if($filterbydiamond == "DELEGATED"){
-					$all = "delegated";
+					$advanced_filter = "delegated";
 				}
 				if($diamond_skull_id != ""){
 					$_SESSION['userData']['diamond_skull_id'] = $diamond_skull_id;
@@ -33,7 +33,7 @@ include 'header.php';
 					$_SESSION['userData']['diamond_skull_id'] = "";
 				}
 				$diamond_skull_totals = getDiamondSkullTotals($conn);
-				getNFTs($conn, 7, $all, $diamond_skull=true, $_SESSION['userData']['diamond_skull_id'], false, $diamond_skull_totals); 
+				getNFTs($conn, 7, $advanced_filter, $diamond_skull=true, $_SESSION['userData']['diamond_skull_id'], false, $diamond_skull_totals); 
 			}else{
 				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
 			} 
@@ -111,7 +111,7 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
-				getNFTs($conn, $_SESSION['userData']['filterby'], $all="", $diamond_skull=false, $diamond_skull_id="", $core_projects=true); 
+				getNFTs($conn, $_SESSION['userData']['filterby'], $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=true); 
 			}else{
 				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
 			} 

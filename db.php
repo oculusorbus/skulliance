@@ -547,7 +547,7 @@ function getDelegatedNFTs($conn){
 }
 
 // Get NFTs
-function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
+function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
 	global $projects, $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
@@ -555,11 +555,12 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}else{
 			$filterby = "";
 		}
-		if($all == "all"){
+		$user_filter = "";
+		if($advanced_filter == "all"){
 			$user_filter = "";
-		}else if($all == "my" || $all == ""){
+		}else if($advanced_filter == "my" || $advanced_filter == ""){
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
-		}else if($all == "delegated"){
+		}else if($advanced_filter == "delegated"){
 			$nft_ids = getDelegatedNFTs($conn);
 			$user_filter = "nfts.id IN(".$nft_ids.")";
 		}
