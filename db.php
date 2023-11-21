@@ -528,7 +528,7 @@ function getDiamondSkullTotals($conn){
 }
 
 // Get NFTs
-function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals){
+function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
 	global $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
