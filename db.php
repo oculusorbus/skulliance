@@ -529,7 +529,7 @@ function getDiamondSkullTotals($conn){
 
 // Get Delegated NFTs
 function getDelegatedNFTs($conn){
-	$sql = "SELECT diamond_skull_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT DISTINCT diamond_skull_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	
 	$nft_ids="";
