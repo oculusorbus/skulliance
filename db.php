@@ -50,6 +50,7 @@ function getAddress($conn){
 	} else {
 	  //echo "0 results";
 	}
+	exit;
 }
 
 // Get all wallets for user
