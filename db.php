@@ -555,7 +555,7 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}else{
 			$filterby = "";
 		}
-		if($all == "all"){
+		if($all == "all" || $all = ""){
 			$user_filter = "";
 		}else if($all == "my"){
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
