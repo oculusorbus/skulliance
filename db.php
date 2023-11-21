@@ -512,10 +512,10 @@ function getDiamondSkullTotals($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  //if(!is_array($diamond_skull_totals[$row["diamond_skull_id"]])){
-		  	//$diamond_skull_totals[$row["diamond_skull_id"]] = array();
-	  	  //}
-		  //$diamond_skull_totals[$row["diamond_skull_id"]][$row["project_id"]]++;
+		  if(!is_array($diamond_skull_totals[$row["diamond_skull_id"]])){
+		  	$diamond_skull_totals[$row["diamond_skull_id"]] = array();
+	  	  }
+		  $diamond_skull_totals[$row["diamond_skull_id"]][$row["project_id"]]++;
 	  }
 	  print_r($diamond_skull_totals);
 	  exit;
