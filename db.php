@@ -529,7 +529,7 @@ function getDiamondSkullTotals($conn){
 
 // Get NFTs
 function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
-	global $project_names;
+	global $projects, $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
 			$filterby = "project_id = '".$filterby."' ";
@@ -579,7 +579,11 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					ksort($diamond_skull_totals[$row["nfts_id"]]);
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
-						echo $project_names[$project_id]." - ".$total."<br>";
+						$full = "";
+						if($projects[$project_id] == $total){
+							$full = "Full"; 
+						}
+						echo $project_names[$project_id]." - ".$total." ".$full."<br>";
 					}
 				}
 				?>
