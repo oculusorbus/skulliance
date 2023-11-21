@@ -563,7 +563,11 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 		  $nftcounter = 0;
 		  while($row = $result->fetch_assoc()) {
 			$nftcounter++;
-		    echo "<div class='nft'><div class='nft-data'>";
+			if($diamond_skull_id == ""){
+				echo "<div class='diamond-skull'><div class='diamond-skull-data'>";
+			}else{
+		    	echo "<div class='nft'><div class='nft-data'>";
+			}
 			echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 			renderIPFS($row["ipfs"], $row["collection_id"]);
 			if($diamond_skull == false){

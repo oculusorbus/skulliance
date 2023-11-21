@@ -707,6 +707,17 @@ li form {
 	min-height: 330px;
 }
 
+.diamond-skull-data{
+	background-color: #36393F;
+	border: 1px solid #43464D;
+	padding: 10px;
+	margin: 10px;
+	border-radius: 1.5rem;
+	-webkit-filter: drop-shadow(5px 5px 5px #202225);
+    filter: drop-shadow(5px 5px 5px #202225);
+	min-height: 430px;
+}
+
 .diamond-data{
 	background-color: #36393F;
 	border: 1px solid #43464D;
