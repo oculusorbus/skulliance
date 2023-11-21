@@ -537,9 +537,9 @@ function getDelegatedNFTs($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  $nft_ids = $nft_ids.$row["nft_id"].", ";
+		  $nft_ids = $nft_ids.$row["nft_id"].",";
 	  }
-	  return $nft_ids;
+	  return rtrim($nft_ids, ",");
 	} else {
 	  //echo "0 results";
 	  return $nft_ids;
