@@ -374,14 +374,14 @@ function getIPFS($ipfs, $collection_id){
 }
 
 // Render IPFS
-function renderIPFS($ipfs, $collection_id){
+function renderIPFS($ipfs, $collection_id, $ipfs_format){
 	$ipfs = str_replace("ipfs/", "", $ipfs);
 	if($collection_id == 4 || $collection_id == 23){
-		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='".$ipfs."'/></span>";
+		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='".$ipfs_format."'/></span>";
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='".$ipfs."'/></span>";
+		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='".$ipfs_format."'/></span>";
 	}else{
-		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='".$ipfs."'/></span>";
+		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='".$ipfs_format."'/></span>";
 	}
 }
 
@@ -400,7 +400,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 		$nftcounter++;
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-		echo renderIPFS(getIPFS($row["ipfs"], $row["collection_id"]), $row["collection_id"]);
+		echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]));
 		echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
 		if($_SESSION['userData']['user_id'] == $row["user_id"] || $diamond_skull_owner == true){
 		?>
@@ -558,7 +558,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	}
 	$title = "Diamond Skull ".$title_verbiage;
 	$description = $nft_owner.": ".$nft_name.$verbiage.$diamond_skull_owner.": ".$diamond_skull_name;
-	$imageurl = getIPFS($nft_image, $collection_id);
+	$imageurl = "https://www.skulliance.io/staking/image.php?ipfs=".str_replace("ipfs/", "", $nft_image);
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
@@ -653,7 +653,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		    	echo "<div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-			echo renderIPFS(getIPFS($row["ipfs"], $row["collection_id"]), $row["collection_id"]);
+			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]));
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
