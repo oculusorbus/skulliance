@@ -365,11 +365,11 @@ function removeUsers($conn){
 function renderIPFS($ipfs, $collection_id){
 	$ipfs = str_replace("ipfs/", "", $ipfs);
 	if($collection_id == 4 || $collection_id == 23){
-		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
+		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
+		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://storage.googleapis.com/jpeg-optim-files/".$ipfs."'/></span>";
 	}else{
-		echo "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
+		return "<span class='nft-image'><img onError='this.src=\"image.php?ipfs=".$ipfs."\";' src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
 	}
 }
 
@@ -388,7 +388,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 		$nftcounter++;
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-		renderIPFS($row["ipfs"], $row["collection_id"]);
+		echo renderIPFS($row["ipfs"], $row["collection_id"]);
 		echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
 		if($_SESSION['userData']['user_id'] == $row["user_id"] || $diamond_skull_owner == true){
 		?>
@@ -488,6 +488,7 @@ function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
+	  sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action="add");
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
@@ -498,9 +499,51 @@ function removeDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	$sql = "DELETE FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."' AND nft_id = '".$nft_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "Record deleted successfully";
+	  sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action="remove");
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+}
+
+function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action){
+	$sql = "SELECT name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE id ='".$diamond_skull_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $diamond_skull_name = $row["name"];
+		  $diamond_skull_image = $row["ipfs"];
+		  $diamond_skull_owner = $row["username"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	
+	$sql = "SELECT name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE id ='".$nft_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $nft_name = $row["name"];
+		  $nft_image = $row["ipfs"];
+		  $nft_owner = $row["username"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	
+	$verbiage = "";
+	if($action == "add"){
+		$verbiage = " Added to ";
+	}else if($action == "remove"){
+		$verbiage = " Removed from ";
+	}
+	$title = $nft_name.$verbiage.$diamond_skull_name;
+	$description = $nft_owner."'s ".$nft_name.$verbiage.$diamond_skull_name." owned by ".$diamond_skull_owner;
+	$imageurl = $nft_image;
+	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
 function getDiamondSkullTotals($conn){
@@ -594,7 +637,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		    	echo "<div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-			renderIPFS($row["ipfs"], $row["collection_id"]);
+			echo renderIPFS($row["ipfs"], $row["collection_id"]);
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
