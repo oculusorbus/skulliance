@@ -580,6 +580,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 				<?php
 			}else{
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
+				echo "test";
 				print_r($diamond_skull_totals[$row["nfts_id"]]);
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project){
