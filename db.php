@@ -506,13 +506,13 @@ function removeDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 }
 
 function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action){
-	$sql = "SELECT name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE nfts.id ='".$diamond_skull_id."'";
+	$sql = "SELECT nfts.name AS nft_name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE nfts.id ='".$diamond_skull_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  $diamond_skull_name = $row["name"];
+		  $diamond_skull_name = $row["nft_name"];
 		  $diamond_skull_image = $row["ipfs"];
 		  $diamond_skull_owner = $row["username"];
 	  }
@@ -520,13 +520,13 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	  //echo "0 results";
 	}
 	
-	$sql = "SELECT name, ipfs, username, collection_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE nfts.id ='".$nft_id."'";
+	$sql = "SELECT nfts.name AS nft_name, ipfs, username, collection_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE nfts.id ='".$nft_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  $nft_name = $row["name"];
+		  $nft_name = $row["nft_name"];
 		  $nft_image = $row["ipfs"];
 		  $nft_owner = $row["username"];
 		  $collection_id = $row["collection_id"];
