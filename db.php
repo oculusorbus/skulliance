@@ -529,7 +529,7 @@ function getDiamondSkullTotals($conn){
 
 // Get Delegated NFTs
 function getDelegatedNFTs($conn){
-	$sql = "SELECT nfts.id AS nft_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT diamond_skull_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	
 	$nft_ids="";
@@ -537,7 +537,7 @@ function getDelegatedNFTs($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  $nft_ids = $nft_ids.$row["nft_id"].",";
+		  $nft_ids = $nft_ids.$row["diamond_skull_id"].",";
 	  }
 	  return rtrim($nft_ids, ",");
 	} else {
@@ -562,8 +562,6 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}else if($all == "delegated"){
 			$nft_ids = getDelegatedNFTs($conn);
 			$user_filter = "nfts.id IN(".$nft_ids.")";
-			echo $user_filter;
-			exit;
 		}
 		$and = "";
 		if(($filterby != "None" && $filterby != "") && $all != "all"){
