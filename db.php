@@ -542,8 +542,9 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 		$verbiage = " Removed from ";
 	}
 	$title = $nft_name.$verbiage.$diamond_skull_name;
-	$description = $nft_owner."s ".$nft_name.$verbiage.$diamond_skull_owner."s ".$diamond_skull_name;
+	$description = $nft_owner."'s ".$nft_name.$verbiage.$diamond_skull_owner."'s ".$diamond_skull_name;
 	//$imageurl = renderIPFS($nft_image, $collection_id);
+	$imageurl = "https://skulliance.io/staking/icons/skulliance.png";
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
