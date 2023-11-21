@@ -715,7 +715,7 @@ li form {
 	border-radius: 1.5rem;
 	-webkit-filter: drop-shadow(5px 5px 5px #202225);
     filter: drop-shadow(5px 5px 5px #202225);
-	min-height: 430px;
+	min-height: 375px;
 }
 
 .diamond-data{
