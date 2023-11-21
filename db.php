@@ -586,7 +586,7 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 						}else{
 							$status = "Open"; 
 						}
-						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='left'>".$total."</td><td align='left'>".$status."</td></tr>";
+						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
 					echo "</table>";
 				}
