@@ -589,6 +589,8 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
 					echo "</table>";
+				}else{
+					echo "Inactive";
 				}
 				?>
 				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
