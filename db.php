@@ -527,6 +527,25 @@ function getDiamondSkullTotals($conn){
 	}
 }
 
+// Get Delegated NFTs
+function getDelegatedNFTs($conn){
+	$sql = "SELECT nfts.id AS nft_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+	$nft_ids="";
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $nft_ids = $nft_ids.$row["nft_id"].", ";
+	  }
+	  return $nft_ids;
+	} else {
+	  //echo "0 results";
+	  return $nft_ids;
+	}
+}
+
 // Get NFTs
 function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
 	global $projects, $project_names;
@@ -541,7 +560,8 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}else if($all == "my"){
 			$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
 		}else if($all == "delegated"){
-			$user_filter = "nfts.id IN(SELECT nft_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id WHERE nfts.user_id = '".$_SESSION['userData']['user_id']."')";
+			$nft_ids = getDelegatedNFTs($conn);
+			$user_filter = "nfts.id IN(".$nft_ids.")";
 		}
 		$and = "";
 		if(($filterby != "None" && $filterby != "") && $all != "all"){
@@ -559,7 +579,8 @@ function getNFTs($conn, $filterby="", $all="", $diamond_skull=false, $diamond_sk
 		}
 		$sql = "SELECT asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY project_id, collection_id";
 		$result = $conn->query($sql);
-
+		echo $sql;
+		exit;
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  $nftcounter = 0;
