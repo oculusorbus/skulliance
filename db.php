@@ -544,6 +544,12 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	$title = $nft_name.$verbiage.$diamond_skull_name;
 	$description = $nft_owner."'s ".$nft_name.$verbiage.$diamond_skull_name." owned by ".$diamond_skull_owner;
 	$imageurl = renderIPFS($nft_image, $collection_id);
+	
+	echo $title;
+	echo $description;
+	echo $imageurl;
+	exit;
+	
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
