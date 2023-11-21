@@ -301,7 +301,9 @@ function renderItemSubmissionForm($creators, $page){
 }
 
 $filterby = "";
-$_SESSION['userData']['filterby'] = 1;
+if(!isset($_SESSION['userData']['filterby'])){
+	$_SESSION['userData']['filterby'] = 1;
+}
 if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
 	$_SESSION['userData']['filterby'] = $filterby;
