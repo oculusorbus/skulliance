@@ -520,16 +520,16 @@ function getDiamondSkullTotals($conn){
 		  }
 		  $diamond_skull_totals[$row["diamond_skull_id"]][$row["project_id"]]++;
 	  }
-	  print_r($diamond_skull_totals);
-	  exit;
+	  return $diamond_skull_totals;
 	} else {
 	  //echo "0 results";
-
+	  return null;
 	}
 }
 
 // Get NFTs
-function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false){
+function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals){
+	global $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
 			$filterby = "project_id = '".$filterby."' ";
@@ -580,6 +580,13 @@ function getNFTs($conn, $filterby="", $all=false, $diamond_skull=false, $diamond
 				<?php
 			}else{
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
+				if(isset($diamond_skull_totals[$row["nfts_id"]])){
+					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project){
+						foreach($project AS $project_id => $total){
+							echo $project_names[$project_id]." - ".$total."<br>";
+						}
+					}
+				}
 			}
 			if($core_projects == true){
 				?>
