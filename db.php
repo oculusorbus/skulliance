@@ -960,22 +960,30 @@ function deployDiamondSkullRewards($conn){
 	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 	
-	$user_rewards = array();
+	$delegator_rewards = array();
+	$diamond_skull_rewards = array();
 
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  if(!isset($user_rewards[$row["user_id"]])){
-		  	$user_rewards[$row["user_id"]] = 0;
+		  // Delegator Rewards
+		  if(!isset($delegator_rewards[$row["user_id"]])){
+		  	$delegator_rewards[$row["user_id"]] = 0;
 		  }
-		  $user_rewards[$row["user_id"]] = $row["rate"]+$user_rewards[$row["user_id"]];
+		  $delegator_rewards[$row["user_id"]] = $row["rate"]+$delegator_rewards[$row["user_id"]];
+		  // Diamond Skull Rewards
+		  if(!isset($diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]])){
+		  	$diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = 0;
+		  }
+		  $diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = $row["rate"]+$diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]];
 	  }
 	} else {
 	  //echo "0 results";
 	}
 	
-	print_r($user_rewards);
+	print_r($diamond_skull_rewards);
 	exit;
+	
 }
 
 // Get current balance for user for a specific project
