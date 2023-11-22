@@ -943,28 +943,36 @@ function processSubtotals($conn, $subtotals){
 }
 
 function deployDiamondSkullRewards($conn){
-	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT diamond_skull_id, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.diamond_skull_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 	
-	$diamond_skulls = array();
-	$diamond_skulls_owners = array();
+	$diamond_skull_owners = array();
 
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  if(!isset($diamond_skulls[$row["diamond_skull_id"]])){
-		  	$diamond_skulls[$row["diamond_skull_id"]] = array();
-		  }
-		  if(!isset($diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]])){
-		  	$diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = 0;
-		  }
-		  $diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = $row["rate"]+$diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]];
+		  $diamond_skull_owners[$row["diamond_skull_id"]] = $row["user_id"];
 	  }
 	} else {
 	  //echo "0 results";
 	}
-	print_r($diamond_skulls);
+	
+	print_r($diamond_skull_owners);
 	exit;
+	
+	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
+	$result = $conn->query($sql);
+	
+	$user_rewards = array();
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+
+	  }
+	} else {
+	  //echo "0 results";
+	}
 }
 
 // Get current balance for user for a specific project
