@@ -957,9 +957,6 @@ function deployDiamondSkullRewards($conn){
 	  //echo "0 results";
 	}
 	
-	print_r($diamond_skull_owners);
-	exit;
-	
 	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 	
@@ -968,11 +965,17 @@ function deployDiamondSkullRewards($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-
+		  if(!isset($user_rewards[$row["user_id"]])){
+		  	$user_rewards[$row["user_id"]] = 0;
+		  }
+		  $user_rewards[$row["user_id"]] = $row["rate"]+$user_rewards[$row["user_id"]];
 	  }
 	} else {
 	  //echo "0 results";
 	}
+	
+	print_r($user_rewards);
+	exit;
 }
 
 // Get current balance for user for a specific project
