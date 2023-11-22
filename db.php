@@ -567,6 +567,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
+// Get total delegations for Diamond Skulls
 function getDiamondSkullTotals($conn){
 	$sql = "SELECT diamond_skull_id, nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
@@ -589,6 +590,29 @@ function getDiamondSkullTotals($conn){
 	  //echo "0 results";
 	  return null;
 	}
+}
+
+// Get total rewards for Diamond Skulls delegation
+function getDiamondSkullsDelegationRewards($conn){
+	// Track Rewards by User ID for Delegators AND Diamond Skull Owners
+	$sql = "SELECT diamond_skull_id, nft_id, rate FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id";
+	$result = $conn->query($sql);
+
+	$delegator_rewards = array();
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  // Delegator Rewards
+		  if(!isset($delegator_rewards[$row["diamond_skull_id"]])){
+		  	$delegator_rewards[$row["diamond_skull_id"]] = 0;
+		  }
+		  $delegator_rewards[$row["diamond_skull_id"]] = $row["rate"]+$delegator_rewards[$row["diamond_skull_id"]];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $delegator_rewards;
 }
 
 // Get Diamond Skulls with NFTs Delegated by User
@@ -636,6 +660,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		}
 		$diamond_skull_filter = "";
 		if($diamond_skull_id != ""){
+			$delegator_rewards = getDiamondSkullsDelegationRewards($conn);
 			$diamond_skull_filter = " AND nfts.id = '".$diamond_skull_id."'";
 			$user_filter = "";
 			$and = "";
@@ -684,6 +709,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
 					echo "</table>";
+					echo "<span class='nft-level'><strong>Current CARBON Rewards</strong><br>".$delegator_rewards[$diamond_skull_id]."</span>";
 				}
 			}else{
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
