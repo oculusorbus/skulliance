@@ -961,7 +961,6 @@ function deployDiamondSkullRewards($conn){
 	$result = $conn->query($sql);
 	
 	$delegator_rewards = array();
-	$diamond_skull_rewards = array();
 
 	if ($result->num_rows > 0) {
 	  // output data of each row
@@ -972,24 +971,24 @@ function deployDiamondSkullRewards($conn){
 		  }
 		  $delegator_rewards[$row["user_id"]] = $row["rate"]+$delegator_rewards[$row["user_id"]];
 		  // Diamond Skull Rewards
-		  if(!isset($diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]])){
-		  	$diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = 0;
+		  if(!isset($delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]])){
+		  	$delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = 0;
 		  }
-		  $diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = $row["rate"]+$diamond_skull_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]];
+		  $delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = $row["rate"]+$delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]];
 	  }
 	} else {
 	  //echo "0 results";
 	}
+	
+	print_r($delegator_rewards);
+	exit;
+	
 	// Diamond Skull project ID for CARBON
 	$project_id = 15;
 	foreach($delegator_rewards AS $delegator_id => $subtotal){
 		updateBalance($conn, $delegator_id, $project_id, $subtotal);
 		logCredit($conn, $delegator_id, $subtotal, $project_id);
 	}
-	foreach($diamond_skull_rewards AS $diamond_skull_owner_id => $subtotal){
-		updateBalance($conn, $diamond_skull_owner_id, $project_id, $subtotal);
-		logCredit($conn, $diamond_skull_owner_id, $subtotal, $project_id);
-	}	
 }
 
 // Get current balance for user for a specific project
