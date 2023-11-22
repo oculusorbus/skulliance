@@ -250,7 +250,7 @@ function renderCrafting($conn, $page){
 			  <img class="icon" src="icons/diamond.png">
 		      <select name="carbon" id="carbon">
 			  <?php
-			  for ($x = 0; $x <= $carbon_index; $x++) {?>
+			  for ($x = 1; $x <= $carbon_index; $x++) {?>
 				    <option value="<?php echo $x*100; ?>"><?php echo $x*100; ?></option>
 			  <?php } ?>
 			  </select>
