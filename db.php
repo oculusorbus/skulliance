@@ -665,7 +665,6 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			$and = "";
 		}else{
 			$delegator_rewards = getDiamondSkullsDelegationRewards($conn);
-			print_r($delegator_rewards);
 		}
 		$core_where = "";
 		if($core_projects == true){
