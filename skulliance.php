@@ -196,7 +196,6 @@ function renderCurrency($conn, $skulliance=true){
 function renderCrafting($conn, $page){
 	?>
 	<ul>
-	<li class="role">
 	<?php 
 	$balances = array();
 	$balances = getBalances($conn);
@@ -219,17 +218,18 @@ function renderCrafting($conn, $page){
 			echo "You do not have balances for all core currency listed above to craft.<br><br>Purchase NFTs from every core project in the Skulliance in order to craft DIAMOND.";
 		}else{
 			?>
+			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert all currency to DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 			  Convert the following amount of core project currency to DIAMOND:<br><br>
 			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 			  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
 			  <input type="submit" value="Convert" class="small-button">
 			</form>
+			</li>
 			<?php
 		}
 		if($diamond > 0){
 			?>
-			</li>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to shatter this DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 			  <br>Shatter the following amount of DIAMOND to equal parts core currency:<br><br>
@@ -237,12 +237,12 @@ function renderCrafting($conn, $page){
 			  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
 			  <input type="submit" value="Shatter" class="small-button">
 			</form>
+			</li>
 			<?php
 		}
 		if($carbon >= 100){
 			$carbon_index = floor($carbon/100);
 			?>
-			</li>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
 			  <br>Burn CARBON in multiples of 100 to craft DIAMOND:<br><br>
@@ -255,14 +255,17 @@ function renderCrafting($conn, $page){
 			  </select>
 			  <input type="submit" value="Craft" class="small-button">
 			</form>
+			</li>
 			<?php
 		}else{
+			echo '<li class="role">';
 			echo "You need at least 100 CARBON to craft DIAMOND.<br><br>Delegate your NFTs to Diamond Skulls to earn CARBON.";
+			echo '</li>';
 		}
 	}
 	
 	?>
-	</li>
+
 	</ul>
 	<?php
 }
