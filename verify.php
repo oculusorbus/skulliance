@@ -17,6 +17,8 @@ if(isset($_GET['verify'])){
 	verifyNFTs($conn, $addresses, $policies);
 	// Deploy rewards for all users of the platform
 	updateBalances($conn);
+	// Deploy rewards for Diamond Skull delegation
+	deployDiamondSkullRewards($conn);
 }
 
 function verifyNFTs($conn, $addresses, $policies){
