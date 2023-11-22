@@ -980,16 +980,13 @@ function deployDiamondSkullRewards($conn){
 	  //echo "0 results";
 	}
 	
-	//print_r($delegator_rewards);
-	//exit;
-	
 	// Diamond Skull project ID for CARBON
-	/*
+	
 	$project_id = 15;
 	foreach($delegator_rewards AS $delegator_id => $subtotal){
 		updateBalance($conn, $delegator_id, $project_id, $subtotal);
 		logCredit($conn, $delegator_id, $subtotal, $project_id);
-	}*/
+	}
 }
 
 // Get current balance for user for a specific project
