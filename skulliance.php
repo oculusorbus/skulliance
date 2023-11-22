@@ -251,7 +251,7 @@ function renderCrafting($conn, $page){
 		      <select name="carbon" id="carbon">
 			  <?php
 			  for ($x = 1; $x <= $carbon_index; $x++) {?>
-				    <option value="<?php echo $x*100; ?>"><?php echo $x*100; ?></option>
+				    <option <?php if($carbon_index == $x){echo "selected";} ?> value="<?php echo $x*100; ?>"><?php echo $x*100; ?> CARBON</option>
 			  <?php } ?>
 			  </select>
 			  <input type="submit" value="Craft" class="small-button">
