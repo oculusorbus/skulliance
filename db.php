@@ -951,7 +951,7 @@ function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()){
 		  // Remove each NFT Delegation for this Diamond Skull
-		  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]]);
+		  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]);
 	  }
 	} else {
 	  //echo "0 results";
