@@ -1097,7 +1097,7 @@ function getMinimumBalance($conn){
 	}
 }
 
-// Craft $DIAMOND
+// Craft DIAMOND
 function craft($conn, $balance){
 	$sql = "SELECT balance, project_id FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id < '7'";
 	$result = $conn->query($sql);
@@ -1115,7 +1115,7 @@ function craft($conn, $balance){
 	logCredit($conn, $_SESSION['userData']['user_id'], $balance, 7, 1);
 }
 
-// Shatter $DIAMOND
+// Shatter DIAMOND
 function shatter($conn, $balance){
 	$sql = "SELECT balance, project_id FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND project_id < '7'";
 	$result = $conn->query($sql);
@@ -1132,6 +1132,17 @@ function shatter($conn, $balance){
 	updateBalance($conn, $_SESSION['userData']['user_id'], 7, -$balance);
 	logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, 7, 1);
 }
+
+// Burn CARBON, Craft DIAMOND
+function burn($conn, $balance, $project_id){
+	// Update CARBON Balance and Log Debit
+    updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$balance);
+	logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, $project_id, 1);
+	// Update DIAMOND Balance and Log Credit
+	updateBalance($conn, $_SESSION['userData']['user_id'], 7, ($balance/100));
+	logCredit($conn, $_SESSION['userData']['user_id'], ($balance/100), 7, 1);
+}
+
 
 // Log a specific user credit for nightly rewards
 function logCredit($conn, $user_id, $amount, $project_id, $crafting=0) {

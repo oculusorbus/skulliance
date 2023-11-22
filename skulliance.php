@@ -156,6 +156,15 @@ if(isset($_POST['diamond'])){
 	}
 }
 
+// Burning
+if(isset($_POST['carbon'])){
+	$carbon_balance = getBalance($conn, 15);
+	if($_POST['carbon'] <= $carbon_balance){
+		burn($conn, $_POST['carbon'], 15);
+		alert("You have successfully burned ".number_format($_POST['carbon'])." CARBON and crafted ".(number_format($_POST['carbon']/100)." DIAMOND.");
+	}
+}
+
 function renderWalletConnection($page){
 	echo '<ul>
 	<div class="wallet-connect">
