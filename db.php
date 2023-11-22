@@ -942,6 +942,31 @@ function processSubtotals($conn, $subtotals){
 	}
 }
 
+function deployDiamondSkullRewards($conn){
+	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
+	$result = $conn->query($sql);
+	
+	$diamond_skulls = array();
+	$diamond_skulls_owners = array();
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  if(!isset($diamond_skulls[$row["diamond_skull_id"]])){
+		  	$diamond_skulls[$row["diamond_skull_id"]] = array();
+		  }
+		  if(!isset($diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]])){
+		  	$diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]] = array();
+		  }
+		  //$diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]][]
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	print_r($diamond_skulls);
+	exit;
+}
+
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
 	$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id."'";

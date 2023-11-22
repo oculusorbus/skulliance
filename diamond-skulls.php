@@ -18,6 +18,9 @@ include 'header.php';
 		<?php filterDiamondSkulls("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
+			
+			deployDiamondSkullRewards($conn);
+			
 			if(isset($_SESSION['userData']['user_id'])){ 
 				if($filterbydiamond == "MY" || $filterbydiamond == ""){
 					$advanced_filter = "my";
