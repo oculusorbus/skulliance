@@ -1000,7 +1000,7 @@ function deployDiamondSkullRewards($conn){
 		logCredit($conn, $delegator_id, $subtotal, $project_id);
 	}
 }
-
+/*
 // Remove all NFT Delegations from a Diamond Skull
 function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 	$sql = "SELECT nft_id, diamond_skull_id FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."'";
@@ -1015,7 +1015,7 @@ function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 	} else {
 	  //echo "0 results";
 	}
-}
+}*/
 
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
