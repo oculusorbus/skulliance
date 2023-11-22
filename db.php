@@ -942,21 +942,7 @@ function processSubtotals($conn, $subtotals){
 	}
 }
 
-// Remove all NFT Delegations from a Diamond Skull
-function removeDiamondSkullNFTs($conn, $diamond_skull_id){
-	$sql = "SELECT nft_id, diamond_skull_id FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."'";
-	$result = $conn->query($sql);
-	
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()){
-		  // Remove each NFT Delegation for this Diamond Skull
-		  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]);
-	  }
-	} else {
-	  //echo "0 results";
-	}
-}
+
 
 // Deploy and Verify Diamond Skull Rewards for Delegators and Owners
 function deployDiamondSkullRewards($conn){
@@ -971,7 +957,7 @@ function deployDiamondSkullRewards($conn){
 	  while($row = $result->fetch_assoc()){
 		  // If no owner, remove all NFTs delegated to the Diamond Skull
 		  if($row["user_id"] == 0){
-		  	removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
+		  	//removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
 	  	  }else{
 	  	  	$diamond_skull_owners[$row["diamond_skull_id"]] = $row["user_id"];
 	  	  }
@@ -991,7 +977,7 @@ function deployDiamondSkullRewards($conn){
 	  while($row = $result->fetch_assoc()) {
 		  // If NFT has no owner, remove NFT delegation to Diamond Skull
 		  if($row["user_id"] == 0){
-			  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]]);
+			  //removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]]);
 		  }else{
 			  // Delegator Rewards
 			  if(!isset($delegator_rewards[$row["user_id"]])){
