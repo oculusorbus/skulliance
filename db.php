@@ -944,9 +944,6 @@ function processSubtotals($conn, $subtotals){
 
 // Remove all NFT Delegations from a Diamond Skull
 function removeDiamondSkullNFTs($conn, $diamond_skull_id){
-	$sql = "SELECT nft_id, diamond_skull_id FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."'";
-	$result = $conn->query($sql);
-	
 
 }
 
