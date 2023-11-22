@@ -253,7 +253,7 @@ function renderCrafting($conn, $page){
 				    <option <?php if($carbon_index == $x){echo "selected";} ?> value="<?php echo $x*100; ?>"><?php echo $x*100; ?> CARBON to <?php echo $x; ?> DIAMOND</option>
 			  <?php } ?>
 			  </select>
-			  <input type="submit" value="Craft" class="small-button">
+			  <input type="submit" value="Burn" class="small-button">
 			</form>
 			</li>
 			<?php
