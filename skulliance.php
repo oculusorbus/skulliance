@@ -208,6 +208,7 @@ function renderCrafting($conn, $page){
 			$carbon = $balances["CARBON"];
 			unset($balances["CARBON"]);
 		}
+		$carbon = 590;
 		$zero = false;
 		foreach($balances AS $currency => $balance){
 			if($balance == 0){
