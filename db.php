@@ -710,7 +710,9 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
 					echo "</table>";
-					echo "<span class='nft-level'><br><strong>Current CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
+					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
+				}else{
+					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: 0 of 38</span>";
 				}
 			}else{
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
