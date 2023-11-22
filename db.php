@@ -557,7 +557,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 		$verbiage = " removed from ";
 	}
 	$title = "Diamond Skull ".$title_verbiage;
-	$description = $nft_owner.": ".$nft_name.$verbiage.$diamond_skull_owner.": ".$diamond_skull_name." by ".getUsername($conn);
+	$description = $nft_owner.": ".$nft_name.$verbiage.$diamond_skull_owner.": ".$diamond_skull_name;
 	$imageurl = "https://www.skulliance.io/staking/image.php?ipfs=".str_replace("ipfs/", "", $nft_image);
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
@@ -942,7 +942,25 @@ function processSubtotals($conn, $subtotals){
 	}
 }
 
+// Remove all NFT Delegations from a Diamond Skull
+function removeDiamondSkullNFTs($conn, $diamond_skull_id){
+	$sql = "SELECT nft_id, diamond_skull_id FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()){
+		  // Remove each NFT Delegation for this Diamond Skull
+		  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]]);
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
+// Deploy and Verify Diamond Skull Rewards for Delegators and Owners
 function deployDiamondSkullRewards($conn){
+	// Populate Diamond Skull Owners
 	$sql = "SELECT diamond_skull_id, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.diamond_skull_id";
 	$result = $conn->query($sql);
 	
@@ -950,13 +968,19 @@ function deployDiamondSkullRewards($conn){
 
 	if ($result->num_rows > 0) {
 	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-		  $diamond_skull_owners[$row["diamond_skull_id"]] = $row["user_id"];
+	  while($row = $result->fetch_assoc()){
+		  // If no owner, remove all NFTs delegated to the Diamond Skull
+		  if($row["user_id"] == 0){
+		  	removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
+	  	  }else{
+	  	  	$diamond_skull_owners[$row["diamond_skull_id"]] = $row["user_id"];
+	  	  }
 	  }
 	} else {
 	  //echo "0 results";
 	}
 	
+	// Track Rewards by User ID for Delegators AND Diamond Skull Owners
 	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 	
@@ -965,23 +989,27 @@ function deployDiamondSkullRewards($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  // Delegator Rewards
-		  if(!isset($delegator_rewards[$row["user_id"]])){
-		  	$delegator_rewards[$row["user_id"]] = 0;
+		  // If NFT has no owner, remove NFT delegation to Diamond Skull
+		  if($row["user_id"] == 0){
+			  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]]);
+		  }else{
+			  // Delegator Rewards
+			  if(!isset($delegator_rewards[$row["user_id"]])){
+			  	$delegator_rewards[$row["user_id"]] = 0;
+			  }
+			  $delegator_rewards[$row["user_id"]] = $row["rate"]+$delegator_rewards[$row["user_id"]];
+			  // Diamond Skull Rewards
+			  if(!isset($delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]])){
+			  	$delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = 0;
+			  }
+			  $delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = $row["rate"]+$delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]];
 		  }
-		  $delegator_rewards[$row["user_id"]] = $row["rate"]+$delegator_rewards[$row["user_id"]];
-		  // Diamond Skull Rewards
-		  if(!isset($delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]])){
-		  	$delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = 0;
-		  }
-		  $delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]] = $row["rate"]+$delegator_rewards[$diamond_skull_owners[$row["diamond_skull_id"]]];
 	  }
 	} else {
 	  //echo "0 results";
 	}
 	
 	// Diamond Skull project ID for CARBON
-	
 	$project_id = 15;
 	foreach($delegator_rewards AS $delegator_id => $subtotal){
 		updateBalance($conn, $delegator_id, $project_id, $subtotal);
