@@ -955,7 +955,7 @@ function deployDiamondSkullRewards($conn){
 	  while($row = $result->fetch_assoc()){
 		  // If no owner, remove all NFTs delegated to the Diamond Skull
 		  if($row["user_id"] == 0){
-		  	//removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
+		  	removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
 	  	  }else{
 	  	  	$diamond_skull_owners[$row["diamond_skull_id"]] = $row["user_id"];
 	  	  }
@@ -975,7 +975,7 @@ function deployDiamondSkullRewards($conn){
 	  while($row = $result->fetch_assoc()) {
 		  // If NFT has no owner, remove NFT delegation to Diamond Skull
 		  if($row["user_id"] == 0){
-			  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]]);
+			  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]);
 		  }else{
 			  // Delegator Rewards
 			  if(!isset($delegator_rewards[$row["user_id"]])){
@@ -1000,7 +1000,7 @@ function deployDiamondSkullRewards($conn){
 		logCredit($conn, $delegator_id, $subtotal, $project_id);
 	}
 }
-/*
+
 // Remove all NFT Delegations from a Diamond Skull
 function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 	$sql = "SELECT nft_id, diamond_skull_id FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."'";
@@ -1015,7 +1015,7 @@ function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 	} else {
 	  //echo "0 results";
 	}
-}*/
+}
 
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
