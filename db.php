@@ -402,6 +402,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 		echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]));
 		echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
+		echo "<span class='nft-level'><strong>".$row["rate"]." CARBON</strong></span>";
 		if($_SESSION['userData']['user_id'] == $row["user_id"] || $diamond_skull_owner == true){
 		?>
 			<form id="nftRemovalForm" action="diamond-skulls.php#diamond-skull" method="post">
@@ -410,7 +411,6 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 			</form>
 		<?php
 		}
-		echo "<span class='nft-level'><strong>".$row["rate"]." CARBON</strong></span>";
 		echo "</div></div>";
 	  }
 	} else {
