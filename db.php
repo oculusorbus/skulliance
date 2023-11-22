@@ -981,7 +981,6 @@ function deployDiamondSkullRewards($conn){
 	  //echo "0 results";
 	}
 	print_r($delegator_rewards);
-	exit;
 	print_r($diamond_skull_rewards);
 	exit;
 	
