@@ -956,9 +956,9 @@ function deployDiamondSkullRewards($conn){
 		  	$diamond_skulls[$row["diamond_skull_id"]] = array();
 		  }
 		  if(!isset($diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]])){
-		  	$diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]] = array();
+		  	$diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = array();
 		  }
-		  $diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]][$row["nft_id"]] = $row["rate"]+$diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]][$row["nft_id"]];
+		  $diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = $row["rate"]+$diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]];
 	  }
 	} else {
 	  //echo "0 results";
