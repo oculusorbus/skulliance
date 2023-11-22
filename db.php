@@ -680,7 +680,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		  $nftcounter = 0;
 		  while($row = $result->fetch_assoc()) {
 			$nftcounter++;
-			if($diamond_skull_id == ""){
+			if($diamond_skull == true){
 				echo "<div class='nft'><div class='diamond-skull-data'>";
 			}else{
 		    	echo "<div class='nft'><div class='nft-data'>";
