@@ -161,7 +161,7 @@ if(isset($_POST['carbon'])){
 	$carbon_balance = getBalance($conn, 15);
 	if($_POST['carbon'] <= $carbon_balance){
 		burn($conn, $_POST['carbon'], 15);
-		alert("You have successfully burned ".number_format($_POST['carbon'])." CARBON and crafted ".(number_format($_POST['carbon']/100))." DIAMOND.");
+		alert("You have successfully burned ".number_format($_POST['carbon'])." CARBON and formed ".(number_format($_POST['carbon']/100))." DIAMOND.");
 	}
 }
 
@@ -254,7 +254,7 @@ function renderCrafting($conn, $page){
 			?>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
-			  <br>Burn CARBON in multiples of 100 to craft DIAMOND:<br><br>
+			  <br>Burn CARBON in multiples of 100 to form DIAMOND:<br><br>
 			  <img class="icon" src="icons/diamond.png">
 		      <select name="carbon" id="carbon">
 			  <?php
@@ -268,7 +268,7 @@ function renderCrafting($conn, $page){
 			<?php
 		}else{
 			echo '<li class="role">';
-			echo "You need at least 100 CARBON to craft DIAMOND.<br><br>Delegate your core project NFTs to Diamond Skulls to earn CARBON.";
+			echo "You need at least 100 CARBON to form DIAMOND.<br><br>Delegate your core project NFTs to Diamond Skulls to earn CARBON.";
 			echo '</li>';
 		}
 	}
