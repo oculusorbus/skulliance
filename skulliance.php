@@ -259,7 +259,7 @@ function renderCrafting($conn, $page){
 			<?php
 		}else{
 			echo '<li class="role">';
-			echo "You need at least 100 CARBON to craft DIAMOND.<br><br>Delegate your NFTs to Diamond Skulls to earn CARBON.";
+			echo "You need at least 100 CARBON to craft DIAMOND.<br><br>Delegate your core project NFTs to Diamond Skulls to earn CARBON.";
 			echo '</li>';
 		}
 	}
