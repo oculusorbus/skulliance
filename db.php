@@ -612,6 +612,8 @@ function getDiamondSkullsDelegationRewards($conn){
 	} else {
 	  //echo "0 results";
 	}
+	print_r($delegator_rewards);
+	exit;
 	return $delegator_rewards;
 }
 
