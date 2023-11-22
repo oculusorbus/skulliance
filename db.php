@@ -960,7 +960,7 @@ function deployDiamondSkullRewards($conn){
 	  while($row = $result->fetch_assoc()){
 		  // If no owner, remove all NFTs delegated to the Diamond Skull
 		  if($row["user_id"] == 0){
-		  	removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
+		  	//removeDiamondSkullNFTs($conn, $row["diamond_skull_id"]);
 	  	  }else{
 	  	  	$diamond_skull_owners[$row["diamond_skull_id"]] = $row["user_id"];
 	  	  }
