@@ -663,9 +663,11 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			$diamond_skull_filter = " AND nfts.id = '".$diamond_skull_id."'";
 			$user_filter = "";
 			$and = "";
-		}else{
+		}
+		if($diamond_skull == true){
 			$delegator_rewards = getDiamondSkullsDelegationRewards($conn);
 		}
+		
 		$core_where = "";
 		if($core_projects == true){
 			$core_where = "AND nfts.id NOT IN(SELECT nft_id FROM diamond_skulls)";
@@ -689,14 +691,16 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
 				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
-			}else if($diamond_skull_id == ""){
+			}else if($diamond_skull == true){
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
+				if($diamond_skull_id == ""){
 				?>
 				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
 				  <input type="hidden" id="diamond_skull_id" name="diamond_skull_id" value="<?php echo $row["nfts_id"];?>">
 				  <input type="submit" value="Select" class="small-button">
 				</form>
 				<?php
+				}
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					ksort($diamond_skull_totals[$row["nfts_id"]]);
 					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>Total</th><th width='20%' align='left'>Status</th></tr>";
@@ -714,9 +718,6 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				}else{
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: 0 of 38</span>";
 				}
-			}else{
-				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
-				echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
 			}
 			if($core_projects == true){
 				?>
