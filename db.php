@@ -943,7 +943,7 @@ function processSubtotals($conn, $subtotals){
 }
 
 function deployDiamondSkullRewards($conn){
-	$sql = "SELECT diamond_skull_id, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.diamond_skull_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT diamond_skull_id, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.diamond_skull_id";
 	$result = $conn->query($sql);
 	
 	$diamond_skull_owners = array();
@@ -980,10 +980,16 @@ function deployDiamondSkullRewards($conn){
 	} else {
 	  //echo "0 results";
 	}
-	print_r($delegator_rewards);
-	print_r($diamond_skull_rewards);
-	exit;
-	
+	// Diamond Skull project ID for CARBON
+	$project_id = 15;
+	foreach($delegator_rewards AS $delegator_id => $subtotal){
+		updateBalance($conn, $delegator_id, $project_id, $subtotal);
+		logCredit($conn, $delegator_id, $subtotal, $project_id);
+	}
+	foreach($diamond_skull_rewards AS $diamond_skull_owner_id => $subtotal){
+		updateBalance($conn, $diamond_skull_owner_id, $project_id, $subtotal);
+		logCredit($conn, $diamond_skull_owner_id, $subtotal, $project_id);
+	}	
 }
 
 // Get current balance for user for a specific project
