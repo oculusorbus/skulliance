@@ -438,10 +438,7 @@ function filterNFTs($page){
 function filterCoreNFTs($page){
 	global $conn;
 	$core_projects = getProjects($conn, "core");
-	$anchor = "";
-	if($page == "dashboard"){
-		$anchor = "#holdings";
-	}
+	$anchor = "#holdings";
 	echo'
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
@@ -463,10 +460,7 @@ function filterCoreNFTs($page){
 
 function filterDiamondSkulls($page){
 	global $conn;
-	$anchor = "";
-	if($page == "dashboard"){
-		$anchor = "#holdings";
-	}
+	$anchor = "#diamond-skulls";
 	echo'
 	<div id="filter-nfts">
 		<label for="filterNFTs"><strong>Filter By:</strong></label>

@@ -13,7 +13,7 @@ include 'header.php';
 <div class="row" id="row1">
   <div class="main">
 	<h2>Diamond Skulls</h2>
-	<a name="holdings" id="holdings"></a>
+	<a name="diamond-skulls" id="diamond-skulls"></a>
     <div class="content">
 		<?php filterDiamondSkulls("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
@@ -46,6 +46,7 @@ include 'header.php';
 
 
 if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
+<a name="diamond-skull" id="diamond-skull"></a>
 <div class="row" id="row1">
     <div class="main-diamond">
 	<h2>Diamond Skull Delegation</h2>
