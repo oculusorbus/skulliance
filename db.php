@@ -595,7 +595,7 @@ function getDiamondSkullTotals($conn){
 // Get total rewards for Diamond Skulls delegation
 function getDiamondSkullsDelegationRewards($conn){
 	// Track Rewards by User ID for Delegators AND Diamond Skull Owners
-	$sql = "SELECT diamond_skull_id, nft_id, rate FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id";
+	$sql = "SELECT diamond_skull_id, nft_id, rate FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 
 	$delegator_rewards = array();
