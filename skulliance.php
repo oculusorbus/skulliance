@@ -200,6 +200,8 @@ function renderCrafting($conn, $page){
 	<?php 
 	$balances = array();
 	$balances = getBalances($conn);
+	print_r($balances);
+	exit;
 	if(!empty($balances)){
 		$diamond = $balances["DIAMOND"];
 		unset($balances["DIAMOND"]);
