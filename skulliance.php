@@ -203,6 +203,12 @@ function renderCrafting($conn, $page){
 	if(!empty($balances)){
 		$diamond = $balances["DIAMOND"];
 		unset($balances["DIAMOND"]);
+		$carbon = 0;
+		// Double check to make sure CARBON exists before referencing it.
+		if(isset($balances["CARBON"])){
+			$carbon = $balances["CARBON"];
+			unset($balances["CARBON"]);
+		}
 		$zero = false;
 		foreach($balances AS $currency => $balance){
 			if($balance == 0){
@@ -232,6 +238,26 @@ function renderCrafting($conn, $page){
 			  <input type="submit" value="Shatter" class="small-button">
 			</form>
 			<?php
+		}
+		if($carbon >= 100){
+			$carbon_index = floor($carbon/100);
+			?>
+			</li>
+			<li class="role">
+			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
+			  <br>Burn CARBON in multiples of 100 to craft DIAMOND:<br><br>
+			  <img class="icon" src="icons/diamond.png">
+		      <select name="carbon" id="carbon">
+			  <?php
+			  for ($x = 0; $x <= $carbon_index; $x++) {?>
+				    <option value="<?php echo $x*100; ?>"><?php echo $x*100; ?></option>
+			  <?php } ?>
+			  </select>
+			  <input type="submit" value="Craft" class="small-button">
+			</form>
+			<?php
+		}else{
+			echo "You need at least 100 CARBON to craft DIAMOND.<br><br>Delegate your NFTs to Diamond Skulls to earn CARBON.";
 		}
 	}
 	
