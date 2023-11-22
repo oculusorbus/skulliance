@@ -948,7 +948,7 @@ function deployDiamondSkullRewards($conn){
 	
 	$diamond_skulls = array();
 	$diamond_skulls_owners = array();
-	
+	$rate = 0;
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
@@ -958,7 +958,8 @@ function deployDiamondSkullRewards($conn){
 		  if(!isset($diamond_skulls[$row["diamond_skull_id"]][$row["nft_id"]])){
 		  	$diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = array();
 		  }
-		  $diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = $row["rate"]+$diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]];
+		  $rate = $diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]];
+		  $diamond_skulls[$row["diamond_skull_id"]][$row["user_id"]] = $row["rate"]+$rate;
 	  }
 	} else {
 	  //echo "0 results";
