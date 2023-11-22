@@ -612,8 +612,6 @@ function getDiamondSkullsDelegationRewards($conn){
 	} else {
 	  //echo "0 results";
 	}
-	print_r($delegator_rewards);
-	exit;
 	return $delegator_rewards;
 }
 
@@ -662,10 +660,11 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		}
 		$diamond_skull_filter = "";
 		if($diamond_skull_id != ""){
-			$delegator_rewards = getDiamondSkullsDelegationRewards($conn);
 			$diamond_skull_filter = " AND nfts.id = '".$diamond_skull_id."'";
 			$user_filter = "";
 			$and = "";
+		}else{
+			$delegator_rewards = getDiamondSkullsDelegationRewards($conn);
 		}
 		$core_where = "";
 		if($core_projects == true){
