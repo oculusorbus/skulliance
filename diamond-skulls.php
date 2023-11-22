@@ -48,7 +48,7 @@ include 'header.php';
 if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 <div class="row" id="row1">
     <div class="main-diamond">
-	<h2>Diamond Skull Activation</h2>
+	<h2>Diamond Skull Delegation</h2>
     <div class="content">
 		<div id="nfts" class="nfts">
 			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 5, $projects, $project_names); ?>
