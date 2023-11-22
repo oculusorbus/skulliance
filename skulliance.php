@@ -200,12 +200,10 @@ function renderCrafting($conn, $page){
 	<?php 
 	$balances = array();
 	$balances = getBalances($conn);
-	print_r($balances);
-	exit;
 	if(!empty($balances)){
 		$diamond = $balances["DIAMOND"];
 		unset($balances["DIAMOND"]);
-		$carbon = 0;
+		$carbon = 590;
 		// Double check to make sure CARBON exists before referencing it.
 		if(isset($balances["CARBON"])){
 			$carbon = $balances["CARBON"];
