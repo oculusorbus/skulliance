@@ -202,13 +202,12 @@ function renderCrafting($conn, $page){
 	if(!empty($balances)){
 		$diamond = $balances["DIAMOND"];
 		unset($balances["DIAMOND"]);
-		$carbon = 590;
+		$carbon = 0;
 		// Double check to make sure CARBON exists before referencing it.
 		if(isset($balances["CARBON"])){
 			$carbon = $balances["CARBON"];
 			unset($balances["CARBON"]);
 		}
-		$carbon = 590;
 		$zero = false;
 		foreach($balances AS $currency => $balance){
 			if($balance == 0){
