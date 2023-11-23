@@ -2,6 +2,7 @@
 include_once 'db.php';
 include 'message.php';
 include 'role.php';
+// Verify includes Webhooks
 include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
