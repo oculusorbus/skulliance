@@ -12,7 +12,7 @@ include 'header.php';
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <div class="main">
-	<?php if($filterbydiamond == "MY"){ ?>
+	<?php if($filterbydiamond == "MY" || $filterbydiamond == ""){ ?>
 	<h2>My Diamond Skulls</h2>
 	<?php }else if($filterbydiamond == "DELEGATED"){ ?>
 	<h2>My Delegated Diamond Skulls</h2>
