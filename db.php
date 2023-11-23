@@ -519,6 +519,7 @@ function removeDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	}
 }
 
+// Send Discord Message regarding addition or removal of Diamond Skull delegation
 function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action){
 	$sql = "SELECT nfts.name AS nft_name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE nfts.id ='".$diamond_skull_id."'";
 	$result = $conn->query($sql);
