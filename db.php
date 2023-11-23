@@ -510,10 +510,10 @@ function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 // Remove Diamond Skull NFT Association
 function removeDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	$sql = "DELETE FROM diamond_skulls WHERE diamond_skull_id = '".$diamond_skull_id."' AND nft_id = '".$nft_id."'";
-	// Send Removal notification before the record is deleted from the database to ensure the verbiage queried still exits to prevent errors.
-    sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action="remove");
+
 	if ($conn->query($sql) === TRUE) {
 	  //echo "Record deleted successfully";
+	  sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action="remove");
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
