@@ -106,7 +106,7 @@ function verifyNFTs($conn, $addresses, $policies){
 											createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
 										}
 									}*/
-									if(isset($nft_data->name)){
+									if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
 										processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address);
 									}
 								}
