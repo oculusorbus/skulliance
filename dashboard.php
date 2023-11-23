@@ -1,6 +1,5 @@
 <?php
 include_once 'db.php';
-include 'webhooks.php';
 include 'message.php';
 include 'role.php';
 include 'verify.php';
