@@ -15,7 +15,7 @@ include 'header.php';
 	<?php if($filterbydiamond == "MY"){ ?>
 	<h2>My Diamond Skulls</h2>
 	<?php }else if($filterbydiamond == "DELEGATED"){ ?>
-	<h2>Delegated Diamond Skulls</h2>
+	<h2>My Delegated Diamond Skulls</h2>
 	<?php }else if($filterbydiamond == "ALL"){ ?>
 	<h2>All Diamond Skulls</h2>
 	<?php } ?>
