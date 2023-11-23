@@ -12,7 +12,7 @@ include('credentials/webhooks_credentials.php');
 	    $timestamp = date("c", strtotime("now"));
 	    $msg = json_encode([
 	    // Message
-	    "content" => "@founder",
+	    "content" => "<@772831523899965440>",
 
 	    // Username
 	    "username" => "Skull Bot",
