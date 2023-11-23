@@ -70,7 +70,7 @@ if(isset($_POST['item_id'])) {
 					logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
 					$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 					$title = $item["name"]." Purchased";
-					$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by ".getUsername($conn);
+					$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by "."<@".getDiscordID($conn).">";
 					$imageurl = $item["image_url"];
 					discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 					if($item["override"] == "0"){
@@ -82,7 +82,7 @@ if(isset($_POST['item_id'])) {
 					$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
 					# Check if DM is created, if yes, let's send a message to this channel.
 					if(isset($newDM["id"])) {
-						$content = $item["name"]." purchased for ".$price." ".$item["currency"]." by ".getUsername($conn). "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
+						$content = $item["name"]." purchased for ".$price." ".$item["currency"]." by "."<@".getDiscordID($conn).">". "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 					    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 					}
 					alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
@@ -111,7 +111,7 @@ if(isset($_POST['name'])){
 		}
 		$title = "New Store Listing: ".$_POST['name'];
 		$project = getProjectInfo($conn, $_POST['project_id']);
-		$description = $_POST['name']." listed for ".number_format($_POST['price'])." $".$project["currency"]." by ".getUsername($conn)."\r\nQuantity: ".$_POST['quantity'];
+		$description = $_POST['name']." listed for ".number_format($_POST['price'])." $".$project["currency"]." by "."<@".getDiscordID($conn).">"."\r\nQuantity: ".$_POST['quantity'];
 		$imageurl = $_POST['image_url'];
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 	}else{
