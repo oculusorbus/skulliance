@@ -534,7 +534,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	} else {
 	  //echo "0 results";
 	  $diamond_skull_name = "Unstaked Diamond Skull";
-	  $diamond_skull_name = "Unknown Owner";
+	  $diamond_skull_owner = "Unknown Owner";
 	}
 	
 	$sql = "SELECT nfts.name AS nft_name, ipfs, username, collection_id, project_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id WHERE nfts.id ='".$nft_id."'";
