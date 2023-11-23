@@ -519,9 +519,29 @@ function removeDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
 	}
 }
 
+// Get NFT User ID 
+function getNFTUserID($conn, $nft_id){
+	$sql = "SELECT user_id FROM nfts WHERE nfts.id ='".$nft_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  return $row["user_id"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Send Discord Message regarding addition or removal of Diamond Skull delegation
 function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $action){
-	$sql = "SELECT nfts.name AS nft_name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE nfts.id ='".$diamond_skull_id."'";
+	// Adjust DB query to handle user id of zero for unstaked NFTs
+	if(getNFTUserID($conn, $diamond_skull_id) != 0){
+		$sql = "SELECT nfts.name AS nft_name, ipfs, username FROM nfts INNER JOIN users ON users.id = nfts.user_id WHERE nfts.id ='".$diamond_skull_id."'";
+	}else{
+		$sql = "SELECT nfts.name AS nft_name, ipfs FROM nfts WHERE nfts.id ='".$diamond_skull_id."'";
+	}
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -529,7 +549,11 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	  while($row = $result->fetch_assoc()) {
 		  $diamond_skull_name = $row["nft_name"];
 		  $diamond_skull_image = $row["ipfs"];
-		  $diamond_skull_owner = $row["username"];
+		  if(isset($row["username"])){
+		  	$diamond_skull_owner = $row["username"];
+	  	  }else{
+	  	  	$diamond_skull_owner = "Unknown Owner";
+	  	  }
 	  }
 	} else {
 	  //echo "0 results";
@@ -537,7 +561,12 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	  $diamond_skull_owner = "Unknown Owner";
 	}
 	
-	$sql = "SELECT nfts.name AS nft_name, ipfs, username, collection_id, project_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id WHERE nfts.id ='".$nft_id."'";
+	// Adjust DB query to handle user id of zero for unstaked NFTs
+	if(getNFTUserID($conn, $nft_id) != 0){
+		$sql = "SELECT nfts.name AS nft_name, ipfs, username, collection_id, project_id FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id WHERE nfts.id ='".$nft_id."'";
+	}else{
+		$sql = "SELECT nfts.name AS nft_name, ipfs, collection_id, project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id WHERE nfts.id ='".$nft_id."'";
+	}
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -545,14 +574,18 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	  while($row = $result->fetch_assoc()) {
 		  $nft_name = $row["nft_name"];
 		  $nft_image = $row["ipfs"];
-		  $nft_owner = $row["username"];
+		  if(isset($row["username"])){
+			  $nft_owner = $row["username"];
+		  }else{
+		  	  $nft_owner = "Unknown Owner";
+		  }
 		  $collection_id = $row["collection_id"];
 		  $project_id = $row["project_id"];
 	  }
 	} else {
 	  $nft_name = "Unstaked NFT";
 	  $nft_image = "";
-	  $nft_owner = "Unknown User";
+	  $nft_owner = "Unknown Owner";
 	  $project_id = 0;
 	}
 	
