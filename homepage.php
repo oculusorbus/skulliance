@@ -110,7 +110,7 @@
 <body>
 	<div class="container">
 		<div class="burger-menu">
-			<img class="burger-icon" onclick="javascript:" src="https://www.skulliance.io/staking/images/menu.png"/>
+			<img class="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
 		</div>
 		<!-- Navigation Bar -->
 		<div class="navbar" id="navbar">
