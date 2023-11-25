@@ -26,8 +26,9 @@
 	  	  margin: 0 auto;
 	  }
 	  .navbar img {
-		  height: 36px;
+		  height: 32px;
 		  width: auto;
+		  margin-left:4px;
 	  }
 	  .navbar{
 	  	  position: fixed;
