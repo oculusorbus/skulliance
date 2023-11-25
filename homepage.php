@@ -88,6 +88,7 @@
 		  	  width: 100%;
 		  }
 	      .burger-menu {
+			  display: block;
 	          position: relative;
 	      }
 	      .burger-menu .burger-icon {
