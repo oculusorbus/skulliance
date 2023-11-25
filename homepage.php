@@ -52,7 +52,7 @@
 			  display: none;
 		  }
 		  .banner .logo img{
-		  	  width: 500px;
+		  	  width: 90%;
 		  }
 	  }
   </style>
