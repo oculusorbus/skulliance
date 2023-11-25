@@ -26,7 +26,8 @@
 	  	  margin: 0 auto;
 	  }
 	  .navbar img {
-		  height: 100px;
+		  height: 50px;
+		  width: auto;
 	  }
   </style>
 </head>
