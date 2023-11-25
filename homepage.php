@@ -50,7 +50,7 @@
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
-		  <img class="icon" src="images/skull.png" />
+		  <a href="#"><img class="icon" src="images/skull.png" /></a>
 		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
 		  <a href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
