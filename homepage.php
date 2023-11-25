@@ -28,7 +28,7 @@
 	  	  margin: 0 auto;
 	  }
 	  .navbar img {
-		  height: 16px;
+		  height: 14px;
 		  width: auto;
 		  padding-left: 5px;
 		  padding-right: 5px;
@@ -39,7 +39,7 @@
 		  align-items: center;
 	  }
 	  .navbar a{
-
+		  font-size: 20px;
 	  }
   </style>
 </head>
