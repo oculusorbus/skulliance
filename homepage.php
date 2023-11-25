@@ -101,7 +101,8 @@
 	          right: 0px;
 			  width: 50px;
 			  height: auto;
-			  padding: 5px;
+			  padding-top: 5px;
+			  padding-right: 10px;
 	      }
 	  }
   </style>
