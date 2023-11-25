@@ -44,6 +44,7 @@
 		  <img src="images/skull.png" />
 		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
+		  <img src="images/discord.png" />
 		</div>
 
 <!-- The flexible grid (content) -->
