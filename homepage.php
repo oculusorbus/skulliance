@@ -59,7 +59,7 @@
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
-		  <img class="icon" src="images/skull.png" />
+		  <img class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
 		  <a class="navbar-first" href="https://www.skulliance.io/staking">Staking</a>
 		  <a href="https://www.skulliance.io/shop">Merch</a>
 		  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
@@ -69,7 +69,7 @@
 <!-- The flexible grid (content) -->
 <div class="row banner" id="row1">
   <div class="main">
-	<div class="logo"><img src="images/skulliancelogo.png"></div>
+	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png"></div>
   </div>
 </div>
 	<!-- Footer -->
