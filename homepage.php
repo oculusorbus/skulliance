@@ -36,8 +36,7 @@
 		<!-- Navigation Bar -->
 		<div class="navbar">
 		  <img src="images/skull.png" />	
-		  <a class="navbar-first" href="store.php">Store</a>
-		  <a href="../staking">Staking</a>
+		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
 		</div>
 
