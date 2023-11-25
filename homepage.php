@@ -9,6 +9,8 @@
   <style>
 	  .container {
 		  max-width: none !important;
+	  }
+	  .main {
 	      align-items: center !important;
 		  display: flex !important;
 	  }
