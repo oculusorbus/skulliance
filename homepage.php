@@ -39,13 +39,17 @@
 	  .navbar a{
 		  font-size: 20px;
 	  }
+	  .navbar .icon {
+	      position: absolute;
+	      height: 40px;
+	  }
   </style>
 </head>
 <body>
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
-		  <img src="images/skull.png" />
+		  <img class="icon" src="images/skull.png" />
 		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
 		  <a href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
