@@ -39,7 +39,7 @@
 		  align-items: center;
 	  }
 	  .navbar a{
-		  font-size: 20px;
+
 	  }
   </style>
 </head>
