@@ -90,11 +90,14 @@
 	      .burger-menu {
 			  display: block;
 	          position: relative;
+			  z-index: 99;
 	      }
 	      .burger-menu .burger-icon {
 	          position: absolute;
 	          top: 0px;
 	          right: 0px;
+			  width: 20px;
+			  height: auto;
 	      }
 	  }
   </style>
