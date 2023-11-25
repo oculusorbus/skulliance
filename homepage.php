@@ -42,6 +42,7 @@
 	  .navbar .icon {
 	      position: absolute;
 	      height: 40px;
+		  padding-left: 10px;
 	  }
   </style>
 </head>
