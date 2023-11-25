@@ -37,10 +37,7 @@
 		<div class="navbar">
 		  <img src="images/skull.png" />	
 		  <a class="navbar-first" href="store.php">Store</a>
-		  <a href="leaderboards.php">Leaderboards</a>
-		  <a href="collections.php">Collections</a>
-		  <a href="transactions.php">Transactions</a>
-    	  <a href="wallets.php">Wallets</a>
+		  <a href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
 		</div>
 
