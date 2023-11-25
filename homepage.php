@@ -11,7 +11,7 @@
 		  max-width: none !important;
 	  }
 	  .banner {
-	  	  background-image: url('/images/skulliancebackground.png');
+	  	  background-image: url('images/skulliancebackground.png');
 	  }
   </style>
 </head>
