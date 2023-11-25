@@ -81,7 +81,7 @@
 		  #burger-menu{
 		  	  display: none;
 		  }
-		  .navbar{
+		  #navbar{
 		  	  display: flex;
 		  }
 	  }
