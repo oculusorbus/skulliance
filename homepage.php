@@ -96,8 +96,9 @@
 	          position: absolute;
 	          top: 0px;
 	          right: 0px;
-			  width: 20px;
+			  width: 50px;
 			  height: auto;
+			  padding: 5px;
 	      }
 	  }
   </style>
