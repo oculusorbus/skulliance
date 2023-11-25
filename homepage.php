@@ -44,6 +44,11 @@
 	      height: 36px;
 		  padding-left: 5px;
 	  }
+	  @media screen and (max-width: 700px) {
+	  	  .navbar .icon {
+			  display: none;
+		  }
+	  }
   </style>
 </head>
 <body>
