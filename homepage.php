@@ -36,6 +36,7 @@
 	  .navbar{
 	  	  position: fixed;
 		  width: 100%;
+		  align-items: center;
 	  }
   </style>
 </head>
