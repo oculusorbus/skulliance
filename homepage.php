@@ -25,6 +25,9 @@
 	  .banner .logo{
 	  	  margin: 0 auto;
 	  }
+	  .navbar img {
+		  height: 100px;
+	  }
   </style>
 </head>
 <body>
