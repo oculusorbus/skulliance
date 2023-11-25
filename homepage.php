@@ -12,6 +12,7 @@
 	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
+		  min-height: 1080px;
 	  }
   </style>
 </head>
