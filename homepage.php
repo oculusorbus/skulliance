@@ -78,7 +78,10 @@
 	  	  display: none;
 	  }
 	  @media screen and (max-width: 700px) {
-	  	  .navbar .icon {
+	  	  .navbar {
+			  display: none;
+	  	  }
+		  .navbar .icon {
 			  display: none;
 		  }
 		  .banner .logo img{
