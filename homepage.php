@@ -42,7 +42,7 @@
 <!-- The flexible grid (content) -->
 <div class="row banner" id="row1">
   <div class="main">
-	<div class="logo"><img src="images/skulliancelogoweb.png"></div>
+	<div class="logo"><img src="images/skulliancelogo.png"></div>
   </div>
 </div>
 <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
