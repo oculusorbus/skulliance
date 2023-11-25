@@ -90,12 +90,12 @@
 		  .navbar a{
 		  	  width: 100%;
 		  }
-	      .burger-menu {
+	      #burger-menu {
 			  display: block;
 	          position: relative;
 			  z-index: 99;
 	      }
-	      .burger-menu .burger-icon {
+	      #burger-menu #burger-icon {
 	          position: absolute;
 	          top: 0px;
 	          right: 0px;
@@ -109,8 +109,8 @@
 </head>
 <body>
 	<div class="container">
-		<div class="burger-menu">
-			<img class="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
+		<div id="burger-menu">
+			<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
 		</div>
 		<!-- Navigation Bar -->
 		<div class="navbar" id="navbar">
