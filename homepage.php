@@ -136,8 +136,13 @@
 	  document.getElementById("year").innerHTML = new Date().getFullYear();
 	  
 	  function toggleMenu(){
-	  	document.getElementById('navbar').style.display='flex';
-		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
+		if(document.getElementById('navbar').style.display == "none"){
+		  	document.getElementById('navbar').style.display='flex';
+			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
+		}else{
+		  	document.getElementById('navbar').style.display='flex';
+			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
+		}
 	  }
   </script>
 </body>
