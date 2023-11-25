@@ -18,7 +18,7 @@
 	  	  background-image: url('images/skulliancebackground.png');
 		  background-size: cover;
 		  background-repeat: no-repeat;
-		  background-attachment: fixed;
+		  background-attachment: scroll;
 		  background-position: center;
 		  min-height: 1080px;
 	  }
