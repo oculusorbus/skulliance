@@ -28,7 +28,7 @@
 	  .navbar img {
 		  height: 32px;
 		  width: auto;
-		  margin-left:4px;
+		  padding-left:10px;
 	  }
 	  .navbar{
 	  	  position: fixed;
