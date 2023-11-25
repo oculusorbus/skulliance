@@ -78,11 +78,11 @@
 	  	  display: none;
 	  }
 	  @media screen and (min-width: 701px) {
-		  .burger-menu{
+		  #burger-menu{
 		  	  display: none;
 		  }
 		  .navbar{
-		  	  display: block;
+		  	  display: flex;
 		  }
 	  }
 	  @media screen and (max-width: 700px) {
