@@ -16,7 +16,7 @@
 	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
-		  background-color: 777;
+		  background-color: #36393F;
 		  background-blend-mode: multiply;
 		  background-size: cover;
 		  background-repeat: no-repeat;
