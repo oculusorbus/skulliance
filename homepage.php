@@ -31,6 +31,7 @@
 	  }
 	  .navbar{
 	  	  position: fixed;
+		  width: 100%;
 	  }
   </style>
 </head>
