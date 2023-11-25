@@ -48,7 +48,7 @@
 		  background-repeat: no-repeat;
 		  background-attachment: fixed;
 		  background-position: center;
-		  max-height: 1300px;
+		  max-height: 1350px;
 		  height: 100%;
 	  }
 	  .banner .logo{
