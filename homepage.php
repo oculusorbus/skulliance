@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
-  <script src="https://www.skulliance.io/skulliance.js"></script>
+  <script src="https://www.skulliance.io/staking/skulliance.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="https://www.skulliance.io/staking/dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <style>
