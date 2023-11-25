@@ -30,6 +30,8 @@
 	  .navbar img {
 		  height: 36px;
 		  width: auto;
+		  padding-left: 5px;
+		  padding-right: 5px;
 	  }
 	  .navbar{
 	  	  position: fixed;
