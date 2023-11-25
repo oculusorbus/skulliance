@@ -16,6 +16,7 @@
 	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
+		  background-blend-mode: multiply;
 		  background-size: cover;
 		  background-repeat: no-repeat;
 		  background-attachment: fixed;
