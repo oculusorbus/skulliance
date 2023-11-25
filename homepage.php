@@ -20,7 +20,7 @@
 		  background-repeat: no-repeat;
 		  background-attachment: fixed;
 		  background-position: center;
-		  min-height: 1400px;
+		  min-height: 1300px;
 	  }
 	  .banner .logo{
 	  	  margin: 0 auto;
