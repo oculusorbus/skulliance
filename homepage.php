@@ -28,7 +28,7 @@
 	  	  margin: 0 auto;
 	  }
 	  .navbar img {
-		  height: 36px;
+		  height: 30px;
 		  width: auto;
 		  padding-left: 5px;
 		  padding-right: 5px;
