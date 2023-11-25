@@ -6,6 +6,11 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="https://www.skulliance.io/staking/dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <style>
+	  .container {
+		  max-width: none !important;
+	  }
+  </style>
 </head>
 <body>
 	<div class="container">
