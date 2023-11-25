@@ -140,7 +140,7 @@
 		  	document.getElementById('navbar').style.display='flex';
 			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
 		}else{
-		  	document.getElementById('navbar').style.display='flex';
+		  	document.getElementById('navbar').style.display='none';
 			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
 		}
 	  }
