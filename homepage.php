@@ -46,8 +46,8 @@
 		  <img src="images/skull.png" />
 		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
-		  <img src="images/discord.png" />
-		  <img src="images/x.png" />
+		  <a href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
+		  <a href="https://www.x.com/skulliance"><img src="images/x.png" /></a>
 		</div>
 
 <!-- The flexible grid (content) -->
