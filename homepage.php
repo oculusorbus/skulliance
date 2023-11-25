@@ -110,7 +110,7 @@
 <body>
 	<div class="container">
 		<div class="burger-menu">
-			<img class="burger-icon" onclick="javascript:document.getElementById('navbar').style.display='flex';" src="https://www.skulliance.io/staking/images/menu.png"/>
+			<img class="burger-icon" onclick="javascript:" src="https://www.skulliance.io/staking/images/menu.png"/>
 		</div>
 		<!-- Navigation Bar -->
 		<div class="navbar" id="navbar">
@@ -134,6 +134,11 @@
 </div>
   <script type="text/javascript">
 	  document.getElementById("year").innerHTML = new Date().getFullYear();
+	  
+	  function toggleMenu(){
+	  	document.getElementById('navbar').style.display='flex';
+		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
+	  }
   </script>
 </body>
 </html>
