@@ -10,6 +10,9 @@
 	  .container {
 		  max-width: none !important;
 	  }
+	  .banner {
+	  	  background-image: url('../images/skulliancebackground.png');
+	  }
   </style>
 </head>
 <body>
@@ -25,7 +28,7 @@
 		</div>
 
 <!-- The flexible grid (content) -->
-<div class="row" id="row1">
+<div class="row banner" id="row1">
   <div class="main">
 	
   </div>
