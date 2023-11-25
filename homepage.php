@@ -113,7 +113,7 @@
 			<img class="burger-icon" onclick="javascript:document.getElementById('navbar').style.display='block';" src="https://www.skulliance.io/staking/images/menu.png"/>
 		</div>
 		<!-- Navigation Bar -->
-		<div class="navbar">
+		<div class="navbar" id="navbar">
 		  <img class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
 		  <a class="navbar-first" href="https://www.skulliance.io/staking">Staking</a>
 		  <a href="https://www.skulliance.io/shop">Merch</a>
