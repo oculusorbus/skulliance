@@ -51,7 +51,7 @@
 	  	  .navbar .icon {
 			  display: none;
 		  }
-		  .logo {
+		  .banner .logo {
 		  	  width: 500px;
 		  }
 	  }
