@@ -30,7 +30,7 @@
 		  width: auto;
 	  }
 	  .navbar{
-	  	  position: absolute;
+	  	  position: fixed;
 	  }
   </style>
 </head>
