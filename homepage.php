@@ -74,6 +74,9 @@
 	  .social:hover img{
 	      -webkit-filter: invert(100%) !important;
 	  }
+	  .burger-menu{
+	  	  display: none;
+	  }
 	  @media screen and (max-width: 700px) {
 	  	  .navbar .icon {
 			  display: none;
@@ -84,11 +87,22 @@
 		  .navbar a{
 		  	  width: 100%;
 		  }
+	      .burger-menu {
+	          position: relative;
+	      }
+	      .burger-menu .burger-icon {
+	          position: absolute;
+	          top: 0px;
+	          right: 0px;
+	      }
 	  }
   </style>
 </head>
 <body>
 	<div class="container">
+		<div class="burger-menu">
+			<img class="burger-icon" src="https://www.skulliance.io/staking/images/menu.png"/>
+		</div>
 		<!-- Navigation Bar -->
 		<div class="navbar">
 		  <img class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
