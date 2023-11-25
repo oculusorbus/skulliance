@@ -39,7 +39,7 @@
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
-		  <img src="images/skull.png" />	
+		  <a href="#"><img src="images/skull.png" /></a>
 		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
 		</div>
