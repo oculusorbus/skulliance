@@ -16,7 +16,7 @@
 		  display: flex !important;
 	  }
 	  .banner {
-	  	  background-image: url('images/skulliancebackground.png');
+	  	  background-image: url('https://www.skulliance.io/staking/images/skulliancebackground.png');
 		  background-color: #36393F;
 		  background-blend-mode: multiply;
 		  background-size: cover;
