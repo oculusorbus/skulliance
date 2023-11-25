@@ -10,6 +10,10 @@
 	  .container {
 		  max-width: none !important;
 	  }
+	  .main {
+	      align-items: center !important;
+		  display: flex !important;
+	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
 		  background-size: cover;
@@ -17,6 +21,9 @@
 		  background-attachment: fixed;
 		  background-position: center;
 		  min-height: 1080px;
+	  }
+	  .banner .logo{
+	  	  margin: 0 auto;
 	  }
   </style>
 </head>
