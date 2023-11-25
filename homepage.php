@@ -136,7 +136,7 @@
 	  document.getElementById("year").innerHTML = new Date().getFullYear();
 	  
 	  function toggleMenu(){
-		if(document.getElementById('navbar').style.display == "none"){
+		if(document.getElementById('burger-icon').src == "https://www.skulliance.io/staking/images/menu.png"){
 		  	document.getElementById('navbar').style.display='flex';
 			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
 		}else{
