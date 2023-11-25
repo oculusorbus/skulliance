@@ -61,8 +61,8 @@
 		  <img class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
 		  <a class="navbar-first" href="https://www.skulliance.io/staking">Staking</a>
 		  <a href="https://www.skulliance.io/shop">Merch</a>
-		  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
-		  <a class="social" href="https://www.x.com/skulliance"><img src="images/x.png" /></a>
+		  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" /></a>
+		  <a class="social" href="https://www.x.com/skulliance"><img src="https://www.skulliance.io/staking/images/x.png" /></a>
 		</div>
 
 <!-- The flexible grid (content) -->
