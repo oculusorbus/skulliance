@@ -51,6 +51,9 @@
 	  	  .navbar .icon {
 			  display: none;
 		  }
+		  .logo {
+		  	  width: 500px;
+		  }
 	  }
   </style>
 </head>
