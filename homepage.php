@@ -31,6 +31,7 @@
 	<div class="container">
 		<!-- Navigation Bar -->
 		<div class="navbar">
+		  <img class="rounded-full" src="images/skull.png" />	
 		  <a class="navbar-first" href="store.php">Store</a>
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="collections.php">Collections</a>
