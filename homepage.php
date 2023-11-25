@@ -44,6 +44,9 @@
 	      height: 36px;
 		  padding-left: 5px;
 	  }
+	  .social:hover img{
+	      -webkit-filter: invert(100%) !important;
+	  }
 	  @media screen and (max-width: 700px) {
 	  	  .navbar .icon {
 			  display: none;
@@ -58,8 +61,8 @@
 		  <img class="icon" src="images/skull.png" />
 		  <a class="navbar-first" href="../staking">Staking</a>
 		  <a href="../shop">Merch</a>
-		  <a href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
-		  <a href="https://www.x.com/skulliance"><img src="images/x.png" /></a>
+		  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="images/discord.png" /></a>
+		  <a class="social" href="https://www.x.com/skulliance"><img src="images/x.png" /></a>
 		</div>
 
 <!-- The flexible grid (content) -->
