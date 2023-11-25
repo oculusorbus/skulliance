@@ -12,6 +12,9 @@
 	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
+		  background-repeat: no-repeat;
+		  background-attachment: fixed;
+		  background-position: center;
 		  min-height: 1080px;
 	  }
   </style>
