@@ -10,6 +10,7 @@
 	  .container {
 		  max-width: none !important;
 	      align-items: center !important;
+		  display: flex !important;
 	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
