@@ -9,6 +9,7 @@
   <style>
 	  .container {
 		  max-width: none !important;
+	      align-items: center !important;
 	  }
 	  .banner {
 	  	  background-image: url('images/skulliancebackground.png');
