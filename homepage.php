@@ -29,6 +29,9 @@
 		  height: 36px;
 		  width: auto;
 	  }
+	  .navbar{
+	  	  position: absolute;
+	  }
   </style>
 </head>
 <body>
