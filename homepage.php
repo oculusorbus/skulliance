@@ -38,6 +38,9 @@
 		  width: 100%;
 		  align-items: center;
 	  }
+	  .navbar a{
+		  font-size: 20px;
+	  }
   </style>
 </head>
 <body>
