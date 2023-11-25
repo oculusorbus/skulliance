@@ -54,6 +54,9 @@
 		  .banner .logo img{
 		  	  width: 90%;
 		  }
+		  .navbar a{
+		  	  width: 100%;
+		  }
 	  }
   </style>
 </head>
