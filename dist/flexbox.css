@@ -740,6 +740,8 @@ li form {
 
 .diamond-container {
 	background-image: url('../icons/diamond.png');
+	background-repeat: no-repeat;
+    background-size: cover;
 }
 
 .store-item .nft-data {
