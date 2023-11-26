@@ -104,7 +104,7 @@
 			  z-index: 99;
 	      }
 	      #burger-menu #burger-icon {
-	          position: absolute;
+	          position: fixed;
 	          top: 0px;
 	          right: 0px;
 			  width: 50px;
