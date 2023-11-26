@@ -739,7 +739,7 @@ li form {
 }
 
 .diamond-container {
-	background-image: url('../icons/diamond.png');
+	background-image: url('../images/diamond-backgroun.png');
 	background-repeat: no-repeat;
     background-size: contain;
 	background-position: top;
