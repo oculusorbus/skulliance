@@ -53,6 +53,7 @@ include 'header.php';
 
 if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 <a name="diamond-skull" id="diamond-skull"></a>
+<div class="diamond-container">
 <div class="row" id="row1">
     <div class="main-diamond">
 	<h2>Diamond Skull Delegation</h2>
@@ -107,6 +108,7 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 		</div>
 	</div>
 	</div>
+</div>
 </div>
 
 <div class="row" id="row1">

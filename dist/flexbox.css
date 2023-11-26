@@ -738,6 +738,10 @@ li form {
 	width: 40% !important;
 }
 
+.diamond-container {
+	background-image: url('../icons/diamond.png');
+}
+
 .store-item .nft-data {
 	min-height: 480px;
 }
