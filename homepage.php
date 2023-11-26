@@ -77,12 +77,6 @@
 	  .burger-menu{
 	  	  display: none;
 	  }
-	  .show-menu{
-		  display: flex !important;
-	  }
-	  .hide_menu{
-	  	  display: none !important;
-	  }
 	  @media screen and (min-width: 701px) {
 		  #burger-menu{
 		  	  display: none;
@@ -118,6 +112,12 @@
 			  padding-top: 5px;
 			  padding-right: 10px;
 	      }
+	  }
+	  .show-menu{
+		  display: flex !important;
+	  }
+	  .hide_menu{
+	  	  display: none !important;
 	  }
   </style>
 </head>
