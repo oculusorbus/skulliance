@@ -77,6 +77,12 @@
 	  .burger-menu{
 	  	  display: none;
 	  }
+	  .show-menu{
+		  display: flex;
+	  }
+	  .hide_menu{
+	  	  display: none;
+	  }
 	  @media screen and (min-width: 701px) {
 		  #burger-menu{
 		  	  display: none;
@@ -146,11 +152,15 @@
 	  
 	  function toggleMenu(){
 		if(document.getElementById('burger-icon').src == "https://www.skulliance.io/staking/images/menu.png"){
-		  	document.getElementById('navbar').style.display='flex';
+		  	//document.getElementById('navbar').style.display='flex';
 			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
+			document.getElementById("navbar").classList.add('show-menu');
+			document.getElementById("navbar").classList.remove('hide-menu');
 		}else{
-		  	document.getElementById('navbar').style.display='none';
+		  	//document.getElementById('navbar').style.display='none';
 			document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
+			document.getElementById("navbar").classList.add('hide-menu');
+			document.getElementById("navbar").classList.remove('show-menu');
 		}
 	  }
   </script>
