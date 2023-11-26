@@ -735,7 +735,7 @@ li form {
 
 .carbon-icon {
 	opacity: 0.7;
-	width: 40%;
+	width: 40% !important;
 }
 
 .store-item .nft-data {
