@@ -773,16 +773,19 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					ksort($diamond_skull_totals[$row["nfts_id"]]);
 					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
+					$carbon_count = 0;
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
 						$status = "";
 						if($projects[$project_id] == $total){
 							$status = "Full"; 
+							$carbon_count++;
 						}else{
 							$status = "Open"; 
 						}
 						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
 					echo "</table>";
+					echo "<img src='images/carbon".$carbon_count.".png'/>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
 				}else{
 					echo "<span class='nft-level'><br><strong>All Slots Available</strong></span>";
