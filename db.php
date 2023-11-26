@@ -772,8 +772,9 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				}
 				if(isset($diamond_skull_totals[$row["nfts_id"]])){
 					ksort($diamond_skull_totals[$row["nfts_id"]]);
-					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
+					
 					$carbon_count = 0;
+					$project_rows = "";
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
 						$status = "";
 						if($projects[$project_id] == $total){
@@ -782,14 +783,16 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						}else{
 							$status = "Open"; 
 						}
-						echo "<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
+						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
-					echo "</table>";
 					echo "<img src='icons/carbon".$carbon_count.".png'/>";
+					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
+					echo $project_rows;
+					echo "</table>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
 				}else{
-					echo "<span class='nft-level'><br><strong>All Slots Available</strong></span>";
 					echo "<img src='icons/carbon0.png'/>";
+					echo "<span class='nft-level'><br><strong>All Slots Available</strong></span>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: 0 of 38</span>";
 				}
 			}
