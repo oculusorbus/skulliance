@@ -130,7 +130,7 @@
 		<div class="navbar" id="navbar">
 		  <img class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
 		  <a class="navbar-first" href="https://www.skulliance.io/staking">Staking</a>
-		  <a class="navbar-first" href="https://www.jpg.store/collection/skulliance">Diamond Skulls</a>
+		  <a href="https://www.jpg.store/collection/skulliance">Diamond Skulls</a>
 		  <a href="https://www.skulliance.io/shop">Merch</a>
 		  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" /></a>
 		  <a class="social" href="https://www.x.com/skulliance"><img src="https://www.skulliance.io/staking/images/x.png" /></a>
