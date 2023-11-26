@@ -78,10 +78,10 @@
 	  	  display: none;
 	  }
 	  .show-menu{
-		  display: flex;
+		  display: flex !important;
 	  }
 	  .hide_menu{
-	  	  display: none;
+	  	  display: none !important;
 	  }
 	  @media screen and (min-width: 701px) {
 		  #burger-menu{
