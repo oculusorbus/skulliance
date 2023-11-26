@@ -791,7 +791,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 					echo "</table>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
 				}else{
-					echo "<img src='icons/carbon0.png'/>";
+					echo "<br><img src='icons/carbon0.png'/>";
 					echo "<span class='nft-level'><br><strong>All Slots Available</strong></span>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: 0 of 38</span>";
 				}
