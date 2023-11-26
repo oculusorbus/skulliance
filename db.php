@@ -785,13 +785,13 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						}
 						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
-					echo "<br><img style='opacity:0.7' src='icons/carbon".$carbon_count.".png'/><br><br>";
+					echo "<br><img class='carbon-icon' src='icons/carbon".$carbon_count.".png'/><br><br>";
 					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
 					echo $project_rows;
 					echo "</table>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
 				}else{
-					echo "<br><img style='opacity:0.7' src='icons/carbon0.png'/>";
+					echo "<br><img class='carbon-icon' src='icons/carbon0.png'/>";
 					echo "<span class='nft-level'><br><strong>All Slots Available</strong></span>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: 0 of 38</span>";
 				}

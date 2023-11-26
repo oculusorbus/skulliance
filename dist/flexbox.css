@@ -733,6 +733,11 @@ li form {
 	min-height: 150px;
 }
 
+.carbon-icon {
+	opacity: 0.7;
+	width: 40%;
+}
+
 .store-item .nft-data {
 	min-height: 480px;
 }
