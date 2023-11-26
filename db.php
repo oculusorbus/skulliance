@@ -785,7 +785,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						}
 						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 					}
-					echo "<img src='icons/carbon".$carbon_count.".png'/>";
+					echo "<br><img src='icons/carbon".$carbon_count.".png'/><br>";
 					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
 					echo $project_rows;
 					echo "</table>";
