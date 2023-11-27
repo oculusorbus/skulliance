@@ -18,6 +18,10 @@ include 'header.php';
 	<h2>My Delegated Diamond Skulls</h2>
 	<?php }else if($filterbydiamond == "ALL"){ ?>
 	<h2>All Diamond Skulls</h2>
+	<?php }else if($filterbydiamond == "ALL DELEGATED"){ ?>
+	<h2>All Delegated Diamond Skulls</h2>
+	<?php }else if($filterbydiamond == "EMPTY"){ ?>
+	<h2>Empty Diamond Skulls</h2>
 	<?php } ?>
 	<a name="diamond-skulls" id="diamond-skulls"></a>
     <div class="content">
