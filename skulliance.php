@@ -133,6 +133,14 @@ if(isset($_POST['stakeaddress'])){
 	alert("Your wallet with stake address: ".$_POST['stakeaddress']." has been successfully connected. The qualifying NFTs in your wallet have now been verified and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallet you just connected. You have also been assigned the Staker role in the Skulliance discord. Enjoy Skulliance staking!");
 }
 
+// Refresh User Wallets
+if(isset($_POST['refresh'])){
+	if(isset($_SESSION['userData']['user_id'])){ 
+		verifyNFTs($conn, getAddresses($conn), getPolicies($conn));
+		alert("Your wallets have been successfully refreshed. Any newly acquired qualifying NFTs have been accounted for in your wallet and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallets you've already connected. Enjoy Skulliance staking!");
+	}
+}
+
 // Crafting
 if(isset($_POST['balance'])){
 	$minbalance = 0;
@@ -178,8 +186,15 @@ function renderWalletConnection($page){
 		  <input type="hidden" id="address" name="address" value="">
 		  <input type="hidden" id="stakeaddress" name="stakeaddress" value="">
 		  <input type="submit" value="Submit" style="display:none;">
-		</form>
-	</li>
+		</form>';
+		// Check if already a user before allowing wallet refreshes
+		<?php if(isset($_SESSION['userData']['user_id'])){ 
+			echo '<form id="refreshWallet" action="'.$page.'.php" method="post">
+			  <input type="hidden" id="refresh" name="refresh" value="refresh">
+			  <input type="submit" value="Refresh">
+			</form>';
+		} ?>
+	echo '</li>
 	</div>';
 }
 
