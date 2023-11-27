@@ -779,7 +779,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 					
 					$carbon_count = 0;
 					$project_rows = "";
-					$prev_project_id = "";
+					$previous_project_id = "";
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
 						$status = "";
 						if($projects[$project_id] == $total){
