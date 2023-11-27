@@ -779,7 +779,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 					
 					$carbon_count = 0;
 					$project_rows = "";
-					$previous_project_id = "";
+					$previous_project_id = 0;
 					foreach($diamond_skull_totals[$row["nfts_id"]] AS $project_id => $total){
 						$status = "";
 						if($projects[$project_id] == $total){
@@ -788,9 +788,11 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						}else{
 							$status = "Open"; 
 						}
-						if(($project_id - $previous_project_id) > 1){
-							for ($x = 1; $x <= ($project_id - $previous_project_id); $x++) {
-								$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id-1]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+						if($previous_project_id != 0){
+							if(($project_id - $previous_project_id) > 1){
+								for ($x = 1; $x <= ($project_id - $previous_project_id); $x++) {
+									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id-1]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+								}
 							}
 						}
 						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
