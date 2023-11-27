@@ -409,7 +409,7 @@ if(isset($_POST['nft_id'])){
 			alert("All ".$project_names[$project_id]." slots have been taken for this Diamond Skull.");
 		}
 	}else{
-		alert("You must be a member of Skulliance in order to participate in Diamond Skull delegation and earn CARBON rewards.");
+		alert("You must be a member of Skulliance in order to participate in Diamond Skull delegation and earn CARBON rewards. Join Skulliance Discord to verify your wallet and request membership. You will need to logout and login to the staking platform in order for your membership to be recognized.");
 	}
 }
 
