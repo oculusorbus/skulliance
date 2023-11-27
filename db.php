@@ -723,9 +723,9 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				$user_filter = "nfts.id IN(".$diamond_skull_ids.")";
 			}
 		}else if($advanced_filter == "all delegated"){
-			$user_filter = "nfts.id IN(SELECT nft_id FROM diamond_skulls)";
+			$user_filter = "nfts.id IN(SELECT diamond_skull_id FROM diamond_skulls)";
 		}else if($advanced_filter == "empty"){
-			$user_filter = "nfts.id NOT IN(SELECT nft_id FROM diamond_skulls)";
+			$user_filter = "nfts.id NOT IN(SELECT diamond_skull_id FROM diamond_skulls)";
 		}
 		$and = "";
 		if(($filterby != "None" && $filterby != "") && $user_filter != ""){
