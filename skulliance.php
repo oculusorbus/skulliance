@@ -137,7 +137,7 @@ if(isset($_POST['stakeaddress'])){
 if(isset($_POST['refresh'])){
 	if(isset($_SESSION['userData']['user_id'])){ 
 		verifyNFTs($conn, getAddresses($conn), getPolicies($conn));
-		alert("Your wallets have been successfully refreshed. Any newly acquired qualifying NFTs have been accounted for in your wallet and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallets you have already connected. Enjoy Skulliance staking!");
+		alert("Your wallet(s) have been successfully refreshed. Any newly acquired qualifying NFTs have been accounted for in your wallet and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallets you have already connected. Enjoy Skulliance staking!");
 	}
 }
 
