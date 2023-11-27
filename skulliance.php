@@ -188,12 +188,12 @@ function renderWalletConnection($page){
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>';
 		// Check if already a user before allowing wallet refreshes
-		<?php if(isset($_SESSION['userData']['user_id'])){ 
+		if(isset($_SESSION['userData']['user_id'])){ 
 			echo '<form id="refreshWallet" action="'.$page.'.php" method="post">
 			  <input type="hidden" id="refresh" name="refresh" value="refresh">
 			  <input type="submit" value="Refresh">
 			</form>';
-		} ?>
+		}
 	echo '</li>
 	</div>';
 }
