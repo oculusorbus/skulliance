@@ -31,6 +31,10 @@ include 'header.php';
 					$advanced_filter = "all";
 				}else if($filterbydiamond == "DELEGATED"){
 					$advanced_filter = "delegated";
+				}else if($filterbydiamond == "ALL DELEGATED"){
+					$advanced_filter = "all delegated";
+				}else if($filterbydiamond == "EMPTY"){
+					$advanced_filter = "empty";
 				}
 				if($diamond_skull_id != ""){
 					$_SESSION['userData']['diamond_skull_id'] = $diamond_skull_id;

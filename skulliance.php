@@ -468,6 +468,8 @@ function filterDiamondSkulls($page){
 			<option value="MY">Diamond Skulls</option>
 			<option value="MY">My Diamond Skulls</option>
 			<option value="DELEGATED">My Delegated Diamond Skulls</option>
+			<option value="EMPTY">Empty Diamond Skulls</option>
+			<option value="ALL DELEGATED">Delegated Diamond Skulls</option>
 			<option value="ALL">All Diamond Skulls</option>';
 		echo '
 		</select>
