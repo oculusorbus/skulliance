@@ -790,8 +790,8 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						}
 						if($previous_project_id != 0){
 							if(($project_id - $previous_project_id) > 1){
-								for ($x = ($project_id - $previous_project_id); $x <= $project_id; $x++) {
-									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+								for ($x = 1; $x <= ($project_id - $previous_project_id); $x++) {
+									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id-1]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
 								}
 							}
 						}
