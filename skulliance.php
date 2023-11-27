@@ -191,7 +191,7 @@ function renderWalletConnection($page){
 		if(isset($_SESSION['userData']['user_id'])){ 
 			echo '<form id="refreshWallet" action="'.$page.'.php" method="post">
 			  <input type="hidden" id="refresh" name="refresh" value="refresh">
-			  <input type="submit" value="Refresh">
+			  <input type="submit" value="Refresh" class="small-button">
 			</form>';
 		}
 	echo '</li>
