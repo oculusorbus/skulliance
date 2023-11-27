@@ -1110,6 +1110,10 @@ input:checked + .slider:before {
 	.current-address {
 		display: none;
 	}
+	// Hide wallet connect on mobile devices
+	.wallet-connect{
+		display: none;
+	}
 	/*
 	.wallet-connect {
 		display: none;
