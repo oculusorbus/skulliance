@@ -722,6 +722,10 @@ li form {
 	min-height: 585px;
 }
 
+.diamond-skull-data table{
+	color: #D6DDDE;
+}
+
 .diamond-data{
 	background-color: #36393F;
 	border: 1px solid #43464D;
