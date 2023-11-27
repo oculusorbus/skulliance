@@ -804,6 +804,11 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$total."</td><td align='right'>".$status."</td></tr>";
 						$previous_project_id = $project_id;
 					}
+					if($previous_project_id < 6){
+						for ($x = $previous_project_id; $x <= 6; $x++) {
+							$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+						}
+					}
 					echo "<br><img class='carbon-icon' src='icons/carbon".$carbon_count.".png'/><br><br>";
 					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
 					echo $project_rows;
