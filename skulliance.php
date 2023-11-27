@@ -391,21 +391,25 @@ $project_names[6] = "Crypties";
 
 $nft_id = "";
 if(isset($_POST['nft_id'])){
-	$nft_id = $_POST['nft_id'];
-	$project_id = getNFTProjectID($conn, $nft_id);
-	$availability = checkDiamondSkullProjectAvailability($conn, $_SESSION['userData']['diamond_skull_id'], $project_id, $projects);
-	if($availability == true){
-		// Check whether NFT id is a valid core project that can delegate to prevent hacking
+	if($member == true){
+		$nft_id = $_POST['nft_id'];
+		$project_id = getNFTProjectID($conn, $nft_id);
+		$availability = checkDiamondSkullProjectAvailability($conn, $_SESSION['userData']['diamond_skull_id'], $project_id, $projects);
+		if($availability == true){
+			// Check whether NFT id is a valid core project that can delegate to prevent hacking
 		
-		// Check whether NFT has already been delegated
-		$delegated = checkNFTDelegationStatus($conn, $nft_id);
-		if($delegated == false){
-			addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
+			// Check whether NFT has already been delegated
+			$delegated = checkNFTDelegationStatus($conn, $nft_id);
+			if($delegated == false){
+				addDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
+			}else{
+				alert("Your NFT was not delegated. This NFT has already been delegated to a Diamond Skull.");
+			}
 		}else{
-			alert("Your NFT was not delegated. This NFT has already been delegated to a Diamond Skull.");
+			alert("All ".$project_names[$project_id]." slots have been taken for this Diamond Skull.");
 		}
 	}else{
-		alert("All ".$project_names[$project_id]." slots have been taken for this Diamond Skull.");
+		alert("You must be a member of Skulliance in order to participate in Diamond Skull delegation and earn CARBON rewards.");
 	}
 }
 
