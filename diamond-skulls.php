@@ -12,11 +12,11 @@ include 'header.php';
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <div class="main">
-	<?php if($filterbydiamond == "MY" || $filterbydiamond == ""){ ?>
+	<?php if($filterbydiamond == "MY"){ ?>
 	<h2>My Diamond Skulls</h2>
 	<?php }else if($filterbydiamond == "DELEGATED"){ ?>
 	<h2>My Delegated Diamond Skulls</h2>
-	<?php }else if($filterbydiamond == "ALL"){ ?>
+	<?php }else if($filterbydiamond == "ALL" || $filterbydiamond == ""){ ?>
 	<h2>All Diamond Skulls</h2>
 	<?php }else if($filterbydiamond == "ALL DELEGATED"){ ?>
 	<h2>All Delegated Diamond Skulls</h2>
@@ -29,9 +29,9 @@ include 'header.php';
 		<div id="nfts" class="nfts">
 			<?php 			
 			if(isset($_SESSION['userData']['user_id'])){ 
-				if($filterbydiamond == "MY" || $filterbydiamond == ""){
+				if($filterbydiamond == "MY"){
 					$advanced_filter = "my";
-				}else if($filterbydiamond == "ALL"){
+				}else if($filterbydiamond == "ALL" || $filterbydiamond == ""){
 					$advanced_filter = "all";
 				}else if($filterbydiamond == "DELEGATED"){
 					$advanced_filter = "delegated";
