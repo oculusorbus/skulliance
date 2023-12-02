@@ -629,10 +629,13 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	$title = "Diamond Skull ".$title_verbiage;
 	$description = $nft_discord_id.": ".$nft_name.$verbiage.$diamond_skull_discord_id.": ".$diamond_skull_name;
 	if($project_id == 6){
-		$imageurl = getIPFS($nft_image, $collection_id);
+		//$imageurl = getIPFS($nft_image, $collection_id);
 	}else{
-		$imageurl = "https://www.skulliance.io/staking/image.php?ipfs=".str_replace("ipfs/", "", $nft_image);
+		// Too resource intensive
+		//$imageurl = "https://www.skulliance.io/staking/image.php?ipfs=".str_replace("ipfs/", "", $nft_image);
 	}
+	// Defaulting to IPFS even though it doesn't work for animated GIFs
+	$imageurl = getIPFS($nft_image, $collection_id);
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 }
 
