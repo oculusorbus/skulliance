@@ -805,7 +805,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 							}
 						}
 						$skulls = "";
-						for ($x = 0; $x <= $total; $x++) {
+						for ($x = 0; $x < $total; $x++) {
 							$skulls = $skulls."💀";
 						}
 						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$skulls."</td><td align='right'>".$status."</td></tr>";
