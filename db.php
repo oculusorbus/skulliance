@@ -794,13 +794,13 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						if($previous_project_id != 0){
 							if(($project_id - $previous_project_id) > 1){
 								for ($x = 1; $x < ($project_id - $previous_project_id); $x++) {
-									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id-$x]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id-$x]."</td><td align='right'>&nbsp;</td><td align='right'>Empty</td></tr>";
 								}
 							}
 						}else{
 							if($project_id > 1){
 								for ($x = 1; $x < $project_id; $x++) {
-									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+									$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='right'>&nbsp;</td><td align='right'>Empty</td></tr>";
 								}
 							}
 						}
@@ -808,16 +808,16 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						for ($x = 0; $x < $total; $x++) {
 							$skulls = $skulls."💀";
 						}
-						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='center'>".$skulls."</td><td align='right'>".$status."</td></tr>";
+						$project_rows = $project_rows."<tr><td align='left'>".$project_names[$project_id]."</td><td align='right'>".$skulls."</td><td align='right'>".$status."</td></tr>";
 						$previous_project_id = $project_id;
 					}
 					if($previous_project_id < 6){
 						for ($x = ($previous_project_id+1); $x <= 6; $x++) {
-							$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='center'>&nbsp;</td><td align='right'>Empty</td></tr>";
+							$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='right'>&nbsp;</td><td align='right'>Empty</td></tr>";
 						}
 					}
 					echo "<br><img class='carbon-icon' src='icons/carbon".$carbon_count.".png'/><br><br>";
-					echo "<table><tr><th width='60%' align='left'>Project</th><th width='20%' align='left'>NFTs</th><th width='20%' align='left'>Status</th></tr>";
+					echo "<table><tr><th width='50%' align='left'>Project</th><th width='30%' align='right'>NFTs</th><th width='20%' align='right'>Status</th></tr>";
 					echo $project_rows;
 					echo "</table>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
