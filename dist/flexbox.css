@@ -727,6 +727,10 @@ li form {
 	font-size: 12px;
 }
 
+.diamond-skull-data td{
+	padding: 2px;
+}
+
 .diamond-data{
 	background-color: #36393F;
 	border: 1px solid #43464D;
