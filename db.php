@@ -817,7 +817,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 						}
 					}
 					echo "<br><img class='carbon-icon' src='icons/carbon".$carbon_count.".png'/><br><br>";
-					echo "<table><tr><th width='50%' align='left'>Project</th><th width='30%' align='right'>NFTs</th><th width='20%' align='right'>Status</th></tr>";
+					echo "<table><tr><th width='40%' align='left'>Project</th><th width='40%' align='right'>NFTs</th><th width='20%' align='right'>Status</th></tr>";
 					echo $project_rows;
 					echo "</table>";
 					echo "<span class='nft-level'><br><strong>CARBON Rewards</strong>: ".$delegator_rewards[$row["nfts_id"]]." of 38</span>";
