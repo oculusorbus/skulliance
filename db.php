@@ -813,7 +813,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 					}
 					if($previous_project_id < 6){
 						for ($x = ($previous_project_id+1); $x <= 6; $x++) {
-							$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='center'>0</td><td align='right'>Empty</td></tr>";
+							$project_rows = $project_rows."<tr><td align='left'>".$project_names[$x]."</td><td align='center'>&nbsp;</td><td align='right'>Empty</td></tr>";
 						}
 					}
 					echo "<br><img class='carbon-icon' src='icons/carbon".$carbon_count.".png'/><br><br>";
