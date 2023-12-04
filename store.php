@@ -38,7 +38,7 @@ include 'header.php';
 					$title = $project["name"];
 				}else if($filterby == "exclusive"){
 					$filterby = "exclusive";
-					$title = "Exclusive";
+					$title = "Exclusive Items";
 				}else{
 					$title = "All Projects";
 					$filterby = 0;
