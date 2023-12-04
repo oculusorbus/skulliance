@@ -36,7 +36,8 @@ include 'header.php';
 				if($filterby != null && $filterby != 0 && $filterby != "exclusive"){
 					$project = getProjectInfo($conn, $filterby);
 					$title = $project["name"];
-					$filterby = $project["id"];
+					echo $filterby;
+					exit;
 				}else if($filterby == "exclusive"){
 					$filterby = "exclusive";
 					$title = "Exclusive Items";
