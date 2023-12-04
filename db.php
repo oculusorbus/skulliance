@@ -712,7 +712,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != ""){
 			$filterby = "project_id = '".$filterby."' ";
-		}else if($filterby = "core"){
+		}else if($filterby == "core"){
 			$filterby = "project_id IN(1,2,3,4,5,6) ";
 		}else{
 			$filterby = "";
