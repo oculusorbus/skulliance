@@ -568,6 +568,7 @@ function filterItems($page){
 		<select onchange="javascript:filterItems(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
 			<option value="0">All</option>
+			<option value="exclusive">Exclusive</option>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
