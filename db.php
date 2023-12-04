@@ -710,7 +710,7 @@ function getDelegatedDiamondSkulls($conn){
 function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
 	global $projects, $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
-		if($filterby != "None" && $filterby != ""){
+		if($filterby != "None" && $filterby != "" && $filterby != "core"){
 			$filterby = "project_id = '".$filterby."' ";
 		}else if($filterby == "core"){
 			$filterby = "project_id IN(1,2,3,4,5,6) ";
