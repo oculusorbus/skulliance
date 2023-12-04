@@ -871,9 +871,7 @@ function getItems($conn, $page, $filterby=""){
 	global $conn;
 	if($filterby != "0" && $filterby != "exclusive"){
 		$filterby = "AND project_id = '".$filterby."' ";
-		echo $filterby;
-		exit;
-	}if($filterby == "exclusive"){
+	}else if($filterby == "exclusive"){
 		$filterby = "AND featured = '1' ";
 	}else{
 		$filterby = "";
