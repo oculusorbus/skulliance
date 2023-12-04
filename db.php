@@ -874,7 +874,7 @@ function getItems($conn, $page, $filterby=""){
 	}else{
 		$filterby = "";
 	}
-	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, secondary_project_id, projects.name AS project_name, projects.currency AS currency, divider FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY projects.id, items.name ASC";
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, secondary_project_id, projects.name AS project_name, projects.currency AS currency, divider, featured FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY projects.id, items.name ASC, featured DESC";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
