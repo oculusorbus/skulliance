@@ -355,7 +355,7 @@ function renderItemSubmissionForm($creators, $page){
 
 $filterby = "";
 if(!isset($_SESSION['userData']['filterby'])){
-	$_SESSION['userData']['filterby'] = null;
+	$_SESSION['userData']['filterby'] = "core";
 }
 if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
