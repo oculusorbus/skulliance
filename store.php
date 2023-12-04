@@ -33,9 +33,11 @@ include 'header.php';
 			</div>
     		<div class="main">
 				<?php
-				if($filterby != null && $filterby != 0){
+				if($filterby != null && $filterby != 0 && $filterby != "exclusive"){
 					$project = getProjectInfo($conn, $filterby);
 					$title = $project["name"];
+				}else if(filterby == "exclusive"){
+					$filterby = "exclusive";
 				}else{
 					$title = "All Projects";
 					$filterby = 0;
