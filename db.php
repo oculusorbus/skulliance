@@ -869,6 +869,8 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 // Get items for store
 function getItems($conn, $page, $filterby=""){
 	global $conn;
+	echo $filterby;
+	exit;
 	if($filterby != "0" && $filterby != "exclusive"){
 		$filterby = "AND project_id = '".$filterby."' ";
 	}if($filterby == "exclusive"){
