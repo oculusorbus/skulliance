@@ -30,9 +30,9 @@ function getUsers($conn){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	$users[$row["user_id"]] = array();
-		$users[$row["user_id"]]["discord_id"] = $row["discord_id"];
-		$users[$row["user_id"]]["username"] = $row["username"];
+    	$users[$row["id"]] = array();
+		$users[$row["id"]]["discord_id"] = $row["discord_id"];
+		$users[$row["id"]]["username"] = $row["username"];
 	  }
 	  return $users;
 	} else {
