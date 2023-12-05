@@ -22,7 +22,7 @@ if ($conn->connect_error) {
 
 // Get all users
 function getUsers($conn){
-	$sql = "SELECT * FROM users WHERE id = '1'";
+	$sql = "SELECT * FROM users";
 	$result = $conn->query($sql);
 	
 	$users = array();

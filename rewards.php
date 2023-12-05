@@ -10,10 +10,4 @@ if(isset($_GET['deploy'])){
 	updateBalances($conn);
 	deployDiamondSkullRewards($conn);
 }*/
-include_once 'db.php';
-include 'webhooks.php';
-
-$users = array();
-$users = getUsers($conn);
-print_r($users);
 ?>
