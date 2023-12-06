@@ -1412,7 +1412,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 	if($project_id != 0){
 		if($project_id = '15'){
 			$inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id";
-			$where = "diamond_skulls.diamond_skull_id != '0'";
+			$where = "WHERE diamond_skulls.diamond_skull_id != '0'";
 		}else{
 			$where = "WHERE collections.project_id = '".$project_id."'";
 		}
