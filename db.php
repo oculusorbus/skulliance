@@ -1392,11 +1392,13 @@ function checkTransaction($conn, $item_id){
 function getTotalNFTs($conn, $project_id=0){
 	$where = "";
 	if($project_id != 0){
-		if($project_id != "15"){
+		if($project_id == "15"){
+			$inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id ";
+		}else{
 			$where = "WHERE collections.project_id = '".$project_id."'";
 		}
 	}
-	$sql = "SELECT COUNT(nfts.id) as total FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$where." AND nfts.user_id != '0'";
+	$sql = "SELECT COUNT(nfts.id) as total FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." AND nfts.user_id != '0'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -1413,7 +1415,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 	$inner_join = "";
 	$column = "";
 	if($project_id != 0){
-		if($project_id = '15'){
+		if($project_id == '15'){
 			$inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id ";
 		}else{
 			$where = "WHERE collections.project_id = '".$project_id."'";
