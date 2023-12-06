@@ -510,6 +510,7 @@ function filterLeaderboard($page){
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
 			<option value="0">All</option>
+			<option value="15">Delegations</option>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
