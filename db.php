@@ -1391,6 +1391,7 @@ function checkTransaction($conn, $item_id){
 // Get total NFTs staked
 function getTotalNFTs($conn, $project_id=0){
 	$where = "";
+	$inner_join = "";
 	if($project_id != 0){
 		if($project_id == "15"){
 			$inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id ";
