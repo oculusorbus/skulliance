@@ -1468,7 +1468,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$current_balance = 0;
 				}
 				$delegated = "";
-				if($project_id = "15"){
+				if($project_id == "15"){
 					$row["currency"] = "CARBON";
 					$delegated = " Delegated";
 				}
