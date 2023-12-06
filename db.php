@@ -1463,6 +1463,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($current_balance == "false"){
 					$current_balance = 0;
 				}
+				if($project_id = "15"){
+					$row["currency"] = "CARBON";
+				}
 		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"")."</li>";
 		  	}
 			echo "</ul>";
