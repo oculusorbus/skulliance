@@ -1414,7 +1414,6 @@ function getTotalNFTs($conn, $project_id=0){
 function checkLeaderboard($conn, $clean, $project_id=0) {
 	$where = "";
 	$inner_join = "";
-	$column = "";
 	if($project_id != 0){
 		if($project_id == '15'){
 			$inner_join = "INNER JOIN diamond_skulls ON diamond_skulls.nft_id = nfts.id ";
