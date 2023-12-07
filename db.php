@@ -1484,7 +1484,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function getDiamondSkullTotal($conn, $user_id=0){
-	$sql = "SELECT COUNT(nfts.id) AS total FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id WHERE project_id='7' AND user_id = '.$user_id.'";
+	$sql = "SELECT COUNT(nfts.id) AS total FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id WHERE collections.project_id='7' AND nfts.user_id = '.$user_id.'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
