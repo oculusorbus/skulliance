@@ -1488,7 +1488,9 @@ function getDiamondSkullTotal($conn, $user_id=0){
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
-	  return $row["total"];
+	  while($row = $result->fetch_assoc()) {
+	  	return $row["total"];
+	  }
 	  //echo "0 results";
 	}else{
 	  return 0;
