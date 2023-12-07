@@ -1468,16 +1468,30 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$current_balance = 0;
 				}
 				$delegated = "";
+				$diamond_skull_count = "";
 				if($project_id == "15"){
 					$row["currency"] = "CARBON";
 					$delegated = " Delegated";
+					$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"")."</li>";
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
 		  	}
 			echo "</ul>";
 		}
 	} else {
 	  //echo "0 results";
+	}
+}
+
+function getDiamondSkullTotal($conn, $user_id=0){
+	$sql = "SELECT COUNT(nfts.id) AS total FROM nfts WHERE project_id='7' AND user_id = '.$user_id.'";
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  return $row["total"];
+	  //echo "0 results";
+	}else{
+	  return 0;
 	}
 }
 
