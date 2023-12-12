@@ -31,7 +31,7 @@ include 'header.php';
 }
 
 .planet img{
-	width: auto;
+	max-width: 100%;
 }
 .crypties{
 	width: 2%;
