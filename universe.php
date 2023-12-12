@@ -36,13 +36,13 @@ include 'header.php';
 }
 .sinder{
 	width: 6%;
-	left: 24%;
-	top: 45%;
+	left: 45%;
+	top: 24%;
 }
 .hype{
 	width: 8%;
-	left: 11%;
-	top: 74%;
+	left: 74%;
+	top: 11%;
 }
 .meed{
 	width: 10%;
