@@ -9,7 +9,7 @@ include 'header.php';
 	max-width: 100%;
 }
 .row {
-	background:url('images/space.jpg');
+	background-image: url('images/space.jpg');
 	height: 100%;
 }	
 </style>
