@@ -20,7 +20,12 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
-
+					<img class="crypties" src="images/planets/crypties.png"/>
+					<img class="kimo" src="images/planets/kimo.png"/>
+					<img class="sinder" src="images/planets/sinder.png"/>
+					<img class="hype" src="images/planets/hype.png"/>
+					<img class="meed" src="images/planets/meed.png"/>
+					<img class="galactico" src="images/planets/galactico.png"/>
 				</div>
 			</div>
 		</div>
