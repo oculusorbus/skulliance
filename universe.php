@@ -5,7 +5,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <style>
-body {
+.row {
 	background:url('images/space.jpg');
 }	
 </style>
