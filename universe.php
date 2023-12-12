@@ -64,6 +64,14 @@ include 'header.php';
 	top: 35%;
 }
 </style>
+<script type="text/javascript">
+	var planets = document.getElementsByClassName("planet");
+	var pixels = "";
+	for (var i = 0; i < planets.length; i++) {
+	   pixels = (screen.height*0.25)+"px";
+	   planets.item(i).style.paddingTop = pixels;
+	}
+</script>
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
