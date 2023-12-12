@@ -16,16 +16,19 @@ include 'header.php';
 .col1of3{
 	background-color: transparent;
 }
+.planet{
+	size: 25%;
+}
 </style>
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
-					<img class="crypties" src="images/planets/crypties.png"/>
-					<img class="kimo" src="images/planets/kimo.png"/>
-					<img class="sinder" src="images/planets/sinder.png"/>
-					<img class="hype" src="images/planets/hype.png"/>
-					<img class="meed" src="images/planets/meed.png"/>
-					<img class="galactico" src="images/planets/galactico.png"/>
+					<img class="planet crypties" src="images/planets/crypties.png"/>
+					<img class="planet kimo" src="images/planets/kimo.png"/>
+					<img class="planet sinder" src="images/planets/sinder.png"/>
+					<img class="planet hype" src="images/planets/hype.png"/>
+					<img class="planet meed" src="images/planets/meed.png"/>
+					<img class="planet galactico" src="images/planets/galactico.png"/>
 				</div>
 			</div>
 		</div>
