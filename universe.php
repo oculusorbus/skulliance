@@ -18,11 +18,17 @@ include 'header.php';
 	background-color: transparent;
 	text-align: center;
 }
+
+.planets{
+	margin: 0 auto;
+	position: absolute;
+	top: 50%;
+}
+
 .planet{
 	width: 12%;
 	margin: 0 auto;
 	position: absolute;
-	top: 50%;
 }
 .crypties{
 	width: 2%;
@@ -58,12 +64,14 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
+					<div class="planets">
 					<img class="planet crypties" src="images/planets/crypties.png"/>
 					<img class="planet kimo" src="images/planets/kimo.png"/>
 					<img class="planet sinder" src="images/planets/sinder.png"/>
 					<img class="planet hype" src="images/planets/hype.png"/>
 					<img class="planet meed" src="images/planets/meed.png"/>
 					<img class="planet galactico" src="images/planets/galactico.png"/>
+					</div>
 				</div>
 			</div>
 		</div>
