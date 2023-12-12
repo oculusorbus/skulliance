@@ -14,7 +14,6 @@ extract($_SESSION['userData']);
 
 $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 
-
 if($_SESSION['userData']['discord_id'] != "167428287050547200" && $_SESSION['userData']['discord_id'] != "772831523899965440"){
 	echo "The staking platform is in maintenance mode.";
 	exit;
