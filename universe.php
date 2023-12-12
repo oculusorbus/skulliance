@@ -19,6 +19,7 @@ include 'header.php';
 }
 .planet{
 	width: 12%;
+	margin: 0 auto;
 }
 .crypties{
 	width: 2%;
