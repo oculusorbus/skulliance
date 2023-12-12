@@ -13,6 +13,7 @@ include 'header.php';
 	background-image: url('images/space.jpg');
 	height: 100%;
 	background-position: center;
+	background-attachment: scroll;
 }	
 .col1of3{
 	background-color: transparent;
