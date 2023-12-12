@@ -16,6 +16,7 @@ include 'header.php';
 }	
 .col1of3{
 	background-color: transparent;
+	text-align: center;
 }
 .planet{
 	width: 12%;
