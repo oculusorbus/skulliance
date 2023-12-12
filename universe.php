@@ -22,7 +22,7 @@ include 'header.php';
 	width: 12%;
 	margin: 0 auto;
 	position: relative;
-	top: 50%;
+	top: 75%;
 }
 .crypties{
 	width: 2%;
