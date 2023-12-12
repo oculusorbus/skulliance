@@ -64,14 +64,6 @@ include 'header.php';
 	top: 35%;
 }
 </style>
-<script type="text/javascript">
-	var planets = document.getElementsByClassName("planet");
-	var pixels = "";
-	for (var i = 0; i < planets.length; i++) {
-	   pixels = (screen.height*0.25)+"px";
-	   planets.item(i).style.paddingTop = pixels;
-	}
-</script>
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
@@ -99,5 +91,14 @@ $conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
+<script type="text/javascript">
+	var planets = document.getElementsByClassName("planet");
+	var pixels = "";
+    pixels = (screen.height*0.25)+"px";
+    alert(pixels);
+	for (var i = 0; i < planets.length; i++) {
+	   planets.item(i).style.paddingTop = pixels;
+	}
+</script>
 <script type="text/javascript" src="skulliance.js"></script>
 </html>
