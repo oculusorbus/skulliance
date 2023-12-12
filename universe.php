@@ -3,12 +3,12 @@ include 'db.php';
 include 'webhooks.php';
 include 'skulliance.php';
 include 'header.php';
+?>
 <style>
 body {
 	background:url('images/space.jpg');
 }	
 </style>
-?>
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
