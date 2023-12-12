@@ -32,6 +32,7 @@ include 'header.php';
 .crypties{
 	background-image: url("images/planets/crypties.png");
 	background-size: contain;
+	background-repeat: no-repeat;
 	width: 2%;
 	left: 40%;
 	top: 1%;
