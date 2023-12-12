@@ -18,7 +18,25 @@ include 'header.php';
 	background-color: transparent;
 }
 .planet{
+	width: 12%;
+}
+.crypties{
+	width: 2%;
+}
+.kimo{
+	width: 4%;
+}
+.sinder{
+	width: 6%;
+}
+.hype{
+	width: 8%;
+}
+.meed{
 	width: 10%;
+}
+.galactico{
+	width: 12%;
 }
 </style>
 		<div class="row" id="row1">
