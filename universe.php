@@ -20,9 +20,7 @@ include 'header.php';
 }
 
 .planets{
-	margin: 0 auto;
-	position: absolute;
-	top: 50%;
+	
 }
 
 .planet{
