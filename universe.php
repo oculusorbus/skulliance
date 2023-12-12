@@ -36,7 +36,7 @@ include 'header.php';
 .crypties{
 	width: 2%;
 	left: 40%;
-	top: 1%;
+	top: 5%;
 }
 .kimo{
 	width: 4%;
@@ -51,12 +51,12 @@ include 'header.php';
 .hype{
 	width: 8%;
 	left: 74%;
-	top: 11%;
+	top: 18%;
 }
 .meed{
 	width: 10%;
 	left: 22%;
-	top: 28%;
+	top: 25%;
 }
 .galactico{
 	width: 12%;
