@@ -10,6 +10,7 @@ include 'header.php';
 }
 .row {
 	background:url('images/space.jpg');
+	height: 100%;
 }	
 </style>
 		<div class="row" id="row1">
