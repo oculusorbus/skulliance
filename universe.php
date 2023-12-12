@@ -95,7 +95,7 @@ if($filterby != ""){
 	var planets = document.getElementsByClassName("planet");
 	var pixels = "";
     pixels = (window.innerHeight*0.20)+"px";
-    alert(pixels);
+    //alert(pixels);
 	for (var i = 0; i < planets.length; i++) {
 	   planets.item(i).style.paddingTop = pixels;
 	}
