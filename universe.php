@@ -29,6 +29,9 @@ include 'header.php';
 	position: absolute;
 	padding-top: 300px;
 }
+.planet{
+	width: auto;
+}
 .crypties{
 	width: 2%;
 	left: 40%;
