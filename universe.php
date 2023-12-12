@@ -26,7 +26,7 @@ include 'header.php';
 .planet{
 	width: 12%;
 	margin: 0 auto;
-	position: relative;
+	position: absolute;
 }
 .crypties{
 	width: 2%;
