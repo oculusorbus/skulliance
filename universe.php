@@ -29,7 +29,7 @@ include 'header.php';
 	position: absolute;
 	padding-top: 300px;
 }
-.planet{
+.planet img{
 	width: auto;
 }
 .crypties{
