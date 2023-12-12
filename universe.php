@@ -17,7 +17,7 @@ include 'header.php';
 	background-color: transparent;
 }
 .planet{
-	size: 25%;
+	width: 25%;
 }
 </style>
 		<div class="row" id="row1">
