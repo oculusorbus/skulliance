@@ -26,27 +26,33 @@ include 'header.php';
 }
 .crypties{
 	width: 2%;
-	left: 5%;
+	left: 40%;
+	top: 1%;
 }
 .kimo{
 	width: 4%;
-	left: 20%;
+	left: 3%;
+	top: 8%;
 }
 .sinder{
 	width: 6%;
-	left: 35%;
+	left: 24%;
+	top: 45%;
 }
 .hype{
 	width: 8%;
-	left: 40%;
+	left: 11%;
+	top: 74%;
 }
 .meed{
 	width: 10%;
-	left: 55;
+	left: 22%;
+	top: 28%;
 }
 .galactico{
 	width: 12%;
-	left: 70%;
+	left: 64%;
+	top: 35%;
 }
 </style>
 		<div class="row" id="row1">
