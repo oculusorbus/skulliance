@@ -6,7 +6,7 @@ include 'header.php';
 ?>
 <style>
 .container{
-	width: 100%;
+	max-width: 100%;
 }
 .row {
 	background:url('images/space.jpg');
