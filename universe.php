@@ -9,12 +9,12 @@ include 'header.php';
 	max-width: 100%;
 }
 .row {
-	background-repeat: cover;
+	background-size: cover;
 	background-image: url('images/space.jpg');
 	height: 100%;
 }	
 .col1of3{
-	background-color: none;
+	background-color: transparent;
 }
 </style>
 		<div class="row" id="row1">
