@@ -29,10 +29,11 @@ include 'header.php';
 	position: absolute;
 	padding-top: 300px;
 }
+
+.planet img{
+	width: auto;
+}
 .crypties{
-	background-image: url("images/planets/crypties.png");
-	background-size: contain;
-	background-repeat: no-repeat;
 	width: 2%;
 	left: 40%;
 	top: 1%;
@@ -67,7 +68,7 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 					<div class="planets">
-					<div class="planet crypties"><img class="" src=""/></div>
+					<div class="planet crypties"><img class="" src="images/planets/crypties.png"/></div>
 					<div class="planet kimo"><img class="" src="images/planets/kimo.png"/></div>
 					<div class="planet sinder"><img class="" src="images/planets/sinder.png"/></div>
 					<div class="planet hype"><img class="" src="images/planets/hype.png"/></div>
