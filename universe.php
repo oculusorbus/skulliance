@@ -36,7 +36,7 @@ include 'header.php';
 }
 .kimo{
 	width: 4%;
-	left: 3%;
+	left: 7%;
 	top: 8%;
 }
 .sinder{
