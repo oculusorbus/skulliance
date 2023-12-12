@@ -12,6 +12,7 @@ include 'header.php';
 	background-size: cover;
 	background-image: url('images/space.jpg');
 	height: 100%;
+	background-position: center;
 }	
 .col1of3{
 	background-color: transparent;
