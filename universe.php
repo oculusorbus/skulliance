@@ -69,7 +69,7 @@ include 'header.php';
 
 .percentage {
 	background-color: black;
-	padding: 15px;
+	padding: 5px;
 	position: relative;
 	top: -10px;
 }
