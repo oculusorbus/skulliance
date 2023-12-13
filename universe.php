@@ -15,7 +15,7 @@ include 'header.php';
 	background-position: center;
 	
     background-color: #36393F;
-    background-blend-mode: multiply;
+    background-blend-mode: overlay;
 }	
 .col1of3{
 	background-color: transparent;
