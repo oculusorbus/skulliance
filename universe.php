@@ -97,7 +97,11 @@ if($filterby != ""){
     pixels = (window.innerHeight*0.20)+"px";
     //alert(pixels);
 	for (var i = 0; i < planets.length; i++) {
-	   planets.item(i).style.paddingTop = pixels;
+		if(window.innerWidth <= 700){
+			planets.item(i).style.paddingTop = "800px";
+		}else{
+	   	 	planets.item(i).style.paddingTop = pixels;
+   		}
 	}
 </script>
 <script type="text/javascript" src="skulliance.js"></script>
