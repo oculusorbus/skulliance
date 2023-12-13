@@ -92,6 +92,7 @@ include 'header.php';
 
 					$percentages = array();
 					$project_delegations = getProjectDelegationTotals($conn);
+					print_r($project_delegations);
 					foreach($project_delegations AS $project_id => $total){
 						$percentages[$project_id] = $total/$max_delegations[$project_id]*100;
 					}
