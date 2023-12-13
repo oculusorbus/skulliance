@@ -40,8 +40,8 @@ include 'header.php';
 }
 .kimo{
 	width: 4%;
-	left: 2%;
-	top: 12%;
+	left: 5%;
+	top: 15%;
 }
 .sinder{
 	width: 6%;
