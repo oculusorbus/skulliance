@@ -58,12 +58,12 @@ include 'header.php';
 	top: 27%;
 }
 .meed{
-	width: 10%;
+	width: 9%;
 	left: 22%;
 	top: 43%;
 }
 .galactico{
-	width: 12%;
+	width: 10%;
 	left: 64%;
 	top: 53%;
 }
