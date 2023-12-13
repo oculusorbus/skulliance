@@ -10,7 +10,7 @@ include 'header.php';
 }
 .row {
 	background-size: cover;
-	background-image: url('images/space.jpg');
+	background-image: url('images/space.png');
 	height: 100%;
 	background-position: center;
 }	
