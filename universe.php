@@ -82,7 +82,7 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 					<?php 
-					$diamond_skull_count = getTotalNFTs($conn, 7);
+					$diamond_skull_count = getTotalNFTs($conn, "7");
 					$max_delegations = array();
 					$max_delegations[1] = $diamond_skull_count;
 					$max_delegations[2] = $diamond_skull_count*2;
