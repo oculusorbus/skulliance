@@ -36,32 +36,32 @@ include 'header.php';
 .crypties{
 	width: 2%;
 	left: 40%;
-	top: 5%;
+	top: 9%;
 }
 .kimo{
 	width: 4%;
-	left: 7%;
-	top: 8%;
+	left: 2%;
+	top: 12%;
 }
 .sinder{
 	width: 6%;
 	left: 45%;
-	top: 24%;
+	top: 36%;
 }
 .hype{
 	width: 8%;
-	left: 74%;
-	top: 18%;
+	left: 81%;
+	top: 27%;
 }
 .meed{
 	width: 10%;
 	left: 22%;
-	top: 25%;
+	top: 43%;
 }
 .galactico{
 	width: 12%;
 	left: 64%;
-	top: 35%;
+	top: 53%;
 }
 </style>
 		<div class="row" id="row1">
