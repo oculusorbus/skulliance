@@ -82,17 +82,17 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 					<?php 
+					$diamond_skull_count = getTotalNFTs($conn, 7);
 					$max_delegations = array();
-					$max_delegations[1] = 100;
-					$max_delegations[2] = 200;
-					$max_delegations[3] = 300;
-					$max_delegations[4] = 400;
-					$max_delegations[5] = 400;
-					$max_delegations[6] = 500;
+					$max_delegations[1] = $diamond_skull_count;
+					$max_delegations[2] = $diamond_skull_count*2;
+					$max_delegations[3] = $diamond_skull_count*3;
+					$max_delegations[4] = $diamond_skull_count*4;
+					$max_delegations[5] = $diamond_skull_count*4;
+					$max_delegations[6] = $diamond_skull_count*5;
 
 					$percentages = array();
 					$project_delegations = getProjectDelegationTotals($conn);
-					print_r($project_delegations);
 					foreach($project_delegations AS $project_id => $total){
 						$percentages[$project_id] = $total/$max_delegations[$project_id]*100;
 					}
