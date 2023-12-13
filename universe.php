@@ -39,7 +39,7 @@ include 'header.php';
 .crypties{
 	width: 2%;
 	left: 40%;
-	top: 9%;
+	top: 4%;
 }
 .kimo{
 	width: 4%;
