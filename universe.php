@@ -69,6 +69,9 @@ include 'header.php';
 
 .percentage {
 	background-color: black;
+	padding: 15px;
+	position: relative;
+	top: -10px;
 }
 </style>
 		<div class="row" id="row1">
