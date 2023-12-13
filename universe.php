@@ -93,7 +93,7 @@ include 'header.php';
 					$percentages = array();
 					$project_delegations = getProjectDelegationTotals($conn);
 					foreach($project_delegations AS $project_id => $total){
-						$percentages[$project_id] = $total/$max_delegations[$project_id];
+						$percentages[$project_id] = $total/$max_delegations[$project_id]*100;
 					}
 					?>
 					<div class="planets">
