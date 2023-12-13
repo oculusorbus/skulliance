@@ -31,9 +31,6 @@ include 'header.php';
 	margin: 0 auto;
 	position: absolute;
 	padding-top: 300px;
-	color: white;
-	font-size: 16px;
-	font-weight: bold;
 }
 
 .planet img{
@@ -71,6 +68,9 @@ include 'header.php';
 }
 
 .percentage {
+	color: white;
+	font-size: 18px;
+	font-weight: bold;
 	background-color: black;
 	padding: 5px;
 	position: relative;
