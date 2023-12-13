@@ -35,6 +35,7 @@ include 'header.php';
 
 .planet img{
 	max-width: 100%;
+	min-width: 20px;
 }
 .crypties{
 	width: 2%;
