@@ -28,6 +28,9 @@ include 'header.php';
 	margin: 0 auto;
 	position: absolute;
 	padding-top: 300px;
+	font-color: white;
+	font-size: 16px;
+	font-weight: bold;
 }
 
 .planet img{
