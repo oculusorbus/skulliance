@@ -48,17 +48,17 @@ include 'header.php';
 	top: 15%;
 }
 .sinder{
-	width: 6%;
+	width: 5%;
 	left: 45%;
 	top: 36%;
 }
 .hype{
-	width: 8%;
+	width: 6%;
 	left: 81%;
 	top: 27%;
 }
 .meed{
-	width: 9%;
+	width: 8%;
 	left: 22%;
 	top: 43%;
 }
