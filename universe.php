@@ -94,16 +94,16 @@ include 'header.php';
 					$project_delegations = getProjectDelegationTotals($conn);
 					print_r($project_delegations);
 					foreach($project_delegations AS $project_id => $total){
-						$percentages[$project_id] = $total/$max_delegations[$project_id];
+						$percentages[$project_id] = $total/$max_delegations[$project_id]*100;
 					}
 					?>
 					<div class="planets">
-					<div class="planet crypties"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
-					<div class="planet kimo"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="" src="images/planets/kimo.png"/><img src="icons/cyber.png"/></div>
-					<div class="planet sinder"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="" src="images/planets/sinder.png"/><img src="icons/sinder.png"/></div>
-					<div class="planet hype"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="" src="images/planets/hype.png"/><img src="icons/hype.png"/></div>
-					<div class="planet meed"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="" src="images/planets/meed.png"/><img src="icons/dread.png"/></div>
-					<div class="planet galactico"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="" src="images/planets/galactico.png"/><img src="icons/star.png"/></div>
+					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
+					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="" src="images/planets/kimo.png"/><img src="icons/cyber.png"/></div>
+					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="" src="images/planets/sinder.png"/><img src="icons/sinder.png"/></div>
+					<div class="planet hype"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="" src="images/planets/hype.png"/><img src="icons/hype.png"/></div>
+					<div class="planet meed"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="" src="images/planets/meed.png"/><img src="icons/dread.png"/></div>
+					<div class="planet galactico"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="" src="images/planets/galactico.png"/><img src="icons/star.png"/></div>
 					</div>
 				</div>
 			</div>
