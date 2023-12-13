@@ -689,7 +689,7 @@ function getDiamondSkullTotals($conn){
 
 // Get total delegations for Project
 function getProjectDelegationTotals($conn){
-	$sql = "SELECT project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 	
 	$project_delegation_totals = array();
