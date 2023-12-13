@@ -83,7 +83,6 @@ include 'header.php';
 			    <div class="content">
 					<?php 
 					$diamond_skull_count = getTotalDiamondSkulls($conn);
-					echo $diamond_skull_count;
 					$max_delegations = array();
 					$max_delegations[1] = $diamond_skull_count;
 					$max_delegations[2] = $diamond_skull_count*2;
@@ -95,7 +94,7 @@ include 'header.php';
 					$percentages = array();
 					$project_delegations = getProjectDelegationTotals($conn);
 					foreach($project_delegations AS $project_id => $total){
-						$percentages[$project_id] = $total/$max_delegations[$project_id]*100;
+						$percentages[$project_id] = round($total/$max_delegations[$project_id]*100);
 					}
 					?>
 					<div class="planets">
