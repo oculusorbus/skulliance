@@ -687,6 +687,31 @@ function getDiamondSkullTotals($conn){
 	}
 }
 
+// Get total delegations for Project
+function getProjectDelegationTotals($conn){
+	$sql = "SELECT project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
+	$result = $conn->query($sql);
+	
+	$project_delegation_totals = array();
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  if(!isset($project_delegation_totals[$row["project_id"]])){
+		  	$project_delegation_totals[$row["project_id"]] = array();
+	  	  }
+		  if(!isset($project_delegation_totals[$row["project_id"]])){
+		  	$project_delegation_totals[$row["project_id"]] = 0;
+		  }
+		  $project_delegation_totals[$row["project_id"]]++;
+	  }
+	  return $project_delegation_totals;
+	} else {
+	  //echo "0 results";
+	  return null;
+	}
+}
+
 // Get total rewards for Diamond Skulls delegation
 function getDiamondSkullsDelegationRewards($conn){
 	// Track Rewards by User ID for Delegators AND Diamond Skull Owners

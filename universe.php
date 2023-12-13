@@ -81,6 +81,7 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
+					<?php print_r(getProjectDelegationTotals($conn)); ?>
 					<div class="planets">
 					<div class="planet crypties"><span class="percentage">75%</span><img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
 					<div class="planet kimo"><span class="percentage">100%</span><img class="" src="images/planets/kimo.png"/><img src="icons/cyber.png"/></div>
