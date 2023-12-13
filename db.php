@@ -1460,7 +1460,7 @@ function getMaxDelegations($diamond_skull_count){
 }
 
 // Calculate project delegation percentages based off of max/current delegations
-function getProjectDelegationPercentages($max_delegations){
+function getProjectDelegationPercentages($conn, $max_delegations){
 	$percentages = array();
 	$project_delegations = getProjectDelegationTotals($conn);
 	foreach($project_delegations AS $project_id => $total){

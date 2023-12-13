@@ -86,7 +86,7 @@ include 'header.php';
 					$max_delegations = array();
 					$max_delegations = getMaxDelegations($diamond_skull_count);
 					$percentages = array();
-					$percentages = getProjectDelegationPercentages($max_delegations);
+					$percentages = getProjectDelegationPercentages($conn, $max_delegations);
 					?>
 					<div class="planets">
 					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="" src="images/planets/crypties.png"/></div>
