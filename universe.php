@@ -68,12 +68,12 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 					<div class="planets">
-					<div class="planet crypties"><img src="icons/crypt.png"/><img class="" src="images/planets/crypties.png"/></div>
+					<div class="planet crypties"><img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
 					<div class="planet kimo"><img class="" src="images/planets/kimo.png"/><img src="icons/cyber.png"/></div>
 					<div class="planet sinder"><img class="" src="images/planets/sinder.png"/><img src="icons/sinder.png"/></div>
 					<div class="planet hype"><img class="" src="images/planets/hype.png"/><img src="icons/hype.png"/></div>
 					<div class="planet meed"><img class="" src="images/planets/meed.png"/><img src="icons/dread.png"/></div>
-					<div class="planet galactico"><img src="icons/star.png"/><img class="" src="images/planets/galactico.png"/></div>
+					<div class="planet galactico"><img class="" src="images/planets/galactico.png"/><img src="icons/star.png"/></div>
 					</div>
 				</div>
 			</div>
