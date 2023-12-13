@@ -13,6 +13,9 @@ include 'header.php';
 	background-image: url('images/space.png');
 	height: 100%;
 	background-position: center;
+	
+    background-color: #36393F;
+    background-blend-mode: multiply;
 }	
 .col1of3{
 	background-color: transparent;
