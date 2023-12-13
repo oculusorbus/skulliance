@@ -68,7 +68,7 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 					<div class="planets">
-					<div class="planet crypties"><img class="" src="images/planets/crypties.png"/><img src="images/icons/crypt.png"/></div>
+					<div class="planet crypties"><img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
 					<div class="planet kimo"><img class="" src="images/planets/kimo.png"/></div>
 					<div class="planet sinder"><img class="" src="images/planets/sinder.png"/></div>
 					<div class="planet hype"><img class="" src="images/planets/hype.png"/></div>
