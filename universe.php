@@ -87,9 +87,9 @@ include 'header.php';
 					$max_delegations[2] = 200;
 					$max_delegations[3] = 300;
 					$max_delegations[4] = 400;
-					$max_delegations[4] = 400;
-					$max_delegations[5] = 500;
-					
+					$max_delegations[5] = 400;
+					$max_delegations[6] = 500;
+
 					$percentages = array();
 					$project_delegations = getProjectDelegationTotals($conn);
 					foreach($project_delegations AS $project_id => $total){
