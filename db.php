@@ -698,9 +698,6 @@ function getProjectDelegationTotals($conn){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		  if(!isset($project_delegation_totals[$row["project_id"]])){
-		  	$project_delegation_totals[$row["project_id"]] = array();
-	  	  }
-		  if(!isset($project_delegation_totals[$row["project_id"]])){
 		  	$project_delegation_totals[$row["project_id"]] = 0;
 		  }
 		  $project_delegation_totals[$row["project_id"]]++;
