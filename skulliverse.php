@@ -82,11 +82,8 @@ include 'header.php';
 			<div class="col1of3">
 			    <div class="content">
 					<?php 
-					$diamond_skull_count = getTotalDiamondSkulls($conn);
-					$max_delegations = array();
-					$max_delegations = getMaxDelegations($diamond_skull_count);
 					$percentages = array();
-					$percentages = getProjectDelegationPercentages($conn, $max_delegations);
+					$percentages = getProjectDelegationPercentages($conn);
 					?>
 					<div class="planets">
 					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="" src="images/planets/crypties.png"/></div>

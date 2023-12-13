@@ -1447,8 +1447,9 @@ function getTotalDiamondSkulls($conn){
 	}
 }
 
-// Get maximum allowable delegations per project for current count of Diamond Skulls staked
-function getMaxDelegations($diamond_skull_count){
+// Calculate project delegation percentages based off of max/current delegations
+function getProjectDelegationPercentages($conn){
+	$diamond_skull_count = getTotalDiamondSkulls($conn);
 	$max_delegations = array();
 	$max_delegations[1] = $diamond_skull_count;
 	$max_delegations[2] = $diamond_skull_count*2;
@@ -1456,11 +1457,7 @@ function getMaxDelegations($diamond_skull_count){
 	$max_delegations[4] = $diamond_skull_count*4;
 	$max_delegations[5] = $diamond_skull_count*4;
 	$max_delegations[6] = $diamond_skull_count*5;
-	return $max_delegations;
-}
-
-// Calculate project delegation percentages based off of max/current delegations
-function getProjectDelegationPercentages($conn, $max_delegations){
+	
 	$percentages = array();
 	$project_delegations = getProjectDelegationTotals($conn);
 	foreach($project_delegations AS $project_id => $total){
