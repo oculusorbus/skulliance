@@ -84,18 +84,9 @@ include 'header.php';
 					<?php 
 					$diamond_skull_count = getTotalDiamondSkulls($conn);
 					$max_delegations = array();
-					$max_delegations[1] = $diamond_skull_count;
-					$max_delegations[2] = $diamond_skull_count*2;
-					$max_delegations[3] = $diamond_skull_count*3;
-					$max_delegations[4] = $diamond_skull_count*4;
-					$max_delegations[5] = $diamond_skull_count*4;
-					$max_delegations[6] = $diamond_skull_count*5;
-
+					$max_delegations = getMaxDelegations($diamond_skull_count);
 					$percentages = array();
-					$project_delegations = getProjectDelegationTotals($conn);
-					foreach($project_delegations AS $project_id => $total){
-						$percentages[$project_id] = round($total/$max_delegations[$project_id]*100);
-					}
+					$percentages = getProjectDelegationPercentages($max_delegations);
 					?>
 					<div class="planets">
 					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="" src="images/planets/crypties.png"/></div>

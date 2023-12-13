@@ -1447,6 +1447,28 @@ function getTotalDiamondSkulls($conn){
 	}
 }
 
+// Get maximum allowable delegations per project for current count of Diamond Skulls staked
+function getMaxDelegations($diamond_skull_count){
+	$max_delegations = array();
+	$max_delegations[1] = $diamond_skull_count;
+	$max_delegations[2] = $diamond_skull_count*2;
+	$max_delegations[3] = $diamond_skull_count*3;
+	$max_delegations[4] = $diamond_skull_count*4;
+	$max_delegations[5] = $diamond_skull_count*4;
+	$max_delegations[6] = $diamond_skull_count*5;
+	return $max_delegations;
+}
+
+// Calculate project delegation percentages based off of max/current delegations
+function getProjectDelegationPercentages($max_delegations){
+	$percentages = array();
+	$project_delegations = getProjectDelegationTotals($conn);
+	foreach($project_delegations AS $project_id => $total){
+		$percentages[$project_id] = round($total/$max_delegations[$project_id]*100);
+	}
+	return $percentages;
+}
+
 // Check leaderboard for discord and site display
 function checkLeaderboard($conn, $clean, $project_id=0) {
 	$where = "";
@@ -1520,6 +1542,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 	}
 }
 
+// Get Diamond Skull total for specific user
 function getDiamondSkullTotal($conn, $user_id=0){
 	$sql = "SELECT COUNT(nfts.id) AS total FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id WHERE collections.project_id='7' AND nfts.user_id = '".$user_id."'";
 	$result = $conn->query($sql);
