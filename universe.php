@@ -66,17 +66,21 @@ include 'header.php';
 	left: 64%;
 	top: 53%;
 }
+
+.percentage {
+	background-color: black;
+}
 </style>
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <div class="content">
 					<div class="planets">
-					<div class="planet crypties">75%<img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
-					<div class="planet kimo">100%<img class="" src="images/planets/kimo.png"/><img src="icons/cyber.png"/></div>
-					<div class="planet sinder">50%<img class="" src="images/planets/sinder.png"/><img src="icons/sinder.png"/></div>
-					<div class="planet hype">40%<img class="" src="images/planets/hype.png"/><img src="icons/hype.png"/></div>
-					<div class="planet meed">100%<img class="" src="images/planets/meed.png"/><img src="icons/dread.png"/></div>
-					<div class="planet galactico">100%<img class="" src="images/planets/galactico.png"/><img src="icons/star.png"/></div>
+					<div class="planet crypties"><span class="percentage">75%</span><img class="" src="images/planets/crypties.png"/><img src="icons/crypt.png"/></div>
+					<div class="planet kimo"><span class="percentage">100%</span><img class="" src="images/planets/kimo.png"/><img src="icons/cyber.png"/></div>
+					<div class="planet sinder"><span class="percentage">50%</span><img class="" src="images/planets/sinder.png"/><img src="icons/sinder.png"/></div>
+					<div class="planet hype"><span class="percentage">40%</span><img class="" src="images/planets/hype.png"/><img src="icons/hype.png"/></div>
+					<div class="planet meed"><span class="percentage">100%</span><img class="" src="images/planets/meed.png"/><img src="icons/dread.png"/></div>
+					<div class="planet galactico"><span class="percentage">100%</span><img class="" src="images/planets/galactico.png"/><img src="icons/star.png"/></div>
 					</div>
 				</div>
 			</div>
