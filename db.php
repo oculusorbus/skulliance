@@ -1434,6 +1434,19 @@ function getTotalNFTs($conn, $project_id=0){
 	}
 }
 
+// Get total Diamond Skulls staked
+function getTotalDiamondSkulls($conn){
+	$sql = "SELECT COUNT(nfts.id) as total FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE projects.id = '7'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		return $row["total"];
+	  }
+	}
+}
+
 // Check leaderboard for discord and site display
 function checkLeaderboard($conn, $clean, $project_id=0) {
 	$where = "";
