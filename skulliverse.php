@@ -116,7 +116,7 @@ include 'header.php';
 
 .close:hover,
 .close:focus {
-  color: black;
+  color: #fff;
   text-decoration: none;
   cursor: pointer;
 }
