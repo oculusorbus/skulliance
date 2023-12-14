@@ -84,6 +84,7 @@ include 'header.php';
 	top: -10px;
 }
 .inactive{
+	opacity: 0.5;
     -webkit-filter: grayscale(100%);
        -moz-filter: grayscale(100%);
          -o-filter: grayscale(100%);
