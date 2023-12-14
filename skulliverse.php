@@ -40,8 +40,8 @@ include 'header.php';
 
 .diamond{
 	width: 12%;
-	left: 18%;
-	top: 47%;
+	left: 47%;
+	top: 18%;
 }
 .crypties{
 	width: 2%;
