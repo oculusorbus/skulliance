@@ -145,7 +145,7 @@ include 'header.php';
   padding: 0;
   border: 1px solid #888;
   width: 50%;
-  min-height: 200px;
+  min-height: 340px;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
   animation-name: animatetop;
   animation-duration: 0.4s;
