@@ -141,7 +141,7 @@ include 'header.php';
 .modal-content {
   position: relative;
   background-color: #000;
-  margin: auto;
+  margin: 15% auto; /* 15% from the top and centered */
   padding: 0;
   border: 1px solid #888;
   width: 80%;
