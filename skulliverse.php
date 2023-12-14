@@ -172,13 +172,13 @@ include 'header.php';
 #myProgress {
   width: 100%;
   background-color: gray;
+  padding-bottom: 20px;
 }
 
 #myBar {
   width: 1%;
   height: 30px;
   background-color: white;
-  padding-bottom: 20px;
 }
 
 @media screen and (max-width: 700px) {
