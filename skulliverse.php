@@ -151,7 +151,7 @@ include 'header.php';
   min-height: 200px;
 }
 
-.modal-image{
+#modal-image{
 	max-width: 200px;
 	float: left;
 }
