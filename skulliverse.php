@@ -238,11 +238,11 @@ include 'header.php';
 			    <h2 id="modal-header">Modal Header</h2>
 			  </div>
 			  <div class="modal-body">
-				<img id="modal-image" src=""/>
-			    <p id="modal-text"></p>
 				<div id="myProgress">
 				  <div id="myBar"></div>
 				</div>
+				<img id="modal-image" src=""/>
+			    <p id="modal-text"></p>
 			  </div>
 			  <div class="modal-footer">
 			    <h3></h3>
