@@ -1091,7 +1091,7 @@ function initializeBalances($conn){
 
 
 // Deploy staking daily staking rewards
-function updateBalances($conn){
+function updateBalances($conn, $diamond_skull_bonus=false){
 	$sql = "SELECT user_id, collection_id, collections.rate AS rate, collections.project_id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id";
 	$result = $conn->query($sql);
 	
@@ -1104,6 +1104,10 @@ function updateBalances($conn){
 		}
 		if(!isset($subtotals[$row["user_id"]][$row["project_id"]])){
 			$subtotals[$row["user_id"]][$row["project_id"]] = 0;
+		}
+		// Double Diamond Skull rewards if bonus is activated
+		if($diamond_skull_bonus == true && $row["project_id"] == 7){
+			$row["rate"] = $row["rate"]*2;
 		}
 		$current_rate = $subtotals[$row["user_id"]][$row["project_id"]];
 		$subtotals[$row["user_id"]][$row["project_id"]] = strval($current_rate) + strval($row["rate"]);
@@ -1136,7 +1140,7 @@ function processSubtotals($conn, $subtotals){
 }
 
 // Deploy and Verify Diamond Skull Rewards for Delegators and Owners
-function deployDiamondSkullRewards($conn){
+function deployDiamondSkullRewards($conn, $percentages){
 	// Populate Diamond Skull Owners
 	$sql = "SELECT diamond_skull_id, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.diamond_skull_id";
 	$result = $conn->query($sql);
@@ -1158,7 +1162,7 @@ function deployDiamondSkullRewards($conn){
 	}
 	
 	// Track Rewards by User ID for Delegators AND Diamond Skull Owners
-	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
 	$result = $conn->query($sql);
 	
 	$delegator_rewards = array();
@@ -1170,6 +1174,10 @@ function deployDiamondSkullRewards($conn){
 		  if($row["user_id"] == 0){
 			  removeDiamondSkullNFT($conn, $row["diamond_skull_id"], $row["nft_id"]);
 		  }else{
+			  // If project delegation is at 100%, double reward rates
+			  if($percentages[$row["project_id"]] == 100){
+			  	$row["rate"] = $row["rate"]+2;
+			  }
 			  // Delegator Rewards
 			  if(!isset($delegator_rewards[$row["user_id"]])){
 			  	$delegator_rewards[$row["user_id"]] = 0;
@@ -1447,9 +1455,21 @@ function getTotalDiamondSkulls($conn){
 	}
 }
 
+// Evaluate project delegation percentages and determine if Diamond Skulls get a bonus
+function getDiamondSkullBonus($percentages){
+	$bonus = true;
+	foreach($percentages AS $project_id => $percentage){
+		if($percentage < 100){
+			$bonus = false;
+		}
+	}
+	return $bonus;
+}
+
 // Calculate project delegation percentages based off of max/current delegations
 function getProjectDelegationPercentages($conn){
 	$diamond_skull_count = getTotalDiamondSkulls($conn);
+	
 	$max_delegations = array();
 	$max_delegations[1] = $diamond_skull_count;
 	$max_delegations[2] = $diamond_skull_count*2;

@@ -16,10 +16,15 @@ if(isset($_GET['verify'])){
 	removeUsers($conn);
 	// Verify all NFTs from wallets in the DB
 	verifyNFTs($conn, $addresses, $policies);
+	// Get project percentages for Diamond Skull delegations
+	$percentages = array();
+	$percentages = getProjectDelegationPercentages($conn);
+	// Determine whether Diamond Skulls should get a bonus
+	$diamond_skull_bonus = getDiamondSkullBonus($percentages);
 	// Deploy rewards for all users of the platform
-	updateBalances($conn);
+	updateBalances($conn, $diamond_skull_bonus);
 	// Deploy rewards for Diamond Skull delegation
-	deployDiamondSkullRewards($conn);
+	deployDiamondSkullRewards($conn, $percentages);
 }
 
 function verifyNFTs($conn, $addresses, $policies){
