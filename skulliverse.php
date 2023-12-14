@@ -254,7 +254,7 @@ if($filterby != ""){
 		 }else if(project_id == 4){
 			 document.getElementById('modal-header').innerText = "Sinder Skullz";
 		 }else if(project_id == 5){
-			 document.getElementById('modal-header').innerText = "Kimosabe";
+			 document.getElementById('modal-header').innerText = "Kimosabe Art";
 		 }else if(project_id == 6){
 			 document.getElementById('modal-header').innerText = "Crypties";
 		 }else if(project_id == 7){
