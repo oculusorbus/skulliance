@@ -172,7 +172,7 @@ include 'header.php';
 #myProgress {
   width: 100%;
   background-color: gray;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 }
 
 #myBar {
