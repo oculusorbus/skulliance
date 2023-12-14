@@ -184,7 +184,7 @@ include 'header.php';
 					}
 					?>
 					<div class="planets">
-					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(1, '<?php echo $seven; ?>');" src="images/planets/diamond.png"/></div>
+					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(7, '<?php echo $seven; ?>');" src="images/planets/diamond.png"/></div>
 					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo $six; ?>" src="images/planets/crypties.png"/></div>
 					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo $five; ?>" src="images/planets/kimo.png"/></div>
 					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo $four; ?>" src="images/planets/sinder.png"/></div>
