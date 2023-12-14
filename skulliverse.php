@@ -110,7 +110,7 @@ include 'header.php';
 .close {
   color: #aaa;
   float: right;
-  font-size: 28px;
+  font-size: 65px;
   font-weight: bold;
 }
 
