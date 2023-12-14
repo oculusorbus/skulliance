@@ -282,7 +282,6 @@ if($filterby != ""){
 		 modal.style.display = "block";
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
-		 document.getElementById('myBar').innerText = percentage+"%";
 		 if(project_id != 7){
 			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase()+"<br><br>Delegations: "+percentage+"%";
 		 }else{
@@ -345,6 +344,7 @@ if($filterby != ""){
 	      } else {
 	        width++;
 	        elem.style.width = width + "%";
+			elem.innerText = width+"%";
 	      }
 	    }
 	  }
