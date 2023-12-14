@@ -246,7 +246,7 @@ if($filterby != ""){
     //alert(pixels);
 	for (var i = 0; i < planets.length; i++) {
 		if(window.innerWidth <= 700){
-			planets.item(i).style.paddingTop = (window.innerHeight*0.8)+"px";
+			planets.item(i).style.paddingTop = (window.innerHeight*0.9)+"px";
 		}else{
 	   	 	planets.item(i).style.paddingTop = pixels;
    		}
