@@ -169,6 +169,12 @@ include 'header.php';
   from {top: -300px; opacity: 0}
   to {top: 0; opacity: 1}
 }
+
+@media screen and (max-width: 700px) {
+	#modal-image{
+		clear: both;
+	}
+}
 </style>
 		<div class="row" id="row1">
 			<div class="col1of3">
