@@ -279,6 +279,7 @@ if($filterby != ""){
 	function openModal(project_id, status, percentage){
 		 modal.style.display = "block";
 		 document.getElementById('myBar').style.width = percentage+"%";
+		 move(percentage);
 		 if(project_id != 7){
 			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase()+"<br><br>Delegations: "+percentage+"%";
 		 }else{
@@ -328,11 +329,11 @@ if($filterby != ""){
 	
 	// Progress Bar
 	var i = 0;
-	function move() {
+	function move(percentage) {
 	  if (i == 0) {
 	    i = 1;
 	    var elem = document.getElementById("myBar");
-	    var width = 1;
+	    var width = percentage;
 	    var id = setInterval(frame, 10);
 	    function frame() {
 	      if (width >= 100) {
