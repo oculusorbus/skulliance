@@ -177,9 +177,9 @@ include 'header.php';
 					foreach($percentages AS $project_id => $percentage){
 						$number = $numbers[$project_id];
 						if($percentage < 100){
-							$$number = "active";
-						}else{
 							$$number = "inactive";
+						}else{
+							$$number = "active";
 						}
 					}
 					?>
