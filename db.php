@@ -1457,10 +1457,10 @@ function getTotalDiamondSkulls($conn){
 
 // Evaluate project delegation percentages and determine if Diamond Skulls get a bonus
 function getDiamondSkullBonus($percentages){
-	$bonus = true;
+	$bonus = false;
 	foreach($percentages AS $project_id => $percentage){
-		if($percentage < 100){
-			$bonus = false;
+		if($percentage == 100){
+			$bonus = true;
 		}
 	}
 	return $bonus;
