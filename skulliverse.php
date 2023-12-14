@@ -55,8 +55,8 @@ include 'header.php';
 }
 .sinder{
 	width: 5%;
-	left: 45%;
-	top: 36%;
+	left: 37%;
+	top: 30%;
 }
 .hype{
 	width: 6%;
