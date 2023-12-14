@@ -160,6 +160,8 @@ include 'header.php';
 #modal-text{
 	padding-left: 20px;
 	font-weight: bold;
+	position: relative;
+	left: 20px;
 }
 
 /* Add Animation */
