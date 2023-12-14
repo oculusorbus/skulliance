@@ -141,13 +141,13 @@ include 'header.php';
 					$percentages[7] = $average;
 					?>
 					<div class="planets">
-					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo ($percentages[7] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/diamond.png"/></div>
-					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo ($percentages[6] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/crypties.png"/></div>
-					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo ($percentages[5] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/kimo.png"/></div>
-					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo ($percentages[4] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/sinder.png"/></div>
-					<div class="planet hype"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="<?php echo ($percentages[3] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/hype.png"/></div>
-					<div class="planet meed"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="<?php echo ($percentages[2] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/meed.png"/></div>
-					<div class="planet galactico"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="<?php echo ($percentages[1] < 100)?"inactive":"active"; ?> myBtn" src="images/planets/galactico.png"/></div>
+					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo ($percentages[7] < 100)?"inactive":"active"; ?>" id="myBtn" src="images/planets/diamond.png"/></div>
+					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo ($percentages[6] < 100)?"inactive":"active"; ?>" id="myBtn" src="images/planets/crypties.png"/></div>
+					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo ($percentages[5] < 100)?"inactive":"active"; ?>" id="myBtn" src="images/planets/kimo.png"/></div>
+					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo ($percentages[4] < 100)?"inactive":"active"; ?>" id="myBtn" id="myBtn" src="images/planets/sinder.png"/></div>
+					<div class="planet hype"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="<?php echo ($percentages[3] < 100)?"inactive":"active"; ?>" id="myBtn" src="images/planets/hype.png"/></div>
+					<div class="planet meed"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="<?php echo ($percentages[2] < 100)?"inactive":"active"; ?>" id="myBtn" src="images/planets/meed.png"/></div>
+					<div class="planet galactico"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="<?php echo ($percentages[1] < 100)?"inactive":"active"; ?>" id="myBtn" src="images/planets/galactico.png"/></div>
 					</div>
 				</div>
 			</div>
