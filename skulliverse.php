@@ -283,9 +283,9 @@ if($filterby != ""){
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase()+"<br><br>Delegations: "+percentage+"%";
+			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase();
 		 }else{
-		 	document.getElementById('modal-text').innerHTML = "2x DIAMOND Rewards: "+status.toUpperCase()+"<br><br>Delegations: "+percentage+"%";
+		 	document.getElementById('modal-text').innerHTML = "2x DIAMOND Rewards: "+status.toUpperCase();
 		 }
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.png";
