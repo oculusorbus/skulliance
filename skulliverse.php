@@ -106,15 +106,6 @@ include 'header.php';
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
-/* Modal Content/Box */
-.modal-content {
-  background-color: #000;
-  margin: 15% auto; /* 15% from the top and centered */
-  padding: 20px;
-  border: 1px solid #888;
-  width: 50%; /* Could be more or less, depending on screen size */
-}
-
 /* The Close Button */
 .close {
   color: #aaa;
@@ -128,6 +119,41 @@ include 'header.php';
   color: black;
   text-decoration: none;
   cursor: pointer;
+}
+/* Modal Header */
+.modal-header {
+  padding: 2px 16px;
+  background-color: #5cb85c;
+  color: white;
+}
+
+/* Modal Body */
+.modal-body {padding: 2px 16px;}
+
+/* Modal Footer */
+.modal-footer {
+  padding: 2px 16px;
+  background-color: #5cb85c;
+  color: white;
+}
+
+/* Modal Content */
+.modal-content {
+  position: relative;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 0;
+  border: 1px solid #888;
+  width: 80%;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  animation-name: animatetop;
+  animation-duration: 0.4s
+}
+
+/* Add Animation */
+@keyframes animatetop {
+  from {top: -300px; opacity: 0}
+  to {top: 0; opacity: 1}
 }
 </style>
 		<div class="row" id="row1">
@@ -154,13 +180,20 @@ include 'header.php';
 		</div>
 		<!-- Modal -->
 		<div id="myModal" class="modal">
-
-		  <!-- Modal content -->
-		  <div class="modal-content">
-		    <span class="close">&times;</span>
-		    <p>Some text in the Modal..</p>
-		  </div>
-
+			<!-- Modal content -->
+			<div class="modal-content">
+			  <div class="modal-header">
+			    <span class="close">&times;</span>
+			    <h2>Modal Header</h2>
+			  </div>
+			  <div class="modal-body">
+			    <p>Some text in the Modal Body</p>
+			    <p>Some other text...</p>
+			  </div>
+			  <div class="modal-footer">
+			    <h3></h3>
+			  </div>
+			</div>
 		</div>
 		<!-- Footer -->
 		<div class="footer">
