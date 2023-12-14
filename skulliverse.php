@@ -165,15 +165,31 @@ include 'header.php';
 					// Calculate average percentage for all projects to determine Diamond Skull percentage
 					$average =  round(array_sum($percentages) / count($percentages));
 					$percentages[7] = $average;
+					
+					$numbers = array();
+					$numbers[1] = "one";
+					$numbers[2] = "two";
+					$numbers[3] = "three";
+					$numbers[4] = "four";
+					$numbers[5] = "five";
+					$numbers[6] = "six";
+					$numbers[7] = "seven";
+					foreach($percentages AS $project_id -> $percentage){
+						if($percentage < 100){
+							$$numbers[$project_id] = "active";
+						}else{
+							$$numbers[$project_id] = "inactive";
+						}
+					}
 					?>
 					<div class="planets">
-					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo ($percentages[7] < 100)?"inactive":"active"; ?>" onclick="javascript:openModal(1);" src="images/planets/diamond.png"/></div>
-					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo ($percentages[6] < 100)?"inactive":"active"; ?>" src="images/planets/crypties.png"/></div>
-					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo ($percentages[5] < 100)?"inactive":"active"; ?>" src="images/planets/kimo.png"/></div>
-					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo ($percentages[4] < 100)?"inactive":"active"; ?>" src="images/planets/sinder.png"/></div>
-					<div class="planet hype"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="<?php echo ($percentages[3] < 100)?"inactive":"active"; ?>" src="images/planets/hype.png"/></div>
-					<div class="planet meed"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="<?php echo ($percentages[2] < 100)?"inactive":"active"; ?>" src="images/planets/meed.png"/></div>
-					<div class="planet galactico"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="<?php echo ($percentages[1] < 100)?"inactive":"active"; ?>" src="images/planets/galactico.png"/></div>
+					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(1);" src="images/planets/diamond.png"/></div>
+					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo $six; ?>" src="images/planets/crypties.png"/></div>
+					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo $five; ?>" src="images/planets/kimo.png"/></div>
+					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo $four; ?>" src="images/planets/sinder.png"/></div>
+					<div class="planet hype"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="<?php echo $three; ?>" src="images/planets/hype.png"/></div>
+					<div class="planet meed"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="<?php echo $two; ?>" src="images/planets/meed.png"/></div>
+					<div class="planet galactico"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="<?php echo $one; ?>" src="images/planets/galactico.png"/></div>
 					</div>
 				</div>
 			</div>
@@ -187,8 +203,8 @@ include 'header.php';
 			    <h2>Modal Header</h2>
 			  </div>
 			  <div class="modal-body">
-			    <p>Some text in the Modal Body</p>
-			    <p>Some other text...</p>
+				<img id="modal-image" src=""/>
+			    <p id="modal-text"></p>
 			  </div>
 			  <div class="modal-footer">
 			    <h3></h3>
@@ -223,6 +239,7 @@ if($filterby != ""){
 	
 	function openModal(project_id){
 		 modal.style.display = "block";
+		 
 	}
 	
 	// Get the modal
