@@ -278,6 +278,7 @@ if($filterby != ""){
 	
 	function openModal(project_id, status, percentage){
 		 modal.style.display = "block";
+		 document.getElementById('myBar').style.width = percentage+"%";
 		 if(project_id != 7){
 			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase()+"<br><br>Delegations: "+percentage+"%";
 		 }else{
