@@ -91,7 +91,7 @@ include 'header.php';
 					$percentages = array();
 					$percentages = getProjectDelegationPercentages($conn);
 					// Calculate average percentage for all projects to determine Diamond Skull percentage
-					$average =  array_sum($percentages) / count($percentages);
+					$average =  round(array_sum($percentages) / count($percentages));
 					$percentages[7] = $average;
 					?>
 					<div class="planets">
