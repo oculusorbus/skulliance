@@ -184,7 +184,7 @@ include 'header.php';
 					}
 					?>
 					<div class="planets">
-					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(1);" src="images/planets/diamond.png"/></div>
+					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(1, '<?php echo $seven; ?>');" src="images/planets/diamond.png"/></div>
 					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo $six; ?>" src="images/planets/crypties.png"/></div>
 					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo $five; ?>" src="images/planets/kimo.png"/></div>
 					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo $four; ?>" src="images/planets/sinder.png"/></div>
@@ -201,7 +201,7 @@ include 'header.php';
 			<div class="modal-content">
 			  <div class="modal-header">
 			    <span class="close">&times;</span>
-			    <h2>Modal Header</h2>
+			    <h2 id="modal-header">Modal Header</h2>
 			  </div>
 			  <div class="modal-body">
 				<img id="modal-image" src=""/>
@@ -238,9 +238,23 @@ if($filterby != ""){
    		}
 	}
 	
-	function openModal(project_id){
+	function openModal(project_id, status){
 		 modal.style.display = "block";
-		 
+		 if(project_id == 1){
+			 document.getElementById('modal-header').innerText = "Galactico";
+		 }else if(project_id == 2){
+			 document.getElementById('modal-header').innerText = "Ohh Meed";
+		 }else if(project_id == 3){
+			 document.getElementById('modal-header').innerText = "H.Y.P.E.";
+		 }else if(project_id == 4){
+			 document.getElementById('modal-header').innerText = "Sinder Skullz";
+		 }else if(project_id == 5){
+			 document.getElementById('modal-header').innerText = "Kimosabe";
+		 }else if(project_id == 6){
+			 document.getElementById('modal-header').innerText = "Crypties";
+		 }else if(project_id == 7){
+			 document.getElementById('modal-header').innerText = "Diamond Skulls";
+		 }
 	}
 	
 	// Get the modal
