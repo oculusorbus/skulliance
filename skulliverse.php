@@ -84,7 +84,11 @@ include 'header.php';
 	top: -10px;
 }
 .inactive{
-	opacity: 0.4;
+    -webkit-filter: grayscale(100%);
+       -moz-filter: grayscale(100%);
+         -o-filter: grayscale(100%);
+        -ms-filter: grayscale(100%);
+            filter: grayscale(100%); 
 }
 </style>
 		<div class="row" id="row1">
