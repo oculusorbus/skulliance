@@ -264,7 +264,7 @@ if($filterby != ""){
 			 document.getElementById('modal-image').src = "images/planets/sinder.png";
 			 document.getElementById('modal-header').innerText = "Sinder Skullz";
 		 }else if(project_id == 5){
-			 document.getElementById('modal-image').src = "images/planets/kimosabe.png";
+			 document.getElementById('modal-image').src = "images/planets/kimo.png";
 			 document.getElementById('modal-header').innerText = "Kimosabe Art";
 		 }else if(project_id == 6){
 			 document.getElementById('modal-image').src = "images/planets/crypties.png";
