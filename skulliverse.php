@@ -240,7 +240,11 @@ if($filterby != ""){
 	
 	function openModal(project_id, status){
 		 modal.style.display = "block";
-		 document.getElementById('modal-text').innerText = "2x Rewards Status: "+status.toUpperCase();
+		 if(project_id != 7){
+			 document.getElementById('modal-text').innerText = "2x CARBON Rewards Status: "+status.toUpperCase();
+		 }else{
+		 	document.getElementById('modal-text').innerText = "2x DIAMOND Rewards Status: "+status.toUpperCase();
+		 }
 		 if(project_id == 1){
 			 document.getElementById('modal-header').innerText = "Galactico";
 		 }else if(project_id == 2){
