@@ -178,7 +178,7 @@ include 'header.php';
   width: 1%;
   height: 30px;
   background-color: white;
-  padding-bottom: 10px;
+  padding-bottom: 20px;
 }
 
 @media screen and (max-width: 700px) {
