@@ -123,7 +123,7 @@ include 'header.php';
 /* Modal Header */
 .modal-header {
   padding: 2px 16px;
-  background-color: #5cb85c;
+  background-color: #000;
   color: white;
 }
 
@@ -133,14 +133,14 @@ include 'header.php';
 /* Modal Footer */
 .modal-footer {
   padding: 2px 16px;
-  background-color: #5cb85c;
+  background-color: #000;
   color: white;
 }
 
 /* Modal Content */
 .modal-content {
   position: relative;
-  background-color: #fefefe;
+  background-color: #000;
   margin: auto;
   padding: 0;
   border: 1px solid #888;
