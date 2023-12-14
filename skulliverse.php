@@ -158,7 +158,6 @@ include 'header.php';
 }
 
 #modal-text{
-	padding-left: 20px;
 	font-weight: bold;
 	position: relative;
 	left: 20px;
@@ -175,7 +174,6 @@ include 'header.php';
 		float: none;
 	}
 	#modal-text{
-		padding-left: 0px;
 		position: relative;
 		left: 0px;
 	}
