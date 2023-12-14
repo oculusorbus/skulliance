@@ -333,7 +333,7 @@ if($filterby != ""){
 	  if (i == 0) {
 	    i = 1;
 	    var elem = document.getElementById("myBar");
-	    var width = percentage+"%";
+	    var width = percentage;
 	    var id = setInterval(frame, 10);
 	    function frame() {
 	      if (width >= 100) {
