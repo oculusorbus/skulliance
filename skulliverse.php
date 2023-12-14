@@ -157,6 +157,10 @@ include 'header.php';
 	float: left;
 }
 
+#modal-text{
+	font-weight: bold;
+}
+
 /* Add Animation */
 @keyframes animatetop {
   from {top: -300px; opacity: 0}
