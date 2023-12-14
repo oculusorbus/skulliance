@@ -255,9 +255,9 @@ if($filterby != ""){
 	function openModal(project_id, status, percentage){
 		 modal.style.display = "block";
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerText = "2x CARBON Rewards Status: "+status.toUpperCase()+"<br>Delegations: "+percentage+"%";
+			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards Status: "+status.toUpperCase()+"<br>Delegations: "+percentage+"%";
 		 }else{
-		 	document.getElementById('modal-text').innerText = "2x DIAMOND Rewards Status: "+status.toUpperCase()+"<br>Delegations: "+percentage+"%";
+		 	document.getElementById('modal-text').innerHTML = "2x DIAMOND Rewards Status: "+status.toUpperCase()+"<br>Delegations: "+percentage+"%";
 		 }
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.png";
