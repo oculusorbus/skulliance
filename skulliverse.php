@@ -175,10 +175,11 @@ include 'header.php';
 					$numbers[6] = "six";
 					$numbers[7] = "seven";
 					foreach($percentages AS $project_id => $percentage){
+						$number = $numbers[$project_id];
 						if($percentage < 100){
-							$$numbers[$project_id] = "active";
+							$$number = "active";
 						}else{
-							$$numbers[$project_id] = "inactive";
+							$$number = "inactive";
 						}
 					}
 					?>
