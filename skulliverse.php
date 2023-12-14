@@ -37,6 +37,12 @@ include 'header.php';
 	max-width: 100%;
 	min-width: 40px;
 }
+
+.diamond{
+	width: 12%;
+	left: 30%;
+	top: 30%;
+}
 .crypties{
 	width: 2%;
 	left: 40%;
@@ -84,8 +90,12 @@ include 'header.php';
 					<?php 
 					$percentages = array();
 					$percentages = getProjectDelegationPercentages($conn);
+					// Calculate average percentage for all projects to determine Diamond Skull percentage
+					$average =  array_sum($percentages) / count($percentages);
+					$percentages[7] = $average;
 					?>
 					<div class="planets">
+					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="" src="images/planets/diamond.png"/></div>
 					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="" src="images/planets/crypties.png"/></div>
 					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="" src="images/planets/kimo.png"/></div>
 					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="" src="images/planets/sinder.png"/></div>
