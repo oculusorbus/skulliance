@@ -178,7 +178,7 @@ include 'header.php';
 #myBar {
   width: 1%;
   height: 30px;
-  background-color: white;
+  background-color: #D6DDDE;
 }
 
 @media screen and (max-width: 700px) {
