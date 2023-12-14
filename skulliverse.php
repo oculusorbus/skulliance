@@ -246,6 +246,7 @@ if($filterby != ""){
 		 	document.getElementById('modal-text').innerText = "2x DIAMOND Rewards Status: "+status.toUpperCase();
 		 }
 		 if(project_id == 1){
+			 document.getElementById('modal-image').src = "images/planet/galactico.png";
 			 document.getElementById('modal-header').innerText = "Galactico";
 		 }else if(project_id == 2){
 			 document.getElementById('modal-header').innerText = "Ohh Meed";
