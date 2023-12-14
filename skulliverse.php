@@ -144,7 +144,7 @@ include 'header.php';
   margin: 15% auto; /* 15% from the top and centered */
   padding: 0;
   border: 1px solid #888;
-  width: 80%;
+  width: 50%;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
   animation-name: animatetop;
   animation-duration: 0.4s
