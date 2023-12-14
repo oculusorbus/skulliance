@@ -169,6 +169,17 @@ include 'header.php';
   to {top: 0; opacity: 1}
 }
 
+#myProgress {
+  width: 100%;
+  background-color: gray;
+}
+
+#myBar {
+  width: 1%;
+  height: 30px;
+  background-color: white;
+}
+
 @media screen and (max-width: 700px) {
 	#modal-image{
 		float: none;
@@ -229,6 +240,9 @@ include 'header.php';
 			  <div class="modal-body">
 				<img id="modal-image" src=""/>
 			    <p id="modal-text"></p>
+				<div id="myProgress">
+				  <div id="myBar"></div>
+				</div>
 			  </div>
 			  <div class="modal-footer">
 			    <h3></h3>
@@ -307,6 +321,26 @@ if($filterby != ""){
 	window.onclick = function(event) {
 	  if (event.target == modal) {
 	    modal.style.display = "none";
+	  }
+	}
+	
+	// Progress Bar
+	var i = 0;
+	function move() {
+	  if (i == 0) {
+	    i = 1;
+	    var elem = document.getElementById("myBar");
+	    var width = 1;
+	    var id = setInterval(frame, 10);
+	    function frame() {
+	      if (width >= 100) {
+	        clearInterval(id);
+	        i = 0;
+	      } else {
+	        width++;
+	        elem.style.width = width + "%";
+	      }
+	    }
 	  }
 	}
 </script>
