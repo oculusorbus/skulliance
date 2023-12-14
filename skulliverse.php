@@ -172,7 +172,12 @@ include 'header.php';
 
 @media screen and (max-width: 700px) {
 	#modal-image{
-		clear: both;
+		float: none;
+	}
+	#modal-text{
+		padding-left: 0px;
+		position: relative;
+		left: 0px;
 	}
 }
 </style>
