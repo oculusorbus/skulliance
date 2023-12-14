@@ -179,6 +179,8 @@ include 'header.php';
   width: 1%;
   height: 30px;
   background-color: #D6DDDE;
+  padding: 6px;
+  text-align: right;
 }
 
 @media screen and (max-width: 700px) {
