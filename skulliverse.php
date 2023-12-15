@@ -354,7 +354,7 @@ if($filterby != ""){
    		}
 	}
 	
-	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, currency){
+	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, ticker){
 		 modal.style.display = "block";
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
@@ -363,7 +363,7 @@ if($filterby != ""){
 		 "<br><br><strong>Inhabitants:</strong> "+inhabitants+
 		 "<br><br><strong>Delegations:</strong> "+delegations+
 		 "<br><br><strong>Delegators:</strong> "+delegators+;
-		 "<br><br><strong>Currency:</strong> "+currency;
+		 "<br><br><strong>Currency:</strong> "+ticker;
 		 
 		 if(project_id != 7){
 			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><br><strong>2x CARBON Rewards:</strong> "+status.toUpperCase();
