@@ -248,7 +248,7 @@ include 'header.php';
 					$categories[3] = "Pulsar";
 					$categories[4] = "Magma";
 					$categories[5] = "Cybernetic";
-					$categories[6] = "Coreless";
+					$categories[6] = "Necro";
 					$categories[7] = "Carbon";
 					
 					$numbers = array();
