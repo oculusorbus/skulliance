@@ -152,8 +152,8 @@ include 'header.php';
   animation-duration: 0.4s;
 }
 
-.modal-content form{
-	padding-top: 40px;
+.modal-content input{
+	margin-top: 40px;
 }
 
 #modal-image{
