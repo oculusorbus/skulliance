@@ -189,10 +189,13 @@ include 'header.php';
 @media screen and (max-width: 700px) {
 	#modal-image{
 		float: none;
+		width: 100%;
+		max-width: none;
 	}
 	#modal-text{
 		position: relative;
 		left: 0px;
+		text-align: center;
 	}
 }
 </style>
