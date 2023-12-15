@@ -247,7 +247,7 @@ include 'header.php';
 					$categories[2] = "Terrestrial";
 					$categories[3] = "Ring";
 					$categories[4] = "Magmatic";
-					$categories[5] = "Ecumenopolis";
+					$categories[5] = "Dystopian";
 					$categories[6] = "Rogue";
 					$categories[7] = "Carbon";
 					
