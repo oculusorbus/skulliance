@@ -203,6 +203,39 @@ include 'header.php';
 					$average =  round(array_sum($percentages) / count($percentages));
 					$percentages[7] = $average;
 					
+					// Get max delegations for projects
+					$diamond_skull_count = getTotalDiamondSkulls($conn);
+					$max_delegations = array();
+					$max_delegations[1] = $diamond_skull_count;
+					$max_delegations[2] = $diamond_skull_count*2;
+					$max_delegations[3] = $diamond_skull_count*3;
+					$max_delegations[4] = $diamond_skull_count*4;
+					$max_delegations[5] = $diamond_skull_count*4;
+					$max_delegations[6] = $diamond_skull_count*5;
+					// Get max delegations for all projects
+					foreach($max_delegations AS $project_id => $max_delegation){
+						if(!isset($max_delegations[7])){
+							$max_delegations[7] = 0;
+						}
+						$max_delegations[7] = $max_delegation+$max_delegations[7];
+					}
+					
+					// Get project delegations
+					$project_delegations = getProjectDelegationTotals($conn);
+					// Get total delegations for all projects
+					foreach($project_delegations AS $project_id => $total){
+						if(!isset($project_delegations[7])){
+							$project_delegations[7] = 0;
+						}
+						$project_delegations[7] = $total+$project_delegations[7];
+					}
+					
+					// Assemble delegations display for modal window
+					$delegations = array();
+					foreach($project_delegations AS $project_id => $total){
+						$delegations[$project_id] = "Delegations: ".$total." of ".$max_delegations[$project_id];
+					}
+					
 					$numbers = array();
 					$numbers[1] = "one";
 					$numbers[2] = "two";
@@ -221,13 +254,20 @@ include 'header.php';
 					}
 					?>
 					<div class="planets">
-					<div class="planet diamond"><span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(7, '<?php echo $seven; ?>', <?php echo $percentages[7]; ?>);" src="images/planets/diamond.png"/></div>
-					<div class="planet crypties"><span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo $six; ?>" onclick="javascript:openModal(6, '<?php echo $six; ?>', <?php echo $percentages[6]; ?>);" src="images/planets/crypties.png"/></div>
-					<div class="planet kimo"><span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo $five; ?>" onclick="javascript:openModal(5, '<?php echo $five; ?>', <?php echo $percentages[5]; ?>);" src="images/planets/kimo.png"/></div>
-					<div class="planet sinder"><span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo $four; ?>" onclick="javascript:openModal(4, '<?php echo $four; ?>', <?php echo $percentages[4]; ?>);" src="images/planets/sinder.png"/></div>
-					<div class="planet hype"><span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="<?php echo $three; ?>" onclick="javascript:openModal(3, '<?php echo $three; ?>', <?php echo $percentages[3]; ?>);" src="images/planets/hype.png"/></div>
-					<div class="planet meed"><span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="<?php echo $two; ?>" onclick="javascript:openModal(2, '<?php echo $two; ?>', <?php echo $percentages[2]; ?>);" src="images/planets/meed.png"/></div>
-					<div class="planet galactico"><span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="<?php echo $one; ?>" onclick="javascript:openModal(1, '<?php echo $one; ?>', <?php echo $percentages[1]; ?>);" src="images/planets/galactico.png"/></div>
+					<div class="planet diamond">
+						<span class="percentage"><?php echo $percentages[7]; ?>%</span><img class="<?php echo $seven; ?>" onclick="javascript:openModal(7, '<?php echo $seven; ?>', <?php echo $percentages[7]; ?>, '<?php echo $delegations[7]; ?>');" src="images/planets/diamond.png"/></div>
+					<div class="planet crypties">
+						<span class="percentage"><?php echo $percentages[6]; ?>%</span><img class="<?php echo $six; ?>" onclick="javascript:openModal(6, '<?php echo $six; ?>', <?php echo $percentages[6]; ?>, '<?php echo $delegations[6]; ?>');" src="images/planets/crypties.png"/></div>
+					<div class="planet kimo">
+						<span class="percentage"><?php echo $percentages[5]; ?>%</span><img class="<?php echo $five; ?>" onclick="javascript:openModal(5, '<?php echo $five; ?>', <?php echo $percentages[5]; ?>, '<?php echo $delegations[5]; ?>');" src="images/planets/kimo.png"/></div>
+					<div class="planet sinder">
+						<span class="percentage"><?php echo $percentages[4]; ?>%</span><img class="<?php echo $four; ?>" onclick="javascript:openModal(4, '<?php echo $four; ?>', <?php echo $percentages[4]; ?>, '<?php echo $delegations[4]; ?>');" src="images/planets/sinder.png"/></div>
+					<div class="planet hype">
+						<span class="percentage"><?php echo $percentages[3]; ?>%</span><img class="<?php echo $three; ?>" onclick="javascript:openModal(3, '<?php echo $three; ?>', <?php echo $percentages[3]; ?>, '<?php echo $delegations[3]; ?>');" src="images/planets/hype.png"/></div>
+					<div class="planet meed">
+						<span class="percentage"><?php echo $percentages[2]; ?>%</span><img class="<?php echo $two; ?>" onclick="javascript:openModal(2, '<?php echo $two; ?>', <?php echo $percentages[2]; ?>, '<?php echo $delegations[2]; ?>');" src="images/planets/meed.png"/></div>
+					<div class="planet galactico">
+						<span class="percentage"><?php echo $percentages[1]; ?>%</span><img class="<?php echo $one; ?>" onclick="javascript:openModal(1, '<?php echo $one; ?>', <?php echo $percentages[1]; ?>, '<?php echo $delegations[1]; ?>');" src="images/planets/galactico.png"/></div>
 					</div>
 				</div>
 			</div>
@@ -278,14 +318,14 @@ if($filterby != ""){
    		}
 	}
 	
-	function openModal(project_id, status, percentage){
+	function openModal(project_id, status, percentage, delegations){
 		 modal.style.display = "block";
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase();
+			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase()+"<br><br>"+delegations;
 		 }else{
-		 	document.getElementById('modal-text').innerHTML = "2x DIAMOND Rewards: "+status.toUpperCase();
+		 	document.getElementById('modal-text').innerHTML = "2x DIAMOND Rewards: "+status.toUpperCase()+"<br><br>"+delegations;
 		 }
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.png";
