@@ -245,7 +245,7 @@ include 'header.php';
 					$categories = array();
 					$categories[1] = "Galactic";
 					$categories[2] = "Terrestrial";
-					$categories[3] = "Hycean";
+					$categories[3] = "Ring";
 					$categories[4] = "Magmatic";
 					$categories[5] = "Ecumenopolis";
 					$categories[6] = "Necro";
