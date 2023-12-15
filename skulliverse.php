@@ -298,7 +298,7 @@ include 'header.php';
 			    <p id="modal-text"></p>
 				<form id="delegationForm" action="diamond-skulls.php" method="post">
 				  Convert the following amount of core project currency to DIAMOND:<br><br>
-				  <input type="submit" value="Delegate" class="small-button">
+				  <input type="submit" value="Delegate" class="button">
 				</form>
 			  </div>
 			  <div class="modal-footer">
