@@ -152,6 +152,10 @@ include 'header.php';
   animation-duration: 0.4s;
 }
 
+.modal-content form{
+	padding-top: 40px;
+}
+
 #modal-image{
 	max-width: 200px;
 	float: left;
@@ -296,11 +300,10 @@ include 'header.php';
 				</div>
 				<img id="modal-image" src=""/>
 			    <p id="modal-text"></p>
-				<p>				<form id="delegationForm" action="diamond-skulls.php" method="post">
+				<form id="delegationForm" action="diamond-skulls.php" method="post">
 				  Convert the following amount of core project currency to DIAMOND:<br><br>
 				  <input type="submit" value="Delegate" class="button">
 				</form>
-				</p>
 			  </div>
 			  <div class="modal-footer">
 			    <h3></h3>
