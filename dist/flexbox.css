@@ -481,7 +481,7 @@ input {
 }
 
 .button {
-  background-color: #6D1C42; /* Green */
+  background-color: #014579; /* Green */
   border: none;
   color: white;
   padding: 15px 32px;
@@ -493,18 +493,18 @@ input {
   border-radius: 0.5rem;
   font-weight: bold;
   font-size: 2rem;
-  box-shadow: 0 6px #24071E;
+  box-shadow: 0 6px #011B37;
   width: 100%;
   font-family: Courier;
 }
 
 .button:hover {
-	background-color: #014579;
+	background-color: #6D1C42;
 }
 
 .button:active {
-  background-color: #014579;
-  box-shadow: 0 3px #011B37;
+  background-color: #6D1C42;
+  box-shadow: 0 3px #24071E;
   transform: translateY(3px);
 }
 
