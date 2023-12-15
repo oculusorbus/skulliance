@@ -236,6 +236,8 @@ include 'header.php';
 						$delegations[$project_id] = "Delegations: ".number_format($total)." of ".number_format($max_delegations[$project_id]);
 					}
 					
+					print_r(getProjectDelegatorTotals($conn));
+					
 					$numbers = array();
 					$numbers[1] = "one";
 					$numbers[2] = "two";

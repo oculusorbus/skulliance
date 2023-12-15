@@ -709,6 +709,28 @@ function getProjectDelegationTotals($conn){
 	}
 }
 
+// Get total delegators for Project
+function getProjectDelegatorTotals($conn){
+	$sql = "SELECT COUNT(DISTINCT user_id) AS user_total, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN users ON nfts.user_id = users.id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
+	$result = $conn->query($sql);
+	
+	$project_delegator_totals = array();
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  if(!isset($project_delegator_totals[$row["project_id"]])){
+		  	$project_delegator_totals[$row["project_id"]] = 0;
+		  }
+		  $project_delegator_totals[$row["project_id"]] = $row["user_total"];
+	  }
+	  return $project_delegator_totals;
+	} else {
+	  //echo "0 results";
+	  return null;
+	}
+}
+
 // Get total rewards for Diamond Skulls delegation
 function getDiamondSkullsDelegationRewards($conn){
 	// Track Rewards by User ID for Delegators AND Diamond Skull Owners
