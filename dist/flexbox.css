@@ -493,7 +493,7 @@ input {
   border-radius: 0.5rem;
   font-weight: bold;
   font-size: 2rem;
-  box-shadow: 0 6px #601363;
+  box-shadow: 0 6px #24071E;
   width: 100%;
   font-family: Courier;
 }
@@ -504,7 +504,7 @@ input {
 
 .button:active {
   background-color: #014579;
-  box-shadow: 0 3px #1c4f2a;
+  box-shadow: 0 3px #011B37;
   transform: translateY(3px);
 }
 
