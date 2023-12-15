@@ -161,6 +161,7 @@ include 'header.php';
 	font-weight: bold;
 	position: relative;
 	left: 20px;
+	padding-bottom: 20px;
 }
 
 /* Add Animation */
