@@ -356,16 +356,18 @@ if($filterby != ""){
 		 modal.style.display = "block";
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
-		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = "<strong>2x CARBON Rewards:</strong> ";
-		 }else{
-			 document.getElementById('modal-text').innerHTML = "<strong>2x DIAMOND Rewards:</strong> ";
-		 }
-		 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+status.toUpperCase()+
-		 "<br><br><strong>Delegations:</strong> "+delegations+
-		 "<br><br><strong>Delegators:</strong> "+delegators+
+		 document.getElementById('modal-text').innerHTML = 
 		 "<br><br><strong>Planet Type:</strong> "+category+
-		 "<br><br><strong>Inhabitants:</strong> "+inhabitants;
+		 "<br><br><strong>Inhabitants:</strong> "+inhabitants+
+		 "<br><br><strong>Delegations:</strong> "+delegations+
+		 "<br><br><strong>Delegators:</strong> "+delegators;
+		 
+		 if(project_id != 7){
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<strong>2x CARBON Rewards:</strong> "+document.getElementById('modal-text').innerHTML+status.toUpperCase();
+		 }else{
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<strong>2x DIAMOND Rewards:</strong> "+document.getElementById('modal-text').innerHTML+status.toUpperCase()+;
+		 }
+		 
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.png";
 			 document.getElementById('modal-header').innerText = "Galactico";
