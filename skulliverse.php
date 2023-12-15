@@ -357,7 +357,7 @@ if($filterby != ""){
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
 		 document.getElementById('modal-text').innerHTML = 
-		 "<br><br><strong>Planet Type:</strong> "+category+
+		 "<strong>Planet Type:</strong> "+category+
 		 "<br><br><strong>Inhabitants:</strong> "+inhabitants+
 		 "<br><br><strong>Delegations:</strong> "+delegations+
 		 "<br><br><strong>Delegators:</strong> "+delegators;
