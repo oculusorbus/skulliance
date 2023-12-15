@@ -499,11 +499,11 @@ input {
 }
 
 .button:hover {
-	background-color: #011B37;
+	background-color: #023E74;
 }
 
 .button:active {
-  background-color: #011B37;
+  background-color: #023E74;
   box-shadow: 0 3px #24071E;
   transform: translateY(3px);
 }
