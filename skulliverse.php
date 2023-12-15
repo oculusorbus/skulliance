@@ -162,7 +162,6 @@ include 'header.php';
 }
 
 #modal-text{
-	font-weight: bold;
 	position: relative;
 	left: 20px;
 }
@@ -237,7 +236,7 @@ include 'header.php';
 					// Assemble delegations display for modal window
 					$delegations = array();
 					foreach($project_delegations AS $project_id => $total){
-						$delegations[$project_id] = "Delegations: ".number_format($total)." of ".number_format($max_delegations[$project_id]);
+						$delegations[$project_id] = number_format($total)." of ".number_format($max_delegations[$project_id]);
 					}
 					
 					$delegators = getProjectDelegatorTotals($conn);
@@ -340,9 +339,9 @@ if($filterby != ""){
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = "2x CARBON Rewards: "+status.toUpperCase()+"<br><br>"+delegations+"<br><br>Delegators: "+delegators;
+			 document.getElementById('modal-text').innerHTML = "<strong>2x CARBON Rewards:</strong> "+status.toUpperCase()+"<br><br><strong>Delegations:</strong> "+delegations+"<br><br><strong>Delegators:</strong> "+delegators;
 		 }else{
-		 	document.getElementById('modal-text').innerHTML = "2x DIAMOND Rewards: "+status.toUpperCase()+"<br><br>"+delegations+"<br><br>Delegators: "+delegators;
+		 	document.getElementById('modal-text').innerHTML = "<strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase()+"<br><br><strong>Delegations:</strong> "+delegations+"<br><br><strong>Delegators:</strong> "+delegators;
 		 }
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.png";
