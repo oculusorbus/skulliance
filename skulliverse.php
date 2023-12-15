@@ -243,13 +243,13 @@ include 'header.php';
 					$delegators[7] = getDelegatorTotal($conn);
 					
 					$categories = array();
-					$numbers[1] = "Galactic";
-					$numbers[2] = "Terrestrial";
-					$numbers[3] = "Pulsar";
-					$numbers[4] = "Magmatic";
-					$numbers[5] = "Cybernetic";
-					$numbers[6] = "Coreless";
-					$numbers[7] = "Carbon";
+					$categories[1] = "Galactic";
+					$categories[2] = "Terrestrial";
+					$categories[3] = "Pulsar";
+					$categories[4] = "Magmatic";
+					$categories[5] = "Cybernetic";
+					$categories[6] = "Coreless";
+					$categories[7] = "Carbon";
 					
 					$numbers = array();
 					$numbers[1] = "one";
