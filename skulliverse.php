@@ -246,7 +246,7 @@ include 'header.php';
 					$categories[1] = "Galactic";
 					$categories[2] = "Terrestrial";
 					$categories[3] = "Pulsar";
-					$categories[4] = "Magmatic";
+					$categories[4] = "Magma";
 					$categories[5] = "Cybernetic";
 					$categories[6] = "Coreless";
 					$categories[7] = "Carbon";
