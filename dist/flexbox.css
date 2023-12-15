@@ -481,7 +481,7 @@ input {
 }
 
 .button {
-  background-color: #2D7D46; /* Green */
+  background-color: #6D1C42; /* Green */
   border: none;
   color: white;
   padding: 15px 32px;
@@ -493,7 +493,7 @@ input {
   border-radius: 0.5rem;
   font-weight: bold;
   font-size: 2rem;
-  box-shadow: 0 6px #1c4f2a;
+  box-shadow: 0 6px #601363;
   width: 100%;
   font-family: Courier;
 }
