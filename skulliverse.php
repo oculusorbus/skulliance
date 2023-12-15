@@ -239,7 +239,7 @@ include 'header.php';
 					// Assemble delegations display for modal window
 					$delegations = array();
 					foreach($project_delegations AS $project_id => $total){
-						$delegations[$project_id] = number_format($total)." of ".number_format($max_delegations[$project_id]);
+						$delegations[$project_id] = number_format($total)." of ".number_format($max_delegations[$project_id])." (".($total-$max_delegations[$project_id])." Remaining)";
 					}
 					
 					$delegators = getProjectDelegatorTotals($conn);
