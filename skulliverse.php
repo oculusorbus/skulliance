@@ -38,6 +38,10 @@ include 'header.php';
 	min-width: 40px;
 }
 
+.planet img:hover{
+	cursor: pointer;
+}
+
 .diamond{
 	width: 12%;
 	left: 47%;
