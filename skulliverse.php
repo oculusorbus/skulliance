@@ -48,34 +48,34 @@ include 'header.php';
 	top: 18%;
 }
 .crypties{
-	width: 2%;
-	left: 40%;
-	top: 4%;
+	width: 5%;
+	left: 36%;
+	top: 7%;
 }
 .kimo{
-	width: 4%;
-	left: 5%;
-	top: 15%;
+	width: 6%;
+	left: 4%;
+	top: 17%;
 }
 .sinder{
-	width: 5%;
-	left: 37%;
-	top: 30%;
+	width: 7%;
+	left: 71%;
+	top: 31%;
 }
 .hype{
-	width: 6%;
-	left: 81%;
-	top: 27%;
+	width: 8%;
+	left: 88%;
+	top: 44%;
 }
 .meed{
-	width: 8%;
-	left: 22%;
-	top: 43%;
+	width: 9%;
+	left: 53%;
+	top: 53%;
 }
 .galactico{
 	width: 10%;
-	left: 64%;
-	top: 53%;
+	left: 16%;
+	top: 43%;
 }
 
 .percentage {
