@@ -54,8 +54,8 @@ include 'header.php';
 }
 .kimo{
 	width: 6%;
-	left: 4%;
-	top: 17%;
+	left: 6%;
+	top: 19%;
 }
 .sinder{
 	width: 7%;
