@@ -380,24 +380,31 @@ if($filterby != ""){
 		 
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+ 			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "Galactico";
 		 }else if(project_id == 2){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+ 			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "Ohh Meed";
 		 }else if(project_id == 3){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "H.Y.P.E.";
 		 }else if(project_id == 4){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "Sinder Skullz";
 		 }else if(project_id == 5){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "Kimosabe Art";
 		 }else if(project_id == 6){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "Crypties";
 		 }else if(project_id == 7){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
+			 document.getElementById("modal-image").classList.add(status);
 			 document.getElementById('modal-header').innerText = "Diamond Skulls";
 		 }
 	}
