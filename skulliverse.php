@@ -59,12 +59,12 @@ include 'header.php';
 }
 .sinder{
 	width: 7%;
-	left: 71%;
+	left: 68%;
 	top: 31%;
 }
 .hype{
 	width: 8%;
-	left: 88%;
+	left: 85%;
 	top: 44%;
 }
 .meed{
