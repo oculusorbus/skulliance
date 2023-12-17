@@ -83,36 +83,37 @@ function verifyNFTs($conn, $addresses, $policies){
 							if(isset($tokenresponsedata->asset_name_ascii)){
 								$asset_name = $tokenresponsedata->asset_name_ascii;
 								if(isset($metadata->$policy_id)){
-									
 									$nft = $metadata->$policy_id;
-									$nft_data = $nft->$asset_name;
-									// Account for NFT with NaN value for asset name
-									if($asset_name == "NaN"){
-										$nft_data->AssetName = "DROPSHIP012";
-									}else{
-										$nft_data->AssetName = $asset_name;
-									}
-									/*
-									if(isset($nft_data->image)){
-										$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
-									}else{
-										$ipfs = "";
-									}
-									if(isset($_SESSION['userData']['user_id'])){
-										$user_id = $_SESSION['userData']['user_id'];
-									}else{
-										$user_id = getUserId($conn, $address);
-									}
-									if(isset($nft_data->name)){
-										if(checkNFT($conn, $tokenresponsedata->fingerprint)){
-											updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+									if(isset($nft))
+										$nft_data = $nft->$asset_name;
+										// Account for NFT with NaN value for asset name
+										if($asset_name == "NaN"){
+											$nft_data->AssetName = "DROPSHIP012";
 										}else{
-											$collection_id = getCollectionId($conn, $policy_id);
-											createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
+											$nft_data->AssetName = $asset_name;
 										}
-									}*/
-									if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
-										processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address);
+										/*
+										if(isset($nft_data->image)){
+											$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
+										}else{
+											$ipfs = "";
+										}
+										if(isset($_SESSION['userData']['user_id'])){
+											$user_id = $_SESSION['userData']['user_id'];
+										}else{
+											$user_id = getUserId($conn, $address);
+										}
+										if(isset($nft_data->name)){
+											if(checkNFT($conn, $tokenresponsedata->fingerprint)){
+												updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+											}else{
+												$collection_id = getCollectionId($conn, $policy_id);
+												createNFT($conn, $tokenresponsedata->fingerprint, $nft_data->AssetName, $nft_data->name, $ipfs, $collection_id, $user_id);
+											}
+										}*/
+										if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
+											processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address);
+										}
 									}
 								}
 							}
