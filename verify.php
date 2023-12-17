@@ -87,6 +87,7 @@ function verifyNFTs($conn, $addresses, $policies){
 									if(isset($nft)){
 										if(str_contains($asset_name, "Hades")){
 											print_r($asset_name);
+											print_r($nft);
 											exit;
 										}
 										$nft_data = $nft->$asset_name;
