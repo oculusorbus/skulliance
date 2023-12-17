@@ -84,7 +84,7 @@ function verifyNFTs($conn, $addresses, $policies){
 								$asset_name = $tokenresponsedata->asset_name_ascii;
 								if(isset($metadata->$policy_id)){
 									$nft = $metadata->$policy_id;
-									if(isset($nft))
+									if(isset($nft)){
 										$nft_data = $nft->$asset_name;
 										// Account for NFT with NaN value for asset name
 										if($asset_name == "NaN"){
