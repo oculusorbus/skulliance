@@ -89,6 +89,7 @@ function verifyNFTs($conn, $addresses, $policies){
 											echo $policy_id;
 											echo $asset_name;
 											print_r($nft);
+											exit;
 										}
 										$nft_data = $nft->$asset_name;
 										if(isset($nft_data)){
