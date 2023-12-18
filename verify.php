@@ -85,11 +85,6 @@ function verifyNFTs($conn, $addresses, $policies){
 								if(isset($metadata->$policy_id)){
 									$nft = $metadata->$policy_id;
 									if(isset($nft)){
-										if(str_contains($asset_name, "Hades")){
-											echo $asset_name;
-											echo $tokenresponsedata->fingerprint;
-											exit;
-										}
 										$nft_data = $nft->$asset_name;
 										if(isset($nft_data)){
 											// Account for NFT with NaN value for asset name
@@ -100,6 +95,17 @@ function verifyNFTs($conn, $addresses, $policies){
 											}
 											if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
 												processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address);
+											}
+										}else{
+											// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
+											echo $asset_name." was missing NFT data, but was still updated in the db. \r\n";
+											if(isset($_SESSION['userData']['user_id'])){
+												$user_id = $_SESSION['userData']['user_id'];
+											}else{
+												$user_id = getUserId($conn, $address);
+											}
+											if(checkNFT($conn, $tokenresponsedata->fingerprint)){
+												updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											}
 										}
 									}
