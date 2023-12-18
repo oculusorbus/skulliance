@@ -86,10 +86,10 @@ function verifyNFTs($conn, $addresses, $policies){
 									$nft = $metadata->$policy_id;
 									if(isset($nft)){
 										if(str_contains($asset_name, "Hades")){
+											echo $policy_id;
 											echo $asset_name;
 											print_r($nft);
-										}else{
-											break;
+											exit;
 										}
 										$nft_data = $nft->$asset_name;
 										if(isset($nft_data)){
