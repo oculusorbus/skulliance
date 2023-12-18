@@ -75,9 +75,7 @@ function verifyNFTs($conn, $addresses, $policies){
 			$tokenresponse = curl_exec( $tokench );
 			$tokenresponse = json_decode($tokenresponse);
 			curl_close( $tokench );
-			
-			$hades_counter = 0;
-			
+
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
 					if(isset($tokenresponsedata->minting_tx_metadata)){
@@ -88,15 +86,6 @@ function verifyNFTs($conn, $addresses, $policies){
 								if(isset($metadata->$policy_id)){
 									$nft = $metadata->$policy_id;
 									if(isset($nft)){
-										if(str_contains($asset_name, "Hades")){
-											echo $policy_id;
-											echo $asset_name;
-											print_r($nft);
-											$hades_counter++;
-											if($hades_counter == 10){
-												exit;
-											}
-										}
 										$nft_data = $nft->$asset_name;
 										if(isset($nft_data)){
 											// Account for NFT with NaN value for asset name
