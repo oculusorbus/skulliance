@@ -792,6 +792,24 @@ function getDelegatedDiamondSkulls($conn){
 	}
 }
 
+// Get NFT asset ids
+function getNFTAssetIDs($conn){
+	$sql = "SELECT id, asset_id FROM nfts";
+	$result = $conn->query($sql);
+	
+	$asset_ids = array();
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $asset_ids[$row["id"]] = $row["asset_id"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $asset_ids;
+}
+
 // Get NFTs
 function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
 	global $projects, $project_names;

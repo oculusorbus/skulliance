@@ -14,8 +14,11 @@ if(isset($_GET['verify'])){
 	$policies = getPolicies($conn);
 	// Remove all user ids from NFTs before running cron job verification
 	removeUsers($conn);
+	// Get all NFT asset IDs to determine whether to update DB records, saves on DB resources instead of individual DB calls to check NFT presence
+	$asset_ids = array();
+	$asset_ids = getNFTAssetIDs($conn);
 	// Verify all NFTs from wallets in the DB
-	verifyNFTs($conn, $addresses, $policies);
+	verifyNFTs($conn, $addresses, $policies, $asset_ids);
 	// Get project percentages for Diamond Skull delegations
 	$percentages = array();
 	$percentages = getProjectDelegationPercentages($conn);
@@ -27,7 +30,7 @@ if(isset($_GET['verify'])){
 	deployDiamondSkullRewards($conn, $percentages);
 }
 
-function verifyNFTs($conn, $addresses, $policies){
+function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	global $blockfrost_project_id;
 	foreach($addresses AS $index => $address){
 		$ch = curl_init("https://api.koios.rest/api/v0/account_assets");
@@ -94,7 +97,7 @@ function verifyNFTs($conn, $addresses, $policies){
 												$nft_data->AssetName = $asset_name;
 											}
 											if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
-												processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address);
+												processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
 											}
 										}else{
 											// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
@@ -104,7 +107,7 @@ function verifyNFTs($conn, $addresses, $policies){
 											}else{
 												$user_id = getUserId($conn, $address);
 											}
-											if(checkNFT($conn, $tokenresponsedata->fingerprint)){
+											if(in_array($fingerprint, $asset_ids)){
 												updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											}
 										}
@@ -139,7 +142,7 @@ function verifyNFTs($conn, $addresses, $policies){
 	}
 }
 
-function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address){
+function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
 	if(isset($image)){
 		$ipfs = substr($image, 7, strlen($image));
 	}else{
@@ -151,7 +154,7 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 		$user_id = getUserId($conn, $address);
 	}
 	if(isset($name)){
-		if(checkNFT($conn, $fingerprint)){
+		if(in_array($fingerprint, $asset_ids)){
 			updateNFT($conn, $fingerprint, $user_id);
 		}else{
 			$collection_id = getCollectionId($conn, $policy_id);
