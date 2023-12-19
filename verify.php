@@ -107,7 +107,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 											}else{
 												$user_id = getUserId($conn, $address);
 											}
-											if(in_array($fingerprint, $asset_ids)){
+											if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
 												updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											}
 										}
