@@ -33,7 +33,7 @@ if(isset($_GET['verify'])){
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	global $blockfrost_project_id;
 	foreach($addresses AS $index => $address){
-		$ch = curl_init("https://api.koios.rest/api/v1/account_assets");
+		$ch = curl_init("https://api.koios.rest/api/v0/account_assets");
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
 		curl_setopt( $ch, CURLOPT_POST, 1);
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"]}');
