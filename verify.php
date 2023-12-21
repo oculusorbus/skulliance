@@ -140,6 +140,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			//updateNFTs($conn, implode("', '", $asset_names));
 		}else{
 			echo "There was no response data for stake address: ".$address." \r\n";
+			print_r($response);
 		}
 		}else{
 			echo "There was no response for stake address: ".$address." \r\n";
