@@ -47,6 +47,9 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		//print_r($response[0]->asset_list);
 		//exit;
 		curl_close( $ch );
+		
+		print_r($response);
+		exit;
 
 		//$_SESSION['userData']['nfts'] = array();
 		if(is_array($response)){
@@ -111,8 +114,14 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 												updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											}
 										}
+									}else{
+										echo "Missing NFT data \r\n";
 									}
+								}else{
+									echo "Missing metadata accessed by policy id \r\n";
 								}
+							}else{
+								echo "Missing asset name ascii \r\n";
 							}
 						} // End foreach
 					// Empty Koios metadata, Use Blockfrost for CIP68
@@ -137,9 +146,13 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 				} // End foreach
 			}// End if
 			//updateNFTs($conn, implode("', '", $asset_names));
-		} // End if
+		}else{
+			echo "There was no response data for stake address: ".$address." \r\n";
 		}
-	}
+		}else{
+			echo "There was no response for stake address: ".$address." \r\n";
+		}
+	} // End foreach
 }
 
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
