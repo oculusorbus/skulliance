@@ -35,7 +35,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	
 	$offsets = array();
 	$offsets[1] = "";
-	$offsets[2] = "offset=1000"
+	$offsets[2] = "offset=1000";
 	
 	foreach($offsets AS $i => $offset){
 	foreach($addresses AS $index => $address){
