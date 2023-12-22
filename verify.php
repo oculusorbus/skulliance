@@ -50,7 +50,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		curl_close( $ch );
 		
 		$test_counter++;
-		if($test_counter > 5){
+		if($test_counter > 10){
 			print_r($response);
 			exit;
 		}
