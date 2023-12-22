@@ -110,7 +110,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 												if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
 													processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
 												}else{
-													echo "NFT is missing an asset name, name, image, or fingerprint.";
+													//echo "NFT is missing an asset name, name, image, or fingerprint.";
 												}
 											}else{
 												// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
@@ -152,8 +152,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			}// End if
 			//updateNFTs($conn, implode("', '", $asset_names));
 		}else{
-			echo "There was no response data for stake address: ".$address." \r\n";
-			print_r($response);
+			//echo "There was no response data for stake address: ".$address." \r\n";
+			//print_r($response);
 		}
 		}else{
 			echo "There was no response for stake address: ".$address." \r\n";
