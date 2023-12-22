@@ -36,9 +36,15 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	$offsets = array();
 	$offsets[1] = "";
 	$offsets[2] = "offset=1000";
+	$offset_flag = false;
 	
 	foreach($offsets AS $i => $offset){
+		if($i == 2){
+			$offset_flag = true;
+		}
 	foreach($addresses AS $index => $address){
+		// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
+		if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null".$offset);
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
 		curl_setopt( $ch, CURLOPT_POST, 1);
@@ -167,6 +173,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		}else{
 			echo "There was no response for stake address: ".$address." \r\n";
 		}
+		} // Offset End if
 	} // End foreach
 	} // End offset foreach
 }
