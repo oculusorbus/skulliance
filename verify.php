@@ -81,60 +81,73 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
-					if(isset($tokenresponsedata->minting_tx_metadata)){
-						foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
-							$policy_id = $tokenresponsedata->policy_id;
-							if(isset($tokenresponsedata->asset_name_ascii)){
-								$asset_name = $tokenresponsedata->asset_name_ascii;
-								if(isset($metadata->$policy_id)){
-									$nft = $metadata->$policy_id;
-									if(isset($nft)){
-										$nft_data = $nft->$asset_name;
-										if(isset($nft_data)){
-											// Account for NFT with NaN value for asset name
-											if($asset_name == "NaN"){
-												$nft_data->AssetName = "DROPSHIP012";
+					// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
+					if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
+						if(isset($_SESSION['userData']['user_id'])){
+							$user_id = $_SESSION['userData']['user_id'];
+						}else{
+							$user_id = getUserId($conn, $address);
+						}
+						updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+					}else{
+						// Handle creation of NFTs by cycling through NFT metadata
+						if(isset($tokenresponsedata->minting_tx_metadata)){
+							foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
+								$policy_id = $tokenresponsedata->policy_id;
+								if(isset($tokenresponsedata->asset_name_ascii)){
+									$asset_name = $tokenresponsedata->asset_name_ascii;
+									if(isset($metadata->$policy_id)){
+										$nft = $metadata->$policy_id;
+										if(isset($nft)){
+											$nft_data = $nft->$asset_name;
+											if(isset($nft_data)){
+												// Account for NFT with NaN value for asset name
+												if($asset_name == "NaN"){
+													$nft_data->AssetName = "DROPSHIP012";
+												}else{
+													$nft_data->AssetName = $asset_name;
+												}
+												if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
+													processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
+												}else{
+													echo "NFT is missing an asset name, name, image, or fingerprint.";
+												}
 											}else{
-												$nft_data->AssetName = $asset_name;
-											}
-											if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
-												processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
-											}
-										}else{
-											// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
-											echo $asset_name." was missing NFT data, but was still updated in the db. \r\n";
-											if(isset($_SESSION['userData']['user_id'])){
-												$user_id = $_SESSION['userData']['user_id'];
-											}else{
-												$user_id = getUserId($conn, $address);
-											}
-											if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
-												updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+												// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
+												echo $asset_name." was missing NFT data, but was still updated in the db. \r\n";
+												if(isset($_SESSION['userData']['user_id'])){
+													$user_id = $_SESSION['userData']['user_id'];
+												}else{
+													$user_id = getUserId($conn, $address);
+												}
+												if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
+													updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+												}
 											}
 										}
 									}
 								}
+							} // End foreach
+						// Empty Koios metadata, Use Blockfrost for CIP68
+						}else{
+							$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
+							curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json', "project_id: ".$blockfrost_project_id));
+							curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
+							curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
+							curl_setopt( $blockfrostch, CURLOPT_RETURNTRANSFER, 1);
+							$blockfrostresponse = curl_exec( $blockfrostch );
+							$blockfrostresponse = json_decode($blockfrostresponse);
+						
+							curl_close( $blockfrostch );
+						
+							if(is_object($blockfrostresponse)){
+									$metadata = $blockfrostresponse->onchain_metadata;
+									// Convert CIP68 asset name from hex to str and strip out extra b.s.
+									$asset_name = clean(hex2str($blockfrostresponse->asset_name));
+									processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
 							}
-						} // End foreach
-					// Empty Koios metadata, Use Blockfrost for CIP68
-					}else{
-						$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
-						curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json', "project_id: ".$blockfrost_project_id));
-						curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
-						curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
-						curl_setopt( $blockfrostch, CURLOPT_RETURNTRANSFER, 1);
-						$blockfrostresponse = curl_exec( $blockfrostch );
-						$blockfrostresponse = json_decode($blockfrostresponse);
-						
-						curl_close( $blockfrostch );
-						
-						if(is_object($blockfrostresponse)){
-								$metadata = $blockfrostresponse->onchain_metadata;
-								// Convert CIP68 asset name from hex to str and strip out extra b.s.
-								$asset_name = clean(hex2str($blockfrostresponse->asset_name));
-								processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
-						}
-					}
+						} // End if
+					} // End if
 				} // End foreach
 			}// End if
 			//updateNFTs($conn, implode("', '", $asset_names));
