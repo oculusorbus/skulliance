@@ -48,8 +48,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		//exit;
 		curl_close( $ch );
 		
-		print_r($response);
-		exit;
+		if($address != "stake1uyqszvt8ck9fhem3z63cj5zdhdqznwhkns5dx75c3cp0zgs084u8j"){
+			print_r($response);
+			exit;
+		}
 
 		//$_SESSION['userData']['nfts'] = array();
 		if(is_array($response)){
