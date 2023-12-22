@@ -39,7 +39,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		curl_setopt( $ch, CURLOPT_POST, 1);
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"],"_extended":true}');
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-		curl_setopt( $ch, CURLOPT_HEADER, '{"Range": "1000-1499"}');
+		curl_setopt( $ch, CURLOPT_HEADER, 'Range: 1000-1499');
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
 
 		$response = curl_exec( $ch );
