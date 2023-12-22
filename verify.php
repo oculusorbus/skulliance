@@ -61,13 +61,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			$asset_list = array();
 			$asset_list["_asset_list"] = array();
 			foreach($response AS $index => $list){
-				foreach($list AS $index => $token){
-					print_r($token);
-					exit;
-					if(in_array($token["policy_id"], $policies)){
+				foreach($list["asset_list"] AS $index => $token){
+					if(in_array($token->policy_id, $policies)){
 						$asset_list["_asset_list"][$counter] = array();
-						$asset_list["_asset_list"][$counter][0] = $token["policy_id"];
-						$asset_list["_asset_list"][$counter][1] = $token["asset_name"];
+						$asset_list["_asset_list"][$counter][0] = $token->policy_id;
+						$asset_list["_asset_list"][$counter][1] = $token->asset_name;
 						$counter++;
 					
 					} // End if
