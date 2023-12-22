@@ -117,6 +117,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 												}
 											}else{
 												// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
+												/* This is no longer needed because we're checking for updates above before determining whether processing NFT metadata is necessary to add new NFTs
 												echo $asset_name." was missing NFT data, but was still updated in the db. \r\n";
 												if(isset($_SESSION['userData']['user_id'])){
 													$user_id = $_SESSION['userData']['user_id'];
@@ -125,7 +126,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 												}
 												if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
 													updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
-												}
+												}*/
 											}
 										}
 									}
