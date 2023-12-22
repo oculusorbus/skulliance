@@ -32,6 +32,7 @@ if(isset($_GET['verify'])){
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	global $blockfrost_project_id;
+	$test_counter = 0;
 	
 	foreach($addresses AS $index => $address){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
@@ -49,8 +50,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		//exit;
 		curl_close( $ch );
 		
+		$test_counter++;
 		print_r($response);
-		exit;
 
 		//$_SESSION['userData']['nfts'] = array();
 		if(is_array($response)){
@@ -59,15 +60,20 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			$counter = 0;
 			$asset_list = array();
 			$asset_list["_asset_list"] = array();
-			foreach($response AS $index => $token){
-				if(in_array($token->policy_id, $policies)){
-					$asset_list["_asset_list"][$counter] = array();
-					$asset_list["_asset_list"][$counter][0] = $token->policy_id;
-					$asset_list["_asset_list"][$counter][1] = $token->asset_name;
-					$counter++;
+			foreach($response AS $index => $list){
+				foreach($list AS $index => $token){
+					if(in_array($token->policy_id, $policies)){
+						$asset_list["_asset_list"][$counter] = array();
+						$asset_list["_asset_list"][$counter][0] = $token->policy_id;
+						$asset_list["_asset_list"][$counter][1] = $token->asset_name;
+						$counter++;
 					
-				} // End if
-			} // End foreach
+					} // End if
+				} // End foreach
+			}
+			
+			print_r($asset_list);
+			exit;
 			
 			$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
