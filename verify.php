@@ -33,11 +33,16 @@ if(isset($_GET['verify'])){
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	global $blockfrost_project_id;
 	
+	$offsets = array();
+	$offsets[1] = "";
+	$offsets[2] = "offset=1000"
+	
+	foreach($offsets AS $i => $offset){
 	foreach($addresses AS $index => $address){
-		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null&offset=1000");
+		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null".$offset);
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
 		curl_setopt( $ch, CURLOPT_POST, 1);
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["stake1uxyjkp666k0prnt946l6p985axk9zwfgz3dyvgmnpqfwfsgyw3plq"],"_extended":true}');
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true, "Preferred":"count=estimated"}');
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt( $ch, CURLOPT_HEADER, 0);
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
@@ -48,9 +53,6 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		//print_r($response[0]->asset_list);
 		//exit;
 		curl_close( $ch );
-		
-		print_r($response);
-		exit;
 
 		//$_SESSION['userData']['nfts'] = array();
 		if(is_array($response)){
@@ -166,6 +168,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			echo "There was no response for stake address: ".$address." \r\n";
 		}
 	} // End foreach
+	} // End offset foreach
 }
 
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
