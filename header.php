@@ -25,7 +25,6 @@
 		  <a href="collections.php">Collections</a>
 		  <a href="transactions.php">Transactions</a>
     	  <a href="wallets.php">Wallets</a>
-		  <a href="../shop">Merch</a>
 		  <a href="logout.php">Logout</a>
 		  <?php } ?>
 		</div>

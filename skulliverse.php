@@ -264,7 +264,7 @@ include 'header.php';
 					$inhabitants[4] = "Militants";
 					$inhabitants[5] = "Machines";
 					$inhabitants[6] = "Necromancers";
-					$inhabitants[7] = "Degenerates";
+					$inhabitants[7] = "Skulliance";
 					
 					$projects = getProjects($conn, $type="");
 					
