@@ -252,9 +252,9 @@ include 'header.php';
 					$categories[1] = "Galactic";
 					$categories[2] = "Terrestrial";
 					$categories[3] = "Ring";
-					$categories[4] = "Magmatic";
-					$categories[5] = "Dystopian";
-					$categories[6] = "Rogue";
+					$categories[4] = "Desert";
+					$categories[5] = "City";
+					$categories[6] = "Lava";
 					$categories[7] = "Carbon";
 					
 					$inhabitants = array();
