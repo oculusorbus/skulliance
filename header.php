@@ -20,7 +20,7 @@
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
 		  <a href="store.php">Store</a>
   		  <a href="diamond-skulls.php">Diamond Skulls</a>
-		  <!--<a href="skulliverse.php">Skulliverse</a>-->
+		  <a href="skulliverse.php">Skulliverse</a>
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="collections.php">Collections</a>
 		  <a href="transactions.php">Transactions</a>

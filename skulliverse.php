@@ -15,7 +15,6 @@ include 'header.php';
 	background-position: center;
 	
     background-color: #36393F;
-    background-blend-mode: overlay;
 }	
 .col1of3{
 	background-color: transparent;
@@ -280,7 +279,7 @@ include 'header.php';
 					foreach($percentages AS $project_id => $percentage){
 						$number = $numbers[$project_id];
 						if($percentage < 100){
-							$$number = "active";
+							$$number = "inactive";
 						}else{
 							$$number = "active";
 						}
@@ -377,7 +376,7 @@ if($filterby != ""){
 		 }else{
 			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><br><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase();
 		 }
-		 status = "active";
+
 		 if(project_id == 1){
 			 document.getElementById('modal-image').src = "images/planets/galactico.gif";
  			 document.getElementById("modal-image").removeAttribute("class");
