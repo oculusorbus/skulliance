@@ -209,7 +209,7 @@ include 'header.php';
 					$percentages = array();
 					$percentages = getProjectDelegationPercentages($conn);
 					// Calculate average percentage for all projects to determine Diamond Skull percentage
-					$average =  round(array_sum($percentages) / count($percentages));
+					$average =  array_sum($percentages) / count($percentages);
 					$percentages[7] = $average;
 					
 					// Get max delegations for projects
