@@ -408,6 +408,7 @@ function getIPFS($ipfs, $collection_id){
 	}else{
 		return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
 	}
+	return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
 }
 
 // Render IPFS
