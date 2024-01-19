@@ -401,6 +401,7 @@ function removeUsers($conn){
 // Render IPFS
 function getIPFS($ipfs, $collection_id){
 	$ipfs = str_replace("ipfs/", "", $ipfs);
+	return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
 	if($collection_id == 4 || $collection_id == 23){
 		return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
@@ -408,7 +409,6 @@ function getIPFS($ipfs, $collection_id){
 	}else{
 		return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
 	}
-	return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
 }
 
 // Render IPFS
