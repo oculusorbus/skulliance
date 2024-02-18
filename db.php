@@ -20,6 +20,25 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
+// Handle Drop Ship DREAD Rewards
+if(isset($_POST['discord_id']) && isset($_POST['rank'])) {
+	// Lookup user by discord id
+	$user_id = getUserIdFromDiscordId($conn, $_POST['discord_id']);
+	// If user exists, add DREAD reward based on rank in game to balance and log credit in transaction history
+	if($user_id != false){
+		$subtotal = 0;
+		if($_POST['rank'] == 1){
+			$subtotal = 1000;
+		}else if($_POST['rank'] == 2){
+			$subtotal = 500;
+		}else if($_POST['rank'] == 3){
+			$subtotal = 250;
+		}
+		updateBalance($conn, $user_id, 2, $subtotal);
+		logCredit($conn, $user_id, $subtotal, 2);
+	}
+}
+
 // Get all users
 function getUsers($conn){
 	$sql = "SELECT * FROM users";
@@ -54,6 +73,23 @@ function getUserId($conn, $address){
 	  }
 	} else {
 	  //echo "0 results";
+	}
+}
+
+// Get user ID from discord id for Drop Ship rewards
+function getUserIdFromDiscordId($conn, $discord_id){
+	$sql = "SELECT id FROM user WHERE discord_id='".$discord_id."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return strval($row["id"]);
+	  }
+	} else {
+	  //echo "0 results";
+	  return false;
 	}
 }
 
