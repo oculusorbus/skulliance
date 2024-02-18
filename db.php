@@ -78,7 +78,7 @@ function getUserId($conn, $address){
 
 // Get user ID from discord id for Drop Ship rewards
 function getUserIdFromDiscordId($conn, $discord_id){
-	$sql = "SELECT id FROM user WHERE discord_id='".$discord_id."'";
+	$sql = "SELECT id FROM users WHERE discord_id='".$discord_id."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
