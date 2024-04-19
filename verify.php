@@ -156,10 +156,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 							curl_close( $blockfrostch );
 						
 							if(is_object($blockfrostresponse)){
-									print_r($blockfrostresponse->onchain_metadata);
+									print_r($blockfrostresponse);
 									$metadata = $blockfrostresponse->onchain_metadata;
 									// Convert CIP68 asset name from hex to str and strip out extra b.s.
 									$asset_name = clean(hex2str($blockfrostresponse->asset_name));
+									echo $asset_name;
 									processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
 							}
 						} // End if
