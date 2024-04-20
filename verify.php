@@ -172,11 +172,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 															$traits[$key] = $value;
 														}
 													}
-												}else{
-													echo "Map: ".$map; 
 												}
 											}
 										}
+									}else{
+										echo "Field: ".$field; 
 									}
 								}
 								echo $tokenresponsedata->policy_id."<br>";
