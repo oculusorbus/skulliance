@@ -146,7 +146,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 						// Use Koios CIP-68 metadata
 						}else if(isset($tokenresponsedata->cip68_metadata)){
 							//foreach($tokenresponsedata->cip68_metadata->222->fields[0]->map[0] AS $metadata){
-								
+							$traits = array();
+							$alternate = "key";
+							$key = "";
+							$value = "";
 							foreach($tokenresponsedata->cip68_metadata AS $metadata){
 								foreach($metadata AS $fields){
 									if(is_array($fields)){
@@ -156,8 +159,17 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 													foreach($map AS $pairings){
 														foreach($pairings AS $pairing){
 															if(isset($pairing->bytes)){
-																echo clean(hex2str($pairing->bytes))."<br>";
+																if($alternate == "key"){
+																	$key = clean(hex2str($pairing->bytes));
+																	$alternate = "value";
+																}else{
+																	$value = clean(hex2str($pairing->bytes));
+																	$alternate = "key";
+																}
 															}
+														}
+														if($key != "" && $value != ""){
+															$traits[$key] = $value;
 														}
 													}
 												}
@@ -165,6 +177,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 										}
 									}
 								}
+								print_r($traits);
 								
 								/*
 								foreach($metadata->222 AS $fields){
