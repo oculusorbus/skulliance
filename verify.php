@@ -176,7 +176,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 											}
 										}
 									}else{
-										echo "Field: ".$field; 
+										echo "Fields: ".$fields; 
 									}
 								}
 								echo $tokenresponsedata->policy_id."<br>";
