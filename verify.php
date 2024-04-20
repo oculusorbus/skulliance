@@ -160,10 +160,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 														foreach($pairings AS $pairing){
 															if(isset($pairing->bytes)){
 																if($alternate == "key"){
-																	$key = clean(hex2str($pairing->bytes));
+																	$key = hex2str($pairing->bytes);
 																	$alternate = "value";
 																}else{
-																	$value = clean(hex2str($pairing->bytes));
+																	$value = hex2str($pairing->bytes);
 																	$alternate = "key";
 																}
 															}
@@ -178,23 +178,9 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 									}
 								}
 								print_r($traits);
-								
-								/*
-								foreach($metadata->222 AS $fields){
-									foreach($fields AS $pairings){
-										foreach($pairings AS $maps){
-											print_r($maps);
-										}
-									}
-								}*/
-								//echo $metadata->k->bytes."<br>";
-								//echo $metadata->v->bytes."<br>";
 							}
 						// Fallback to Blockfrost for CIP68
 						}else{
-							print_r($tokenresponsedata);
-							echo("policy: ".$tokenresponsedata->policy_id);
-							echo("asset_name:".$tokenresponsedata->asset_name);
 							$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
 							curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json', "project_id: ".$blockfrost_project_id));
 							curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
@@ -206,11 +192,9 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 							curl_close( $blockfrostch );
 						
 							if(is_object($blockfrostresponse)){
-									print_r($blockfrostresponse);
 									$metadata = $blockfrostresponse->onchain_metadata;
 									// Convert CIP68 asset name from hex to str and strip out extra b.s.
 									$asset_name = clean(hex2str($blockfrostresponse->asset_name));
-									echo $asset_name;
 									processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
 							}
 						} // End if
