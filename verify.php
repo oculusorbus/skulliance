@@ -175,11 +175,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 												}
 											}
 										}
-									}else{
-										echo "Fields: ".$fields; 
 									}
 								}
-								echo $tokenresponsedata->policy_id."<br>";
+								//processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids);
+								echo $tokenresponsedata->asset_name_ascii."<br>";
 								print_r($traits);
 							}
 						// Fallback to Blockfrost for CIP68
