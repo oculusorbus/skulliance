@@ -153,7 +153,9 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 										foreach($maps AS $map){
 											foreach($map AS $pairings){
 												foreach($pairings AS $pairing){
-													echo clean(hex2str($pairing->bytes));
+													if(isset($pairing->bytes)){
+														echo clean(hex2str($pairing->bytes))."<br>";
+													}
 												}
 											}
 										}
