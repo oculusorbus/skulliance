@@ -149,7 +149,9 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 								
 							foreach($tokenresponsedata->cip68_metadata AS $metadata){
 								foreach($metadata AS $fields){
-									print_r($fields);
+									foreach($fields AS $map){
+										print_r($map);
+									}
 								}
 								
 								/*
