@@ -146,18 +146,20 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 						// Use Koios CIP-68 metadata
 						}else if(isset($tokenresponsedata->cip68_metadata)){
 							//foreach($tokenresponsedata->cip68_metadata->222->fields[0]->map[0] AS $metadata){
-								/*
+								
 							foreach($tokenresponsedata->cip68_metadata AS $metadata){
+								print_r($metadata);
+								/*
 								foreach($metadata->222 AS $fields){
 									foreach($fields AS $pairings){
 										foreach($pairings AS $maps){
 											print_r($maps);
 										}
 									}
-								}
+								}*/
 								//echo $metadata->k->bytes."<br>";
 								//echo $metadata->v->bytes."<br>";
-							}*/
+							}
 						// Fallback to Blockfrost for CIP68
 						}else{
 							print_r($tokenresponsedata);
