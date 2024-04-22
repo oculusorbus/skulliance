@@ -43,7 +43,14 @@ if(!empty($roles)){
 			if(verifyMembershipNFTs($conn)){
 				$member = true;
 				array_push($_SESSION['userData']['roles'], "949930195584954378");
+				// Member Role
 				assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
+				// Crypties Role
+				assignRole($_SESSION['userData']['discord_id'], "944816668327166002");
+				// Kimosabe Role
+				assignRole($_SESSION['userData']['discord_id'], "944817126705885234");
+				// Sinder Role
+				assignRole($_SESSION['userData']['discord_id'], "944817421976490056");
 				$title = "Congratulations ".$_SESSION['userData']['name']."!";
 				$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
 				$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
