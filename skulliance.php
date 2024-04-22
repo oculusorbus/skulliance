@@ -20,6 +20,11 @@ if($_SESSION['userData']['discord_id'] != "772831523899965440"){
 	exit;
 }*/
 
+// Call initial DB functions
+if(sizeof(getAddressesDiscord($conn)) != 0){
+	checkUser($conn);
+}
+
 // Initiate variables
 $member = false;
 $roles = $_SESSION['userData']['roles'];
@@ -55,11 +60,6 @@ if(!$member){
 	// Call initial DB functions
 	checkUser($conn);
 }*/
-
-// Call initial DB functions
-if(sizeof(getAddressesDiscord($conn)) != 0){
-	checkUser($conn);
-}
 
 $projects = array();
 $projects = getProjects($conn);
