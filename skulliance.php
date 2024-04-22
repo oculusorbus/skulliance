@@ -47,7 +47,7 @@ if(!empty($roles)){
 				$title = "Congratulations ".$_SESSION['userData']['name']."!";
 				$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
 				$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
-				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
 			}
 		}
 	}

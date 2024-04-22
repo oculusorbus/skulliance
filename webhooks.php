@@ -3,12 +3,16 @@ include('credentials/webhooks_credentials.php');
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $url="") {
+    function discordmsg($title, $description, $imageurl, $url="", $channel="") {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
 		}
-		$webhook = getWebhook();
+		if($channel == "general"){
+			$webhook = getGeneralWebhook();
+		}else{
+			$webhook = getWebhook();
+		}
 	    $timestamp = date("c", strtotime("now"));
 	    $msg = json_encode([
 	    // Message
