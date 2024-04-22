@@ -39,6 +39,35 @@ if(isset($_POST['discord_id']) && isset($_POST['rank'])) {
 	}
 }
 
+function verifyMembershipNFTs($conn){
+	$sql = "SELECT DISTINCT projects.id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE user_id='".$_SESSION['userData']['user_id']."' AND project_id IN('6','5','4')";
+	$result = $conn->query($sql);
+	
+	$crypties = false;
+	$kimosabe = false;
+	$sinder = false;
+	if ($result->num_rows > 0) {
+  	  while($row = $result->fetch_assoc()) {
+      	if($row["project_id"] == "6"){
+      		$crypties = true;
+      	}
+      	if($row["project_id"] == "6"){
+      		$kimosabe = true;
+      	}
+      	if($row["project_id"] == "6"){
+      		$sinder = true;
+      	}
+  	  }
+	  if($crypties && $kimosabe && $sinder){
+	  	  return true;
+	  }else{
+	  	  return false;
+	  }
+	}else{
+		return false;
+	}
+}
+
 // Get all users
 function getUsers($conn){
 	$sql = "SELECT * FROM users";
