@@ -44,7 +44,7 @@ if(!empty($roles)){
 				$member = true;
 				array_push($_SESSION['userData']['roles'], "949930195584954378");
 				assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
-				$title = "Congratulations <@".$_SESSION['userData']['discord_id'].">!";
+				$title = "Congratulations ".$_SESSION['userData']['name']."!";
 				$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
 				$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
 				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
