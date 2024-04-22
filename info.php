@@ -23,7 +23,7 @@ include 'header.php';
 					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership. The minimum total cost for all the required NFTs for membership is approx 20-40 ADA.
 				</p>
 				<p>
-					Once the necessary NFTs are verified in Discord and you've setup your membership, you will be able to claim NFT/FT rewards from the staking store.
+					Once the necessary NFTs are verified in Discord and you've setup your membership, you will be able to claim NFT/FT rewards from the staking store. Connecting to the staking site with the necessary NFTs in your wallet(s) will also automatically assign roles and membership.
 				</p>
 				<video width="100%" style="background-color:black" poster="images/og.jpg" controls>
 				  <source src="images/staking.mp4" type="video/mp4">
