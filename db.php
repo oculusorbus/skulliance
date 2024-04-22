@@ -58,7 +58,7 @@ function verifyMembershipNFTs($conn){
       		$sinder = true;
       	}
   	  }
-	  if($crypties && $kimosabe && $sinder){
+	  if($crypties == true && $kimosabe == true && $sinder == true){
 	  	  return true;
 	  }else{
 	  	  return false;
