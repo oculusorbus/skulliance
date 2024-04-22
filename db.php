@@ -57,7 +57,7 @@ function verifyMembershipNFTs($conn){
       	if($row["project_id"] == "4"){
       		$sinder = true;
       	}
-		echo $row["project_id"];
+		echo $row["project_id"].", ";
   	  }
 	  exit;
 	  if($crypties && $kimosabe && $sinder){
