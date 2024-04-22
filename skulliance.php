@@ -35,21 +35,20 @@ if(!empty($roles)){
 			$member = true;
 			break;
 		  default:
-		    if(sizeof(getAddressesDiscord($conn)) != 0){
-				if(verifyMembershipNFTs($conn)){
-					$member = true;
-					print_r($_SESSION['userData']['roles']);
-					array_push($_SESSION['userData']['roles'], "949930195584954378");
-					print_r($_SESSION['userData']['roles']);
-					exit;
-					assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
-					$title = "Congratulations ".$_SESSION['userData']['name']."!";
-					$description = $_SESSION['userData']['name']." just became an official member of the Skulliance!";
-					$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
-					discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
-				}
-			}
 			break;
+		}
+	}
+	if(!$member){
+	    if(sizeof(getAddressesDiscord($conn)) != 0){
+			if(verifyMembershipNFTs($conn)){
+				$member = true;
+				array_push($_SESSION['userData']['roles'], "949930195584954378");
+				assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
+				$title = "Congratulations ".$_SESSION['userData']['name']."!";
+				$description = $_SESSION['userData']['name']." just became an official member of the Skulliance!";
+				$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
+				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+			}
 		}
 	}
 }else{
