@@ -1,6 +1,5 @@
 <?php
 include 'db.php';
-include_once 'role.php';
 // Verify includes Webhooks
 include 'verify.php';
 include 'skulliance.php';
