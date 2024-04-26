@@ -50,27 +50,22 @@ if(!empty($roles)){
 		$status = array();
 		$status = verifyMembershipNFTs($conn);
 		if(!$member){
-		    if(sizeof(getAddressesDiscord($conn)) != 0){
-				$member = member($status);
-				if($member){
-					$elite = elite($status);
-				}
-				if($elite){
-					$innercircle = innercircle($status);
-				}
+			$member = member($status);
+			if($member){
+				$elite = elite($status);
+			}
+			if($elite){
+				$innercircle = innercircle($status);
 			}
 		}
 		if($member && !$elite){
-			if(sizeof(getAddressesDiscord($conn)) != 0){
-				$elite = elite($status);
-				if($elite){
-					$innercircle = innercircle($status);
-				}
+			$elite = elite($status);
+			if($elite){
+				$innercircle = innercircle($status);
 			}
 		}
 		if($member && $elite && !$innercircle){
-				$innercircle = innercircle($status);
-			}
+			$innercircle = innercircle($status);
 		}
 		if(!$status["diamond"]){
 			assignRole($_SESSION['userData']['discord_id'], "1097916579250978907", "delete");
