@@ -20,10 +20,13 @@ include 'header.php';
 					</table>
 				</p>
 				<p>
-					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies, verification of NFTs, and claiming membership. The minimum total cost for all the required NFTs for membership is approx 20-40 ADA.
+					<a href="http://discord.gg/JqqBZBrph2" target="_blank">Join Skulliance Discord</a> for a full list of qualifying policies or visit <a href="/collections.php">collections</a>. The minimum total cost for all the required NFTs for membership is approx 20-40 ADA.
 				</p>
 				<p>
-					Once the necessary NFTs are verified in Discord and you've setup your membership, you will be able to claim NFT/FT rewards from the staking store. Connecting to the staking site with the necessary NFTs in your wallet(s) will also automatically assign roles and membership.
+					Connecting to the staking site with the necessary NFTs in your wallet(s) will also automatically assign roles and membership. You may have to hit the refresh button next to the wallet dropdown or log out and back in to the staking platform.
+				</p>
+				<p>
+					Once the necessary NFTs are verified on the staking platform and you're automatically assigned membership, you will be able to claim NFT/FT rewards from the staking store. 
 				</p>
 				<video width="100%" style="background-color:black" poster="images/og.jpg" controls>
 				  <source src="images/staking.mp4" type="video/mp4">
