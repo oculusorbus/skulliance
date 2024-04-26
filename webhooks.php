@@ -10,6 +10,12 @@ include('credentials/webhooks_credentials.php');
 		}
 		if($channel == "general"){
 			$webhook = getGeneralWebhook();
+		}else if($channel == "member"){
+			$webhook = getMemberWebhook();
+		}else if($channel == "elite"){
+			$webhook = getEliteWebhook();
+		}else if($channel == "innercircle"){
+			$webhook = getInnerCircleWebhook();
 		}else{
 			$webhook = getWebhook();
 		}

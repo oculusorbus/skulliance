@@ -41,32 +41,58 @@ if(isset($_POST['discord_id']) && isset($_POST['rank'])) {
 
 // Verify NFTs required for Membership
 function verifyMembershipNFTs($conn){
-	$sql = "SELECT DISTINCT projects.id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."' AND project_id IN('6','5','4')";
+	$sql = "SELECT DISTINCT projects.id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."' AND project_id IN('7','6','5','4','3','2','1')";
 	$result = $conn->query($sql);
 	
-	$crypties = false;
-	$kimosabe = false;
-	$sinder = false;
+	$status = array();
+	$status["crypties"] = false;
+	$status["kimosabe"] = false;
+	$status["sinder"] = false;
+	$status["hype"] = false;
+	$status["ohhmeed"] = false;
+	$status["galactico"] = false;
+	$status["diamond"] = false;
+	
 	if ($result->num_rows > 0) {
   	  while($row = $result->fetch_assoc()) {
+    	if($row["project_id"] == "7"){
+    		$status["diamond"] = true;
+			// Diamond Skull Role
+			assignRole($_SESSION['userData']['discord_id'], "1097916579250978907");
+    	}
       	if($row["project_id"] == "6"){
-      		$crypties = true;
+      		$status["crypties"] = true;
+			// Crypties Role
+			assignRole($_SESSION['userData']['discord_id'], "944816668327166002");
       	}
       	if($row["project_id"] == "5"){
-      		$kimosabe = true;
+      		$status["kimosabe"] = true;
+			// Kimosabe Role
+			assignRole($_SESSION['userData']['discord_id'], "944817126705885234");
       	}
       	if($row["project_id"] == "4"){
-      		$sinder = true;
+    		$status["sinder"] = true;
+			// Sinder Role
+			assignRole($_SESSION['userData']['discord_id'], "944817421976490056");
+      	}
+      	if($row["project_id"] == "3"){
+      		$status["hype"] = true;
+			// HYPE Role
+			assignRole($_SESSION['userData']['discord_id'], "952215678100852807");
+      	}
+      	if($row["project_id"] == "2"){
+      		$status["ohhmeed"] = true;
+			// Ohh Meed Role
+			assignRole($_SESSION['userData']['discord_id'], "944816868911370290");
+      	}
+      	if($row["project_id"] == "1"){
+    		$status["galactico"] = true;
+			// Galactico Role
+			assignRole($_SESSION['userData']['discord_id'], "944817486124171324");
       	}
   	  }
-	  if($crypties == true && $kimosabe == true && $sinder == true){
-	  	  return true;
-	  }else{
-	  	  return false;
-	  }
-	}else{
-		return false;
 	}
+	return $status;
 }
 
 // Get all users

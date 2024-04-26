@@ -27,6 +27,8 @@ if(sizeof(getAddressesDiscord($conn)) != 0){
 
 // Initiate variables
 $member = false;
+$elite = false;
+$innercircle = false;
 $roles = $_SESSION['userData']['roles'];
 if(!empty($roles)){
 	foreach ($roles as $key => $roleData) {
@@ -34,33 +36,95 @@ if(!empty($roles)){
 		  case "949930195584954378":
 			$member = true;
 			break;
+  		  case "949930360681140274":
+  			$elite = true;
+  			break;
 		  default:
 			break;
 		}
 	}
 	if(!$member){
 	    if(sizeof(getAddressesDiscord($conn)) != 0){
-			if(verifyMembershipNFTs($conn)){
-				$member = true;
-				array_push($_SESSION['userData']['roles'], "949930195584954378");
-				// Member Role
-				assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
-				// Crypties Role
-				assignRole($_SESSION['userData']['discord_id'], "944816668327166002");
-				// Kimosabe Role
-				assignRole($_SESSION['userData']['discord_id'], "944817126705885234");
-				// Sinder Role
-				assignRole($_SESSION['userData']['discord_id'], "944817421976490056");
-				$title = "Congratulations ".$_SESSION['userData']['name']."!";
-				$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
-				$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
-				discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			$status = array();
+			$status = verifyMembershipNFTs($conn);
+			$member = member($status);
+			if($member){
+				$elite = elite($status);
 			}
+			if($elite){
+				$innercircle = innercircle($status);
+			}
+		}
+	}
+	if($member && !$elite){
+		if(sizeof(getAddressesDiscord($conn)) != 0){
+			$status = array();
+			$status = verifyMembershipNFTs($conn);
+			$elite = elite($status);
+			if($elite){
+				$innercircle = innercircle($status);
+			}
+		}
+	}
+	if($member && $elite && !$innercircle){
+		if(sizeof(getAddressesDiscord($conn)) != 0){
+			$status = array();
+			$status = verifyMembershipNFTs($conn);
+			$innercircle = innercircle($status);
 		}
 	}
 }else{
 	// Redirect non-members to the splash page for membership information
 	header("Location: http://discord.gg/JqqBZBrph2");	
+}
+
+function member($status){
+	if($status["crypties"] && $status["kimosabe"] && $status["sinder"]){
+		$member = true;
+		array_push($_SESSION['userData']['roles'], "949930195584954378");
+		// Member Role
+		assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
+		$title = "Congratulations ".$_SESSION['userData']['name']."!";
+		$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
+		$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "member");
+		return true;
+	}else{
+		return false;
+	}
+}
+
+function elite($status){
+	if($status["hype"] && $status["ohhmeed"] && $status["galactico"]){
+		array_push($_SESSION['userData']['roles'], "949930360681140274");
+		// Elite Role
+		assignRole($_SESSION['userData']['discord_id'], "949930360681140274");
+		$title = "Congratulations ".$_SESSION['userData']['name']."!";
+		$description = "<@".$_SESSION['userData']['discord_id']."> just became an elite member of the Skulliance!";
+		$imageurl = "https://www.madballs.net/skulliance/gifs/meme2.gif";
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "elite");
+		return true;
+	}else{
+		return false;
+	}
+}
+
+function innercircle($status){
+	if($status["diamond"]){
+		array_push($_SESSION['userData']['roles'], "949930529841635348");
+		// Inner Circle Role
+		assignRole($_SESSION['userData']['discord_id'], "949930529841635348");
+		$title = "Congratulations ".$_SESSION['userData']['name']."!";
+		$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance Inner Circle!";
+		$imageurl = "https://www.madballs.net/skulliance/gifs/meme1.gif";
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "innercircle");
+		return true;
+	}else{
+		return false;
+	}
 }
 /*
 if(!$member){
