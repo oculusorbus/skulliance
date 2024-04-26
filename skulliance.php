@@ -46,6 +46,8 @@ if(!empty($roles)){
 			break;
 		}
 	}
+	echo $_SERVER['REQUEST_URI'];
+	exit;
 	if(sizeof(getAddressesDiscord($conn)) != 0 && $_SERVER['REQUEST_URI'] == "/dashboard.php"){
 		$status = array();
 		$status = verifyMembershipNFTs($conn);
