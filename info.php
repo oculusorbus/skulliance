@@ -5,7 +5,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 		<div class="row" id="row4">
-			<div class="main">
+			<div class="main col1of3">
 				<h2><img style="max-width:300px;width:100%;" src="images/skulliancelogoweb.png"/></h2>
 				<p>
 					In order to claim items in the Skulliance staking store, you will need to become a member.
