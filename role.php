@@ -9,7 +9,7 @@ function assignRole($discord_id, $role_id, $action="") {
 	
 	$request = "PUT";
 	if($action == "delete"){
-		$request = "DELETE";
+		$request = "PUT";
 	}
 
 	$ch = curl_init();
