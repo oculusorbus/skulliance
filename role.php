@@ -1,11 +1,16 @@
 <?php
-function assignRole($discord_id, $role_id) {
+function assignRole($discord_id, $role_id, $action="") {
 	global $bot_token;
 	$authToken = $bot_token;
 	$guildid = "944002913443938306";
 	$userid = $discord_id;
 	$roleid = $role_id;
 	$url = "https://discordapp.com/api/v6/guilds/" . $guildid . "/members/" . $userid . "/roles/" . $roleid;
+	
+	$request = "PUT";
+	if($action == "delete"){
+		$request = "DELETE";
+	}
 
 	$ch = curl_init();
 	curl_setopt_array($ch, array(
@@ -15,7 +20,7 @@ function assignRole($discord_id, $role_id) {
 	        "Content-Length: 0"
 	    ),
 	    CURLOPT_RETURNTRANSFER => 1,
-	    CURLOPT_CUSTOMREQUEST  => "PUT",
+	    CURLOPT_CUSTOMREQUEST  => $request,
 	    CURLOPT_FOLLOWLOCATION => 1,
 	    CURLOPT_VERBOSE        => 1,
 	    CURLOPT_SSL_VERIFYPEER => 0

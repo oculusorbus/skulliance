@@ -46,34 +46,46 @@ if(!empty($roles)){
 			break;
 		}
 	}
-	if(!$member){
-	    if(sizeof(getAddressesDiscord($conn)) != 0){
-			$status = array();
-			$status = verifyMembershipNFTs($conn);
-			$member = member($status);
-			if($member){
+	if(sizeof(getAddressesDiscord($conn)) != 0){
+		$status = array();
+		$status = verifyMembershipNFTs($conn);
+		if(!$member){
+		    if(sizeof(getAddressesDiscord($conn)) != 0){
+				$member = member($status);
+				if($member){
+					$elite = elite($status);
+				}
+				if($elite){
+					$innercircle = innercircle($status);
+				}
+			}
+		}
+		if($member && !$elite){
+			if(sizeof(getAddressesDiscord($conn)) != 0){
 				$elite = elite($status);
+				if($elite){
+					$innercircle = innercircle($status);
+				}
 			}
-			if($elite){
+		}
+		if($member && $elite && !$innercircle){
 				$innercircle = innercircle($status);
 			}
 		}
-	}
-	if($member && !$elite){
-		if(sizeof(getAddressesDiscord($conn)) != 0){
-			$status = array();
-			$status = verifyMembershipNFTs($conn);
-			$elite = elite($status);
-			if($elite){
-				$innercircle = innercircle($status);
-			}
-		}
-	}
-	if($member && $elite && !$innercircle){
-		if(sizeof(getAddressesDiscord($conn)) != 0){
-			$status = array();
-			$status = verifyMembershipNFTs($conn);
-			$innercircle = innercircle($status);
+		if(!$status["diamond"]){
+			assignRole($_SESSION['userData']['discord_id'], "1097916579250978907", "delete");
+		}else if(!$status["crypties"]){
+			assignRole($_SESSION['userData']['discord_id'], "944816668327166002", "delete");
+		}else if(!$status["kimosabe"]){
+			assignRole($_SESSION['userData']['discord_id'], "944817126705885234", "delete");
+		}else if(!$status["sinder"]){
+			assignRole($_SESSION['userData']['discord_id'], "944817421976490056", "delete");
+		}else if(!$status["hype"]){
+			assignRole($_SESSION['userData']['discord_id'], "952215678100852807", "delete");
+		}else if(!$status["ohhmeed"]){
+			assignRole($_SESSION['userData']['discord_id'], "944816868911370290", "delete");
+		}else if(!$status["galactico"]){
+			assignRole($_SESSION['userData']['discord_id'], "944817486124171324", "delete");
 		}
 	}
 }else{
@@ -94,6 +106,7 @@ function member($status){
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "member");
 		return true;
 	}else{
+		assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
 		return false;
 	}
 }
@@ -110,6 +123,7 @@ function elite($status){
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "elite");
 		return true;
 	}else{
+		assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
 		return false;
 	}
 }
@@ -126,6 +140,7 @@ function innercircle($status){
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "innercircle");
 		return true;
 	}else{
+		assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
 		return false;
 	}
 }
