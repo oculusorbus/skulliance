@@ -1,6 +1,6 @@
 <?php
 include 'credentials/db_credentials.php';
-include 'role.php';
+include_once 'role.php';
 session_start();
 
 ini_set('display_errors', 1);
