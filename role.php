@@ -28,14 +28,12 @@ function assignRole($discord_id, $role_id, $action="") {
 	$response = curl_exec($ch);
 
 	//It's possible to output the response at this place for debugging, so remove the comment if needed
-	if($request == "DELETE"){
+/*
 	print $response;
 	print "<pre>";
 	print_r(json_decode($response));
 	print "</pre>";
-	exit;
-	}
-
+*/
 	curl_close($ch);
 }
 ?>
