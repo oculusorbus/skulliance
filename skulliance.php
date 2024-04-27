@@ -59,7 +59,7 @@ if(!empty($roles)){
 				$innercircle = innercircle($status, true);
 			}
 		}else{
-			$member = member($status, false);
+			$member = member($status, false, $roles);
 		}
 		// Elite
 		if($member && !$elite){
@@ -68,13 +68,13 @@ if(!empty($roles)){
 				$innercircle = innercircle($status, true);
 			}
 		}else{
-			$elite = elite($status, false);
+			$elite = elite($status, false, $roles);
 		}
 		// Inner Circle
 		if($member && $elite && !$innercircle){
 			$innercircle = innercircle($status, true);
 		}else{
-			$innercircle = innercircle($status, false);
+			$innercircle = innercircle($status, false, $roles);
 		}
 		/*
 		if(!$member && in_array("949930195584954378", $roles)){
@@ -127,7 +127,9 @@ function member($status, $message, $roles=array()){
 		}
 		return true;
 	}else{
-		assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
+		if(in_array("949930195584954378", $roles){
+			assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
+		}
 		return false;
 	}
 }
@@ -146,7 +148,9 @@ function elite($status, $message, $roles=array()){
 		}
 		return true;
 	}else{
-		assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
+		if(in_array("949930360681140274", $roles){
+			assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
+		}
 		return false;
 	}
 }
@@ -165,7 +169,9 @@ function innercircle($status, $message, $roles=array()){
 		}
 		return true;
 	}else{
-		assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
+		if(in_array("949930529841635348", $roles){
+			assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
+		}
 		return false;
 	}
 }
