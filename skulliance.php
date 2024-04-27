@@ -49,23 +49,32 @@ if(!empty($roles)){
 	if(sizeof(getAddressesDiscord($conn)) != 0 && str_contains($_SERVER['REQUEST_URI'], "dashboard.php")){
 		$status = array();
 		$status = verifyMembershipNFTs($conn, $roles);
+		// Member
 		if(!$member){
-			$member = member($status);
+			$member = member($status, true);
 			if($member){
-				$elite = elite($status);
+				$elite = elite($status, true);
 			}
 			if($elite){
-				$innercircle = innercircle($status);
+				$innercircle = innercircle($status, true);
 			}
+		}else{
+			$member = member($status, false);
 		}
+		// Elite
 		if($member && !$elite){
-			$elite = elite($status);
+			$elite = elite($status, true);
 			if($elite){
-				$innercircle = innercircle($status);
+				$innercircle = innercircle($status, true);
 			}
+		}else{
+			$elite = elite($status, false);
 		}
+		// Inner Circle
 		if($member && $elite && !$innercircle){
-			$innercircle = innercircle($status);
+			$innercircle = innercircle($status, true);
+		}else{
+			$innercircle = innercircle($status, false);
 		}
 		/*
 		if(!$member && in_array("949930195584954378", $roles)){
@@ -104,17 +113,18 @@ if(!empty($roles)){
 	header("Location: http://discord.gg/JqqBZBrph2");	
 }
 
-function member($status){
+function member($status, $message){
 	if($status["crypties"] && $status["kimosabe"] && $status["sinder"]){
-		$member = true;
 		array_push($_SESSION['userData']['roles'], "949930195584954378");
 		// Member Role
 		assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
-		$title = "Congratulations ".$_SESSION['userData']['name']."!";
-		$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
-		$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "member");
+		if($message){
+			$title = "Congratulations ".$_SESSION['userData']['name']."!";
+			$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
+			$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "member");
+		}
 		return true;
 	}else{
 		assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
@@ -122,16 +132,18 @@ function member($status){
 	}
 }
 
-function elite($status){
+function elite($status, $message){
 	if($status["hype"] && $status["ohhmeed"] && $status["galactico"]){
 		array_push($_SESSION['userData']['roles'], "949930360681140274");
 		// Elite Role
 		assignRole($_SESSION['userData']['discord_id'], "949930360681140274");
-		$title = "Congratulations ".$_SESSION['userData']['name']."!";
-		$description = "<@".$_SESSION['userData']['discord_id']."> just became an elite member of the Skulliance!";
-		$imageurl = "https://www.madballs.net/skulliance/gifs/meme2.gif";
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "elite");
+		if($message){
+			$title = "Congratulations ".$_SESSION['userData']['name']."!";
+			$description = "<@".$_SESSION['userData']['discord_id']."> just became an elite member of the Skulliance!";
+			$imageurl = "https://www.madballs.net/skulliance/gifs/meme2.gif";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "elite");
+		}
 		return true;
 	}else{
 		assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
@@ -139,16 +151,18 @@ function elite($status){
 	}
 }
 
-function innercircle($status){
+function innercircle($status, $message){
 	if($status["diamond"]){
 		array_push($_SESSION['userData']['roles'], "949930529841635348");
 		// Inner Circle Role
 		assignRole($_SESSION['userData']['discord_id'], "949930529841635348");
-		$title = "Congratulations ".$_SESSION['userData']['name']."!";
-		$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance Inner Circle!";
-		$imageurl = "https://www.madballs.net/skulliance/gifs/meme1.gif";
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "innercircle");
+		if($message){
+			$title = "Congratulations ".$_SESSION['userData']['name']."!";
+			$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance Inner Circle!";
+			$imageurl = "https://www.madballs.net/skulliance/gifs/meme1.gif";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "innercircle");
+		}
 		return true;
 	}else{
 		assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
