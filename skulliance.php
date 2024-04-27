@@ -113,7 +113,7 @@ if(!empty($roles)){
 	header("Location: http://discord.gg/JqqBZBrph2");	
 }
 
-function member($status, $message){
+function member($status, $message, $roles=array()){
 	if($status["crypties"] && $status["kimosabe"] && $status["sinder"]){
 		array_push($_SESSION['userData']['roles'], "949930195584954378");
 		// Member Role
@@ -132,7 +132,7 @@ function member($status, $message){
 	}
 }
 
-function elite($status, $message){
+function elite($status, $message, $roles=array()){
 	if($status["hype"] && $status["ohhmeed"] && $status["galactico"]){
 		array_push($_SESSION['userData']['roles'], "949930360681140274");
 		// Elite Role
@@ -151,7 +151,7 @@ function elite($status, $message){
 	}
 }
 
-function innercircle($status, $message){
+function innercircle($status, $message, $roles=array()){
 	if($status["diamond"]){
 		array_push($_SESSION['userData']['roles'], "949930529841635348");
 		// Inner Circle Role
