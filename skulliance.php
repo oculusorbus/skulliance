@@ -48,7 +48,7 @@ if(!empty($roles)){
 	}
 	if(sizeof(getAddressesDiscord($conn)) != 0 && str_contains($_SERVER['REQUEST_URI'], "dashboard.php")){
 		$status = array();
-		$status = verifyMembershipNFTs($conn);
+		$status = verifyMembershipNFTs($conn, $roles);
 		if(!$member){
 			$member = member($status);
 			if($member){
@@ -67,19 +67,25 @@ if(!empty($roles)){
 		if($member && $elite && !$innercircle){
 			$innercircle = innercircle($status);
 		}
-		if(!$status["diamond"]){
+		if(!$status["diamond"] && in_array("1097916579250978907", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "1097916579250978907", "delete");
-		}else if(!$status["crypties"]){
+		}
+		if(!$status["crypties"] && in_array("944816668327166002", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "944816668327166002", "delete");
-		}else if(!$status["kimosabe"]){
+		}
+		if(!$status["kimosabe"] && in_array("944817126705885234", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "944817126705885234", "delete");
-		}else if(!$status["sinder"]){
+		}
+		if(!$status["sinder"] && in_array("944817421976490056", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "944817421976490056", "delete");
-		}else if(!$status["hype"]){
+		}
+		if(!$status["hype"] && in_array("952215678100852807", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "952215678100852807", "delete");
-		}else if(!$status["ohhmeed"]){
+		}
+		if(!$status["ohhmeed"] && in_array("944816868911370290", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "944816868911370290", "delete");
-		}else if(!$status["galactico"]){
+		}
+		if(!$status["galactico"] && in_array("944817486124171324", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "944817486124171324", "delete");
 		}
 	}
