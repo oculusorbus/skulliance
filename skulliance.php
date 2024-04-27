@@ -127,7 +127,7 @@ function member($status, $message, $roles=array()){
 		}
 		return true;
 	}else{
-		if(in_array("949930195584954378", $roles){
+		if(in_array("949930195584954378", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
 		}
 		return false;
@@ -148,7 +148,7 @@ function elite($status, $message, $roles=array()){
 		}
 		return true;
 	}else{
-		if(in_array("949930360681140274", $roles){
+		if(in_array("949930360681140274", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
 		}
 		return false;
@@ -169,7 +169,7 @@ function innercircle($status, $message, $roles=array()){
 		}
 		return true;
 	}else{
-		if(in_array("949930529841635348", $roles){
+		if(in_array("949930529841635348", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
 		}
 		return false;
