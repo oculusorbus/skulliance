@@ -57,20 +57,14 @@ if(!empty($roles)){
 			if($elite){
 				$innercircle = innercircle($status);
 			}
-		}else{
-			$member = member($status);
 		}
 		if($member && !$elite){
 			$elite = elite($status);
 			if($elite){
 				$innercircle = innercircle($status);
 			}
-		}else{
-			$elite = elite($status);
 		}
 		if($member && $elite && !$innercircle){
-			$innercircle = innercircle($status);
-		}else{
 			$innercircle = innercircle($status);
 		}
 		if(!$member && in_array("949930195584954378", $roles)){
