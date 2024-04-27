@@ -105,9 +105,11 @@ if(!empty($roles)){
 
 function member($status, $message, $roles=array()){
 	if($status["crypties"] && $status["kimosabe"] && $status["sinder"]){
-		array_push($_SESSION['userData']['roles'], "949930195584954378");
-		// Member Role
-		assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
+		if(!in_array("949930195584954378", $roles)){
+			array_push($_SESSION['userData']['roles'], "949930195584954378");
+			// Member Role
+			assignRole($_SESSION['userData']['discord_id'], "949930195584954378");
+		}
 		if($message){
 			$title = "Congratulations ".$_SESSION['userData']['name']."!";
 			$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
@@ -126,9 +128,11 @@ function member($status, $message, $roles=array()){
 
 function elite($status, $message, $roles=array()){
 	if($status["hype"] && $status["ohhmeed"] && $status["galactico"]){
-		array_push($_SESSION['userData']['roles'], "949930360681140274");
-		// Elite Role
-		assignRole($_SESSION['userData']['discord_id'], "949930360681140274");
+		if(!in_array("949930360681140274", $roles)){
+			array_push($_SESSION['userData']['roles'], "949930360681140274");
+			// Elite Role
+			assignRole($_SESSION['userData']['discord_id'], "949930360681140274");
+		}
 		if($message){
 			$title = "Congratulations ".$_SESSION['userData']['name']."!";
 			$description = "<@".$_SESSION['userData']['discord_id']."> just became an elite member of the Skulliance!";
@@ -147,9 +151,11 @@ function elite($status, $message, $roles=array()){
 
 function innercircle($status, $message, $roles=array()){
 	if($status["diamond"]){
-		array_push($_SESSION['userData']['roles'], "949930529841635348");
-		// Inner Circle Role
-		assignRole($_SESSION['userData']['discord_id'], "949930529841635348");
+		if(!in_array("949930529841635348", $roles)){
+			array_push($_SESSION['userData']['roles'], "949930529841635348");
+			// Inner Circle Role
+			assignRole($_SESSION['userData']['discord_id'], "949930529841635348");
+		}
 		if($message){
 			$title = "Congratulations ".$_SESSION['userData']['name']."!";
 			$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance Inner Circle!";
