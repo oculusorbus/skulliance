@@ -71,10 +71,10 @@ if(!empty($roles)){
 			assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
 		}
 		if(!$elite && in_array("949930360681140274", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
+			assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
 		}
 		if(!$innercircle && in_array("949930529841635348", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
+			assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
 		}
 		if(!$status["diamond"] && in_array("1097916579250978907", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "1097916579250978907", "delete");
