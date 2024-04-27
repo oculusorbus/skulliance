@@ -58,7 +58,7 @@ if(!empty($roles)){
 			if($elite){
 				$innercircle = innercircle($status, true);
 			}
-		}else{
+		}else{ // Default to member check in case already a member but no longer own qualifying NFTs
 			$member = member($status, false, $roles);
 		}
 		// Elite
@@ -67,25 +67,15 @@ if(!empty($roles)){
 			if($elite){
 				$innercircle = innercircle($status, true);
 			}
-		}else{
+		}else{ // Default to elite check in case already an elite member but no longer own qualifying NFTs
 			$elite = elite($status, false, $roles);
 		}
 		// Inner Circle
 		if($member && $elite && !$innercircle){
 			$innercircle = innercircle($status, true);
-		}else{
+		}else{ // Default to inner circle check in case already an inner circle member but no longer own qualifying NFTs
 			$innercircle = innercircle($status, false, $roles);
 		}
-		/*
-		if(!$member && in_array("949930195584954378", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "949930195584954378", "delete");
-		}
-		if(!$elite && in_array("949930360681140274", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "949930360681140274", "delete");
-		}
-		if(!$innercircle && in_array("949930529841635348", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "949930529841635348", "delete");
-		}*/
 		if(!$status["diamond"] && in_array("1097916579250978907", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "1097916579250978907", "delete");
 		}
