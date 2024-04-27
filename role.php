@@ -33,6 +33,7 @@ function assignRole($discord_id, $role_id, $action="") {
 	print "<pre>";
 	print_r(json_decode($response));
 	print "</pre>";
+	exit;
 	}
 
 	curl_close($ch);
