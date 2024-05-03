@@ -128,7 +128,7 @@ function getVisibility($conn){
 
 // Update NFT Collection Leaderboard Visibility
 function updateVisibility($conn, $visibility){
-	$sql = "UPDATE users SET visibility='".$visibility."' WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "UPDATE users SET visibility='".$visibility."' WHERE id='".$_SESSION['userData']['user_id']."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
