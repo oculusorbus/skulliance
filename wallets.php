@@ -21,9 +21,9 @@ if(isset($_POST['wallet_id'])){
 						$visible = "";
 						$visibility = getVisibility($conn);
 						if($visibility == "1"){
-							$visible = "selected";
+							$visible = "checked";
 						}else{
-							$hidden = "selected";
+							$hidden = "checked";
 						}
 						?>
 						
