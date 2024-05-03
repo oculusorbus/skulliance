@@ -25,7 +25,7 @@ if(isset($_GET['username'])){
 			if(isset($_SESSION['userData']['user_id'])){
 				$visibility = 0;
 				$visibility = getVisibilityByUsername($conn, $username);
-				if($visibility == "1"){ 
+				if($visibility == "2"){ 
 					getNFTs($conn, $filterby, $username); 
 				}else{
 					echo "<p>This user does not allow visibility of their NFT collection";

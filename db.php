@@ -1768,9 +1768,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
 				}
 				$username = "";
-				if($row["visibility"] == "1"){
+				if($row["visibility"] == "2"){
 					$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-				}else if($row["visibility"] == "0"){
+				}else{
 					$username = $row["username"];
 				}
 		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$username."</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
