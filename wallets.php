@@ -14,9 +14,7 @@ if(isset($_POST['wallet_id'])){
 			<div class="col1of3">
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
-						<?php renderWalletConnection("wallets"); ?>
-						
-						<div class="privacy">
+						<div class="visibility">
 						<li class="role">
 							<strong>NFT Collection Visibility from Leaderboard</strong>
 						</li>
@@ -36,6 +34,7 @@ if(isset($_POST['wallet_id'])){
 						</li>
 						</div>
 						
+						<?php renderWalletConnection("wallets"); ?>
 						<?php
 						if(isset($_SESSION['userData']['user_id'])){ 
 							$wallets = getWallets($conn);
