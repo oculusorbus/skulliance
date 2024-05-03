@@ -17,17 +17,12 @@ if(isset($_POST['wallet_id'])){
 						
 						<?php 
 						$visibility = 0;
-						print_r($_POST);
-						if(isset($_POST['user_id'])){
-							if(isset($_POST['hidden'])){
-								$visibility = 0;
-							}
-							if(isset($_POST['visible'])){
-								$visibility = 1;
-							}
-							echo $visibility;
-							updateVisibility($conn, $visibility);
+						if(isset($_POST['visibility'] == "hidden")){
+							$visibility = 0;
+						}else if(isset($_POST['visibility'] == "visible")){
+							$visibility = 1;
 						}
+						updateVisibility($conn, $visibility);
 						
 						$visibility = 0;
 						$hidden = "";
@@ -47,12 +42,10 @@ if(isset($_POST['wallet_id'])){
 						<li class="role">
 							<form id="privacyForm" action="wallets.php" method="post">
 							  <br>	
-							  <input type="radio" id="hidden" name="visibility" value="Hidden" <?php echo $hidden; ?>>
+							  <input type="radio" id="hidden" name="visibility" value="hidden" <?php echo $hidden; ?>>
 							  <label for="hidden">Hidden</label><br>
-							  <input type="radio" id="visible" name="visibility" value="Visible" <?php echo $visible; ?>>
+							  <input type="radio" id="visible" name="visibility" value="visible" <?php echo $visible; ?>>
 							  <label for="visible">Visible</label><br>
-							  
-							  <input type="hidden" id="user_id" name="user_id" value="<?php echo $_SESSION['userData']['user_id']; ?>">
 							  <br>
 							  <input type="submit" value="Submit" class="small-button">
 							  <br><br>
