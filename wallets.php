@@ -24,6 +24,7 @@ if(isset($_POST['wallet_id'])){
 							if(isset($_POST['visible'])){
 								$visibility = 1;
 							}
+							echo $visibility;
 							updateVisibility($conn, $visibility);
 						}
 						
