@@ -18,7 +18,7 @@ if(isset($_POST['wallet_id'])){
 						<?php 
 						$visibility = 0;
 						if(isset($_POST['visibility'])){
-							if($_POST['visibility'] == "hidden")){
+							if($_POST['visibility'] == "hidden"){
 								$visibility = 0;
 							}else if($_POST['visibility'] == "visible"){
 								$visibility = 1;
