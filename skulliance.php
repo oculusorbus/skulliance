@@ -320,9 +320,9 @@ function renderVisibility($page){
 	$visibility = 0;
 	if(isset($_POST['visibility'])){
 		if($_POST['visibility'] == "hidden"){
-			$visibility = 0;
-		}else if($_POST['visibility'] == "visible"){
 			$visibility = 1;
+		}else if($_POST['visibility'] == "visible"){
+			$visibility = 2;
 		}
 		updateVisibility($conn, $visibility);
 	}
