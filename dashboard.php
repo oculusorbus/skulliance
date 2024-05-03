@@ -51,10 +51,10 @@ include 'header.php';
 		<div class="modal-content">
 		  <div class="modal-header">
 		    <span class="close">&times;</span>
-		    <h2 id="modal-header">Modal Header</h2>
+		    <h2 id="modal-header">NFT Collection Visibility</h2>
 		  </div>
 		  <div class="modal-body">
-		    <p id="modal-text"></p>
+		    <p id="modal-text"><?php renderVisibility("dashboard"); ?></p>
 		  </div>
 		  <div class="modal-footer">
 		    <h3></h3>
@@ -80,8 +80,6 @@ if(getVisibility($conn) == "0"){
 	?>
 	<script type="text/javascript">
 	 modal.style.display = "block";
-
-	 document.getElementById('modal-header').innerText = "NFT Collection Visibility on Leaderboard";
 	</script>
 	<?php
 }
