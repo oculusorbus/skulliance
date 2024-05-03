@@ -18,7 +18,7 @@ if(isset($_POST['wallet_id'])){
 						
 						<div class="privacy">
 						<li class="role">
-							<strong>NFT Collection Visibility</strong>
+							<strong>NFT Collection Visibility from Leaderboard</strong>
 						</li>
 						<li class="role">
 							<form id="privacyForm" action="wallets.php" method="post">
