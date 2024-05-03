@@ -14,6 +14,19 @@ if(isset($_POST['wallet_id'])){
 			<div class="col1of3">
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
+						
+						<?php 
+						$visibility = 0;
+						$hidden = "";
+						$visible = "";
+						$visibility = getVisibility($conn);
+						if($visibility == "1"){
+							$visible = "selected";
+						}else{
+							$hidden = "selected";
+						}
+						?>
+						
 						<div class="visibility">
 						<li class="role">
 							<strong>NFT Collection Visibility from Leaderboard</strong>
@@ -21,9 +34,9 @@ if(isset($_POST['wallet_id'])){
 						<li class="role">
 							<form id="privacyForm" action="wallets.php" method="post">
 							  <br>	
-							  <input type="radio" id="hidden" name="visibility" value="Hidden">
+							  <input type="radio" id="hidden" name="visibility" value="Hidden" <?php echo $hidden; ?>>
 							  <label for="hidden">Hidden</label><br>
-							  <input type="radio" id="visible" name="visibility" value="Visible">
+							  <input type="radio" id="visible" name="visibility" value="Visible" <?php echo $visible; ?>>
 							  <label for="visible">Visible</label><br>
 							  
 							  <input type="hidden" id="user_id" name="user_id" value="<?php echo $_SESSION['userData']['user_id']; ?>">
