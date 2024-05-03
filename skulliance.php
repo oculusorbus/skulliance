@@ -564,13 +564,16 @@ if(isset($_POST['remove_nft_id'])){
 	removeDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 
-function filterNFTs($page){
+function filterNFTs($page, $username=""){
 	global $conn;
 	$core_projects = getProjects($conn, "core");
 	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
-	if($page == "dashboard"){
+	if($page == "dashboard" || $page == "showcase"){
 		$anchor = "#holdings";
+	}
+	if(isset($username)){
+		$username = "?username=".$username;
 	}
 	echo'
 	<div id="filter-nfts">
@@ -589,7 +592,7 @@ function filterNFTs($page){
 			echo '</optgroup>';
 		echo '
 		</select>
-		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="post">
+		<form id="filterNFTsForm" action="'.$page.'.php'.$username.$anchor.'" method="post">
 		  <input type="hidden" id="filterby" name="filterby" value="">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>
