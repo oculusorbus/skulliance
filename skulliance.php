@@ -347,10 +347,10 @@ function renderVisibility($page){
 		<li class="role">
 			<form id="privacyForm" action="'.$page.'.php" method="post">
 			  <br>	
-			  <input type="radio" id="hidden" name="visibility" value="hidden" '.$hidden.'>
-			  <label for="hidden">Hidden</label><br>
 			  <input type="radio" id="visible" name="visibility" value="visible" '.$visible.'>
 			  <label for="visible">Visible</label><br>
+			  <input type="radio" id="hidden" name="visibility" value="hidden" '.$hidden.'>
+			  <label for="hidden">Hidden</label><br>
 			  <br>
 			  <input type="submit" value="Submit" class="small-button" id="visibility-button">
 			  <br><br>
