@@ -15,6 +15,23 @@ if(isset($_POST['wallet_id'])){
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
 						<?php renderWalletConnection("wallets"); ?>
+						
+						<div class="privacy">
+						<li class="role">
+							<label for="wallets"><strong>NFT Collection Visibility</strong>&nbsp;</label>
+							<form id="privacyForm" action="wallets.php" method="post">
+								
+							  <input type="radio" id="private" name="visibility" value="Hidden">
+							  <label for="html">Hidden</label><br>
+							  <input type="radio" id="public" name="visibility" value="Visible">
+							  <label for="css">Visible</label><br>
+							  
+							  <input type="hidden" id="user_id" name="user_id" value="<?php echo $_SESSION['userData']['user_id']; ?>">	
+							  <input type="submit" value="Submit">
+							</form>
+						</li>
+						</div>
+						
 						<?php
 						if(isset($_SESSION['userData']['user_id'])){ 
 							$wallets = getWallets($conn);
