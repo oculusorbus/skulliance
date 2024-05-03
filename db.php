@@ -1725,7 +1725,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$delegated = " Delegated";
 					$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$row["username"]. "</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count." <a href='/showcase.php?username=".$row["username"]."'>View NFT Collection</a></li>";
 		  	}
 			echo "</ul>";
 		}
