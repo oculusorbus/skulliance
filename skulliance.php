@@ -614,7 +614,7 @@ function filterNFTs($page, $username=""){
 	if($page == "dashboard" || $page == "showcase"){
 		$anchor = "#holdings";
 	}
-	if(isset($username)){
+	if($username != ""){
 		$username = "?username=".$username;
 	}
 	echo'
