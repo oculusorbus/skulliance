@@ -45,6 +45,23 @@ include 'header.php';
   </div>
 </div>
 
+	<!-- Modal -->
+	<div id="myModal" class="modal">
+		<!-- Modal content -->
+		<div class="modal-content">
+		  <div class="modal-header">
+		    <span class="close">&times;</span>
+		    <h2 id="modal-header">Modal Header</h2>
+		  </div>
+		  <div class="modal-body">
+		    <p id="modal-text"></p>
+		  </div>
+		  <div class="modal-footer">
+		    <h3></h3>
+		  </div>
+		</div>
+	</div>
+
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
@@ -57,7 +74,18 @@ include 'header.php';
 $conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
-}?>
+}
+if(getVisibility($conn) == "0"){
+	?>
+	<script type="text/javascript">
+	 modal.style.display = "block";
+	 document.getElementById('modal-text').innerHTML = '<?php renderVisibility("dashboard"); ?>';
+	 document.getElementById('modal-header').innerText = "NFT Collection Visibility on Leaderboard";
+	</script>
+	<?php
+}
+?>
+
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 </html>
