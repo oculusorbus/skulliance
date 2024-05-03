@@ -316,6 +316,7 @@ if(isset($_POST['carbon'])){
 }
 
 function renderVisibility($page){
+	global $conn;
 	$visibility = 0;
 	if(isset($_POST['visibility'])){
 		if($_POST['visibility'] == "hidden"){
