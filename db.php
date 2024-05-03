@@ -1698,7 +1698,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			$where = "WHERE collections.project_id = '".$project_id."'";
 		}
 	}
-	$sql = "SELECT nfts.id, nfts.user_id, COUNT(nfts.id) as total, users.username, users.discord_id AS discord_id, avatar, projects.id AS project_id, currency FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." GROUP BY nfts.user_id ORDER BY total DESC";
+	$sql = "SELECT nfts.id, nfts.user_id, COUNT(nfts.id) as total, users.username, users.visibility, users.discord_id AS discord_id, avatar, projects.id AS project_id, currency FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." GROUP BY nfts.user_id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -1751,7 +1751,13 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$delegated = " Delegated";
 					$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'><a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a></strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
+				$username = "";
+				if($row["visibility"] == "1"){
+					$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
+				}else if($row["visibility"] == "2"){
+					$username = $row["username"];
+				}
+		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$username."</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
 		  	}
 			echo "</ul>";
 		}
