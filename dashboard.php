@@ -27,13 +27,15 @@ include 'header.php';
 	</div>
 </div>
 <?php
-if(getVisibility($conn) == "0"){
-	?>
-	<script type="text/javascript">
-     document.getElementById("myModal").style.display = "block";
-	 document.getElementById("visibility-button").className = "button";
-	</script>
-	<?php
+if(isset($_SESSION['userData']['user_id'])){
+	if(getVisibility($conn) == "0"){
+		?>
+		<script type="text/javascript">
+	     document.getElementById("myModal").style.display = "block";
+		 document.getElementById("visibility-button").className = "button";
+		</script>
+		<?php
+	}
 }?>
 
 <a name="dashboard" id="dashboard"></a>

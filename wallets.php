@@ -15,7 +15,10 @@ if(isset($_POST['wallet_id'])){
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
 						
-						<?php renderVisibility("wallets"); ?>
+						<?php 
+						if(isset($_SESSION['userData']['user_id'])){
+							renderVisibility("wallets");
+						}?>
 						
 						<?php renderWalletConnection("wallets"); ?>
 						<?php
