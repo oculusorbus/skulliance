@@ -18,7 +18,7 @@ if(isset($_POST['wallet_id'])){
 						
 						<div class="privacy">
 						<li class="role">
-							<label for="wallets"><strong>NFT Collection Visibility</strong>&nbsp;</label>
+							<strong>NFT Collection Visibility</strong>
 							<form id="privacyForm" action="wallets.php" method="post">
 								
 							  <input type="radio" id="private" name="visibility" value="Hidden">
@@ -27,7 +27,7 @@ if(isset($_POST['wallet_id'])){
 							  <label for="css">Visible</label><br>
 							  
 							  <input type="hidden" id="user_id" name="user_id" value="<?php echo $_SESSION['userData']['user_id']; ?>">	
-							  <input type="submit" value="Submit">
+							  <input type="submit" value="Submit" class="small-button">
 							</form>
 						</li>
 						</div>
