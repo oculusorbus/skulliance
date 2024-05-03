@@ -22,7 +22,7 @@ if(isset($_POST['wallet_id'])){
 						</li>
 						<li class="role">
 							<form id="privacyForm" action="wallets.php" method="post">
-								
+							  <br>	
 							  <input type="radio" id="private" name="visibility" value="Hidden">
 							  <label for="html">Hidden</label><br>
 							  <input type="radio" id="public" name="visibility" value="Visible">
@@ -31,7 +31,7 @@ if(isset($_POST['wallet_id'])){
 							  <input type="hidden" id="user_id" name="user_id" value="<?php echo $_SESSION['userData']['user_id']; ?>">
 							  <br>
 							  <input type="submit" value="Submit" class="small-button">
-							  <br>
+							  <br><br>
 							</form>
 						</li>
 						</div>
