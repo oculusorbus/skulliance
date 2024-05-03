@@ -79,7 +79,7 @@ if($filterby != ""){
 if(getVisibility($conn) == "0"){
 	?>
 	<script type="text/javascript">
-	 modal.style.display = "block";
+	 document.getElementById('myModal').style.display = "block";
 	 document.getElementById('modal-text').innerHTML = '<?php renderVisibility("dashboard"); ?>';
 	 document.getElementById('modal-header').innerText = "NFT Collection Visibility on Leaderboard";
 	</script>
