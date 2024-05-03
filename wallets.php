@@ -17,6 +17,17 @@ if(isset($_POST['wallet_id'])){
 						
 						<?php 
 						$visibility = 0;
+						if(isset($_POST['user_id'])){
+							if(isset($_POST['hidden'])){
+								$visibility = 0;
+							}
+							if(isset($_POST['visible'])){
+								$visibility = 1;
+							}
+							updateVisibility($conn, $visibility);
+						}
+						
+						$visibility = 0;
 						$hidden = "";
 						$visible = "";
 						$visibility = getVisibility($conn);
@@ -29,7 +40,7 @@ if(isset($_POST['wallet_id'])){
 						
 						<div class="visibility">
 						<li class="role">
-							<strong>NFT Collection Visibility from Leaderboard</strong>
+							<strong>NFT Collection Visibility from Leaderboards</strong>
 						</li>
 						<li class="role">
 							<form id="privacyForm" action="wallets.php" method="post">

@@ -126,6 +126,16 @@ function getVisibility($conn){
 	}
 }
 
+// Update NFT Collection Leaderboard Visibility
+function updateVisibility($conn, $visibility){
+	$sql = "UPDATE users SET visibility='".$visibility."' WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Get all users
 function getUsers($conn){
 	$sql = "SELECT * FROM users";
