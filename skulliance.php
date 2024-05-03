@@ -335,7 +335,7 @@ function renderVisibility($page){
 		$visibility = getVisibility($conn);
 		if($visibility == "2"){
 			$visible = "checked";
-		}else($visibility == "1"){
+		}else if($visibility == "1"){
 			$hidden = "checked";
 		}
 	
