@@ -1754,7 +1754,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				$username = "";
 				if($row["visibility"] == "1"){
 					$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-				}else if($row["visibility"] == "2"){
+				}else if($row["visibility"] == "0"){
 					$username = $row["username"];
 				}
 		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$username."</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
