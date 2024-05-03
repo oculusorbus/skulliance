@@ -23,10 +23,10 @@ if(isset($_POST['wallet_id'])){
 						<li class="role">
 							<form id="privacyForm" action="wallets.php" method="post">
 							  <br>	
-							  <input type="radio" id="private" name="visibility" value="Hidden">
-							  <label for="html">Hidden</label><br>
-							  <input type="radio" id="public" name="visibility" value="Visible">
-							  <label for="css">Visible</label><br>
+							  <input type="radio" id="hidden" name="visibility" value="Hidden">
+							  <label for="hidden">Hidden</label><br>
+							  <input type="radio" id="visible" name="visibility" value="Visible">
+							  <label for="visible">Visible</label><br>
 							  
 							  <input type="hidden" id="user_id" name="user_id" value="<?php echo $_SESSION['userData']['user_id']; ?>">
 							  <br>
