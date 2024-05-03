@@ -256,6 +256,7 @@ $conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
+<script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
 	var planets = document.getElementsByClassName("planet");
 	var pixels = "";
@@ -345,5 +346,4 @@ if($filterby != ""){
 	  }
 	}
 </script>
-<script type="text/javascript" src="skulliance.js"></script>
 </html>
