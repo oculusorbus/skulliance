@@ -5,20 +5,25 @@ include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
+
+$username="";
+if(isset($_GET['username'])){
+	$username = $_GET['username'];
+}
 ?>
 
-<a name="dashboard" id="dashboard"></a>
+<a name="showcase" id="showcase"></a>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <div class="main">
 	<h2>Qualifying NFTs</h2>
 	<a name="holdings" id="holdings"></a>
     <div class="content">
-		<?php filterNFTs("dashboard"); ?>
+		<?php filterNFTs("showcase"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
-				getNFTs($conn, $filterby); 
+				getNFTs($conn, $filterby, $username); 
 			}else{
 				echo "<p>Please connect a Cardano wallet to view your qualifying NFTs.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
