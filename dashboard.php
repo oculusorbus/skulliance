@@ -7,6 +7,32 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 
+<!-- Modal -->
+<div id="myModal" class="modal">
+	<!-- Modal content -->
+	<div class="modal-content">
+	  <div class="modal-header">
+	    <span class="close">&times;</span>
+	    <h2 id="modal-header">NFT Collection Visibility</h2>
+	  </div>
+	  <div class="modal-body">
+	    <p id="modal-text"><?php renderVisibility("dashboard"); ?></p>
+	  </div>
+	  <div class="modal-footer">
+	    <h3></h3>
+	  </div>
+	</div>
+</div>
+<?php
+if(getVisibility($conn) == "0"){
+	?>
+	<script type="text/javascript">
+     document.getElementById("myModal").style.display = "block";
+	 document.getElementById("visibility-button").className = "button";
+	</script>
+	<?php
+}?>
+
 <a name="dashboard" id="dashboard"></a>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
@@ -45,23 +71,6 @@ include 'header.php';
   </div>
 </div>
 
-	<!-- Modal -->
-	<div id="myModal" class="modal">
-		<!-- Modal content -->
-		<div class="modal-content">
-		  <div class="modal-header">
-		    <span class="close">&times;</span>
-		    <h2 id="modal-header">NFT Collection Visibility</h2>
-		  </div>
-		  <div class="modal-body">
-		    <p id="modal-text"><?php renderVisibility("dashboard"); ?></p>
-		  </div>
-		  <div class="modal-footer">
-		    <h3></h3>
-		  </div>
-		</div>
-	</div>
-
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
@@ -76,14 +85,6 @@ if($filterby != ""){
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php
-if(getVisibility($conn) == "0"){
-	?>
-	<script type="text/javascript">
-	 modal.style.display = "block";
-	 document.getElementById("visibility-button").className = "button";
-	</script>
-	<?php
-}
 // Close DB Connection
 $conn->close();
 ?>
