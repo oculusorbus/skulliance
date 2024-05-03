@@ -7,6 +7,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
 </head>
 <body>
 	<div class="container">
