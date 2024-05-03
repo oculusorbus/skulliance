@@ -24,7 +24,7 @@ if(isset($_GET['username'])){
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
 				$visibility = 0;
-				$visibility = getVisibility($conn);
+				$visibility = getVisibilityByUsername($conn, $username);
 				if($visibility == "1"){ 
 					getNFTs($conn, $filterby, $username); 
 				}else{

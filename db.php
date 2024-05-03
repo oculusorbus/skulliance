@@ -126,6 +126,22 @@ function getVisibility($conn){
 	}
 }
 
+// Get NFT Collection Leaderboard Visibility by Username
+function getVisibilityByUsername($conn, $username){
+	$sql = "SELECT visibility FROM users WHERE username = '".$username."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return $row["visibility"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Update NFT Collection Leaderboard Visibility
 function updateVisibility($conn, $visibility){
 	$sql = "UPDATE users SET visibility='".$visibility."' WHERE id='".$_SESSION['userData']['user_id']."'";
