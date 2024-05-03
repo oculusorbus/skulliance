@@ -19,7 +19,7 @@ if(isset($_GET['username'])){
 	<h2>Qualifying NFTs</h2>
 	<a name="holdings" id="holdings"></a>
     <div class="content">
-		<?php filterNFTs("showcase"); ?>
+		<?php filterNFTs("showcase", $username); ?>
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){ 
