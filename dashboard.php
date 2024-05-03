@@ -70,8 +70,6 @@ include 'header.php';
 </div>
 </body>
 <?php
-// Close DB Connection
-$conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
 }?>
@@ -87,5 +85,7 @@ if(getVisibility($conn) == "0"){
 	</script>
 	<?php
 }
+// Close DB Connection
+$conn->close();
 ?>
 </html>
