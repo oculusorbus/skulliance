@@ -315,6 +315,47 @@ if(isset($_POST['carbon'])){
 	}
 }
 
+function renderVisibility($page){
+	$visibility = 0;
+	if(isset($_POST['visibility'])){
+		if($_POST['visibility'] == "hidden"){
+			$visibility = 0;
+		}else if($_POST['visibility'] == "visible"){
+			$visibility = 1;
+		}
+		updateVisibility($conn, $visibility);
+	}
+	
+	$visibility = 0;
+	$hidden = "";
+	$visible = "";
+	$visibility = getVisibility($conn);
+	if($visibility == "1"){
+		$visible = "checked";
+	}else{
+		$hidden = "checked";
+	}
+	
+	echo '
+	<div class="visibility">
+	<li class="role">
+		<strong>NFT Collection Visibility from Leaderboards</strong>
+	</li>
+	<li class="role">
+		<form id="privacyForm" action="'.$page.'.php" method="post">
+		  <br>	
+		  <input type="radio" id="hidden" name="visibility" value="hidden" '.$hidden.'>
+		  <label for="hidden">Hidden</label><br>
+		  <input type="radio" id="visible" name="visibility" value="visible" '.$visible.'>
+		  <label for="visible">Visible</label><br>
+		  <br>
+		  <input type="submit" value="Submit" class="small-button">
+		  <br><br>
+		</form>
+	</li>
+	</div>';
+}
+
 function renderWalletConnection($page){
 	echo '<ul>
 	<div class="wallet-connect">

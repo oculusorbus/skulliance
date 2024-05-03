@@ -15,45 +15,7 @@ if(isset($_POST['wallet_id'])){
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
 						
-						<?php 
-						$visibility = 0;
-						if(isset($_POST['visibility'])){
-							if($_POST['visibility'] == "hidden"){
-								$visibility = 0;
-							}else if($_POST['visibility'] == "visible"){
-								$visibility = 1;
-							}
-							updateVisibility($conn, $visibility);
-						}
-						
-						$visibility = 0;
-						$hidden = "";
-						$visible = "";
-						$visibility = getVisibility($conn);
-						if($visibility == "1"){
-							$visible = "checked";
-						}else{
-							$hidden = "checked";
-						}
-						?>
-						
-						<div class="visibility">
-						<li class="role">
-							<strong>NFT Collection Visibility from Leaderboards</strong>
-						</li>
-						<li class="role">
-							<form id="privacyForm" action="wallets.php" method="post">
-							  <br>	
-							  <input type="radio" id="hidden" name="visibility" value="hidden" <?php echo $hidden; ?>>
-							  <label for="hidden">Hidden</label><br>
-							  <input type="radio" id="visible" name="visibility" value="visible" <?php echo $visible; ?>>
-							  <label for="visible">Visible</label><br>
-							  <br>
-							  <input type="submit" value="Submit" class="small-button">
-							  <br><br>
-							</form>
-						</li>
-						</div>
+						<?php renderVisibility("wallets"); ?>
 						
 						<?php renderWalletConnection("wallets"); ?>
 						<?php
