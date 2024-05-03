@@ -80,6 +80,7 @@ if(getVisibility($conn) == "0"){
 	?>
 	<script type="text/javascript">
 	 modal.style.display = "block";
+	 document.getElementById("visibility-button").className = "button";
 	</script>
 	<?php
 }

@@ -350,7 +350,7 @@ function renderVisibility($page){
 		  <input type="radio" id="visible" name="visibility" value="visible" '.$visible.'>
 		  <label for="visible">Visible</label><br>
 		  <br>
-		  <input type="submit" value="Submit" class="small-button">
+		  <input type="submit" value="Submit" class="small-button" id="visibility-button">
 		  <br><br>
 		</form>
 	</li>
