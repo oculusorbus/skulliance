@@ -14,13 +14,9 @@ if(isset($_POST['wallet_id'])){
 			<div class="col1of3">
 				<h2>Wallets</h2>
 					<div class="content" id="transactions-pane">
-						
 						<?php 
-						if(isset($_SESSION['userData']['user_id'])){
-							renderVisibility("wallets");
-						}?>
-						
-						<?php renderWalletConnection("wallets"); ?>
+						renderVisibility("wallets");
+						renderWalletConnection("wallets"); ?>
 						<?php
 						if(isset($_SESSION['userData']['user_id'])){ 
 							$wallets = getWallets($conn);

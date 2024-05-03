@@ -317,44 +317,47 @@ if(isset($_POST['carbon'])){
 
 function renderVisibility($page){
 	global $conn;
-	$visibility = 0;
-	if(isset($_POST['visibility'])){
-		if($_POST['visibility'] == "hidden"){
-			$visibility = 1;
-		}else if($_POST['visibility'] == "visible"){
-			$visibility = 2;
+	
+	if(isset($_SESSION['userData']['user_id'])){
+		$visibility = 0;
+		if(isset($_POST['visibility'])){
+			if($_POST['visibility'] == "hidden"){
+				$visibility = 1;
+			}else if($_POST['visibility'] == "visible"){
+				$visibility = 2;
+			}
+			updateVisibility($conn, $visibility);
 		}
-		updateVisibility($conn, $visibility);
-	}
 	
-	$visibility = 0;
-	$hidden = "";
-	$visible = "";
-	$visibility = getVisibility($conn);
-	if($visibility == "2"){
-		$visible = "checked";
-	}else{
-		$hidden = "checked";
-	}
+		$visibility = 0;
+		$hidden = "";
+		$visible = "";
+		$visibility = getVisibility($conn);
+		if($visibility == "2"){
+			$visible = "checked";
+		}else($visibility == "1"){
+			$hidden = "checked";
+		}
 	
-	echo '
-	<div class="visibility">
-	<li class="role">
-		<strong>NFT Collection Visibility from Leaderboards</strong>
-	</li>
-	<li class="role">
-		<form id="privacyForm" action="'.$page.'.php" method="post">
-		  <br>	
-		  <input type="radio" id="hidden" name="visibility" value="hidden" '.$hidden.'>
-		  <label for="hidden">Hidden</label><br>
-		  <input type="radio" id="visible" name="visibility" value="visible" '.$visible.'>
-		  <label for="visible">Visible</label><br>
-		  <br>
-		  <input type="submit" value="Submit" class="small-button" id="visibility-button">
-		  <br><br>
-		</form>
-	</li>
-	</div>';
+		echo '
+		<div class="visibility">
+		<li class="role">
+			<strong>NFT Collection Visibility from Leaderboards</strong>
+		</li>
+		<li class="role">
+			<form id="privacyForm" action="'.$page.'.php" method="post">
+			  <br>	
+			  <input type="radio" id="hidden" name="visibility" value="hidden" '.$hidden.'>
+			  <label for="hidden">Hidden</label><br>
+			  <input type="radio" id="visible" name="visibility" value="visible" '.$visible.'>
+			  <label for="visible">Visible</label><br>
+			  <br>
+			  <input type="submit" value="Submit" class="small-button" id="visibility-button">
+			  <br><br>
+			</form>
+		</li>
+		</div>';
+	}
 }
 
 function renderWalletConnection($page){
