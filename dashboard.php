@@ -17,7 +17,7 @@ include 'header.php';
 	  </div>
 	  <div class="modal-body">
 	    <p id="modal-text">
-			<span style="padding-left:5px">Leaderboards have been updated to allow for stakers to view other staker's NFT collections by clicking on usernames from the leaderboards. You have a choice as to whether you want other stakers to view your NFT collection or not. Select 'Visible' to allow. Select 'Hidden' to reject. This setting can be changed at any time under the Wallets menu item and is set to 'Hidden' by default.</span>
+			<span style="margin-right:5px">Leaderboards have been updated to allow for stakers to view other staker's NFT collections by clicking on usernames from the leaderboards. You have a choice as to whether you want other stakers to view your NFT collection or not. Select 'Visible' to allow. Select 'Hidden' to reject. This setting can be changed at any time under the Wallets menu item and is set to 'Hidden' by default.</span>
 			<?php renderVisibility("dashboard"); ?>
 		</p>
 	  </div>
