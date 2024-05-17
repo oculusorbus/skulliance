@@ -1770,9 +1770,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					}else{
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 						$leaderboardCounter--;
-					}
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
+						if($_SESSION['userData']['user_id'] == $row["user_id"]){
+							$fireworks = true;
+						}
 					}
 				}else if($leaderboardCounter == 3){
 					//$width = 40;
@@ -1783,15 +1783,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 						$leaderboardCounter--;
 					}
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
-					}
 				}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 					$leaderboardCounter--;
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
-					}
 				}else if($leaderboardCounter > 3 && $last_total == $row["total"]){
 					$leaderboardCounter--;
 				}
