@@ -1739,7 +1739,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				$trophy = "";
 				if($leaderboardCounter == 1){
 					//$width = 50;
-					$trophy = "<img style='width:".$width."px' src='/staking/icons/trophy.png' class='icon rounded-full'/>";
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/trophy.png' class='icon'/>";
 				}else if($leaderboardCounter == 2){
 					//$width = 45;
 				}else if($leaderboardCounter == 3){
@@ -1752,7 +1752,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				$highlight = "";
 				if(isset($_SESSION['userData']['user_id'])){
