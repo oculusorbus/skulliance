@@ -1747,6 +1747,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 					}else{
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+						$leaderboardCounter--;
 					}
 				}else if($leaderboardCounter == 3){
 					//$width = 40;
@@ -1754,6 +1755,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 					}else{
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+						$leaderboardCounter--;
 					}
 				}
 				//$level = floor($row["xp"]/100);
