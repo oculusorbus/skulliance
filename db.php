@@ -1730,7 +1730,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		// Formatted output for website leaderboard
 		} else {
 			$leaderboardCounter = 0;
-		  	echo "<ul class='leaderboard'>";
+		  	//echo "<ul class='leaderboard'>";
+			echo "<table>"
+			echo "<th>Rank</th><th>Avatar</th><th>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				$width = 20;
@@ -1773,9 +1775,12 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				}else{
 					$username = $row["username"];
 				}
-		    	echo "<li class='".$highlight."'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.". ".$avatar." <strong style='font-size:".$width."px'>".$username."</strong>: ".$row["total"]." NFTs".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</li>";
+				echo "<tr class='".$highlight."'>";
+		    	echo "<td>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".</td><td>".$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td>".$row["total"]."</td><td>".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</td>";
+				echo "</tr>";
 		  	}
-			echo "</ul>";
+			//echo "</ul>";
+			echo "</table>";
 		}
 	} else {
 	  //echo "0 results";
