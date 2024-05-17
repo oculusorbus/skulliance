@@ -302,6 +302,7 @@ a{
 	border-style: solid;
 	border-color: #202225 !important;
 	font-family: arial;
+	background-color: #121212;
 }
 
 #transactions th, #transactions td {
@@ -316,7 +317,7 @@ a{
 }
 
 #transactions th {
-	background-color: #121212;
+	background-color: black;
 }
 
 #transactions img {
