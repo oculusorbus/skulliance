@@ -790,7 +790,7 @@ li form {
 }
 
 .nft img {
-	border-radius: 0.5rem;
+	border-radius: 0;
 	max-width: 175px;
 	max-height: 165px;
 	width: inherit;
