@@ -1735,7 +1735,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
-				$width = 30;
+				$width = 40;
 				$trophy = "";
 				if($leaderboardCounter == 1){
 					//$width = 50;
