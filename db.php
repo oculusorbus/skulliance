@@ -1752,7 +1752,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				$highlight = "";
 				if(isset($_SESSION['userData']['user_id'])){
