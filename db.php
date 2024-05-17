@@ -1735,7 +1735,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			$third_total = 0;
 		  	//echo "<ul class='leaderboard'>";
 			echo "<table id='transactions' cellspacing='0'>";
-			echo "<th>Row</th><th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
+			echo "<th>#</th><th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
 				$rowCounter++;
 				$leaderboardCounter++;
