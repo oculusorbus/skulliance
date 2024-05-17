@@ -69,10 +69,10 @@ a{
 /* Style the top navigation bar */
 .navbar {
   display: flex;
-  background-color: #202225;
+  background-color: black;
   font-family: arial;
-  -webkit-filter: drop-shadow(5px 5px 5px #202225);
-  filter: drop-shadow(5px 5px 5px #202225);
+  /*-webkit-filter: drop-shadow(5px 5px 5px #202225);
+  filter: drop-shadow(5px 5px 5px #202225);*/
 }
 
 /* Style the navigation bar links */
@@ -184,12 +184,12 @@ a{
 }
 
 #player-stats {
-	background-color: #36393F;
-    border-radius: 1.5rem;
+	background-color: black;
+    border-radius: 0;
     padding: 10px;
     border: 1px solid #43464D;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
+	/*-webkit-filter: drop-shadow(5px 5px 5px #202225);
+    filter: drop-shadow(5px 5px 5px #202225);*/
 }
 
 /* Soldiers column */
@@ -229,10 +229,10 @@ a{
 
 #filterNFTs {
     width: 152px;
-    border-radius: 0.5rem;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
-    background-color: #2F3136;
+    background-color: black;
     color: #D6DDDE;
     text-align: left;
     font-size: 20px;
@@ -509,7 +509,7 @@ input {
 }
 
 .small-button {
-  background-color: #000; /* Green */
+  background-color: #2F3136; /* Green */
   border: none;
   color: white;
   padding: 3px 10px;
@@ -525,11 +525,11 @@ input {
 }
 
 .small-button:hover {
-	background-color: #333;
+	background-color: #444;
 }
 
 .small-button:active {
-  background-color: #333;
+  background-color: #444;
   box-shadow: 0 2px #1c4f2a;
   transform: translateY(2px);
 }
@@ -697,13 +697,13 @@ li form {
 }
 
 .nft-data{
-	background-color: #36393F;
+	background-color: black;
 	border: 1px solid #43464D;
 	padding: 10px;
 	margin: 10px;
-	border-radius: 1.5rem;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
+	border-radius: 0;
+	/*-webkit-filter: drop-shadow(5px 5px 5px #202225);
+    filter: drop-shadow(5px 5px 5px #202225);*/
 	min-height: 330px;
 }
 
