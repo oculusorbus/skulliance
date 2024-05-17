@@ -1739,11 +1739,13 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				$trophy = "";
 				if($leaderboardCounter == 1){
 					//$width = 50;
-					$trophy = "<img style='width:".$width."px' src='/staking/icons/trophy.png' class='icon'/>";
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 				}else if($leaderboardCounter == 2){
 					//$width = 45;
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 				}else if($leaderboardCounter == 3){
 					//$width = 40;
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				}else if($leaderboardCounter == 4){
 					//$width = 35;
 				}else if($leaderboardCounter == 5){
