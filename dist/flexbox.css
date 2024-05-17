@@ -168,7 +168,7 @@ a{
 
 .wallet-connect select {
 	width: 148px;
-    border-radius: 0.5rem;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
     background-color: #2F3136;
@@ -523,7 +523,7 @@ input {
   display: inline-block;
   font-size: 12px;
   cursor:pointer;
-  border-radius: 0.5rem;
+  border-radius: 0;
   font-weight: bold;
   box-shadow: 0 4px #222;
   font-family: Courier;
