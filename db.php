@@ -1716,7 +1716,7 @@ function getProjectDelegationPercentages($conn){
 function fireworks(){
 	echo "<script type='text/javascript'>".
 		 "var body = document.getElementsByTagName('body')[0];".
-		 "body.style.backgroundImage = 'url(https://www.skulliance.io/staking/images/fireworks.gif)';'".
+		 "body.style.backgroundImage = 'url(https://www.skulliance.io/staking/images/fireworks.gif)';".
 		 "</script>";
 }
 
