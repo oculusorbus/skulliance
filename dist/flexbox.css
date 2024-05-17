@@ -1029,7 +1029,6 @@ input:checked + .slider:before {
 .footer {
   padding: 20px;
   text-align: center;
-  background: #202225;
 }
 
 @media screen and (max-width: 1780px) {
