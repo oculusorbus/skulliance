@@ -1777,7 +1777,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$username = $row["username"];
 				}
 				echo "<tr class='".$highlight."'>";
-		    	echo "<td align='center'><strong>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
+		    	echo "<td align='center'><strong>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
 				echo "</tr>";
 		  	}
 			//echo "</ul>";
