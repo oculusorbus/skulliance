@@ -69,7 +69,7 @@ a{
 /* Style the top navigation bar */
 .navbar {
   display: flex;
-  background-color: black;
+  background-color: #121212;
   font-family: arial;
   /*-webkit-filter: drop-shadow(5px 5px 5px #202225);
   filter: drop-shadow(5px 5px 5px #202225);*/
@@ -184,7 +184,7 @@ a{
 }
 
 #player-stats {
-	background-color: black;
+	background-color: #121212;
     border-radius: 0;
     padding: 10px;
     border: 1px solid #43464D;
@@ -316,7 +316,7 @@ a{
 }
 
 #transactions th {
-	background-color: black;
+	background-color: #121212;
 }
 
 #transactions img {
@@ -702,7 +702,7 @@ li form {
 }
 
 .nft-data{
-	background-color: black;
+	background-color: #121212;
 	border: 1px solid #43464D;
 	padding: 10px;
 	margin: 10px;
