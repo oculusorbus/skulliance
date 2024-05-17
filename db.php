@@ -1030,7 +1030,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
-				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." $".$row["currency"]."</span>";
+				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." ".$row["currency"]."</span>";
 			}else if($diamond_skull == true){
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
 				if($diamond_skull_id == ""){

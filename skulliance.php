@@ -431,7 +431,7 @@ function renderCrafting($conn, $page){
 			?>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert all currency to DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
-			  Convert the following amount of core project currency to DIAMOND:<br><br>
+			  Convert core project points to DIAMOND:<br><br>
 			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 			  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
 			  <input type="submit" value="Convert" class="small-button">
@@ -443,7 +443,7 @@ function renderCrafting($conn, $page){
 			?>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to shatter this DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
-			  <br>Shatter the following amount of DIAMOND to equal parts core currency:<br><br>
+			  <br>Shatter DIAMOND to equal parts core points:<br><br>
 			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
 			  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
 			  <input type="submit" value="Shatter" class="small-button">
@@ -456,7 +456,7 @@ function renderCrafting($conn, $page){
 			?>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
-			  <br>Burn CARBON in multiples of 100 to form DIAMOND:<br><br>
+			  <br>Burn CARBON to form DIAMOND:<br><br>
 			  <img class="icon" src="icons/diamond.png">
 		      <select name="carbon" id="carbon">
 			  <?php
