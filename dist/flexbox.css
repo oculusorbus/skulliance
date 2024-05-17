@@ -271,7 +271,7 @@ a{
 
 .col1of3 {
   flex: 33%;
-  background-color: black;
+  /*background-color: black;*/
   padding: 20px;
   min-width: 33%;
 }
@@ -316,7 +316,7 @@ a{
 }
 
 #transactions th {
-	background-color: #2F3136;
+	background-color: black;
 }
 
 #transactions img {
