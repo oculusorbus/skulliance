@@ -1735,7 +1735,8 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
-				$width = 20;
+				$width = 30;
+				/*
 				if($leaderboardCounter == 1){
 					$width = 50;
 				}else if($leaderboardCounter == 2){
@@ -1746,7 +1747,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$width = 35;
 				}else if($leaderboardCounter == 5){
 					$width = 30;
-				}
+				}*/
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
 				if($row["avatar"] != ""){
