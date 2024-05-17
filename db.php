@@ -1731,6 +1731,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		} else {
 			$leaderboardCounter = 0;
 			$last_total = 0;
+			$third_total = 0;
 		  	//echo "<ul class='leaderboard'>";
 			echo "<table id='transactions' cellspacing='0'>";
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
@@ -1753,10 +1754,13 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					//$width = 40;
 					if($last_total != $row["total"]){
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+						$third_total = $row["total"];
 					}else{
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 						$leaderboardCounter--;
 					}
+				}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				}
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
