@@ -480,6 +480,11 @@ input {
     color: #D6DDDE;
 }
 
+#carbon {
+	background-color: #2F3136;
+    color: #D6DDDE;
+}
+
 .button {
   background-color: #014579; /* Green */
   border: none;
