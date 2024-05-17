@@ -1736,18 +1736,19 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				$width = 30;
-				/*
+				$trophy = "";
 				if($leaderboardCounter == 1){
-					$width = 50;
+					//$width = 50;
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/trophy.png' class='icon rounded-full'/>";
 				}else if($leaderboardCounter == 2){
-					$width = 45;
+					//$width = 45;
 				}else if($leaderboardCounter == 3){
-					$width = 40;
+					//$width = 40;
 				}else if($leaderboardCounter == 4){
-					$width = 35;
+					//$width = 35;
 				}else if($leaderboardCounter == 5){
-					$width = 30;
-				}*/
+					//$width = 30;
+				}
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
 				if($row["avatar"] != ""){
@@ -1777,7 +1778,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$username = $row["username"];
 				}
 				echo "<tr class='".$highlight."'>";
-		    	echo "<td align='center'><strong>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
+		    	echo "<td align='center'><strong>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".</strong></td><td align='center'>".$trophy.$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
 				echo "</tr>";
 		  	}
 			//echo "</ul>";
