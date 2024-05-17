@@ -1746,6 +1746,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			}
 		// Formatted output for website leaderboard
 		} else {
+			$fireworks = false;
 			$leaderboardCounter = 0;
 			$last_total = 0;
 			$third_total = 0;
@@ -1760,7 +1761,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					//$width = 50;
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						fireworks();
+						$fireworks = true;
 					}
 				}else if($leaderboardCounter == 2){
 					//$width = 45;
@@ -1770,7 +1771,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 						$leaderboardCounter--;
 						if($_SESSION['userData']['user_id'] == $row["user_id"]){
-							fireworks();
+							$fireworks = true;
 						}
 					}
 				}else if($leaderboardCounter == 3){
@@ -1823,6 +1824,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		  	}
 			//echo "</ul>";
 			echo "</table>";
+			if($fireworks){
+				fireworks();
+			}
 		}
 	} else {
 	  //echo "0 results";
