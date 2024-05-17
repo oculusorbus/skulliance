@@ -712,6 +712,10 @@ li form {
 	min-height: 330px;
 }
 
+.nft-level{
+	color: #bbb;
+}
+
 .diamond-skull-data table{
 	margin: 0 auto;
 }
