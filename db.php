@@ -1713,6 +1713,13 @@ function getProjectDelegationPercentages($conn){
 	return $percentages;
 }
 
+function fireworks(){
+	echo "<script type='text/javascript>".
+		 "var body = document.getElementsByTagName('body')[0];".
+		 "body.style.backgroundImage = 'url(https://www.skulliance.io/staking/images/fireworks.gif)';'".
+		 "</script";
+}
+
 // Check leaderboard for discord and site display
 function checkLeaderboard($conn, $clean, $project_id=0) {
 	$where = "";
@@ -1752,6 +1759,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				if($leaderboardCounter == 1){
 					//$width = 50;
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						fireworks();
+					}
 				}else if($leaderboardCounter == 2){
 					//$width = 45;
 					if($last_total != $row["total"]){
@@ -1759,6 +1769,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					}else{
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 						$leaderboardCounter--;
+						if($_SESSION['userData']['user_id'] == $row["user_id"]){
+							fireworks();
+						}
 					}
 				}else if($leaderboardCounter == 3){
 					//$width = 40;
