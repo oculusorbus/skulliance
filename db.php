@@ -1732,7 +1732,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			$leaderboardCounter = 0;
 		  	//echo "<ul class='leaderboard'>";
 			echo "<table id='transactions'>";
-			echo "<th>Rank</th><th>Avatar</th><th>Username</th><th>NFTs</th><th>Points</th>";
+			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
 				$leaderboardCounter++;
 				$width = 20;
@@ -1776,7 +1776,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$username = $row["username"];
 				}
 				echo "<tr class='".$highlight."'>";
-		    	echo "<td>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".</td><td>".$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td>".$row["total"]."</td><td>".$delegated.(($project_id != 0)?" (".number_format($current_balance)." ".$row["currency"].")":"").$diamond_skull_count."</td>";
+		    	echo "<td align='center'>".(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".</td><td align='center'>".$avatar."</td><td><strong style='font-size:".$width."px'>".$username."</strong></td><td align='center'>".$row["total"]."</td><td align='center'>".$delegated.(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
 				echo "</tr>";
 		  	}
 			//echo "</ul>";
