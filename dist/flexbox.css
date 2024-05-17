@@ -395,8 +395,8 @@ a{
 	position: relative;
     top: 4px;
     margin-right: 2px;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
+	/*-webkit-filter: drop-shadow(5px 5px 5px #202225);
+    filter: drop-shadow(5px 5px 5px #202225);*/
 }
 
 .leaderboard li {
