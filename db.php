@@ -1730,6 +1730,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		// Formatted output for website leaderboard
 		} else {
 			$leaderboardCounter = 0;
+			$last_total = 0;
 		  	//echo "<ul class='leaderboard'>";
 			echo "<table id='transactions' cellspacing='0'>";
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
@@ -1742,10 +1743,18 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 				}else if($leaderboardCounter == 2){
 					//$width = 45;
-					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+					if($last_total != $row["total"]){
+						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+					}else{
+						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+					}
 				}else if($leaderboardCounter == 3){
 					//$width = 40;
-					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+					if($last_total != $row["total"]){
+						$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+					}else{
+						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+					}
 				}
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
@@ -1778,6 +1787,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				echo "<tr class='".$highlight."'>";
 		    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
 				echo "</tr>";
+				$last_total = $row["total"];
 		  	}
 			//echo "</ul>";
 			echo "</table>";
