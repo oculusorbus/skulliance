@@ -1658,7 +1658,7 @@ function getTotalNFTs($conn, $project_id=0){
 	  }
 	}
 	
-	$sql = "SELECT COUNT(user_id) as total FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." AND nfts.user_id != '0'";
+	$sql = "SELECT COUNT(DISTINCT user_id) as total FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." AND nfts.user_id != '0'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
