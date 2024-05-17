@@ -1762,6 +1762,8 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 				}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 					$leaderboardCounter--;
+				}else if($leaderboardCounter > 3 && $last_total == $row["total"]){
+					$leaderboardCounter--;
 				}
 				//$level = floor($row["xp"]/100);
 				$avatar = "";
