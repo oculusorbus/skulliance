@@ -10,7 +10,7 @@ html {
 body {
   font-family: Arial;
   margin: 0;
-  background-color: #36393F;
+  background-color: #222;
   height:100%;
   /*background-image: url("../images/dropshipbackground.jpg");  The image used */
   background-position: top; /* Center the image */
@@ -271,14 +271,14 @@ a{
 
 .col1of3 {
   flex: 33%;
-  background-color: #2F3136;
+  background-color: black;
   padding: 20px;
   min-width: 33%;
 }
 
 .col1of2 {
   flex: 50%;
-  background-color: #2F3136;
+  background-color: black;
   padding: 20px;
 }
 
