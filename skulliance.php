@@ -456,7 +456,7 @@ function renderCrafting($conn, $page){
 			?>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
-			  <br><strong>Burn CARBON to form DIAMOND</strong><br><br>
+			  <br><strong>Burn CARBON to Form DIAMOND</strong><br><br>
 			  <img class="icon" src="icons/diamond.png">
 		      <select name="carbon" id="carbon">
 			  <?php
