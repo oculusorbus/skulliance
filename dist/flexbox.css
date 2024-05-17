@@ -137,7 +137,7 @@ a{
 /* Create two unequal columns that sits next to each other */
 /* Sidebar/left column */
 .side {
-  flex: 33%;
+  flex: 25%;
   /*background-color: #32353B;*/
   /* Side background commented out
   background-color: #2F3136;*/
@@ -146,7 +146,7 @@ a{
 
 /* Main column */
 .main {
-  flex: 67%;
+  flex: 75%;
   /*background-color: #36393F;
 	background-color: #32353B;*/
   
