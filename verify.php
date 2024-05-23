@@ -79,8 +79,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 				} // End foreach
 			}
 			
-			//$asset_list["_asset_list"] = array_slice($asset_list["_asset_list"], 0, 90);
-			
+			// Batch asset list into arrays of 90 items or less to allow for successful queries
 			$batch_asset_lists = array();
 			$final_asset_lists = array();
 			$batch_index = 0;
@@ -95,13 +94,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 				}
 			}
 			
-			print_r($final_asset_lists);
-			
-			
+			foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
 				$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 				curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
 				curl_setopt( $tokench, CURLOPT_POST, 1);
-				curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($asset_list));
+				curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
 				curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
 				curl_setopt( $tokench, CURLOPT_HEADER, 0);
 				curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
@@ -224,6 +221,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 					echo "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
 					print_r($tokenresponse);
 				}
+			}
 			//updateNFTs($conn, implode("', '", $asset_names));
 		}else{
 			echo "There was no response data for stake address: ".$address." \r\n";
