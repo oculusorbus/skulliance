@@ -205,7 +205,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 						} // End if
 					} // End if
 				} // End foreach
-			}// End if
+			}else{
+				echo "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+				print_r($tokenresponse);
+			}
 			//updateNFTs($conn, implode("', '", $asset_names));
 		}else{
 			echo "There was no response data for stake address: ".$address." \r\n";
