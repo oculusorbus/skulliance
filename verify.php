@@ -83,16 +83,12 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			
 			$batch_asset_list = array();
 			$batch_index = 0;
-			$blank_array = array();
 			if(count($asset_list["_asset_list"]) < 90){
-				$batch_asset_list[$batch_index] = $asset_list["_asset_list"];
-				$batch_index++;
+				//$batch_asset_list[$batch_index]["_asset_list"] = array();
+				//$batch_asset_list[$batch_index]["_asset_list"] = $asset_list["_asset_list"];
+			}else{
+				$batch_asset_list = array_chunk($asset_list["_asset_list"], 90);
 			}
-			while(count($asset_list["_asset_list"]) > 90){
-				$batch_asset_list[$batch_index] = array_splice($asset_list["_asset_list"], 0, 90, $blank_array);
-				$batch_index++;
-			}
-			$batch_asset_list[$batch_index] = $asset_list["_asset_list"];
 			
 			print_r($batch_asset_list);
 			
