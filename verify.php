@@ -79,7 +79,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 				} // End foreach
 			}
 			
-			$asset_list = array_slice($asset_list, 0, 100);
+			$asset_list["_asset_list"] = array_slice($asset_list["_asset_list"], 0, 100);
 			
 			$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
