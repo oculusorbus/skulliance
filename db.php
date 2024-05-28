@@ -1021,9 +1021,9 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		  while($row = $result->fetch_assoc()) {
 			$nftcounter++;
 			if($diamond_skull == true){
-				echo "<div class='nft'><div class='diamond-skull-data'>";
+				echo "<section class='reveal'><div class='nft'><div class='diamond-skull-data'>";
 			}else{
-		    	echo "<div class='nft'><div class='nft-data'>";
+		    	echo "<section class='reveal'><div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
 			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]))."</a>";
@@ -1099,7 +1099,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				</form>
 				<?php
 			}
-			echo "</div></div>";
+			echo "</div></div></section>";
 		  }
 		} else {
 		  //echo "0 results";

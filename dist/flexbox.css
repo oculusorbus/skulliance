@@ -1035,6 +1035,45 @@ input:checked + .slider:before {
   filter: drop-shadow(5px 5px 5px #202225);
 }
 
+/* Reveal on Scroll */
+section {
+	/*
+	height: 300px;
+	width: 60%;
+	max-width: 600px;
+	position: relative;
+	top: 20px;
+	background-color: #fff;
+	margin: 45px auto;
+	padding: 10px 30px;
+	text-align: center;
+	border-radius: 6px;
+	text-align: left;
+	color: #333;
+	scale: 0.94;*/
+	opacity: 0;
+	transition: 0.9s;
+	transition-timing-function: cubic-bezier(0.5, 0, 0, 1);
+}
+
+section.active {
+	opacity: 1;
+	top: 0;
+	scale: 1;
+}
+
+#revealPoint {
+	position: fixed;
+	height: 20px;
+	width: 100%;
+	left: 0;
+	bottom: 150px;
+	color: red;
+	padding: 7px;
+	margin: 0;
+	border-bottom: 1px solid red;
+}
+
 /* Footer */
 .footer {
   padding: 20px;
