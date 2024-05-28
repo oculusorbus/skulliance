@@ -1022,7 +1022,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			$nftcounter++;
 			$reveal_prefix = "";
 			$reveal_suffix = "";
-			if($nftcounter > 12){
+			if($nftcounter > 16){
 				$reveal_prefix = "<section class='reveal'>";
 				$reveal_suffix = "</section>";
 			}
