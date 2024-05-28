@@ -1068,10 +1068,8 @@ section.active {
 	width: 100%;
 	left: 0;
 	bottom: 150px;
-	color: red;
 	padding: 7px;
 	margin: 0;
-	border-bottom: 1px solid red;
 }
 
 /* Footer */

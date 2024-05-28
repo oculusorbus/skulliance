@@ -29,5 +29,5 @@
 		  <a href="logout.php">Logout</a>
 		  <?php } ?>
 		</div>
-		<div id="revealPoint">Reveal Point</div>
+		<div id="revealPoint"></div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
