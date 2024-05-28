@@ -394,7 +394,7 @@ function renderCurrency($conn, $skulliance=true){
 	if(isset($balances)){
 	foreach($balances AS $currency => $balance){ 
 		?>
-		<li class="role"><img class="icon rounded-full" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.webp"/>
+		<li class="role"><img class="icon" src="icons/<?php echo strtolower(str_replace("$", "", $currency));?>.png"/>
 			<?php
 			echo number_format($balance)." ".$currency;
 			?>
