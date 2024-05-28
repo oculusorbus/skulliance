@@ -451,8 +451,8 @@ function renderCrafting($conn, $page){
 			</li>
 			<?php
 		}
-		if($carbon >= 1000){
-			$carbon_index = floor($carbon/1000);
+		if($carbon >= 100){
+			$carbon_index = floor($carbon/100);
 			?>
 			<li class="role">
 			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
@@ -461,7 +461,7 @@ function renderCrafting($conn, $page){
 		      <select name="carbon" id="carbon">
 			  <?php
 			  for ($x = 1; $x <= $carbon_index; $x++) {?>
-				    <option <?php if($carbon_index == $x){echo "selected";} ?> value="<?php echo $x*1000; ?>"><?php echo $x*1000; ?> CARBON to <?php echo $x; ?> DIAMOND</option>
+				    <option <?php if($carbon_index == $x){echo "selected";} ?> value="<?php echo $x*100; ?>"><?php echo $x*100; ?> CARBON to <?php echo $x; ?> DIAMOND</option>
 			  <?php } ?>
 			  </select>
 			  <input type="submit" value="Burn" class="small-button">
