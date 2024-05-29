@@ -278,7 +278,6 @@ if($filterby != ""){
 		 "<strong>Planet Type:</strong> "+category+
 		 "<br><br><strong>Inhabitants:</strong> "+inhabitants+
  		 "<br><br><strong>Currency:</strong> "+currency+
-		 "<br><br><strong>Population:</strong> "+population+
 		 "<br><br><strong>Delegations:</strong> "+delegations+
 		 "<br><br><strong>Delegators:</strong> "+delegators;
 		 
