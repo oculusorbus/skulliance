@@ -1169,8 +1169,8 @@ function getItems($conn, $page, $filterby=""){
 		}else{
 			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." ".$row["currency"]."</span>";
 		}*/
-		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
+		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 		renderBuyButton($row["item_id"], $row["project_id"], "BUY for ".number_format($row["price"])." ".$row["currency"], $row["project_id"], $page);
 		if($row["secondary_project_id"] != 0){
 			$project = getProjectInfo($conn, $row["secondary_project_id"]);
