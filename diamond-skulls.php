@@ -23,7 +23,7 @@ include 'header.php';
 	<h2>Empty Diamond Skulls</h2>
 	<?php } ?>
 	<a name="diamond-skulls" id="diamond-skulls"></a>
-    <div class="content">
+    <div class="content" id="filtered-content">
 		<?php filterDiamondSkulls("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
 			<?php 			

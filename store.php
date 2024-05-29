@@ -44,7 +44,7 @@ include 'header.php';
 				echo "<h2>".$title."</h2>";
 				filterItems("store");?>
 				<a name="store" id="store"></a>
-				<div class="content">
+				<div class="content" id="filtered-content">
 					<div id="nfts" class="nfts">
 						<?php 
 						if(!$member){

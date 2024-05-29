@@ -61,7 +61,7 @@ if(getVisibility($conn) == "0"){
   <div class="main">
 	<h2>Qualifying NFTs</h2>
 	<a name="holdings" id="holdings"></a>
-    <div class="content">
+    <div class="content" id="filtered-content">
 		<?php filterNFTs("dashboard"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
