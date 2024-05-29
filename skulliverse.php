@@ -276,10 +276,11 @@ if($filterby != ""){
 		 move(percentage);
 		 document.getElementById('modal-text').innerHTML = 
 		 "<strong>Planet Type:</strong> "+category+
-		 "<br><br><strong>Inhabitants:</strong> "+inhabitants+
- 		 "<br><br><strong>Currency:</strong> "+currency+
-		 "<br><br><strong>Delegations:</strong> "+delegations+
-		 "<br><br><strong>Delegators:</strong> "+delegators;
+		 "<br><strong>Inhabitants:</strong> "+inhabitants+
+ 		 "<br><strong>Currency:</strong> "+currency+
+		 "<br><strong>Population:</strong> "+population+
+		 "<br><strong>Delegations:</strong> "+delegations+
+		 "<br><strong>Delegators:</strong> "+delegators;
 		 
 		 if(project_id != 7){
 			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><br><strong>2x CARBON Rewards:</strong> "+status.toUpperCase();
