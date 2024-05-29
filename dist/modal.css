@@ -74,6 +74,13 @@
 	width: 95%;
 }
 
+#modal-text span{
+	display: block;
+    word-wrap:break-word;
+    white-space: normal;
+	padding-bottom: 5px;
+}
+
 /* Add Animation */
 @keyframes animatetop {
   from {top: -300px; opacity: 0}
