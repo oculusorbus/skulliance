@@ -1012,7 +1012,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		if($_SESSION['userData']['user_id'] == 1){
 			//$limit = " LIMIT 300";
 		}
-		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25), collection_id".$limit;
+		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30), collection_id".$limit;
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
