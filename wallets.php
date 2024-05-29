@@ -13,7 +13,7 @@ if(isset($_POST['wallet_id'])){
 		<div class="row" id="row4">
 			<div class="col1of3">
 				<h2>Wallets</h2>
-					<div class="content" id="transactions-pane">
+					<div class="content" id="player-stats">
 						<?php 
 						renderVisibility("wallets");
 						renderWalletConnection("wallets"); ?>
