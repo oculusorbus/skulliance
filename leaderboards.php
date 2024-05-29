@@ -7,16 +7,17 @@ include 'header.php';
 		<a name="leaderboards" id="leaderboards"></a>
 		<div class="row" id="row1">
 			<div class="col1of3">
-			    <div class="content">
+			    <?php
+					if($filterby != null && $filterby != 0){
+						$project = getProjectInfo($conn, $filterby);
+						$title = $project["name"];
+					}else{
+						$title = "All Projects";
+						$filterby = 0;
+					}
+					echo "<h2>".$title."</h2>";?>
+			    <div class="content" id="filtered-content">
 				    <?php
-						if($filterby != null && $filterby != 0){
-							$project = getProjectInfo($conn, $filterby);
-							$title = $project["name"];
-						}else{
-							$title = "All Projects";
-							$filterby = 0;
-						}
-						echo "<h2>".$title."</h2>";
 						filterLeaderboard("leaderboards");
 						getTotalNFTs($conn, $filterby);
 						checkLeaderboard($conn, false, $filterby);

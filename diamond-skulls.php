@@ -122,7 +122,7 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
   <div class="main">
 	<h2>NFTs</h2>
 	<a name="holdings" id="holdings"></a>
-    <div class="content">
+    <div class="content" id="filtered-content">
 		<?php filterCoreNFTs("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
 			<?php 
