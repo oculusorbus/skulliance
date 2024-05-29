@@ -65,6 +65,7 @@
 #modal-image{
 	max-width: 200px;
 	float: left;
+	margin-bottom: 40px;
 }
 
 #modal-text{
