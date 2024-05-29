@@ -85,6 +85,7 @@
 		float: none;
 		width: 100%;
 		max-width: none;
+		margin-bottom: 0px;
 	}
 	#modal-text{
 		position: relative;
