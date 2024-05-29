@@ -283,9 +283,9 @@ if($filterby != ""){
 		 "<br><strong>Delegators:</strong> "+delegators;
 		 
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><br><strong>2x CARBON Rewards:</strong> "+status.toUpperCase();
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><strong>2x CARBON Rewards:</strong> "+status.toUpperCase();
 		 }else{
-			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><br><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase();
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase();
 		 }
 
 		 if(project_id == 1){
