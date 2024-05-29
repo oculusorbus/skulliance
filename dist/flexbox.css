@@ -1092,6 +1092,15 @@ section.active {
 	.nft img {
 	    max-width: 175px;
 	}
+	#filtered-content {
+		position: relative;
+		top: 0px;
+	}
+
+	#filter-nfts {
+		position: relative;
+	    top: -10px;
+	}
 }
 
 @media screen and (max-width: 1120px) {
