@@ -40,12 +40,12 @@ include 'header.php';
 				}else{
 					$title = "All Projects";
 					$filterby = 0;
-				}?>
+				}
+				echo "<h2>".$title."</h2>";?>
 				<a name="store" id="store"></a>
 				<div class="content" id="filtered-content">
 					<?php
-					filterItems("store");
-					?>
+					filterItems("store");?>
 					<div id="nfts" class="nfts">
 						<?php 
 						if(!$member){
