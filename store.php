@@ -31,20 +31,20 @@ include 'header.php';
 				</div>
 			</div>
     		<div class="main">
-				<?php
-				if($filterby != null && $filterby != 0 && $filterby != "exclusive"){
-					$project = getProjectInfo($conn, $filterby);
-					$title = $project["name"];
-				}else if($filterby == "exclusive"){
-					$title = "Exclusive Items";
-				}else{
-					$title = "All Projects";
-					$filterby = 0;
-				}
-				echo "<h2>".$title."</h2>";
-				filterItems("store");?>
 				<a name="store" id="store"></a>
 				<div class="content" id="filtered-content">
+					<?php
+					if($filterby != null && $filterby != 0 && $filterby != "exclusive"){
+						$project = getProjectInfo($conn, $filterby);
+						$title = $project["name"];
+					}else if($filterby == "exclusive"){
+						$title = "Exclusive Items";
+					}else{
+						$title = "All Projects";
+						$filterby = 0;
+					}
+					echo "<h2>".$title."</h2>";
+					filterItems("store");?>
 					<div id="nfts" class="nfts">
 						<?php 
 						if(!$member){
