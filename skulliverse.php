@@ -197,25 +197,25 @@ include 'header.php';
 <div class="planets">
 <div class="planet diamond">
 <!--<span class="percentage"><?php echo $percentages[7]; ?>%</span>-->
-<img class="<?php echo $seven; ?>" onclick="javascript:openModal(7, '<?php echo $seven; ?>', <?php echo $percentages[7]; ?>, '<?php echo $delegations[7]; ?>', <?php echo $delegators[7]; ?>, '<?php echo $categories[7]; ?>', '<?php echo $inhabitants[7]; ?>', '<?php echo $projects[7]['currency']; ?>');" src="images/planets/diamond.gif"/></div>
+<img class="<?php echo $seven; ?>" onclick="javascript:openModal(7, '<?php echo $seven; ?>', <?php echo $percentages[7]; ?>, '<?php echo $delegations[7]; ?>', <?php echo $delegators[7]; ?>, '<?php echo $categories[7]; ?>', '<?php echo $inhabitants[7]; ?>', '<?php echo $projects[7]['currency']; ?>', '<?php echo getTotalNFTs($conn, 7); ?>');" src="images/planets/diamond.gif"/></div>
 <div class="planet crypties">
 <!--<span class="percentage"><?php echo $percentages[6]; ?>%</span>-->
-<img class="<?php echo $six; ?>" onclick="javascript:openModal(6, '<?php echo $six; ?>', <?php echo $percentages[6]; ?>, '<?php echo $delegations[6]; ?>', <?php echo $delegators[6]; ?>, '<?php echo $categories[6]; ?>', '<?php echo $inhabitants[6]; ?>', '<?php echo $projects[6]['currency']; ?>');" src="images/planets/crypties.gif"/></div>
+<img class="<?php echo $six; ?>" onclick="javascript:openModal(6, '<?php echo $six; ?>', <?php echo $percentages[6]; ?>, '<?php echo $delegations[6]; ?>', <?php echo $delegators[6]; ?>, '<?php echo $categories[6]; ?>', '<?php echo $inhabitants[6]; ?>', '<?php echo $projects[6]['currency']; ?>', '<?php echo getTotalNFTs($conn, 6); ?>');" src="images/planets/crypties.gif"/></div>
 <div class="planet kimo">
 <!--<span class="percentage"><?php echo $percentages[5]; ?>%</span>-->
-<img class="<?php echo $five; ?>" onclick="javascript:openModal(5, '<?php echo $five; ?>', <?php echo $percentages[5]; ?>, '<?php echo $delegations[5]; ?>', <?php echo $delegators[5]; ?>, '<?php echo $categories[5]; ?>', '<?php echo $inhabitants[5]; ?>', '<?php echo $projects[5]['currency']; ?>');" src="images/planets/kimo.gif"/></div>
+<img class="<?php echo $five; ?>" onclick="javascript:openModal(5, '<?php echo $five; ?>', <?php echo $percentages[5]; ?>, '<?php echo $delegations[5]; ?>', <?php echo $delegators[5]; ?>, '<?php echo $categories[5]; ?>', '<?php echo $inhabitants[5]; ?>', '<?php echo $projects[5]['currency']; ?>', '<?php echo getTotalNFTs($conn, 5); ?>');" src="images/planets/kimo.gif"/></div>
 <div class="planet sinder">
 <!--<span class="percentage"><?php echo $percentages[4]; ?>%</span>-->
-<img class="<?php echo $four; ?>" onclick="javascript:openModal(4, '<?php echo $four; ?>', <?php echo $percentages[4]; ?>, '<?php echo $delegations[4]; ?>', <?php echo $delegators[4]; ?>, '<?php echo $categories[4]; ?>', '<?php echo $inhabitants[4]; ?>', '<?php echo $projects[4]['currency']; ?>');" src="images/planets/sinder.gif"/></div>
+<img class="<?php echo $four; ?>" onclick="javascript:openModal(4, '<?php echo $four; ?>', <?php echo $percentages[4]; ?>, '<?php echo $delegations[4]; ?>', <?php echo $delegators[4]; ?>, '<?php echo $categories[4]; ?>', '<?php echo $inhabitants[4]; ?>', '<?php echo $projects[4]['currency']; ?>', '<?php echo getTotalNFTs($conn, 4); ?>');" src="images/planets/sinder.gif"/></div>
 <div class="planet hype">
 <!--<span class="percentage"><?php echo $percentages[3]; ?>%</span>-->
-<img class="<?php echo $three; ?>" onclick="javascript:openModal(3, '<?php echo $three; ?>', <?php echo $percentages[3]; ?>, '<?php echo $delegations[3]; ?>', <?php echo $delegators[3]; ?>, '<?php echo $categories[3]; ?>', '<?php echo $inhabitants[3]; ?>', '<?php echo $projects[3]['currency']; ?>');" src="images/planets/hype.gif"/></div>
+<img class="<?php echo $three; ?>" onclick="javascript:openModal(3, '<?php echo $three; ?>', <?php echo $percentages[3]; ?>, '<?php echo $delegations[3]; ?>', <?php echo $delegators[3]; ?>, '<?php echo $categories[3]; ?>', '<?php echo $inhabitants[3]; ?>', '<?php echo $projects[3]['currency']; ?>', '<?php echo getTotalNFTs($conn, 3); ?>');" src="images/planets/hype.gif"/></div>
 <div class="planet meed">
 <!--<span class="percentage"><?php echo $percentages[2]; ?>%</span>-->
-<img class="<?php echo $two; ?>" onclick="javascript:openModal(2, '<?php echo $two; ?>', <?php echo $percentages[2]; ?>, '<?php echo $delegations[2]; ?>', <?php echo $delegators[2]; ?>, '<?php echo $categories[2]; ?>', '<?php echo $inhabitants[2]; ?>', '<?php echo $projects[2]['currency']; ?>');" src="images/planets/meed.gif"/></div>
+<img class="<?php echo $two; ?>" onclick="javascript:openModal(2, '<?php echo $two; ?>', <?php echo $percentages[2]; ?>, '<?php echo $delegations[2]; ?>', <?php echo $delegators[2]; ?>, '<?php echo $categories[2]; ?>', '<?php echo $inhabitants[2]; ?>', '<?php echo $projects[2]['currency']; ?>', '<?php echo getTotalNFTs($conn, 2); ?>');" src="images/planets/meed.gif"/></div>
 <div class="planet galactico">
 <!--<span class="percentage"><?php echo $percentages[1]; ?>%</span>-->
-<img class="<?php echo $one; ?>" onclick="javascript:openModal(1, '<?php echo $one; ?>', <?php echo $percentages[1]; ?>, '<?php echo $delegations[1]; ?>', <?php echo $delegators[1]; ?>, '<?php echo $categories[1]; ?>', '<?php echo $inhabitants[1]; ?>', '<?php echo $projects[1]['currency']; ?>');" src="images/planets/galactico.gif"/></div>
+<img class="<?php echo $one; ?>" onclick="javascript:openModal(1, '<?php echo $one; ?>', <?php echo $percentages[1]; ?>, '<?php echo $delegations[1]; ?>', <?php echo $delegators[1]; ?>, '<?php echo $categories[1]; ?>', '<?php echo $inhabitants[1]; ?>', '<?php echo $projects[1]['currency']; ?>', '<?php echo getTotalNFTs($conn, 1); ?>');" src="images/planets/galactico.gif"/></div>
 </div>
 				</div>
 			</div>
@@ -270,7 +270,7 @@ if($filterby != ""){
    		}
 	}
 	
-	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, currency){
+	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, currency, population){
 		 modal.style.display = "block";
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
@@ -279,7 +279,8 @@ if($filterby != ""){
 		 "<br><br><strong>Inhabitants:</strong> "+inhabitants+
  		 "<br><br><strong>Currency:</strong> "+currency+
 		 "<br><br><strong>Delegations:</strong> "+delegations+
-		 "<br><br><strong>Delegators:</strong> "+delegators;
+		 "<br><br><strong>Delegators:</strong> "+delegators+
+		 "<br><br><strong>Population:</strong> "+population;
 		 
 		 if(project_id != 7){
 			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><br><strong>2x CARBON Rewards:</strong> "+status.toUpperCase();
