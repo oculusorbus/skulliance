@@ -275,17 +275,17 @@ if($filterby != ""){
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
 		 document.getElementById('modal-text').innerHTML = 
-		 "<strong>Planet Type:</strong> "+category+
-		 "<br><strong>Inhabitants:</strong> "+inhabitants+
- 		 "<br><strong>Currency:</strong> "+currency+
-		 "<br><strong>Population:</strong> "+population+
-		 "<br><strong>Delegations:</strong> "+delegations+
-		 "<br><strong>Delegators:</strong> "+delegators;
+		 "<ul><li><strong>Planet Type:</strong> "+category+"</li>"+
+		 "<li><strong>Inhabitants:</strong> "+inhabitants+"</li>"+
+ 		 "<li><strong>Currency:</strong> "+currency+"</li>"+
+		 "<li><strong>Population:</strong> "+population+"</li>"+
+		 "<li><strong>Delegations:</strong> "+delegations+"</li>"+
+		 "<li><strong>Delegators:</strong> "+delegators+"</li>";
 		 
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><strong>2x CARBON Rewards:</strong> "+status.toUpperCase();
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<li><strong>2x CARBON Rewards:</strong> "+status.toUpperCase()+"</li></ul>";
 		 }else{
-			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<br><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase();
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<li><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase()+"</li></ul>";
 		 }
 
 		 if(project_id == 1){
