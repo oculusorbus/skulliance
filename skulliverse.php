@@ -275,17 +275,17 @@ if($filterby != ""){
 		 //document.getElementById('myBar').style.width = percentage+"%";
 		 move(percentage);
 		 document.getElementById('modal-text').innerHTML = 
-		 "<ul><li><strong>Planet Type:</strong> "+category+"</li>"+
-		 "<li><strong>Inhabitants:</strong> "+inhabitants+"</li>"+
- 		 "<li><strong>Currency:</strong> "+currency+"</li>"+
-		 "<li><strong>Population:</strong> "+population+"</li>"+
-		 "<li><strong>Delegations:</strong> "+delegations+"</li>"+
-		 "<li><strong>Delegators:</strong> "+delegators+"</li>";
+		 "<span><strong>Planet Type:</strong> "+category+"</span>"+
+		 "<span><strong>Inhabitants:</strong> "+inhabitants+"</span>"+
+ 		 "<span><strong>Currency:</strong> "+currency+"</span>"+
+		 "<span><strong>Population:</strong> "+population+"</span>"+
+		 "<span><strong>Delegations:</strong> "+delegations+"</span>"+
+		 "<span><strong>Delegators:</strong> "+delegators+"</span>";
 		 
 		 if(project_id != 7){
-			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<li><strong>2x CARBON Rewards:</strong> "+status.toUpperCase()+"</li></ul>";
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<span><strong>2x CARBON Rewards:</strong> "+status.toUpperCase()+"</span>";
 		 }else{
-			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<li><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase()+"</li></ul>";
+			 document.getElementById('modal-text').innerHTML = document.getElementById('modal-text').innerHTML+"<span><strong>2x DIAMOND Rewards:</strong> "+status.toUpperCase()+"</span>";
 		 }
 
 		 if(project_id == 1){
