@@ -51,7 +51,7 @@ if(getVisibility($conn) == "0"){
 		<div class="content" id="player-stats">
 			<?php renderCrafting($conn, "dashboard"); ?>
 		</div>
-		<h2>Partner Projects</h2>
+		<h2>Partners</h2>
 		<div class="content" id="player-stats">
 			<ul>
 			<?php renderCurrency($conn, false); ?>
