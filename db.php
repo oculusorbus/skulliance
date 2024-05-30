@@ -1784,79 +1784,84 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			echo "<table id='transactions' cellspacing='0'>";
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
-				$leaderboardCounter++;
-				$width = 40;
-				$trophy = "";
-				if($leaderboardCounter == 1){
-					//$width = 50;
-					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
-					}
-				}else if($leaderboardCounter == 2){
-					//$width = 45;
-					if($last_total != $row["total"]){
-						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
-					}else{
-						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
-						$leaderboardCounter--;
-					}
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
-					}
-				}else if($leaderboardCounter == 3){
-					//$width = 40;
-					if($last_total != $row["total"]){
-						$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
-						$third_total = $row["total"];
-					}else{
-						$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
-						$leaderboardCounter--;
-					}
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
-					}
-				}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
-					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
-					$leaderboardCounter--;
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
-						$fireworks = true;
-					}
-				}else if($leaderboardCounter > 3 && $last_total == $row["total"]){
-					$leaderboardCounter--;
-				}
-				//$level = floor($row["xp"]/100);
-				$avatar = "";
-				if($row["avatar"] != ""){
-					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
-				}
-				$highlight = "";
-				if(isset($_SESSION['userData']['user_id'])){
-					if($row["user_id"] == $_SESSION['userData']['user_id']){
-						$highlight = "highlight";
-					}
-				}
-				$current_balance = getCurrentBalance($conn, $row["user_id"], $project_id);
-				if($current_balance == "false"){
-					$current_balance = 0;
-				}
-				$delegated = "";
-				$diamond_skull_count = "";
-				if($project_id == "15"){
-					$row["currency"] = "CARBON";
-					$delegated = " Delegated";
-					$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
-				}
-				$username = "";
-				if($row["visibility"] == "2"){
-					$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
+				// Filter out project owners
+				if($row["discord_id"] == $row["project_discord_id"] && $row["project_discord_id"] != "772831523899965440"){
+					// Do not generate row for project owners unless Oculus Orbus
 				}else{
-					$username = $row["username"];
+					$leaderboardCounter++;
+					$width = 40;
+					$trophy = "";
+					if($leaderboardCounter == 1){
+						//$width = 50;
+						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+						if($_SESSION['userData']['user_id'] == $row["user_id"]){
+							$fireworks = true;
+						}
+					}else if($leaderboardCounter == 2){
+						//$width = 45;
+						if($last_total != $row["total"]){
+							$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+						}else{
+							$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+							$leaderboardCounter--;
+						}
+						if($_SESSION['userData']['user_id'] == $row["user_id"]){
+							$fireworks = true;
+						}
+					}else if($leaderboardCounter == 3){
+						//$width = 40;
+						if($last_total != $row["total"]){
+							$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+							$third_total = $row["total"];
+						}else{
+							$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+							$leaderboardCounter--;
+						}
+						if($_SESSION['userData']['user_id'] == $row["user_id"]){
+							$fireworks = true;
+						}
+					}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
+						$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+						$leaderboardCounter--;
+						if($_SESSION['userData']['user_id'] == $row["user_id"]){
+							$fireworks = true;
+						}
+					}else if($leaderboardCounter > 3 && $last_total == $row["total"]){
+						$leaderboardCounter--;
+					}
+					//$level = floor($row["xp"]/100);
+					$avatar = "";
+					if($row["avatar"] != ""){
+						$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					}
+					$highlight = "";
+					if(isset($_SESSION['userData']['user_id'])){
+						if($row["user_id"] == $_SESSION['userData']['user_id']){
+							$highlight = "highlight";
+						}
+					}
+					$current_balance = getCurrentBalance($conn, $row["user_id"], $project_id);
+					if($current_balance == "false"){
+						$current_balance = 0;
+					}
+					$delegated = "";
+					$diamond_skull_count = "";
+					if($project_id == "15"){
+						$row["currency"] = "CARBON";
+						$delegated = " Delegated";
+						$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
+					}
+					$username = "";
+					if($row["visibility"] == "2"){
+						$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
+					}else{
+						$username = $row["username"];
+					}
+					echo "<tr class='".$highlight."'>";
+			    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
+					echo "</tr>";
+					$last_total = $row["total"];
 				}
-				echo "<tr class='".$highlight."'>";
-		    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
-				echo "</tr>";
-				$last_total = $row["total"];
 		  	}
 			//echo "</ul>";
 			echo "</table>";
