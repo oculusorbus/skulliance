@@ -18,7 +18,7 @@ if(isset($_GET['username'])){
   <div class="main">
 	<h2><?php echo ucfirst($username); ?> NFTs</h2>
 	<a name="holdings" id="holdings"></a>
-    <div class="content">
+    <div class="content" id="filtered-content">
 		<?php filterNFTs("showcase", $username); ?>
 		<div id="nfts" class="nfts">
 			<?php 
