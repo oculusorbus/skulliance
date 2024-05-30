@@ -1761,7 +1761,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			$where = "WHERE collections.project_id = '".$project_id."'";
 		}
 	}
-	$sql = "SELECT nfts.id, nfts.user_id, COUNT(nfts.id) as total, users.username, users.visibility, users.discord_id AS discord_id, avatar, projects.id AS project_id, currency FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." GROUP BY nfts.user_id ORDER BY total DESC";
+	$sql = "SELECT nfts.id, nfts.user_id, COUNT(nfts.id) as total, users.username, users.visibility, users.discord_id AS discord_id, avatar, projects.id AS project_id, projects.discord_id AS project_discord_id, currency FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id ".$inner_join.$where." GROUP BY nfts.user_id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -1784,6 +1784,9 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			echo "<table id='transactions' cellspacing='0'>";
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
+				// Filter out 
+				if($row["discord_id"] != $row["project_discord_id"]){
+				
 				$leaderboardCounter++;
 				$width = 40;
 				$trophy = "";
@@ -1857,6 +1860,8 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
 				echo "</tr>";
 				$last_total = $row["total"];
+				
+				}
 		  	}
 			//echo "</ul>";
 			echo "</table>";
