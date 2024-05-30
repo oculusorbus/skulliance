@@ -1786,7 +1786,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		  	while($row = $result->fetch_assoc()) {
 				// Filter out project owners
 				if(($row["discord_id"] == $row["project_discord_id"] && $row["project_discord_id"] != "772831523899965440") || ($project_id == '5' && $row["discord_id"] == "183841115286405121")){
-					// Do not generate row for project owners unless Oculus Orbus
+					// Do not generate row for project owners unless Oculus Orbus and filter out Kimosabe
 				}else{
 					$leaderboardCounter++;
 					$width = 40;
