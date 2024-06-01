@@ -674,6 +674,10 @@ li form {
 	padding-right: 20px;
 }
 
+.project-row h2 {
+	margin-left: 10px;
+}
+
 .projects {
 	background-color: black;
 }

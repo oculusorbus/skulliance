@@ -142,8 +142,8 @@
 	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png"></div>
   </div>
 </div>
-<div class="row" id="row1">
-	<h2>Core Artists</h2>
+<div class="row project-row" id="row1">
+	<h2>Founding Artists</h2>
 	<div class="projects">
 		<div class="project">
 			<img src="images/projects/galactico.png"/>
@@ -156,7 +156,7 @@
 		</div>
 	</div>
 </div>
-<div class="row" id="row1">
+<div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
 			<img src="images/projects/sinderskullz.png"/>
