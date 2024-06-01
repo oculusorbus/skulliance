@@ -674,6 +674,10 @@ li form {
 	padding-right: 20px;
 }
 
+.projects {
+	background-color: black;
+}
+
 .project {
 	float: left;
 	width:33%;
