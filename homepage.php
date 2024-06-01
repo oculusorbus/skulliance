@@ -86,6 +86,9 @@
 		  }
 	  }
 	  @media screen and (max-width: 700px) {
+		  .project {
+			  width: 100%;
+		  }
 	  	  .navbar {
 			  display: none;
 	  	  }
