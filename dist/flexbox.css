@@ -675,7 +675,8 @@ li form {
 }
 
 .project-row h2 {
-	margin-left: 25px;
+	margin: 25px;
+	width: 100%;
 }
 
 .projects {
