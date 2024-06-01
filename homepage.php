@@ -144,25 +144,29 @@
 </div>
 <h2>Core Artists</h2>
 <div class="row" id="row1">
-	<div class="project">
-		<img src="images/projects/galactico.png"/>
-	</div>
-	<div class="project">
-		<img src="images/projects/ohhmeed.png"/>
-	</div>
-	<div class="project">
-		<img src="images/projects/hype.png"/>
+	<div class="projects">
+		<div class="project">
+			<img src="images/projects/galactico.png"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/ohhmeed.png"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/hype.png"/>
+		</div>
 	</div>
 </div>
 <div class="row" id="row1">
-	<div class="project">
-		<img src="images/projects/sinderskullz.png"/>
-	</div>
-	<div class="project">
-		<img src="images/projects/kimosabe.png"/>
-	</div>
-	<div class="project">
-		<img src="images/projects/crypties.png"/>
+	<div class="projects">
+		<div class="project">
+			<img src="images/projects/sinderskullz.png"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/kimosabe.png"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/crypties.png"/>
+		</div>
 	</div>
 </div>
 

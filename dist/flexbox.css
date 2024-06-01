@@ -679,6 +679,10 @@ li form {
 	width:33%;
 }
 
+.project img{
+	width: 100%;
+}
+
 .nfts {
 	color: #D6DDDE;
 }
