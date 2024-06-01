@@ -142,8 +142,8 @@
 	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png"></div>
   </div>
 </div>
+<h2>Core Artists</h2>
 <div class="row" id="row1">
-	<h2>Core Artists</h2>
 	<div class="project">
 		<img src="images/projects/galactico.png"/>
 	</div>
