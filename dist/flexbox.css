@@ -674,6 +674,11 @@ li form {
 	padding-right: 20px;
 }
 
+.project {
+	float: left;
+	width:33%;
+}
+
 .nfts {
 	color: #D6DDDE;
 }

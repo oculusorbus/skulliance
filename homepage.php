@@ -142,6 +142,30 @@
 	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png"></div>
   </div>
 </div>
+<div class="row" id="row1">
+	<h2>Core Artists</h2>
+	<div class="project">
+		<img src="galactico.png"/>
+	</div>
+	<div class="project">
+		<img src="ohhmeed.png"/>
+	</div>
+	<div class="project">
+		<img src="hype.png"/>
+	</div>
+</div>
+<div class="row" id="row1">
+	<div class="project">
+		<img src="sinderskullz.png"/>
+	</div>
+	<div class="project">
+		<img src="kimosabe.png"/>
+	</div>
+	<div class="project">
+		<img src="crypties.png"/>
+	</div>
+</div>
+
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
