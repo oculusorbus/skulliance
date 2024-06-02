@@ -679,6 +679,7 @@ li form {
 	max-width: 1500px;
 	margin: 0 auto;
 	padding: 25px;
+	background-color: black;
 }
 
 .project-row {
