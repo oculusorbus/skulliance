@@ -256,16 +256,16 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<h3>Discord Login</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/discord.png"/></a>
+		</div>
+		<div class="project">
 			<h3>Dashboard</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
 		</div>
 		<div class="project">
 			<h3>Staking Store</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
-		</div>
-		<div class="project">
-			<h3>Leaderboards</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
 		</div>
 	</div>
 </div>
@@ -288,16 +288,16 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<h3>Leaderboards</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
+		</div>
+		<div class="project">
 			<h3>Collections</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png"/></a>
 		</div>
 		<div class="project">
 			<h3>Transaction History</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png"/></a>
-		</div>
-		<div class="project">
-			<h3>Wallet Management</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/wallets.png"/></a>
 		</div>
 	</div>
 </div>
