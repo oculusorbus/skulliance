@@ -160,26 +160,26 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://www.galacticocnft.com" target="_blank"><img src="images/projects/galactico.png"/></a>
+			<a href="https://x.com/GalacticoNFT" target="_blank"><img src="images/projects/galactico.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/ohhmeed.png"/>
+			<a href="https://x.com/ohh_meed" target="_blank"><img src="images/projects/ohhmeed.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/hype.png"/>
+			<a href="https://x.com/haveyouseenhype" target="_blank"><img src="images/projects/hype.png"/></a>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/sinderskullz.png"/>
+			<a href="https://x.com/SinderSkullz" target="_blank"><img src="images/projects/sinderskullz.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/kimosabe.png"/>
+			<a href="https://x.com/Nft4R" target="_blank"><img src="images/projects/kimosabe.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/crypties.png"/>
+			<a href="https://x.com/cryptiesnft" target="_blank"><img src="images/projects/crypties.png"/></a>
 		</div>
 	</div>
 </div>
@@ -188,49 +188,49 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/netanelcohen.png"/>
+			<a href="https://x.com/netanelchn" target="_blank"><img src="images/projects/netanelcohen.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/grey.png"/>
+			<a href="https://x.com/diexgrey" target="_blank"><img src="images/projects/grey.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/threefoldbold.png"/>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
-			<img src="images/projects/maxingo.png"/>
-		</div>
-		<div class="project">
-			<img src="images/projects/deadpophell.png"/>
-		</div>
-		<div class="project">
-			<img src="images/projects/jordi.png"/>
+			<a href="https://x.com/Threefoldbold" target="_blank"><img src="images/projects/threefoldbold.png"/></a>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/danketsu.png"/>
+			<a href="https://x.com/madmaxi__" target="_blank"><img src="images/projects/maxingo.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/cardanocamera.jpg"/>
+			<a href="https://x.com/deadpophell" target="_blank"><img src="images/projects/deadpophell.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/apprentices.png"/>
+			<a href="https://x.com/JordiLeitao" target="_blank"><img src="images/projects/jordi.png"/></a>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/mipatoys.jpg"/>
+			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="images/projects/danketsu.png"/></a>
 		</div>
 		<div class="project">
-			<img src="images/projects/ascenderone.jpg"/>
+			<a href="https://x.com/cardanocamera" target="_blank"><img src="images/projects/cardanocamera.jpg"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="images/projects/apprentices.png"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://x.com/MipaToys" target="_blank"><img src="images/projects/mipatoys.jpg"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/AscenderOne" target="_blank"><img src="images/projects/ascenderone.jpg"/></a>
 		</div>
 	</div>
 </div>
