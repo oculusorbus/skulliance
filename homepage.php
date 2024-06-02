@@ -223,12 +223,11 @@
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
-
-		<div class="project">
-			<img src="images/projects/cardanocamera.jpg"/>
-		</div>
 		<div class="project">
 			<img src="images/projects/mipatoys.jpg"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/ascenderone.jpg"/>
