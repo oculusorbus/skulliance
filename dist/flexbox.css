@@ -277,19 +277,23 @@ a{
 }
 
 .3up {
-	width:33.33%;
+	float: left;
+	width: 33.33%;
 }
 
 .4up {
-	width:25%;
+	float: left;
+	width: 25%;
 }
 
 .5up {
-	width:20%;
+	float: left;
+	width: 20%;
 }
 
 .6up {
-	width:16.66%;
+	float: left;
+	width: 16.66%;
 }
 
 .col1of3 {
