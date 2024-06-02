@@ -35,6 +35,7 @@
   <style>
 	  body {
 		  background-image: none;
+		  background-color: black;
 	  }
 	  
 	  .container {
