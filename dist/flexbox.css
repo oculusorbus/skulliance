@@ -674,15 +674,19 @@ li form {
 	padding-right: 20px;
 }
 
-.project-row {
+.projects-container {
 	width: 100%;
 	max-width: 1500px;
 	margin: 0 auto;
 }
 
-.project-row h2 {
-	margin: 25px;
-	width: 90%;
+.projects-container h2 {
+	padding: 25px;
+	width: 100%;
+}
+
+.project-row {
+	width: 100%;
 }
 
 .projects {

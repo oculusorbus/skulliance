@@ -147,8 +147,9 @@
 	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png"></div>
   </div>
 </div>
+<div class="projects-container">
+<h2>Founding Artists</h2>
 <div class="row project-row" id="row1">
-	<h2>Founding Artists</h2>
 	<div class="projects">
 		<div class="project">
 			<img src="images/projects/galactico.png"/>
@@ -174,8 +175,8 @@
 		</div>
 	</div>
 </div>
+<h2>Staking Partners</h2>
 <div class="row project-row" id="row1">
-	<h2>Staking Partners</h2>
 	<div class="projects">
 		<div class="project">
 			<img src="images/projects/netanelcohen.png"/>
@@ -213,6 +214,7 @@
 			<img src="images/projects/jordi.png"/>
 		</div>
 	</div>
+</div>
 </div>
 
 	<!-- Footer -->
