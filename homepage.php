@@ -225,11 +225,11 @@
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
-		<div style="width:50%">
-			<img style="max-width:50%;" src="images/projects/mipatoys.jpg"/>
+		<div class="project">
+			<img src="images/projects/mipatoys.jpg"/>
 		</div>
-		<div style="width:50%">
-			<img style="max-width:50%;" src="images/projects/ascenderone.jpg"/>
+		<div class="project">
+			<img src="images/projects/ascenderone.jpg"/>
 		</div>
 	</div>
 </div>
