@@ -84,7 +84,7 @@
 	  .burger-menu{
 	  	  display: none;
 	  }
-	  @media screen and (min-width: 901px) {
+	  @media screen and (min-width: 701px) {
 		  #burger-menu{
 		  	  display: none;
 		  }
@@ -92,7 +92,7 @@
 		  	  display: flex;
 		  }
 	  }
-	  @media screen and (max-width: 900px) {
+	  @media screen and (max-width: 700px) {
 		  .project {
 			  width: 100%;
 		  }
