@@ -214,10 +214,10 @@
 			<img src="images/projects/danketsu.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/pendulum.jpg"/>
+			<img src="images/projects/apprentices.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/apprentices.png"/>
+			<img src="images/projects/pendulum.jpg"/>
 		</div>
 	</div>
 </div>
