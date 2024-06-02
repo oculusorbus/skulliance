@@ -106,9 +106,6 @@
 		  .navbar a{
 		  	  width: 100%;
 		  }
-		  .main {
-			  padding: 0px;
-		  }
 	      #burger-menu {
 			  display: block;
 	          position: relative;
