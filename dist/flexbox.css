@@ -676,6 +676,7 @@ li form {
 
 .project-row {
 	max-width: 1500px;
+	margin: 0 auto;
 }
 
 .project-row h2 {
