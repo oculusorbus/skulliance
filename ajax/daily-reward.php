@@ -1,13 +1,11 @@
 <?php
-echo "here";
-/*
 include 'db.php';
 include 'skulliance.php';
 
-$project = array();
-$project = getRandomReward($conn);
+//$project = array();
+//$project = getRandomReward($conn);
 
-echo $project["currency"];
+//echo $project["currency"];
 
 // Close DB Connection
 $conn->close();*/
