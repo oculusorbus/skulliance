@@ -204,7 +204,7 @@
 			<img src="images/projects/deadpophell.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/pendulum.jpg"/>
+			<img src="images/projects/jordi.png"/>
 		</div>
 	</div>
 </div>
@@ -214,7 +214,7 @@
 			<img src="images/projects/danketsu.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/jordi.png"/>
+			<img src="images/projects/pendulum.jpg"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/apprentices.png"/>
