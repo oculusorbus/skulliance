@@ -260,7 +260,7 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Leaderboard</h3>
+			<h3>Leaderboards</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
 		</div>
 		<div class="project">
