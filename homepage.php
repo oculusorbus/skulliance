@@ -160,7 +160,7 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/galactico.png"/>
+			<a href="https://www.galacticocnft.com" target="_blank"><img src="images/projects/galactico.png"/></a>
 		</div>
 		<div class="project">
 			<img src="images/projects/ohhmeed.png"/>
