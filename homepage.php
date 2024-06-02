@@ -197,10 +197,10 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/pendulum.jpg"/>
+			<img src="images/projects/danketsu.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/danketsu.png"/>
+			<img src="images/projects/deadpophell.png"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/apprentices.png"/>
@@ -213,7 +213,7 @@
 			<img src="images/projects/grey.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/deadpophell.png"/>
+			<img src="images/projects/ascenderone.jpg"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/jordi.png"/>
@@ -222,10 +222,7 @@
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
-		<div class="project">
-			<img src="images/projects/ascenderone.jpg"/>
-		</div>
-		<div class="project">
+		<div class="project" style="width:100%">
 			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
 	</div>
