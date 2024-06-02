@@ -41,7 +41,7 @@
 	  .container {
 		  max-width: 100% !important;
 		  background-color: black;
-		  max-height: 1350px;
+		  max-height: 1350px !important;
 	  }
 	  .main {
 	      align-items: center !important;
