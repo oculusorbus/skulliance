@@ -39,7 +39,9 @@
 	  }
 	  
 	  .container {
+		  max-width: 100% !important;
 		  background-color: black;
+		  max-height: 1350px;
 	  }
 	  .main {
 	      align-items: center !important;
