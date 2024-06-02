@@ -84,7 +84,7 @@
 	  .burger-menu{
 	  	  display: none;
 	  }
-	  @media screen and (min-width: 701px) {
+	  @media screen and (min-width: 901px) {
 		  #burger-menu{
 		  	  display: none;
 		  }
