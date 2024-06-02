@@ -205,7 +205,7 @@
 			<img src="images/projects/grey.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/ascenderone.jpg"/>
+			<img src="images/projects/deadpophell.png"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/jordi.png"/>
@@ -215,7 +215,7 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/deadpophell.png"/>
+			<img src="images/projects/ascenderone.jpg"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/cardanocamera.jpg"/>
