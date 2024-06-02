@@ -260,12 +260,12 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Showcase</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/showcase.png"/></a>
-		</div>
-		<div class="project">
 			<h3>Staking Store</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Showcase</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/showcase.png"/></a>
 		</div>
 	</div>
 </div>
