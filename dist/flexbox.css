@@ -696,6 +696,7 @@ li form {
 .project {
 	float: left;
 	width: 33.33%;
+	padding: 10px;
 }
 
 .project img{
