@@ -216,22 +216,19 @@
 			<img src="images/projects/danketsu.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/apprentices.png"/>
+			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/pendulum.jpg"/>
+			<img src="images/projects/apprentices.png"/>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
-		<div class="project">
+		<div style="width:25%">
 			<img src="images/projects/mipatoys.jpg"/>
 		</div>
-		<div class="project">
-			<img src="images/projects/cardanocamera.jpg"/>
-		</div>
-		<div class="project">
+		<div style="width:25%">
 			<img src="images/projects/ascenderone.jpg"/>
 		</div>
 	</div>
