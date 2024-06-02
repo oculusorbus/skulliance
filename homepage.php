@@ -162,7 +162,7 @@
 <br>
 <h2>Mission</h2>
 <p>The mission of Skulliance is to connect skull art investors with the premier skull NFT artists on the Cardano blockchain and elevate the collective art form and community within the space.</p>
-<img src="images/skulliance-group.jpg" width="100%"/>
+<img src="https://www.skulliance.io/staking/images/skulliance-group.jpg" width="100%"/>
 <a id="artists" name="artists"></a>
 <br><br>
 <h2>Founding Artists</h2>
@@ -246,6 +246,36 @@
 		</div>
 		<div class="project">
 			<a href="https://x.com/skulliance" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/skulliance.jpg"/></a>
+		</div>
+	</div>
+</div>
+<a id="partners" name="partners"></a>
+<br>
+<h2>Staking Platform</h2>
+<p>The Skulliance staking platform allows for holders to connect their Cardano wallets and load in their qualifying NFTs. Holders will then begin to earn off-chain points nightly that can be redeemed for exclusive incentives from the staking store. Holders can also delegate core project NFTs to Diamond Skulls to earn CARBON which can be burned to create DIAMOND. The Skulliverse highlights the status of Diamond Skull delegations for all core projects and whether there are any reward multipliers for that planet.</p>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png"/></a>
 		</div>
 	</div>
 </div>
