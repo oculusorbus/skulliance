@@ -167,7 +167,7 @@
 <br><br>
 <h2>Founding Artists</h2>
 <p>The following artists specialize in skull art on Cardano and came together to form Skulliance under the leadership of Oculus Orbus, an avid skull NFT collector and developer. Oculus Orbus developed a staking platform that allows holders of NFTs from these artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
-<h3>Membership requires 1 NFT from Crypties, Kimosabe Art, and Sinder Skullz.</h3>
+<h3>Membership requires 1 NFT from Sinder Skullz, Kimosabe Art, and Crypties.</h3>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
