@@ -675,13 +675,14 @@ li form {
 }
 
 .project-row {
+	width: 100%;
 	max-width: 1500px;
 	margin: 0 auto;
 }
 
 .project-row h2 {
 	margin: 25px;
-	width: 100%;
+	width: 90%;
 }
 
 .projects {
