@@ -155,11 +155,12 @@
   </div>
 </div>
 <div class="projects-container">
-<a id="mission" name="mission"/>
+<a id="mission" name="mission"></a>
+<br>
 <h2>Mission</h2>
 <p>The mission of Skulliance is to connect skull art investors with the premier skull NFT projects on Cardano and elevate the collective art form and community within the space.</p>
+<a id="artists" name="artists"></a>
 <br><br>
-<a id="artists" name="artists"/>
 <h2>Founding Artists</h2>
 <p>The following artists specialize in skull art on Cardano and came together to form Skulliance. Skulliance developed a staking platform that allows holders of NFTs from these artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
 <div class="row project-row" id="row1">
@@ -188,7 +189,8 @@
 		</div>
 	</div>
 </div>
-<a id="partners" name="partners"/>
+<a id="partners" name="partners"></a>
+<br>
 <h2>Staking Partners</h2>
 <p>With the success of the Skulliance staking platform. Skulliance chose to invite other high quality artists and projects on Cardano to participate in partner staking. This allows for holders of their NFTs to earn off-chain points and redeem them for exclusive incentives.</p>
 <div class="row project-row" id="row1">
