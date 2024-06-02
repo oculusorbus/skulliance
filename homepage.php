@@ -54,7 +54,6 @@
 		  background-repeat: no-repeat;
 		  background-attachment: fixed;
 		  background-position: center;
-		  min-height: 1350px;
 		  max-height: 1350px;
 		  height: 100%;
 	  }
