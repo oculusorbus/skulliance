@@ -685,6 +685,11 @@ li form {
 	width: 100%;
 }
 
+.projects-container p {
+	padding: 25px;
+	width: 100%;
+}
+
 .project-row {
 	width: 100%;
 }
