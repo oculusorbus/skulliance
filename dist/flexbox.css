@@ -674,6 +674,10 @@ li form {
 	padding-right: 20px;
 }
 
+.project-row {
+	max-width: 1500px;
+}
+
 .project-row h2 {
 	margin: 25px;
 	width: 100%;
