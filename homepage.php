@@ -35,7 +35,7 @@
   <style>
 	  
 	  .container {
-		  max-width: none !important;
+		  max-width: 100% !important;
 		  background-color: black;
 	  }
 	  .main {
