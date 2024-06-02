@@ -1,4 +1,6 @@
 <?php
+echo "here";
+/*
 include 'db.php';
 include 'skulliance.php';
 
@@ -8,5 +10,5 @@ $project = getRandomReward($conn);
 echo $project["currency"];
 
 // Close DB Connection
-$conn->close();
+$conn->close();*/
 ?>
