@@ -191,14 +191,14 @@
 			<img src="images/projects/grey.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/maxingo.png"/>
+			<img src="images/projects/threefoldbold.png"/>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/threefoldbold.png"/>
+			<img src="images/projects/maxingo.png"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/deadpophell.png"/>
