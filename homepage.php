@@ -39,7 +39,6 @@
 	  }
 	  
 	  .container {
-		  max-width: 100% !important;
 		  background-color: black;
 	  }
 	  .main {
