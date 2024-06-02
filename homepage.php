@@ -33,15 +33,7 @@
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="https://www.skulliance.io/staking/dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <style>
-	  body {
-		  background-image: none;
-		  background-color: black;
-	  }
-	  
-	  .container {
-		  max-width: 100% !important;
-		  background-color: black;
-	  }
+
 	  .main {
 	      align-items: center !important;
 		  display: flex !important;
