@@ -33,6 +33,10 @@
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="https://www.skulliance.io/staking/dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <style>
+	  body {
+		  background-image: none;
+	  }
+	  
 	  .container {
 		  max-width: none !important;
 	  }
