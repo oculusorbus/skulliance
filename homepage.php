@@ -152,7 +152,7 @@
   </div>
 </div>
 <div class="projects-container">
-<h2>Mission</h2>
+<h2>MISSION</h2>
 <p>The mission of Skulliance is to connect skull art investors with the premier skull NFT projects on Cardano and elevate the collective art form and community within the space.</p>
 <br><br>
 <h2>Founding Artists</h2>
