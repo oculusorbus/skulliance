@@ -189,7 +189,7 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<img src="images/projects/pendulum.png"/>
+			<img src="images/projects/pendulum.jpg"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/danketsu.png"/>
