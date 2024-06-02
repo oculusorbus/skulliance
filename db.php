@@ -310,6 +310,13 @@ function getProjects($conn, $type=""){
 	}
 }
 
+// Get random daily reward for user
+function getRandomReward($conn){
+	$projects = array();
+	$projects = getProjects($conn, $type="");
+	return $projects[rand(1, count($projects))];
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){

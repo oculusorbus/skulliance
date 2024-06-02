@@ -49,10 +49,7 @@ if(getVisibility($conn) == "0"){
 		<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 		<h2>Daily Rewards</h2>
 		<div class="content" id="player-stats">
-			<form id="dailyRewardsForm" action="<?php echo $page; ?>.php" method="post">
-			  <input type="hidden" id="reward" name="reward" value="true">
-			  <input type="submit" value="Claim Reward" class="small-button">
-			</form>
+			<input type="button" value="Claim Reward" class="small-button" onclick="javascript:dailyReward();">
 		</div>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">

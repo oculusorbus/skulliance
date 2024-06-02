@@ -328,6 +328,25 @@ function toggleArmory(pane, tab){
 	tab.style.height = "76px";
 }
 
+function dailyReward(){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
+	xhttp.send();
+	request.onreadystatechange = function() {
+	  if (request.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (request.status == 200) {
+	      // Access the data returned by the server
+	      var data = request.responseText;
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 
