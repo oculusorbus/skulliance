@@ -252,7 +252,7 @@
 <a id="partners" name="partners"></a>
 <br>
 <h2>Staking Platform</h2>
-<p>The <a href="https://skulliance.io/staking">Skulliance staking platform</a> allows for holders to connect their Cardano wallets and load in their qualifying NFTs. Holders will then begin to earn off-chain points nightly that can be redeemed for exclusive incentives from the staking store. Holders can also delegate core project NFTs to Diamond Skulls to earn CARBON which can be burned to create DIAMOND. The Skulliverse highlights the status of Diamond Skull delegations for all core projects and whether there are any reward multipliers for that planet.</p>
+<p>The Skulliance staking platform allows for holders to connect their Cardano wallets and load in their qualifying NFTs. Holders will then begin to earn off-chain points nightly that can be redeemed for exclusive incentives from the staking store. Holders can also delegate core project NFTs to Diamond Skulls to earn CARBON which can be burned to create DIAMOND. The Skulliverse highlights the status of Diamond Skull delegations for all core projects and whether there are any reward multipliers for that planet.</p>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
