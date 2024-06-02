@@ -153,6 +153,7 @@
 </div>
 <div class="projects-container">
 <h2>Founding Artists</h2>
+<p>The following artists specialize in skull art on Cardano and came together to form Skulliance. Skulliance developed a staking platform that allows holders of NFTs from these artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
@@ -180,6 +181,7 @@
 	</div>
 </div>
 <h2>Staking Partners</h2>
+<p>With the success of the Skulliance staking platform. Skulliance chose to invite other high quality artists and projects on Cardano to participate in partner staking. This allows for holders of their NFTs to earn off-chain points and redeem them for exclusive incentives.</p>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
