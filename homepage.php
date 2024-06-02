@@ -228,7 +228,7 @@
 			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/mipatoys.png"/>
+			<img src="images/projects/mipatoys.jpg"/>
 		</div>
 		<div class="project">
 			<img src="images/projects/ascenderone.jpg"/>
