@@ -260,9 +260,11 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
 		</div>
 		<div class="project">
+			<h3>Leaderboard</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
 		</div>
 		<div class="project">
+			<h3>Store</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
 		</div>
 	</div>
@@ -270,12 +272,15 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<h3>Diamond Skulls</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"/></a>
 		</div>
 		<div class="project">
+			<h3>Delegation</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
 		</div>
 		<div class="project">
+			<h3>Skulliverse</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png"/></a>
 		</div>
 	</div>
@@ -283,12 +288,15 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<h3>Collections</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png"/></a>
 		</div>
 		<div class="project">
+			<h3>Wallets</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/wallets.png"/></a>
 		</div>
 		<div class="project">
+			<h3>Transactions</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png"/></a>
 		</div>
 	</div>
