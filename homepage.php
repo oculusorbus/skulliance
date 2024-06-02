@@ -167,7 +167,6 @@
 <br><br>
 <h2>Founding Artists</h2>
 <p>The following artists specialize in skull art on Cardano and came together to form Skulliance under the leadership of Oculus Orbus, an avid skull NFT collector and developer. Oculus Orbus developed the Skulliance staking platform that allows holders of NFTs from these founding artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
-<h3>Membership requires 1 NFT from Sinder Skullz, Kimosabe Art, and Crypties.</h3>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
@@ -181,7 +180,6 @@
 		</div>
 	</div>
 </div>
-<h3>Elite Membership requires at least 1 NFT from all founding artists.</h3>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
@@ -195,10 +193,6 @@
 		</div>
 	</div>
 </div>
-<a id="membership" name="membership"></a>
-<br>
-<h2>Membership</h2>
-<p>Base membership isn't required to stake but it allows stakers to claim exclusive incentives from the staking store using off-chain points they've accumulated. Elite members can convert equal parts of founding artist points to DIAMOND, which are points that Skulliance Diamond Skull NFTs earn nightly and can be utilized to purchase any reward from the staking store either at a discount or a premium.</p>
 <a id="partners" name="partners"></a>
 <br>
 <h2>Staking Partners</h2>
@@ -307,6 +301,10 @@
 		</div>
 	</div>
 </div>
+<a id="membership" name="membership"></a>
+<br>
+<h2>Membership</h2>
+<p>Base Membership requires 1 NFT from <a href="#artists">Sinder Skullz, Kimosabe Art, and Crypties</a>. Base membership isn't required to stake but it allows stakers to claim exclusive incentives from the staking store using off-chain points they've accumulated. Elite Membership requires at least 1 NFT from all <a href="#artists">founding artists</a>. Elite members can convert equal parts of founding artist points to DIAMOND, which are points that Skulliance Diamond Skull NFTs earn nightly and can be utilized to purchase any reward from the staking store either at a discount or a premium.</p>
 
 	<!-- Footer -->
 	<div class="footer">
