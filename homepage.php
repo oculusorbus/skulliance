@@ -260,12 +260,12 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Leaderboards</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
-		</div>
-		<div class="project">
 			<h3>Staking Store</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Leaderboards</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
 		</div>
 	</div>
 </div>
@@ -276,12 +276,12 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Delegations</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
-		</div>
-		<div class="project">
 			<h3>Skulliverse</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Delegations</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
 		</div>
 	</div>
 </div>
@@ -292,12 +292,12 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Wallet Management</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/wallets.png"/></a>
-		</div>
-		<div class="project">
 			<h3>Transaction History</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Wallet Management</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/wallets.png"/></a>
 		</div>
 	</div>
 </div>
