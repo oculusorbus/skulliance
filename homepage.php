@@ -279,6 +279,19 @@
 		</div>
 	</div>
 </div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/wallets.png"/></a>
+		</div>
+	</div>
+</div>
 
 	<!-- Footer -->
 	<div class="footer">
