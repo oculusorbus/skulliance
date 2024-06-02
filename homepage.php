@@ -220,8 +220,6 @@
 		<div class="project">
 			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
-		<div class="project">
-		</div>
 	</div>
 </div>
 
