@@ -256,6 +256,7 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<h3>Dashboard</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
 		</div>
 		<div class="project">
