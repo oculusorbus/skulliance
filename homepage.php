@@ -198,7 +198,7 @@
 <a id="membership" name="membership"></a>
 <br>
 <h2>Membership</h2>
-<p>Base membership isn't required to stake but it allows stakers to claim exclusive incentives from the staking store using off-chain points they've accumulated. Elite members can convert equal parts of founding artist points to DIAMOND, which are points that Skulliance Diamond Skull NFTs can earn nightly and can be utilized to purchase any reward from the staking store either at a discount or a premium.</p>
+<p>Base membership isn't required to stake but it allows stakers to claim exclusive incentives from the staking store using off-chain points they've accumulated. Elite members can convert equal parts of founding artist points to DIAMOND, which are points that Skulliance Diamond Skull NFTs earn nightly and can be utilized to purchase any reward from the staking store either at a discount or a premium.</p>
 <a id="partners" name="partners"></a>
 <br>
 <h2>Staking Partners</h2>
