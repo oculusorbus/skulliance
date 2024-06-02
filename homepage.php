@@ -158,7 +158,7 @@
 <a id="mission" name="mission"></a>
 <br>
 <h2>Mission</h2>
-<p>The mission of Skulliance is to connect skull art investors with the premier skull NFT projects on Cardano and elevate the collective art form and community within the space.</p>
+<p>The initial mission of Skulliance was to connect skull art investors with the premier skull NFT artists on Cardano and elevate the collective art form and community within the space. This mission has since expanded to include high quality partner artists and projects that may or may not feature skulls within their artwork. Nonetheless, many do feature skulls as well as darker themes which fit well within the ever expanding Skulliance roster.</p>
 <a id="artists" name="artists"></a>
 <br><br>
 <h2>Founding Artists</h2>
