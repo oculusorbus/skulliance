@@ -166,7 +166,7 @@
 <a id="artists" name="artists"></a>
 <br><br>
 <h2>Founding Artists</h2>
-<p>The following artists specialize in skull art on Cardano and came together to form Skulliance. Skulliance developed a staking platform that allows holders of NFTs from these artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
+<p>The following artists specialize in skull art on Cardano and came together to form Skulliance under the leadership of Oculus Orbus, an avid skull NFT collector and developer. Oculus Orbus developed a staking platform that allows holders of NFTs from these artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
