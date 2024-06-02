@@ -188,10 +188,23 @@
 			<img src="images/projects/netanelcohen.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/maxingo.png"/>
+			<img src="images/projects/grey.png"/>
 		</div>
 		<div class="project">
+			<img src="images/projects/maxingo.png"/>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
 			<img src="images/projects/threefoldbold.png"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/deadpophell.png"/>
+		</div>
+		<div class="project">
+			<img src="images/projects/jordi.png"/>
 		</div>
 	</div>
 </div>
@@ -201,23 +214,10 @@
 			<img src="images/projects/danketsu.png"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/deadpophell.png"/>
-		</div>
-		<div class="project">
-			<img src="images/projects/apprentices.png"/>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
-			<img src="images/projects/grey.png"/>
-		</div>
-		<div class="project">
 			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
 		<div class="project">
-			<img src="images/projects/jordi.png"/>
+			<img src="images/projects/apprentices.png"/>
 		</div>
 	</div>
 </div>
