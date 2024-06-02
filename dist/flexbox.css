@@ -276,26 +276,6 @@ a{
 	margin: 1px;
 }
 
-.3up {
-	float: left;
-	width: 33.33%;
-}
-
-.4up {
-	float: left;
-	width: 25%;
-}
-
-.5up {
-	float: left;
-	width: 20%;
-}
-
-.6up {
-	float: left;
-	width: 16.66%;
-}
-
 .col1of3 {
   flex: 33%;
   /*background-color: black;*/
@@ -715,7 +695,7 @@ li form {
 
 .project {
 	float: left;
-	width:33.33%;
+	width: 33.33%;
 }
 
 .project img{
