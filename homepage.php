@@ -208,13 +208,16 @@
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
-		<div class="project">
+		<div class="4up">
 			<img src="images/projects/grey.png"/>
 		</div>
-		<div class="project">
+		<div class="4up">
+			<img src="images/projects/ascenderone.jpg"/>
+		</div>
+		<div class="4up">
 			<img src="images/projects/cardanocamera.jpg"/>
 		</div>
-		<div class="project">
+		<div class="4up">
 			<img src="images/projects/jordi.png"/>
 		</div>
 	</div>
