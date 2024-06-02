@@ -138,7 +138,7 @@
 	</div>
 	<!-- Navigation Bar -->
 	<div class="navbar" id="navbar">
-	  <img onclick="window.open('skulliance.io');" class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
+	  <img onclick="window.open('/');" class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
 	  <a class="navbar-first" href="#mission">Mission</a>
 	  <a href="#artists">Artists</a>
 	  <a href="#partners">Partners</a>
