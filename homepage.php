@@ -196,7 +196,7 @@
 <a id="partners" name="partners"></a>
 <br>
 <h2>Staking Partners</h2>
-<p>With the success of the Skulliance staking platform. Skulliance chose to invite other high quality artists and projects on Cardano to participate in partner staking. This allows for holders of their NFTs to earn off-chain points and redeem them for exclusive incentives.</p>
+<p>With the success of the Skulliance staking platform. Skulliance chose to invite other high quality artists and projects on Cardano to participate in partner staking. This allows for holders of their NFTs to earn off-chain points and redeem them for exclusive incentives. It also allows holders to climb a leaderboard based on the size of their NFT collections.</p>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
