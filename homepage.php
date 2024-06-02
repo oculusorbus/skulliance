@@ -138,7 +138,10 @@
 		<!-- Navigation Bar -->
 		<div class="navbar" id="navbar">
 		  <img class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
-		  <a class="navbar-first" href="https://www.skulliance.io/staking">Staking</a>
+		  <a class="navbar-first" href="#mission">Mission</a>
+		  <a href="#artists">Artists</a>
+		  <a href="#partners">Partners</a>
+		  <a href="https://www.skulliance.io/staking">Staking</a>
 		  <a href="https://www.jpg.store/collection/skulliance">Diamond Skulls</a>
 		  <a href="https://www.skulliance.io/shop">Merch</a>
 		  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" /></a>
@@ -152,9 +155,11 @@
   </div>
 </div>
 <div class="projects-container">
+<a id="mission" name="mission"/>
 <h2>Mission</h2>
 <p>The mission of Skulliance is to connect skull art investors with the premier skull NFT projects on Cardano and elevate the collective art form and community within the space.</p>
 <br><br>
+<a id="artists" name="artists"/>
 <h2>Founding Artists</h2>
 <p>The following artists specialize in skull art on Cardano and came together to form Skulliance. Skulliance developed a staking platform that allows holders of NFTs from these artists to stake them and earn nightly off-chain points that can be redeemed for exclusive incentives.</p>
 <div class="row project-row" id="row1">
@@ -183,6 +188,7 @@
 		</div>
 	</div>
 </div>
+<a id="partners" name="partners"/>
 <h2>Staking Partners</h2>
 <p>With the success of the Skulliance staking platform. Skulliance chose to invite other high quality artists and projects on Cardano to participate in partner staking. This allows for holders of their NFTs to earn off-chain points and redeem them for exclusive incentives.</p>
 <div class="row project-row" id="row1">
