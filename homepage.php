@@ -276,12 +276,12 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Skulliverse</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png"/></a>
-		</div>
-		<div class="project">
 			<h3>Delegations</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Skulliverse</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png"/></a>
 		</div>
 	</div>
 </div>
