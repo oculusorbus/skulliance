@@ -264,7 +264,7 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Store</h3>
+			<h3>Staking Store</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
 		</div>
 	</div>
@@ -276,7 +276,7 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Delegation</h3>
+			<h3>Delegations</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
 		</div>
 		<div class="project">
@@ -292,11 +292,11 @@
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Wallets</h3>
+			<h3>Wallet Management</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/wallets.png"/></a>
 		</div>
 		<div class="project">
-			<h3>Transactions</h3>
+			<h3>Transaction History</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png"/></a>
 		</div>
 	</div>
