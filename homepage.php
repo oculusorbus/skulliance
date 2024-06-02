@@ -304,7 +304,7 @@
 <a id="membership" name="membership"></a>
 <br>
 <h2>Membership</h2>
-<p>Base Membership requires 1 NFT from <a href="#artists">Sinder Skullz, Kimosabe Art, and Crypties</a>. Base membership isn't required to stake but it allows stakers to claim exclusive incentives from the staking store using off-chain points they've accumulated. Elite Membership requires at least 1 NFT from all <a href="#artists">founding artists</a>. Elite members can convert equal parts of founding artist points to DIAMOND, which are points that Skulliance Diamond Skull NFTs earn nightly and can be utilized to purchase any reward from the staking store either at a discount or a premium. Inner Circle members are Elite Members who also own a Diamond Skull and benefit from delegations on the staking platform and DIAMOND accrual.</p>
+<p>Base Membership requires 1 NFT from <a href="#artists">Sinder Skullz, Kimosabe Art, and Crypties</a>. Base membership isn't required to stake but it allows stakers to claim exclusive incentives from the staking store using off-chain points they've accumulated. Elite Membership requires at least 1 NFT from all <a href="#artists">founding artists</a>. Elite members can convert equal parts of founding artist points to DIAMOND, which are points that Skulliance Diamond Skull NFTs earn nightly and can be utilized to purchase any reward from the staking store either at a discount or a premium. Inner Circle members are Elite Members who also own a Diamond Skull and benefit from delegation rewards on the staking platform as well as DIAMOND accrual from nightly emissions and crafting.</p>
 
 <div class="row project-row" id="row1">
 	<div class="projects">
