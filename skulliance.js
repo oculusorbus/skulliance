@@ -332,12 +332,12 @@ function dailyReward(){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
 	xhttp.send();
-	request.onreadystatechange = function() {
-	  if (request.readyState == XMLHttpRequest.DONE) {
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
-	    if (request.status == 200) {
+	    if (xhttp.status == 200) {
 	      // Access the data returned by the server
-	      var data = request.responseText;
+	      var data = xhttp.responseText;
 		  console.log(data);
 	      // Do something with the data
 	    } else {
