@@ -69,7 +69,6 @@
 	  	  position: fixed;
 		  width: 100%;
 		  align-items: center;
-		  overflow-y:auto
 	  }
 	  .navbar a{
 		  font-size: 20px;
