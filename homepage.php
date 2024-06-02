@@ -239,10 +239,10 @@
 			<a href="https://x.com/MipaToys" target="_blank"><img src="images/projects/mipatoys.jpg"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/AscenderOne" target="_blank"><img src="images/projects/ascenderone.jpg"/></a>
+			<a href="https://x.com/skulliance" target="_blank"><img src="images/projects/skulliance.jpg"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/skulliance" target="_blank"><img src="images/projects/skulliance.jpg"/></a>
+			<a href="https://x.com/AscenderOne" target="_blank"><img src="images/projects/ascenderone.jpg"/></a>
 		</div>
 	</div>
 </div>
