@@ -59,7 +59,7 @@ if(getVisibility($conn) == "0"){
 				if(!empty($days)){
 					foreach($days AS $number => $day){
 						echo "<li class='role'>";
-						echo "Day ".$number.": ".$day["amount"]." ".$day["currency"];
+						echo "Day ".$number." - ".$day["amount"]." ".$day["currency"];
 						echo "</li>";
 					}
 				}
