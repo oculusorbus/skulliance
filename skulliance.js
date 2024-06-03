@@ -342,7 +342,7 @@ function dailyReward(){
 		  if(obj == null){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
-		  	document.getElementById('reward').innerHTML = document.getElementById('reward').innerHTML+obj.amount+" "+obj.currency+" Claimed";
+		  	document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency+" Claimed";
 			document.getElementById('dailyRewardIcon').src = "icons/"+obj.currency.toLowerCase()+".png";
 			document.getElementById('dailyRewardIcon').style.display = "block";
 	  	  }
