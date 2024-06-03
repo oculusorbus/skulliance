@@ -37,13 +37,20 @@ if(getVisibility($conn) == "0"){
 }
 
 function renderDailyRewards($rewards){
+	$count = 0;
 	if(is_array($rewards)){
 		foreach($rewards AS $index => $reward){
 			echo "<li class='role'>";
 			echo "<strong>Day ".$reward["day"].":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
 			echo "</li>";
 		}
+		$count = count($rewards);
+	}else{
+		$count = 0;
 	}
+	for ($count; $count <= 7; $count++) {
+	  echo "<strong>Day ".$count.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/mystery.png'/> ".$count." ".$count;
+	}	
 }
 ?>
 
