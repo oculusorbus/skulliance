@@ -419,11 +419,11 @@ function getRandomReward($conn){
 // Get streak rewards
 function getStreakRewards($conn) {
 	$current_streak = getCurrentDailyRewardStreak($conn);
-	$sql = "SELECT currency, amount FROM transactions INNER JOIN projects ON projects.id = transactions.project_id WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' LIMIT ".$current_streak;
+	$sql = "SELECT currency, amount FROM transactions INNER JOIN projects ON projects.id = transactions.project_id WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' ORDER BY date_created DESC LIMIT ".$current_streak;
 	$result = $conn->query($sql);
 	
 	$days = array();
-	$index = 1;
+	$index = $current_streak;
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
@@ -431,7 +431,7 @@ function getStreakRewards($conn) {
     	$days[$index] = array();
 		$days[$index]["currency"] = $row["currency"];
 		$days[$index]["amount"] = $row["amount"];
-		$index++;
+		$index--;
 	  }
 	} else {
 	  //echo "0 results";
