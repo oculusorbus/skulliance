@@ -74,14 +74,11 @@ function renderDailyRewards($rewards){
 						}
 						?>
 						<li class="role" id="reward"></li>
-						<li class="role">
 						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
-						</li>
 					<?php } else { ?>
-						
 							<?php
-							// Display 7th day rewards if applicable
+							// Display 7 day completed rewards despite streak being reset
 							$current_streak = getCurrentDailyRewardStreak($conn);
 							if($current_streak == 0){
 								$rewards = getCompletedRewards($conn);
