@@ -48,8 +48,11 @@ function renderDailyRewards($rewards){
 	}else{
 		$count = 0;
 	}
+	$count++;
 	for ($count; $count <= 7; $count++) {
+      echo "<li class='role'>";
 	  echo "<strong>Day ".$count.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/mystery.png'/> ".$count." RANDOM";
+      echo "</li>";
 	}	
 }
 ?>
