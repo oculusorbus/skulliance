@@ -350,8 +350,8 @@ function incrementDailyRewardStreak($conn) {
 	$current_streak = getCurrentDailyRewardStreak($conn);
 	$current_streak++;
 	$streak = $current_streak;
-	// If streak reaches 7 days, reset to zero
-	if($streak == 7){
+	// If streak reaches 7 days (or more cuz something fucked up), reset to zero
+	if($streak >= 7){
 		$streak = 0;
 	}
 	$sql = "UPDATE users SET streak='".$streak."' WHERE id='".$_SESSION['userData']['user_id']."'";
