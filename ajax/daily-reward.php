@@ -5,7 +5,7 @@ include '../skulliance.php';
 $project = array();
 $project = getRandomReward($conn);
 
-echo $project["currency"];
+echo json_encode($project);
 
 // Close DB Connection
 $conn->close();

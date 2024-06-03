@@ -338,7 +338,8 @@ function dailyReward(){
 	    if (xhttp.status == 200) {
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
-		  document.getElementById('reward').innerHTML = data;
+		  const obj = JSON.parse(data);
+		  document.getElementById('reward').innerHTML = obj.currency;
 		  console.log(data);
 	      // Do something with the data
 	    } else {
