@@ -455,7 +455,7 @@ function getCompletedRewards($conn) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		$rewards[$index] = array();
-	    $rewards[$index]["day"] = $current_streak;
+	    $rewards[$index]["day"] = $index;
 		$rewards[$index]["currency"] = $row["currency"];
 		$rewards[$index]["amount"] = $row["amount"];
 		$index--;
