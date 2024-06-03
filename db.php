@@ -329,7 +329,7 @@ function verifyYesterdaysRewards($conn){
 
 // Get current daily reward streak
 function getCurrentDailyRewardStreak($conn) {
-	$sql = "SELECT streak FROM users WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT streak FROM users WHERE id ='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	
 	$streak = 0;
