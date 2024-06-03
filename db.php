@@ -349,8 +349,6 @@ function getRandomReward($conn){
 		$project["amount"] = 10;
 		logCredit($conn, $_SESSION['userData']['user_id'], 10, $project_id, $crafting=0, $bonus=1);
 		return $project;
-	}else{
-		
 	}
 }
 

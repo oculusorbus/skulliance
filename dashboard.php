@@ -51,15 +51,16 @@ if(getVisibility($conn) == "0"){
 		<div class="content" id="player-stats">
 			<ul>
 				<li class="role">
+					echo date(l);
 					<?php if(getDailyRewardEligibility($conn)) { ?>
-					<form>
-					<strong>Claim Random Daily Reward</strong><br><br>
-					<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;">
-					<span id="reward"></span>
-					<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">
-					</form>
+						<form>
+						<strong>Claim Random Daily Reward</strong><br><br>
+						<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;">
+						<span id="reward"></span>
+						<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">
+						</form>
 					<?php } else { ?>
-					<strong>Daily Reward Already Claimed</strong><br><br>
+						<strong>Daily Reward Already Claimed</strong><br><br>
 					<?php } ?>
 				</li>
 			</ul>
