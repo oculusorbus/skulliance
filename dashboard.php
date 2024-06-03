@@ -57,7 +57,7 @@ if(getVisibility($conn) == "0"){
 				if(!empty($days)){
 					foreach($days AS $number => $day){
 						echo "<li class='role'>";
-						echo "Day ".$number.": "."&nbsp;&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
+						echo "<strong>Day ".$number.":</strong> "."&nbsp;&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
 						echo "</li>";
 					}
 				}
@@ -84,7 +84,7 @@ if(getVisibility($conn) == "0"){
 								if(is_array($rewards)){
 									foreach($rewards AS $index => $reward){
 										echo "<li class='role'>";
-										echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
+										echo "<strong>Day ".$reward["day"].":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
 										echo "</li>";
 									}
 								}
