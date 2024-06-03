@@ -55,7 +55,7 @@ if(getVisibility($conn) == "0"){
 					<?php if(getDailyRewardEligibility($conn)) { 
 						// Reset daily reward streak if yesterday's daily reward wasn't claimed
 						if(!verifyYesterdaysRewards($conn)){
-							resetDailyRewardStreak($conn)
+							resetDailyRewardStreak($conn);
 						}
 						?>
 						<form>
