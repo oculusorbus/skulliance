@@ -79,7 +79,7 @@ if(getVisibility($conn) == "0"){
 					<?php } else { ?>
 						<li class="role">
 							<?php
-							$reward = getTodaysReward($conn)
+							$reward = getTodaysReward($conn);
 							echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
 							?>
 						</li>
