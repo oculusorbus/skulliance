@@ -343,6 +343,8 @@ function dailyReward(){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
 		  	document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency+" Claimed";
+			document.getElementById('dailyRewardIcon').src = "icons/"+obj.currency".png";
+			document.getElementById('dailyRewardIcon').style.display = "block";
 	  	  }
 		  document.getElementById('claimRewardButton').style.display = "none";
 		  console.log(data);
