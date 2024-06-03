@@ -339,7 +339,7 @@ function dailyReward(){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
-		  document.getElementById('reward').innerHTML = obj.currency;
+		  document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency;
 		  console.log(data);
 	      // Do something with the data
 	    } else {

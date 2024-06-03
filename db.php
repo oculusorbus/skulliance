@@ -317,7 +317,8 @@ function getRandomReward($conn){
 	$projects = getProjects($conn, $type="");
 	$project_id = rand(1, count($projects));
 	$project = $projects[$project_id];
-	logCredit($conn, $_SESSION['userData']['user_id'], 100, $project_id, $crafting=0, $bonus=1);
+	$project["amount"] = 10;
+	logCredit($conn, $_SESSION['userData']['user_id'], 10, $project_id, $crafting=0, $bonus=1);
 	return $project;
 }
 
