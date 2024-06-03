@@ -56,7 +56,7 @@ if(getVisibility($conn) == "0"){
 					echo "<strong>Current Streak</strong>";
 					foreach($days AS $number => $day){
 						echo "<li class='role'>";
-						echo "Day ".$number." - ".$day["amount"]." ".$day["currency"];
+						echo "Day ".$number." - "."<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
 						echo "</li>";
 					}
 				}
@@ -71,7 +71,7 @@ if(getVisibility($conn) == "0"){
 						?>
 						<form>
 						<strong>Claim Random Daily Reward</strong><br><br>
-						<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;">
+						<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>
 						<span id="reward"></span>
 						<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">
 						</form>
