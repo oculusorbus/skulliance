@@ -75,17 +75,19 @@ if(getVisibility($conn) == "0"){
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
 						</li>
 					<?php } else { ?>
-						<li class="role">
+						
 							<?php
+							// Display 7th day rewards if applicable
 							$current_streak = getCurrentDailyRewardStreak($conn);
 							if($current_streak == 0){
 								$reward = getTodaysReward($conn);
 								if(is_array($reward)){
+									echo "<li class='role'>";
 									echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
+									echo "</li>";
 								}
 							}
 							?>
-						</li>
 						<li class="role">
 						<strong>Daily Reward Already Claimed</strong>
 						</li>
