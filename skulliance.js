@@ -344,7 +344,7 @@ function dailyReward(){
 		  }else{
 		  	document.getElementById('reward').innerHTML = "Day "+obj.amount+":&nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/>"+obj.amount+" "+obj.currency+" Claimed";
 			//document.getElementById('dailyRewardIcon').src = "icons/"+obj.currency.toLowerCase()+".png";
-			document.getElementById('dailyRewardIcon').style.display = "block";
+			//document.getElementById('dailyRewardIcon').style.display = "block";
 	  	  }
 		  document.getElementById('claimRewardButton').style.display = "none";
 		  console.log(data);
