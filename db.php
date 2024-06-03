@@ -410,11 +410,25 @@ function getRandomReward($conn){
 		$project_id = rand(1, count($projects));
 		$project = $projects[$project_id];
 		$current_streak = incrementDailyRewardStreak($conn);
-		$project["amount"] = $current_streak;
+		$reward_tiers = getRewardTiers();
+		$project["amount"] = $reward_tiers[$current_streak];
 		updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $project["amount"]);
 		logCredit($conn, $_SESSION['userData']['user_id'], $project["amount"], $project_id, $crafting=0, $bonus=1);
 		return $project;
 	}
+}
+
+// Reward tiers
+function getRewardTiers(){
+	$reward_tiers = array();
+	$reward_tiers[1] = 1;
+	$reward_tiers[2] = 2;
+	$reward_tiers[3] = 3;
+	$reward_tiers[4] = 5;
+	$reward_tiers[5] = 10;
+	$reward_tiers[6] = 15;
+	$reward_tiers[7] = 20;
+	return $reward_tiers;
 }
 
 // Get streak rewards

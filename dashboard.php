@@ -46,13 +46,14 @@ function renderDailyRewards($rewards){
 	}else{
 		$count = 0;
 	}
+	$reward_tiers = getRewardTiers();
 	$count++;
 	if($count <= 7){
-	  renderDailyReward($count, "RANDOM", $count, true);
+	  renderDailyReward($count, "RANDOM", $reward_tiers[$count], true);
 	}
 	$count++;
 	for ($count; $count <= 7; $count++) {
-      renderDailyReward($count, "RANDOM", $count);
+      renderDailyReward($count, "RANDOM", $reward_tiers[$count]);
 	}	
 }
 
