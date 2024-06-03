@@ -144,6 +144,12 @@ function getUsersGuildRoles($discord_ID,$auth_token,$guild_ID){
     return $result['roles'];
 }
 
+// Change session timeout value to 1 month = ~2678400 seconds
+ini_set('session.gc_maxlifetime', 2678400);
+
+// Each client should remember their session id for EXACTLY 1 month
+session_set_cookie_params(2678400);
+
 session_start();
 
 $_SESSION['logged_in'] = true;
