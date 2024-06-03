@@ -50,8 +50,19 @@ if(getVisibility($conn) == "0"){
 		<h2>Daily Rewards</h2>
 		<div class="content" id="player-stats">
 			<ul>
+				<?php
+				$days = getStreakRewards($conn);
+				if(!empty($days)){
+					foreach($days AS $number => $day){
+						echo "<li class='role'>";
+						echo "Day ".$number.": "$day["amount"]." ".$day["currency"];
+						echo "</li>";
+					}
+				}
+				?>
 				<li class="role">
-					<?php if(getDailyRewardEligibility($conn)) { 
+					<?php 
+					if(getDailyRewardEligibility($conn)) { 
 						// Reset daily reward streak if yesterday's daily reward wasn't claimed
 						if(!verifyYesterdaysRewards($conn)){
 							resetDailyRewardStreak($conn);
