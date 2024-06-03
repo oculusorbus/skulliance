@@ -436,40 +436,31 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 }
 
 function renderDailyRewardsSection(){
-	?>
-	<ul>
-		<?php
-		echo "<li class='role'><strong>Current Daily Rewards Streak</strong></li>";
-		echo "<li class='role'>Collect daily random rewards for up to 7 days in a row.</li>";
-		$days = getStreakRewards($conn);
-		renderDailyRewards($days);
-		?>
-			<?php 
-			if(getDailyRewardEligibility($conn)) { 
-				// Reset daily reward streak if yesterday's daily reward wasn't claimed
-				if(!verifyYesterdaysRewards($conn)){
-					resetDailyRewardStreak($conn);
-				}
-				?>
-				<br>
-				<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
-				<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
-			<?php } else { ?>
-					<?php
-					// Display 7 day completed rewards despite streak being reset
-					/*
-					$current_streak = getCurrentDailyRewardStreak($conn);
-					if($current_streak == 0){
-						$rewards = getCompletedRewards($conn);
-						renderDailyRewards($rewards);
-					}*/
-					?>
-				<li class="role">
-				<strong>Daily Reward Already Claimed</strong>
-				</li>
-			<?php } ?>
-	</ul>
-	<?php
+	echo "<ul>";
+	echo "<li class='role'><strong>Current Daily Rewards Streak</strong></li>";
+	echo "<li class='role'>Collect daily random rewards for up to 7 days in a row.</li>";
+	$days = getStreakRewards($conn);
+	renderDailyRewards($days);
+	if(getDailyRewardEligibility($conn)) { 
+		// Reset daily reward streak if yesterday's daily reward wasn't claimed
+		if(!verifyYesterdaysRewards($conn)){
+			resetDailyRewardStreak($conn);
+		}
+		echo "<br>";
+		echo '<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">';
+	} else { 
+			// Display 7 day completed rewards despite streak being reset
+			/*
+			$current_streak = getCurrentDailyRewardStreak($conn);
+			if($current_streak == 0){
+				$rewards = getCompletedRewards($conn);
+				renderDailyRewards($rewards);
+			}*/
+		echo '<li class="role">';
+		echo '<strong>Daily Reward Already Claimed</strong>';
+		echo '</li>';
+ 	} 
+	echo '</ul>';
 }
 
 function renderCrafting($conn, $page){
