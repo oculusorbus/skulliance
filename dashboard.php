@@ -70,10 +70,9 @@ if(getVisibility($conn) == "0"){
 						}
 						?>
 						<form>
-						<strong>Claim Random Daily Reward</strong><br><br>
 						<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>
 						<span id="reward"></span>
-						<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">
+						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
 						</form>
 					<?php } else { ?>
 						<strong>Daily Reward Already Claimed</strong><br><br>
