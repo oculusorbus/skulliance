@@ -49,9 +49,13 @@ if(getVisibility($conn) == "0"){
 		<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 		<h2>Daily Rewards</h2>
 		<div class="content" id="player-stats">
-			<strong>Claim Random Daily Bonus Reward</strong><br><br>
-			<div id="reward" style="color:white"></div>
-			<input type="button" value="Claim Reward" class="small-button" onclick="javascript:dailyReward();">
+			<ul>
+				<li class="role">
+					<strong>Claim Random Daily Bonus Reward</strong><br><br>
+					<div id="reward" style="color:white"></div>
+					<input type="button" value="Claim Reward" class="small-button" onclick="javascript:dailyReward();">
+				</li>
+			</ul>
 		</div>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">
