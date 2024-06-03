@@ -427,7 +427,7 @@ function getRewardTiers(){
 	$reward_tiers[4] = 10;
 	$reward_tiers[5] = 15;
 	$reward_tiers[6] = 20;
-	$reward_tiers[7] = 25;
+	$reward_tiers[7] = 30;
 	return $reward_tiers;
 }
 
