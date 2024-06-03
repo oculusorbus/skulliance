@@ -77,8 +77,13 @@ if(getVisibility($conn) == "0"){
 					<?php } else { ?>
 						<li class="role">
 							<?php
-							$reward = getTodaysReward($conn);
-							echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
+							$current_streak = getCurrentDailyRewardStreak($conn);
+							if($current_streak == 0){
+								$reward = getTodaysReward($conn);
+								if(is_array($reward)){
+									echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
+								}
+							}
 							?>
 						</li>
 						<li class="role">
