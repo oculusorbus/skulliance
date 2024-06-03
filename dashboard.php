@@ -54,7 +54,7 @@ if(getVisibility($conn) == "0"){
 				$days = getStreakRewards($conn);
 				if(!empty($days)){
 					echo "<li class='role'><strong>Current Streak</strong></li>";
-					echo "<p>Collect random rewards every day for up to 7 days in a row.</p>
+					echo "<p>Collect random rewards every day for up to 7 days in a row.</p>";
 					foreach($days AS $number => $day){
 						echo "<li class='role'>";
 						echo "Day ".$number.": "."&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
