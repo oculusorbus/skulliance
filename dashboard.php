@@ -51,9 +51,11 @@ if(getVisibility($conn) == "0"){
 		<div class="content" id="player-stats">
 			<ul>
 				<li class="role">
+					<form>
 					<strong>Claim Random Daily Reward</strong><br><br>
 					<div id="reward" style="color:white"></div>
 					<input type="button" value="Claim Reward" class="small-button" onclick="javascript:dailyReward();">
+					</form>
 				</li>
 			</ul>
 		</div>
