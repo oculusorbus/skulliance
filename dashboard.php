@@ -35,6 +35,16 @@ if(getVisibility($conn) == "0"){
 	</script>
 	<?php
 }
+
+function renderDailyRewards($rewards){
+	if(is_array($rewards)){
+		foreach($rewards AS $index => $reward){
+			echo "<li class='role'>";
+			echo "<strong>Day ".$reward["day"].":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
+			echo "</li>";
+		}
+	}
+}
 ?>
 
 <a name="dashboard" id="dashboard"></a>
@@ -54,13 +64,7 @@ if(getVisibility($conn) == "0"){
 				echo "<li class='role'><strong>Current Daily Rewards Streak</strong></li>";
 				echo "<li class='role'>Collect daily random rewards for up to 7 days in a row.</li>";
 				$days = getStreakRewards($conn);
-				if(!empty($days)){
-					foreach($days AS $number => $day){
-						echo "<li class='role'>";
-						echo "<strong>Day ".$number.":</strong> "."&nbsp;&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
-						echo "</li>";
-					}
-				}
+				renderDailyRewards($days);
 				?>
 					<?php 
 					if(getDailyRewardEligibility($conn)) { 
@@ -81,13 +85,7 @@ if(getVisibility($conn) == "0"){
 							$current_streak = getCurrentDailyRewardStreak($conn);
 							if($current_streak == 0){
 								$rewards = getCompletedRewards($conn);
-								if(is_array($rewards)){
-									foreach($rewards AS $index => $reward){
-										echo "<li class='role'>";
-										echo "<strong>Day ".$reward["day"].":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
-										echo "</li>";
-									}
-								}
+								renderDailyRewards($rewards);
 							}
 							?>
 						<li class="role">
