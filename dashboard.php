@@ -49,6 +49,12 @@ function renderDailyRewards($rewards){
 		$count = 0;
 	}
 	$count++;
+	if($count <= 7){
+      echo "<li class='role' id='reward'>";
+  	  echo "<strong>Day ".$count.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/mystery.png'/> ".$count." RANDOM";
+      echo "</li>";
+	}
+	$count++
 	for ($count; $count <= 7; $count++) {
       echo "<li class='role'>";
 	  echo "<strong>Day ".$count.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/mystery.png'/> ".$count." RANDOM";
@@ -83,7 +89,6 @@ function renderDailyRewards($rewards){
 							resetDailyRewardStreak($conn);
 						}
 						?>
-						<li class="role" id="reward" style="display:none"></li>
 						<br>
 						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
