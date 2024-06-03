@@ -433,7 +433,7 @@ function getStreakRewards($conn) {
 		$days[$index]["amount"] = $row["amount"];
 		$index--;
 	  }
-	  $days = ksort($days);
+	  ksort($days);
 	} else {
 	  //echo "0 results";
 	}
