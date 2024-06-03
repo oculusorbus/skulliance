@@ -312,6 +312,24 @@ function getProjects($conn, $type=""){
 
 // Get random daily reward for user
 function getRandomReward($conn){
+	$sql = "SELECT id, MAX(date_created) FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus = '1'";
+	
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$date_created = $row["date_created"]);
+		$id = $row["id"]);
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	echo $date_created."<br>";
+	echo $id;
+	exit;
+	
 	$projects = array();
 	$project = array();
 	$projects = getProjects($conn, $type="");
