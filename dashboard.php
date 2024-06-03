@@ -71,7 +71,7 @@ if(getVisibility($conn) == "0"){
 						}
 						?>
 						<form>
-						<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>
+						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
 						<span id="reward"></span>
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
 						</form>
