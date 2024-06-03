@@ -339,7 +339,7 @@ function dailyReward(){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
-		  if(obj.amount == null){
+		  if(obj == null){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
 		  	document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency+" Claimed";
