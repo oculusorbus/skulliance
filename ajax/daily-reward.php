@@ -7,5 +7,5 @@ include '../db.php';
 //echo $project["currency"];
 
 // Close DB Connection
-$conn->close();*/
+$conn->close();
 ?>
