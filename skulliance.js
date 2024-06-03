@@ -340,6 +340,7 @@ function dailyReward(){
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
 		  document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency;
+		  document.getElementById('claimRewardButton').style.display = "none";
 		  console.log(data);
 	      // Do something with the data
 	    } else {
