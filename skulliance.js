@@ -339,7 +339,11 @@ function dailyReward(){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
-		  document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency+" Claimed";
+		  if(obj.amount == null){
+		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
+		  }else{
+		  	document.getElementById('reward').innerHTML = obj.amount+" "+obj.currency+" Claimed";
+	  	  }
 		  document.getElementById('claimRewardButton').style.display = "none";
 		  console.log(data);
 	      // Do something with the data
