@@ -441,7 +441,7 @@ function getStreakRewards($conn) {
 }
 
 // Get completed daily rewards streak
-function getCompletedReward($conn) {
+function getCompletedRewards($conn) {
 	$current_streak = getCurrentDailyRewardStreak($conn);
 	if($current_streak == 0){
 		$current_streak = 7;
