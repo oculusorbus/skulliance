@@ -406,6 +406,7 @@ function renderCurrency($conn, $skulliance=true){
 
 function renderDailyRewards($rewards){
 	$count = 0;
+	// Existing rewards
 	if(is_array($rewards)){
 		foreach($rewards AS $index => $reward){
 			renderDailyReward($reward["day"], $reward["currency"], $reward["amount"]);
@@ -414,6 +415,7 @@ function renderDailyRewards($rewards){
 	}else{
 		$count = 0;
 	}
+	// Potential rewards
 	$reward_tiers = getRewardTiers();
 	$count++;
 	if($count <= 7){
