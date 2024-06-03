@@ -51,7 +51,7 @@ if(getVisibility($conn) == "0"){
 		<div class="content" id="player-stats">
 			<ul>
 				<li class="role">
-					echo date(l);
+					<?php echo date(l);?>
 					<?php if(getDailyRewardEligibility($conn)) { ?>
 						<form>
 						<strong>Claim Random Daily Reward</strong><br><br>
