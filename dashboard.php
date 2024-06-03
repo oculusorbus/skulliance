@@ -52,7 +52,12 @@ if(getVisibility($conn) == "0"){
 			<ul>
 				<li class="role">
 					<?php echo date("l");?>
-					<?php if(getDailyRewardEligibility($conn)) { ?>
+					<?php if(getDailyRewardEligibility($conn)) { 
+						// Reset daily reward streak if yesterday's daily reward wasn't claimed
+						if(!verifyYesterdaysRewards($conn)){
+							resetDailyRewardStreak($conn)
+						}
+						?>
 						<form>
 						<strong>Claim Random Daily Reward</strong><br><br>
 						<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;">

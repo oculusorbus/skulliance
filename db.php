@@ -363,6 +363,16 @@ function incrementDailyRewardStreak($conn) {
 	return $current_streak;
 }
 
+// Reset daily reward streak
+function resetDailyRewardStreak($conn) {
+	$sql = "UPDATE users SET streak='0' WHERE id='".$_SESSION['userData']['user_id']."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Determine if eligible for daily reward
 function getDailyRewardEligibility($conn){
 	$eligibility = false;
