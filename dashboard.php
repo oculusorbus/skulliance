@@ -51,7 +51,6 @@ if(getVisibility($conn) == "0"){
 		<div class="content" id="player-stats">
 			<ul>
 				<li class="role">
-					<?php echo date("l");?>
 					<?php if(getDailyRewardEligibility($conn)) { 
 						// Reset daily reward streak if yesterday's daily reward wasn't claimed
 						if(!verifyYesterdaysRewards($conn)){
