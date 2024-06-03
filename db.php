@@ -440,28 +440,31 @@ function getStreakRewards($conn) {
 	return $days;
 }
 
-// Get today's claimed reward
-function getTodaysReward($conn) {
+// Get completed daily rewards streak
+function getCompletedReward($conn) {
 	$current_streak = getCurrentDailyRewardStreak($conn);
-	$limit = 1;
 	if($current_streak == 0){
 		$current_streak = 7;
 	}
-	$sql = "SELECT currency, amount FROM transactions INNER JOIN projects ON projects.id = transactions.project_id WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' ORDER BY date_created DESC LIMIT ".$limit;
+	$sql = "SELECT currency, amount FROM transactions INNER JOIN projects ON projects.id = transactions.project_id WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' ORDER BY date_created DESC LIMIT ".$current_streak;
 	$result = $conn->query($sql);
 	
-	$reward = array();
+	$rewards = array();
+	$index = $current_streak;
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-	    $reward["day"] = $current_streak;
-		$reward["currency"] = $row["currency"];
-		$reward["amount"] = $row["amount"];
+		$rewards[$index] = array();
+	    $rewards[$index]["day"] = $current_streak;
+		$rewards[$index]["currency"] = $row["currency"];
+		$rewards[$index]["amount"] = $row["amount"];
+		$index--;
 	  }
+	  ksort($rewards);
 	} else {
 	  //echo "0 results";
 	}
-	return $reward;
+	return $rewards;
 }
 
 // Check if user already exists, if not... create them.
