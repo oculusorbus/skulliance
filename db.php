@@ -313,8 +313,12 @@ function getProjects($conn, $type=""){
 // Get random daily reward for user
 function getRandomReward($conn){
 	$projects = array();
+	$project = array();
 	$projects = getProjects($conn, $type="");
-	return $projects[rand(1, count($projects))];
+	$project_id = rand(1, count($projects));
+	$project = $projects[$project_id];
+	logCredit($conn, $_SESSION['userData']['user_id'], 100, $project_id, $crafting=0, $bonus=1);
+	return $project;
 }
 
 // Check if user already exists, if not... create them.
@@ -1577,9 +1581,9 @@ function burn($conn, $balance, $project_id){
 
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id, $crafting=0) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
