@@ -35,37 +35,6 @@ if(getVisibility($conn) == "0"){
 	</script>
 	<?php
 }
-
-function renderDailyRewards($rewards){
-	$count = 0;
-	if(is_array($rewards)){
-		foreach($rewards AS $index => $reward){
-			renderDailyReward($reward["day"], $reward["currency"], $reward["amount"]);
-		}
-		$count = count($rewards);
-	}else{
-		$count = 0;
-	}
-	$reward_tiers = getRewardTiers();
-	$count++;
-	if($count <= 7){
-	  renderDailyReward($count, "RANDOM", $reward_tiers[$count], true);
-	}
-	$count++;
-	for ($count; $count <= 7; $count++) {
-      renderDailyReward($count, "RANDOM", $reward_tiers[$count]);
-	}	
-}
-
-function renderDailyReward($day, $currency, $amount, $reward=false) {
-	if($reward){
-		echo "<li class='role' id='reward'>";
-	}else{
-		echo "<li class='role'>";
-	}
-	echo "<strong>Day ".$day.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($currency).".png'/> ".$amount." ".$currency;
-	echo "</li>";
-}
 ?>
 
 <a name="dashboard" id="dashboard"></a>
@@ -80,38 +49,7 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 		<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 		<h2>Daily Rewards</h2>
 		<div class="content" id="player-stats">
-			<ul>
-				<?php
-				echo "<li class='role'><strong>Current Daily Rewards Streak</strong></li>";
-				echo "<li class='role'>Collect daily random rewards for up to 7 days in a row.</li>";
-				$days = getStreakRewards($conn);
-				renderDailyRewards($days);
-				?>
-					<?php 
-					if(getDailyRewardEligibility($conn)) { 
-						// Reset daily reward streak if yesterday's daily reward wasn't claimed
-						if(!verifyYesterdaysRewards($conn)){
-							resetDailyRewardStreak($conn);
-						}
-						?>
-						<br>
-						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
-						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
-					<?php } else { ?>
-							<?php
-							// Display 7 day completed rewards despite streak being reset
-							/*
-							$current_streak = getCurrentDailyRewardStreak($conn);
-							if($current_streak == 0){
-								$rewards = getCompletedRewards($conn);
-								renderDailyRewards($rewards);
-							}*/
-							?>
-						<li class="role">
-						<strong>Daily Reward Already Claimed</strong>
-						</li>
-					<?php } ?>
-			</ul>
+			<?php renderDailyRewardsSection(); ?>
 		</div>
 		<h2>Crafting</h2>
 		<div class="content" id="player-stats">

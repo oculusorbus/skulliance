@@ -16,6 +16,10 @@ include 'header.php';
 							<?php renderCurrency($conn); ?>
 					</div>
 					<?php if(isset($_SESSION['userData']['user_id'])){ ?>
+					<h2>Daily Rewards</h2>
+					<div class="content" id="player-stats">
+						<?php renderDailyRewardsSection(); ?>
+					</div>
 					<h2>Crafting</h2>
 					<div class="content" id="player-stats">
 						<?php renderCrafting($conn, "store"); ?>
