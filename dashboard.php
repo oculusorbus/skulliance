@@ -57,7 +57,7 @@ if(getVisibility($conn) == "0"){
 					echo "<li class='role'><p>Collect daily random rewards for up to 7 days in a row.</p></li>";
 					foreach($days AS $number => $day){
 						echo "<li class='role'>";
-						echo "Day ".$number.": "."&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
+						echo "Day ".$number.": "."&nbsp;&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
 						echo "</li>";
 					}
 				}
