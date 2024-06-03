@@ -48,11 +48,11 @@ function renderDailyRewards($rewards){
 	}
 	$count++;
 	if($count <= 7){
-	  renderDailyReward($count, "MYSTERY", $count, true);
+	  renderDailyReward($count, "RANDOM", $count, true);
 	}
 	$count++;
 	for ($count; $count <= 7; $count++) {
-      renderDailyReward($count, "MYSTERY", $count);
+      renderDailyReward($count, "RANDOM", $count);
 	}	
 }
 
