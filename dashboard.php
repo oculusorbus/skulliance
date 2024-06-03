@@ -54,7 +54,7 @@ if(getVisibility($conn) == "0"){
 					<form>
 					<strong>Claim Random Daily Reward</strong><br><br>
 					<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;">&nbsp;
-					<p id="reward"></p>
+					<span id="reward"></span>
 					<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">
 					</form>
 				</li>
