@@ -95,11 +95,12 @@ function renderDailyRewards($rewards){
 					<?php } else { ?>
 							<?php
 							// Display 7 day completed rewards despite streak being reset
+							/*
 							$current_streak = getCurrentDailyRewardStreak($conn);
 							if($current_streak == 0){
 								$rewards = getCompletedRewards($conn);
 								renderDailyRewards($rewards);
-							}
+							}*/
 							?>
 						<li class="role">
 						<strong>Daily Reward Already Claimed</strong>
