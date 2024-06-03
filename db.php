@@ -440,6 +440,30 @@ function getStreakRewards($conn) {
 	return $days;
 }
 
+// Get today's claimed reward
+function getTodaysReward($conn) {
+	$current_streak = getCurrentDailyRewardStreak($conn);
+	$limit = 1;
+	if($current_streak == 0){
+		$current_streak = 7;
+	}
+	$sql = "SELECT currency, amount FROM transactions INNER JOIN projects ON projects.id = transactions.project_id WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' ORDER BY date_created DESC LIMIT ".$limit;
+	$result = $conn->query($sql);
+	
+	$reward = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    $reward["day"] = $current_streak;
+		$reward["currency"] = $row["currency"];
+		$reward["amount"] = $row["amount"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $reward;
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){

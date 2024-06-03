@@ -62,7 +62,6 @@ if(getVisibility($conn) == "0"){
 					}
 				}
 				?>
-				<li class="role">
 					<?php 
 					if(getDailyRewardEligibility($conn)) { 
 						// Reset daily reward streak if yesterday's daily reward wasn't claimed
@@ -70,15 +69,24 @@ if(getVisibility($conn) == "0"){
 							resetDailyRewardStreak($conn);
 						}
 						?>
+						<li class="role" id="reward">
+						<li class="role">
 						<form>
 						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
-						<span id="reward"></span>
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
 						</form>
+						</li>
 					<?php } else { ?>
-						<strong>Daily Reward Already Claimed</strong><br><br>
+						<li class="role">
+							<?php
+							$reward = getTodaysReward($conn)
+							echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
+							?>
+						</li>
+						<li class="role">
+						<strong>Daily Reward Already Claimed</strong>
+						</li>
 					<?php } ?>
-				</li>
 			</ul>
 		</div>
 		<h2>Crafting</h2>
