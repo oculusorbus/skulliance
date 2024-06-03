@@ -81,11 +81,10 @@ if(getVisibility($conn) == "0"){
 							$current_streak = getCurrentDailyRewardStreak($conn);
 							if($current_streak == 0){
 								$rewards = getCompletedRewards($conn);
-								print_r($rewards);
 								if(is_array($rewards)){
 									foreach($rewards AS $index => $reward){
 										echo "<li class='role'>";
-										echo "Day ".$reward[$index]["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward[$index]["currency"]).".png'/> ".$reward[$index]["amount"]." ".$reward[$index]["currency"];
+										echo "Day ".$reward["day"].": &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
 										echo "</li>";
 									}
 								}
