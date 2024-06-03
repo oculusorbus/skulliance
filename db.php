@@ -310,9 +310,9 @@ function getProjects($conn, $type=""){
 	}
 }
 
-// Get random daily reward for user
-function getRandomReward($conn){
-	$date_flag = false;
+// Determine if eligible for daily reward
+function getDailyRewardEligibility($conn){
+	$eligibility = false;
 	$date_created = "";
 	$sql = "SELECT id, MAX(date_created) AS date_created FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus = '1' GROUP BY id";
 	$result = $conn->query($sql);
@@ -329,13 +329,18 @@ function getRandomReward($conn){
 	
 	if(isset($date_created)){
 		if (strtotime('-1 day') < strtotime($date_created)) {
-		    $date_flag = false;
+		    $eligibility = false;
 		}else{
-			$date_flag = true;
+			$eligibility = true;
 		}
 	}
-	
-	if($date_flag){
+	return $eligibility;
+}
+
+// Get random daily reward for user
+function getRandomReward($conn){
+	$eligibility = getDailyRewardEligibility($conn);
+	if($eligibility){
 		$projects = array();
 		$project = array();
 		$projects = getProjects($conn, $type="");
