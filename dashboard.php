@@ -73,7 +73,8 @@ function renderDailyRewards($rewards){
 							resetDailyRewardStreak($conn);
 						}
 						?>
-						<li class="role" id="reward"></li>
+						<li class="role" id="reward" style="display:none"></li>
+						<br>
 						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
 					<?php } else { ?>
