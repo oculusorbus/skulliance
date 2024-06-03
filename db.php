@@ -312,6 +312,8 @@ function getProjects($conn, $type=""){
 
 // Get random daily reward for user
 function getRandomReward($conn){
+	$date_flag = false;
+	$date_created = "";
 	$sql = "SELECT id, MAX(date_created) AS date_created FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus = '1' GROUP BY id";
 	$result = $conn->query($sql);
 
@@ -320,23 +322,31 @@ function getRandomReward($conn){
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	$date_created = $row["date_created"];
-		$id = $row["id"];
 	  }
 	} else {
 	  //echo "0 results";
 	}
-	echo $date_created."<br>";
-	echo $id;
-	exit;
 	
-	$projects = array();
-	$project = array();
-	$projects = getProjects($conn, $type="");
-	$project_id = rand(1, count($projects));
-	$project = $projects[$project_id];
-	$project["amount"] = 10;
-	logCredit($conn, $_SESSION['userData']['user_id'], 10, $project_id, $crafting=0, $bonus=1);
-	return $project;
+	if(isset($date_created)){
+		if (strtotime('-1 day') < strtotime($date_created)) {
+		    $date_flag = false;
+		}else{
+			$date_flag = true;
+		}
+	}
+	
+	if($date_flag){
+		$projects = array();
+		$project = array();
+		$projects = getProjects($conn, $type="");
+		$project_id = rand(1, count($projects));
+		$project = $projects[$project_id];
+		$project["amount"] = 10;
+		logCredit($conn, $_SESSION['userData']['user_id'], 10, $project_id, $crafting=0, $bonus=1);
+		return $project;
+	}else{
+		
+	}
 }
 
 // Check if user already exists, if not... create them.
