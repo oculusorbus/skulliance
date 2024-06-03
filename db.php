@@ -310,6 +310,59 @@ function getProjects($conn, $type=""){
 	}
 }
 
+// Verify yesterday's rewards
+function verifyYesterdaysRewards($conn){
+	$sql = "SELECT id FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND date_created >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND date_created < CURDATE()";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return true;
+	  }
+	} else {
+	  //echo "0 results";
+	  return false;
+	}
+}
+
+// Get current daily reward streak
+function getCurrentDailyRewardStreak($conn) {
+	$sql = "SELECT streak FROM users WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+	$streak = 0;
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$streak = $row["streak"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $streak;
+}
+
+// Increment daily reward streak
+function incrementDailyRewardStreak($conn) {
+	$current_streak = getCurrentDailyRewardStreak($conn);
+	$current_streak++;
+	$streak = $current_streak;
+	// If streak reaches 7 days, reset to zero
+	if($streak == 7){
+		$streak = 0;
+	}
+	$sql = "UPDATE users SET streak='".$streak."' WHERE id='".$_SESSION['userData']['user_id']."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+	return $current_streak;
+}
+
 // Determine if eligible for daily reward
 function getDailyRewardEligibility($conn){
 	$eligibility = false;
@@ -346,8 +399,9 @@ function getRandomReward($conn){
 		$projects = getProjects($conn, $type="");
 		$project_id = rand(1, count($projects));
 		$project = $projects[$project_id];
-		$project["amount"] = 10;
-		logCredit($conn, $_SESSION['userData']['user_id'], 10, $project_id, $crafting=0, $bonus=1);
+		$current_streak = incrementDailyRewardStreak($conn);
+		$project["amount"] = $current_streak;
+		logCredit($conn, $_SESSION['userData']['user_id'], $project["amount"], $project_id, $crafting=0, $bonus=1);
 		return $project;
 	}
 }
