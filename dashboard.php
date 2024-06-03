@@ -69,12 +69,10 @@ if(getVisibility($conn) == "0"){
 							resetDailyRewardStreak($conn);
 						}
 						?>
-						<li class="role" id="reward">
+						<li class="role" id="reward"></li>
 						<li class="role">
-						<form>
 						<!--<img class="icon" id="dailyRewardIcon" src="icons/diamond.png" style="display:none;"/>-->
 						<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">
-						</form>
 						</li>
 					<?php } else { ?>
 						<li class="role">
