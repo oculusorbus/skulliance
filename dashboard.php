@@ -86,7 +86,6 @@ function renderDailyRewards($rewards){
 							if($current_streak == 0){
 								$rewards = getCompletedRewards($conn);
 								renderDailyRewards($rewards);
-								exit;
 							}
 							?>
 						<li class="role">
