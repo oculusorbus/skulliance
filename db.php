@@ -429,6 +429,7 @@ function getStreakRewards($conn) {
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	$days[$index] = array();
+		$days[$index]["day"] = $index;
 		$days[$index]["currency"] = $row["currency"];
 		$days[$index]["amount"] = $row["amount"];
 		$index--;
