@@ -40,9 +40,7 @@ function renderDailyRewards($rewards){
 	$count = 0;
 	if(is_array($rewards)){
 		foreach($rewards AS $index => $reward){
-			echo "<li class='role'>";
-			echo "<strong>Day ".$reward["day"].":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($reward["currency"]).".png'/> ".$reward["amount"]." ".$reward["currency"];
-			echo "</li>";
+			renderDailyReward($reward["day"], $reward["currency"], $reward["amount"]);
 		}
 		$count = count($rewards);
 	}else{
@@ -50,16 +48,22 @@ function renderDailyRewards($rewards){
 	}
 	$count++;
 	if($count <= 7){
-      echo "<li class='role' id='reward'>";
-  	  echo "<strong>Day ".$count.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/mystery.png'/> ".$count." RANDOM";
-      echo "</li>";
+	  renderDailyReward($count, "MYSTERY", $count, true);
 	}
 	$count++;
 	for ($count; $count <= 7; $count++) {
-      echo "<li class='role'>";
-	  echo "<strong>Day ".$count.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/mystery.png'/> ".$count." RANDOM";
-      echo "</li>";
+      renderDailyReward($count, "MYSTERY", $count);
 	}	
+}
+
+function renderDailyReward($day, $currency, $amount, $reward=false) {
+	if($reward){
+		echo "<li class='role' id='reward'>";
+	}else{
+		echo "<li class='role'>";
+	}
+	echo "<strong>Day ".$day.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($currency).".png'/> ".$amount." ".$currency;
+	echo "</li>";
 }
 ?>
 
