@@ -441,7 +441,6 @@ function renderDailyRewardsSection(){
 	global $conn;
 	echo "<ul>";
 	echo "<li class='role'><strong>Current Daily Rewards Streak</strong></li>";
-	echo "<li class='role'>Collect daily random rewards for up to 7 days in a row.</li>";
 	$days = getStreakRewards($conn);
 	renderDailyRewards($days);
 	if(getDailyRewardEligibility($conn)) { 
