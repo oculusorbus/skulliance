@@ -81,6 +81,7 @@ if(getVisibility($conn) == "0"){
 							$current_streak = getCurrentDailyRewardStreak($conn);
 							if($current_streak == 0){
 								$rewards = getCompletedRewards($conn);
+								print_r($rewards);
 								if(is_array($rewards)){
 									foreach($rewards AS $index => $reward){
 										echo "<li class='role'>";
