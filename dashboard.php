@@ -53,9 +53,11 @@ if(getVisibility($conn) == "0"){
 				<?php
 				$days = getStreakRewards($conn);
 				if(!empty($days)){
-					echo "<strong>Current Streak</strong>";
 					foreach($days AS $number => $day){
 						echo "<li class='role'>";
+						if($number == 1){
+							echo "<strong>Current Streak</strong>";
+						}
 						echo "Day ".$number.": "."&nbsp;<img class='icon' src='icons/".strtolower($day["currency"]).".png'/>".$day["amount"]." ".$day["currency"];
 						echo "</li>";
 					}
