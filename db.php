@@ -422,12 +422,12 @@ function getRandomReward($conn){
 function getRewardTiers(){
 	$reward_tiers = array();
 	$reward_tiers[1] = 1;
-	$reward_tiers[2] = 2;
-	$reward_tiers[3] = 3;
-	$reward_tiers[4] = 5;
-	$reward_tiers[5] = 10;
-	$reward_tiers[6] = 15;
-	$reward_tiers[7] = 20;
+	$reward_tiers[2] = 3;
+	$reward_tiers[3] = 5;
+	$reward_tiers[4] = 10;
+	$reward_tiers[5] = 15;
+	$reward_tiers[6] = 20;
+	$reward_tiers[7] = 25;
 	return $reward_tiers;
 }
 
