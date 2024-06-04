@@ -464,7 +464,7 @@ function renderDailyRewardsSection(){
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role">'; 
-		$d1 = new DateTime(strtotime(getMaxDateCreated($conn)));
+		$d1 = new DateTime(getMaxDateCreated($conn));
 		//$d1 = new DateTime(date('Y-m-d H:i:s'));  
 		$d2 = new DateTime('tomorrow 00:00:00');
 		$interval = $d1->diff($d2);
