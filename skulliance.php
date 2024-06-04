@@ -462,7 +462,7 @@ function renderDailyRewardsSection(){
 			}*/
 		echo '<li class="role">';
 		echo '<strong>Daily Reward Already Claimed</strong>';
-		$d1 = new DateTime('today');                                                                                          
+		$d1 = new DateTime('today H:i:s');                                                                                          
 		$d2 = new DateTime('tomorrow 00:00:00');
 
 		$interval = $d1->diff($d2);
