@@ -428,10 +428,14 @@ function renderDailyRewards($rewards){
 }
 
 function renderDailyReward($day, $currency, $amount, $reward=false) {
+	$greyed_out = "";
+	if($currency == "RANDOM"){
+		$greyed_out = " greyed-out";
+	}
 	if($reward){
-		echo "<li class='role' id='reward'>";
+		echo "<li class='role".$greyed_out."' id='reward'>";
 	}else{
-		echo "<li class='role'>";
+		echo "<li class='role".$greyed_out."'>";
 	}
 	echo "<strong>Day ".$day.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($currency).".png'/> +".$amount." ".preg_replace('/[0-9]+/', '', $currency);
 	echo "</li>";

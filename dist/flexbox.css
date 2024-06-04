@@ -595,6 +595,10 @@ li {
 .no-border-style {
 	border-style: none;
 }
+
+.greyed-out {
+	opacity: 0.5;
+}
 /*
 li form {
 	float: right;
