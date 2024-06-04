@@ -342,6 +342,7 @@ function dailyReward(){
 		  if(obj == null){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
+		    document.getElementById('reward').style.opacity = 1;
 		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong> &nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
 	  	  }
 		  document.getElementById('claimRewardButton').style.display = "none";
