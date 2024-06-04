@@ -593,7 +593,7 @@ li {
 }
 
 .no-border-style {
-	border-style: none !important;
+	border-style: none;
 }
 /*
 li form {
