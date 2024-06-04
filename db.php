@@ -312,7 +312,7 @@ function getProjects($conn, $type=""){
 
 // Verify yesterday's rewards
 function verifyYesterdaysRewards($conn){
-	$sql = "SELECT id FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND date_created >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND date_created < CURDATE()";
+	$sql = "SELECT id FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND DATE(date_created) >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND DATE(date_created) < CURDATE()";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
