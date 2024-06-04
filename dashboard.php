@@ -35,6 +35,19 @@ if(getVisibility($conn) == "0"){
 	</script>
 	<?php
 }
+
+$sql = "SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY) AS yesterday";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+  // output data of each row
+  while($row = $result->fetch_assoc()) {
+    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+	echo $row['yesterday'];
+  }
+} else {
+  //echo "0 results";
+}
 ?>
 
 <a name="dashboard" id="dashboard"></a>
