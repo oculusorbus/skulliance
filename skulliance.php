@@ -471,7 +471,7 @@ function renderDailyRewardsSection(){
 		$date = strtotime('+1 day', strtotime(getMaxDateCreated($conn)));
 		$remaining = $date - time();
 		$hours_remaining = floor(($remaining % 86400) / 3600);
-		$minutes_remaining = floor(($rem % 3600) / 60);
+		$minutes_remaining = floor(($remaining % 3600) / 60);
 		echo $hours_remaining." hours and ".$minutes_remaining." minutes until next reward.";
 		echo '</li>';
 		/* Failed date/time bullshit
