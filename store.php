@@ -59,6 +59,7 @@ include 'header.php';
 							getItems($conn, "store", $filterby);
 						}else{
 							echo "<p>The store is disabled on the test server. Kick rocks.</p>";
+							getItems($conn, "store", $filterby);
 						}
 						?>				
 					</div>
