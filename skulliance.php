@@ -467,10 +467,12 @@ function renderDailyRewardsSection(){
 		echo '<li class="role no-border-style">';
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
+		echo '<li class="role">';
 		$date = strtotime('+1 day', strtotime(getMaxDateCreated($conn)));
 		$remaining = $date - time();
 		$hours_remaining = floor(($remaining % 86400) / 3600);
 		echo $hours_remaining." hours until next reward.";
+		echo '</li>';
 		/* Failed date/time bullshit
 		echo '<li class="role">';
 		$d1 = new DateTime(getMaxDateCreated($conn));
