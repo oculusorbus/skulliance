@@ -429,7 +429,7 @@ function renderDailyRewards($rewards){
 
 function renderDailyReward($day, $currency, $amount, $reward=false) {
 	$greyed_out = "";
-	if($currency == "RANDOM"){
+	if(str_contains($currency, "RANDOM")){
 		$greyed_out = " greyed-out";
 	}
 	if($reward){
