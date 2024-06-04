@@ -411,6 +411,7 @@ function getRandomReward($conn){
 		$project = $projects[$project_id];
 		$current_streak = incrementDailyRewardStreak($conn);
 		$reward_tiers = getRewardTiers();
+		$project["day"] = $current_streak;
 		$project["amount"] = $reward_tiers[$current_streak];
 		updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $project["amount"]);
 		logCredit($conn, $_SESSION['userData']['user_id'], $project["amount"], $project_id, $crafting=0, $bonus=1);
