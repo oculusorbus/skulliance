@@ -376,6 +376,18 @@ function resetDailyRewardStreak($conn) {
 // Determine if eligible for daily reward
 function getDailyRewardEligibility($conn){
 	$eligibility = false;
+	$date_created = getMaxDateCreated($conn);
+	if(isset($date_created)){
+		if (strtotime('-1 day') < strtotime($date_created)) {
+		    $eligibility = false;
+		}else{
+			$eligibility = true;
+		}
+	}
+	return $eligibility;
+}
+
+function getMaxDateCreated($conn){
 	$date_created = "";
 	$sql = "SELECT id, MAX(date_created) AS date_created FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus = '1' GROUP BY id";
 	$result = $conn->query($sql);
@@ -386,18 +398,11 @@ function getDailyRewardEligibility($conn){
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	$date_created = $row["date_created"];
 	  }
+	  return $date_created;
 	} else {
 	  //echo "0 results";
+      return null;
 	}
-	
-	if(isset($date_created)){
-		if (strtotime('-1 day') < strtotime($date_created)) {
-		    $eligibility = false;
-		}else{
-			$eligibility = true;
-		}
-	}
-	return $eligibility;
 }
 
 // Get random daily reward for user
