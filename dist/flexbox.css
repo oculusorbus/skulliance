@@ -591,6 +591,10 @@ li {
 	border-color: #43464D !important;
 	list-style: none;
 }
+
+.no-border-style {
+	border-style: none;
+}
 /*
 li form {
 	float: right;
