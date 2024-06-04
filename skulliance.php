@@ -460,7 +460,7 @@ function renderDailyRewardsSection(){
 				$rewards = getCompletedRewards($conn);
 				renderDailyRewards($rewards);
 			}*/
-		echo '<li class="role">';
+		echo '<li class="role" style="border-style:none;">';
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role">';
