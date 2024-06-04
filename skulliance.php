@@ -441,7 +441,6 @@ function renderDailyRewardsSection(){
 	global $conn;
 	echo "<ul>";
 	echo "<li class='role no-border-style'><strong>Current Daily Rewards Streak</strong></li>";
-	echo "<li class='role'>Claiming daily random rewards in a row increases reward amounts over 7 days.</li>";
 	if(getDailyRewardEligibility($conn)) { 
 		// Reset daily reward streak if yesterday's daily reward wasn't claimed
 		if(!verifyYesterdaysRewards($conn)){
