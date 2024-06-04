@@ -466,9 +466,8 @@ function renderDailyRewardsSection(){
 		echo '<li class="role">'; 
 		$d1 = new DateTime(getMaxDateCreated($conn));
 		//$d1 = new DateTime(date('Y-m-d H:i:s'));  
-		$time = date("H:i:s", strtotime(getMaxDateCreated($conn)));
-		echo $time;
-		$d2 = new DateTime('tomorrow '.$time);
+		$timetime = date("Y-m-d H:i:s", strtotime('+1 day', strtotime(getMaxDateCreated($conn))));
+		$d2 = new DateTime($datetime);
 		$interval = $d1->diff($d2);
 		echo $interval->format('%h')." hours and ".$interval->format('%i')." minutes until next reward.";
 		echo '</li>';
