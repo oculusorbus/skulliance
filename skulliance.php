@@ -462,7 +462,8 @@ function renderDailyRewardsSection(){
 			}*/
 		echo '<li class="role">';
 		echo '<strong>Daily Reward Already Claimed</strong>';
-		echo date("H", strtotime("tomorrow 00:00:00") - time())." hours until next reward.";
+		$timeLeft = 86400 - (time() - strtotime("today"));
+		echo date("H", $timeLeft)." hours until next reward.";
 		echo '</li>';
  	} 
 	echo '</ul>';
