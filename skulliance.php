@@ -461,26 +461,14 @@ function renderDailyRewardsSection(){
 				renderDailyRewards($rewards);
 			}*/
 		echo '<li class="role">';
-		echo '<strong>Daily Reward Already Claimed</strong>';
-		$sql = "SELECT CURTIME() AS currenttime";
-		$result = $conn->query($sql);
-
-		if ($result->num_rows > 0) {
-		  // output data of each row
-		  while($row = $result->fetch_assoc()) {
-		    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-	    	echo $row["currenttime"];
-		  }
-		} else {
-		  //echo "0 results";
-		}
+		echo '<strong>Daily Reward Already Claimed</strong><br><br>';
 		echo date('Y-m-d H:i:s');
 		$d1 = new DateTime(date('Y-m-d H:i:s'));                                                                                          
 		$d2 = new DateTime('tomorrow 00:00:00');
 
 		$interval = $d1->diff($d2);
 
-		echo $interval->format('%h')." hours until next reward.";
+		echo $interval->format('%h')." hours and ".$interval->format('%i')." minutes until next reward.";
 		echo '</li>';
  	} 
 	echo '</ul>';
