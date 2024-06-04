@@ -387,6 +387,7 @@ function getDailyRewardEligibility($conn){
 	return $eligibility;
 }
 
+// Get maximum date created for bonus transaction
 function getMaxDateCreated($conn){
 	$date_created = "";
 	$sql = "SELECT id, MAX(date_created) AS date_created FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus = '1' GROUP BY id";
