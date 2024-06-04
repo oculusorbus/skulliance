@@ -383,6 +383,8 @@ function getDailyRewardEligibility($conn){
 		}else{
 			$eligibility = true;
 		}
+	}else{
+		$eligibility = true;
 	}
 	return $eligibility;
 }
