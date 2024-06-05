@@ -454,7 +454,11 @@ function renderDailyRewardsSection(){
 	$days = getStreakRewards($conn);
 	renderDailyRewards($days);
 	if(getDailyRewardEligibility($conn)) { 
-		echo "<br>";
+		echo '<li class="role no-border-style" id="claimed" style="display:none;">';
+		echo '<strong>Daily Reward Already Claimed</strong>';
+		echo '</li>';
+		echo '<li class="role" id="remaining">';
+		echo '</li>';
 		echo '<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">';
 	} else { 
 			// Display 7 day completed rewards despite streak being reset
