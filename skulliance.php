@@ -455,7 +455,7 @@ function renderDailyRewardsSection(){
 	renderDailyRewards($days);
 	if(getDailyRewardEligibility($conn)) { 
 		echo '<li class="role no-border-style" id="claimed" style="display:none;">';
-		echo '<strong>Daily Reward Already Claimed</strong>';
+		echo '<strong>Daily Reward Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role" id="remaining" style="display:none;">';
 		echo '</li><br>';
