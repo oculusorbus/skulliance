@@ -458,7 +458,7 @@ function renderDailyRewardsSection(){
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role" id="remaining" style="display:none;">';
-		echo '</li>';
+		echo '</li><br>';
 		echo '<input id="claimRewardButton" type="button" value="Claim Daily Reward" class="button" onclick="javascript:dailyReward();">';
 	} else { 
 			// Display 7 day completed rewards despite streak being reset
