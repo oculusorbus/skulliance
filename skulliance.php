@@ -485,7 +485,7 @@ function getRewardTimeRemaining($conn){
 		$remaining = $date - time();
 		$hours_remaining = floor(($remaining % 86400) / 3600);
 		$minutes_remaining = floor(($remaining % 3600) / 60);
-		return $hours_remaining." hours and ".$minutes_remaining." minutes until next reward.";
+		return $hours_remaining." hours and ".$minutes_remaining." minutes until next reward";
 	}else{
 		return "";
 	}
