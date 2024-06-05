@@ -345,6 +345,7 @@ function dailyReward(){
 		    document.getElementById('reward').style.opacity = 1;
 		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong> &nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
 			document.getElementById('claimed').style.display = "flex";
+			document.getElementById('remaining').style.display = "flex";
 			document.getElementById('remaining').innerHTML = obj.remaining;
 	  	  }
 		  document.getElementById('claimRewardButton').style.display = "none";
