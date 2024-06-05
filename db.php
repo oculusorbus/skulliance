@@ -378,7 +378,7 @@ function getDailyRewardEligibility($conn){
 	$eligibility = false;
 	$date_created = getMaxDateCreated($conn);
 	if(isset($date_created)){
-		if (strtotime(date('Y-m-d 00:00:00', strtotime('-1 day')))3 < strtotime($date_created)) {
+		if (strtotime(date('Y-m-d 00:00:00', strtotime('-1 day'))) < strtotime($date_created)) {
 		    $eligibility = false;
 		}else{
 			$eligibility = true;
