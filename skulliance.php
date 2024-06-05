@@ -470,7 +470,7 @@ function renderDailyRewardsSection(){
 		echo '<li class="role">';
 		$maxdate = getMaxDateCreated($conn);
 		if(isset($maxdate)){
-			$date = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', $maxdate)));
+			$date = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', strtotime($maxdate))));
 			$remaining = $date - time();
 			$hours_remaining = floor(($remaining % 86400) / 3600);
 			$minutes_remaining = floor(($remaining % 3600) / 60);
