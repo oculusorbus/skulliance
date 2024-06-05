@@ -468,17 +468,23 @@ function renderDailyRewardsSection(){
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role">';
-		$maxdate = getMaxDateCreated($conn);
-		if(isset($maxdate)){
-			$date = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', strtotime($maxdate))));
-			$remaining = $date - time();
-			$hours_remaining = floor(($remaining % 86400) / 3600);
-			$minutes_remaining = floor(($remaining % 3600) / 60);
-			echo $hours_remaining." hours and ".$minutes_remaining." minutes until next reward.";
-		}
+		echo getRewardTimeRemaining($conn);
 		echo '</li>';
  	} 
 	echo '</ul>';
+}
+
+function getRewardTimeRemaining($conn){
+	$maxdate = getMaxDateCreated($conn);
+	if(isset($maxdate)){
+		$date = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', strtotime($maxdate))));
+		$remaining = $date - time();
+		$hours_remaining = floor(($remaining % 86400) / 3600);
+		$minutes_remaining = floor(($remaining % 3600) / 60);
+		return $hours_remaining." hours and ".$minutes_remaining." minutes until next reward.";
+	}else{
+		return "";
+	}
 }
 
 function renderCrafting($conn, $page){
