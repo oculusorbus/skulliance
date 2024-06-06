@@ -337,29 +337,32 @@ function processMissionNFT(action, nft_id, rate){
 	xhttp.open('GET', 'ajax/process-mission-nft.php?action='+action+'nft_id'+nft_id+'&rate='+rate, true);
 	xhttp.send();
 	
-	if(action == 'Select'){
-		document.getElementById('button-'+nft_id).value = 'Deselect';
-	}else if(action == 'Deselect'){
-		document.getElementById('button-'+nft_id).value = 'Select';
-	}
 	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
-	    if (xhttp.status == 200) {
-	      // Access the data returned by the server
-	      var data = xhttp.responseText;
-		  alert(data);
-		  const obj = JSON.parse(data);
-		  if(obj == null){
-			  
-		  }else{
-			  
-	  	  }
-		  console.log(data);
-	      // Do something with the data
+	    if (xhttp.status == 200) {	
+			current_rate = document.getElementById('success-rate').innerHTML;
+			if(action == 'Select'){
+				document.getElementById('button-'+nft_id).value = 'Deselect';
+				setSuccessRate(current_rate+rate);
+			}else if(action == 'Deselect'){
+				document.getElementById('button-'+nft_id).value = 'Select';
+				setSuccessRate(current_rate-rate);
+			}
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+			alert(data);
+			const obj = JSON.parse(data);
+			if(obj == null){
+  
+			}else{
+  
+			}
+			console.log(data);
+			// Do something with the data
 	    } else {
 	      // Handle error
-			alert("error");
+			alert("AJAX Error");
 	    }
 	  }
 	};
