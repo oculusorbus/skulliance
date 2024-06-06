@@ -581,7 +581,6 @@ function startMission($conn){
 		VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."'); 
 		SELECT LAST_INSERT_ID() AS mission_id;";
 		
-		/*
 		$mission_id = "";
 		if ($conn->query($sql) === TRUE) {
 			//echo "New record created successfully";
@@ -605,7 +604,7 @@ function startMission($conn){
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
-		unset($_SESSION['userData']['mission']);*/
+		unset($_SESSION['userData']['mission']);
 	}
 }
 
