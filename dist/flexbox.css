@@ -768,6 +768,10 @@ li form {
 	overflow-y: clip;
 }
 
+.highlight {
+	border: 1px solid white;
+}
+
 .nft-level{
 	color: #bbb;
 }

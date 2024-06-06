@@ -15,14 +15,18 @@ if(isset($_GET['username'])){
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <?php 
+  $project_id = 0;
+  $quest_id = 0;
   if(isset($_POST["project_id"]) && isset($_POST["quest_id"])){ 
+	  $project_id = $_POST["project_id"];
+	  $quest_id = $_POST["quest_id"];
   ?>	
   <div class="side">
   	<a name="inventory" id="inventory"></a>
 	<h2>Inventory</h2>
 	<div class="content inventory">
 		<?php 
-		getInventory($conn, $_POST["project_id"]); 
+		getInventory($conn, $project_id); 
 	    ?>
 	</div>
   </div>
@@ -37,7 +41,7 @@ if(isset($_GET['username'])){
 		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
-				getMissions($conn);
+				getMissions($conn, $quest_id);
 			}else{
 				echo "<p>Please connect a Cardano wallet to view your qualifying NFTs.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
