@@ -764,6 +764,7 @@ li form {
 
 .inventory .nft-image {
     min-height: 45px;
+	overflow-y: inherit;
 }
 
 .nft-level{
