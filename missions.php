@@ -41,6 +41,20 @@ if(isset($_GET['username'])){
   }
   ?>
   <div class="main">
+	<h2>Current Missions</h2>
+	<a name="current-missions" id="current-missions"></a>
+    <div class="content missions">
+		<?php //filterMissions($project_id); ?>
+		<div id="nfts" class="nfts">
+			<?php 
+			if(isset($_SESSION['userData']['user_id'])){
+				getCurrentMissions($conn);
+			}else{
+				echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
+			} 
+			?>
+		</div>
+    </div>
 	<h2>Missions</h2>
 	<a name="missions" id="missions"></a>
     <div class="content missions">
@@ -50,7 +64,7 @@ if(isset($_GET['username'])){
 			if(isset($_SESSION['userData']['user_id'])){
 				getMissions($conn, $quest_id);
 			}else{
-				echo "<p>Please connect a Cardano wallet to view your qualifying NFTs.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
+				echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
 			?>
 		</div>

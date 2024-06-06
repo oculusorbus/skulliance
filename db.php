@@ -546,6 +546,26 @@ function getMissions($conn, $quest_id) {
 	}
 }
 
+// Get Current Missions for User
+function getCurrentMissions($conn){
+	$sql = "SELECT title FROM missions INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id WHERE status = 0 AND user_id = '".$_SESSION['userData']['user_id']."'";
+	
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+ 	  echo "<ul>";
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  echo "<li class='role'>";
+		  echo $row["title"];
+		  echo "</li>";
+	  }
+	  echo "</ul>";
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Get missions inventory
 function getInventory($conn, $project_id, $quest_id) {
 	$sql = "SELECT nfts.id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
