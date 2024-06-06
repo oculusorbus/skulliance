@@ -431,6 +431,8 @@ function dailyReward(){
 	      // Do something with the data
 	    } else {
 	      // Handle error
+     	  var data = xhttp.responseText;
+		  alert(data);
 	    }
 	  }
 	};
