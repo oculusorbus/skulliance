@@ -555,7 +555,7 @@ function getCurrentMissions($conn){
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
- 	  echo "<table>";
+ 	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th>Title</th><th>NFTs Deployed</th><th>Success Rate</th><th>Time Left</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
