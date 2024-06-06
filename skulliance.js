@@ -364,6 +364,7 @@ function processMissionNFT(action, nft_id, rate){
 				}else{
   
 				}*/
+				console.log('ajax/process-mission-nft.php?action='+action+'&nft_id'+nft_id+'&rate='+rate);
 				console.log(data);
 				// Do something with the data
 		    } else {
