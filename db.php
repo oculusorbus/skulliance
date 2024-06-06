@@ -559,7 +559,7 @@ function getCurrentMissions($conn){
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th>";
+	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Completed</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
   		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
@@ -568,8 +568,9 @@ function getCurrentMissions($conn){
   		$minutes_remaining = floor(($remaining % 3600) / 60);
 		if($hours_remaining > 0 && $minutes_remaining > 0){
 			$time_message = $hours_remaining." Hours and ".$minutes_remaining." Minutes";
+			$completed = "Not Completed";
 		}else{
-			$time_message = "0 Hours and 0 Minutes";
+			$completed = "<input type='button' 'class='small-button' value='Claim'/>";
 		}
 		echo "<tr>";
 		  echo "<td align='left'>";
@@ -589,6 +590,9 @@ function getCurrentMissions($conn){
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $time_message;
+		  echo "</td>";
+  		  echo "<td align='left'>";
+		  echo $completed;
 		  echo "</td>";
 		echo "</tr>";
 	  }
