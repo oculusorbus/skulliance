@@ -15,6 +15,7 @@ if(isset($_GET['username'])){
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <?php 
+  $rate_tally = 0;
   $project_id = 0;
   $quest_id = 0;
   if(isset($_POST["project_id"]) && isset($_POST["quest_id"])){ 
@@ -30,6 +31,9 @@ if(isset($_GET['username'])){
 	<div class="content inventory">
 		<?php 
 		$rate_tally = getInventory($conn, $project_id, $quest_id);
+		if($rate_tally == 0){
+			echo "<h3>No Inventory Available for this Mission</h3>";
+		}
 	    ?>
 	</div>
   </div>
