@@ -55,7 +55,7 @@ if(isset($_GET['username'])){
 			?>
 		</div>
     </div>
-	<h2>Missions</h2>
+	<h2>Available Missions</h2>
 	<a name="missions" id="missions"></a>
     <div class="content missions">
 		<?php //filterMissions($project_id); ?>
