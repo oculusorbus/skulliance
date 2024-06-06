@@ -543,7 +543,7 @@ function getMissions($conn) {
 
 // Get missions inventory
 function getInventory($conn, $project_id=0) {
-	$sql = "SELECT name, ipfs, rate FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
+	$sql = "SELECT nfts.name, ipfs, rate FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
 	
 	$result = $conn->query($sql);
 	
