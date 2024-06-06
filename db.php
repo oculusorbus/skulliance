@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
-	$sql = "SELECT DISTINCT missions.id, title, projects.name AS project_name, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
+	$sql = "SELECT DISTINCT missions.id AS mission_id, title, projects.name AS project_name, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions INNER JOIN quests ON missions.quest_id = quests.id INNER JOIN projects ON projects.id = quests.project_id INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id 
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY missions.id ASC";
 	
@@ -571,7 +571,7 @@ function getCurrentMissions($conn){
 			$completed = "Not Completed";
 		}else{
 			$time_message = "0 Hours and 0 Minutes";
-			$completed = "<input type='button' class='small-button' value='Claim'/>";
+			$completed = "<input type='button' class='small-button' value='Claim' onclick='claimMission(".$row["mission_id"].");'/>";
 		}
 		echo "<tr>";
 		  echo "<td align='left'>";
@@ -638,6 +638,14 @@ function getInventory($conn, $project_id, $quest_id) {
 
 function startMission($conn){
 	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
+		
+		/*
+		$balance = getBalance($conn, $_POST['project_id']);
+		if($balance >= $price){
+			updateBalance($conn, $user_id, $_POST['project_id'], -$price);
+			logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);*/
+		
+		//logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, $project_id, 1, 1);
 		$sql = "INSERT INTO missions (quest_id, user_id)
 		VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
 		
@@ -1952,9 +1960,9 @@ function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0)
 }
 
 // Log a specific user debit for an item purchase
-function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0) {
-	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting)
-	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."')";
+function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission=0) {
+	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission)
+	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
