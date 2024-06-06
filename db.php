@@ -534,7 +534,6 @@ function getMissions($conn) {
 		  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
 		  <input class='small-button' type='submit' value='Select Mission'>
 		</form>";
-		echo "<input type='button' class='small-button' value='Select Mission'>";
 		echo "</div></div>";
 	  }
 	} else {
@@ -544,7 +543,7 @@ function getMissions($conn) {
 
 // Get missions inventory
 function getInventory($conn, $project_id=0) {
-	$sql = "SELECT title, ipfs, rate FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
+	$sql = "SELECT name, ipfs, rate FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
 	
 	$result = $conn->query($sql);
 	
