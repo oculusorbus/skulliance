@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
-	$sql = "SELECT DISTINCT missions.id AS mission_id, title, projects.name AS project_name, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
+	$sql = "SELECT DISTINCT missions.id AS mission_id, title, projects.name AS project_name, cost, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions INNER JOIN quests ON missions.quest_id = quests.id INNER JOIN projects ON projects.id = quests.project_id INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id 
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY missions.id ASC";
 	
@@ -559,7 +559,7 @@ function getCurrentMissions($conn){
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
+	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
   		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
@@ -582,6 +582,9 @@ function getCurrentMissions($conn){
 		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo $row["total_nfts"];
+		  echo "</td>";
+		  echo "<td align='left'>";
+		  echo $row["cost"]." ".$row["currency"];
 		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo $row["reward"]." ".$row["currency"];
