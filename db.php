@@ -567,7 +567,7 @@ function getCurrentMissions($conn){
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
 		if($hours_remaining > 0 && $minutes_remaining > 0){
-			$time_message = $hours_remaining." Hours and ".$minutes_remaining." Minutes";
+			$time_message = $hours_remaining." Hours ".$minutes_remaining." Minutes";
 			$completed = "Not Completed";
 		}else{
 			$time_message = "0 Hours and 0 Minutes";
