@@ -555,6 +555,9 @@ function getCurrentMissions($conn){
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
+	  echo "<h2>Current Missions</h2>";
+	  echo '<a name="current-missions" id="current-missions"></a>';
+	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th>";
 	  // output data of each row
@@ -584,7 +587,7 @@ function getCurrentMissions($conn){
 		  echo "</td>";
 		echo "</tr>";
 	  }
-	  echo "</table>";
+	  echo "</table></div>";
 	} else {
 	  //echo "0 results";
 	}
