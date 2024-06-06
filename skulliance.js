@@ -378,7 +378,7 @@ function processMissionNFT(action, nft_id, rate){
 
 function startMission() {
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'start-mission.php', true);
+	xhttp.open('GET', 'ajax/start-mission.php', true);
 	xhttp.send();
 
 	xhttp.onreadystatechange = function() {
