@@ -563,6 +563,7 @@ function getCurrentMissions($conn){
   		$remaining = $date - time();
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
+		echo "<tr>";
 		  echo "<td>";
 		  echo $row["title"];
 		  echo "</td>";
@@ -575,6 +576,7 @@ function getCurrentMissions($conn){
   		  echo "<td>";
 		  echo "Time Left: ".$hours_remaining." Hours and ".$minutes_remaining." Minutes";
 		  echo "</td>";
+		echo "</tr>";
 	  }
 	  echo "</table>";
 	} else {
