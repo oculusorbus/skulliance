@@ -583,18 +583,17 @@ function startMission($conn){
 		$mission_id = 0;
 		if ($conn->query($sql) === TRUE) {
 			//echo "New record created successfully";
-			$sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
+			$mission_sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
+			$result = $conn->query($sql);
 			
-			if ($conn->query($sql) === TRUE) {
-				if ($result->num_rows > 0) {
-				  // output data of each row
-				  while($row = $result->fetch_assoc()) {
-					  $mission_id = $row["mission_id"];
-				  }
-			    }else{
-			    	
-			    }
-		  	}
+			if ($result->num_rows > 0) {
+			  // output data of each row
+			  while($row = $result->fetch_assoc()) {
+				  $mission_id = $row["mission_id"];
+			  }
+		    }else{
+		    	
+		    }
 			if($mission_id > 0){
 				foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
 					$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
