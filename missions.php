@@ -14,6 +14,8 @@ if(isset($_GET['username'])){
 
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
+  <div class="side">
+  </div>
   <div class="main">
 	<h2>Missions</h2>
 	<a name="missions" id="missions"></a>
@@ -28,8 +30,6 @@ if(isset($_GET['username'])){
 			} 
 			?>
 		</div>
-    </div>
-    <div class="side">
     </div>
   </div>
 </div>
