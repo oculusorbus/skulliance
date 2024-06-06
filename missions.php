@@ -20,13 +20,17 @@ if(isset($_GET['username'])){
   if(isset($_POST["project_id"]) && isset($_POST["quest_id"])){ 
 	  $project_id = $_POST["project_id"];
 	  $quest_id = $_POST["quest_id"];
+	  $_SESSION['userData']['mission'] = array();
+	  $_SESSION['userData']['mission']['quest_id'] = $_POST["quest_id"];
+	  $_SESSION['userData']['mission']['nfts'] = array();
   ?>	
   <div class="side">
   	<a name="inventory" id="inventory"></a>
 	<h2>Inventory</h2>
 	<div class="content inventory">
 		<?php 
-		getInventory($conn, $project_id); 
+		getInventory($conn, $project_id);
+		print_r($_SESSION['userData']['mission']);
 	    ?>
 	</div>
   </div>
