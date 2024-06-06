@@ -555,13 +555,13 @@ function getInventory($conn, $project_id, $quest_id) {
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
 		echo "<ul>";
-		echo "<li class='role'><strong>Success Rate: </strong><span id='success-rate'></span></li>";
+		echo "<li class='role'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'></span>&=%</li>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
 			echo substr($row["asset_name"], 0, 15)." (Rate ".$row["rate"].")";
-			$rate_tally += $row["rate"];
 			if($rate_tally <= 100){
+				$rate_tally += $row["rate"];
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
 				?>&nbsp;<input style='float:right' type='button' class='small-button' value='Deselect' onclick='processMissionNFT("deselect", <?php echo $quest_id; ?>, <?php echo $row["id"]; ?>);'/><?php
 			}else{
