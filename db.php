@@ -543,7 +543,7 @@ function getMissions($conn) {
 
 // Get missions inventory
 function getInventory($conn, $project_id=0) {
-	$sql = "SELECT nfts.name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
+	$sql = "SELECT asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
 	
 	$result = $conn->query($sql);
 	
@@ -552,7 +552,7 @@ function getInventory($conn, $project_id=0) {
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
-			echo $row["name"];
+			echo substr($row["asset_name"], 0, 19)." (Rate: ".$row["rate"].")";
 			echo "</li>";
 		}
 		echo "</ul>";
