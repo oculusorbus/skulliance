@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
-	$sql = "SELECT DISTINCT missions.id, title, COUNT(nft_id) AS total_nfts FROM missions INNER JOIN quests ON missions.quest_id = quests.id INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id WHERE status = 0 AND user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id";
+	$sql = "SELECT DISTINCT missions.id, title, COUNT(nft_id) AS total_nfts FROM missions INNER JOIN quests ON missions.quest_id = quests.id INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id WHERE status = 0 AND user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY missions.id ASC";
 	
 	$result = $conn->query($sql);
 	
