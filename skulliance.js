@@ -359,6 +359,7 @@ function processMissionNFT(action, nft_id, rate){
 	      // Do something with the data
 	    } else {
 	      // Handle error
+			alert("error");
 	    }
 	  }
 	};
