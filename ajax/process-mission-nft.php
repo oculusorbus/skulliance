@@ -11,6 +11,8 @@ if(isset($_GET['action'] && isset($_GET['nft_id'] && isset($_GET['rate']){
 }
 //$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
 
+print_r($_SESSION['userData']['mission']);
+
 //echo json_encode($project);
 
 // Close DB Connection
