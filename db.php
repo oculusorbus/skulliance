@@ -653,7 +653,7 @@ function startMission($conn){
 		$balance = getBalance($conn, $project_id);
 		if($balance >= $cost){
 			updateBalance($conn, $user_id, $project_id, -$cost);
-			logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $_POST['project_id'], 0, 1);
+			logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, 0, 1);
 			$sql = "INSERT INTO missions (quest_id, user_id)
 			VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
 		
