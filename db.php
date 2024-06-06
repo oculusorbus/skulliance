@@ -576,7 +576,7 @@ function getInventory($conn, $project_id, $quest_id) {
 }
 
 function startMission($conn){
-	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['mission']['user_id'])){
+	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		$sql = "INSERT INTO missions (quest_id, user_id)
 		VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."'); 
 		SELECT LAST_INSERT_ID() AS mission_id;";
