@@ -29,7 +29,7 @@ if(isset($_GET['username'])){
 	<h2>Inventory</h2>
 	<div class="content inventory">
 		<?php 
-		getInventory($conn, $project_id);
+		getInventory($conn, $project_id, $quest_id);
 		print_r($_SESSION['userData']['mission']);
 	    ?>
 	</div>

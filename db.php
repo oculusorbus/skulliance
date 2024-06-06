@@ -547,7 +547,7 @@ function getMissions($conn, $quest_id) {
 }
 
 // Get missions inventory
-function getInventory($conn, $project_id=0) {
+function getInventory($conn, $project_id, $quest_id) {
 	$sql = "SELECT nfts.id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."' ORDER BY collection_id ASC, rate DESC";
 	
 	$result = $conn->query($sql);
@@ -561,10 +561,10 @@ function getInventory($conn, $project_id=0) {
 			echo substr($row["asset_name"], 0, 15)." (Rate ".$row["rate"].")";
 			$rate_tally += $row["rate"];
 			if($rate_tally <= 100){
-				echo "&nbsp;<input style='float:right' type='button' class='small-button' value='Deselect'/>";
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
+				?>&nbsp;<input style='float:right' type='button' class='small-button' value='Deselect' onclick='processMissionNFT("deselect", <?php echo $quest_id; ?>, <?php echo $row["id"]; ?>);'/><?php
 			}else{
-				echo "&nbsp;<input style='float:right' type='button' class='small-button' value='Select'/>";
+				?>&nbsp;<input style='float:right' type='button' class='small-button' value='Select' onclick='processMissionNFT("select", <?php echo $quest_id; ?>, <?php echo $row["id"]; ?>);'/><?php
 			}
 			echo "</li>";
 		}
