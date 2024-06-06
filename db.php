@@ -556,7 +556,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if ($result->num_rows > 0) {
 		echo "<ul>";
 		echo "<li class='role'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
-		echo "<input type='button' class='button' value='Start Mission'/>";
+		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
@@ -572,6 +572,39 @@ function getInventory($conn, $project_id, $quest_id) {
 		}
 		echo "</ul>";
 		return $rate_tally;
+	}
+}
+
+function startMission($conn){
+	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['mission']['user_id'])){
+		$sql = "INSERT INTO missions (quest_id, user_id)
+		VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."')".
+		"SELECT LAST_INSERT_ID() AS last_insert_id;"
+	
+		$mission_id = "";
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		  if ($result->num_rows > 0) {
+				while($row = $result->fetch_assoc()) {
+				  $mission_id = $row['last_insert_id'];
+				}
+				if($mission_id > 0){
+					foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
+						$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
+						VALUES ('".$mission_id."', '".$nft_id."')";
+
+						if ($conn->query($sql) === TRUE) {
+						  //echo "New record created successfully";
+						} else {
+						  //echo "Error: " . $sql . "<br>" . $conn->error;
+						}
+					}
+				}
+		  }
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+		unset($_SESSION['userData']['mission']);
 	}
 }
 

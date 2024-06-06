@@ -376,27 +376,57 @@ function processMissionNFT(action, nft_id, rate){
 	}
 }
 
+function startMission() {
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/process-mission-nft.php?action='+action+'nft_id'+nft_id+'&rate='+rate, true);
+	xhttp.send();
+
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {	
+			if(action == 'Select'){
+				document.getElementById('button-'+nft_id).value = 'Deselect';
+				setSuccessRate(calculated_rate);
+			}else if(action == 'Deselect'){
+				document.getElementById('button-'+nft_id).value = 'Select';
+				setSuccessRate(calculated_rate);
+			}
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+			const obj = JSON.parse(data);
+			if(obj == null){
+
+			}else{
+
+			}
+			console.log(data);
+			// Do something with the data
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
+}
+
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
+	xhttp.open('GET', 'ajax/start-mission.php', true);
 	xhttp.send();
 	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
+		  window.location.href = 'missions.php';	
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
 		  if(obj == null){
-		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
+
 		  }else{
-		    document.getElementById('reward').style.opacity = 1;
-		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong> &nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
-			document.getElementById('claimed').style.display = "flex";
-			document.getElementById('remaining').style.display = "flex";
-			document.getElementById('remaining').innerHTML = obj.remaining;
+
 	  	  }
-		  document.getElementById('claimRewardButton').style.display = "none";
 		  console.log(data);
 	      // Do something with the data
 	    } else {
