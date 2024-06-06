@@ -559,7 +559,7 @@ function getCurrentMissions($conn){
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		  echo "<li class='role'>";
-		  echo $row["title"]." - Total NFTs: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%";
+		  echo $row["title"]." - Total NFTs Deployed: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%";
 		  echo "</li>";
 	  }
 	  echo "</ul>";
