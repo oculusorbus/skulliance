@@ -512,6 +512,30 @@ function getStreaksTotal($conn) {
 	return $streaks;
 }
 
+// Get missions
+function getMissions($conn) {
+	$sql = "SELECT title, description, image, cost, reward, duration, currency, name FROM missions INNER JOIN projects ON projects.id = missions.project_id";
+	
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+    	echo "<div class='nft'><div class='nft-data'>";
+		echo "<span class='nft-name'>".$row["title"]."</span>";
+		echo "<span class='nft-image'><img src='images/missions/".$row["image"].".png'/></span>";
+		echo "<span class='nft-level'>".$row["description"]."</span>";
+		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
+		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Reward</strong><br>".$row["reward"]." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
+		echo "</div></div>";
+	  }
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){
