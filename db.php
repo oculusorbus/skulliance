@@ -564,7 +564,7 @@ function getCurrentMissions($conn){
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
 		  echo "<li class='role'>";
-		  echo $row["title"]." - Total NFTs Deployed: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%"." Time Left: Hours ".$hours_remaining." Minutes ".$minutes_remaining;
+		  echo $row["title"]." - Total NFTs Deployed: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%"." Time Left: ".$hours_remaining." Hours and ".$minutes_remaining." Minutes";
 		  echo "</li>";
 	  }
 	  echo "</ul>";
