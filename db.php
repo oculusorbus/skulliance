@@ -529,6 +529,7 @@ function getMissions($conn) {
 		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Reward</strong><br>".$row["reward"]." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
+		echo "<input type='button' class='small-button' value='Select Mission'>";
 		echo "</div></div>";
 	  }
 	} else {
