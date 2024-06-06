@@ -639,46 +639,57 @@ function getInventory($conn, $project_id, $quest_id) {
 function startMission($conn){
 	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
-		/*
-		$balance = getBalance($conn, $_POST['project_id']);
-		if($balance >= $price){
-			updateBalance($conn, $user_id, $_POST['project_id'], -$price);
-			logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);*/
+		$sql = "SELECT project_id, cost FROM quests WHERE id ='".$_SESSION['userData']['mission']['quest_id']."';";
+		$result = $conn->query($sql);
 		
-		//logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, $project_id, 1, 1);
-		$sql = "INSERT INTO missions (quest_id, user_id)
-		VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+			  $project_id = $row["project_id"];
+			  $cost = $row["cost_id"];
+		  }
+	    }
 		
-		$mission_id = 0;
-		if ($conn->query($sql) === TRUE) {
-			//echo "New record created successfully";
-			$sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
-			$result = $conn->query($sql);
+		$balance = getBalance($conn, $project_id);
+		if($balance >= $cost){
+			updateBalance($conn, $user_id, $project_id, -$cost);
+			logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $_POST['project_id'], 0, 1);
+			$sql = "INSERT INTO missions (quest_id, user_id)
+			VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
+		
+			$mission_id = 0;
+			if ($conn->query($sql) === TRUE) {
+				//echo "New record created successfully";
+				$sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
+				$result = $conn->query($sql);
 			
-			if ($result->num_rows > 0) {
-			  // output data of each row
-			  while($row = $result->fetch_assoc()) {
-				  $mission_id = $row["mission_id"];
-			  }
-		    }else{
+				if ($result->num_rows > 0) {
+				  // output data of each row
+				  while($row = $result->fetch_assoc()) {
+					  $mission_id = $row["mission_id"];
+				  }
+			    }else{
 		    	
-		    }
-			if($mission_id > 0){
-				foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
-					$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
-					VALUES ('".$mission_id."', '".$nft_id."')";
+			    }
+				if($mission_id > 0){
+					foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
+						$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
+						VALUES ('".$mission_id."', '".$nft_id."')";
 
-					if ($conn->query($sql) === TRUE) {
-					  //echo "New record created successfully";
-					} else {
-					  //echo "Error: " . $sql . "<br>" . $conn->error;
+						if ($conn->query($sql) === TRUE) {
+						  //echo "New record created successfully";
+						} else {
+						  //echo "Error: " . $sql . "<br>" . $conn->error;
+						}
 					}
 				}
+			} else {
+			  //echo "Error: " . $sql . "<br>" . $conn->error;
 			}
-		} else {
-		  //echo "Error: " . $sql . "<br>" . $conn->error;
+			unset($_SESSION['userData']['mission']);
+		}else{
+			alert("You do not have enough points to start this mission.");
 		}
-		unset($_SESSION['userData']['mission']);
 	}else{
 		echo "No Session";
 	}
