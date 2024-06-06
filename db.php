@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
-	$sql = "SELECT title FROM missions INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id WHERE status = 0 AND user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT missions.title FROM missions INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id WHERE status = 0 AND user_id = '".$_SESSION['userData']['user_id']."'";
 	
 	$result = $conn->query($sql);
 	
