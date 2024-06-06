@@ -555,19 +555,28 @@ function getCurrentMissions($conn){
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
- 	  echo "<ul>";
+ 	  echo "<table>";
+	  echo "<th>Title</th>NFTs Deployed<th>Success Rate</th><th>Time Left</th>"
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  ;
   		$date = strtotime('+1 day', strtotime($row["created_date"]));
   		$remaining = $date - time();
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
-		  echo "<li class='role'>";
-		  echo $row["title"]." - Total NFTs Deployed: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%"." Time Left: ".$hours_remaining." Hours and ".$minutes_remaining." Minutes";
-		  echo "</li>";
+		  echo "<td>";
+		  echo $row["title"];
+		  echo "</td>";
+		  echo "<td>";
+		  echo $row["total_nfts"];
+		  echo "</td>";
+  		  echo "<td>";
+		  echo $row["success_rate"]."%";
+		  echo "</td>";
+  		  echo "<td>";
+		  echo "Time Left: ".$hours_remaining." Hours and ".$minutes_remaining." Minutes";
+		  echo "</td>";
 	  }
-	  echo "</ul>";
+	  echo "</table>";
 	} else {
 	  //echo "0 results";
 	}
