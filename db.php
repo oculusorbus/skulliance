@@ -583,7 +583,7 @@ function startMission($conn){
 		$mission_id = 0;
 		if ($conn->query($sql) === TRUE) {
 			//echo "New record created successfully";
-			$mission_sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
+			$sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
 			$result = $conn->query($sql);
 			
 			if ($result->num_rows > 0) {
