@@ -646,7 +646,7 @@ function startMission($conn){
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
 			  $project_id = $row["project_id"];
-			  $cost = $row["cost_id"];
+			  $cost = $row["cost"];
 		  }
 	    }
 		
