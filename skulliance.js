@@ -386,6 +386,7 @@ function startMission() {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
 			// Access the data returned by the server
+			alert('Mission successfully started!');
 			window.location.href = "missions.php";
 			var data = xhttp.responseText;
 			const obj = JSON.parse(data);
