@@ -574,7 +574,7 @@ function getCurrentMissions($conn){
 		  echo $row["success_rate"]."%";
 		  echo "</td>";
   		  echo "<td>";
-		  echo "Time Left: ".$hours_remaining." Hours and ".$minutes_remaining." Minutes";
+		  echo $hours_remaining." Hours and ".$minutes_remaining." Minutes";
 		  echo "</td>";
 		echo "</tr>";
 	  }
