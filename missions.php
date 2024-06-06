@@ -17,12 +17,14 @@ if(isset($_GET['username'])){
   <div class="side">
   	<a name="inventory" id="inventory"></a>
 	<h2>Inventory</h2>
+	<div class="content inventory">
 	<?php 
 	if(isset($_POST["project_id"])){
 		$project_id = $_POST["project_id"];
 		getInventory($conn, $project_id); 
 	}
 	?>
+	</div>
   </div>
   <div class="main">
 	<h2>Missions</h2>

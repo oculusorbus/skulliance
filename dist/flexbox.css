@@ -762,6 +762,10 @@ li form {
 	min-height: 500px;
 }
 
+.inventory .nft-image {
+    min-height: 45px;
+}
+
 .nft-level{
 	color: #bbb;
 }
