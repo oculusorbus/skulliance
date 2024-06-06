@@ -561,9 +561,9 @@ function getInventory($conn, $project_id=0) {
 			echo substr($row["asset_name"], 0, 15)." (Rate ".$row["rate"].")";
 			$rate_tally += $row["rate"];
 			if($rate_tally <= 100){
-				echo "<input style='text-align:right' type='button' class='small-button' value='Deselect'/>";
+				echo "<input style='float:right' type='button' class='small-button' value='Deselect'/>";
 			}else{
-				echo "<input style='text-align:right' type='button' class='small-button' value='Select'/>";
+				echo "<input style='float:right' type='button' class='small-button' value='Select'/>";
 			}
 			echo "</li>";
 		}
