@@ -571,7 +571,7 @@ function getCurrentMissions($conn){
 			$completed = "Not Completed";
 		}else{
 			$time_message = "0 Hours and 0 Minutes";
-			$completed = "<input type='button' 'class='small-button' value='Claim'/>";
+			$completed = "<input type='button' class='small-button' value='Claim'/>";
 		}
 		echo "<tr>";
 		  echo "<td align='left'>";
