@@ -558,13 +558,13 @@ function getInventory($conn, $project_id=0) {
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
+			echo substr($row["asset_name"], 0, 15)." (Rate ".$row["rate"].")";
 			$rate_tally += $row["rate"];
 			if($rate_tally <= 100){
-				echo "<input type='button' class='small-button' value='Deselect'/>";
+				echo "<input style='text-align:right' type='button' class='small-button' value='Deselect'/>";
 			}else{
-				echo "<input type='button' class='small-button' value='Select'/>";
+				echo "<input style='text-align:right' type='button' class='small-button' value='Select'/>";
 			}
-			echo substr($row["asset_name"], 0, 15)." (Rate ".$row["rate"].")";
 			echo "</li>";
 		}
 		echo "</ul>";
