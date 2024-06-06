@@ -556,7 +556,7 @@ function getCurrentMissions($conn){
 	
 	if ($result->num_rows > 0) {
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>Reward</th><th align='left'>NFTs Deployed</th><th align='left'>Success Rate</th><th align='left'>Time Left</th>";
+	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
   		$date = strtotime('+1 day', strtotime($row["created_date"]));
@@ -571,10 +571,10 @@ function getCurrentMissions($conn){
 		  echo $row["project_name"];
 		  echo "</td>";
 		  echo "<td align='left'>";
-		  echo $row["reward"]." ".$row["currency"];
+		  echo $row["total_nfts"];
 		  echo "</td>";
 		  echo "<td align='left'>";
-		  echo $row["total_nfts"];
+		  echo $row["reward"]." ".$row["currency"];
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $row["success_rate"]."%";
