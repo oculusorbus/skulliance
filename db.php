@@ -550,7 +550,9 @@ function getInventory($conn, $project_id=0) {
 	if ($result->num_rows > 0) {
 		echo "<ul>";
 		while($row = $result->fetch_assoc()) {
+			echo "<li class='role'>";
 			echo $row["name"];
+			echo "</li>";
 		}
 		echo "</ul>";
 	}
