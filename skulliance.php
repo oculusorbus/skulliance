@@ -445,7 +445,7 @@ function renderDailyRewardsSection(){
 	global $conn;
 	echo "<ul>";
 	echo "<li class='role no-border-style'><strong>Daily Random Rewards Streak</strong></li>";
-	echo "<li class='role'>Streaks Completed: ".getStreaksTotal($conn)."</li>";
+	echo "<li class='role'>Total Streaks Completed: ".getStreaksTotal($conn)."</li>";
 	if(getDailyRewardEligibility($conn)) { 
 		// Reset daily reward streak if yesterday's daily reward wasn't claimed
 		if(!verifyYesterdaysRewards($conn)){
