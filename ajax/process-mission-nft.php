@@ -7,6 +7,7 @@ if(isset($_GET['action']) && isset($_GET['nft_id']) && isset($_GET['rate'])){
 		$_SESSION['userData']['mission']['nfts'][$_GET['nft_id']] = $_GET['rate'];
 	}else if($_GET['action'] == "Deselect"){
 		unset($_SESSION['userData']['mission']['nfts'][$_GET['nft_id']]);
+		print_r($_SESSION);
 	}
 }else{
 	echo "No Session";
