@@ -17,7 +17,7 @@ if(isset($_GET['username'])){
   <div class="main">
 	<h2>Missions</h2>
 	<a name="missions" id="missions"></a>
-    <div class="content" id="filtered-content">
+    <div class="content">
 		<?php //filterMissions($project_id); ?>
 		<div id="nfts" class="nfts">
 			<?php 
