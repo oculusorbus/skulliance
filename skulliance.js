@@ -351,7 +351,6 @@ function processMissionNFT(action, nft_id, rate){
 			}
 			// Access the data returned by the server
 			var data = xhttp.responseText;
-			alert(data);
 			const obj = JSON.parse(data);
 			if(obj == null){
   
