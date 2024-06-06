@@ -332,6 +332,37 @@ function setSuccessRate(rate) {
 	document.getElementById('success-rate').innerHTML = rate;
 }
 
+function processMissionNFT(action, nft_id, rate){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/process-mission-nft.php?action='+action+'nft_id'+nft_id+'&rate='+rate, true);
+	xhttp.send();
+	
+	if(action == 'Select'){
+		document.getElementById('button-'+nft_id).value = 'Deselect';
+	}else if(action == 'Deselect'){
+		document.getElementById('button-'+nft_id).value = 'Select';
+	}
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+		  const obj = JSON.parse(data);
+		  if(obj == null){
+			  
+		  }else{
+			  
+	  	  }
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
