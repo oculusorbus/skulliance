@@ -758,6 +758,10 @@ li form {
 	min-height: 330px;
 }
 
+.missions .nft-data {
+	min-height: 400px;
+}
+
 .nft-level{
 	color: #bbb;
 }
