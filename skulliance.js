@@ -328,6 +328,10 @@ function toggleArmory(pane, tab){
 	tab.style.height = "76px";
 }
 
+function setSuccessRate(rate) {
+	document.getElementById('success-rate').innerHTML = rate;
+}
+
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
