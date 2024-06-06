@@ -551,7 +551,7 @@ function getInventory($conn, $project_id=0) {
 		echo "<ul>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
-			echo "<img class='icon' src='".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]))."'/>";
+			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
 			echo $row["name"];
 			echo "</li>";
 		}
@@ -810,16 +810,20 @@ function getIPFS($ipfs, $collection_id){
 }
 
 // Render IPFS
-function renderIPFS($ipfs, $collection_id, $ipfs_format){
+function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
 	$ipfs = str_replace("ipfs/", "", $ipfs);
 	if($collection_id == 4 || $collection_id == 23){
 		// Resource intensive IPFS code, disabled to save server resources, swapped for fallback skull icon
 		// onError='this.src=\"image.php?ipfs=".$ipfs."\";'
-		return "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		$class = "";
+		if($icon){
+			$class = "class='icon' ";
+		}
+		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		return "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else{
-		return "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}
 }
 
