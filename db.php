@@ -555,8 +555,8 @@ function getInventory($conn, $project_id, $quest_id) {
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
 		echo "<ul>";
-		echo "<input type='button' class='button' value='Start Mission'/>";
 		echo "<li class='role'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
+		echo "<input type='button' class='button' value='Start Mission'/>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
