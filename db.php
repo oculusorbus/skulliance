@@ -524,7 +524,7 @@ function getMissions($conn) {
     	echo "<div class='nft'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
 		echo "<span class='nft-image'><img src='images/missions/".$row["image"]."'/></span>";
-		echo "<span class='nft-level'>".$row["description"]."</span>";
+		echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
 		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Reward</strong><br>".$row["reward"]." ".$row["currency"]."</span>";
