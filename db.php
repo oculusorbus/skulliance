@@ -514,7 +514,7 @@ function getStreaksTotal($conn) {
 
 // Get missions
 function getMissions($conn) {
-	$sql = "SELECT title, description, image, cost, reward, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id";
+	$sql = "SELECT title, description, image, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id";
 	
 	$result = $conn->query($sql);
 	
@@ -529,11 +529,31 @@ function getMissions($conn) {
 		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Reward</strong><br>".$row["reward"]." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
+		echo"
+		<form action='missions.php#inventory' method='post'>
+		  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
+		  <input class='small-button' type='submit' value='Select Mission'>
+		</form>";
 		echo "<input type='button' class='small-button' value='Select Mission'>";
 		echo "</div></div>";
 	  }
 	} else {
 	  //echo "0 results";
+	}
+}
+
+// Get missions inventory
+function getInventory($conn, $project_id=0) {
+	$sql = "SELECT title, ipfs, rate FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."'";
+	
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		echo "<ul>";
+		while($row = $result->fetch_assoc()) {
+			echo $row["title"];
+		}
+		echo "</ul>";
 	}
 }
 
