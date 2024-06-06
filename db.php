@@ -556,7 +556,7 @@ function getCurrentMissions($conn){
 	
 	if ($result->num_rows > 0) {
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th>Title</th><th>NFTs Deployed</th><th>Success Rate</th><th>Time Left</th>";
+	  echo "<th align='left'>Title</th><th align='left'>NFTs Deployed</th><th align='left'>Success Rate</th><th align='left'>Time Left</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
   		$date = strtotime('+1 day', strtotime($row["created_date"]));
