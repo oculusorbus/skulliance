@@ -605,6 +605,8 @@ function startMission($conn){
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 		unset($_SESSION['userData']['mission']);
+	}else{
+		echo "No Session";
 	}
 }
 
