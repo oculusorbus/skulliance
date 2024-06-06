@@ -493,6 +493,25 @@ function getCompletedRewards($conn) {
 	return $rewards;
 }
 
+// Get number of streaks completed
+function getStreaksTotal($conn) {
+	$sql = "SELECT COUNT(id) AS streaks FROM transactions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' AND amount = '30'";
+	
+	$result = $conn->query($sql);
+	
+	$streaks = 0;
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		$streaks = $row["streaks"];
+	  }
+	} else {
+	  //echo "0 results";
+	  $streaks = 0;
+	}
+	return $streaks;
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){
