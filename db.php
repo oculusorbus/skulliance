@@ -811,14 +811,14 @@ function getIPFS($ipfs, $collection_id){
 
 // Render IPFS
 function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
+	$class = "";
+	if($icon){
+		$class = "class='icon' ";
+	}
 	$ipfs = str_replace("ipfs/", "", $ipfs);
 	if($collection_id == 4 || $collection_id == 23){
 		// Resource intensive IPFS code, disabled to save server resources, swapped for fallback skull icon
 		// onError='this.src=\"image.php?ipfs=".$ipfs."\";'
-		$class = "";
-		if($icon){
-			$class = "class='icon' ";
-		}
 		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
 		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
