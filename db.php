@@ -514,7 +514,7 @@ function getStreaksTotal($conn) {
 
 // Get missions
 function getMissions($conn) {
-	$sql = "SELECT title, description, image, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id";
+	$sql = "SELECT id, title, description, image, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id";
 	
 	$result = $conn->query($sql);
 	
@@ -531,6 +531,7 @@ function getMissions($conn) {
 		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
 		echo"
 		<form action='missions.php#inventory' method='post'>
+		  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
 		  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
 		  <input class='small-button' type='submit' value='Select Mission'>
 		</form>";
