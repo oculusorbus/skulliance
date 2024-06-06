@@ -550,7 +550,7 @@ function getInventory($conn, $project_id=0) {
 	if ($result->num_rows > 0) {
 		echo "<ul>";
 		while($row = $result->fetch_assoc()) {
-			echo $row["title"];
+			echo $row["name"];
 		}
 		echo "</ul>";
 	}
