@@ -341,7 +341,7 @@ function processMissionNFT(action, nft_id, rate){
 	}
 	if(calculated_rate <= 100){
 		var xhttp = new XMLHttpRequest();
-		xhttp.open('GET', 'ajax/process-mission-nft.php?action='+action+'nft_id'+nft_id+'&rate='+rate, true);
+		xhttp.open('GET', 'ajax/process-mission-nft.php?action='+action+'&nft_id'+nft_id+'&rate='+rate, true);
 		xhttp.send();
 	
 		xhttp.onreadystatechange = function() {
