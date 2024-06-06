@@ -2022,7 +2022,7 @@ function transactionHistory($conn) {
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
 				}
 				if($row["mission"] != 0){
-					echo "<td>Mission Rewards</td>";
+					echo "<td>Mission Cost</td>";
 				}
 			}
 			echo "</tr>";
