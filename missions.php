@@ -14,18 +14,22 @@ if(isset($_GET['username'])){
 
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
+  <?php 
+  if(isset($_POST["project_id"])){ 
+	  $project_id = $_POST["project_id"];
+  ?>	
   <div class="side">
   	<a name="inventory" id="inventory"></a>
 	<h2>Inventory</h2>
 	<div class="content inventory">
-	<?php 
-	if(isset($_POST["project_id"])){
-		$project_id = $_POST["project_id"];
+		<?php 
 		getInventory($conn, $project_id); 
-	}
-	?>
+	    ?>
 	</div>
   </div>
+  <?php
+  }
+  ?>
   <div class="main">
 	<h2>Missions</h2>
 	<a name="missions" id="missions"></a>
