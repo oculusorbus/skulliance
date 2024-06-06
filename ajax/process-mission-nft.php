@@ -5,9 +5,9 @@ include '../skulliance.php';
 session_start();
 
 if(isset($_GET['action']) && isset($_GET['nft_id']) && isset($_GET['rate'])){
-	if($_GET['action' == "Select"){
+	if($_GET['action'] == "Select"){
 		$_SESSION['userData']['mission']['nfts'][$_GET['nft_id']] = $_GET['rate'];
-	}else if($_GET['action' == "Deselect"){
+	}else if($_GET['action'] == "Deselect"){
 		unset($_SESSION['userData']['mission']['nfts'][$_GET['nft_id']]);
 	}
 }
