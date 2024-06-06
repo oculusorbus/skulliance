@@ -558,8 +558,13 @@ function getCurrentMissions($conn){
  	  echo "<ul>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
+		  ;
+  		$date = strtotime('+1 day', strtotime($row["created_date"]));
+  		$remaining = $date - time();
+  		$hours_remaining = floor(($remaining % 86400) / 3600);
+  		$minutes_remaining = floor(($remaining % 3600) / 60);
 		  echo "<li class='role'>";
-		  echo $row["title"]." - Total NFTs Deployed: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%";
+		  echo $row["title"]." - Total NFTs Deployed: ".$row["total_nfts"]." Success Rate: ".$row["success_rate"]."%"." Time Left: Hours ".$hours_remaining." Minutes ".$minutes_remaining;
 		  echo "</li>";
 	  }
 	  echo "</ul>";
