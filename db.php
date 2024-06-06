@@ -570,7 +570,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "</li>";
 		}
 		echo "</ul>";
-		echo "<script type='text/javascript'>setSuccessRate('".$rate_tally."');</script>";
+		return $rate_tally;
 	}
 }
 

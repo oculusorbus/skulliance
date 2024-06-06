@@ -29,8 +29,7 @@ if(isset($_GET['username'])){
 	<h2>Inventory</h2>
 	<div class="content inventory">
 		<?php 
-		getInventory($conn, $project_id, $quest_id);
-		print_r($_SESSION['userData']['mission']);
+		$rate_tally = getInventory($conn, $project_id, $quest_id);
 	    ?>
 	</div>
   </div>
@@ -70,4 +69,5 @@ if($filterby != ""){
 }?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type='text/javascript'>setSuccessRate('<?php echo $rate_tally; ?>');</script>
 </html>
