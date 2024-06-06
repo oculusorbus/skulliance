@@ -551,7 +551,7 @@ function getInventory($conn, $project_id=0) {
 		echo "<ul>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
-			echo "<img class='icon' src='".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]))."'/>"
+			echo "<img class='icon' src='".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]))."'/>";
 			echo $row["name"];
 			echo "</li>";
 		}
