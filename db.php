@@ -560,9 +560,9 @@ function getInventory($conn, $project_id=0) {
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
 			$rate_tally += $row["rate"];
 			if($rate_tally <= 100){
-				echo "<input type='button' class='button' value='Deselect'/>";
+				echo "<input type='button' class='small-button' value='Deselect'/>";
 			}else{
-				echo "<input type='button' class='button' value='Select'/>";
+				echo "<input type='button' class='small-button' value='Select'/>";
 			}
 			echo substr($row["asset_name"], 0, 15)." (Rate ".$row["rate"].")";
 			echo "</li>";
