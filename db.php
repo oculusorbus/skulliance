@@ -562,7 +562,7 @@ function getCurrentMissions($conn){
 	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>NFTs Deployed</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-  		$date = strtotime('+1 day', strtotime($row["created_date"]));
+  		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
   		$remaining = $date - time();
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
