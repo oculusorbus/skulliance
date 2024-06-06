@@ -575,18 +575,18 @@ function getInventory($conn, $project_id, $quest_id) {
 	}
 }
 
-function startMission($conn){
+function startMission($conn){/*
 	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['mission']['user_id'])){
 		$sql = "INSERT INTO missions (quest_id, user_id)
 		VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');
-		SELECT LAST_INSERT_ID() AS last_insert_id;"
+		SELECT LAST_INSERT_ID() AS mission_id;"
 	
 		$mission_id = "";
 		if ($conn->query($sql) === TRUE) {
 			//echo "New record created successfully";
 			if ($result->num_rows > 0) {
 				while($row = $result->fetch_assoc()) {
-				  $mission_id = $row['last_insert_id'];
+				  $mission_id = $row['mission_id'];
 				}
 				if($mission_id > 0){
 					foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
@@ -605,7 +605,7 @@ function startMission($conn){
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 		unset($_SESSION['userData']['mission']);
-	}
+	}*/
 }
 
 // Check if user already exists, if not... create them.
