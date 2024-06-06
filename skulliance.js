@@ -388,6 +388,7 @@ function startMission() {
 			// Access the data returned by the server
 			//window.location.href = "missions.php";
 			var data = xhttp.responseText;
+			alert(data);
 			const obj = JSON.parse(data);
 			if(obj == null){
 
