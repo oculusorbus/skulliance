@@ -525,7 +525,7 @@ function getMissions($conn, $quest_id) {
 		if($quest_id == $row["id"]){
 			$class = " highlight";
 		}
-    	echo "<div class='nft'><div class='nft-data".$highlight."'>";
+    	echo "<div class='nft'><div class='nft-data".$class."'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
 		echo "<span class='nft-image'><img src='images/missions/".$row["image"]."'/></span>";
 		echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
