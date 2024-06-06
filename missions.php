@@ -32,7 +32,7 @@ if(isset($_GET['username'])){
 		<?php 
 		$rate_tally = getInventory($conn, $project_id, $quest_id);
 		if($rate_tally == 0){
-			echo "<ul><li class='role'><h3>No Inventory Available for this Mission</h3></li></ul>";
+			echo "<ul><li class='role'><strong>No Inventory Available for this Mission</strong></li></ul>";
 		}
 	    ?>
 	</div>
