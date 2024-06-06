@@ -566,6 +566,11 @@ function getCurrentMissions($conn){
   		$remaining = $date - time();
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
+		if($hours_remaining > 0 && $minutes_remaining > 0){
+			$time_message = $hours_remaining." Hours and ".$minutes_remaining." Minutes";
+		}else{
+			$time_message = "0 Hours and 0 Minutes";
+		}
 		echo "<tr>";
 		  echo "<td align='left'>";
 		  echo $row["title"];
@@ -583,7 +588,7 @@ function getCurrentMissions($conn){
 		  echo $row["success_rate"]."%";
 		  echo "</td>";
   		  echo "<td align='left'>";
-		  echo $hours_remaining." Hours and ".$minutes_remaining." Minutes";
+		  echo $time_message;
 		  echo "</td>";
 		echo "</tr>";
 	  }
