@@ -562,7 +562,7 @@ function getInventory($conn, $project_id=0) {
 			$rate_tally += $row["rate"];
 			if($rate_tally <= 100){
 				echo "&nbsp;<input style='float:right' type='button' class='small-button' value='Deselect'/>";
-				$_SESSION['userData']['nfts'][$row["id"]] = $row["id"];
+				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
 			}else{
 				echo "&nbsp;<input style='float:right' type='button' class='small-button' value='Select'/>";
 			}
