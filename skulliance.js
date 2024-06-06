@@ -350,7 +350,7 @@ function processMissionNFT(action, nft_id, rate){
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
 		  if(obj == null){
-			  
+			  alert(obj);
 		  }else{
 			  
 	  	  }
