@@ -341,7 +341,7 @@ function processMissionNFT(action, nft_id, rate){
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {	
-			current_rate = document.getElementById('success-rate').innerHTML;
+			current_rate = valueOf(document.getElementById('success-rate').innerHTML);
 			if(action == 'Select'){
 				document.getElementById('button-'+nft_id).value = 'Deselect';
 				setSuccessRate(current_rate+rate);
