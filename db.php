@@ -527,7 +527,7 @@ function getMissions($conn, $quest_id) {
 		}
     	echo "<div class='nft'><div class='nft-data".$class."'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
-		echo "<span class='nft-image'><img src='images/missions/".str_replace(" ", "-", $row["title"]).".png'/></span>";
+		echo "<span class='nft-image'><img src='images/missions/".str_to_lower(str_replace(" ", "-", $row["title"])).".png'/></span>";
 		echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
 		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
