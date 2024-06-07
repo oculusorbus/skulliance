@@ -27,7 +27,6 @@ if(isset($_GET['username'])){
   ?>	
   <div class="side">
   	<a name="inventory" id="inventory"></a>
-	<h2>Inventory</h2>
 	<div class="content inventory">
 		<?php 
 		$rate_tally = getInventory($conn, $project_id, $quest_id);
