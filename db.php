@@ -660,6 +660,8 @@ function getInventory($conn, $project_id, $quest_id) {
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
 		echo "<ul>";
+		echo "<li class='role no-border-style'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
+		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		if($total_rates >= 100){
 			  if(!isset($_POST['maximize']) && !isset($_POST['balance'])){
 				  renderInventoryButton("maximize", $quest_id, $project_id);
@@ -672,8 +674,6 @@ function getInventory($conn, $project_id, $quest_id) {
 				  }
 		  	  }
 		}
-		echo "<li class='role no-border-style'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
-		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
