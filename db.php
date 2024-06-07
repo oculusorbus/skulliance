@@ -665,6 +665,8 @@ function getInventory($conn, $project_id, $quest_id) {
 					<input type='hidden' id='balance' name='balance' value='balance'/>
 					<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>
 				  </form>
+				  </li>
+				  <li class='role'>
 				  <form action='missions.php' method='post'>
 				     <input type='hidden' id='maximize' name='maximize' value='maximize'/>
 				 	 <input type='submit' class='small-button' value='Maximize Inventory Selections for Single Mission  '/>
