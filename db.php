@@ -663,8 +663,8 @@ function getInventory($conn, $project_id, $quest_id) {
 		$quest = getQuestInfo($conn, $quest_id);
 		echo "<ul>";
 		echo "<li class='role no-border-style'><strong>Mission: ".$quest["title"]."</strong></li>";
-		echo "<li class='role no-border-style'><strong>Cost: ".$quest["cost"].$quest["currency"]."</strong></li>";
-		echo "<li class='role no-border-style'><strong>Reward: ".$quest["reward"].$quest["currency"]."</strong></li>";
+		echo "<li class='role no-border-style'><strong>Cost: ".$quest["cost"]." ".$quest["currency"]."</strong></li>";
+		echo "<li class='role no-border-style'><strong>Reward: ".$quest["reward"]." ".$quest["currency"]."</strong></li>";
 		echo "<li class='role no-border-style'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<br><input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		echo "<br><br>";
