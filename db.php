@@ -642,7 +642,7 @@ function getInventory($conn, $project_id, $quest_id) {
 function startMission($conn){
 	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
-		$sql = "SELECT title, cost, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE id ='".$_SESSION['userData']['mission']['quest_id']."';";
+		$sql = "SELECT title, cost, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$_SESSION['userData']['mission']['quest_id']."';";
 		$result = $conn->query($sql);
 		
 		if ($result->num_rows > 0) {
