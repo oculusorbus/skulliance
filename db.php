@@ -669,7 +669,8 @@ function getInventory($conn, $project_id, $quest_id) {
 			 	 <input type='submit' class='small-button' value='Maximize Inventory Selections for Single Mission'/>
 			  </form>
 			  </li>";
-		}else if($total_rates >= 100 || isset($_POST['balance'])){
+		}
+		if($total_rates >= 100 || isset($_POST['balance'])){
 			  echo "<li class='role no-border-style'>
 			  <form action='missions.php#inventory' method='post'>
 		  		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
