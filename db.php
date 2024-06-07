@@ -728,7 +728,7 @@ function getQuestInfo($conn, $quest_id){
 		  $quest["project"] = $row["name"];
 		  $quest["currency"] = $row["currency"];
 	  }
-	  return $project;
+	  return $quest;
     }
 }
 
