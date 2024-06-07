@@ -697,8 +697,13 @@ function renderInventoryButton($selection, $quest_id, $project_id){
   <form action='missions.php#inventory' method='post'>
 		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
     <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
-	<input type='hidden' id='".$selection."' name='".$selection."' value='".$selection."'/>
-	<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>
+	<input type='hidden' id='".$selection."' name='".$selection."' value='".$selection."'/>";
+	if($selection == "balance"){
+		echo "<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>";
+	}else{
+		echo "<input type='submit' class='small-button' value='Maximize Inventory Selections for a Single Mission'/>";
+	}
+  echo "
   </form>
   </li>";
 }
