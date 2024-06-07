@@ -659,8 +659,8 @@ function getInventory($conn, $project_id, $quest_id) {
 		if($total_rates > 100){
 			echo "<li class='role'>
 				  <form action='missions.php' method='post'>
-					<input type='button' class='small-button' value='Maximize for Single Mission'/>
-					<input type='button' class='small-button' value='Balance for Multiiple Missions'/>
+					<input type='button' class='small-button' value='Maximize Inventory Selections for Single Mission'/>
+					<input type='button' class='small-button' value='Balance Inventory Selections for Multiiple Missions'/>
 				  </form>
 				  </li>";
 		}
