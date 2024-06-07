@@ -656,6 +656,14 @@ function getInventory($conn, $project_id, $quest_id) {
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
 		echo "<ul>";
+		if($total_rates > 100){
+			echo "<li class='role'>
+				  <form action='missions.php' method='post'>
+					<input type='button' class='small-button' value='Maximize for Single Mission'/>
+					<input type='button' class='small-button' value='Balance for Multiiple Missions'/>
+				  </form>
+				  </li>";
+		}
 		echo "<li class='role'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		while($row = $result->fetch_assoc()) {
