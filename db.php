@@ -713,7 +713,7 @@ function completeMission($conn, $mission_id, $quest_id){
 		  }
 	    }
 		
-		$sql = "SELECT SUM(rate) AS success_rate FROM missions_nfts INNER JOIN nfts ON nfts.id = missions_nfts.nft_id WHERE mission_id ='".$mission_id."';";
+		$sql = "SELECT SUM(rate) AS success_rate FROM missions_nfts INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE mission_id ='".$mission_id."';";
 		$result = $conn->query($sql);
 		
 		if ($result->num_rows > 0) {
