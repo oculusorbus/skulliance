@@ -703,6 +703,10 @@ function completeMission($conn, $mission_id, $quest_id){
 		$sql = "SELECT title, reward, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 		$result = $conn->query($sql);
 		
+		$title = "";
+		$reward = "";
+		$project_id = 0;
+		$currency = "";
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
