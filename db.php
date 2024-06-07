@@ -514,7 +514,7 @@ function getStreaksTotal($conn) {
 
 // Get missions
 function getMissions($conn, $quest_id) {
-	$sql = "SELECT quests.id, title, description, image, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, quests.id";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, quests.id";
 	
 	$result = $conn->query($sql);
 	
@@ -527,7 +527,7 @@ function getMissions($conn, $quest_id) {
 		}
     	echo "<div class='nft'><div class='nft-data".$class."'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
-		echo "<span class='nft-image'><img src='images/missions/".$row["image"]."'/></span>";
+		echo "<span class='nft-image'><img src='images/missions/".str_replace(" ", "-", $row["title"]).".png'/></span>";
 		echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
 		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
