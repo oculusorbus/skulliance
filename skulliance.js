@@ -425,6 +425,7 @@ function completeMission(mission_id, quest_id) {
 
 			}*/
 			alert(data);
+			window.location.href = "missions.php";
 			console.log(data);
 			// Do something with the data
 	    } else {
