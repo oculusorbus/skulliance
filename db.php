@@ -717,7 +717,7 @@ function renderInventoryButton($selection, $quest_id, $project_id){
 	}
   echo "
   </form>
-  </li>";
+  </li><br>";
 }
 
 function getQuestInfo($conn, $quest_id){
