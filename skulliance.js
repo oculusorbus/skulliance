@@ -427,7 +427,7 @@ function completeMission(mission_id, quest_id) {
 			}*/
 			//document.getElementById('claim-button-'+mission_id).style.display = "none";
 			alert(data);
-			window.location.href = "missions.phpcurrent-missions";
+			window.location.href = "missions.php#current-missions";
 			console.log(data);
 			// Do something with the data
 	    } else {
