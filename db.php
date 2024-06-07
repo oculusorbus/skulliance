@@ -624,9 +624,9 @@ function getInventory($conn, $project_id, $quest_id) {
 	
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				if(($row["total_rates"]/2) < 100){
+				if($row["total_rates"] > 100 && ($row["total_rates"]/2) < 100){
 					$threshold = $row["total_rates"]/2;
-				}else if(($row["total_rates"]/3) < 100){
+				}else if($row["total_rates"] > 100 && ($row["total_rates"]/3) < 100){
 					$threshold = $row["total_rates"]/3;
 				}else{
 					$threshold = 100;
