@@ -608,6 +608,29 @@ function getCurrentMissions($conn){
 
 // Get missions inventory
 function getInventory($conn, $project_id, $quest_id) {
+	$threshold = 100;
+	$sql = "SELECT nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
+	
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		$threshold = 100;
+	}else{
+		$sql = "SELECT SUM(rate) AS total_rates FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND collections.project_id = '".$project_id."';";
+	
+		$result = $conn->query($sql);
+	
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				if($row["total_rates"] < 100){
+					$threshold = $row["total_rates"];
+				}else{
+					$threshold = 100;
+				}
+			}
+		}
+	}
+	
 	$sql = "SELECT nfts.id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
 		NOT IN(
         SELECT nft_id
@@ -625,7 +648,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
 			echo substr($row["asset_name"], 0, 12)." (Rate ".$row["rate"].")";
-			if(($rate_tally+$row["rate"]) <= 100){
+			if(($rate_tally+$row["rate"]) <= $threshold){
 				$rate_tally += $row["rate"];
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
 				?>&nbsp;<input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='Deselect' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/><?php
