@@ -745,12 +745,12 @@ function completeMission($conn, $mission_id, $quest_id){
 		if($success == 1){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, 1);
-			alert($title." was successful! ".$reward." ".$currency." added to your balance and transaction history.");
+			return $title." was successful! ".$reward." ".$currency." added to your balance and transaction history.";
 		}else{
-			alert($title." failed. 0 ".$currency." awarded.");
+			return $title." failed. 0 ".$currency." awarded.";
 		}
 	}else{
-		echo "No Session";
+		return "No Session";
 	}
 }
 

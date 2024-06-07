@@ -424,6 +424,7 @@ function completeMission(mission_id, quest_id) {
 			}else{
 
 			}*/
+			alert(data);
 			console.log(data);
 			// Do something with the data
 	    } else {
