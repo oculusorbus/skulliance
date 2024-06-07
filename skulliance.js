@@ -424,7 +424,7 @@ function completeMission(mission_id, quest_id) {
 			}else{
 
 			}*/
-			document.getElementById('claim-button-'+mission_id).style.display = "none";
+			//document.getElementById('claim-button-'+mission_id).style.display = "none";
 			alert(data);
 			window.location.href = "missions.php";
 			console.log(data);
