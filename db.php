@@ -610,8 +610,9 @@ function getCurrentMissions($conn){
 function getInventory($conn, $project_id, $quest_id) {
 	$total_rates = 100;
 	$threshold = 100;
+	// Only evaluate project NFT holdings whether in missions or not when balancing for multiple runs
 	if(!isset($_POST['maximize'])){
-		// Check if there's existing missions deployed, if so keep threshold at 100
+		// Check if there's existing missions deployed. If so, factor those into total rates calculation so that balancing is accurate
 		$sql = "SELECT SUM(rate), nft_id AS total_mission_rates FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id 
 			    INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND quests.project_id = '".$project_id."'";
 	
@@ -693,6 +694,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	}
 }
 
+// Render Inventory selection maximazation and balancing toggle buttons
 function renderInventoryButton($selection, $quest_id, $project_id){
   echo "<li class='role no-border-style'>
   <form action='missions.php#inventory' method='post'>
