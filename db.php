@@ -608,7 +608,8 @@ function getCurrentMissions($conn){
 
 // Get missions inventory
 function getInventory($conn, $project_id, $quest_id) {
-	$threshold = 100;
+		$total_rates = 0;
+		$threshold = 100;
 		if(!isset($_POST['maximize'])){
 		// Check if there's existing missions deployed, if so keep threshold at 100
 		$sql = "SELECT SUM(rate), nft_id AS total_mission_rates FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id 
