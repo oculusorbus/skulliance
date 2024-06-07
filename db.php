@@ -662,34 +662,13 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<ul>";
 		if($total_rates >= 100){
 			  if(!isset($_POST['maximize']) && !isset($_POST['balance'])){
-				  echo "<li class='role no-border-style'>
-				  <form action='missions.php#inventory' method='post'>
-				         <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
-				         <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
-				     <input type='hidden' id='maximize' name='maximize' value='maximize'/>
-				 	 <input type='submit' class='small-button' value='Maximize Inventory Selections for Single Mission   '/>
-				  </form>
-				  </li>";
+				  renderInventoryButton("maximize", $quest_id, $project_id);
 			  }else{
 				  if(!isset($_POST['maximize'])){
-					  echo "<li class='role no-border-style'>
-					  <form action='missions.php#inventory' method='post'>
-					         <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
-					         <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
-					     <input type='hidden' id='maximize' name='maximize' value='maximize'/>
-					 	 <input type='submit' class='small-button' value='Maximize Inventory Selections for Single Mission   '/>
-					  </form>
-					  </li>";
+					  renderInventoryButton("maximize", $quest_id, $project_id);
 			  	  }
 				  if(!isset($_POST['balance'])){
-					  echo "<li class='role no-border-style'>
-					  <form action='missions.php#inventory' method='post'>
-				  		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
-			  		    <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
-						<input type='hidden' id='balance' name='balance' value='balance'/>
-						<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>
-					  </form>
-					  </li>";
+					  renderInventoryButton("balance", $quest_id, $project_id);
 				  }
 		  	  }
 		}
@@ -711,6 +690,17 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "</ul>";
 		return $rate_tally;
 	}
+}
+
+function renderInventoryButton($selection, $quest_id, $project_id){
+  echo "<li class='role no-border-style'>
+  <form action='missions.php#inventory' method='post'>
+		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
+    <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
+	<input type='hidden' id='".$selection."' name='".$selection."' value='".$selection."'/>
+	<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>
+  </form>
+  </li>";
 }
 
 function startMission($conn){
