@@ -608,9 +608,9 @@ function getCurrentMissions($conn){
 
 // Get missions inventory
 function getInventory($conn, $project_id, $quest_id) {
-		$total_rates = 0;
-		$threshold = 100;
-		if(!isset($_POST['maximize'])){
+	$total_rates = 0;
+	$threshold = 100;
+	if(!isset($_POST['maximize'])){
 		// Check if there's existing missions deployed, if so keep threshold at 100
 		$sql = "SELECT SUM(rate), nft_id AS total_mission_rates FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id 
 			    INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND quests.project_id = '".$project_id."'";
@@ -661,26 +661,23 @@ function getInventory($conn, $project_id, $quest_id) {
 	if ($result->num_rows > 0) {
 		echo "<ul>";
 		if($total_rates >= 100){
-			  if(!isset($_POST['maximize'])){
-				  echo "<li class='role'>
-				  <form action='missions.php#inventory' method='post'>
-				         <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
-				         <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
-				     <input type='hidden' id='maximize' name='maximize' value='maximize'/>
-				 	 <input type='submit' class='small-button' value='Maximize Inventory Selections for Single Mission'/>
-				  </form>
-				  </li>";
-		  	  }
-			  if(!isset($_POST['balance'])){
-				  echo "<li class='role no-border-style'>
-				  <form action='missions.php#inventory' method='post'>
-			  		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
-		  		    <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
-					<input type='hidden' id='balance' name='balance' value='balance'/>
-					<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>
-				  </form>
-				  </li>";
-			  }
+			  echo "<li class='role'>
+			  <form action='missions.php#inventory' method='post'>
+			         <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
+			         <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
+			     <input type='hidden' id='maximize' name='maximize' value='maximize'/>
+			 	 <input type='submit' class='small-button' value='Maximize Inventory Selections for Single Mission'/>
+			  </form>
+			  </li>";
+
+			  echo "<li class='role no-border-style'>
+			  <form action='missions.php#inventory' method='post'>
+		  		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
+	  		    <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
+				<input type='hidden' id='balance' name='balance' value='balance'/>
+				<input type='submit' class='small-button' value='Balance Inventory Selections for Multiple Missions'/>
+			  </form>
+			  </li>";
 		}
 		echo "<li class='role no-border-style'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
