@@ -661,7 +661,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
-			echo substr($row["asset_name"], 0, 12)." (Rate ".$row["rate"].")";
+			echo substr($row["asset_name"], 0, 12)." (+".$row["rate"]."%)";
 			if(($rate_tally+$row["rate"]) <= $threshold){
 				$rate_tally += $row["rate"];
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
