@@ -610,7 +610,7 @@ function getCurrentMissions($conn){
 function getInventory($conn, $project_id, $quest_id) {
 	$threshold = 100;
 	// Check if there's existing missions deployed, if so keep threshold at 100
-	$sql = "SELECT nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND project_id = '".$project_id."'";
 	
 	$result = $conn->query($sql);
 	
