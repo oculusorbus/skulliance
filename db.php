@@ -694,8 +694,8 @@ function startMission($conn){
 			unset($_SESSION['userData']['mission']);
 			echo $title." Mission successfully started!";
 		}else{
-			echo "You do not have enough points to start this mission./\n/\r
-				  You have ".$balance." ".$currency."/\n/\r
+			echo "You do not have enough points to start this mission.\r\n
+				  You have ".$balance." ".$currency."\r\n
 				  You need ".$cost." ".$currency;
 		}
 	}else{
