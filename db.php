@@ -700,7 +700,7 @@ function startMission($conn){
 
 function completeMission($conn, $mission_id, $quest_id){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT title, reward, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE id ='".$quest_id."';";
+		$sql = "SELECT title, reward, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 		$result = $conn->query($sql);
 		
 		if ($result->num_rows > 0) {
