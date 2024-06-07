@@ -662,7 +662,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<ul>";
 		if($total_rates >= 100){
 			  if(!isset($_POST['maximize'])){
-				  echo "<li class='role'>
+				  echo "<li class='role no-border-style'>
 				  <form action='missions.php#inventory' method='post'>
 				         <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
 				         <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
