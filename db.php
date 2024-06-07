@@ -610,27 +610,35 @@ function getCurrentMissions($conn){
 function getInventory($conn, $project_id, $quest_id) {
 	$threshold = 100;
 	// Check if there's existing missions deployed, if so keep threshold at 100
-	$sql = "SELECT nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND project_id = '".$project_id."'";
+	$sql = "SELECT SUM(rates) AS $total_mission_rates FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND project_id = '".$project_id."'";
 	
 	$result = $conn->query($sql);
 	
+	$total_mission_rates = 0;
 	if ($result->num_rows > 0) {
-		$threshold = 100;
+		while($row = $result->fetch_assoc()) {
+			$total_mission_rates= $row["total_mission_rates"];
+		}
+		//$threshold = 100;
 	}else{
-		// If no missions deployed, check if total rates divided by 2 or 3 is greater than 100. If so, make threshold half or a third of total rates to try and balance out missions for whales
-		$sql = "SELECT SUM(rate) AS total_rates FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND collections.project_id = '".$project_id."';";
+		
+	}
 	
-		$result = $conn->query($sql);
-	
-		if ($result->num_rows > 0) {
-			while($row = $result->fetch_assoc()) {
-				if($row["total_rates"] > 100 && ($row["total_rates"]/2) < 100 && ($row["total_rates"]/2) >= 75){
-					$threshold = $row["total_rates"]/2;
-				}else if($row["total_rates"] > 100 && ($row["total_rates"]/3) < 100 && ($row["total_rates"]/2) >= 75){
-					$threshold = $row["total_rates"]/3;
-				}else{
-					$threshold = 100;
-				}
+	// If no missions deployed, check if total rates divided by 2 or 3 is greater than 100. If so, make threshold half or a third of total rates to try and balance out missions for whales
+	$sql = "SELECT SUM(rate) AS total_rates FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND collections.project_id = '".$project_id."';";
+
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$total_rates = $row["total_rates"];
+			$total_rates = $total_rates + $total_mission_rates;
+			if($total_rates > 100 && ($total_rates/2) < 100){
+				$threshold = $total_rates/2;
+			}else if($total_rates > 100 && ($total_rates/3) < 100){
+				$threshold = $total_rates/3;
+			}else{
+				$threshold = 100;
 			}
 		}
 	}
