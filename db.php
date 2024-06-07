@@ -2061,6 +2061,8 @@ function transactionHistory($conn) {
 				if($row["crafting"] == 0){
 					if($row["bonus"] == 1){
 						echo "Daily Reward: ".$row["project_name"];
+					}else if($row["mission"] == 1){
+						echo "Mission Reward: ".$row["project_name"];
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
@@ -2078,7 +2080,7 @@ function transactionHistory($conn) {
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
 				}
 				if($row["mission"] != 0){
-					echo "<td>Mission Cost</td>";
+					echo "<td>Mission Cost: ".$row["project_name"]."</td>";
 				}
 			}
 			echo "</tr>";
