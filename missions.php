@@ -41,7 +41,6 @@ if(isset($_GET['username'])){
   }
   ?>
   <div class="main">
-	 <a name="current-missions" id="current-missions"></a>
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
 				getCurrentMissions($conn);
