@@ -610,7 +610,7 @@ function getCurrentMissions($conn){
 function getInventory($conn, $project_id, $quest_id) {
 	$threshold = 100;
 	// Check if there's existing missions deployed, if so keep threshold at 100
-	$sql = "SELECT SUM(rate) AS total_mission_rates FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND project_id = '".$project_id."'";
+	$sql = "SELECT SUM(rate) AS total_mission_rates FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN quests ON quests.id = missions.quest_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND missions.project_id = '".$project_id."'";
 	
 	$result = $conn->query($sql);
 	
