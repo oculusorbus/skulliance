@@ -660,7 +660,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
 		echo "<ul>";
-		if($total_rates > 100 || isset($_POST['maximize'])){
+		if($total_rates > 100){
 			  echo "<li class='role'>
 			  <form action='missions.php#inventory' method='post'>
 			         <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
@@ -670,7 +670,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			  </form>
 			  </li>";
 		}
-		if($total_rates >= 100 || isset($_POST['balance'])){
+		if($total_rates >= 100){
 			  echo "<li class='role no-border-style'>
 			  <form action='missions.php#inventory' method='post'>
 		  		    <input type='hidden' id='quest_id' name='quest_id' value='".$quest_id."'>
