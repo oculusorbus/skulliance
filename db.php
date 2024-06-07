@@ -695,8 +695,8 @@ function startMission($conn){
 			echo $title." Mission successfully started!";
 		}else{
 			echo "You do not have enough points to start the ".$title." Mission.\r\n".
-				 "You have ".$balance." ".$currency."\r\n".
-				 "You need ".$cost." ".$currency;
+				 "You have ".$balance." ".$currency.".\r\n".
+				 "You need ".$cost." ".$currency.".";
 		}
 	}else{
 		echo "No Session";
