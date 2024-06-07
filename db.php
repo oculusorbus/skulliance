@@ -660,7 +660,9 @@ function getInventory($conn, $project_id, $quest_id) {
 	
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
+		$quest = getQuestInfo($conn, $quest_id);
 		echo "<ul>";
+		echo "<li class='role no-border-style'><strong>".$quest["title"]."</strong></li>";
 		echo "<li class='role no-border-style'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<br><input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		echo "<br><br>";
@@ -710,6 +712,24 @@ function renderInventoryButton($selection, $quest_id, $project_id){
   echo "
   </form>
   </li>";
+}
+
+function getQuestInfo($conn, $quest_id){
+	$sql = "SELECT title, cost, reward, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
+	$result = $conn->query($sql);
+	
+	$quest = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $quest["title"] = $row["title"];
+		  $quest["cost"] = $row["cost"];
+		  $quest["reward"] = $row["reward"];
+		  $quest["project"] = $row["name"];
+		  $quest["currency"] = $row["currency"];
+	  }
+	  return $project;
+    }
 }
 
 function startMission($conn){
