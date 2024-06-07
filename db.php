@@ -704,7 +704,7 @@ function completeMission($conn, $mission_id, $quest_id){
 		$result = $conn->query($sql);
 		
 		$title = "";
-		$reward = "";
+		$reward = 0;
 		$project_id = 0;
 		$currency = "";
 		if ($result->num_rows > 0) {
