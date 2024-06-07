@@ -617,7 +617,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if ($result->num_rows > 0) {
 		$threshold = 100;
 	}else{
-		// If no missions deployed, check if total rates divided by 2 is greater than 100. If so, make threshold half of total rates to try and balance out missions.
+		// If no missions deployed, check if total rates divided by 2 or 3 is greater than 100. If so, make threshold half or a third of total rates to try and balance out missions for whales
 		$sql = "SELECT SUM(rate) AS total_rates FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND collections.project_id = '".$project_id."';";
 	
 		$result = $conn->query($sql);
@@ -626,6 +626,8 @@ function getInventory($conn, $project_id, $quest_id) {
 			while($row = $result->fetch_assoc()) {
 				if(($row["total_rates"]/2) < 100){
 					$threshold = $row["total_rates"]/2;
+				}else if(($row["total_rates"]/3) < 100){
+					$threshold = $row["total_rates"]/3;
 				}else{
 					$threshold = 100;
 				}
