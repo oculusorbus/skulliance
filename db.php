@@ -642,14 +642,16 @@ function getInventory($conn, $project_id, $quest_id) {
 function startMission($conn){
 	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
-		$sql = "SELECT project_id, cost FROM quests WHERE id ='".$_SESSION['userData']['mission']['quest_id']."';";
+		$sql = "SELECT title, cost, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id  WHERE id ='".$_SESSION['userData']['mission']['quest_id']."';";
 		$result = $conn->query($sql);
 		
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
+			  $title = $row["title"];
 			  $project_id = $row["project_id"];
 			  $cost = $row["cost"];
+			  $currency = $row["currency"];
 		  }
 	    }
 		
@@ -690,9 +692,11 @@ function startMission($conn){
 			  //echo "Error: " . $sql . "<br>" . $conn->error;
 			}
 			unset($_SESSION['userData']['mission']);
-			echo "Mission successfully started!";
+			echo $title." Mission successfully started!";
 		}else{
-			echo "You do not have enough points to start this mission.";
+			echo "You do not have enough points to start this mission.\n\r
+				  You have ".$balance." ".$currency."\n\r
+				  You need ".$cost." ".$currency;
 		}
 	}else{
 		echo "No Session";
