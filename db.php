@@ -690,8 +690,9 @@ function startMission($conn){
 			  //echo "Error: " . $sql . "<br>" . $conn->error;
 			}
 			unset($_SESSION['userData']['mission']);
+			echo "Mission successfully started!";
 		}else{
-			alert("You do not have enough points to start this mission.");
+			echo "You do not have enough points to start this mission.";
 		}
 	}else{
 		echo "No Session";
