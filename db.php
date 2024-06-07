@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
-	$sql = "SELECT DISTINCT missions.id AS mission_id, title, projects.name AS project_name, cost, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
+	$sql = "SELECT DISTINCT missions.id AS mission_id, quest_id title, projects.name AS project_name, cost, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions INNER JOIN quests ON missions.quest_id = quests.id INNER JOIN projects ON projects.id = quests.project_id INNER JOIN missions_nfts ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON collections.id = nfts.collection_id 
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY missions.id ASC";
 	
@@ -571,7 +571,7 @@ function getCurrentMissions($conn){
 			$completed = "Not Completed";
 		}else{
 			$time_message = "0 Hours and 0 Minutes";
-			$completed = "<input type='button' class='small-button' value='Claim' onclick='claimMission(".$row["mission_id"].");'/>";
+			$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");'/>";
 		}
 		echo "<tr>";
 		  echo "<td align='left'>";
@@ -692,6 +692,58 @@ function startMission($conn){
 			unset($_SESSION['userData']['mission']);
 		}else{
 			alert("You do not have enough points to start this mission.");
+		}
+	}else{
+		echo "No Session";
+	}
+}
+
+function completeMission($conn, $mission_id, $quest_id){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT title, reward, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE id ='".$quest_id."';";
+		$result = $conn->query($sql);
+		
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+			  $title = $row["title"];
+			  $reward = $row["reward"];
+			  $project_id = $row["project_id"];
+			  $currency = $row["currency"];
+		  }
+	    }
+		
+		$sql = "SELECT SUM(rate) AS success_rate FROM missions_nfts INNER JOIN nfts ON nfts.id = missions_nfts.nft_id WHERE mission_id ='".$mission_id."';";
+		$result = $conn->query($sql);
+		
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+			  $success_rate = $row["success_rate"];
+		  }
+	    }
+		
+		// Failure = 2, Succes = 1
+		$success = 2;
+		$chance = $success_rate;
+		if(rand(1,100) <= (int)$chance){
+			$success = 1;
+		}
+		
+		$sql = "UPDATE missions SET status='".$success."' WHERE id='".$mission_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+		
+		// If success, update balance and log credit transaction
+		if($success == 1){
+			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
+			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, 1);
+			alert($title." was successful! ".$reward." ".$currency." added to your balance and transaction history.");
+		}else{
+			alert($title." failed. 0 ".$currency." awarded.");
 		}
 	}else{
 		echo "No Session";
@@ -1962,9 +2014,9 @@ function burn($conn, $balance, $project_id){
 
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";

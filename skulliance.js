@@ -406,6 +406,33 @@ function startMission() {
 	};
 }
 
+function completeMission(mission_id, quest_id) {
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/complete-mission.php?mission_id='+mission_id+"&quest_id="+quest_id, true);
+	xhttp.send();
+
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+			const obj = JSON.parse(data);
+			if(obj == null){
+
+			}else{
+
+			}
+			console.log(data);
+			// Do something with the data
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
+}
+
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
