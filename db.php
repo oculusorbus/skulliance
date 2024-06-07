@@ -664,6 +664,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<li class='role no-border-style'><strong>Success Rate: </strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<br><input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		echo "<br><br>";
+		// Toggle Maximization and Balancing Inventory Selection Buttons
 		if($total_rates >= 100){
 			  if(!isset($_POST['maximize']) && !isset($_POST['balance'])){
 				  renderInventoryButton("maximize", $quest_id, $project_id);
