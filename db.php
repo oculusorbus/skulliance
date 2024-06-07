@@ -617,7 +617,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	$total_mission_rates = 0;
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$total_mission_rates= $row["total_mission_rates"];
+			$total_mission_rates = $row["total_mission_rates"];
 		}
 		//$threshold = 100;
 	}else{
