@@ -440,8 +440,12 @@ function completeMission(mission_id, quest_id) {
 
 function completeMissions(mission_ids, quest_ids) {
 	var xhttp = new XMLHttpRequest();
-	const missionIDs = mission_ids.split(',');
-	const questIDs = quest_ids.split(',');
+	
+	var missionIDs = new Array();
+	var questIDs = new Array();
+	
+	missionIDs = mission_ids.split(',');
+	questIDs = quest_ids.split(',');
 	alert(missionIDs);
 	alert(questIDs);
 	
