@@ -785,10 +785,6 @@ function startMission($conn){
 		
 		$balance = getBalance($conn, $project_id);
 		if($balance >= $cost){
-			if($cost > 0){
-				updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
-				logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, 0, 1);
-			}
 			$sql = "INSERT INTO missions (quest_id, user_id)
 			VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
 		
@@ -807,6 +803,10 @@ function startMission($conn){
 		    	
 			    }
 				if($mission_id > 0){
+					if($cost > 0){
+						updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
+						logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, 0, $mission_id);
+					}
 					foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
 						$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
 						VALUES ('".$mission_id."', '".$nft_id."')";
@@ -879,10 +879,10 @@ function completeMission($conn, $mission_id, $quest_id){
 		// If success, update balance and log credit transaction
 		if($success == 1){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
-			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, 1);
-			echo "SUCCESS: ".$title." Mission - ".$reward." ".$currency."\r\n\r\n";
+			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
+			echo "SUCCESS - ".$title." Mission: ".$reward." ".$currency."\r\n\r\n";
 		}else if($success == 2){
-			echo "FAILURE: ".$title." Mission - NO ".$currency."\r\n\r\n";
+			echo "FAILURE - ".$title." Mission: NO ".$currency."\r\n\r\n";
 		}
 	}else{
 		echo "No Session";
@@ -2165,9 +2165,9 @@ function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0,
 }
 
 // Log a specific user debit for an item purchase
-function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission=0) {
+function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission_id=0) {
 	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission)
-	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission."')";
+	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -2179,7 +2179,9 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, 
 // Display transaction history for user
 function transactionHistory($conn) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC LIMIT 1000";
+		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, quests.title, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions 
+			    LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id LEFT JOIN missions ON missions.id = transactions.mission_id INNER JOIN quests ON quests.id = missions.quest_id 
+		        WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC LIMIT 1000";
 		$result = $conn->query($sql);
 	
 		echo "<table cellspacing='0' id='transactions'><tr><th align='left'>Date</th><th align='left'>Time</th><th align='center'>Type</th><th align='center'>Amount</th><th align='center'>Icon</th><th align='left'>Description</th></tr>";
@@ -2196,8 +2198,8 @@ function transactionHistory($conn) {
 				if($row["crafting"] == 0){
 					if($row["bonus"] == 1){
 						echo "Daily Reward: ".$row["project_name"];
-					}else if($row["mission"] == 1){
-						echo "Mission Reward: ".$row["project_name"];
+					}else if($row["mission_id"] != 0){
+						echo "Mission Reward: ".$row["title"];
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
@@ -2214,8 +2216,8 @@ function transactionHistory($conn) {
 				if($row["name"] != ""){
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
 				}
-				if($row["mission"] != 0){
-					echo "<td>Mission Cost: ".$row["project_name"]."</td>";
+				if($row["mission_id"] != 0){
+					echo "<td>Mission Cost: ".$row["title"]."</td>";
 				}
 			}
 			echo "</tr>";
