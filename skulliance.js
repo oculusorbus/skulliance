@@ -438,10 +438,12 @@ function completeMission(mission_id, quest_id) {
 	};
 }
 
-function completeMissions(encoded_missions) {
+function completeMissions(mission_ids, quest_ids) {
 	var xhttp = new XMLHttpRequest();
-	const obj = JSON.parse(encoded_missions);
-	alert(obj);
+	const missionIDs = mission_ids.split(',');
+	const questIDs = quest_ids.split(',');
+	alert(missionIDs);
+	alert(questIDs);
 	
 }
 
