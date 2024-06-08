@@ -440,7 +440,7 @@ function completeMission(mission_id, quest_id) {
 
 function completeMissions(mission_ids, quest_ids) {	
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/complete-missions.php?mission_id='+missionIDs[i]+"&quest_id="+questIDs[i], true);
+	xhttp.open('GET', 'ajax/complete-missions.php?mission_id='+mission_ids+"&quest_id="+quest_ids, true);
 	xhttp.send();
 
 	xhttp.onreadystatechange = function() {
