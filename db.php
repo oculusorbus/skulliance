@@ -728,7 +728,7 @@ function renderInventoryButton($selection, $quest_id, $project_id){
 }
 
 function getQuestInfo($conn, $quest_id){
-	$sql = "SELECT title, cost, reward, duration project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
+	$sql = "SELECT title, cost, reward, duration, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 	$result = $conn->query($sql);
 	
 	$quest = array();
