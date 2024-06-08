@@ -522,9 +522,8 @@ function getMissions($conn, $quest_id) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
     	$class = "";
-		if($quest_id == $row["id"]){
-			$class = " highlight";
-		}
+		if($quest_id != $row["id"]){
+			//$class = " highlight";
     	echo "<div class='nft'><div class='nft-data".$class."'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
 		echo "<span class='nft-image'><img src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
@@ -540,6 +539,7 @@ function getMissions($conn, $quest_id) {
 		  <input class='small-button' type='submit' value='Select Mission'>
 		</form>";
 		echo "</div></div>";
+		}
 	  }
 	} else {
 	  //echo "0 results";
