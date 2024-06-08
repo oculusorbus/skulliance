@@ -446,7 +446,8 @@ function completeMissions(mission_ids, quest_ids) {
 	questIDs = quest_ids.split(',');
 
 	let i = 0;
-
+	
+	var responses = "";
 	while (i < missionIDs.length) {		
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/complete-mission.php?mission_id='+missionIDs[i]+"&quest_id="+questIDs[i], true);
@@ -467,7 +468,6 @@ function completeMissions(mission_ids, quest_ids) {
 				}*/
 				//document.getElementById('claim-button-'+mission_id).style.display = "none";
 				alert(data);
-				window.location.href = "missions.php";
 				console.log(data);
 				// Do something with the data
 		    } else {
@@ -478,6 +478,7 @@ function completeMissions(mission_ids, quest_ids) {
 		};
 	    i++;
 	}
+	window.location.href = "missions.php";
 	
 }
 
