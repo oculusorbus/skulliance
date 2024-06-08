@@ -762,6 +762,10 @@ li form {
 	min-height: 400px;
 }
 
+.missions .role {
+	color: #bbb;
+}
+
 .inventory .nft-image {
     min-height: 45px;
 	max-height: 45px;
