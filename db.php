@@ -877,9 +877,9 @@ function completeMission($conn, $mission_id, $quest_id){
 		if($success == 1){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, 1);
-			echo "SUCCESS - ".$title." Mission was successful! Awarded ".$reward." ".$currency."\r\n\r\n";
+			echo "SUCCESS: ".$title." Mission - ".$reward." ".$currency."\r\n\r\n";
 		}else if($success == 2){
-			echo "FAILURE - ".$title." Mission failed. No ".$currency." Awarded\r\n\r\n";
+			echo "FAILURE: ".$title." Mission - NO ".$currency."\r\n\r\n";
 		}
 	}else{
 		echo "No Session";
