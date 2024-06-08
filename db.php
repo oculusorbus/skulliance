@@ -661,14 +661,19 @@ function getInventory($conn, $project_id, $quest_id) {
 	$rate_tally = 0;
 	if ($result->num_rows > 0) {
 		$quest = getQuestInfo($conn, $quest_id);
+		$balance = getBalance($conn, $project_id);
 		echo "<h2>".$quest["title"]."</h2>";
 		echo "<ul>";
-		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format(getBalance($conn, $project_id))." ".$quest["currency"]."</li>";
+		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
-		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
+		if($balance >= $cost){
+			echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
+		}else{
+			echo "You need ".number_format($cost-$balance)." ".$quest["currency"]." to start this mission.";
+		}
 		echo "</li>";
 		echo "</ul>";
 		echo "<h2>Inventory</strong></h2>";
