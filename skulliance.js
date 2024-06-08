@@ -395,7 +395,7 @@ function startMission() {
 			}else{
 
 			}*/
-			//alert(data);
+			alert(data);
 			window.location.href = "missions.php";
 			console.log(data);
 			// Do something with the data
