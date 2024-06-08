@@ -672,7 +672,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		if($balance >= $quest["cost"]){
 			echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		}else{
-			echo "You need ".number_format($quest["cost"]-$balance)." ".$quest["currency"]." to start this mission.";
+			echo "You need ".number_format($quest["cost"]-$balance)." more ".$quest["currency"]." to start this mission.";
 		}
 		echo "</li>";
 		echo "</ul>";
