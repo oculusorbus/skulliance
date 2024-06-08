@@ -19,7 +19,7 @@
 		  <?php } ?>
 		  <a href="http://discord.gg/JqqBZBrph2"><?php echo (isset($name))?$name:"";?></a>
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
-  		  <!--<a href="missions.php">Missions</a>-->
+  		  <a href="missions.php">Missions</a>
 		  <a href="store.php">Store</a>
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="collections.php">Collections</a>
