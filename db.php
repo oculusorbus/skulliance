@@ -664,7 +664,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		$balance = getBalance($conn, $project_id);
 		echo "<h2>".$quest["title"]."</h2>";
 		echo "<ul>";
-		echo "<li class='role'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
+		echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
 		echo "<li class='role'>".$quest["description"]."</li>";
 		echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
 		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
