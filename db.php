@@ -2154,7 +2154,7 @@ function burn($conn, $balance, $project_id){
 
 // Log a specific user credit for nightly rewards
 function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission)
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id)
 	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."')";
 
 	if ($conn->query($sql) === TRUE) {
@@ -2166,7 +2166,7 @@ function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0,
 
 // Log a specific user debit for an item purchase
 function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission)
+	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission_id)
 	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission_id."')";
 
 	if ($conn->query($sql) === TRUE) {
