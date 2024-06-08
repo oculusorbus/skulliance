@@ -667,6 +667,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
+		echo "<li class='role'><strong>Duration:</strong>&nbsp;".$quest["duration"]." Day(s)</li>";
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
 		if($balance >= $quest["cost"]){
@@ -727,7 +728,7 @@ function renderInventoryButton($selection, $quest_id, $project_id){
 }
 
 function getQuestInfo($conn, $quest_id){
-	$sql = "SELECT title, cost, reward, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
+	$sql = "SELECT title, cost, reward, duration project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 	$result = $conn->query($sql);
 	
 	$quest = array();
@@ -739,6 +740,7 @@ function getQuestInfo($conn, $quest_id){
 		  $quest["reward"] = $row["reward"];
 		  $quest["project"] = $row["name"];
 		  $quest["currency"] = $row["currency"];
+		  $quest["duration"] = $row["duration"];
 	  }
 	  return $quest;
     }
