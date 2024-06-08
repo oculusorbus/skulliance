@@ -675,18 +675,18 @@ function getInventory($conn, $project_id, $quest_id) {
 	$result = $conn->query($sql);
 	
 	$rate_tally = 0;
+	$quest = getQuestInfo($conn, $quest_id);
+	$balance = getBalance($conn, $project_id);
+	echo "<h2>".$quest["title"]."</h2>";
+	echo "<ul>";
+	echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
+	echo "<li class='role'>".$quest["description"]."</li>";
+	echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
+	echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
+	echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
+	echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
+	echo "<li class='role'><strong>Duration:</strong>&nbsp;".$quest["duration"]." Day(s)</li>";
 	if ($result->num_rows > 0) {
-		$quest = getQuestInfo($conn, $quest_id);
-		$balance = getBalance($conn, $project_id);
-		echo "<h2>".$quest["title"]."</h2>";
-		echo "<ul>";
-		echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
-		echo "<li class='role'>".$quest["description"]."</li>";
-		echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
-		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
-		echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
-		echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
-		echo "<li class='role'><strong>Duration:</strong>&nbsp;".$quest["duration"]." Day(s)</li>";
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
 		if($balance >= $quest["cost"]){
