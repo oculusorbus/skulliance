@@ -663,6 +663,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		$quest = getQuestInfo($conn, $quest_id);
 		echo "<h2>".$quest["title"]."</h2>";
 		echo "<ul>";
+		echo "<li class='role no-border-style'><strong>Balance:</strong>&nbsp;".getBalance($conn, $project_id)." ".$quest["currency"]."</li>";
 		echo "<li class='role no-border-style'><strong>Cost:</strong>&nbsp;".$quest["cost"]." ".$quest["currency"]."</li>";
 		echo "<li class='role no-border-style'><strong>Reward:</strong>&nbsp;".$quest["reward"]." ".$quest["currency"]."</li>";
 		echo "<li class='role no-border-style'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
