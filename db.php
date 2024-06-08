@@ -554,6 +554,8 @@ function getCurrentMissions($conn){
 	
 	$result = $conn->query($sql);
 	
+	$completed_missions = array();
+	
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions</h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
@@ -572,6 +574,7 @@ function getCurrentMissions($conn){
 		}else{
 			$time_message = "0 Hours 0 Minutes";
 			$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
+			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
 		echo "<tr>";
 		  echo "<td align='left'>";
@@ -601,6 +604,11 @@ function getCurrentMissions($conn){
 		echo "</tr>";
 	  }
 	  echo "</table></div>";
+	  //json_encode(
+	  if(!empty($completed_missions)){
+		  $completed_missions_encoded = json_encode($completed_missions);
+		  echo "<input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(".$completed_missions_encoded.");'/>";
+  	  }
 	} else {
 	  //echo "0 results";
 	}
