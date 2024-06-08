@@ -607,7 +607,7 @@ function getCurrentMissions($conn){
 	  //json_encode(
 	  if(!empty($completed_missions)){
 		  $completed_missions_encoded = json_encode($completed_missions);
-		  echo "<input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions('".$completed_missions_encoded."');'/>";
+		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions('".$completed_missions_encoded."');'/>";
   	  }
 	} else {
 	  //echo "0 results";
