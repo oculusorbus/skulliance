@@ -766,6 +766,10 @@ li form {
 	color: #bbb;
 }
 
+.inventory .button {
+	margin-top: 10px;
+}
+
 .mission-image {
 	border: 1px solid #43464D;
 }
