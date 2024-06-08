@@ -566,10 +566,11 @@ function getCurrentMissions($conn){
 	  while($row = $result->fetch_assoc()) {
   		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
   		$remaining = $date - time();
+		$days_remaining = floor(($remaining % 86400));
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
 		if($hours_remaining > 0 && $minutes_remaining > 0){
-			$time_message = $hours_remaining." Hours ".$minutes_remaining." Minutes";
+			$time_message = $days_remaining." Day(s) ".$hours_remaining." Hours ".$minutes_remaining." Minutes";
 			$completed = "Not Completed";
 		}else{
 			$time_message = "0 Hours 0 Minutes";
