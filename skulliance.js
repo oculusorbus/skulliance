@@ -439,22 +439,43 @@ function completeMission(mission_id, quest_id) {
 }
 
 function completeMissions(mission_ids, quest_ids) {
-	var xhttp = new XMLHttpRequest();
-	
 	var missionIDs = new Array();
 	var questIDs = new Array();
 	
 	missionIDs = mission_ids.split(',');
 	questIDs = quest_ids.split(',');
-	
-	console.log(missionIDs);
-	console.log(questIDs);
 
 	let i = 0;
 
-	while (i < missionIDs.length) {
-	    console.log(missionIDs[i]);
-		console.log(questIDs[i]);
+	while (i < missionIDs.length) {		
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/complete-mission.php?mission_id='+missionIDs[i]+"&quest_id="+questIDs[i], true);
+		xhttp.send();
+
+		xhttp.onreadystatechange = function() {
+		  if (xhttp.readyState == XMLHttpRequest.DONE) {
+		    // Check the status of the response
+		    if (xhttp.status == 200) {
+				// Access the data returned by the server
+				var data = xhttp.responseText;
+				/*
+				const obj = JSON.parse(data);
+				if(obj == null){
+
+				}else{
+
+				}*/
+				//document.getElementById('claim-button-'+mission_id).style.display = "none";
+				alert(data);
+				window.location.href = "missions.php";
+				console.log(data);
+				// Do something with the data
+		    } else {
+		      // Handle error
+				alert("AJAX Error");
+		    }
+		  }
+		};
 	    i++;
 	}
 	
