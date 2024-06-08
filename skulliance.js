@@ -446,6 +446,9 @@ function completeMissions(mission_ids, quest_ids) {
 	
 	missionIDs = mission_ids.split(',');
 	questIDs = quest_ids.split(',');
+	
+	console.log(missionIDs);
+	console.log(questIDs);
 
 	let i = 0;
 
