@@ -438,48 +438,35 @@ function completeMission(mission_id, quest_id) {
 	};
 }
 
-function completeMissions(mission_ids, quest_ids) {
-	var missionIDs = new Array();
-	var questIDs = new Array();
-	
-	missionIDs = mission_ids.split(',');
-	questIDs = quest_ids.split(',');
+function completeMissions(mission_ids, quest_ids) {	
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/complete-missions.php?mission_id='+missionIDs[i]+"&quest_id="+questIDs[i], true);
+	xhttp.send();
 
-	let i = 0;
-	
-	var responses = "";
-	while (i < missionIDs.length) {		
-		var xhttp = new XMLHttpRequest();
-		xhttp.open('GET', 'ajax/complete-mission.php?mission_id='+missionIDs[i]+"&quest_id="+questIDs[i], true);
-		xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+			/*
+			const obj = JSON.parse(data);
+			if(obj == null){
 
-		xhttp.onreadystatechange = function() {
-		  if (xhttp.readyState == XMLHttpRequest.DONE) {
-		    // Check the status of the response
-		    if (xhttp.status == 200) {
-				// Access the data returned by the server
-				var data = xhttp.responseText;
-				/*
-				const obj = JSON.parse(data);
-				if(obj == null){
+			}else{
 
-				}else{
-
-				}*/
-				//document.getElementById('claim-button-'+mission_id).style.display = "none";
-				alert(data);
-				console.log(data);
-				// Do something with the data
-		    } else {
-		      // Handle error
-				alert("AJAX Error");
-		    }
-		  }
-		};
-	    i++;
-	}
-	window.location.href = "missions.php";
-	
+			}*/
+			//document.getElementById('claim-button-'+mission_id).style.display = "none";
+			window.location.href = "missions.php";
+			alert(data);
+			console.log(data);
+			// Do something with the data
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
 }
 
 
