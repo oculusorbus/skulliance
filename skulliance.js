@@ -438,6 +438,14 @@ function completeMission(mission_id, quest_id) {
 	};
 }
 
+function completeMissions(encoded_missions) {
+	var xhttp = new XMLHttpRequest();
+	const obj = JSON.parse(encoded_missions);
+	alert(obj);
+	
+}
+
+
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
