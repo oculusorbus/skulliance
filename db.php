@@ -512,6 +512,28 @@ function getStreaksTotal($conn) {
 	return $streaks;
 }
 
+// Get mission info
+function getMission($conn, $mission_id){
+	$sql = "SELECT title, description, cost, reward, project_id, duration, currency, name FROM missions INNER JOIN quests ON quests.id = missions.quest_id INNER JOIN projects ON projects.id = quests.project_id WHERE id = '".$mission_id."'";
+	
+	$mission = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $mission["title"] = $row["title"]; 
+		  $mission["description"] = $row["description"];
+		  $mission["cost"] = $row["cost"];
+		  $mission["reward"] = $row["reward"];
+		  $mission["duration"] = $row["duration"];
+		  $mission["currency"] = $row["currency"];
+		  $mission["project"] = $row["name"];
+	  }
+	  return $mission;
+	} else {
+	  //echo "0 results";
+	}
+}
+
 // Get missions
 function getMissions($conn, $quest_id) {
 	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
@@ -2199,7 +2221,8 @@ function transactionHistory($conn) {
 					if($row["bonus"] == 1){
 						echo "Daily Reward: ".$row["project_name"];
 					}else if($row["mission_id"] != 0){
-						echo "Mission Reward: ".$row["project_name"];
+						$mission = getMission($conn, $row["mission_id"]);
+						echo "Mission Reward: ".$mission["title"];
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
@@ -2217,7 +2240,8 @@ function transactionHistory($conn) {
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
 				}
 				if($row["mission_id"] != 0){
-					echo "<td>Mission Cost: ".$row["project_name"]."</td>";
+					$mission = getMission($conn, $row["mission_id"]);
+					echo "<td>Mission Cost: ".$mission["title"]."</td>";
 				}
 			}
 			echo "</tr>";
