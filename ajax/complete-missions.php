@@ -9,7 +9,7 @@ if(isset($_GET['mission_id']) && isset($_GET['quest_id'])){
 	$quest_ids = explode(',', $_GET['quest_id']);
 	$missions_quests = array();
 	$missions_quests = array_combine($mission_ids, $quest_ids);
-	foreach($mission_quests AS $mission_id => $quest_id){
+	foreach($missions_quests AS $mission_id => $quest_id){
 		completeMission($conn, $mission_id, $quest_id);
 	}
 }else{
