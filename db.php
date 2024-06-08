@@ -665,6 +665,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<h2>".$quest["title"]."</h2>";
 		echo "<ul>";
 		echo "<li class='role'><img width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
+		echo "<li class='role'>".$quest["description"]."</li>";
 		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
@@ -742,6 +743,7 @@ function getQuestInfo($conn, $quest_id){
 		  $quest["project"] = $row["name"];
 		  $quest["currency"] = $row["currency"];
 		  $quest["duration"] = $row["duration"];
+		  $quest["description"] = $row["description"];
 	  }
 	  return $quest;
     }
