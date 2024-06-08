@@ -606,8 +606,13 @@ function getCurrentMissions($conn){
 	  echo "</table></div>";
 	  //json_encode(
 	  if(!empty($completed_missions)){
-		  $completed_missions_encoded = json_encode($completed_missions);
-		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions('".$completed_missions_encoded."');'/>";
+		  $mission_ids = "";
+		  $quest_ids = "";
+		  foreach($completed_missions AS $mission_id => $quest_id){
+			  $mission_ids = $mission_ids.",".$mission_id;
+			  $quest_ids = $quest_ids.",".$quest_id;
+		  }
+		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");'/>";
   	  }
 	} else {
 	  //echo "0 results";
