@@ -666,9 +666,9 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format(getBalance($conn, $project_id))." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 		echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
-		echo "<li class='role no-border-style'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
+		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
-		echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
+		echo "<br><input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		echo "</li>";
 		echo "</ul>";
 		echo "<h2>Inventory</strong></h2>";
