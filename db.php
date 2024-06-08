@@ -2179,8 +2179,8 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, 
 // Display transaction history for user
 function transactionHistory($conn) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, quests.title, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions 
-			    LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id LEFT JOIN missions ON missions.id = transactions.mission_id INNER JOIN quests ON quests.id = missions.quest_id 
+		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions 
+			    LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id 
 		        WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC LIMIT 1000";
 		$result = $conn->query($sql);
 	
@@ -2199,7 +2199,7 @@ function transactionHistory($conn) {
 					if($row["bonus"] == 1){
 						echo "Daily Reward: ".$row["project_name"];
 					}else if($row["mission_id"] != 0){
-						echo "Mission Reward: ".$row["title"];
+						echo "Mission Reward: ".$row["project_name"];
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
@@ -2217,7 +2217,7 @@ function transactionHistory($conn) {
 					echo "<td>NFT Purchase: ".$row["name"]."</td>";
 				}
 				if($row["mission_id"] != 0){
-					echo "<td>Mission Cost: ".$row["title"]."</td>";
+					echo "<td>Mission Cost: ".$row["project_name"]."</td>";
 				}
 			}
 			echo "</tr>";
