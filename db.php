@@ -516,6 +516,8 @@ function getStreaksTotal($conn) {
 function getMission($conn, $mission_id){
 	$sql = "SELECT title, description, cost, reward, project_id, duration, currency, name FROM missions INNER JOIN quests ON quests.id = missions.quest_id INNER JOIN projects ON projects.id = quests.project_id WHERE id = '".$mission_id."'";
 	
+	$result = $conn->query($sql);
+	
 	$mission = array();
 	if ($result->num_rows > 0) {
 	  // output data of each row
