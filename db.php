@@ -530,8 +530,8 @@ function getMissions($conn, $quest_id) {
 		echo "<span class='nft-image'><img src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
 		echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
-		echo "<span class='nft-level'><strong>Cost</strong><br>".$row["cost"]." ".$row["currency"]."</span>";
-		echo "<span class='nft-level'><strong>Reward</strong><br>".$row["reward"]." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
 		echo"
 		<form action='missions.php#inventory' method='post'>
@@ -584,10 +584,10 @@ function getCurrentMissions($conn){
 		  echo $row["total_nfts"]." NFTs";
 		  echo "</td>";
 		  echo "<td align='left'>";
-		  echo $row["cost"]." ".$row["currency"];
+		  echo number_format($row["cost"])." ".$row["currency"];
 		  echo "</td>";
 		  echo "<td align='left'>";
-		  echo $row["reward"]." ".$row["currency"];
+		  echo number_format($row["reward"])." ".$row["currency"];
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $row["success_rate"]."%";
