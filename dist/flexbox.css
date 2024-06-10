@@ -276,13 +276,6 @@ a{
 	margin: 1px;
 }
 
-.col1of4 {
-  flex: 25%;
-  /*background-color: black;*/
-  padding: 20px;
-  min-width: 25%;
-}
-
 .col1of3 {
   flex: 33%;
   /*background-color: black;*/
@@ -709,6 +702,16 @@ li form {
 	float: left;
 	width: 33.33%;
 	padding: 10px;
+}
+
+.team {
+	float: left;
+	width: 25%;
+	padding: 10px;
+}
+
+.team img{
+	width: 100%;
 }
 
 .projects-container h3{
