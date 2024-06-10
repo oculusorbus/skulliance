@@ -1207,18 +1207,21 @@ section.active {
 }
 /* Responsive layout - when the screen is less than 700px wide, make the two columns stack on top of each other instead of next to each other */
 @media screen and (max-width: 700px) {
-  .row, .navbar {   
-    flex-direction: column;
-  }
-  .navbar-first {
-  	margin-left: 0;
-  }
-  .navbar img {
-	margin: 0 auto;
-	width: 120px;
-    height: 120px;
-    margin-top: 10px;
-  }
+	.row, .navbar {   
+		flex-direction: column;
+	}
+	.navbar-first {
+		margin-left: 0;
+	}
+	.navbar img {
+		margin: 0 auto;
+		width: 120px;
+		height: 120px;
+		margin-top: 10px;
+	}
+	.member {
+		width: 100%;
+	}
 	#results {
 		min-height: 350px;
 		max-height: 350px;
