@@ -583,7 +583,7 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions</h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
-	  echo "<div id='mission-results'></div>";
+	  echo "<ul id='mission-results'></ul>";
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
@@ -905,9 +905,9 @@ function completeMission($conn, $mission_id, $quest_id){
 		if($success == 1){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
-			echo "SUCCESS - ".$title.": ".$reward." ".$currency."\r\n\r\n";
+			echo "<li class='role'><strong>SUCCESS</strong> - ".$title.": ".$reward." ".$currency."</li>";
 		}else if($success == 2){
-			echo "FAILURE - ".$title.": NO ".$currency."\r\n\r\n";
+			echo "<li class='role'><strong>FAILURE</strong> - ".$title.": NO ".$currency."</li>";
 		}
 	}else{
 		echo "No Session";
