@@ -459,6 +459,7 @@ function completeMissions(mission_ids, quest_ids) {
 			
 			const obj = JSON.parse(data);
 			alert(obj);
+			console.log(obj);
 			
 			/*
 			var missionIDs = new Array();
