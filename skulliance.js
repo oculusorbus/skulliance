@@ -458,8 +458,15 @@ function completeMissions(mission_ids, quest_ids) {
 			}*/
 			
 			const obj = JSON.parse(data);
-			alert(obj);
-			console.log(obj);
+			for(var i in obj){
+			  alert(i); // alerts key
+			  alert(obj[i]); //alerts key's value
+			  
+			  document.getElementById('mission-result-'+i).innerHTML = obj[i];
+			  if(obj[i] == "FAILURE"){
+			  	document.getElementById('mission-result-'+i).innerHTML = "NO REWARD";
+			  }
+			}
 			
 			/*
 			var missionIDs = new Array();
