@@ -327,7 +327,7 @@
 	<div class="teams">
 		<div class="member">
 			<h3>Founder</h3>
-			<strong>Oculus Orbus</strong>
+			<p><strong>Oculus Orbus</strong></p>
 			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/>
 		</div>
 		<div class="member">
