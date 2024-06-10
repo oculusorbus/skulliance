@@ -331,15 +331,18 @@
 			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/>
 		</div>
 		<div class="member">
-			<h3>Co-Founder<br>Kryptman</h3>
+			<h3>Co-Founder</h3>
+			<p><strong>Kryptman</strong></p>
 			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg"/>
 		</div>
 		<div class="member">
-			<h3>Artist<br>Diex Grey</h3>
+			<h3>Artist</h3>
+			<p><strong>Diex Grey</strong></p>
 			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/>
 		</div>
 		<div class="member">
-			<h3>Diamond Skulls Artist<br>Sinder Skullz</h3>
+			<h3>Diamond Skulls Artist</h3>
+			<p><strong>Sinder Skullz</strong></p>
 			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg"/>
 		</div>
 	</div>
