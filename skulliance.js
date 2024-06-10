@@ -461,7 +461,9 @@ function completeMissions(mission_ids, quest_ids) {
 			for(var i in obj){
 			  document.getElementById('mission-result-'+i).innerHTML = "<strong>"+obj[i]+"</strong>";
 			  if(obj[i] == "FAILURE"){
-			  	document.getElementById('mission-reward-'+i).innerHTML = "<strong>NO REWARD</strong>";
+				var contents = document.getElementById('mission-reward-'+i).innerHTML;
+				var withNoDigits = contents.replace(/[0-9]/g, '');
+			  	document.getElementById('mission-reward-'+i).innerHTML = "0"+withNoDigits;
 				document.getElementById('mission-row-'+i).className = "failure";
 			  }else{
 			  	document.getElementById('mission-row-'+i).className = "success";
