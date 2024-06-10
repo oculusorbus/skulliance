@@ -706,12 +706,6 @@ li form {
 	background-color: black;
 }
 
-.membership {
-	float: left;
-	width: 50%;
-	padding: 10px;
-}
-
 .project {
 	float: left;
 	width: 33.33%;
@@ -722,6 +716,16 @@ li form {
 	float: left;
 	width: 25%;
 	padding: 10px;
+}
+
+.membership {
+	float: left;
+	width: 50%;
+	padding: 10px;
+}
+
+.membership img{
+	width: 100%;
 }
 
 .member img{
