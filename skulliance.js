@@ -464,7 +464,7 @@ function completeMissions(mission_ids, quest_ids) {
 			}
 			document.getElementById('mission-results').innerHTML = data;
 			//window.location.href = "missions.php";
-			alert(data);
+			//alert(data);
 			console.log(data);
 			// Do something with the data
 	    } else {
