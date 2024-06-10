@@ -905,9 +905,9 @@ function completeMission($conn, $mission_id, $quest_id){
 		if($success == 1){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
-			echo "<li class='role'><strong>SUCCESS</strong> - ".$title.": ".$reward." ".$currency."</li>";
+			echo "<li class='role'><strong>SUCCESS</strong>&nbsp;- ".$title.": ".$reward." ".$currency."</li>";
 		}else if($success == 2){
-			echo "<li class='role'><strong>FAILURE</strong> - ".$title.": NO ".$currency."</li>";
+			echo "<li class='role'><strong>FAILURE</strong>&nbsp;- ".$title.": NO ".$currency."</li>";
 		}
 	}else{
 		echo "No Session";
