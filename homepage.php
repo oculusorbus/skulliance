@@ -328,22 +328,26 @@
 		<div class="member">
 			<h3>Founder</h3>
 			<p><strong>Oculus Orbus</strong></p>
-			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/>
+			<a href="https://www.x.com/oculusorbus" target="_blank">
+			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/></a>
 		</div>
 		<div class="member">
 			<h3>Co-Founder</h3>
 			<p><strong>Kryptman</strong></p>
-			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg"/>
+			<a href="https://www.x.com/TheKryptman" target="_blank">
+			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg"/></a>
 		</div>
 		<div class="member">
 			<h3>Artist</h3>
 			<p><strong>Diex Grey</strong></p>
-			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/>
+			<a href="https://www.x.com/diexgrey" target="_blank">
+			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/></a>
 		</div>
 		<div class="member">
 			<h3>Diamond Skulls Artist</h3>
 			<p><strong>Sinder Skullz</strong></p>
-			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg"/>
+			<a href="https://www.x.com/SinderSkullz" target="_blank">
+			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg"/></a>
 		</div>
 	</div>
 </div>
