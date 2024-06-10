@@ -1191,6 +1191,9 @@ section.active {
 		position: relative;
 	    top: -10px;
 	}
+	.member {
+		width: 50%;
+	}
 }
 
 @media screen and (max-width: 1120px) {
