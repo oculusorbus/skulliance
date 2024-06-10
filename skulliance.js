@@ -460,7 +460,7 @@ function completeMissions(mission_ids, quest_ids) {
 			missionIDs = mission_ids.split(",");
 			var arrayLength = missionIDs.length;
 			for (var i = 0; i < arrayLength; i++) {
-			    document.getElementById('mission-row-'+missionIDs[i]).style.display = none;
+			    document.getElementById('mission-row-'+missionIDs[i]).style.display = "none";
 			}
 			document.getElementById('mission-results').innerHTML = data;
 			//window.location.href = "missions.php";
