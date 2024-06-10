@@ -603,7 +603,7 @@ function getCurrentMissions($conn){
 			//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
-		echo "<tr>";
+		echo "<tr id='mission-row-".$row["mission_id"]."'>";
 		  echo "<td align='left'>";
 		  echo $row["title"];
 		  echo "</td>";

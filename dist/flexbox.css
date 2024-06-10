@@ -784,6 +784,14 @@ li form {
 	border: 1px solid white;
 }
 
+.success {
+	background-color: #9400D3;
+}
+
+.failure {
+	background-color: #C81585;
+}
+
 .nft-level{
 	color: #bbb;
 }
