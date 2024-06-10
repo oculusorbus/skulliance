@@ -326,20 +326,19 @@
 <div class="row teams-row" id="row1">
 	<div class="teams">
 		<div class="member">
-			<h3>Founder</h3>
-			<h4>Oculus Orbus</h4>
+			<h3>Founder<br>Oculus Orbus</h3>
 			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/>
 		</div>
 		<div class="member">
-			<h3>Co-Founder: Kryptman</h3>
+			<h3>Co-Founder<br>Kryptman</h3>
 			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg"/>
 		</div>
 		<div class="member">
-			<h3>Artist: Diex Grey</h3>
+			<h3>Artist<br>Diex Grey</h3>
 			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/>
 		</div>
 		<div class="member">
-			<h3>Diamond Skulls Artist: Sinder Skullz</h3>
+			<h3>Diamond Skulls Artist<br>Sinder Skullz</h3>
 			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg"/>
 		</div>
 	</div>
