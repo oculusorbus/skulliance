@@ -339,7 +339,7 @@
 		</div>
 		<div class="member">
 			<h3>Artist</h3>
-			<p><strong>Diex Grey aka Galactico</strong></p>
+			<p><strong>Diex Grey (Galactico)</strong></p>
 			<a href="https://www.x.com/diexgrey" target="_blank">
 			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/></a>
 		</div>
