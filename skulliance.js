@@ -456,8 +456,14 @@ function completeMissions(mission_ids, quest_ids) {
 			}else{
 
 			}*/
-			//document.getElementById('claim-button-'+mission_id).style.display = "none";
-			window.location.href = "missions.php";
+			var missionIDs = new Array();
+			missionIDs = mission_ids.split(",");
+			var arrayLength = missionIDs.length;
+			for (var i = 0; i < arrayLength; i++) {
+			    document.getElementById('mission-row-'+missionIDs[i]).style.display = none;
+			}
+			document.getElementById('mission-results').innerHTML = data;
+			//window.location.href = "missions.php";
 			alert(data);
 			console.log(data);
 			// Do something with the data

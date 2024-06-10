@@ -583,6 +583,7 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions</h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
+	  echo "<div id='mission-results'></div>";
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
@@ -602,7 +603,7 @@ function getCurrentMissions($conn){
 			//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
-		echo "<tr>";
+		echo "<tr id='mission-row-".$row["mission_id"]."'>";
 		  echo "<td align='left'>";
 		  echo $row["title"];
 		  echo "</td>";
@@ -640,7 +641,7 @@ function getCurrentMissions($conn){
 		  }
 		  $mission_ids = substr($mission_ids, 1);
 		  $quest_ids = substr($quest_ids, 1);
-		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");'/>";
+		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
   	  }
 	} else {
 	  //echo "0 results";
