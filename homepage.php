@@ -326,7 +326,8 @@
 <div class="row teams-row" id="row1">
 	<div class="teams">
 		<div class="member">
-			<h3><strong>Founder</strong><br>Oculus Orbus</h3>
+			<h3>Founder</h3>
+			<strong>Oculus Orbus</strong>
 			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/>
 		</div>
 		<div class="member">
