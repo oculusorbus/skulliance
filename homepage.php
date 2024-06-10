@@ -352,7 +352,7 @@
 		</div>
 	</div>
 </div>
-<br><br>
+<br><br><br><br>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
