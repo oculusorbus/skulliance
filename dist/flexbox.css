@@ -720,11 +720,17 @@ li form {
 
 .membership {
 	float: left;
-	width: 50%;
+	width: 75%;
 	padding: 10px;
 }
 
-.membership img{
+.skull {
+	float: left;
+	width: 25%;
+	padding: 10px;
+}
+
+.skull img{
 	width: 100%;
 }
 
