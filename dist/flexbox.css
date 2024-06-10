@@ -694,7 +694,15 @@ li form {
 	width: 100%;
 }
 
+.teams-row {
+	width: 100%;
+}
+
 .projects {
+	background-color: black;
+}
+
+.teams {
 	background-color: black;
 }
 
@@ -704,13 +712,13 @@ li form {
 	padding: 10px;
 }
 
-.team {
+.member {
 	float: left;
 	width: 25%;
 	padding: 10px;
 }
 
-.team img{
+.member img{
 	width: 100%;
 }
 

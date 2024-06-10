@@ -323,21 +323,21 @@
 <h2>Team</h2>
 <p>The Skulliance team is dedicated to elevating skull artists on Cardano and partnering with high quality artists in the space. We're always brainstorming ways to bring value and utility to the Skulliance family of artists and loyal collectors.</p>
 
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="col1of4">
+<div class="row teams-row" id="row1">
+	<div class="teams">
+		<div class="member">
 			<h3>Founder: Oculus Orbus</h3>
 			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/>
 		</div>
-		<div class="col1of4">
+		<div class="member">
 			<h3>Co-Founder: Kryptman</h3>
 			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg"/>
 		</div>
-		<div class="col1of4">
+		<div class="member">
 			<h3>Artist: Diex Grey</h3>
 			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/>
 		</div>
-		<div class="col1of4">
+		<div class="member">
 			<h3>Diamond Skulls Artist: Sinder Skullz</h3>
 			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg"/>
 		</div>
