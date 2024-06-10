@@ -603,7 +603,7 @@ function getCurrentMissions($conn){
 			//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
-		echo "<tr id='mission-row-".$row["mission_id"]."'>";
+		echo "<tr>";
 		  echo "<td align='left'>";
 		  echo $row["title"];
 		  echo "</td>";
@@ -616,7 +616,7 @@ function getCurrentMissions($conn){
 		  echo "<td align='left'>";
 		  echo number_format($row["cost"])." ".$row["currency"];
 		  echo "</td>";
-		  echo "<td align='left'>";
+		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
 		  echo number_format($row["reward"])." ".$row["currency"];
 		  echo "</td>";
   		  echo "<td align='left'>";
@@ -625,7 +625,7 @@ function getCurrentMissions($conn){
   		  echo "<td align='left'>";
 		  echo $time_message;
 		  echo "</td>";
-  		  echo "<td align='left'>";
+  		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
 		  echo $completed;
 		  echo "</td>";
 		echo "</tr>";
@@ -905,9 +905,9 @@ function completeMission($conn, $mission_id, $quest_id){
 		if($success == 1){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
-			echo "<li class='role'><strong>SUCCESS</strong>&nbsp;- ".$title.": ".$reward." ".$currency."</li>";
+			return "SUCCESS";
 		}else if($success == 2){
-			echo "<li class='role'><strong>FAILURE</strong>&nbsp;- ".$title.": NO ".$currency."</li>";
+			return "FAILURE";
 		}
 	}else{
 		echo "No Session";
