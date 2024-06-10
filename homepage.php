@@ -312,7 +312,7 @@
 		<div class="project">
 		</div>
 		<div class="project">
-			<img src="https://www.skulliance.io/staking/images/skulliance.gif"/>
+			<img src="https://www.skulliance.io/staking/images/skulliance.jpg"/>
 		</div>
 		<div class="project">
 		</div>
