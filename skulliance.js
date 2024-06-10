@@ -459,12 +459,9 @@ function completeMissions(mission_ids, quest_ids) {
 			
 			const obj = JSON.parse(data);
 			for(var i in obj){
-			  alert(i); // alerts key
-			  alert(obj[i]); //alerts key's value
-			  
-			  document.getElementById('mission-result-'+i).innerHTML = obj[i];
+			  document.getElementById('mission-result-'+i).innerHTML = "<strong>"+obj[i]+"</strong>";
 			  if(obj[i] == "FAILURE"){
-			  	document.getElementById('mission-result-'+i).innerHTML = "NO REWARD";
+			  	document.getElementById('mission-result-'+i).innerHTML = "<strong>NO REWARD</strong>";
 			  }
 			}
 			
