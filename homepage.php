@@ -142,6 +142,7 @@
 	  <a class="navbar-first" href="#mission">Mission</a>
 	  <a href="#artists">Artists</a>
 	  <a href="#partners">Partners</a>
+	  <a href="#team">Team</a>
 	  <a href="https://www.skulliance.io/staking">Staking</a>
 	  <a href="https://www.jpg.store/collection/skulliance">Diamond Skulls</a>
 	  <a href="https://www.skulliance.io/shop">Merch</a>
