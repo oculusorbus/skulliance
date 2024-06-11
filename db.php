@@ -618,9 +618,11 @@ function getCurrentMissions($conn){
 		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo number_format($row["cost"])." ".$row["currency"];
+		  echo "<img class='icon' src='icons/".strolower($row["currency"]).".png'/>";
 		  echo "</td>";
 		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
 		  echo number_format($row["reward"])." ".$row["currency"];
+  		  echo "<img class='icon' src='icons/".strolower($row["currency"]).".png'/>";
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $row["success_rate"]."%";
@@ -898,7 +900,7 @@ function completeMission($conn, $mission_id, $quest_id){
 		  }
 	    }
 		
-		// Failure = 2, Succes = 1
+		// Failure = 2, Success = 1
 		$success = 2;
 		$chance = $success_rate;
 		if(rand(1,100) <= (int)$chance){
