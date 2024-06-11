@@ -2407,7 +2407,8 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 			echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>NFTs</th><th>Points</th>";
 		  	while($row = $result->fetch_assoc()) {
 				// Filter out project owners
-				if(($row["discord_id"] == $row["project_discord_id"] && $row["project_discord_id"] != "772831523899965440") || ($project_id == '5' && $row["discord_id"] == "183841115286405121")){
+				578386308406181918
+				if(($row["discord_id"] == $row["project_discord_id"] && $row["project_discord_id"] != "772831523899965440") || ($project_id == '5' && $row["discord_id"] == "183841115286405121") || ($project_id == '20' && $row["discord_id"] == "578386308406181918")){
 					// Do not generate row for project owners unless Oculus Orbus and filter out Kimosabe
 				}else{
 					$leaderboardCounter++;
