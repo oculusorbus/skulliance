@@ -201,6 +201,19 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
 			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png"/></a>
 		</div>
 		<div class="project">
@@ -227,26 +240,13 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png"/></a>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
 			<a href="https://x.com/AscenderOne" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ascenderone.jpg"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/MipaToys" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg"/></a>
+			<a href="https://x.com/skulliance" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/skulliance" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/skulliance.jpg"/></a>
+			<a href="https://x.com/MipaToys" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg"/></a>
 		</div>
 	</div>
 </div>
