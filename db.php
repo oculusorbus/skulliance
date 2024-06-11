@@ -708,17 +708,25 @@ function getInventory($conn, $project_id, $quest_id) {
 	echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
 	echo "<li class='role'>".$quest["description"]."</li>";
 	echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
-	echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
+	if(!empty($balance)){
+		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
+	}else{
+		echo "<li class='role'><strong>Balance:</strong>&nbsp;NO ".$quest["currency"]."</li>";
+	}
 	echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 	echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
 	echo "<li class='role'><strong>Duration:</strong>&nbsp;".$quest["duration"]." Day(s)</li>";
 	if ($result->num_rows > 0) {
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
-		if($balance >= $quest["cost"]){
-			echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
+		if(!empty($balance)){
+			if($balance >= $quest["cost"]){
+				echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
+			}else{
+				echo "You need ".number_format($quest["cost"]-$balance)." more ".$quest["currency"]." to start this mission.";
+			}
 		}else{
-			echo "You need ".number_format($quest["cost"]-$balance)." more ".$quest["currency"]." to start this mission.";
+			echo "You need initial ".$quest["currency"]." staking rewards to start this mission.";
 		}
 		echo "</li>";
 		echo "</ul>";
