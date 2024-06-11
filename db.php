@@ -604,7 +604,7 @@ function getCurrentMissions($conn){
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
 		echo "<tr id='mission-row-".$row["mission_id"]."'>";
-		  echo "<td align='left'>";
+		  echo "<td align='center'>";
 		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
 		  echo "</td>";
 		  echo "<td align='left'>";
