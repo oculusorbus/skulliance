@@ -726,7 +726,7 @@ function getInventory($conn, $project_id, $quest_id) {
 				echo "You need ".number_format($quest["cost"]-$balance)." more ".$quest["currency"]." to start this mission.";
 			}
 		}else{
-			echo "You need an initial ".$quest["currency"]." staking rewards balance to start this mission. Make sure your NFTs are loaded into the staking platform and wait for the nightly staking rewards before starting this mission.";
+			echo "You need an initial ".$quest["currency"]." staking rewards balance to start this mission. Make sure your NFTs are loaded into the staking platform and wait for the nightly staking rewards to process before starting this mission.";
 		}
 		echo "</li>";
 		echo "</ul>";
