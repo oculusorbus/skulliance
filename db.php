@@ -586,7 +586,7 @@ function getCurrentMissions($conn){
 	  echo "<ul id='mission-results'></ul>";
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
+	  echo "<th align='left'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
   		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
@@ -604,6 +604,9 @@ function getCurrentMissions($conn){
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
 		echo "<tr id='mission-row-".$row["mission_id"]."'>";
+		  echo "<td align='left'>";
+		  echo "<img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
+		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo $row["title"];
 		  echo "</td>";
