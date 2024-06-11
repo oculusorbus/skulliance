@@ -618,11 +618,9 @@ function getCurrentMissions($conn){
 		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo number_format($row["cost"])." ".$row["currency"];
-		  echo "<img class='icon' src='icons/".strtolower($row["currency"]).".png'/>";
 		  echo "</td>";
 		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
 		  echo number_format($row["reward"])." ".$row["currency"];
-  		  echo "<img class='icon' src='icons/".strtolower($row["currency"]).".png'/>";
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $row["success_rate"]."%";
