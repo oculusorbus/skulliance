@@ -915,6 +915,8 @@ function completeMission($conn, $mission_id, $quest_id){
 		  while($row = $result->fetch_assoc()) {
 			  $status_total = $row["status_total"];
 		  }
+		  echo $status_total;
+		  exit;
 		  if($status_total == 10){
 			  $success = 1;
 		  }
