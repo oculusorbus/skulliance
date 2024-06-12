@@ -2508,7 +2508,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function checkMissionsLeaderboard($conn){
-	$sql = "SELECT COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility 
+	$sql = "SELECT COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility, 
 		    (SELECT COUNT(status) FROM missions INNER JOIN users ON users.id = missions.user_id WHERE status = '1' GROUP BY users.id) AS success, (COUNT(status) FROM missions INNER JOIN users ON users.id = missions.user_id WHERE status = '2' GROUP BY users.id) AS failure 
 		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
