@@ -905,7 +905,7 @@ function completeMission($conn, $mission_id, $quest_id){
 			$success = 1;
 		}
 		
-		// Check to see if mission has failed 4 times. If so, force a successful mission for mission 5
+		// Check to see if mission has failed 4 times in a row. If so, force a successful result for mission 5
 		$sql = "SELECT SUM(status) AS status_total FROM (SELECT status FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$quest_id."' ORDER BY id DESC LIMIT 5) AS subquery";
 		$result = $conn->query($sql);
 		
