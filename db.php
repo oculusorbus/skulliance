@@ -2517,6 +2517,7 @@ function checkMissionsLeaderboard($conn){
 		$rank = 1;
 		$width = 40;
 		while($row = $result->fetch_assoc()) {
+			echo "<tr>";
 			echo "<td>";
 			echo $rank;
 			echo "</td>";
@@ -2530,9 +2531,9 @@ function checkMissionsLeaderboard($conn){
 			echo "<td>";
 			echo $row["missions_total"];
 			echo "</td>";
+			echo "</tr>";
 			$rank++;
 		}
-		echo "</tr>";
 		echo "</table>";
 	}
 }
