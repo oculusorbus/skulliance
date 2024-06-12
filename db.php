@@ -2063,7 +2063,11 @@ function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
-	$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id."'";
+	if($project_id == ""){
+		$sql = "SELECT SUM(balance) FROM balances WHERE user_id = '".$user_id."'";
+	}else{
+		$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id."'";
+	}
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
@@ -2491,7 +2495,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$username = $row["username"];
 					}
 					echo "<tr class='".$highlight."'>";
-			    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":"").$diamond_skull_count."</td>";
+			    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":number_format($current_balance)).$diamond_skull_count."</td>";
 					echo "</tr>";
 					$last_total = $row["total"];
 				}
