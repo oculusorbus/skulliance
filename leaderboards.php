@@ -11,12 +11,12 @@ include 'header.php';
 					if($filterby != null && $filterby != 0 && $filterby != "missions"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
-					}else if($filterby == "missions"){
-						$title = "Missions";
-						$filterby = "missions";
-				    }else{
+					}else if($filterby == "0"){
 						$title = "All Projects";
 						$filterby = 0;
+					}else{
+						$title = "Missions";
+						$filterby = "missions";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
