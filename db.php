@@ -2587,6 +2587,7 @@ function checkMissionsLeaderboard($conn){
 			echo $row["total"];
 			echo "</td>";
 			echo "</tr>";
+			$last_total = $row["total"];
 		}
 		echo "</table>";
 	}
