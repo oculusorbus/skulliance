@@ -204,7 +204,7 @@
 			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg"/></a>
+			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png"/></a>
@@ -243,7 +243,7 @@
 			<a href="https://x.com/AscenderOne" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ascenderone.jpg"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/skulliance" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg"/></a>
+			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/MipaToys" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg"/></a>
