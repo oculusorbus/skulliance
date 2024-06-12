@@ -20,7 +20,7 @@ include 'header.php';
 				    <?php
 						filterLeaderboard("leaderboards");
 						getTotalNFTs($conn, $filterby);
-						if($_POST['filterby'] != "missions"){
+						if($filterby != "missions"){
 							checkLeaderboard($conn, false, $filterby);
 						}else{
 							checkMissionsLeaderboard($conn);
