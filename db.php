@@ -2063,7 +2063,7 @@ function removeDiamondSkullNFTs($conn, $diamond_skull_id){
 
 // Get current balance for user for a specific project
 function getCurrentBalance($conn, $user_id, $project_id){
-	if($project_id == ""){
+	if($project_id == 0){
 		$sql = "SELECT SUM(balance) FROM balances WHERE user_id = '".$user_id."'";
 	}else{
 		$sql = "SELECT balance FROM balances WHERE user_id = '".$user_id."' AND project_id = '".$project_id."'";
