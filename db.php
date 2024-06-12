@@ -2513,22 +2513,22 @@ function checkMissionsLeaderboard($conn){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th>Username</th><th>Total Missions</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th>";
 		$rank = 1;
 		$width = 40;
 		while($row = $result->fetch_assoc()) {
 			echo "<tr>";
-			echo "<td>";
+			echo "<td align='center'>";
 			echo $rank;
 			echo "</td>";
-			echo "<td>";
+			echo "<td align='center'>";
 			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
-			echo "<td>";
+			echo "<td align='left'>";
 			echo $row["username"];
 			echo "</td>";
-			echo "<td>";
+			echo "<td align='center'>";
 			echo $row["missions_total"];
 			echo "</td>";
 			echo "</tr>";
