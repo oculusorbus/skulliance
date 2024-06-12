@@ -906,9 +906,10 @@ function completeMission($conn, $mission_id, $quest_id){
 		}
 		
 		// Check to see if mission has failed 5 times. If so, force a successful mission
-		$sql = "SELECT SUM(status) AS status_total FROM (SELECT status FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$quest_id."' LIMIT 5);";
+		$sql = "SELECT SUM(status) FROM (SELECT status FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$quest_id."' LIMIT 5) AS status_total;";
 		$result = $conn->query($sql);
 		
+		$status_total = 0;
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
