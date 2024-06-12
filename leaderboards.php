@@ -8,7 +8,7 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <?php
-					if($filterby != null && $filterby != 0){
+					if($filterby != null && $filterby != 0 && $filterby != "missions"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
 					}else if($filterby == "0"){
