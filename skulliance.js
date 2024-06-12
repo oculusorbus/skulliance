@@ -456,7 +456,7 @@ function completeMissions(mission_ids, quest_ids) {
 			}else{
 
 			}*/
-			
+			alert(data);
 			const obj = JSON.parse(data);
 			for(var i in obj){
 			  document.getElementById('mission-result-'+i).innerHTML = "<strong>"+obj[i]+"</strong>";
