@@ -2508,11 +2508,11 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function checkMissionsLeaderboard($conn){
-	$sql = "SELECT COUNT(missions.id) AS missions_total, username, avatar FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id GROUP BY users.id ORDER BY missions_total DESC";
+	$sql = "SELECT COUNT(missions.id) AS missions_total, username, avatar, discord_id FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id GROUP BY users.id ORDER BY missions_total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
-		echo "<table>";
+		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th>Username</th><th>Total Missions</th>";
 		$rank = 1;
 		while($row = $result->fetch_assoc()) {
@@ -2520,7 +2520,8 @@ function checkMissionsLeaderboard($conn){
 			echo $rank;
 			echo "</td>";
 			echo "<td>";
-			echo $row["avatar"];
+			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			echo $avatar;
 			echo "</td>";
 			echo "<td>";
 			echo $row["username"];
@@ -2530,6 +2531,8 @@ function checkMissionsLeaderboard($conn){
 			echo "</td>";
 			$rank++;
 		}
+		echo "</tr>";
+		echo "</table>";
 	}
 }
 
