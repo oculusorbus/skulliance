@@ -2563,7 +2563,7 @@ function checkMissionsLeaderboard($conn){
 					$highlight = "highlight";
 				}
 			}
-			echo "<tr class='".$highlight"'>";
+			echo "<tr class='".$highlight."'>";
 			echo "<td align='center'>";
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
