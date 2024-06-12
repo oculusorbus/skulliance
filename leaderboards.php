@@ -11,7 +11,7 @@ include 'header.php';
 					if($filterby != null && $filterby != 0 && $filterby != "missions"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
-					}else if($filterby != null || $filterby == 0){
+					}else if($filterby == null || $filterby == 0){
 						$title = "All Projects";
 						$filterby = 0;
 					}else{
