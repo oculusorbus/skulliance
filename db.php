@@ -2507,6 +2507,32 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 	}
 }
 
+function checkMissionsLeaderboard($conn){
+	$sql = "SELECT COUNT(missions.id) AS missions_total, username, avatar FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.mission_id = missions.id GROUP BY users.id ORDER BY missions_total DESC";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		echo "<table>";
+		echo "<th>Rank</th><th>Avatar</th><th>Username</th><th>Total Missions</th>";
+		$rank = 1;
+		while($row = $result->fetch_assoc()) {
+			echo "<td>";
+			echo $rank;
+			echo "</td>";
+			echo "<td>";
+			echo $row["avatar"];
+			echo "</td>";
+			echo "<td>";
+			echo $row["username"];
+			echo "</td>";
+			echo "<td>";
+			echo $row["missions_total"];
+			echo "</td>";
+			$rank++;
+		}
+	}
+}
+
 // Get Diamond Skull total for specific user
 function getDiamondSkullTotal($conn, $user_id=0){
 	$sql = "SELECT COUNT(nfts.id) AS total FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id WHERE collections.project_id='7' AND nfts.user_id = '".$user_id."'";
