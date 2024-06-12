@@ -2514,7 +2514,7 @@ function checkMissionsLeaderboard($conn){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th><th>Success</th><th>Failure</th>";
 		$fireworks = false;
 		$leaderboardCounter = 0;
 		$last_total = 0;
@@ -2586,6 +2586,12 @@ function checkMissionsLeaderboard($conn){
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["total"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["success"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["failure"];
 			echo "</td>";
 			echo "</tr>";
 			$last_total = $row["total"];
