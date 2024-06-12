@@ -2515,6 +2515,7 @@ function checkMissionsLeaderboard($conn){
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th>Username</th><th>Total Missions</th>";
 		$rank = 1;
+		$width = 40;
 		while($row = $result->fetch_assoc()) {
 			echo "<td>";
 			echo $rank;
