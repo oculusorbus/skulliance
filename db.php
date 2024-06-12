@@ -2510,6 +2510,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 function checkMissionsLeaderboard($conn){
 	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
 	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
+				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '2' AND progress_users.id = users.id) AS in_progress, 
 	        COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility 
 		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
