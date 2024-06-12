@@ -2508,13 +2508,13 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function checkMissionsLeaderboard($conn){
-	$sql = "SELECT (SELECT COUNT(id) FROM missions AS m) AS success, (COUNT(id) FROM missions AS l) AS failure, COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility, 
+	$sql = "SELECT (SELECT COUNT(id) FROM missions AS successful_missions INNER JOIN users AS success_users ON missions.user_id = success_users.id WHERE successful_missions.status = '1') AS success, (COUNT(id) FROM missions AS failed_missions) AS failure, COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility, 
 		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th><th>Success</th><th>Failure</th>";
 		$fireworks = false;
 		$leaderboardCounter = 0;
 		$last_total = 0;
@@ -2586,6 +2586,12 @@ function checkMissionsLeaderboard($conn){
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["total"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["success"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["failure"];
 			echo "</td>";
 			echo "</tr>";
 			$last_total = $row["total"];
