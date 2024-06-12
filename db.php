@@ -2514,7 +2514,7 @@ function checkMissionsLeaderboard($conn){
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th>";
-		$leaderboardCounter = 1;
+		$leaderboardCounter = 0;
 		$width = 40;
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
@@ -2578,7 +2578,7 @@ function checkMissionsLeaderboard($conn){
 			}else{
 				$username = $row["username"];
 			}
-			echo $username;
+			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["total"];
