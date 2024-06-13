@@ -1,5 +1,6 @@
 <?php
 include_once 'db.php';
+include 'message.php';
 include 'webhooks.php';
 
 if(isset($argv)){
@@ -220,6 +221,15 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 				}else{
 					echo "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
 					print_r($tokenresponse);
+					
+					# Open the DM first
+					$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
+					# Check if DM is created, if yes, let's send a message to this channel.
+					if(isset($newDM["id"])) {
+						$content = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+					    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
+					}
+					exit();
 				}
 			} // End foreach
 			//updateNFTs($conn, implode("', '", $asset_names));
