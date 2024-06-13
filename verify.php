@@ -1,6 +1,6 @@
 <?php
 include_once 'db.php';
-include 'message.php';
+include_once 'message.php';
 include 'webhooks.php';
 
 if(isset($argv)){
