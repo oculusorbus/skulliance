@@ -789,6 +789,7 @@ function filterLeaderboard($page){
 			<option value="0">Project</option>
 			<option value="0">All</option>
 			<option value="missions">Missions</option>
+			<option value="monthly">'.date('F').'</option>
 			<option value="15">Delegations</option>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
