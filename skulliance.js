@@ -522,21 +522,6 @@ function dailyReward(){
 	};
 }
 
-// Toggle burger menu
-function toggleMenu(){
-	if(document.getElementById('burger-icon').src == "https://www.skulliance.io/staking/images/menu.png"){
-	  	//document.getElementById('navbar').style.display='flex';
-		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
-		document.getElementById("navbar").classList.add('show-menu');
-		document.getElementById("navbar").classList.remove('hide-menu');
-	}else{
-	  	//document.getElementById('navbar').style.display='none';
-		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
-		document.getElementById("navbar").classList.add('hide-menu');
-		document.getElementById("navbar").classList.remove('show-menu');
-	}
-}
-
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 
