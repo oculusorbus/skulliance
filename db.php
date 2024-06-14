@@ -2565,7 +2565,7 @@ function getTotalMissions($conn){
 			echo $row["progress"];
 			echo "</td>";
 			echo "<td align='center'>";
-			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterBy' id='filterBy' value='missions'/><input type='submit' class='small-button' value='Check'/></form>";
+			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterBy' id='filterby' value='missions'/><input type='submit' class='small-button' value='Check'/></form>";
 			echo "</td>";
 			echo "</tr>";
 			
