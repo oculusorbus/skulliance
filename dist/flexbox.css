@@ -1171,8 +1171,8 @@ section.active {
   text-align: center;
 }
 
-.burger-menu{
-	  display: none;
+#burger-menu{
+	display: none;
 }
 
 .show-menu{
