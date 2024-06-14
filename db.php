@@ -2530,7 +2530,7 @@ function getTotalMissions($conn){
 	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
 				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
 	        COUNT(missions.id) AS total, users.id AS user_id
-		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."'";
+		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.date_created) >= cast(format(GETDATE(), 'yyyy-MM-01')";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
@@ -2538,7 +2538,7 @@ function getTotalMissions($conn){
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions">';
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th width='25%'>Total Missions</th><th width='25%'>Success</th><th width='25%'>Failure</th><th width='25%'>In Progress</th>";
+		echo "<th width='25%'>Total Missions</th><th width='25%'>Total Missions</th><th width='25%'>Success</th><th width='25%'>Failure</th><th width='25%'>In Progress</th>";
 		while($row = $result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='center'>";
