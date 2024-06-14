@@ -1243,6 +1243,9 @@ section.active {
 @media screen and (max-width: 700px) {
 	.navbar {
 		display: none;
+		position: fixed;
+	    width: 100%;
+	    z-index: 1;
 	}
 	.navbar .icon {
 		display: none;
@@ -1267,6 +1270,7 @@ section.active {
 		padding-top: 5px;
 		padding-right: 10px;
 	}
+	
 	.row, .navbar {   
 		flex-direction: column;
 	}
