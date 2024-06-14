@@ -2534,7 +2534,7 @@ function getTotalMissions($conn){
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
-	  	echo "<h2>Total Missions</h2>";
+	  	echo "<h2>Missions Stats</h2>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions">';
 		echo "<table id='transactions' cellspacing='0'>";
