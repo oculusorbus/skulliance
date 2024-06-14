@@ -11,8 +11,11 @@
 </head>
 <body>
 	<div class="container">
+		<div id="burger-menu">
+			<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
+		</div>
 		<!-- Navigation Bar -->
-		<div class="navbar">
+		<div class="navbar" id="navbar">
 		  <?php if(isset($name)){?>
 		  <?php if(isset($avatar_url)){?>
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
