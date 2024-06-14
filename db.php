@@ -2574,7 +2574,7 @@ function getTotalMissions($conn){
 			$month_result = $conn->query($month_sql);
 			
 			if ($month_result->num_rows > 0) {
-				while($month_row = $result->fetch_assoc()) {
+				while($month_row = $month_result->fetch_assoc()) {
 					echo "<tr>";
 					echo "<td align='left'>";
 					echo date('m');
