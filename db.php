@@ -2526,89 +2526,95 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function getTotalMissions($conn){
-	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
-	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
-				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
-	        COUNT(missions.id) AS total, users.id AS user_id
-		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."'";
-	$result = $conn->query($sql);
+	$month_sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id 
+				  WHERE success_missions.status = '1' AND success_users.id = users.id AND DATE(success_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS success, 
+	             (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id 
+				  WHERE failed_missions.status = '2' AND failed_users.id = users.id AND DATE(failed_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS failure, 
+				 (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id 
+				  WHERE progress_missions.status = '0' AND progress_users.id = users.id AND DATE(progress_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS progress, 
+	        	  COUNT(missions.id) AS total, users.id AS user_id
+		    	  FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+	$month_result = $conn->query($month_sql);
 	
-	if ($result->num_rows > 0) {
+	if ($month_result->num_rows > 0) {
 	  	echo "<h2>Missions Stats</h2>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions">';
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th align='left' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard</th>";
-		while($row = $result->fetch_assoc()) {
+		while($month_row = $month_result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='left'>";
-			echo "All Time";
+			echo date('F');
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["total"];
+			echo $month_row["total"];
 			echo "</td>";
 			echo "<td align='center'>";
 			$success_percentage = 0;
-			if($row["total"]-$row["progress"] != 0){
-				$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
+			if($month_row["total"]-$month_row["progress"] != 0){
+				$success_percentage = round($month_row["success"]/($month_row["total"]-$month_row["progress"])*100);
 			}
-			echo $row["success"]." (".$success_percentage."%)";
+			echo $month_row["success"]." (".$success_percentage."%)";
 			echo "</td>";
 			echo "<td align='center'>";
 			$failure_percentage = 0;
-			if($row["total"]-$row["progress"] != 0){
-				$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100);
+			if($month_row["total"]-$month_row["progress"] != 0){
+				$failure_percentage = round($month_row["failure"]/($month_row["total"]-$month_row["progress"])*100);
 			}
-			echo $row["failure"]." (".$failure_percentage."%)";;
+			echo $month_row["failure"]." (".$failure_percentage."%)";;
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["progress"];
+			echo $month_row["progress"];
 			echo "</td>";
 			echo "<td align='center'>";
-			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='missions'/><input type='submit' class='small-button' value='All Time'/></form>";
+			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly'/><input type='submit' class='small-button' value='".date("F")."'/></form>";
 			echo "</td>";
 			echo "</tr>";
+		}
+		$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
+		               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
+					   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
+		        COUNT(missions.id) AS total, users.id AS user_id
+			    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+	
+		if ($result->num_rows > 0) {
+
+			while($row = $result->fetch_assoc()) {
+				echo "<tr>";
+				echo "<td align='left'>";
+				echo "All Time";
+				echo "</td>";
+				echo "<td align='center'>";
+				echo $row["total"];
+				echo "</td>";
+				echo "<td align='center'>";
+				$success_percentage = 0;
+				if($row["total"]-$row["progress"] != 0){
+					$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
+				}
+				echo $row["success"]." (".$success_percentage."%)";
+				echo "</td>";
+				echo "<td align='center'>";
+				$failure_percentage = 0;
+				if($row["total"]-$row["progress"] != 0){
+					$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100);
+				}
+				echo $row["failure"]." (".$failure_percentage."%)";;
+				echo "</td>";
+				echo "<td align='center'>";
+				echo $row["progress"];
+				echo "</td>";
+				echo "<td align='center'>";
+				echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='missions'/><input type='submit' class='small-button' value='All Time'/></form>";
+				echo "</td>";
+				echo "</tr>";
 			
-			$month_sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id AND DATE(success_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS success, 
-			               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id AND DATE(failed_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS failure, 
-						   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id AND DATE(progress_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS progress, 
-			        COUNT(missions.id) AS total, users.id AS user_id
-				    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
-			$month_result = $conn->query($month_sql);
-			
-			if ($month_result->num_rows > 0) {
-				while($month_row = $month_result->fetch_assoc()) {
-					echo "<tr>";
-					echo "<td align='left'>";
-					echo date('F');
-					echo "</td>";
-					echo "<td align='center'>";
-					echo $month_row["total"];
-					echo "</td>";
-					echo "<td align='center'>";
-					$success_percentage = 0;
-					if($month_row["total"]-$month_row["progress"] != 0){
-						$success_percentage = round($month_row["success"]/($month_row["total"]-$month_row["progress"])*100);
-					}
-					echo $month_row["success"]." (".$success_percentage."%)";
-					echo "</td>";
-					echo "<td align='center'>";
-					$failure_percentage = 0;
-					if($month_row["total"]-$month_row["progress"] != 0){
-						$failure_percentage = round($month_row["failure"]/($month_row["total"]-$month_row["progress"])*100);
-					}
-					echo $month_row["failure"]." (".$failure_percentage."%)";;
-					echo "</td>";
-					echo "<td align='center'>";
-					echo $month_row["progress"];
-					echo "</td>";
-					echo "<td align='center'>";
-					echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly'/><input type='submit' class='small-button' value='".date("F")."'/></form>";
-					echo "</td>";
-					echo "</tr>";
+
+				
 				}
 			}
-		}
 		echo "</table>";
 		echo "</div>";
 	}
