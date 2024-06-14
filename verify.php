@@ -236,9 +236,27 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		}else{
 			echo "There was no response data for stake address: ".$address." \r\n";
 			print_r($response);
+			
+			# Open the DM first
+			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
+			# Check if DM is created, if yes, let's send a message to this channel.
+			if(isset($newDM["id"])) {
+				$content = "There was no response data for stake address: ".$address." \r\n";
+			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
+			}
+			exit();
 		}
 		}else{
 			echo "There was no response for stake address: ".$address." \r\n";
+			
+			# Open the DM first
+			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
+			# Check if DM is created, if yes, let's send a message to this channel.
+			if(isset($newDM["id"])) {
+				$content = "There was no response for stake address: ".$address." \r\n";
+			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
+			}
+			exit();
 		}
 		} // Offset End if
 	} // End foreach
