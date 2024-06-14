@@ -2545,10 +2545,10 @@ function getTotalMissions($conn){
 			echo $row["total"];
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["success"];
+			echo $row["success"]." (".round($row["success"]/($row["total"]-$row["progress"]))."%)";
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["failure"];
+			echo $row["failure"]." (".round($row["failure"]/($row["total"]-$row["progress"]))."%)";;
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["progress"];
