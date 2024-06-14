@@ -1171,7 +1171,7 @@ section.active {
   text-align: center;
 }
 
-#burger-menu{
+.burger-menu{
 	display: none;
 }
 
@@ -1230,7 +1230,7 @@ section.active {
 	}
 }
 
-@media screen and (max-width: 701px) {
+@media screen and (min-width: 701px) {
 	#burger-menu{
 		  display: none;
 	}
