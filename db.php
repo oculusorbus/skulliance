@@ -2534,6 +2534,9 @@ function getTotalMissions($conn){
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
+	  	echo "<h2>Total Missions</h2>";
+	  	echo '<a name="total-missions" id="total-missions"></a>';
+	    echo '<div class="content missions">';
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		while($row = $result->fetch_assoc()) {
@@ -2553,6 +2556,7 @@ function getTotalMissions($conn){
 			echo "</tr>";
 		}
 		echo "</table>";
+		echo "</div>";
 	}
 }
 
