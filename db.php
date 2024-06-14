@@ -2547,14 +2547,14 @@ function getTotalMissions($conn){
 			echo "<td align='center'>";
 			$success_percentage = 0;
 			if($row["total"]-$row["progress"] != 0){
-				$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100)
+				$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
 			}
 			echo $row["success"]." (".$success_percentage."%)";
 			echo "</td>";
 			echo "<td align='center'>";
 			$failure_percentage = 0;
 			if($row["total"]-$row["progress"] != 0){
-				$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100)
+				$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100);
 			}
 			echo $row["failure"]." (".$failure_percentage."%)";;
 			echo "</td>";
