@@ -2603,7 +2603,7 @@ function getTotalMissions($conn){
 					echo $month_row["progress"];
 					echo "</td>";
 					echo "<td align='center'>";
-					echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly'/><input type='submit' class='small-button' value='All Time'/></form>";
+					echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly'/><input type='submit' class='small-button' value='Monthly'/></form>";
 					echo "</td>";
 					echo "</tr>";
 				}
