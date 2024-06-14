@@ -2566,38 +2566,38 @@ function getTotalMissions($conn){
 			echo "</td>";
 			echo "</tr>";
 			
-			$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
+			$month_sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
 			               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
 						   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
 			        COUNT(missions.id) AS total, users.id AS user_id
 				    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
-			$result = $conn->query($sql);
+			$month_result = $conn->query($month_sql);
 			
-			if ($result->num_rows > 0) {
-				while($row = $result->fetch_assoc()) {
+			if ($month_result->num_rows > 0) {
+				while($month_row = $result->fetch_assoc()) {
 					echo "<tr>";
 					echo "<td align='left'>";
 					echo date('m');
 					echo "</td>";
 					echo "<td align='center'>";
-					echo $row["total"];
+					echo $month_row["total"];
 					echo "</td>";
 					echo "<td align='center'>";
 					$success_percentage = 0;
-					if($row["total"]-$row["progress"] != 0){
-						$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
+					if($month_row["total"]-$month_row["progress"] != 0){
+						$success_percentage = round($month_row["success"]/($month_row["total"]-$month_row["progress"])*100);
 					}
-					echo $row["success"]." (".$success_percentage."%)";
+					echo $month_row["success"]." (".$success_percentage."%)";
 					echo "</td>";
 					echo "<td align='center'>";
 					$failure_percentage = 0;
-					if($row["total"]-$row["progress"] != 0){
-						$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100);
+					if($month_row["total"]-$month_row["progress"] != 0){
+						$failure_percentage = round($month_row["failure"]/($month_row["total"]-$month_row["progress"])*100);
 					}
-					echo $row["failure"]." (".$failure_percentage."%)";;
+					echo $month_row["failure"]." (".$failure_percentage."%)";;
 					echo "</td>";
 					echo "<td align='center'>";
-					echo $row["progress"];
+					echo $month_row["progress"];
 					echo "</td>";
 					echo "</tr>";
 				}
