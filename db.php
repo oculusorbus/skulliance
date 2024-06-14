@@ -2538,7 +2538,7 @@ function getTotalMissions($conn){
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions">';
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th width='20%'>Timeframe</th><th width='20%'>Total Missions</th><th width='20%'>Success</th><th width='20%'>Failure</th><th width='20%'>In Progress</th>";
+		echo "<th align='left' width='20%'>Timeframe</th><th width='20%'>Total Missions</th><th width='20%'>Success</th><th width='20%'>Failure</th><th width='20%'>In Progress</th>";
 		while($row = $result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='left'>";
