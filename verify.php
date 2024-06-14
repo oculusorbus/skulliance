@@ -38,6 +38,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	$offsets[1] = "";
 	$offsets[2] = "offset=1000";
 	$offset_flag = false;
+	$message = "";
 	
 	foreach($offsets AS $i => $offset){
 		if($i == 2){
@@ -219,48 +220,40 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 						} // End if
 					} // End foreach
 				}else{
-					echo "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+					$message = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+					echo $message;
 					print_r($tokenresponse);
-					
-					# Open the DM first
-					$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
-					# Check if DM is created, if yes, let's send a message to this channel.
-					if(isset($newDM["id"])) {
-						$content = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
-					    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
-					}
+					sendDM("772831523899965440", $message);
 					exit();
 				}
 			} // End foreach
 			//updateNFTs($conn, implode("', '", $asset_names));
 		}else{
-			echo "There was no response data for stake address: ".$address." \r\n";
+			$message = "There was no response data for stake address: ".$address." \r\n";
+			echo $message;
 			print_r($response);
-			
-			# Open the DM first
-			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
-			# Check if DM is created, if yes, let's send a message to this channel.
-			if(isset($newDM["id"])) {
-				$content = "There was no response data for stake address: ".$address." \r\n";
-			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
-			}
+			sendDM("772831523899965440", $message);
 			exit();
 		}
 		}else{
-			echo "There was no response for stake address: ".$address." \r\n";
-			
-			# Open the DM first
-			$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => "772831523899965440"));
-			# Check if DM is created, if yes, let's send a message to this channel.
-			if(isset($newDM["id"])) {
-				$content = "There was no response for stake address: ".$address." \r\n";
-			    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
-			}
+			$message = "There was no response for stake address: ".$address." \r\n";
+			echo $message;
+			print_r($response);
+			sendDM("772831523899965440", $message);
 			exit();
 		}
 		} // Offset End if
 	} // End foreach
 	} // End offset foreach
+}
+
+function sendDM($discord_id, $message){
+	# Open the DM first
+	$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
+	# Check if DM is created, if yes, let's send a message to this channel.
+	if(isset($newDM["id"])) {
+	    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $message));
+	}
 }
 
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
