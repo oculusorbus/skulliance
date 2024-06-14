@@ -2577,7 +2577,7 @@ function getTotalMissions($conn){
 				while($month_row = $month_result->fetch_assoc()) {
 					echo "<tr>";
 					echo "<td align='left'>";
-					echo date('m');
+					echo date('F');
 					echo "</td>";
 					echo "<td align='center'>";
 					echo $month_row["total"];
