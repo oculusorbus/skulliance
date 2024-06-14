@@ -2538,7 +2538,7 @@ function getTotalMissions($conn){
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions">';
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th align='left' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard/th>";
+		echo "<th align='left' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard</th>";
 		while($row = $result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='left'>";
@@ -2565,7 +2565,7 @@ function getTotalMissions($conn){
 			echo $row["progress"];
 			echo "</td>";
 			echo "<td align='center'>";
-			echo "<form action='/leaderboards.php' method='post'><input type='hidden' name='filterBy' id='filterBy' value='missions'/><input type='submit' class='small-button' value='Check'/></form>";
+			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterBy' id='filterBy' value='missions'/><input type='submit' class='small-button' value='Check'/></form>";
 			echo "</td>";
 			echo "</tr>";
 			
