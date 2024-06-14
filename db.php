@@ -583,7 +583,6 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions</h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
-	  echo "<ul id='mission-results'></ul>";
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
@@ -2523,6 +2522,37 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 		}
 	} else {
 	  //echo "0 results";
+	}
+}
+
+function getTotalMissions($conn){
+	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
+	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
+				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
+	        COUNT(missions.id) AS total, users.id AS user_id
+		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' GROUP BY users.id ORDER BY total DESC";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		echo "<table id='transactions' cellspacing='0'>";
+		echo "<th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		while($row = $result->fetch_assoc()) {
+			echo "<tr>";
+			echo "<td align='center'>";
+			echo $row["total"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["success"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["failure"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["progress"];
+			echo "</td>";
+			echo "</tr>";
+		}
+		echo "</table>";
 	}
 }
 
