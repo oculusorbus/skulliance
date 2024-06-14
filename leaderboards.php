@@ -8,25 +8,30 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <?php
-					if($filterby != null && $filterby != 0 && $filterby != "missions"){
+					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
 					}else if($filterby == null || $filterby == 0){
 						$title = "All Projects";
 						$filterby = 0;
-					}else{
+					}else if($filterby == "missions"){
 						$title = "Missions";
 						$filterby = "missions";
+					}else if($filterby == "Monthly"){
+						$title = "Monthly Missions";
+						$filterby = "monthly";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterLeaderboard("leaderboards");
-						if($filterby != "missions"){
+						if($filterby != "missions" && $filterby != "monthly"){
 							getTotalNFTs($conn, $filterby);
 							checkLeaderboard($conn, false, $filterby);
-						}else{
+						}else if($filterby == "missions"){
 							checkMissionsLeaderboard($conn);
+						}else if($filterby == "monthly"){
+							checkMissionsLeaderboard($conn, true);
 						}
 					?>
 				</div>
