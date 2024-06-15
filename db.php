@@ -2673,7 +2673,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 				}
 			}else if($leaderboardCounter == 2){
 				//$width = 45;
-				if($last_total != $row["total"]){
+				if($last_total != $row["score"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 				}else{
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
@@ -2686,7 +2686,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 				}
 			}else if($leaderboardCounter == 3){
 				//$width = 40;
-				if($last_total != $row["total"]){
+				if($last_total != $row["score"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 					$third_total = $row["total"];
 				}else{
@@ -2698,7 +2698,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 						$fireworks = true;
 					}
 				}
-			}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
+			}else if($leaderboardCounter > 3 && $third_total == $row["score"]){
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				$leaderboardCounter--;
 				if(isset($_SESSION['userData']['user_id'])){
@@ -2706,7 +2706,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 						$fireworks = true;
 					}
 				}
-			}else if($leaderboardCounter > 3 && $last_total == $row["total"]){
+			}else if($leaderboardCounter > 3 && $last_total == $row["score"]){
 				$leaderboardCounter--;
 			}
 			$highlight = "";
