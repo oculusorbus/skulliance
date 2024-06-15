@@ -788,6 +788,7 @@ li form {
 
 .mission-data:hover{
 	border: 1px solid white;
+	cursor: pointer;
 }
 
 .inventory .role {
