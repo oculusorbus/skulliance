@@ -2617,9 +2617,13 @@ function getTotalMissions($conn){
 }
 
 function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
+	$carbon = 100000;
 	$where = "";
 	if($monthly){
 		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+	}
+	if($rewards){
+		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
 	}
 	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
 	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
@@ -2714,6 +2718,9 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			echo "</tr>";
 			$last_total = $row["total"];
+			if($rewards){
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+			}
 		}
 		echo "</table>";
 		if($fireworks){
