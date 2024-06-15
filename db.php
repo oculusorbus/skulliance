@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		if($quest_id != $row["id"]){
 			//$class = " highlight";
-    	echo "<div class='nft'><div class='nft-data".$class."'>";
+    	echo "<div class='nft'><div class='nft-data".$class." mission-data'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
 		echo "<span class='nft-image'><img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
 		//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
@@ -2766,6 +2766,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	}
 }
 
+// Multidimensional array sorting
 function array_sort_by_column(&$arr, $col, $dir = SORT_DESC) {
     $sort_col = array();
     foreach ($arr as $key => $row) {

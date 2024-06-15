@@ -786,6 +786,10 @@ li form {
 	min-height: 400px;
 }
 
+.mission-data:hover{
+	border: 1px solid white;
+}
+
 .inventory .role {
 	color: #bbb;
 }
