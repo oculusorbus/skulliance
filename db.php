@@ -548,7 +548,7 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		if($quest_id != $row["id"]){
 			//$class = " highlight";
-    	echo "<div class='nft'><div class='nft-data".$class." mission-data'>";
+    	echo "<div class='nft'><div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 		echo "<span class='nft-name'>".$row["title"]."</span>";
 		echo "<span class='nft-image'><img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
 		//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
@@ -560,7 +560,7 @@ function getMissions($conn, $quest_id) {
 		<form action='missions.php#inventory' method='post'>
 		  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
 		  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
-		  <input class='small-button' type='submit' value='Select Mission'>
+		  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
 		</form>";
 		echo "</div></div>";
 		}
