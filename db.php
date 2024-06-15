@@ -2754,7 +2754,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 				echo "</td>";
 			}
 			echo "</tr>";
-			$last_total = $row["total"];
+			$last_total = $row["score"];
 			if($rewards){
 				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 			}
