@@ -2725,7 +2725,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			if($monthly){
 				echo "<td align='center'>";
-				echo number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(round(round($carbon/$leaderboardCounter)/100))." DIAMOND";
+				echo number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND";
 				echo "</td>";
 			}
 			echo "</tr>";
