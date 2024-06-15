@@ -2628,13 +2628,13 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
 	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
 				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
-	        COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility, (success - failure - progress) AS score 
-		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id ".$where." GROUP BY users.id ORDER BY score DESC";
+	        COUNT(missions.id) AS total, users.id AS user_id, username, avatar, discord_id, visibility 
+		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id ".$where." GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Calculatted Score</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
@@ -2643,7 +2643,23 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		$last_total = 0;
 		$third_total = 0;
 		$width = 40;
+		$missions = array();
 		while($row = $result->fetch_assoc()) {
+			$missions["user_id"] = $row["user_id"];
+			$missions["total"] = $row["total"];
+			$missions["user_id"] = $row["user_id"];
+			$missions["discord_id"] = $row["discord_id"];
+			$missions["avatar"] = $row["avatar"];
+			$missions["username"] = $row["username"];
+			$missions["success"] = $row["success"];
+			$missions["failure"] = $row["failure"];
+			$missions["progress"] = $row["progress"];
+			$missions["score"] = ($row["total"]+$row["success"]-$row["failure"]-$row["progress"]);
+		}
+		array_sort_by_column($missions, "score");
+		print_r($missions);
+		exit;
+		
 			$leaderboardCounter++;
 			$trophy = "";
 			if($leaderboardCounter == 1){
@@ -2716,9 +2732,6 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["score"];
-			echo "</td>";
-			echo "<td align='center'>";
 			echo $row["total"];
 			echo "</td>";
 			echo "<td align='center'>";
@@ -2745,8 +2758,18 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		if($fireworks){
 			fireworks();
 		}
-	}
+
 }
+
+function array_sort_by_column(&$arr, $col, $dir = SORT_DESC) {
+    $sort_col = array();
+    foreach ($arr as $key => $row) {
+        $sort_col[$key] = $row[$col];
+    }
+
+    array_multisort($sort_col, $dir, $arr);
+}
+
 
 // Get Diamond Skull total for specific user
 function getDiamondSkullTotal($conn, $user_id=0){
