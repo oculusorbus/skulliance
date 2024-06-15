@@ -2724,7 +2724,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo $row["progress"];
 			echo "</td>";
 			if($monthly){
-				echo "<td>";
+				echo "<td align='center'>";
 				echo number_format(round($carbon/$leaderboardCounter))." CARBON";
 				echo "</td>";
 			}
