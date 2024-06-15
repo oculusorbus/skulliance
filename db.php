@@ -2660,7 +2660,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$index++;
 		}
 		array_sort_by_column($missions, "score");
-		foreach($missions AS -> $index => $row){
+		foreach($missions AS $index => $row){
 			$leaderboardCounter++;
 			$trophy = "";
 			if($leaderboardCounter == 1){
