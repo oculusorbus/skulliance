@@ -2659,7 +2659,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$missions[$index]["score"] = ($row["total"]+$row["success"]-$row["failure"]-$row["progress"]);
 			$index++;
 		}
-		//array_sort_by_column($missions, "score");
+		array_sort_by_column($missions, "score");
 		print_r($missions);
 		exit;
 		
@@ -2763,7 +2763,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 
 }
-/*
+
 function array_sort_by_column(&$arr, $col, $dir = SORT_DESC) {
     $sort_col = array();
     foreach ($arr as $key => $row) {
@@ -2771,7 +2771,7 @@ function array_sort_by_column(&$arr, $col, $dir = SORT_DESC) {
     }
 
     array_multisort($sort_col, $dir, $arr);
-}*/
+}
 
 
 // Get Diamond Skull total for specific user
