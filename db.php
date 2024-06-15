@@ -2647,6 +2647,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		$index = 0;
 		while($row = $result->fetch_assoc()) {
 			$missions[$index] = array();
+			$missions[$index]["visibility"] = $row["visibility"];
 			$missions[$index]["user_id"] = $row["user_id"];
 			$missions[$index]["total"] = $row["total"];
 			$missions[$index]["user_id"] = $row["user_id"];
