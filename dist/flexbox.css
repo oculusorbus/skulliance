@@ -1360,4 +1360,8 @@ section.active {
 	#transactions strong {
     	font-size: 8px !important;
 	}
+	
+	#transactions img {
+		width: 20px !important;
+	}
 }
