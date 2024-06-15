@@ -2725,13 +2725,13 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			if($monthly){
 				echo "<td>";
-				echo round($carbon/$leaderboardCounter)." CARBON";
+				echo number_format(round($carbon/$leaderboardCounter))." CARBON";
 				echo "</td>";
 			}
 			echo "</tr>";
 			$last_total = $row["total"];
 			if($rewards){
-				logCredit($conn, $row["user_id"], number_format(round($carbon/$leaderboardCounter)), 15);
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 			}
 		}
 		echo "</table>";
