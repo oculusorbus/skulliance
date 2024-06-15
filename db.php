@@ -2644,17 +2644,20 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		$third_total = 0;
 		$width = 40;
 		$missions = array();
+		$index = 0;
 		while($row = $result->fetch_assoc()) {
-			$missions["user_id"] = $row["user_id"];
-			$missions["total"] = $row["total"];
-			$missions["user_id"] = $row["user_id"];
-			$missions["discord_id"] = $row["discord_id"];
-			$missions["avatar"] = $row["avatar"];
-			$missions["username"] = $row["username"];
-			$missions["success"] = $row["success"];
-			$missions["failure"] = $row["failure"];
-			$missions["progress"] = $row["progress"];
-			$missions["score"] = ($row["total"]+$row["success"]-$row["failure"]-$row["progress"]);
+			$missions[$index] = array();
+			$missions[$index]["user_id"] = $row["user_id"];
+			$missions[$index]["total"] = $row["total"];
+			$missions[$index]["user_id"] = $row["user_id"];
+			$missions[$index]["discord_id"] = $row["discord_id"];
+			$missions[$index]["avatar"] = $row["avatar"];
+			$missions[$index]["username"] = $row["username"];
+			$missions[$index]["success"] = $row["success"];
+			$missions[$index]["failure"] = $row["failure"];
+			$missions[$index]["progress"] = $row["progress"];
+			$missions[$index]["score"] = ($row["total"]+$row["success"]-$row["failure"]-$row["progress"]);
+			$index++;
 		}
 		//array_sort_by_column($missions, "score");
 		print_r($missions);
