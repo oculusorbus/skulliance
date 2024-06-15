@@ -1364,4 +1364,8 @@ section.active {
 	#transactions img {
 		width: 20px !important;
 	}
+	
+	#carbon {
+	    max-width: 180px;
+	}
 }
