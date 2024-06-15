@@ -1343,3 +1343,9 @@ section.active {
 		display: none;
 	}*/
 }
+
+@media screen and (max-width: 375px) {
+	#player-stats {
+		max-width: 335px;
+	}
+}
