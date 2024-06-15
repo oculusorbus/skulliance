@@ -2657,7 +2657,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$missions[$index]["success"] = $row["success"];
 			$missions[$index]["failure"] = $row["failure"];
 			$missions[$index]["progress"] = $row["progress"];
-			$missions[$index]["score"] = ((($row["total"]+$row["success"])-$row["failure"])-$row["progress"]);
+			$missions[$index]["score"] = ((($row["total"]+$row["success"])-$row["failure"])-$row["progress"])+100;
 			$index++;
 		}
 		array_sort_by_column($missions, "score");
