@@ -2634,7 +2634,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Calculated Score</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
@@ -2660,9 +2660,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$index++;
 		}
 		array_sort_by_column($missions, "score");
-		print_r($missions);
-		exit;
-		
+		foreach($missions AS -> $index => $row){
 			$leaderboardCounter++;
 			$trophy = "";
 			if($leaderboardCounter == 1){
@@ -2735,6 +2733,9 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
+			echo $row["score"];
+			echo "</td>";
+			echo "<td align='center'>";
 			echo $row["total"];
 			echo "</td>";
 			echo "<td align='center'>";
@@ -2761,7 +2762,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		if($fireworks){
 			fireworks();
 		}
-
+	}
 }
 
 function array_sort_by_column(&$arr, $col, $dir = SORT_DESC) {
