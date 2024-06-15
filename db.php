@@ -2635,6 +2635,9 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		if($monthly){
+			echo "<th>Projected Rewards</th>";
+		}
 		$fireworks = false;
 		$leaderboardCounter = 0;
 		$last_total = 0;
@@ -2720,6 +2723,11 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<td align='center'>";
 			echo $row["progress"];
 			echo "</td>";
+			if($monthly){
+				echo "<td>";
+				echo round($carbon/$leaderboardCounter)." CARBON";
+				echo "</td>";
+			}
 			echo "</tr>";
 			$last_total = $row["total"];
 			if($rewards){
