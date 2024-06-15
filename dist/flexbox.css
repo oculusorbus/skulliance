@@ -1348,4 +1348,16 @@ section.active {
 	#player-stats {
 		max-width: 335px;
 	}
+	
+	.role {
+	    font-size: 1rem;
+	}
+	
+	.button {
+		font-size: 1.5rem;
+	}
+	
+	#transactions strong {
+    	font-size: 8px !important;
+	}
 }
