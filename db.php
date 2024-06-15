@@ -2689,7 +2689,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 				//$width = 40;
 				if($last_total != $row["score"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
-					$third_total = $row["total"];
+					$third_total = $row["score"];
 				}else{
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 					$leaderboardCounter--;
