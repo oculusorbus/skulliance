@@ -2580,7 +2580,6 @@ function getTotalMissions($conn){
 		$result = $conn->query($sql);
 	
 		if ($result->num_rows > 0) {
-
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
 				echo "<td align='left'>";
@@ -2610,9 +2609,6 @@ function getTotalMissions($conn){
 				echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='missions'/><input type='submit' class='small-button' value='All Time'/></form>";
 				echo "</td>";
 				echo "</tr>";
-			
-
-				
 				}
 			}
 		echo "</table>";
@@ -2620,7 +2616,7 @@ function getTotalMissions($conn){
 	}
 }
 
-function checkMissionsLeaderboard($conn, $monthly=false){
+function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	$where = "";
 	if($monthly){
 		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
@@ -2720,6 +2716,9 @@ function checkMissionsLeaderboard($conn, $monthly=false){
 			$last_total = $row["total"];
 		}
 		echo "</table>";
+		if($fireworks){
+			fireworks();
+		}
 	}
 }
 
