@@ -334,12 +334,12 @@ function setSuccessRate(rate) {
 
 function processConsumable(action, consumable_id){
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
+	calculated_rate = 0;
 	var consumables = [];
 	consumables[1] = 100;
 	consumables[3] = 75;
 	consumables[5] = 50;
 	consumables[6] = 25;
-	alert(consumables[consumable_id]);
 	if(consumable_id == 1 || consumable_id == 3 || consumable_id == 5 || consumable_id == 6){
 		if(action == 'Select'){
 			calculated_rate = current_rate+consumables[consumable_id];
@@ -347,7 +347,7 @@ function processConsumable(action, consumable_id){
 			calculated_rate = current_rate-consumables[consumable_id];
 		}
 	}
-	if(calculated_rate <= 100 || typeof calculated_rate == 'undefined'){
+	if(calculated_rate <= 100){
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/process-mission-consumable.php?action='+action+'&consumable_id='+consumable_id, true);
 		xhttp.send();
