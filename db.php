@@ -850,25 +850,29 @@ function startMission($conn){
 						updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
 						logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, 0, $mission_id);
 					}
-					foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
-						$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
-						VALUES ('".$mission_id."', '".$nft_id."')";
+					if(isset($_SESSION['userData']['mission']['nfts'])){
+						foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
+							$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
+							VALUES ('".$mission_id."', '".$nft_id."')";
 
-						if ($conn->query($sql) === TRUE) {
-						  //echo "New record created successfully";
-						} else {
-						  //echo "Error: " . $sql . "<br>" . $conn->error;
+							if ($conn->query($sql) === TRUE) {
+							  //echo "New record created successfully";
+							} else {
+							  //echo "Error: " . $sql . "<br>" . $conn->error;
+							}
 						}
 					}
-					foreach($_SESSION['userData']['mission']['consumables'] AS $id => $consumable_id){
-						$sql = "INSERT INTO missions_consumables (mission_id, consumable_id)
-						VALUES ('".$mission_id."', '".$consumable_id."')";
+					if(isset($_SESSION['userData']['mission']['consumables'])){
+						foreach($_SESSION['userData']['mission']['consumables'] AS $id => $consumable_id){
+							$sql = "INSERT INTO missions_consumables (mission_id, consumable_id)
+							VALUES ('".$mission_id."', '".$consumable_id."')";
 
-						if ($conn->query($sql) === TRUE) {
-						  //echo "New record created successfully";
-						  updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, -1);
-						} else {
-						  //echo "Error: " . $sql . "<br>" . $conn->error;
+							if ($conn->query($sql) === TRUE) {
+							  //echo "New record created successfully";
+							  updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, -1);
+							} else {
+							  //echo "Error: " . $sql . "<br>" . $conn->error;
+							}
 						}
 					}
 				}
