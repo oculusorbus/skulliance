@@ -336,7 +336,7 @@ function processMissionNFT(action, nft_id, rate){
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
 	if(action == 'Select'){
 		calculated_rate = current_rate+rate;
-	}else if(action == 'Deselect'){
+	}else if(action == 'Remove'){
 		calculated_rate = current_rate-rate;
 	}
 	if(calculated_rate <= 100){
