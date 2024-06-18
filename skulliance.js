@@ -335,10 +335,10 @@ function setSuccessRate(rate) {
 function processConsumable(action, consumable_id){
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
 	var consumables = [];
-	consumables.push([1,100]);
-	consumables.push([3,75]);
-	consumables.push([5,50]);
-	consumables.push([6,25]);
+	consumables[1] = 100;
+	consumables[3] = 75;
+	consumables[5] = 50;
+	consumables[6] = 25;
 	alert(consumables[consumable_id]);
 	if(consumable_id == 1 || consumable_id == 3 || consumable_id == 5 || consumable_id == 6){
 		if(action == 'Select'){
