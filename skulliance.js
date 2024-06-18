@@ -347,7 +347,7 @@ function processConsumable(action, consumable_id){
 			calculated_rate = current_rate-consumables[consumable_id];
 		}
 	}
-	if(calculated_rate <= 100 || typeof calculated_rate === 'undefined'){
+	if(calculated_rate <= 100 || typeof calculated_rate == 'undefined'){
 		
 	}else{
 		alert("Success Rate cannot go above 100%.");
