@@ -339,6 +339,7 @@ function processConsumable(action, consumable_id){
 	consumables.push([3,75]);
 	consumables.push([5,50]);
 	consumables.push([6,25]);
+	alert(consumables[consumable_id]);
 	if(consumable_id == 1 || consumable_id == 3 || consumable_id == 5 || consumable_id == 6){
 		if(action == 'Select'){
 			calculated_rate = current_rate+consumables[consumable_id];
