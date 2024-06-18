@@ -928,6 +928,21 @@ function completeMission($conn, $mission_id, $quest_id){
 		
 		// If success, update balance and log credit transaction
 		if($success == 1){
+		    $random = 0;
+		    $consumables = array();
+		    $consumables = getConsumables($conn);
+		    $consumable_ranges = array();
+		    $consumable_ranges = getConsumableRanges($conn);
+		    $random = rand(1, 100);
+		    $consumable_id = 0;
+		    foreach($consumable_ranges AS $id => $range){
+		  	  foreach($range AS $start => $end){
+		  		  if($random >= $start && $random <= $end){
+		  			  $consumable_id = $id;
+		  		  }
+		  	  }
+		    }
+			updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, 1);
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
 			return "SUCCESS";
@@ -939,6 +954,46 @@ function completeMission($conn, $mission_id, $quest_id){
 	}
 }
 
+// Get current amount for user for a specific consumable
+function getCurrentAmount($conn, $user_id, $consumable_id){
+	$sql = "SELECT amount FROM units WHERE user_id = '".$user_id."' AND consumable_id = '".$consumable_id."'";
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	return $row["amount"];
+	  }
+	} else {
+	  //echo "0 results";
+	    return "false";
+	}
+}
+
+// Update specific user amount for a specific consumable
+function updateAmount($conn, $user_id, $consumable_id, $subtotal){
+	$current_amount = getCurrentAmount($conn, $user_id, $consumable_id);
+	if($current_amount != "false"){
+		$total = $subtotal + $current_amount;
+		$sql = "UPDATE amounts SET amount = '".$total."' WHERE user_id='".$user_id."' AND consumable_id ='".$consumable_id."'";
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}else{
+		$sql = "INSERT INTO amounts (amount, user_id, consumable_id)
+		VALUES ('".$subtotal."', '".$user_id."', '".$consumable_id."')";
+
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}
+}
+
+// Get consumable ranges for probability of rewards
 function getConsumableRanges($conn){
 	$sql = "SELECT id, rate FROM consumables ORDER BY rate ASC";
 	$result = $conn->query($sql);
@@ -956,6 +1011,7 @@ function getConsumableRanges($conn){
     }
 }
 
+// Get consumables ids and names
 function getConsumables($conn){
 	$sql = "SELECT id, name FROM consumables";
 	$result = $conn->query($sql);
