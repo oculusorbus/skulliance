@@ -939,6 +939,23 @@ function completeMission($conn, $mission_id, $quest_id){
 	}
 }
 
+function getConsumables($conn){
+	$sql = "SELECT name, rate FROM consumables ORDER BY rate ASC";
+	$result = $conn->query($sql);
+	
+	$consumables = array();
+	$total = 0;
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $consumables[$row["name"]] = array();
+     	  $consumables[$row["name"]][$total+1] = $row["rate"]+$total;
+		  $total += $row["rate"];
+	  }
+	  return $consumables;
+    }
+}
+
 // Check if user already exists, if not... create them.
 function checkUser($conn) {
 	if(isset($_SESSION['userData']['discord_id'])){

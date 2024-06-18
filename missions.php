@@ -38,6 +38,9 @@ if(isset($_GET['username'])){
   </div>
   <?php
   }
+  
+  print_r(getConsumables($conn));
+  
   ?>
   <div class="main">
 	<?php
