@@ -364,7 +364,7 @@ function processConsumable(action, consumable_id){
 					}
 				}else if(action == 'Remove'){
 					document.getElementById('consumable-'+consumable_id).value = 'Select';
-					document.getElementById('amount-'+consumable_id).innerHTML = document.getElementById('amount-'+consumable_id).innerHTML+1;
+					document.getElementById('amount-'+consumable_id).innerHTML = document.getElementById('amount-'+consumable_id).innerHTML++;
 					if(calculated_rate != 0){
 						setSuccessRate(calculated_rate);
 					}
