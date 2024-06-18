@@ -734,6 +734,13 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "</ul>";
 		echo "<h2>Inventory</strong></h2>";
 		echo "<ul>";
+		
+		$consumables = array();
+		$consumables = getCurrentAmounts($conn);
+		foreach($consumables AS $id => $consumable){
+			echo "<li class='role'>".$consumable["name"]." - ".$consumable["amount"]."</li>";
+		}
+		
 		// Toggle Maximization and Balancing Inventory Selection Buttons
 		if($total_rates >= 100){
 			  if(!isset($_POST['maximize']) && !isset($_POST['balance'])){
@@ -951,6 +958,28 @@ function completeMission($conn, $mission_id, $quest_id){
 		}
 	}else{
 		echo "No Session";
+	}
+}
+
+// Get user amounts for all consumables
+function getCurrentAmounts($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT amount, name, consumables.id AS consumable_id FROM amounts INNER JOIN consumables ON amounts.consumable_id = consumables.id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+	
+		$consumables = array();
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+		    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+	        $consumables[$row["consumable_id"]] = array();
+			$consumables[$row["consumable_id"]]["name"] = $row["name"];
+			$consumables[$row["consumable_id"]]["amount"] = $row["amount"];
+		  }
+		} else {
+		  //echo "0 results";
+		}
+		return $consumables;
 	}
 }
 
