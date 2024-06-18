@@ -39,8 +39,23 @@ if(isset($_GET['username'])){
   <?php
   }
   
-  print_r(getConsumables($conn));
+  $random = 0;
+  $consumables = array();
+  $consumables = getConsumables($conn);
+  $consumable_ranges = array();
+  $consumable_ranges = getConsumableRanges($conn);
+  $random = rand(1, 100);
+  $consumable_id = 0;
   
+  foreach($consumable_ranges AS $id => $range){
+	  foreach($range AS $start => $end){
+		  if($random >= $start && $random <= $end){
+			  $consumable_id = $id;
+		  }
+	  }
+  }
+  
+  echo $consumables[$consumable_id];
   ?>
   <div class="main">
 	<?php
