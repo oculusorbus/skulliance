@@ -349,9 +349,9 @@ function processMissionNFT(action, nft_id, rate){
 		    // Check the status of the response
 		    if (xhttp.status == 200) {	
 				if(action == 'Select'){
-					document.getElementById('button-'+nft_id).value = 'Deselect';
+					document.getElementById('button-'+nft_id).value = 'Remove';
 					setSuccessRate(calculated_rate);
-				}else if(action == 'Deselect'){
+				}else if(action == 'Remove'){
 					document.getElementById('button-'+nft_id).value = 'Select';
 					setSuccessRate(calculated_rate);
 				}
