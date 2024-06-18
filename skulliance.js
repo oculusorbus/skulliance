@@ -348,7 +348,40 @@ function processConsumable(action, consumable_id){
 		}
 	}
 	if(calculated_rate <= 100 || typeof calculated_rate == 'undefined'){
-		
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/process-mission-consumable.php?action='+action+'&consumable_id='+consumable_id, true);
+		xhttp.send();
+	
+		xhttp.onreadystatechange = function() {
+		  if (xhttp.readyState == XMLHttpRequest.DONE) {
+		    // Check the status of the response
+		    if (xhttp.status == 200) {	
+				if(action == 'Select'){
+					document.getElementById('consumable-'+consumable_id).value = 'Remove';
+					document.getElementById('amount-'+consumable_id).innerHTML = valueOf(document.getElementById('amount-'+consumable_id).innerHTML)-1;
+					setSuccessRate(calculated_rate);
+				}else if(action == 'Remove'){
+					document.getElementById('consumable-'+consumable_id).value = 'Select';
+					document.getElementById('amount-'+consumable_id).innerHTML = valueOf(document.getElementById('amount-'+consumable_id).innerHTML)+1;
+					setSuccessRate(calculated_rate);
+				}
+				// Access the data returned by the server
+				var data = xhttp.responseText;
+				/*
+				const obj = JSON.parse(data);
+				if(obj == null){
+  
+				}else{
+  
+				}*/
+				console.log(data);
+				// Do something with the data
+		    } else {
+		      // Handle error
+				alert("AJAX Error");
+		    }
+		  }
+		};
 	}else{
 		alert("Success Rate cannot go above 100%.");
 	}
