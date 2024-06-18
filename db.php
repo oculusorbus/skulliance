@@ -916,6 +916,34 @@ function completeMission($conn, $mission_id, $quest_id){
 		  }
 	    }
 		
+		$consumables = array();
+		$double_reward = false;
+		$random_reward = false;
+		$sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id ='".$mission_id."';";
+		$result = $conn->query($sql);
+		
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+			  $consumables[$row["consumable_id"]] = $row["consumable_id"];
+		  }
+	    }
+		foreach($consumables AS $id => $consumable_id){
+			if($consumable_id == 1){
+				$success_rate += 100;
+			}else if($consumable_id == 3){
+				$success_rate += 75;
+			}else if($consumable_id == 5){
+				$success_rate += 50;
+			}else if($consumable_id == 6){
+				$success_rate += 25;
+			}else if($consumable_id == 2){
+				$double_reward = true;
+			}else if($consumable_id == 7){
+				$random_reward = true;
+			}
+		}
+		
 		// Failure = 2, Success = 1
 		$success = 2;
 		$chance = $success_rate;
