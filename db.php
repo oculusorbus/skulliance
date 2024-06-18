@@ -956,7 +956,7 @@ function completeMission($conn, $mission_id, $quest_id){
 
 // Get current amount for user for a specific consumable
 function getCurrentAmount($conn, $user_id, $consumable_id){
-	$sql = "SELECT amount FROM units WHERE user_id = '".$user_id."' AND consumable_id = '".$consumable_id."'";
+	$sql = "SELECT amount FROM amounts WHERE user_id = '".$user_id."' AND consumable_id = '".$consumable_id."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 	  // output data of each row
