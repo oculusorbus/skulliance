@@ -358,11 +358,11 @@ function processConsumable(action, consumable_id){
 		    if (xhttp.status == 200) {	
 				if(action == 'Select'){
 					document.getElementById('consumable-'+consumable_id).value = 'Remove';
-					document.getElementById('amount-'+consumable_id).innerHTML = valueOf(document.getElementById('amount-'+consumable_id).innerHTML)-1;
+					document.getElementById('amount-'+consumable_id).innerHTML = document.getElementById('amount-'+consumable_id).innerHTML-1;
 					setSuccessRate(calculated_rate);
 				}else if(action == 'Remove'){
 					document.getElementById('consumable-'+consumable_id).value = 'Select';
-					document.getElementById('amount-'+consumable_id).innerHTML = valueOf(document.getElementById('amount-'+consumable_id).innerHTML)+1;
+					document.getElementById('amount-'+consumable_id).innerHTML = document.getElementById('amount-'+consumable_id).innerHTML+1;
 					setSuccessRate(calculated_rate);
 				}
 				// Access the data returned by the server
