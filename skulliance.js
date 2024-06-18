@@ -332,6 +332,27 @@ function setSuccessRate(rate) {
 	document.getElementById('success-rate').innerHTML = rate;
 }
 
+function processConsumable(action, consumable_id){
+	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
+	var consumables = [];
+	consumables.push([1,100]);
+	consumables.push([3,75]);
+	consumables.push([5,50]);
+	consumables.push([6,25]);
+	if(consumable_id == 1 || consumable_id == 3 || consumable_id == 5 || consumable_id == 6){
+		if(action == 'Select'){
+			calculated_rate = current_rate+consumables[consumable_id];
+		}else if(action == 'Remove'){
+			calculated_rate = current_rate-consumables[consumable_id];
+		}
+	}
+	if(calculated_rate <= 100){
+		
+	}else{
+		alert("Success Rate cannot go above 100%.");
+	}
+}
+
 function processMissionNFT(action, nft_id, rate){
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
 	if(action == 'Select'){
