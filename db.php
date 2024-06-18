@@ -860,6 +860,17 @@ function startMission($conn){
 						  //echo "Error: " . $sql . "<br>" . $conn->error;
 						}
 					}
+					foreach($_SESSION['userData']['mission']['consumables'] AS $id => $consumable_id){
+						$sql = "INSERT INTO missions_consumables (mission_id, consumable_id)
+						VALUES ('".$mission_id."', '".$consumable_id."')";
+
+						if ($conn->query($sql) === TRUE) {
+						  //echo "New record created successfully";
+						  updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, -1);
+						} else {
+						  //echo "Error: " . $sql . "<br>" . $conn->error;
+						}
+					}
 				}
 			} else {
 			  //echo "Error: " . $sql . "<br>" . $conn->error;
