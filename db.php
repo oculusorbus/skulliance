@@ -917,7 +917,6 @@ function completeMission($conn, $mission_id, $quest_id){
 	    }
 		
 		$consumables = array();
-		$double_reward = false;
 		$random_reward = false;
 		$sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id ='".$mission_id."';";
 		$result = $conn->query($sql);
@@ -938,9 +937,11 @@ function completeMission($conn, $mission_id, $quest_id){
 			}else if($consumable_id == 6){
 				$success_rate += 25;
 			}else if($consumable_id == 2){
-				$double_reward = true;
+				$reward = $reward*2;
 			}else if($consumable_id == 7){
-				$random_reward = true;
+				$projects = array();
+				$projects = getProjects($conn, $type="");
+				$project_id = rand(1, count($projects));
 			}
 		}
 		
