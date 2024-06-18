@@ -964,7 +964,7 @@ function completeMission($conn, $mission_id, $quest_id){
 // Get user amounts for all consumables
 function getCurrentAmounts($conn){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT amount, name, consumables.id AS consumable_id FROM amounts INNER JOIN consumables ON amounts.consumable_id = consumables.id WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+		$sql = "SELECT amount, name, consumables.id AS consumable_id FROM amounts INNER JOIN consumables ON amounts.consumable_id = consumables.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ORDER BY name DESC";
 		$result = $conn->query($sql);
 	
 		$consumables = array();
