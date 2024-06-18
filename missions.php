@@ -24,6 +24,7 @@ if(isset($_GET['username'])){
 	  $_SESSION['userData']['mission'] = array();
 	  $_SESSION['userData']['mission']['quest_id'] = $_POST["quest_id"];
 	  $_SESSION['userData']['mission']['nfts'] = array();
+	  $_SESSION['userData']['mission']['consumables'] = array();
   ?>	
   <div class="side">
   	<a name="inventory" id="inventory"></a>

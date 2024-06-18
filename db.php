@@ -735,8 +735,6 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<h2>Inventory</strong></h2>";
 		echo "<ul>";
 		
-		unset($_SESSION['userData']['mission']['nfts']);
-		unset($_SESSION['userData']['mission']['consumables']);
 		$consumables = array();
 		$consumables = getCurrentAmounts($conn);
 		foreach($consumables AS $id => $consumable){
