@@ -738,7 +738,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		$consumables = array();
 		$consumables = getCurrentAmounts($conn);
 		foreach($consumables AS $id => $consumable){
-			echo "<li class='role'><input type='button' type='small-button' value='Use'/>&nbsp;".$consumable["name"]." - ".$consumable["amount"]."</li>";
+			echo "<li class='role'><input type='button' type='small-button' value='Select'/>&nbsp;".$consumable["name"]." - ".$consumable["amount"]."</li>";
 		}
 		
 		// Toggle Maximization and Balancing Inventory Selection Buttons
