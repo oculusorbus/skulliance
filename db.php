@@ -791,8 +791,10 @@ function getInventory($conn, $project_id, $quest_id) {
 				  }
 		  	  }
 		}
+		$nft_ids = array();
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
+			$nft_ids[$row["id"]] = $row["id"];
 			if(($rate_tally+$row["rate"]) <= $threshold){
 				$rate_tally += $row["rate"];
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
@@ -805,6 +807,17 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "</li>";
 		}
 		echo "</ul>";
+		if(!empty($nft_ids)){
+			echo "<script type='text/javascript'>";
+			echo "function removeAllNFTs(){"
+			foreach($nft_ids AS $id => $nft_id){
+				echo "document.getElementById('button-".$nft_id."').value = 'Select';";
+				echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
+			}
+			echo "setSuccessRate(0);";
+			echo "}";
+			echo "</script>";
+		}
 		return $rate_tally;
 	}
 }
