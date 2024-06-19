@@ -769,7 +769,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		$consumables = getCurrentAmounts($conn);
 		foreach($consumables AS $id => $consumable){
 			if($consumable["amount"] != 0){
-				echo "<li class='role'><input id='consumable-".$id."' type='button' class='small-button' value='Select' onclick='processConsumable(this.value, ".$id.");' />&nbsp;".$consumable["name"].":&nbsp;Qty&nbsp;<span id='amount-".$id."'>".$consumable["amount"]."</span></li>";
+				echo "<li class='role'><input id='consumable-".$id."' type='button' class='small-button' value='Select' onclick='processConsumable(this.value, ".$id.");' />&nbsp;".$consumable["name"].":&nbsp;<span id='amount-".$id."'>".$consumable["amount"]."</span></li>";
 			}
 		}
 		
