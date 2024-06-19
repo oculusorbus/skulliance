@@ -808,7 +808,7 @@ li form {
 }
 
 .consumable {
-	border: 0px;
+	border: 0px !important;
 }
 
 .inventory .nft-image {
