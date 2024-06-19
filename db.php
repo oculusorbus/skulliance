@@ -792,7 +792,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		  	  }
 		}
 		$nft_ids = array();
-		echo "<li class='role'><input style='padding:12px;' type='button' class='small-button' value='Remove All NFTs' onclick='removeAllNFTs();'/></li>";
+		//echo "<li class='role'><input style='padding:12px;' type='button' class='small-button' value='Remove All NFTs' onclick='removeAllNFTs();'/></li>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			$nft_ids[$row["id"]] = $row["id"];
@@ -808,6 +808,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "</li>";
 		}
 		echo "</ul>";
+		/*
 		if(!empty($nft_ids)){
 			echo "<script type='text/javascript'>";
 			echo "function removeAllNFTs(){";
@@ -821,7 +822,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "xhttp.send();";
 			echo "}";
 			echo "</script>";
-		}
+		}*/
 		return $rate_tally;
 	}
 }
