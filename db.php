@@ -1013,6 +1013,10 @@ function completeMission($conn, $mission_id, $quest_id){
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 		
+		$mission_result = array();
+		$project = getProjectInfo($conn, $project_id);
+		$mission_result["currency"] = $project["currency"];
+		
 		// If success, update balance and log credit transaction
 		if($success == 1){
 		    $random = 0;
@@ -1032,10 +1036,13 @@ function completeMission($conn, $mission_id, $quest_id){
 			updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, 1);
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
-			return "SUCCESS";
+			$mission_result["status"] = "SUCCESS";
+			$mission_result["consumable"] = $consumables[$consumable_id];
 		}else if($success == 2){
-			return "FAILURE";
+			$mission_result["status"] = "FAILURE";
+			$mission_result["consumable"] = "";
 		}
+		return $mission_result;
 	}else{
 		echo "No Session";
 	}
