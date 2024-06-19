@@ -660,7 +660,7 @@ function getCurrentMissions($conn){
   		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
 		  echo $completed;
 		  echo "</td>";
-  		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
+  		  echo "<td width='55' style='display:none' id='consumable-".$row["mission_id"]."'></td>";
 		echo "</tr>";
 	  }
 	  echo "</table></div>";
