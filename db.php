@@ -792,6 +792,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		  	  }
 		}
 		$nft_ids = array();
+		echo "<input type='button' class='small-button' value='Remove All' onclick='removeAllNFTs();'/>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			$nft_ids[$row["id"]] = $row["id"];
@@ -814,9 +815,8 @@ function getInventory($conn, $project_id, $quest_id) {
 				echo "document.getElementById('button-".$nft_id."').value = 'Select';";
 				echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
 			}
-			echo "setSuccessRate(0);";
+			echo "document.getElementById('success-rate').innerHTML = 0;";
 			echo "}";
-			echo "removeAllNFTs();";
 			echo "</script>";
 		}
 		return $rate_tally;
