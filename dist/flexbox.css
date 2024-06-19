@@ -566,13 +566,13 @@ input {
 }
 
 .activated:hover{
-	background-color: #444;
+	background-color: #444 !important;
 }
 
 .activated:active{
-    background-color: #444;
-    box-shadow: 0 2px #1c4f2a;
-    transform: translateY(2px);
+    background-color: #444 !important;
+    box-shadow: 0 2px #1c4f2a !important;
+    transform: translateY(2px) !important;
 }
 /*
 .td3 {
