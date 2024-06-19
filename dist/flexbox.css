@@ -563,7 +563,16 @@ input {
 
 .activated {
 	background-color: #510936 !important;
-	
+}
+
+.activated:hover{
+	background-color: #444;
+}
+
+.activated:active{
+    background-color: #444;
+    box-shadow: 0 2px #1c4f2a;
+    transform: translateY(2px);
 }
 /*
 .td3 {
