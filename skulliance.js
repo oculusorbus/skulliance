@@ -516,14 +516,17 @@ function completeMissions(mission_ids, quest_ids) {
 
 			}*/
 			const obj = JSON.parse(data);
+			document.getElementById('consumable-header').style.display = 'block';
 			for(var i in obj){
 			  document.getElementById('mission-result-'+i).innerHTML = "<strong>"+obj[i].status+"</strong>";
 			  document.getElementById('currency-'+i).innerHTML = obj[i].currency;
+			  document.getElementById('consumable-'+i).style.display = 'block';
 			  if(obj[i].status == "FAILURE"){
 				var contents = document.getElementById('mission-reward-'+i).innerHTML;
 				var withNoDigits = contents.replace(/[0-9]/g, '');
 			  	document.getElementById('mission-reward-'+i).innerHTML = "0"+withNoDigits;
 				document.getElementById('mission-row-'+i).className = "failure";
+				document.getElementById('consumable-'+i).innerHTML += "NONE";
 			  }else{
 			  	document.getElementById('mission-row-'+i).className = "success";
 				document.getElementById('consumable-'+i).innerHTML += "<img class='icon' src='icons/"+obj[i].consumable+".png'/>";
