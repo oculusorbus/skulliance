@@ -592,6 +592,7 @@ function getCurrentMissions($conn){
 	  	$consumables = array();
 	  	$random_reward = false;
 		$success_rate = 0;
+		$fast_forward = false;
 	  	$consumables_sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id ='".$row["mission_id"]."';";
 	  	$consumables_result = $conn->query($consumables_sql);
 	
@@ -612,6 +613,8 @@ function getCurrentMissions($conn){
 	  			$success_rate += 25;
 	  		}else if($consumable_id == 2){
 	  			$row["reward"] = $row["reward"]*2;
+	  		}else if($consumable_id == 4){
+	  			$fast_forward = true;
 	  		}
 	  	}  
 		  
@@ -620,7 +623,7 @@ function getCurrentMissions($conn){
 		$days_remaining = floor(($remaining / 86400));
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
-		if($date > time()){
+		if($date > time() && $fast_forward == false){
 			$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 			$completed = "In Progress";
 		}else{
