@@ -771,7 +771,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			if($consumable["amount"] != 0){
 				echo "<li class='role'>";
 				echo "<input id='consumable-".$id."' type='button' class='small-button' value='Select' onclick='processConsumable(this.value, ".$id.");' />";
-				echo "<img class='icon' src='../icons/".str_replace("%", "", str_replace(" ", "-", $consumable["name"])).".png'/>";
+				echo "<img class='icon' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/>";
 				echo "&nbsp;".$consumable["name"].":&nbsp;<span id='amount-".$id."'>".$consumable["amount"]."</span>";
 				echo "</li>";
 			}
