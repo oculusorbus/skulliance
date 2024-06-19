@@ -387,7 +387,7 @@ function processConsumable(action, consumable_id){
 		  }
 		};
 	}else{
-		alert("Success Rate cannot go above 100%.\r\nRemove NFTs from inventory to free up room to use success rate consumables.");
+		alert("Success Rate cannot go above 100%.\r\n\r\nRemove NFTs from your inventory to free up room to use success rate consumables.");
 	}
 }
 
