@@ -772,7 +772,7 @@ function getInventory($conn, $project_id, $quest_id) {
 				echo "<li class='role'>";
 				echo "<input id='consumable-".$id."' type='button' class='small-button' value='Select' onclick='processConsumable(this.value, ".$id.");' />&nbsp;";
 				echo "<img class='icon' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/>";
-				echo "&nbsp;".$consumable["name"].":&nbsp;<span id='amount-".$id."'>".$consumable["amount"]."</span>";
+				echo $consumable["name"].":&nbsp;<span id='amount-".$id."'>".$consumable["amount"]."</span>";
 				echo "</li>";
 			}
 		}
