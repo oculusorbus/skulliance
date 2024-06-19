@@ -519,7 +519,7 @@ function completeMissions(mission_ids, quest_ids) {
 			for(var i in obj){
 			  document.getElementById('mission-result-'+i).innerHTML = "<strong>"+obj[i].status+"</strong>";
 			  document.getElementById('currency-'+i).innerHTML = obj[i].currency;
-			  if(obj[i] == "FAILURE"){
+			  if(obj[i].status == "FAILURE"){
 				var contents = document.getElementById('mission-reward-'+i).innerHTML;
 				var withNoDigits = contents.replace(/[0-9]/g, '');
 			  	document.getElementById('mission-reward-'+i).innerHTML = "0"+withNoDigits;
