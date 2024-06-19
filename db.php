@@ -816,6 +816,9 @@ function getInventory($conn, $project_id, $quest_id) {
 				echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
 			}
 			echo "document.getElementById('success-rate').innerHTML = 0;";
+			echo "var xhttp = new XMLHttpRequest();";
+			echo "xhttp.open('GET', 'ajax/remove-all-nfts.php', true);";
+			echo "xhttp.send();";
 			echo "}";
 			echo "</script>";
 		}
