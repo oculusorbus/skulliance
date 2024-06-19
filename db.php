@@ -585,7 +585,7 @@ function getCurrentMissions($conn){
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none' width='55'>Item</th>";
+	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		// Handle consumables for each mission
@@ -660,7 +660,7 @@ function getCurrentMissions($conn){
   		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
 		  echo $completed;
 		  echo "</td>";
-  		  echo "<td width='55' style='display:none' id='consumable-".$row["mission_id"]."'></td>";
+  		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
 		echo "</tr>";
 	  }
 	  echo "</table></div>";
