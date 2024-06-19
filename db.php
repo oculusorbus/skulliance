@@ -765,7 +765,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "</ul>";
 		echo "<h2>Inventory</strong></h2>";
 		echo "<ul>";
-		echo "<li class='role'><input style='padding:12px;' type='button' class='small-button' value='Clear All Selections' onclick='clearAllSelections();'/></li>";
+		//echo "<li class='role'><input style='padding:12px;' type='button' class='small-button' value='Clear All Selections' onclick='clearAllSelections();'/></li>";
 		
 		$consumables = array();
 		$consumables = getCurrentAmounts($conn);
@@ -808,6 +808,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "</li>";
 		}
 		echo "</ul>";
+		/*
 		if(!empty($nft_ids)){
 			echo "<script type='text/javascript'>";
 			echo "function clearAllSelections(){";
@@ -827,7 +828,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "xhttp.send();";
 			echo "}";
 			echo "</script>";
-		}
+		}*/
 		return $rate_tally;
 	}
 }
