@@ -334,7 +334,7 @@ function setSuccessRate(rate) {
 
 function processConsumable(action, consumable_id){
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
-	calculated_rate = 101;
+	calculated_rate = -1;
 	var consumables = [];
 	consumables[1] = 100;
 	consumables[2] = 75;
@@ -359,13 +359,13 @@ function processConsumable(action, consumable_id){
 				if(action == 'Select'){
 					document.getElementById('consumable-'+consumable_id).value = 'Remove';
 					document.getElementById('amount-'+consumable_id).innerHTML = document.getElementById('amount-'+consumable_id).innerHTML-1;
-					if(calculated_rate != 101){
+					if(calculated_rate != -1){
 						setSuccessRate(calculated_rate);
 					}
 				}else if(action == 'Remove'){
 					document.getElementById('consumable-'+consumable_id).value = 'Select';
 					document.getElementById('amount-'+consumable_id).innerHTML = parseFloat(document.getElementById('amount-'+consumable_id).innerHTML)+1;
-					if(calculated_rate != 101){
+					if(calculated_rate != -1){
 						setSuccessRate(calculated_rate);
 					}
 				}
