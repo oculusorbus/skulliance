@@ -595,10 +595,10 @@ function getCurrentMissions($conn){
 	  	$consumables_sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id ='".$row["mission_id"]."';";
 	  	$consumables_result = $conn->query($consumables_sql);
 	
-	  	if ($result->num_rows > 0) {
+	  	if ($consumables_result->num_rows > 0) {
 	  	  // output data of each row
-	  	  while($row = $consumables_result->fetch_assoc()) {
-	  		  $consumables_result[$row["consumable_id"]] = $row["consumable_id"];
+	  	  while($consumables_row = $consumables_result->fetch_assoc()) {
+	  		  $consumables_result[$consumables_row["consumable_id"]] = $consumables_row["consumable_id"];
 	  	  }
 	    }
 	  	foreach($consumables AS $id => $consumable_id){
