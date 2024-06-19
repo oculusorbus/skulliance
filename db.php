@@ -816,6 +816,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			}
 			echo "setSuccessRate(0);";
 			echo "}";
+			echo "removeAllNFTs();";
 			echo "</script>";
 		}
 		return $rate_tally;
