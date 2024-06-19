@@ -649,7 +649,7 @@ function getCurrentMissions($conn){
 		  echo number_format($row["cost"])." ".$row["currency"];
 		  echo "</td>";
 		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
-		  echo number_format($row["reward"])." ".$row["currency"];
+		  echo number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $success_rate+$row["success_rate"]."%";

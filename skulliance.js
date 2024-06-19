@@ -518,6 +518,7 @@ function completeMissions(mission_ids, quest_ids) {
 			const obj = JSON.parse(data);
 			for(var i in obj){
 			  document.getElementById('mission-result-'+i).innerHTML = "<strong>"+obj[i].status+"</strong>";
+			  document.getElementById('currency-'+i).innerHTML = obj[i].currency;
 			  if(obj[i] == "FAILURE"){
 				var contents = document.getElementById('mission-reward-'+i).innerHTML;
 				var withNoDigits = contents.replace(/[0-9]/g, '');
