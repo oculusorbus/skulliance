@@ -796,7 +796,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			if(($rate_tally+$row["rate"]) <= $threshold){
 				$rate_tally += $row["rate"];
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
-				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='Remove' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
+				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button activated' value='Remove' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
 			}else{
 				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='Select' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
 			}
