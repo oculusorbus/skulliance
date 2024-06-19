@@ -598,7 +598,7 @@ function getCurrentMissions($conn){
 	  	if ($consumables_result->num_rows > 0) {
 	  	  // output data of each row
 	  	  while($consumables_row = $consumables_result->fetch_assoc()) {
-	  		  $consumables_result[$consumables_row["consumable_id"]] = $consumables_row["consumable_id"];
+	  		  $consumables[$consumables_row["consumable_id"]] = $consumables_row["consumable_id"];
 	  	  }
 	    }
 	  	foreach($consumables AS $id => $consumable_id){
