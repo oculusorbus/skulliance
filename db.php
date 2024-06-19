@@ -572,8 +572,6 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
-	
-	
 	$sql = "SELECT DISTINCT missions.id AS mission_id, quest_id, title, projects.name AS project_name, cost, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions LEFT JOIN quests ON missions.quest_id = quests.id LEFT JOIN projects ON projects.id = quests.project_id LEFT JOIN missions_nfts ON missions.id = missions_nfts.mission_id LEFT JOIN nfts ON nfts.id = missions_nfts.nft_id LEFT JOIN collections ON collections.id = nfts.collection_id 
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY missions.id ASC";
@@ -590,6 +588,33 @@ function getCurrentMissions($conn){
 	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
+		// Handle consumables for each mission
+	  	$consumables = array();
+	  	$random_reward = false;
+		$success_rate = 0;
+	  	$consumables_sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id ='".$row["mission_id"]."';";
+	  	$consumables_result = $conn->query($consumables_sql);
+	
+	  	if ($result->num_rows > 0) {
+	  	  // output data of each row
+	  	  while($row = $consumables_result->fetch_assoc()) {
+	  		  $consumables_result[$row["consumable_id"]] = $row["consumable_id"];
+	  	  }
+	    }
+	  	foreach($consumables AS $id => $consumable_id){
+	  		if($consumable_id == 1){
+	  			$success_rate += 100;
+	  		}else if($consumable_id == 3){
+	  			$success_rate += 75;
+	  		}else if($consumable_id == 5){
+	  			$success_rate += 50;
+	  		}else if($consumable_id == 6){
+	  			$success_rate += 25;
+	  		}else if($consumable_id == 2){
+	  			$row["reward"] = $row["reward"]*2;
+	  		}
+	  	}  
+		  
   		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
   		$remaining = $date - time();
 		$days_remaining = floor(($remaining / 86400));
@@ -624,7 +649,7 @@ function getCurrentMissions($conn){
 		  echo number_format($row["reward"])." ".$row["currency"];
 		  echo "</td>";
   		  echo "<td align='left'>";
-		  echo $row["success_rate"]."%";
+		  echo $success_rate+$row["success_rate"]."%";
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $time_message;
