@@ -552,7 +552,7 @@ input {
 }
 
 .activated {
-	background-color: #37004f;
+	background-color: #37004f !important;
 	
 }
 /*
