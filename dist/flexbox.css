@@ -548,11 +548,11 @@ input {
 }
 
 .inventory .small-button {
-	background-color: #510936;
+	background-color: #37004f;
 }
 
 .activated {
-	background-color: #37004f !important;
+	background-color: #510936 !important;
 	
 }
 /*
