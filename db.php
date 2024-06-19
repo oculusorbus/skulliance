@@ -1037,7 +1037,7 @@ function completeMission($conn, $mission_id, $quest_id){
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $reward);
 			logCredit($conn, $_SESSION['userData']['user_id'], $reward, $project_id, 0, 0, $mission_id);
 			$mission_result["status"] = "SUCCESS";
-			$mission_result["consumable"] = $consumables[$consumable_id];
+			$mission_result["consumable"] = strtolower(str_replace("%", "", str_replace(" ", "-", $consumables[$consumable_id])));
 		}else if($success == 2){
 			$mission_result["status"] = "FAILURE";
 			$mission_result["consumable"] = "";

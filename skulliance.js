@@ -526,6 +526,7 @@ function completeMissions(mission_ids, quest_ids) {
 				document.getElementById('mission-row-'+i).className = "failure";
 			  }else{
 			  	document.getElementById('mission-row-'+i).className = "success";
+				document.getElementById('mission-result-'+i).innerHTML += "<img class='icon' src='icons/"+obj[i].consumable+".png'/>";
 			  }
 			}
 			
