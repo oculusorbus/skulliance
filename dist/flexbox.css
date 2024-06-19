@@ -805,6 +805,7 @@ li form {
 
 .missions .icon {
 	border: 1px solid #43464D;
+	width: 50px;
 }
 
 .consumable {
