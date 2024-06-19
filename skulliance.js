@@ -333,6 +333,9 @@ function setSuccessRate(rate) {
 }
 
 function processConsumable(action, consumable_id){
+	if($consumable_id == 1){
+		removeAllNFTs();
+	}
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
 	calculated_rate = -1;
 	var consumables = [];
