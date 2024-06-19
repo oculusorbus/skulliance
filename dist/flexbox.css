@@ -547,8 +547,13 @@ input {
   transform: translateY(2px);
 }
 
+.inventory .small-button {
+	background-color: #510936;
+}
+
 .activated {
-	background-color: #444;
+	background-color: #37004f;
+	
 }
 /*
 .td3 {
@@ -809,7 +814,7 @@ li form {
 
 .missions .icon {
 	border: 1px solid #43464D;
-	width: 50px;
+	width: 50px !important;
 }
 
 .consumable {
