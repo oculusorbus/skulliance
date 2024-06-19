@@ -807,6 +807,10 @@ li form {
 	border: 1px solid #43464D;
 }
 
+.consumable {
+	border: 0px;
+}
+
 .inventory .nft-image {
     min-height: 45px;
 	max-height: 45px;
