@@ -792,7 +792,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		  	  }
 		}
 		$nft_ids = array();
-		echo "<input type='button' class='small-button' value='Remove All' onclick='removeAllNFTs();'/>";
+		echo "<li class='role'><input type='button' class='small-button' value='Remove All' onclick='removeAllNFTs();'/></li>";
 		while($row = $result->fetch_assoc()) {
 			echo "<li class='role'>";
 			$nft_ids[$row["id"]] = $row["id"];
