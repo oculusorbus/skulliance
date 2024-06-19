@@ -441,33 +441,38 @@ function processMissionNFT(action, nft_id, rate){
 }
 
 function startMission() {
-	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/start-mission.php', true);
-	xhttp.send();
+	var success_rate = document.getElementById('success-rate').innerHTML;
+	if(success_rate != 0){
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/start-mission.php', true);
+		xhttp.send();
 
-	xhttp.onreadystatechange = function() {
-	  if (xhttp.readyState == XMLHttpRequest.DONE) {
-	    // Check the status of the response
-	    if (xhttp.status == 200) {
-			// Access the data returned by the server
-			var data = xhttp.responseText;
-			/*
-			const obj = JSON.parse(data);
-			if(obj == null){
+		xhttp.onreadystatechange = function() {
+		  if (xhttp.readyState == XMLHttpRequest.DONE) {
+		    // Check the status of the response
+		    if (xhttp.status == 200) {
+				// Access the data returned by the server
+				var data = xhttp.responseText;
+				/*
+				const obj = JSON.parse(data);
+				if(obj == null){
 
-			}else{
+				}else{
 
-			}*/
-			//alert(data);
-			window.location.href = "missions.php";
-			console.log(data);
-			// Do something with the data
-	    } else {
-	      // Handle error
-			alert("AJAX Error");
-	    }
-	  }
-	};
+				}*/
+				//alert(data);
+				window.location.href = "missions.php";
+				console.log(data);
+				// Do something with the data
+		    } else {
+		      // Handle error
+				alert("AJAX Error");
+		    }
+		  }
+		};
+	}else{
+		alert('Success Rate cannot be at 0%.');
+	}
 }
 
 function completeMission(mission_id, quest_id) {
