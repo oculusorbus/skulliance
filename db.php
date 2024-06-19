@@ -605,15 +605,15 @@ function getCurrentMissions($conn){
 	  	foreach($consumables AS $id => $consumable_id){
 	  		if($consumable_id == 1){
 	  			$success_rate += 100;
-	  		}else if($consumable_id == 3){
-	  			$success_rate += 75;
-	  		}else if($consumable_id == 5){
-	  			$success_rate += 50;
-	  		}else if($consumable_id == 6){
-	  			$success_rate += 25;
 	  		}else if($consumable_id == 2){
-	  			$row["reward"] = $row["reward"]*2;
+	  			$success_rate += 75;
+	  		}else if($consumable_id == 3){
+	  			$success_rate += 50;
 	  		}else if($consumable_id == 4){
+	  			$success_rate += 25;
+	  		}else if($consumable_id == 6){
+	  			$row["reward"] = $row["reward"]*2;
+	  		}else if($consumable_id == 5){
 	  			$fast_forward = true;
 	  		}
 	  	}  
@@ -965,13 +965,13 @@ function completeMission($conn, $mission_id, $quest_id){
 		foreach($consumables AS $id => $consumable_id){
 			if($consumable_id == 1){
 				$success_rate += 100;
-			}else if($consumable_id == 3){
-				$success_rate += 75;
-			}else if($consumable_id == 5){
-				$success_rate += 50;
-			}else if($consumable_id == 6){
-				$success_rate += 25;
 			}else if($consumable_id == 2){
+				$success_rate += 75;
+			}else if($consumable_id == 3){
+				$success_rate += 50;
+			}else if($consumable_id == 4){
+				$success_rate += 25;
+			}else if($consumable_id == 6){
 				$reward = $reward*2;
 			}else if($consumable_id == 7){
 				$projects = array();
@@ -1040,7 +1040,7 @@ function completeMission($conn, $mission_id, $quest_id){
 // Get user amounts for all consumables
 function getCurrentAmounts($conn){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT amount, name, consumables.id AS consumable_id FROM amounts INNER JOIN consumables ON amounts.consumable_id = consumables.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ORDER BY sort ASC";
+		$sql = "SELECT amount, name, consumables.id AS consumable_id FROM amounts INNER JOIN consumables ON amounts.consumable_id = consumables.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ORDER BY amounts.id ASC";
 		$result = $conn->query($sql);
 	
 		$consumables = array();

@@ -337,10 +337,10 @@ function processConsumable(action, consumable_id){
 	calculated_rate = 0;
 	var consumables = [];
 	consumables[1] = 100;
-	consumables[3] = 75;
-	consumables[5] = 50;
-	consumables[6] = 25;
-	if(consumable_id == 1 || consumable_id == 3 || consumable_id == 5 || consumable_id == 6){
+	consumables[2] = 75;
+	consumables[3] = 50;
+	consumables[4] = 25;
+	if(consumable_id == 1 || consumable_id == 2 || consumable_id == 3 || consumable_id == 4){
 		if(action == 'Select'){
 			calculated_rate = current_rate+consumables[consumable_id];
 		}else if(action == 'Remove'){
