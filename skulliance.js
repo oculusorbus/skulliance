@@ -526,7 +526,7 @@ function completeMissions(mission_ids, quest_ids) {
 				var withNoDigits = contents.replace(/[0-9]/g, '');
 			  	document.getElementById('mission-reward-'+i).innerHTML = "0"+withNoDigits;
 				document.getElementById('mission-row-'+i).className = "failure";
-				document.getElementById('consumable-'+i).innerHTML += "NONE";
+				//document.getElementById('consumable-'+i).innerHTML += "NONE";
 			  }else{
 			  	document.getElementById('mission-row-'+i).className = "success";
 				document.getElementById('consumable-'+i).innerHTML += "<img class='icon' src='icons/"+obj[i].consumable+".png'/>";
