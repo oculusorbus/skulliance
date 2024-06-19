@@ -809,7 +809,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "</ul>";
 		if(!empty($nft_ids)){
 			echo "<script type='text/javascript'>";
-			echo "function removeAllNFTs(){"
+			echo "function removeAllNFTs(){";
 			foreach($nft_ids AS $id => $nft_id){
 				echo "document.getElementById('button-".$nft_id."').value = 'Select';";
 				echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
