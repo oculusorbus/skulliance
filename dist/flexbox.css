@@ -547,32 +547,9 @@ input {
   transform: translateY(2px);
 }
 
-.inventory .small-button {
-	background-color: #37004f;
-}
-
-.inventory .small-button:hover {
-	background-color: #444;
-}
-
-.inventory .small-button:active {
-  background-color: #444;
-  box-shadow: 0 2px #1c4f2a;
-  transform: translateY(2px);
-}
-
 .activated {
-	background-color: #510936 !important;
-}
-
-.activated:hover{
-	background-color: #444 !important;
-}
-
-.activated:active{
-    background-color: #444 !important;
-    box-shadow: 0 2px #1c4f2a !important;
-    transform: translateY(2px) !important;
+	background-color: #555 !important;
+	
 }
 /*
 .td3 {
