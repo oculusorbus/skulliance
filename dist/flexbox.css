@@ -546,6 +546,10 @@ input {
   box-shadow: 0 2px #1c4f2a;
   transform: translateY(2px);
 }
+
+.activated {
+	background-color: #444;
+}
 /*
 .td3 {
 	text-align: right;
