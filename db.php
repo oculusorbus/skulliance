@@ -2995,7 +2995,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 		if($rewards){
 			$last_month = date('F', strtotime('last month'));
-			$title = $last_month." Missions Leaderboard";
+			$title = $last_month." Missions Leaderboard Results";
 			$imageurl = "";
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
