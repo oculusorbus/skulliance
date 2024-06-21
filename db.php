@@ -813,9 +813,11 @@ function getInventory($conn, $project_id, $quest_id) {
 			echo "function clearAllSelections(){";
 			
 			foreach($consumables AS $id => $consumable){
-				echo "document.getElementById('consumable-".$id."').value = 'Select';";
-				echo "document.getElementById('consumable-".$id."').classList.remove('activated');";
-				echo "document.getElementById('amount-".$id."').innerHTML = '".$consumable["amount"]."';";
+				if($consumable["amount"] != 0){
+					echo "document.getElementById('consumable-".$id."').value = 'Select';";
+					echo "document.getElementById('consumable-".$id."').classList.remove('activated');";
+					echo "document.getElementById('amount-".$id."').innerHTML = '".$consumable["amount"]."';";
+				}
 			}
 			
 			foreach($nft_ids AS $id => $nft_id){
