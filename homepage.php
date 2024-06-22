@@ -146,6 +146,7 @@
 	  <a href="https://www.skulliance.io/staking">Staking</a>
 	  <a href="https://www.jpg.store/collection/skulliance">Diamond Skulls</a>
 	  <a href="https://www.skulliance.io/shop">Merch</a>
+  	  <a href="https://skulliance.gitbook.io/skulliance" target="_blank">Skull Paper</a>
 	  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" /></a>
 	  <a class="social" href="https://www.x.com/skulliance"><img src="https://www.skulliance.io/staking/images/x.png" /></a>
 	</div>
