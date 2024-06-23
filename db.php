@@ -538,7 +538,7 @@ function getMission($conn, $mission_id){
 
 // Get missions
 function getMissions($conn, $quest_id) {
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
 	
 	$result = $conn->query($sql);
 	
@@ -556,6 +556,7 @@ function getMissions($conn, $quest_id) {
 		echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
+		echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
 		echo"
 		<form action='missions.php#inventory' method='post'>
 		  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
