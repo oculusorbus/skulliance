@@ -536,6 +536,7 @@ function getMission($conn, $mission_id){
 	}
 }
 
+// Get max mission levels for successfully completed missions by project
 function getMissionLevels($conn) {
 	$sql = "SELECT level, project_id FROM missions INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '1' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	
@@ -581,7 +582,6 @@ function getMissions($conn, $quest_id) {
 			}else{
 				echo "<div class='nft'><div class='nft-data".$class." mission-data' style='opacity:0.5'>";
 			}
-						echo $max_level;
 			echo "<span class='nft-name'>".$row["title"]."</span>";
 			echo "<span class='nft-image'><img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
 			//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
@@ -651,13 +651,19 @@ function getCurrentMissions($conn){
 	  			$fast_forward = true;
 	  		}
 	  	}  
-		  
-  		$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
+		
+		$created_date = "";
+		if($fast_forward == true){
+			$created_date = strtotime('+1 day', strtotime($row["created_date"]));
+		}else{
+			$created_date = strtotime($row["created_date"]);
+		}
+  		$date = strtotime('+'.$row["duration"].' day', $created_date);
   		$remaining = $date - time();
 		$days_remaining = floor(($remaining / 86400));
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
-		if($date > time() && $fast_forward == false){
+		if($date > time()){
 			$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 			$completed = "In Progress";
 		}else{
