@@ -536,34 +536,60 @@ function getMission($conn, $mission_id){
 	}
 }
 
+function getMissionLevels($conn) {
+	$sql = "SELECT MAX(level) AS max_level, quest_id FROM missions INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '1' AND user_id = '".$_SESSION['userData']['user_id']."'";
+	
+	$result = $conn->query($sql);
+	
+	$levels = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $levels[$row["quest_id"]] = $row["max_level"];
+	  }
+  	}else{
+  		
+  	}
+	return $levels;
+}
+
 // Get missions
 function getMissions($conn, $quest_id) {
 	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
 	
 	$result = $conn->query($sql);
 	
+	$levels = getMissionLevels($conn);
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
+	  	$max_level = 1;
     	$class = "";
 		if($quest_id != $row["id"]){
 			//$class = " highlight";
-    	echo "<div class='nft'><div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
-		echo "<span class='nft-name'>".$row["title"]."</span>";
-		echo "<span class='nft-image'><img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
-		//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
-		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
-		echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
-		echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
-		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
-		echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
-		echo"
-		<form action='missions.php#inventory' method='post'>
-		  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
-		  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
-		  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
-		</form>";
-		echo "</div></div>";
+			if(isset($levels[$quest_id])){
+				$max_level = $levels[$quest_id];
+			}
+			if($max_level+1 >= $row["level"]){
+	    		echo "<div class='nft'><div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
+			}else{
+				echo "<div class='nft'><div class='nft-data".$class." mission-data'>";
+			}
+			echo "<span class='nft-name'>".$row["title"]."</span>";
+			echo "<span class='nft-image'><img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
+			//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
+			echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
+			echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
+			echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
+			echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
+			echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
+			echo"
+			<form action='missions.php#inventory' method='post'>
+			  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
+			  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
+			  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
+			</form>";
+			echo "</div></div>";
 		}
 	  }
 	} else {
