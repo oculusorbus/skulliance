@@ -782,7 +782,9 @@ function getInventory($conn, $project_id, $quest_id) {
 	}
 	echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 	echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
-	echo "<li class='role'><strong>Net Reward Per Day:</strong>&nbsp;".number_format(($quest["reward"]-$quest["cost"])/$quest["duration"])." ".$quest["currency"]."</li>";
+	if($quest["duration"] != 0){
+		echo "<li class='role'><strong>Net Reward Per Day:</strong>&nbsp;".number_format(($quest["reward"]-$quest["cost"])/$quest["duration"])." ".$quest["currency"]."</li>";
+	}
 	echo "<li class='role'><strong>Duration:</strong>&nbsp;".$quest["duration"]." Day(s)</li>";
 	echo "<li class='role'><strong>Level:</strong>&nbsp;".$quest["level"]."</li>";
 	if ($result->num_rows > 0) {
