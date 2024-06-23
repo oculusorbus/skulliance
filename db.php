@@ -537,7 +537,7 @@ function getMission($conn, $mission_id){
 }
 
 function getMissionLevels($conn) {
-	$sql = "SELECT level, quest_id FROM missions INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '1' AND user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT level, project_id FROM missions INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '1' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	
 	$result = $conn->query($sql);
 	
@@ -545,11 +545,11 @@ function getMissionLevels($conn) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  if(!isset($levels[$row["quest_id"]])){
-		  	$levels[$row["quest_id"]] = $row["level"];
+		  if(!isset($levels[$row["project_id"]])){
+		  	$levels[$row["project_id"]] = $row["level"];
 	  	  }else{
-			  if($row["level"] > $levels[$row["quest_id"]]){
-			  	$levels[$row["quest_id"]] = $row["level"];
+			  if($row["level"] > $levels[$row["project_id"]]){
+			  	$levels[$row["project_id"]] = $row["level"];
 			  }
 	  	  }
 	  }
@@ -573,8 +573,8 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		if($quest_id != $row["id"]){
 			//$class = " highlight";
-			if(isset($levels[$row["id"]])){
-				$max_level = $levels[$row["id"]];
+			if(isset($levels[$row["project_id"]])){
+				$max_level = $levels[$row["project_id"]];
 			}
 			if(($max_level+1) >= $row["level"]){
 	    		echo "<div class='nft'><div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
