@@ -590,12 +590,14 @@ function getMissions($conn, $quest_id) {
 			echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
 			echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
 			echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
-			echo"
-			<form action='missions.php#inventory' method='post'>
-			  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
-			  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
-			  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
-			</form>";
+			if(($max_level+1) >= $row["level"]){
+				echo"
+				<form action='missions.php#inventory' method='post'>
+				  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
+				  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
+				  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
+				</form>";
+			}
 			echo "</div></div>";
 		}
 	  }
