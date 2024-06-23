@@ -576,7 +576,7 @@ function getMissions($conn, $quest_id) {
 			if(isset($levels[$row["id"]])){
 				$max_level = $levels[$row["id"]];
 			}
-			if(($max_level+1) >= $row["level"]){
+			if(intval($max_level+1) >= intval($row["level"])){
 	    		echo "<div class='nft'><div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 			}else{
 				echo "<div class='nft'><div class='nft-data".$class." mission-data' style='opacity:0.5'>";
