@@ -654,7 +654,7 @@ function getCurrentMissions($conn){
 		
 		$created_date = "";
 		if($fast_forward == true){
-			$created_date = strtotime('-'.ceil($row["duration"]/2).' day', strtotime($row["created_date"]));
+			$created_date = strtotime('-'.$row["duration"].' day', strtotime($row["created_date"]));
 		}else{
 			$created_date = strtotime($row["created_date"]);
 		}
