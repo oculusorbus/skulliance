@@ -573,7 +573,7 @@ function getMissions($conn, $quest_id) {
 			if($max_level+1 >= $row["level"]){
 	    		echo "<div class='nft'><div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 			}else{
-				echo "<div class='nft'><div class='nft-data".$class." mission-data'>";
+				echo "<div class='nft'><div class='nft-data".$class." mission-data' style='opacity:0.5'>";
 			}
 			echo "<span class='nft-name'>".$row["title"]."</span>";
 			echo "<span class='nft-image'><img class='mission-image' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/></span>";
