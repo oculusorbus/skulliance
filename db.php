@@ -537,7 +537,7 @@ function getMission($conn, $mission_id){
 }
 
 function getMissionLevels($conn) {
-	$sql = "SELECT MAX(level) AS max_level, quest_id FROM missions INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '1' AND user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT level, quest_id FROM missions INNER JOIN quests ON quests.id = missions.quest_id WHERE status = '1' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	
 	$result = $conn->query($sql);
 	
@@ -545,7 +545,13 @@ function getMissionLevels($conn) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		  $levels[$row["quest_id"]] = $row["max_level"];
+		  if(!isset($levels[$row["quest_id"]])){
+		  	$levels[$row["quest_id"]] = $row["level"];
+	  	  }else{
+			  if($row["level"] > $levels[$row["quest_id"]]){
+			  	$levels[$row["quest_id"]] = $row["level"];
+			  }
+	  	  }
 	  }
   	}else{
   		
