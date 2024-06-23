@@ -563,7 +563,7 @@ function getMissions($conn, $quest_id) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-	  	$max_level = 1;
+	  	$max_level = 0;
     	$class = "";
 		if($quest_id != $row["id"]){
 			//$class = " highlight";
@@ -775,7 +775,9 @@ function getInventory($conn, $project_id, $quest_id) {
 	}
 	echo "<li class='role'><strong>Cost:</strong>&nbsp;".number_format($quest["cost"])." ".$quest["currency"]."</li>";
 	echo "<li class='role'><strong>Reward:</strong>&nbsp;".number_format($quest["reward"])." ".$quest["currency"]."</li>";
+	echo "<li class='role'><strong>Net Reward Per Day:</strong>&nbsp;".number_format(($quest["reward"]-$quest["cost"])/$quest["duration"])." ".$quest["currency"]."</li>";
 	echo "<li class='role'><strong>Duration:</strong>&nbsp;".$quest["duration"]." Day(s)</li>";
+	echo "<li class='role'><strong>Level:</strong>&nbsp;".$quest["level"]."</li>";
 	if ($result->num_rows > 0) {
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
@@ -880,7 +882,7 @@ function renderInventoryButton($selection, $quest_id, $project_id){
 }
 
 function getQuestInfo($conn, $quest_id){
-	$sql = "SELECT title, description, cost, reward, duration, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
+	$sql = "SELECT title, description, cost, reward, duration, level, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 	$result = $conn->query($sql);
 	
 	$quest = array();
@@ -893,6 +895,7 @@ function getQuestInfo($conn, $quest_id){
 		  $quest["project"] = $row["name"];
 		  $quest["currency"] = $row["currency"];
 		  $quest["duration"] = $row["duration"];
+		  $quest["level"] = $row["level"];
 		  $quest["description"] = $row["description"];
 	  }
 	  return $quest;
