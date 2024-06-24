@@ -777,13 +777,14 @@ function getInventory($conn, $project_id, $quest_id) {
 	
 	$rate_tally = 0;
 	$quest = getQuestInfo($conn, $quest_id);
+	$balance = "";
 	$balance = getBalance($conn, $project_id);
 	echo "<h2>".$quest["title"]."</h2>";
 	echo "<ul>";
 	echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
 	echo "<li class='role'>".$quest["description"]."</li>";
 	echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
-	if(!empty($balance)){
+	if($balance != ""){
 		echo "<li class='role'><strong>Balance:</strong>&nbsp;".number_format($balance)." ".$quest["currency"]."</li>";
 	}else{
 		echo "<li class='role'><strong>Balance:</strong>&nbsp;NO ".$quest["currency"]."</li>";
@@ -798,7 +799,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if ($result->num_rows > 0) {
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
-		if(!empty($balance)){
+		if($balance != ""){
 			if($balance >= $quest["cost"]){
 				echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 			}else{
