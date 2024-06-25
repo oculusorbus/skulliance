@@ -785,7 +785,16 @@ function getInventory($conn, $project_id, $quest_id) {
 	if($project_id == 3){
 		$extension = "gif";
 	}
-	echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".".$extension."'/></li>";
+	if($project != 3){
+		echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".".$extension."'/></li>";
+	}else{
+		echo "<li class='role no-border-style'>";
+		echo "<video class='mission-image' width='100%' autoplay loop muted>
+  		  		<source src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".mp4' type='video/mp4'>
+				Your browser does not support the video tag.	
+			  </video>";
+		echo "</li>";
+	}
 	echo "<li class='role'>".$quest["description"]."</li>";
 	echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
 	if($balance != ""){
