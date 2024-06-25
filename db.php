@@ -781,7 +781,11 @@ function getInventory($conn, $project_id, $quest_id) {
 	$balance = getBalance($conn, $project_id);
 	echo "<h2>".$quest["title"]."</h2>";
 	echo "<ul>";
-	echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".png'/></li>";
+	$extension = "png";
+	if($project_id == 3){
+		$extension = "gif";
+	}
+	echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".".$extension."'/></li>";
 	echo "<li class='role'>".$quest["description"]."</li>";
 	echo "<li class='role'><strong>Project:</strong>&nbsp;".$quest["project"]."</li>";
 	if($balance != ""){
