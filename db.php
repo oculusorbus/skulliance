@@ -782,12 +782,12 @@ function getInventory($conn, $project_id, $quest_id) {
 	echo "<h2>".$quest["title"]."</h2>";
 	echo "<ul>";
 	$extension = "png";
-	if($project_id == 3){
+	if($project_id == 3 || $project_id == 6){
 		$extension = "gif";
 	}
 	$filename = "images/missions/".strtolower(str_replace(" ", "-", $quest["title"]));
 	echo "<li class='role no-border-style'>";
-	if($project_id != 3){
+	if($project_id != 3 && $project_id != 6){
 		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
 	}else{
 		echo "<video width='100%' height='100%' autoplay loop muted poster='".$filename.".".$extension."'>
