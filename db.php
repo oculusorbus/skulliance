@@ -785,7 +785,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if($project_id == 3){
 		$extension = "gif";
 	}
-	if($project != 3){
+	if($project_id != 3){
 		echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".".$extension."'/></li>";
 	}else{
 		echo "<li class='role no-border-style'>";
