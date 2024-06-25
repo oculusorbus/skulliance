@@ -790,7 +790,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if($project_id != 3){
 		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
 	}else{
-		echo "<video class='mission-image' width='100%' height='100%' controls autoplay loop muted poster='".$filename.".".$extension."'>
+		echo "<video class='mission-image' width='100%' height='100%' autoplay loop muted poster='".$filename.".".$extension."'>
   		  		<source src='".$filename.".mp4' type='video/mp4'>
 				Your browser does not support the video tag.	
 			  </video>";
