@@ -789,7 +789,7 @@ function getInventory($conn, $project_id, $quest_id) {
 		echo "<li class='role no-border-style'><img class='mission-image' width='100%' src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".".$extension."'/></li>";
 	}else{
 		echo "<li class='role no-border-style'>";
-		echo "<video class='mission-image' width='100%' autoplay loop muted>
+		echo "<video class='mission-image' width='100%' height='100%' autoplay loop muted poster='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".".$extension."'>
   		  		<source src='images/missions/".strtolower(str_replace(" ", "-", $quest["title"])).".mp4' type='video/mp4'>
 				Your browser does not support the video tag.	
 			  </video>";
