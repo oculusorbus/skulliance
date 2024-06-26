@@ -21,11 +21,11 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
-// Handle Drop Ship DREAD Rewards
-if(isset($_POST['discord_id']) && isset($_POST['rank'])) {
+// Handle Drop Ship DREAD AND Oculus Lounge MOON Rewards
+if(isset($_POST['discord_id']) && isset($_POST['rank']) && isset($_POST['project_id'])) {
 	// Lookup user by discord id
 	$user_id = getUserIdFromDiscordId($conn, $_POST['discord_id']);
-	// If user exists, add DREAD reward based on rank in game to balance and log credit in transaction history
+	// If user exists, add DREAD or MOON reward based on rank in game to balance and log credit in transaction history
 	if($user_id != false){
 		$subtotal = 0;
 		if($_POST['rank'] == 1){
@@ -35,8 +35,13 @@ if(isset($_POST['discord_id']) && isset($_POST['rank'])) {
 		}else if($_POST['rank'] == 3){
 			$subtotal = 250;
 		}
-		updateBalance($conn, $user_id, 2, $subtotal);
-		logCredit($conn, $user_id, $subtotal, 2);
+		if($_POST['project_id'] == 1){
+			$project_id = 2;
+		}else if($_POST['project_id'] == 4){
+			$project_id = 21;
+		}
+		updateBalance($conn, $user_id, $project_id, $subtotal);
+		logCredit($conn, $user_id, $subtotal, $project_id);
 	}
 }
 
