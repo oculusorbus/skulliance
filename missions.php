@@ -58,7 +58,6 @@ if(isset($_GET['username'])){
 	<a name="missions" id="missions"></a>
     <div class="content missions">
 		<?php //filterMissions($project_id); ?>
-		<div id="nfts" class="nfts">
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
 				getMissions($conn, $quest_id);
@@ -66,7 +65,6 @@ if(isset($_GET['username'])){
 				echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
 			?>
-		</div>
     </div>
   </div>
 </div>
