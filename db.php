@@ -583,7 +583,6 @@ function getMissions($conn, $quest_id) {
 		}
 		if($project_flag){
 			echo '<h2>'.$row["name"].'</h2>';
-			echo '<div class="row">';
 			echo '<div id="nfts" class="nfts">';
 		}
 	  	$max_level = 0;
@@ -617,7 +616,7 @@ function getMissions($conn, $quest_id) {
 			echo "</div>";
 		}
 		if($project_flag){
-			echo '</div></div>';
+			echo '</div>';
 		}
 		$last_project_id = $row["project_id"];
 	  }
