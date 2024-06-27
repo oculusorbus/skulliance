@@ -618,6 +618,7 @@ function getMissions($conn, $quest_id) {
 		if($project_flag){
 			echo '</div>';
 		}
+		$last_project_id = $row["project_id"];
 	  }
 	} else {
 	  //echo "0 results";
