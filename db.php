@@ -572,19 +572,9 @@ function getMissions($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	$levels = getMissionLevels($conn);
-	$last_project_id = 0;
-	$project_flag = false;
 	if($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		$project_flag = false;
-		if($last_project_id == 0 || ($last_project_id != $row["project_id"] && $last_project_id != 0)){
-			$project_flag = true;
-		}
-		if($project_flag){
-			echo '<h2>'.$row["name"].'</h2>';
-			echo '<div id="nfts" class="nfts">';
-		}
 	  	$max_level = 0;
     	$class = "";
 		if($quest_id != $row["id"]){
@@ -613,12 +603,8 @@ function getMissions($conn, $quest_id) {
 				  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
 				</form>";
 			}
-			echo "</div>";
+			echo "</div></div>";
 		}
-		if($project_flag){
-			echo '</div>';
-		}
-		$last_project_id = $row["project_id"];
 	  }
 	} else {
 	  //echo "0 results";
