@@ -582,8 +582,8 @@ function getMissions($conn, $quest_id) {
 			$project_flag = true;
 		}
 		if($project_flag){
-			echo '<div class="row">';
 			echo '<h2>'.$row["name"].'</h2>';
+			echo '<div class="row">';
 			echo '<div id="nfts" class="nfts">';
 		}
 	  	$max_level = 0;
