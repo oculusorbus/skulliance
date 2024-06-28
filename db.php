@@ -631,7 +631,7 @@ function checkMissionTotal($conn, $project_id){
 // Get missions
 function getMissions($conn, $quest_id) {
 	//CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 0 END ASC, projects.id";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 0 END DESC, projects.id";
 	
 	$result = $conn->query($sql);
 	
