@@ -650,45 +650,43 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		$image = "";
 		$title = "";
-		if($quest_id != $row["id"]){
-			$quest_ids[$row["id"]] = $row["id"];
-			if(!checkMissionInventory($conn, $row["project_id"])){
-				$ineligible_quest_ids[$row["id"]] = $row["id"];
-			}
-			//$class = " highlight";
-			if(isset($levels[$row["project_id"]])){
-				$max_level = $levels[$row["project_id"]];
-			}
-			if(($max_level+1) >= $row["level"]){
-				echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
-	    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
-				$title = $row["title"];
-				$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
-			}else{
-				$locked_quest_ids[$row["id"]] = $row["id"];
-				echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
-				echo "<div class='nft-data".$class." mission-data disabled'>";
-				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
-				$image = "icons/padlock";
-			}
-			echo "<span class='nft-name'>".$title."</span>";
-			echo "<span class='nft-image'><img class='mission-image' src='".$image.".png'/></span>";
-			//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
-			echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
-			echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
-			echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
-			echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
-			echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
-			if(($max_level+1) >= $row["level"]){
-				echo"
-				<form action='missions.php#inventory' method='post'>
-				  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
-				  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
-				  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
-				</form>";
-			}
-			echo "</div></div>";
+		$quest_ids[$row["id"]] = $row["id"];
+		if(!checkMissionInventory($conn, $row["project_id"])){
+			$ineligible_quest_ids[$row["id"]] = $row["id"];
 		}
+		//$class = " highlight";
+		if(isset($levels[$row["project_id"]])){
+			$max_level = $levels[$row["project_id"]];
+		}
+		if(($max_level+1) >= $row["level"]){
+			echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
+    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
+			$title = $row["title"];
+			$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
+		}else{
+			$locked_quest_ids[$row["id"]] = $row["id"];
+			echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
+			echo "<div class='nft-data".$class." mission-data disabled'>";
+			$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
+			$image = "icons/padlock";
+		}
+		echo "<span class='nft-name'>".$title."</span>";
+		echo "<span class='nft-image'><img class='mission-image' src='".$image.".png'/></span>";
+		//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
+		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
+		echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
+		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
+		echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
+		if(($max_level+1) >= $row["level"]){
+			echo"
+			<form action='missions.php#inventory' method='post'>
+			  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
+			  <input type='hidden' id='project_id' name='project_id' value='".$row["project_id"]."'>
+			  <input style='display:none' id='submit-".$row["id"]."' class='small-button' type='submit' value='Select Mission'>
+			</form>";
+		}
+		echo "</div></div>";
 	  }
 	} else {
 	  //echo "0 results";
