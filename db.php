@@ -574,7 +574,7 @@ function getMissionsFilters($conn) {
 	echo '<div class="content missions">';
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			echo "<div style='float:left'>".$row["name"]."</div>";
+			echo "<div class='missions-filter'>".$row["name"]."</div>";
 		}
 	}
 	echo '</div>';
