@@ -573,7 +573,7 @@ function getMissionsFilters($conn) {
 	
 	if($result->num_rows > 0) {
 		echo "<div class='missions-filters'>";
-		echo "<div class='missions-filter'>All</div>";
+		echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
 		while($row = $result->fetch_assoc()) {
 			echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
 		}
