@@ -630,11 +630,11 @@ function getMissions($conn, $quest_id) {
 	}
 	echo "</div>";
 	echo "<script type='text/javascript'>";
-	echo "function toggleMissions(visibility){"
+	echo "function toggleMissions(visibility){";
 	foreach($quest_ids AS $id => $quest_id){
 		echo "document.getElementById('quest-".$quest_id."').style.display = visibility;";
 	}
-	echo "}"
+	echo "}";
 	echo "</script>";
 }
 
