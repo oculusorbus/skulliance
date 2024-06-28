@@ -669,6 +669,7 @@ function getCurrentMissions($conn){
 	$result = $conn->query($sql);
 	
 	$completed_missions = array();
+	
 	$arrow = "down";
 	$display = "block";
 	if(isset($_SESSION['userData']['current_missions'])){
@@ -2892,10 +2893,22 @@ function getTotalMissions($conn){
 		    	  FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
 	$month_result = $conn->query($month_sql);
 	
+	$arrow = "down";
+	$display = "block";
+	if(isset($_SESSION['userData']['total_missions'])){
+		if($_SESSION['userData']['total_missions'] == "show"){
+			$arrow = "down";
+			$display = "block";
+		}else if($_SESSION['userData']['total_missions'] == "hide"){
+			$arrow = "up";
+			$display = "none";
+		}
+	}
+	
 	if ($month_result->num_rows > 0) {
-	  	echo "<h2>Missions Stats</h2>";
+	  	echo "<h2>Missions Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
-	    echo '<div class="content missions">';
+	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th align='left' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
