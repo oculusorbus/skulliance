@@ -587,6 +587,7 @@ function getMissions($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	$levels = getMissionLevels($conn);
+	echo "<div class='nfts'>";
 	if($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
@@ -624,6 +625,7 @@ function getMissions($conn, $quest_id) {
 	} else {
 	  //echo "0 results";
 	}
+	echo "</div>";
 }
 
 // Get Current Missions for User
