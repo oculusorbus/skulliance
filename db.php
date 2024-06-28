@@ -615,7 +615,7 @@ function getMissions($conn, $quest_id) {
 		$where = "WHERE projects.id = '".$_SESSION['userData']['project_id']."'";
 	}
 	
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY ".$where." CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ".$where." ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
 	
 	$result = $conn->query($sql);
 	
