@@ -626,11 +626,6 @@ function getQuestProjectID($conn, $quest_id){
 
 // Get missions
 function getMissions($conn, $quest_id) {
-	/*
-	alert($quest_id);
-	if($quest_id != 0){
-		alert(getQuestProjectID($conn, $quest_id));
-	}*/
 	$project_id = 1;
 	if(isset($_SESSION['userData']['project_id'])){
 		$project_id = $_SESSION['userData']['project_id'];
