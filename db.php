@@ -674,9 +674,11 @@ function getCurrentMissions($conn){
 	echo "function toggleCurrentMissions(arrow){
 			if(arrow.id == 'down'){
 				arrow.id = 'up';
+				arrow.src = 'icons/up.png';
 				document.getElementById('current-missions-container').style.display = 'none';
 			}else{
 				arrow.id = 'down';
+				arrow.src = 'icons/down.png';
 				document.getElementById('current-missions-container').style.display = 'block';
 			}
 		  }";
