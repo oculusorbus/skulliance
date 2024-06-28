@@ -572,7 +572,7 @@ function getMissionsFilters($conn) {
 	$result = $conn->query($sql);
 	
 	echo "</div>";
-	echo "<div class='main'";
+	echo "<div class='main'>";
 	echo '<div class="content missions">';
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
