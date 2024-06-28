@@ -626,6 +626,7 @@ function getQuestProjectID($conn, $quest_id){
 
 // Get missions
 function getMissions($conn, $quest_id) {
+	$project_id = 1;
 	if($quest_id == 0){
 		$project_id = 1;
 	}else{
