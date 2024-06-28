@@ -748,6 +748,7 @@ li form {
     padding: 10px;
     margin: 10px;
     color: #bbb;
+	cursor: pointer;
 }
 
 .nfts {
