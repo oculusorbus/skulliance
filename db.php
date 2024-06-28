@@ -670,9 +670,6 @@ function getCurrentMissions($conn){
 	
 	$completed_missions = array();
 	
-	echo "<script type='text/javascript'>";
-	echo "";
-	echo "</script>";
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='down' src='icons/down.png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
