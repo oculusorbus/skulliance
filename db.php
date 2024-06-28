@@ -587,7 +587,7 @@ function getMissions($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	$levels = getMissionLevels($conn);
-	$project_ids = array();
+	$quest_ids = array();
 	echo "<div class='nfts'>";
 	if($result->num_rows > 0) {
 	  // output data of each row
@@ -595,12 +595,12 @@ function getMissions($conn, $quest_id) {
 	  	$max_level = 0;
     	$class = "";
 		if($quest_id != $row["id"]){
-			$project_ids[$row["project_id"]] = $row["project_id"];
+			$quest_ids[$row["id"]] = $row["id"];
 			//$class = " highlight";
 			if(isset($levels[$row["project_id"]])){
 				$max_level = $levels[$row["project_id"]];
 			}
-			echo "<div class='nft' id='project-".$row["project_id"]."'>";
+			echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 			if(($max_level+1) >= $row["level"]){
 	    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 			}else{
@@ -630,8 +630,8 @@ function getMissions($conn, $quest_id) {
 	}
 	echo "</div>";
 	echo "<script type='text/javascript'>";
-	foreach($project_ids AS $id => $project_id){
-		echo "document.getElementById('project-".$project_id."').style.display = 'none';";
+	foreach($quest_ids AS $id => $quest_id){
+		echo "document.getElementById('quest-".$quest_id."').style.display = 'none';";
 	}
 	echo "</script>";
 }
