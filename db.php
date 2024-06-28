@@ -610,29 +610,26 @@ function checkMissionInventory($conn, $project_id){
 }
 
 // See if there is more than one mission available for a project
-function checkMissionTotal($conn, $project_id){
-	$sql = "SELECT COUNT(quests.id) AS quests_count FROM quests WHERE project_id = '".$project_id."'";
+function getQuestProjectID($conn, $quest_id){
+	$sql = "SELECT project_id FROM quests WHERE quest_id = '".$quest_id."'";
 	
 	$result = $conn->query($sql);
 	
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			if($row["quests_count"] > 1){
-				return true;
-			}else{
-				return false;
-			}
+			return $row['project_id'];
 		}
 	}else{
-		return false;
+
 	}
 }
 
 // Get missions
 function getMissions($conn, $quest_id) {
-	$project_id = 1;
-	if(isset($_SESSION['userData']['project_id'])){
-		$project_id = $_SESSION['userData']['project_id'];
+	if($quest_id == 0){
+		$project_id = 1;
+	}else{
+		$project_id = getQuestProjectID($conn, $quest_id);
 	}
 	//CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END
 	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN projects.id = '".$project_id."' THEN 0 ELSE 1 END ASC, projects.id ASC";
