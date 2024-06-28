@@ -575,7 +575,7 @@ function getMissionsFilters($conn) {
 		echo "<div class='missions-filters'>";
 		echo "<div class='missions-filter'>All</div>";
 		while($row = $result->fetch_assoc()) {
-			echo "<div class='missions-filter'>".$row["name"]."</div>";
+			echo "<div class='missions-filter' onclick='toggleMissionsVisibility(none);showMissions(".$row["id"].");'>".$row["name"]."</div>";
 		}
 		echo "</div>";
 	}
@@ -635,6 +635,13 @@ function getMissions($conn, $quest_id) {
 	foreach($quest_ids AS $id => $quest_id){
 		echo "document.getElementById('quest-".$quest_id."').style.display = visibility;";
 	}
+	echo "}";
+	echo "function showMissions(project_id){";
+	echo "var projects = document.getElementsByClassName('project-'+project_id);";
+	echo "
+	for (var i = 0; i < projects.length; i ++) {
+	    projects[i].style.display = 'block';
+	}";
 	echo "}";
 	echo "</script>";
 }
