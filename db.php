@@ -624,7 +624,7 @@ function getMissions($conn, $quest_id) {
 			}else{
 				$locked_quest_ids[$row["id"]] = $row["id"];
 				echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
-				echo "<div class='nft-data".$class." mission-data disabled' style='opacity:0.5'>";
+				echo "<div class='nft-data".$class." mission-data disabled'>";
 				$image = "icons/padlock";
 			}
 			echo "<span class='nft-name'>".$row["title"]."</span>";
