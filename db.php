@@ -573,6 +573,7 @@ function getMissionsFilters($conn, $quest_id) {
 	
 	echo "<div class='missions-filters'>";
 	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();'>All</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();hideIneligibleMissions();'>Eligible</div>";
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
@@ -595,6 +596,16 @@ function getMissionsFilters($conn, $quest_id) {
 	echo "</div>";
 }
 
+function checkMissionInventory($conn, $project_id){
+	$sql = "SELECT id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE collections.project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
+	
+	if($result->num_rows > 0) {
+		return true;
+	}else{
+		return false;
+	}
+}
+
 // Get missions
 function getMissions($conn, $quest_id) {
 	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
@@ -604,6 +615,7 @@ function getMissions($conn, $quest_id) {
 	$levels = getMissionLevels($conn);
 	$quest_ids = array();
 	$locked_quest_ids = array();
+	$ineligible_quest_ids = array();
 	echo "<div class='nfts'>";
 	if($result->num_rows > 0) {
 	  // output data of each row
@@ -614,6 +626,9 @@ function getMissions($conn, $quest_id) {
 		$title = "";
 		if($quest_id != $row["id"]){
 			$quest_ids[$row["id"]] = $row["id"];
+			if(!checkMissionInventory($conn, $row["project_id"])){
+				$ineligible_quest_ids[$row["id"]] = $row["id"];
+			}
 			//$class = " highlight";
 			if(isset($levels[$row["project_id"]])){
 				$max_level = $levels[$row["project_id"]];
@@ -661,6 +676,11 @@ function getMissions($conn, $quest_id) {
 	echo "}";
 	echo "function hideLockedMissions(){";
 	foreach($locked_quest_ids AS $id => $quest_id){
+		echo "document.getElementById('quest-".$quest_id."').style.display = 'none';";
+	}
+	echo "}";
+	echo "function hideIneligibleMissions(){";
+	foreach($ineligible_quest_ids AS $id => $quest_id){
 		echo "document.getElementById('quest-".$quest_id."').style.display = 'none';";
 	}
 	echo "}";
