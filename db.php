@@ -611,7 +611,7 @@ function checkMissionInventory($conn, $project_id){
 // Get missions
 function getMissions($conn, $quest_id) {
 	$where = "";
-	if(isset($_SESSION['userData']['project_id']){
+	if(isset($_SESSION['userData']['project_id'])){
 		$where = "WHERE projects.id = '".$_SESSION['userData']['project_id']."'";
 	}
 	
