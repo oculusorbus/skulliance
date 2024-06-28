@@ -630,6 +630,7 @@ function checkMissionTotal($conn, $project_id){
 
 // Get missions
 function getMissions($conn, $quest_id) {
+	$project_id = 1;
 	if(isset($_SESSION['userData']['project_id'])){
 		$project_id = $_SESSION['userData']['project_id'];
 	}
