@@ -565,6 +565,19 @@ function getMissionLevels($conn) {
 	return $levels;
 }
 
+//
+function getMissionsFilters($conn) {
+	$sql = "SELECT DISTINCT projects.id, name FROM quests INNER JOIN projects.id = quests.project_id";
+	
+	$result = $conn->query($sql);
+	
+	if($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			echo "<div style='float:left'>".$row["name"]."</div>";
+		}
+	}
+}
+
 // Get missions
 function getMissions($conn, $quest_id) {
 	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
