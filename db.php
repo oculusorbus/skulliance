@@ -672,13 +672,13 @@ function getCurrentMissions($conn){
 	
 	echo "<script type='text/javascript'>";
 	echo "function toggleCurrentMissions(){
-			document.getElementById('current-missions').style.display = 'none';
+			document.getElementById('current-missions-container').style.display = 'none';
 		  }";
 	echo "</script>";
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' src='icons/down.png' onclick='toggleCurrentMissions()'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
-	  echo '<div class="content missions">';
+	  echo '<div class="content missions" id="current-missions-container">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
 	  // output data of each row
