@@ -751,6 +751,10 @@ li form {
 	cursor: pointer;
 }
 
+.missions-filter:hover {
+	border: 1px solid white;
+}
+
 .nfts {
 	color: #D6DDDE;
 	clear: both;
