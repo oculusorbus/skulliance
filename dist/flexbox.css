@@ -741,6 +741,15 @@ li form {
 	width: 100%;
 }
 
+.missions-filter {
+    float: left;
+    background-color: #121212;
+    border: 1px solid #43464D;
+    padding: 10px;
+    margin: 10px;
+    color: #bbb;
+}
+
 .nfts {
 	color: #D6DDDE;
 	clear: both;
