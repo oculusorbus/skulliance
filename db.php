@@ -624,16 +624,16 @@ function getMissions($conn, $quest_id) {
 			}
 			echo "</div></div>";
 		}
-		echo "<script type='text/javascript'>";
-		foreach($project_ids AS $id => $project_id){
-			echo "document.getElementById('project-".$project_id."').style.display = 'none';";
-		}
-		echo "</script>";
 	  }
 	} else {
 	  //echo "0 results";
 	}
 	echo "</div>";
+	echo "<script type='text/javascript'>";
+	foreach($project_ids AS $id => $project_id){
+		echo "document.getElementById('project-".$project_id."').style.display = 'none';";
+	}
+	echo "</script>";
 }
 
 // Get Current Missions for User
