@@ -672,6 +672,7 @@ function getMissions($conn, $quest_id) {
 	echo "</div>";
 	echo "<script type='text/javascript'>";
 	if(isset($_SESSION['userData']['project_id'])){
+		echo "toggleMissions('none');";
 		echo "showMissions(".$_SESSION['userData']['project_id'].");";
 	}
 	echo "function toggleMissions(visibility){";
