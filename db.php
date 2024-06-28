@@ -577,7 +577,7 @@ function getMissionsFilters($conn, $quest_id) {
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
-				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -589,7 +589,7 @@ function getMissionsFilters($conn, $quest_id) {
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] >= 8){
-				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -610,7 +610,12 @@ function checkMissionInventory($conn, $project_id){
 
 // Get missions
 function getMissions($conn, $quest_id) {
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
+	$where = "";
+	if(isset($_SESSION['userData']['project_id']){
+		$where = "WHERE projects.id = '".$_SESSION['userData']['project_id']."'";
+	}
+	
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY ".$where." CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
 	
 	$result = $conn->query($sql);
 	

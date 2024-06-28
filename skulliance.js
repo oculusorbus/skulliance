@@ -328,6 +328,28 @@ function toggleArmory(pane, tab){
 	tab.style.height = "76px";
 }
 
+function selectProjectFilter(project_id){
+	var xhttp = new XMLHttpRequest();
+	var visibility = "";
+	
+	xhttp.open('GET', 'ajax/select_project_filter.php?project_id='+project_id, true);
+	
+	xhttp.send();
+
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
+}
+
 function toggleTotalMissions(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
