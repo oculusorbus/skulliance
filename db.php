@@ -571,13 +571,11 @@ function getMissionsFilters($conn) {
 	
 	$result = $conn->query($sql);
 	
-	echo '<div class="content missions">';
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			echo "<div class='missions-filter'>".$row["name"]."</div>";
 		}
 	}
-	echo '</div>';
 }
 
 // Get missions
@@ -587,7 +585,6 @@ function getMissions($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	$levels = getMissionLevels($conn);
-	echo '<div class="content missions">';
 	if($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
@@ -625,7 +622,6 @@ function getMissions($conn, $quest_id) {
 	} else {
 	  //echo "0 results";
 	}
-	echo '</div>';
 }
 
 // Get Current Missions for User
