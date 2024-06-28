@@ -669,11 +669,21 @@ function getCurrentMissions($conn){
 	$result = $conn->query($sql);
 	
 	$completed_missions = array();
-	
+	$arrow = "down";
+	$display = "block";
+	if(isset($_SESSION['userData']['current_missions'])){
+		if($_SESSION['userData']['current_missions'] == "show"){
+			$arrow = "down";
+			$display = "block";
+		}else if($_SESSION['userData']['current_missions'] == "hide"){
+			$arrow = "up";
+			$display = "none";
+		}
+	}
 	if ($result->num_rows > 0) {
-	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='down' src='icons/down.png' onclick='toggleCurrentMissions(this)'/></h2>";
+	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
-	  echo '<div class="content missions" id="current-missions-container">';
+	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='left'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
 	  // output data of each row
