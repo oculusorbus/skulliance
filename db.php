@@ -566,8 +566,8 @@ function getMissionLevels($conn) {
 }
 
 
-function getMissionsFilters($conn) {
-	$sql = "SELECT DISTINCT projects.id, projects.name FROM quests INNER JOIN projects ON projects.id = quests.project_id";
+function getMissionsFilters($conn, $quest_id) {
+	$sql = "SELECT DISTINCT projects.id, projects.name FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id != '".$quest_id."'";
 	
 	$result = $conn->query($sql);
 	
