@@ -671,17 +671,7 @@ function getCurrentMissions($conn){
 	$completed_missions = array();
 	
 	echo "<script type='text/javascript'>";
-	echo "function toggleCurrentMissions(arrow){
-			if(arrow.id == 'down'){
-				arrow.id = 'up';
-				arrow.src = 'icons/up.png';
-				document.getElementById('current-missions-container').style.display = 'none';
-			}else{
-				arrow.id = 'down';
-				arrow.src = 'icons/down.png';
-				document.getElementById('current-missions-container').style.display = 'block';
-			}
-		  }";
+	echo "";
 	echo "</script>";
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='down' src='icons/down.png' onclick='toggleCurrentMissions(this)'/></h2>";

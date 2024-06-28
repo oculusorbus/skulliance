@@ -328,6 +328,18 @@ function toggleArmory(pane, tab){
 	tab.style.height = "76px";
 }
 
+function toggleCurrentMissions(arrow){
+	if(arrow.id == 'down'){
+		arrow.id = 'up';
+		arrow.src = 'icons/up.png';
+		document.getElementById('current-missions-container').style.display = 'none';
+	}else{
+		arrow.id = 'down';
+		arrow.src = 'icons/down.png';
+		document.getElementById('current-missions-container').style.display = 'block';
+	}
+}
+
 function setSuccessRate(rate) {
 	document.getElementById('success-rate').innerHTML = rate;
 }
