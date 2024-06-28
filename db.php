@@ -671,12 +671,12 @@ function getCurrentMissions($conn){
 	$completed_missions = array();
 	
 	echo "<script type='text/javascript'>";
-	echo "function toggleCurrentMissions(visibility){
-			document.getElementById('current-missions').style.display = visibility;
+	echo "function toggleCurrentMissions(){
+			document.getElementById('current-missions').style.display = 'none';
 		  }";
 	echo "</script>";
 	if ($result->num_rows > 0) {
-	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' src='icons/down.png' onclick='toggleCurrentMissions(\'none\')'/></h2>";
+	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' src='icons/down.png' onclick='toggleCurrentMissions()'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
