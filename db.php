@@ -572,8 +572,8 @@ function getMissionsFilters($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	echo "<div class='missions-filters'>";
-	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();'>All</div>";
-	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();hideIneligibleMissions();'>Eligible</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();showMissions(0);'>All</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();showMissions(0);hideIneligibleMissions();'>Eligible</div>";
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
