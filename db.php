@@ -611,6 +611,7 @@ function getMissions($conn, $quest_id) {
 	  	$max_level = 0;
     	$class = "";
 		$image = "";
+		$title = "";
 		if($quest_id != $row["id"]){
 			$quest_ids[$row["id"]] = $row["id"];
 			//$class = " highlight";
@@ -620,14 +621,16 @@ function getMissions($conn, $quest_id) {
 			if(($max_level+1) >= $row["level"]){
 				echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 	    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
+				$title = $row["title"];
 				$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
 			}else{
 				$locked_quest_ids[$row["id"]] = $row["id"];
 				echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 				echo "<div class='nft-data".$class." mission-data disabled'>";
+				$title = preg_replace('/[^0-9.]/~\D~', '?', $row["title"]);
 				$image = "icons/padlock";
 			}
-			echo "<span class='nft-name'>".$row["title"]."</span>";
+			echo "<span class='nft-name'>".$title."</span>";
 			echo "<span class='nft-image'><img class='mission-image' src='".$image.".png'/></span>";
 			//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
 			echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
