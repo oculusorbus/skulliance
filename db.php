@@ -595,7 +595,7 @@ function getMissions($conn, $quest_id) {
 	  	$max_level = 0;
     	$class = "";
 		if($quest_id != $row["id"]){
-			$quest_ids[$row["id"]] = $row["id"];
+			$quest_ids[][$row["id"]] = $row["id"];
 			//$class = " highlight";
 			if(isset($levels[$row["project_id"]])){
 				$max_level = $levels[$row["project_id"]];
