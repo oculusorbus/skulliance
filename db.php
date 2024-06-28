@@ -682,7 +682,7 @@ function getCurrentMissions($conn){
 		}
 	}
 	if ($result->num_rows > 0) {
-	  echo "<h2 onclick='this.querySelector(\".child\").click()'>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
+	  echo "<h2 onclick='this.querySelector(\".child\")[0].click()'>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
