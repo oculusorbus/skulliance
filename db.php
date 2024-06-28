@@ -629,8 +629,9 @@ function getMissions($conn, $quest_id) {
 	$project_id = 1;
 	if($quest_id == 0){
 		$project_id = 1;
+		$_SESSION['userData']['project_id'] = 1;
 	}else{
-		$project_id = getQuestProjectID($conn, $quest_id);
+		$_SESSION['userData']['project_id'] = getQuestProjectID($conn, $quest_id);
 	}
 	alert($project_id);
 	//CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END
