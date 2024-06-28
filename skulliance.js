@@ -367,13 +367,13 @@ function toggleCurrentMissions(arrow){
 	var visibility = "";
 	
 	if(arrow.id == 'down'){
-		arrow.children[0].id = 'up';
-		arrow.children[0].src = 'icons/up.png';
+		arrow.id = 'up';
+		arrow.src = 'icons/up.png';
 		visibility = 'hide';
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
-		arrow.children[0].id = 'down';
-		arrow.children[0].src = 'icons/down.png';
+		arrow.id = 'down';
+		arrow.src = 'icons/down.png';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
 	}
