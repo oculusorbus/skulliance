@@ -332,7 +332,7 @@ function selectProjectFilter(project_id){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
-	xhttp.open('GET', 'ajax/select_project_filter.php?project_id='+project_id, true);
+	xhttp.open('GET', 'ajax/select-project-filter.php?project_id='+project_id, true);
 	
 	xhttp.send();
 
