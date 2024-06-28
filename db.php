@@ -586,9 +586,8 @@ function getMissionsFilters($conn, $quest_id) {
 	
 	if($result->num_rows > 0) {
 		echo "<div class='missions-filters'>";
-		echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
 		while($row = $result->fetch_assoc()) {
-			if($row["id"] <= 8){
+			if($row["id"] >= 8){
 				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
