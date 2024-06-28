@@ -572,7 +572,7 @@ function getMissionsFilters($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	echo "<div class='missions-filters'>";
-	echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideUnlockedMissions();'>All</div>";
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
@@ -603,6 +603,7 @@ function getMissions($conn, $quest_id) {
 	
 	$levels = getMissionLevels($conn);
 	$quest_ids = array();
+	$unlocked_quest_ids = array();
 	echo "<div class='nfts'>";
 	if($result->num_rows > 0) {
 	  // output data of each row
@@ -619,6 +620,7 @@ function getMissions($conn, $quest_id) {
 				echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 	    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 			}else{
+				$unlocked_quest_ids[$row["id"]] = $row["id"];
 				echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 				echo "<div class='nft-data".$class." mission-data' style='opacity:0.5'>";
 			}
@@ -649,6 +651,11 @@ function getMissions($conn, $quest_id) {
 	echo "function toggleMissions(visibility){";
 	foreach($quest_ids AS $id => $quest_id){
 		echo "document.getElementById('quest-".$quest_id."').style.display = visibility;";
+	}
+	echo "}";
+	echo "function hideUnlockedMissions(){";
+	foreach($unlocked_quest_ids AS $id => $quest_id){
+		echo "document.getElementById('quest-".$quest_id."').style.display = 'none';";
 	}
 	echo "}";
 	echo "function showMissions(project_id){";
