@@ -571,28 +571,26 @@ function getMissionsFilters($conn, $quest_id) {
 	
 	$result = $conn->query($sql);
 	
+	echo "<div class='missions-filters'>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
 	if($result->num_rows > 0) {
-		echo "<div class='missions-filters'>";
-		echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
 				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
-		echo "</div>";
 	}
 	
 	$result = $conn->query($sql);
 	
 	if($result->num_rows > 0) {
-		echo "<div class='missions-filters'>";
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] >= 8){
 				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
-		echo "</div>";
 	}
+	echo "</div>";
 }
 
 // Get missions
