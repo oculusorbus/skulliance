@@ -744,6 +744,7 @@ li form {
 .missions-filters {
     position: relative;
     top: -10px;
+	clear: both;
 }
 
 .missions-filter {
@@ -754,7 +755,6 @@ li form {
     margin: 10px;
     color: #bbb;
 	cursor: pointer;
-	clear: both;
 }
 
 .missions-filter:hover {
