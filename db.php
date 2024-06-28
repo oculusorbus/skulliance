@@ -610,12 +610,7 @@ function checkMissionInventory($conn, $project_id){
 
 // Get missions
 function getMissions($conn, $quest_id) {
-	$where = "";
-	if(isset($_SESSION['userData']['project_id'])){
-		$where = "WHERE projects.id = '".$_SESSION['userData']['project_id']."'";
-	}
-	
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ".$where." ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END, projects.id";
 	
 	$result = $conn->query($sql);
 	
@@ -676,6 +671,9 @@ function getMissions($conn, $quest_id) {
 	}
 	echo "</div>";
 	echo "<script type='text/javascript'>";
+	if(isset($_SESSION['userData']['project_id']){
+		echo "showMissions(".$_SESSION['userData']['project_id'].");";
+	}
 	echo "function toggleMissions(visibility){";
 	foreach($quest_ids AS $id => $quest_id){
 		echo "document.getElementById('quest-".$quest_id."').style.display = visibility;";
