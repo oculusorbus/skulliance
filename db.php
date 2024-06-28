@@ -682,7 +682,7 @@ function getCurrentMissions($conn){
 		}
 	}
 	if ($result->num_rows > 0) {
-	  echo "<h2 onclick='this.querySelectorAll(\".parent > .icon\").click()'>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
+	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
@@ -770,7 +770,7 @@ function getCurrentMissions($conn){
   		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
 		echo "</tr>";
 	  }
-	  echo "</table></div>";
+	  echo "</table>";
 	  //json_encode(
 	  if(!empty($completed_missions)){
 		  $mission_ids = "";
@@ -783,6 +783,7 @@ function getCurrentMissions($conn){
 		  $quest_ids = substr($quest_ids, 1);
 		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
   	  }
+	  echo "</div>";
 	} else {
 	  //echo "0 results";
 	}
