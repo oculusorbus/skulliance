@@ -818,6 +818,10 @@ li form {
 	cursor: pointer;
 }
 
+.disabled {
+	opacity: 0.5;
+}
+
 .disabled:hover{
 	border: 1px solid #43464D !important;
 	cursor: no-drop !important;
