@@ -599,6 +599,8 @@ function getMissionsFilters($conn, $quest_id) {
 function checkMissionInventory($conn, $project_id){
 	$sql = "SELECT id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE collections.project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	
+	$result = $conn->query($sql);
+	
 	if($result->num_rows > 0) {
 		return true;
 	}else{
