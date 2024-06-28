@@ -741,6 +741,11 @@ li form {
 	width: 100%;
 }
 
+.missions-filters {
+    position: relative;
+    top: -10px;
+}
+
 .missions-filter {
     float: left;
     background-color: #121212;
