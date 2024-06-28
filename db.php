@@ -580,6 +580,8 @@ function getMissionsFilters($conn, $quest_id) {
 			}
 		}
 	}
+	echo "</div>";
+	echo "<div class='missions-filters'>";
 	
 	$result = $conn->query($sql);
 	
