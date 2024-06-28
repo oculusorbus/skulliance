@@ -763,6 +763,7 @@ li form {
 .nfts {
 	color: #D6DDDE;
 	clear: both;
+	min-height: 1000px;
 }
 
 .nfts label {
