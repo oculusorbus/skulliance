@@ -754,6 +754,7 @@ li form {
     margin: 10px;
     color: #bbb;
 	cursor: pointer;
+	clear: both;
 }
 
 .missions-filter:hover {
