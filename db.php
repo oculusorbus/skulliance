@@ -596,6 +596,7 @@ function getMissionsFilters($conn, $quest_id) {
 	echo "</div>";
 }
 
+// See if user has qualifying NFTs for a particular mission
 function checkMissionInventory($conn, $project_id){
 	$sql = "SELECT nfts.id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE collections.project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	
@@ -603,6 +604,25 @@ function checkMissionInventory($conn, $project_id){
 	
 	if($result->num_rows > 0) {
 		return true;
+	}else{
+		return false;
+	}
+}
+
+// See if there is more than one mission available for a project
+function checkMissionTotal($conn, $project_id){
+	$sql = "SELECT COUNT(quests.id) AS quests_count FROM quests WHERE project_id = '".$project_id."'";
+	
+	$result = $conn->query($sql);
+	
+	if($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row["quests_count"] > 1){
+				return true;
+			}else{
+				return false;
+			}
+		}
 	}else{
 		return false;
 	}
