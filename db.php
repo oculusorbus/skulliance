@@ -580,6 +580,11 @@ function getMissionsFilters($conn, $quest_id) {
 			}
 		}
 		echo "</div>";
+	}
+	
+	$result = $conn->query($sql);
+	
+	if($result->num_rows > 0) {
 		echo "<div class='missions-filters'>";
 		echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
 		while($row = $result->fetch_assoc()) {
