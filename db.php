@@ -572,9 +572,11 @@ function getMissionsFilters($conn) {
 	$result = $conn->query($sql);
 	
 	if($result->num_rows > 0) {
+		echo "<div class='missions-filters'>";
 		while($row = $result->fetch_assoc()) {
 			echo "<div class='missions-filter'>".$row["name"]."</div>";
 		}
+		echo "</div>";
 	}
 }
 
