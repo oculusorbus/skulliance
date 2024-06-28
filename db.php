@@ -671,7 +671,7 @@ function getCurrentMissions($conn){
 	$completed_missions = array();
 	
 	if ($result->num_rows > 0) {
-	  echo "<h2>Current Missions</h2><img class='icon' src='icons/up.png'/>";
+	  echo "<h2>Current Missions<img class='icon' src='icons/up.png'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions">';
  	  echo "<table cellspacing='0' id='transactions'>";
