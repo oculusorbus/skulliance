@@ -567,7 +567,7 @@ function getMissionLevels($conn) {
 
 
 function getMissionsFilters($conn, $quest_id) {
-	$sql = "SELECT DISTINCT projects.id, projects.name FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id != '".$quest_id."' ORDER BY projects.name";
+	$sql = "SELECT DISTINCT projects.id, projects.name FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id != '".$quest_id."' ORDER BY projects.id";
 	
 	$result = $conn->query($sql);
 	
@@ -575,7 +575,17 @@ function getMissionsFilters($conn, $quest_id) {
 		echo "<div class='missions-filters'>";
 		echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
 		while($row = $result->fetch_assoc()) {
-			echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
+			if($row["id"] <= 7){
+				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
+			}
+		}
+		echo "</div>";
+		echo "<div class='missions-filters'>";
+		echo "<div class='missions-filter' onclick='toggleMissions(\"block\")'>All</div>";
+		while($row = $result->fetch_assoc()) {
+			if($row["id"] <= 8){
+				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");'>".$row["name"]."</div>";
+			}
 		}
 		echo "</div>";
 	}
