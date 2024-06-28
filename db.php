@@ -565,10 +565,20 @@ function getMissionLevels($conn) {
 	return $levels;
 }
 
-//
+/*
 function getMissionsFilters($conn) {
-
-}
+	$sql = "SELECT DISTINCT projects.id, projects.name FROM quests INNER JOIN projects ON projects.id = quests.project_id";
+	
+	$result = $conn->query($sql);
+	
+	if($result->num_rows > 0) {
+		echo "<div class='missions-filters'>";
+		while($row = $result->fetch_assoc()) {
+			echo "<div class='missions-filter'>".$row["name"]."</div>";
+		}
+		echo "</div>";
+	}
+}*/
 
 // Get missions
 function getMissions($conn, $quest_id) {
