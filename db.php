@@ -3262,7 +3262,7 @@ function checkStreaksLeaderboard($conn){
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$trophy = "";
-			$score = $row["streak_total"]+$row["streak"];
+			$score = $row["streak_total"].$row["streak"];
 			if($leaderboardCounter == 1){
 				//$width = 50;
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
