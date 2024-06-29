@@ -3227,7 +3227,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 // Check Daily Rewards Streaks Leaderboard
 function checkStreaksLeaderboard($conn){
-	$sql = "SELECT streaks FROM users ORDER BY streaks DESC";
+	$sql = "SELECT streak FROM users ORDER BY streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -3236,7 +3236,7 @@ function checkStreaksLeaderboard($conn){
 		$last_total = 0;
 		$third_total = 0;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Streaks</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Streak</th>";
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$trophy = "";
@@ -3250,7 +3250,7 @@ function checkStreaksLeaderboard($conn){
 				}
 			}else if($leaderboardCounter == 2){
 				//$width = 45;
-				if($last_total != $row["streaks"]){
+				if($last_total != $row["streak"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 				}else{
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
@@ -3263,9 +3263,9 @@ function checkStreaksLeaderboard($conn){
 				}
 			}else if($leaderboardCounter == 3){
 				//$width = 40;
-				if($last_total != $row["streaks"]){
+				if($last_total != $row["streak"]){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
-					$third_total = $row["streaks"];
+					$third_total = $row["streak"];
 				}else{
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 					$leaderboardCounter--;
@@ -3275,7 +3275,7 @@ function checkStreaksLeaderboard($conn){
 						$fireworks = true;
 					}
 				}
-			}else if($leaderboardCounter > 3 && $third_total == $row["streaks"]){
+			}else if($leaderboardCounter > 3 && $third_total == $row["streak"]){
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				$leaderboardCounter--;
 				if(isset($_SESSION['userData']['user_id'])){
@@ -3283,7 +3283,7 @@ function checkStreaksLeaderboard($conn){
 						$fireworks = true;
 					}
 				}
-			}else if($leaderboardCounter > 3 && $last_total == $row["streaks"]){
+			}else if($leaderboardCounter > 3 && $last_total == $row["streak"]){
 				$leaderboardCounter--;
 			}
 			$highlight = "";
