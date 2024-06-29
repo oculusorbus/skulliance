@@ -22,7 +22,7 @@ include 'header.php';
 						$filterby = "monthly";
 					}else if($filterby == "streak"){
 						$title = "Daily Reward Streak";
-						$filterby = "streaks";
+						$filterby = "streak";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
@@ -36,7 +36,7 @@ include 'header.php';
 						}else if($filterby == "monthly"){
 							checkMissionsLeaderboard($conn, true);
 						}else if($filterby == "streak"){
-							checkStreaksLeaderboard($conn);
+							checkStreakLeaderboard($conn);
 						}
 					?>
 				</div>
