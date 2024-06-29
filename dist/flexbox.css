@@ -170,6 +170,10 @@ a{
 	min-height: 0px;
 }
 
+.filtered-content .nfts {
+	min-height: 0px;
+}
+
 .wallet-connect select {
 	width: 148px;
     border-radius: 0;
