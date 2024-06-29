@@ -985,9 +985,9 @@ function getInventory($conn, $project_id, $quest_id) {
 			if(($rate_tally+$row["rate"]) <= $threshold){
 				$rate_tally += $row["rate"];
 				$_SESSION['userData']['mission']['nfts'][$row["id"]] = $row["rate"];
-				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button activated' value='✖' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
+				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button activated' value='Remove' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
 			}else{
-				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='✚' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
+				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='Select' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
 			}
 			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
 			echo substr($row["asset_name"], 0, 12)." (+".$row["rate"]."%)";
