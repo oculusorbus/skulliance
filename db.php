@@ -3235,6 +3235,7 @@ function checkStreaksLeaderboard($conn){
 		$leaderboardCounter = 0;
 		$last_total = 0;
 		$third_total = 0;
+		$width = 40;
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Streak</th>";
 		while($row = $result->fetch_assoc()) {
