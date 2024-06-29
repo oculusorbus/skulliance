@@ -166,6 +166,10 @@ a{
   text-align: center;
 }
 
+.main-diamond .nfts {
+	min-height: 0px;
+}
+
 .wallet-connect select {
 	width: 148px;
     border-radius: 0;
