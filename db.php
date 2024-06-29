@@ -500,6 +500,26 @@ function getCompletedRewards($conn) {
 
 // Get number of streaks completed
 function getStreaksTotal($conn) {
+	$sql = "SELECT COUNT(id) AS streaks FROM transactions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' AND amount = '30'";
+	
+	$result = $conn->query($sql);
+	
+	$streaks = 0;
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		$streaks = $row["streaks"];
+	  }
+	} else {
+	  //echo "0 results";
+	  $streaks = 0;
+	}
+	return $streaks;
+}
+
+// Get number of streaks completed
+/*
+function getStreaksTotal($conn) {
 	$sql = "SELECT streak FROM users WHERE id ='".$_SESSION['userData']['user_id']."'";
 	
 	$result = $conn->query($sql);
@@ -515,7 +535,7 @@ function getStreaksTotal($conn) {
 	  $streak = 0;
 	}
 	return $streak;
-}
+}*/
 
 // Get mission info
 function getMission($conn, $mission_id){
@@ -3225,9 +3245,9 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	}
 }
 
-// Check Daily Rewards Streaks Leaderboard
-function checkStreaksLeaderboard($conn){
-	$sql = "SELECT id AS user_id, discord_id, avatar, visibility, username, streak FROM users ORDER BY streak DESC";
+// Check Daily Rewards Streak Leaderboard
+function checkStreakLeaderboard($conn){
+	$sql =" SELECT COUNT(transactions.id) AS streak, user_id, discord_id, avatar, visibility, username FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' AND amount = '30' ORDER BY streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
