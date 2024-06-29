@@ -3247,7 +3247,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 // Check Daily Rewards Streak Leaderboard
 function checkStreakLeaderboard($conn){
-	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total, streak DESC";
+	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
