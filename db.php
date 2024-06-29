@@ -997,23 +997,43 @@ function getInventory($conn, $project_id, $quest_id) {
 		if(!empty($nft_ids)){
 			echo "<script type='text/javascript'>";
 			echo "function clearAllSelections(){";
-			
-			foreach($consumables AS $id => $consumable){
-				if($consumable["amount"] != 0){
-					echo "document.getElementById('consumable-".$id."').value = 'Select';";
-					echo "document.getElementById('consumable-".$id."').classList.remove('activated');";
-					echo "document.getElementById('amount-".$id."').innerHTML = '".$consumable["amount"]."';";
+				foreach($consumables AS $id => $consumable){
+					if($consumable["amount"] != 0){
+						echo "document.getElementById('consumable-".$id."').value = 'Select';";
+						echo "document.getElementById('consumable-".$id."').classList.remove('activated');";
+						echo "document.getElementById('amount-".$id."').innerHTML = '".$consumable["amount"]."';";
+					}
 				}
-			}
 			
-			foreach($nft_ids AS $id => $nft_id){
-				echo "document.getElementById('button-".$nft_id."').value = 'Select';";
-				echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
-			}
-			echo "document.getElementById('success-rate').innerHTML = 0;";
-			echo "var xhttp = new XMLHttpRequest();";
-			echo "xhttp.open('GET', 'ajax/clear-all-selections.php', true);";
-			echo "xhttp.send();";
+				foreach($nft_ids AS $id => $nft_id){
+					echo "document.getElementById('button-".$nft_id."').value = 'Select';";
+					echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
+				}
+				echo "document.getElementById('success-rate').innerHTML = 0;";
+				echo "var xhttp = new XMLHttpRequest();";
+				echo "xhttp.open('GET', 'ajax/clear-all-selections.php', true);";
+				echo "xhttp.send();";
+			echo "}";
+			
+			echo "function clearSuccessRate(){";
+				foreach($consumables AS $id => $consumable){
+					if($consumable["amount"] != 0){
+						// Clear only success rate items
+						if($id <= 4){
+							echo "document.getElementById('consumable-".$id."').value = 'Select';";
+							echo "document.getElementById('consumable-".$id."').classList.remove('activated');";
+							echo "document.getElementById('amount-".$id."').innerHTML = '".$consumable["amount"]."';";
+						}
+					}
+				}
+				foreach($nft_ids AS $id => $nft_id){
+					echo "document.getElementById('button-".$nft_id."').value = 'Select';";
+					echo "document.getElementById('button-".$nft_id."').classList.remove('activated');";
+				}
+				echo "document.getElementById('success-rate').innerHTML = 0;";
+				echo "var xhttp = new XMLHttpRequest();";
+				echo "xhttp.open('GET', 'ajax/clear-success-rate.php', true);";
+				echo "xhttp.send();";
 			echo "}";
 			echo "</script>";
 		}

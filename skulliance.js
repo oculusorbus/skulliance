@@ -423,8 +423,9 @@ function setSuccessRate(rate) {
 }
 
 function processConsumable(action, consumable_id){
+	// Clear NFTs and Success Rate items to accommodate 100% item
 	if(consumable_id == 1 && action == 'Select'){
-		clearAllSelections();
+		clearSuccessRate();
 	}
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
 	calculated_rate = -1;
