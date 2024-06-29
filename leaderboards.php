@@ -21,7 +21,7 @@ include 'header.php';
 						$title = date("F")." Missions";
 						$filterby = "monthly";
 					}else if($filterby == "streaks"){
-						$title = "Daily Reward Streaks";
+						$title = "Daily Reward Streak";
 						$filterby = "streaks";
 					}
 					echo "<h2>".$title."</h2>";?>
