@@ -3247,7 +3247,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 // Check Daily Rewards Streak Leaderboard
 function checkStreakLeaderboard($conn){
-	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC";
+	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -3257,7 +3257,7 @@ function checkStreakLeaderboard($conn){
 		$third_total = 0;
 		$width = 40;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Streak</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks</th><th>Current Streak (Days)</th>";
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$trophy = "";
@@ -3332,6 +3332,9 @@ function checkStreakLeaderboard($conn){
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["streak_total"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["streak"];
 			echo "</td>";
 			echo "</tr>";
 			$last_total = $row["streak_total"];
