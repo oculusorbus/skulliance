@@ -36,7 +36,7 @@ include 'header.php';
 						}else if($filterby == "monthly"){
 							checkMissionsLeaderboard($conn, true);
 						}else if($filterby == "streaks"){
-							checkStreakLeaderboard($conn);
+							checkStreaksLeaderboard($conn);
 						}
 					?>
 				</div>

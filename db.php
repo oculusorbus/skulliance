@@ -3246,7 +3246,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 }
 
 // Check Daily Rewards Streak Leaderboard
-function checkStreakLeaderboard($conn){
+function checkStreaksLeaderboard($conn){
 	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
 	$result = $conn->query($sql);
 
@@ -3256,11 +3256,13 @@ function checkStreakLeaderboard($conn){
 		$last_total = 0;
 		$third_total = 0;
 		$width = 40;
+		$score = 0;
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks Completed</th><th>Current Streak (Days)</th>";
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$trophy = "";
+			$score = $row["streak_total"]+$row["streak"];
 			if($leaderboardCounter == 1){
 				//$width = 50;
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
@@ -3271,7 +3273,7 @@ function checkStreakLeaderboard($conn){
 				}
 			}else if($leaderboardCounter == 2){
 				//$width = 45;
-				if($last_total != $row["streak_total"]){
+				if($last_total != $score){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 				}else{
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
@@ -3284,9 +3286,9 @@ function checkStreakLeaderboard($conn){
 				}
 			}else if($leaderboardCounter == 3){
 				//$width = 40;
-				if($last_total != $row["streak_total"]){
+				if($last_total != $score){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
-					$third_total = $row["streak_total"];
+					$third_total = $score;
 				}else{
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 					$leaderboardCounter--;
@@ -3296,7 +3298,7 @@ function checkStreakLeaderboard($conn){
 						$fireworks = true;
 					}
 				}
-			}else if($leaderboardCounter > 3 && $third_total == $row["streak_total"]){
+			}else if($leaderboardCounter > 3 && $third_total == $score){
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				$leaderboardCounter--;
 				if(isset($_SESSION['userData']['user_id'])){
@@ -3304,7 +3306,7 @@ function checkStreakLeaderboard($conn){
 						$fireworks = true;
 					}
 				}
-			}else if($leaderboardCounter > 3 && $last_total == $row["streak_total"]){
+			}else if($leaderboardCounter > 3 && $last_total == $score){
 				$leaderboardCounter--;
 			}
 			$highlight = "";
@@ -3337,7 +3339,7 @@ function checkStreakLeaderboard($conn){
 			echo $row["streak"];
 			echo "</td>";
 			echo "</tr>";
-			$last_total = $row["streak_total"];
+			$last_total = $score;
 		}
 		echo "</table>";
 		if($fireworks){
