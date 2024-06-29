@@ -790,10 +790,16 @@ function filterLeaderboard($page){
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="0">Project</option>
 			<option value="0">All</option>
-			<option value="missions">All Missions</option>
-			<option value="monthly">'.date('F').' Missions</option>
-			<option value="streaks">Daily Rewards Streaks</option>
-			<option value="15">Delegations</option>
+			<optgroup label="Missions">
+				<option value="missions">All</option>
+				<option value="monthly">'.date('F').'</option>
+			</optgroup>
+			<optgroup label="Daily Rewards">
+				<option value="streaks">Streaks</option>
+			</optgroup>
+			<optgroup label="Diamond Skulls">
+				<option value="15">Delegations</option>
+			</optgroup>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
 				echo '<option value="'.$id.'">'.$project["name"].'</option>';
