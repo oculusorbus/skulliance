@@ -789,11 +789,11 @@ function filterLeaderboard($page){
 		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<optgroup label="Projects">
-				<option value="0">All</option>
+				<option value="0">All Projects</option>
 			</optgroup>
 			<optgroup label="Missions">
-				<option value="missions">All</option>
-				<option value="monthly">'.date('F').'</option>
+				<option value="missions">All Missions</option>
+				<option value="monthly">'.date('F').' Missions</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">Streaks</option>
