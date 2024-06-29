@@ -423,6 +423,9 @@ function setSuccessRate(rate) {
 }
 
 function processConsumable(action, consumable_id){
+	if(consumable_id == 1 && action == 'Select'){
+		clearAllSelections();
+	}
 	current_rate = parseInt(document.getElementById('success-rate').innerHTML);
 	calculated_rate = -1;
 	var consumables = [];
