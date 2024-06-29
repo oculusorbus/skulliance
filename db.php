@@ -3257,7 +3257,7 @@ function checkStreakLeaderboard($conn){
 		$third_total = 0;
 		$width = 40;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks</th><th>Current Streak (Days)</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks Completed</th><th>Current Streak (Days)</th>";
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$trophy = "";
