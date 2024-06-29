@@ -3227,7 +3227,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 // Check Daily Rewards Streaks Leaderboard
 function checkStreaksLeaderboard($conn){
-	$sql = "SELECT id AS user_id, streak FROM users ORDER BY streak DESC";
+	$sql = "SELECT id AS user_id, discord_id, avatar, visibility, username, streak FROM users ORDER BY streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
