@@ -500,7 +500,7 @@ function getCompletedRewards($conn) {
 
 // Get number of streaks completed
 function getStreaksTotal($conn) {
-	$sql = "SELECT streak FROM users WHERE user_id ='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT streak FROM users WHERE id ='".$_SESSION['userData']['user_id']."'";
 	
 	$result = $conn->query($sql);
 	
