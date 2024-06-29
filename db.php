@@ -3226,7 +3226,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 }
 
 // Check Daily Rewards Streaks Leaderboard
-function checkStreaksLeaderboard(){
+function checkStreaksLeaderboard($conn){
 	$sql = "SELECT streaks FROM users ORDER BY streaks DESC";
 	$result = $conn->query($sql);
 
