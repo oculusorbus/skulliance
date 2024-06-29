@@ -787,7 +787,7 @@ function filterLeaderboard($page){
 	echo'
 	<div id="filter-nfts">
 		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
-		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
 			<optgroup label="Projects">
 				<option value="0">All Projects</option>
 			</optgroup>
