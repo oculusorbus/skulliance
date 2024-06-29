@@ -15,7 +15,7 @@ include 'header.php';
 						$title = "All Projects";
 						$filterby = 0;
 					}else if($filterby == "missions"){
-						$title = "Missions";
+						$title = "All Missions";
 						$filterby = "missions";
 					}else if($filterby == "monthly"){
 						$title = date("F")." Missions";
