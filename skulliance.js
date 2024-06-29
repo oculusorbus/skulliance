@@ -530,7 +530,7 @@ function processMissionNFT(action, nft_id, rate){
 		  }
 		};
 	}else{
-		alert("Success Rate cannot go above 100%.\r\n\r\nRemove Success Rate Items or NFTs to free up space for your selection.");
+		alert("Success Rate cannot go above 100%.\r\n\r\nRemove Success Rate Items or NFTs to free up space for your NFT selection.");
 	}
 }
 
