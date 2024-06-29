@@ -790,6 +790,7 @@ function filterLeaderboard($page){
 			<option value="0">All</option>
 			<option value="missions">All Missions</option>
 			<option value="monthly">'.date('F').' Missions</option>
+			<option value="streaks">Streaks</option>
 			<option value="15">Delegations</option>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
