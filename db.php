@@ -500,7 +500,7 @@ function getCompletedRewards($conn) {
 
 // Get number of streaks completed
 function getStreaksTotal($conn) {
-	$sql = "SELECT COUNT(id) AS streaks FROM transactions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' AND amount = '30'";
+	$sql = "SELECT streak FROM users WHERE user_id ='".$_SESSION['userData']['user_id']."'";
 	
 	$result = $conn->query($sql);
 	
@@ -508,13 +508,13 @@ function getStreaksTotal($conn) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		$streaks = $row["streaks"];
+		$streak = $row["streak"];
 	  }
 	} else {
 	  //echo "0 results";
-	  $streaks = 0;
+	  $streak = 0;
 	}
-	return $streaks;
+	return $streak;
 }
 
 // Get mission info
