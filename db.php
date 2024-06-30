@@ -3247,7 +3247,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 // Check Daily Rewards Streak Leaderboard
 function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
-	$carbon = 50000;
+	$carbon = 10000;
 	$where = "";
 	if($monthly){
 		$where = "DATE(transactions.date_created) >= DATE_FORMAT(CURDATE(),'%Y-%m-01') AND";
