@@ -796,8 +796,8 @@ function filterLeaderboard($page){
 				<option value="monthly">'.date('F').' Missions</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
-				<option value="streaks">Streaks</option>
-				<option value="monthly-streaks">'.date('F').' Missions</option>
+				<option value="streaks">All Streaks</option>
+				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
 			<optgroup label="Diamond Skulls">
 				<option value="15">Delegations</option>
