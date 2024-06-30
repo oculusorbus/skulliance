@@ -678,7 +678,6 @@ function getMissions($conn, $quest_id) {
 		if(($max_level+1) >= $row["level"]){
 			echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
     		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
-
 		}else{
 			$locked_quest_ids[$row["id"]] = $row["id"];
 			echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
