@@ -3246,8 +3246,16 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 }
 
 // Check Daily Rewards Streak Leaderboard
-function checkStreaksLeaderboard($conn){
-	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
+function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
+	$carbon = 500000;
+	$where = "";
+	if($monthly){
+		$where = "DATE(transactions.date_created) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+	}
+	if($rewards){
+		$where = "DATE(transactions.date_created) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
+	}
+	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE ".$where." bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -3259,6 +3267,9 @@ function checkStreaksLeaderboard($conn){
 		$score = 0;
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks Completed</th><th>Current Streak (Days)</th>";
+		if($monthly){
+			echo "<th>Projected Rewards</th>";
+		}
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$trophy = "";
@@ -3338,6 +3349,11 @@ function checkStreaksLeaderboard($conn){
 			echo "<td align='center'>";
 			echo $row["streak"];
 			echo "</td>";
+			if($monthly){
+				echo "<td align='center'>";
+				echo number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND";
+				echo "</td>";
+			}
 			echo "</tr>";
 			$last_total = $score;
 		}

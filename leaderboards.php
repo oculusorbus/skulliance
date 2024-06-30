@@ -8,7 +8,7 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <?php
-					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks"){
+					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
 					}else if($filterby == null || $filterby == 0){
@@ -23,12 +23,15 @@ include 'header.php';
 					}else if($filterby == "streaks"){
 						$title = "Daily Rewards Streaks";
 						$filterby = "streaks";
+					}else if($filterby == "monthly-streaks"){
+						$title = date("F")." Daily Rewards Streaks";
+						$filterby = "monthly-streaks";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterLeaderboard("leaderboards");
-						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks"){
+						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks"){
 							getTotalNFTs($conn, $filterby);
 							checkLeaderboard($conn, false, $filterby);
 						}else if($filterby == "missions"){
@@ -37,6 +40,8 @@ include 'header.php';
 							checkMissionsLeaderboard($conn, true);
 						}else if($filterby == "streaks"){
 							checkStreaksLeaderboard($conn);
+						}else if($filterby == "monthly-streaks"){
+							checkStreaksLeaderboard($conn, true);
 						}
 					?>
 				</div>
