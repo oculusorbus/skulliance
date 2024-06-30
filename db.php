@@ -3356,6 +3356,17 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 			}
 			echo "</tr>";
 			$last_total = $score;
+			if($rewards){
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+				$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Total: ".$row["streak_total"].", Current Streak: ".$row["streak"]."\r\n";
+				$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+			}
+		}
+		if($rewards){
+			$last_month = date('F', strtotime('last month'));
+			$title = $last_month." Daily Rewards Streaks Leaderboard Results";
+			$imageurl = "";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		echo "</table>";
 		if($fireworks){
