@@ -277,6 +277,7 @@ function displayRound(project_id) {
 
 function filterNFTs(criteria){
 	document.getElementById('filterby').value = criteria;
+	break;
 	document.getElementById("filterNFTsForm").submit();
 }
 
