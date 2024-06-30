@@ -3265,6 +3265,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 		$third_total = 0;
 		$width = 40;
 		$score = 0;
+		$description = "";
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks Completed</th><th>Current Streak (Days)</th>";
 		if($monthly){
