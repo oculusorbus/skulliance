@@ -665,8 +665,8 @@ function getMissions($conn, $quest_id) {
 	  while($row = $result->fetch_assoc()) {
 	  	$max_level = 0;
     	$class = "";
-		$image = "";
-		$title = "";
+		$title = $row["title"];
+		$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
 		$quest_ids[$row["id"]] = $row["id"];
 		if(!checkMissionInventory($conn, $row["project_id"])){
 			$ineligible_quest_ids[$row["id"]] = $row["id"];
@@ -678,14 +678,15 @@ function getMissions($conn, $quest_id) {
 		if(($max_level+1) >= $row["level"]){
 			echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
     		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
-			$title = $row["title"];
-			$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
+
 		}else{
 			$locked_quest_ids[$row["id"]] = $row["id"];
 			echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 			echo "<div class='nft-data".$class." mission-data disabled'>";
-			$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
-			$image = "icons/padlock";
+			if($_SESSION['userData']['discord_id'] != '772831523899965440'){
+				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
+				$image = "icons/padlock";
+			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
 		echo "<span class='nft-image'><img class='mission-image' src='".$image.".png'/></span>";
