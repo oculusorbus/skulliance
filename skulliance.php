@@ -446,7 +446,7 @@ function renderDailyRewardsSection(){
 	echo "<ul>";
 	echo "<li class='role no-border-style'><strong>Daily Random Rewards Streak</strong></li>";
 	echo "<li class='role'>Total Streaks Completed: ".getStreaksTotal($conn)."&nbsp;&nbsp;";
-	echo '<form style="position:relative;top:-4px;" action="leaderboards.php" method="post"><input type="hidden" name="filterby" id="filterby" value="monthly-streaks"><input type="submit" class="small-button" value="Leaderboard"></form>';
+	echo '<form style="position:relative;top:-4px;" action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-streaks"><input type="submit" class="small-button" value="Leaderboard"></form>';
 	echo "</li>";
 	if(getDailyRewardEligibility($conn)) { 
 		// Reset daily reward streak if yesterday's daily reward wasn't claimed
@@ -636,6 +636,10 @@ if(!isset($_SESSION['userData']['filterby'])){
 }
 if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
+	$_SESSION['userData']['filterby'] = $filterby;
+}
+if(isset($_POST['filterbystreak'])){
+	$filterby = $_POST['filterbystreak'];
 	$_SESSION['userData']['filterby'] = $filterby;
 }
 
