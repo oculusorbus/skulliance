@@ -3395,6 +3395,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 	}else{
 		echo "<p>No Streaks have been completed yet for the month of ".date("F").".</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="streaks"><input type="submit" class="small-button" value="View All Streaks Leaderboard"></form>';
 	}
 }
 
