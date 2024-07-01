@@ -3098,7 +3098,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
 				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
 	        COUNT(missions.id) AS total, SUM(quests.duration) AS total_duration, users.id AS user_id, discord_id, username, avatar, discord_id, visibility 
-		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id ".$where." GROUP BY users.id ORDER BY total DESC LIMIT 46";
+		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id ".$where." GROUP BY users.id ORDER BY total DESC LIMIT 47";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
