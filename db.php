@@ -3395,7 +3395,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 	}else{
 		echo "<p>No Streaks have been completed yet for the month of ".date("F").".</p>";
-		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="streaks"><input type="submit" class="small-button" value="View All Streaks Leaderboard"></form>';
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="streaks"><input type="submit" class="small-button" value="View All Streaks Leaderboard"></form><br><br>';
 		echo '<img src="https://cdn.discordapp.com/attachments/1009563829467893850/1255995247284977744/GRG9WABW8AAwJVB.png?ex=66831cba&is=6681cb3a&hm=c952f1ecc3f7b6c19d7bfc2cede1f0c3ee348f8c4ceec7ed1d5c82f380c38dc1&"/>';
 	}
 }
