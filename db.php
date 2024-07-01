@@ -3226,11 +3226,13 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</tr>";
 			$last_total = $row["score"];
 			if($rewards){
-				//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
-				//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
-				$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
-				//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
-				$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				if(isset($row["discord_id"])){
+					//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
+					//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
+					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
+					$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				}
 			}
 		}
 		if($rewards){
