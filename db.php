@@ -3231,10 +3231,10 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 				$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
 				//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
 				$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
-				echo $description;
 			}
 		}
 		if($rewards){
+			echo $description;
 			$last_month = date('F', strtotime('last month'));
 			$title = $last_month." Missions Leaderboard Results";
 			$imageurl = "";
