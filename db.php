@@ -3234,8 +3234,8 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</tr>";
 			$last_total = $row["score"];
 			if($rewards){
-				//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
-				//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+				updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
@@ -3373,8 +3373,8 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</tr>";
 			$last_total = $score;
 			if($rewards){
-				//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
-				//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+				updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
