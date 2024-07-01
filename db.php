@@ -3394,7 +3394,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 			fireworks();
 		}
 	}else{
-		
+		echo "No Streaks have been completed yet for the month of ".date("F").".";
 	}
 }
 
