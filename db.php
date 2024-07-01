@@ -3263,10 +3263,10 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 10000;
 	$where = "";
 	if($monthly){
-		$where = "DATE(transactions.date_created) >= DATE_FORMAT(CURDATE(),'%Y-%m-07') AND";
+		$where = "DATE(transactions.date_created) >= DATE_FORMAT(CURDATE(),'%Y-%m-01') AND";
 	}
 	if($rewards){
-		$where = "DATE(transactions.date_created) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-07') AND";
+		$where = "DATE(transactions.date_created) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01') AND";
 	}
 	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE ".$where." bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
 	$result = $conn->query($sql);
