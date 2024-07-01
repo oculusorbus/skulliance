@@ -3230,6 +3230,8 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			if($rewards){
 				//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
 				//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+				
+				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
 					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
@@ -3271,6 +3273,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 		$width = 40;
 		$score = 0;
 		$description = "";
+		$counter = 0;
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Total Streaks Completed</th><th>Current Streak (Days)</th>";
 		if($monthly){
@@ -3278,6 +3281,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
+			$counter++;
 			$trophy = "";
 			$score = $row["streak_total"].$row["streak"];
 			if($leaderboardCounter == 1){
@@ -3365,8 +3369,12 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 			if($rewards){
 				//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
 				//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
-				$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Total: ".$row["streak_total"].", Current Streak: ".$row["streak"]."\r\n";
-				$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				
+				// Limit number of rows added to description to prevent going over Discord notification text length limit
+				if($counter <= 45){
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Total: ".$row["streak_total"].", Current Streak: ".$row["streak"]."\r\n";
+					$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				}
 			}
 		}
 		if($rewards){
