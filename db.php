@@ -3088,19 +3088,17 @@ function getTotalMissions($conn){
 function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 100000;
 	$where = "";
-	$limit = "";
 	if($monthly){
 		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
 	}
 	if($rewards){
 		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
-		$limit = " LIMIT 45";
 	}
 	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
 	               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
 				   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
 	        COUNT(missions.id) AS total, SUM(quests.duration) AS total_duration, users.id AS user_id, discord_id, username, avatar, discord_id, visibility 
-		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id ".$where." GROUP BY users.id ORDER BY total DESC".$limit;
+		    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id ".$where." GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -3117,6 +3115,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		$missions = array();
 		$index = 0;
 		$description = "";
+		$counter = 0;
 		while($row = $result->fetch_assoc()) {
 			$missions[$index] = array();
 			$missions[$index]["visibility"] = $row["visibility"];
@@ -3135,6 +3134,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		array_sort_by_column($missions, "score");
 		foreach($missions AS $index => $row){
 			$leaderboardCounter++;
+			$counter++;
 			$trophy = "";
 			if($leaderboardCounter == 1){
 				//$width = 50;
@@ -3230,9 +3230,11 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			if($rewards){
 				//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
 				//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
-				$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
-				//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
-				$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				if($counter <= 45){
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
+					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
+					$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				}
 			}
 		}
 		if($rewards){
@@ -3252,15 +3254,13 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 10000;
 	$where = "";
-	$limit = "";
 	if($monthly){
 		$where = "DATE(transactions.date_created) >= DATE_FORMAT(CURDATE(),'%Y-%m-01') AND";
 	}
 	if($rewards){
 		$where = "DATE(transactions.date_created) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01') AND";
-		$limit = " LIMIT 45";
 	}
-	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE ".$where." bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC".$limit;
+	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE ".$where." bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
