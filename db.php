@@ -3226,7 +3226,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</tr>";
 			$last_total = $row["score"];
 			if($rewards){
-				if(isset($row["discord_id"])){
+				if(isset($row["score"])){
 					//updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
 					//logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
