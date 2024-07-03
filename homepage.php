@@ -254,7 +254,7 @@
 <a id="partners" name="partners"></a>
 <br>
 <h2>Staking Platform</h2>
-<p>The Skulliance staking platform allows for holders to login via Discord and connect their Cardano wallets to load in their qualifying NFTs. Holders will then begin to earn off-chain points nightly that can be redeemed for exclusive incentives from the staking store. Holders can also delegate core project NFTs to Diamond Skulls to earn CARBON which can be burned to create DIAMOND. The Skulliverse highlights the status of Diamond Skull delegations for all core projects and whether there are any reward multipliers for that planet. The staking platform also has leaderboards, qualifying collection lists, wallet management, and transaction history.</p>
+<p>The Skulliance staking platform allows for holders to login via Discord and connect their Cardano wallets to load in their qualifying NFTs. Holders will then begin to earn off-chain points nightly that can be redeemed for exclusive incentives from the staking store. Skulliance also offers idle missions gamification allowing holders to send their NFTs on time based missions. If missions are successful, holders receive consumable items that can be utilized increase their chances of successful missions in the future. Holders can also delegate core project NFTs to Diamond Skulls to earn CARBON which can be burned to create DIAMOND. The Skulliverse highlights the status of Diamond Skull delegations for all core projects and whether there are any reward multipliers for that planet. The staking platform also has leaderboards, qualifying collection lists, wallet management, and transaction history.</p>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
@@ -268,6 +268,22 @@
 		<div class="project">
 			<h3>Showcase</h3>
 			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/showcase.png"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<h3>Missions</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/missions.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Inventory</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/inventory.png"/></a>
+		</div>
+		<div class="project">
+			<h3>Stats</h3>
+			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/stats.png"/></a>
 		</div>
 	</div>
 </div>
