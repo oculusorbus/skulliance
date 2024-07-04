@@ -1100,83 +1100,87 @@ function getQuestInfo($conn, $quest_id){
 }
 
 function startMission($conn){
-	if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
-		
-		$sql = "SELECT title, cost, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$_SESSION['userData']['mission']['quest_id']."';";
-		$result = $conn->query($sql);
-		
-		if ($result->num_rows > 0) {
-		  // output data of each row
-		  while($row = $result->fetch_assoc()) {
-			  $title = $row["title"];
-			  $project_id = $row["project_id"];
-			  $cost = $row["cost"];
-			  $currency = $row["currency"];
-		  }
-	    }
-		
-		$balance = getBalance($conn, $project_id);
-		if($balance >= $cost){
-			$sql = "INSERT INTO missions (quest_id, user_id)
-			VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
-		
-			$mission_id = 0;
-			if ($conn->query($sql) === TRUE) {
-				//echo "New record created successfully";
-				$sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
-				$result = $conn->query($sql);
-			
-				if ($result->num_rows > 0) {
-				  // output data of each row
-				  while($row = $result->fetch_assoc()) {
-					  $mission_id = $row["mission_id"];
-				  }
-			    }else{
-		    	
-			    }
-				if($mission_id > 0){
-					if($cost > 0){
-						updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
-						logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, 0, $mission_id);
-					}
-					if(isset($_SESSION['userData']['mission']['nfts'])){
-						foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
-							$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
-							VALUES ('".$mission_id."', '".$nft_id."')";
-
-							if ($conn->query($sql) === TRUE) {
-							  //echo "New record created successfully";
-							} else {
-							  //echo "Error: " . $sql . "<br>" . $conn->error;
-							}
-						}
-					}
-					if(isset($_SESSION['userData']['mission']['consumables'])){
-						foreach($_SESSION['userData']['mission']['consumables'] AS $id => $consumable_id){
-							$sql = "INSERT INTO missions_consumables (mission_id, consumable_id)
-							VALUES ('".$mission_id."', '".$consumable_id."')";
-
-							if ($conn->query($sql) === TRUE) {
-							  //echo "New record created successfully";
-							  updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, -1);
-							} else {
-							  //echo "Error: " . $sql . "<br>" . $conn->error;
-							}
-						}
-					}
-				}
-			} else {
-			  //echo "Error: " . $sql . "<br>" . $conn->error;
-			}
-			unset($_SESSION['userData']['mission']);
-			echo $title." Mission successfully started!";
-		}else{
-			echo "You do not have enough ".$currency." to start the ".$title." Mission.\r\n".
-				 "You have ".$balance." ".$currency.".\r\n".
-				 "You need ".$cost." ".$currency.".";
-		}
+	if(!isset($_SESSION['userData']['mission']['nfts'] && !isset($_SESSION['userData']['mission']['consumables']){
+		alert('You cannot start a mission with 0% success rate.');
 	}else{
-		echo "No Session";
+		if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
+		
+			$sql = "SELECT title, cost, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$_SESSION['userData']['mission']['quest_id']."';";
+			$result = $conn->query($sql);
+		
+			if ($result->num_rows > 0) {
+			  // output data of each row
+			  while($row = $result->fetch_assoc()) {
+				  $title = $row["title"];
+				  $project_id = $row["project_id"];
+				  $cost = $row["cost"];
+				  $currency = $row["currency"];
+			  }
+		    }
+		
+			$balance = getBalance($conn, $project_id);
+			if($balance >= $cost){
+				$sql = "INSERT INTO missions (quest_id, user_id)
+				VALUES ('".$_SESSION['userData']['mission']['quest_id']."', '".$_SESSION['userData']['user_id']."');";
+		
+				$mission_id = 0;
+				if ($conn->query($sql) === TRUE) {
+					//echo "New record created successfully";
+					$sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
+					$result = $conn->query($sql);
+			
+					if ($result->num_rows > 0) {
+					  // output data of each row
+					  while($row = $result->fetch_assoc()) {
+						  $mission_id = $row["mission_id"];
+					  }
+				    }else{
+		    	
+				    }
+					if($mission_id > 0){
+						if($cost > 0){
+							updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
+							logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, 0, $mission_id);
+						}
+						if(isset($_SESSION['userData']['mission']['nfts'])){
+							foreach($_SESSION['userData']['mission']['nfts'] AS $nft_id => $rate){
+								$sql = "INSERT INTO missions_nfts (mission_id, nft_id)
+								VALUES ('".$mission_id."', '".$nft_id."')";
+
+								if ($conn->query($sql) === TRUE) {
+								  //echo "New record created successfully";
+								} else {
+								  //echo "Error: " . $sql . "<br>" . $conn->error;
+								}
+							}
+						}
+						if(isset($_SESSION['userData']['mission']['consumables'])){
+							foreach($_SESSION['userData']['mission']['consumables'] AS $id => $consumable_id){
+								$sql = "INSERT INTO missions_consumables (mission_id, consumable_id)
+								VALUES ('".$mission_id."', '".$consumable_id."')";
+
+								if ($conn->query($sql) === TRUE) {
+								  //echo "New record created successfully";
+								  updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, -1);
+								} else {
+								  //echo "Error: " . $sql . "<br>" . $conn->error;
+								}
+							}
+						}
+					}
+				} else {
+				  //echo "Error: " . $sql . "<br>" . $conn->error;
+				}
+				unset($_SESSION['userData']['mission']);
+				echo $title." Mission successfully started!";
+			}else{
+				echo "You do not have enough ".$currency." to start the ".$title." Mission.\r\n".
+					 "You have ".$balance." ".$currency.".\r\n".
+					 "You need ".$cost." ".$currency.".";
+			}
+		}else{
+			echo "No Session";
+		}
 	}
 }
 
