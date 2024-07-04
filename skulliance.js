@@ -556,8 +556,9 @@ function startMission() {
 				}*/
 				if(data != ""){
 					alert(data);
+				}else{
+					window.location.href = "missions.php";
 				}
-				window.location.href = "missions.php";
 				console.log(data);
 				// Do something with the data
 		    } else {
