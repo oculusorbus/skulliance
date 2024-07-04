@@ -1101,7 +1101,7 @@ function getQuestInfo($conn, $quest_id){
 
 function startMission($conn){
 	if(!isset($_SESSION['userData']['mission']['nfts']) && !isset($_SESSION['userData']['mission']['consumables'])){
-		alert('You cannot start a mission with 0% success rate.');
+		echo 'You cannot start a mission with 0% success rate.';
 	}else{
 		if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
