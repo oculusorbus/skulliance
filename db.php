@@ -1172,7 +1172,7 @@ function startMission($conn){
 				  //echo "Error: " . $sql . "<br>" . $conn->error;
 				}
 				unset($_SESSION['userData']['mission']);
-				echo $title." Mission successfully started!";
+				//echo $title." Mission successfully started!";
 			}else{
 				echo "You do not have enough ".$currency." to start the ".$title." Mission.\r\n".
 					 "You have ".$balance." ".$currency.".\r\n".
