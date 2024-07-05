@@ -152,6 +152,12 @@ session_set_cookie_params(2678400);
 
 session_start();
 
+$guild_IDs = array();
+// Skulliance Guild
+$guild_IDs[0] = '944002913443938306';
+// Ritual Guild
+$guild_IDs[1] = '1235869893664964608';
+
 $_SESSION['logged_in'] = true;
 $_SESSION['userData'] = [
     'name'=>$result['username'],
@@ -160,7 +166,7 @@ $_SESSION['userData'] = [
 	// Get single guild role
     //'roles'=>getUsersGuildRoles($result['id'],$access_token,$guild_ID)
 	// Get multiple guild roles
-	'roles'=>getUsersGuildRoles($result['id'],$access_token,$guild_ID)
+	'roles'=>getUsersGuildsRoles($result['id'],$access_token,$guild_IDs)
 /*	'guilds'=>getUsersGuilds($access_token)*/
 ];
 
