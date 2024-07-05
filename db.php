@@ -981,7 +981,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	}
 	$filename = "images/missions/".strtolower(str_replace(" ", "-", $quest["title"]));
 	echo "<li class='role no-border-style'>";
-	if($project_id != 3 && $project_id != 6 && $project_id != 4 && $project_id != 11){
+	if($project_id != 3 && $project_id != 6 && $project_id != 4 && $project_id != 11 && $project_id != 22){
 		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
 	}else{
 		echo "<video width='100%' height='100%' controls autoplay loop muted poster='".$filename.".".$extension."'>
