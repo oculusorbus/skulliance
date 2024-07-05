@@ -115,6 +115,26 @@ function verifyMembershipNFTs($conn, $roles){
 	return $status;
 }
 
+// Verify Ritual NFT roles
+function verifyRitualNFTs($conn, $roles){
+	$sql = "SELECT DISTINCT collections.name AS collection_name FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."' AND project_id = '22'";
+	$result = $conn->query($sql);
+	
+	$status = array();
+	$status["BOGEYMAN"] = false;
+	
+	if ($result->num_rows > 0) {
+  	  while($row = $result->fetch_assoc()) {
+    	if($row["collection_name"] == "BOGEYMAN"){
+			if(!in_array("1258837960413937695", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "", "1235869893664964608");
+			}
+		}
+	  }
+    }
+	return $status;
+}
+
 // Get NFT Collection Leaderboard Visibility
 function getVisibility($conn){
 	$sql = "SELECT visibility FROM users WHERE id = '".$_SESSION['userData']['user_id']."'";

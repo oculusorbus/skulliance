@@ -97,6 +97,11 @@ if(!empty($roles)){
 		if(!$status["galactico"] && in_array("944817486124171324", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "944817486124171324", "delete");
 		}
+		
+		$status = verifyRitualNFTs($conn, $roles);
+		if(!$status["BOGEYMAN"] && in_array("1258837960413937695", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		}
 	}
 }else{
 	// Redirect non-members to the splash page for membership information

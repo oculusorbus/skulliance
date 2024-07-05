@@ -1,8 +1,8 @@
 <?php
-function assignRole($discord_id, $role_id, $action="") {
+function assignRole($discord_id, $role_id, $action="", $guild_id="944002913443938306") {
 	global $bot_token;
 	$authToken = $bot_token;
-	$guildid = "944002913443938306";
+	$guildid = $guild_id;
 	$userid = $discord_id;
 	$roleid = $role_id;
 	$url = "https://discordapp.com/api/v6/guilds/" . $guildid . "/members/" . $userid . "/roles/" . $roleid;
