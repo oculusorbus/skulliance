@@ -1007,14 +1007,14 @@ function getInventory($conn, $project_id, $quest_id) {
 	if ($result->num_rows > 0) {
 		echo "<li class='role'><strong>Success Rate:</strong>&nbsp;<span id='success-rate'>Loading...</span>%</li>";
 		echo "<li class='role no-border-style'>";
-		if($balance != ""){
-			if($balance >= $quest["cost"]){
-				echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
-			}else{
-				echo "You need ".number_format($quest["cost"]-$balance)." more ".$quest["currency"]." to start this mission.";
-			}
+		if($balance == ""){
+			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, 0);
+			$balance = 0;
+		}
+		if($balance >= $quest["cost"]){
+			echo "<input type='button' class='button' value='Start Mission' onclick='startMission();'/>";
 		}else{
-			echo "You need an initial ".$quest["currency"]." staking rewards balance to start this mission. Make sure your NFTs are loaded into the staking platform and wait for the nightly staking rewards to process before starting this mission.";
+			echo "You need ".number_format($quest["cost"]-$balance)." more ".$quest["currency"]." to start this mission.";
 		}
 		echo "</li>";
 		echo "</ul>";
