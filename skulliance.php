@@ -102,6 +102,15 @@ if(!empty($roles)){
 		if(!$status["BOGEYMAN"] && in_array("1258837960413937695", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
 		}
+		if(!$status["JOHN DOE"] && in_array("1258837960413937695", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		}
+		if(!$status["V/H/S"] && in_array("1258837960413937695", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		}
+		if(!$status["BEELZEBUB"] && in_array("1258837960413937695", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		}
 	}
 }else{
 	// Redirect non-members to the splash page for membership information

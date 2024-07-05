@@ -126,8 +126,33 @@ function verifyRitualNFTs($conn, $roles){
 	if ($result->num_rows > 0) {
   	  while($row = $result->fetch_assoc()) {
     	if($row["collection_name"] == "BOGEYMAN"){
+			$status["BOGEYMAN"] = true;
 			if(!in_array("1258837960413937695", $roles)){
 				assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "", "1235869893664964608");
+			}
+		}
+    	if($row["collection_name"] == "RITUAL"){
+			$status["RITUAL"] = true;
+			if(!in_array("1258838665304735785", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1258838665304735785", "", "1235869893664964608");
+			}
+		}
+    	if($row["collection_name"] == "V/H/S"){
+			$status["V/H/S"] = true;
+			if(!in_array("1258838325280641075", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1258838325280641075", "", "1235869893664964608");
+			}
+		}
+    	if($row["collection_name"] == "JOHN DOE"){
+			$status["JOHN DOE"] = true;
+			if(!in_array("1258838187929899018", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1258838187929899018", "", "1235869893664964608");
+			}
+		}
+    	if($row["collection_name"] == "BEELZEBUB"){
+			$status["BEELZEBUB"] = true;
+			if(!in_array("1258839170194079949", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1258839170194079949", "", "1235869893664964608");
 			}
 		}
 	  }
