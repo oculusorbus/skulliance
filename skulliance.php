@@ -102,14 +102,17 @@ if(!empty($roles)){
 		if(!$status["BOGEYMAN"] && in_array("1258837960413937695", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
 		}
-		if(!$status["JOHN DOE"] && in_array("1258837960413937695", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		if(!$status["RITUAL"] && in_array("1258838665304735785", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258838665304735785", "delete", "1235869893664964608");
 		}
-		if(!$status["V/H/S"] && in_array("1258837960413937695", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		if(!$status["V/H/S"] && in_array("1258838325280641075", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258838325280641075", "delete", "1235869893664964608");
 		}
-		if(!$status["BEELZEBUB"] && in_array("1258837960413937695", $roles)){
-			assignRole($_SESSION['userData']['discord_id'], "1258837960413937695", "delete", "1235869893664964608");
+		if(!$status["JOHN DOE"] && in_array("1258838187929899018", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258838187929899018", "delete", "1235869893664964608");
+		}
+		if(!$status["BEELZEBUB"] && in_array("1258839170194079949", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258839170194079949", "delete", "1235869893664964608");
 		}
 	}
 }else{
