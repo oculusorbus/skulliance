@@ -122,6 +122,10 @@ function verifyRitualNFTs($conn, $roles){
 	
 	$status = array();
 	$status["BOGEYMAN"] = false;
+	$status["RITUAL"] = false;
+	$status["V/H/S"] = false;
+	$status["JOHN DOE"] = false;
+	$status["BEELZEBUB"] = false;
 	
 	if ($result->num_rows > 0) {
   	  while($row = $result->fetch_assoc()) {
