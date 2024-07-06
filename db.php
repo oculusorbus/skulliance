@@ -731,11 +731,11 @@ function getMissions($conn, $quest_id) {
 			$locked_quest_ids[$row["id"]] = $row["id"];
 			echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
 			if($_SESSION['userData']['discord_id'] != '772831523899965440'){
-				echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
+				echo "<div class='nft-data".$class." mission-data disabled'>";
 				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
 				$image = "icons/padlock";
 			}else{
-				echo "<div class='nft-data".$class." mission-data disabled'>";
+				echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
