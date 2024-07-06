@@ -730,10 +730,12 @@ function getMissions($conn, $quest_id) {
 		}else{
 			$locked_quest_ids[$row["id"]] = $row["id"];
 			echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
-			echo "<div class='nft-data".$class." mission-data disabled'>";
 			if($_SESSION['userData']['discord_id'] != '772831523899965440'){
+				echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
 				$image = "icons/padlock";
+			}else{
+				echo "<div class='nft-data".$class." mission-data disabled'>";
 			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
@@ -744,7 +746,7 @@ function getMissions($conn, $quest_id) {
 		echo "<span class='nft-level'><strong>Reward</strong><br>".number_format($row["reward"])." ".$row["currency"]."</span>";
 		echo "<span class='nft-level'><strong>Duration</strong><br>".$row["duration"]." Day(s)</span>";
 		echo "<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";
-		if(($max_level+1) >= $row["level"]){
+		if(($max_level+1) >= $row["level"] || $_SESSION['userData']['discord_id'] == '772831523899965440'){
 			echo"
 			<form action='missions.php#inventory' method='post'>
 			  <input type='hidden' id='quest_id' name='quest_id' value='".$row["id"]."'>
