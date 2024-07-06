@@ -126,6 +126,8 @@ function verifyRitualNFTs($conn, $roles){
 	$status["V/H/S"] = false;
 	$status["JOHN DOE"] = false;
 	$status["BEELZEBUB"] = false;
+	$status["SKADA"] = false;
+	$status["Nemonium x Ritual"] = false;
 	
 	if ($result->num_rows > 0) {
   	  while($row = $result->fetch_assoc()) {
@@ -157,6 +159,18 @@ function verifyRitualNFTs($conn, $roles){
 			$status["BEELZEBUB"] = true;
 			if(!in_array("1258839170194079949", $roles)){
 				assignRole($_SESSION['userData']['discord_id'], "1258839170194079949", "", "1235869893664964608");
+			}
+		}
+    	if($row["collection_name"] == "SKADA"){
+			$status["SKADA"] = true;
+			if(!in_array("1258848946248220702", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1258848946248220702", "", "1235869893664964608");
+			}
+		}
+    	if($row["collection_name"] == "Nemonium x Ritual"){
+			$status["Nemonium x Ritual"] = true;
+			if(!in_array("1259251384998690866", $roles)){
+				assignRole($_SESSION['userData']['discord_id'], "1259251384998690866", "", "1235869893664964608");
 			}
 		}
 	  }

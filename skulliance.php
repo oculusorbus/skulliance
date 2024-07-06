@@ -114,6 +114,12 @@ if(!empty($roles)){
 		if(!$status["BEELZEBUB"] && in_array("1258839170194079949", $roles)){
 			assignRole($_SESSION['userData']['discord_id'], "1258839170194079949", "delete", "1235869893664964608");
 		}
+		if(!$status["SKADA"] && in_array("1258848946248220702", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1258848946248220702", "delete", "1235869893664964608");
+		}
+		if(!$status["Nemonium x Ritual"] && in_array("1259251384998690866", $roles)){
+			assignRole($_SESSION['userData']['discord_id'], "1259251384998690866", "delete", "1235869893664964608");
+		}
 	}
 }else{
 	// Redirect non-members to the splash page for membership information
