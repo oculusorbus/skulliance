@@ -208,14 +208,15 @@
 			<a href="https://x.com/discosolaris" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png"/></a>
+			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png"/></a>
 		</div>
+
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png"/></a>
+			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/diexgrey" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/grey.png"/></a>
