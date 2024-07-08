@@ -15,7 +15,9 @@ include 'header.php';
 						$title = "All Projects";
 						$filterby = 0;
 					}
-					echo "<h2>".$title."</h2>";?>
+					echo "<h2>".$title."</h2>";
+					echo "<p>*Fungible tokens don't qualify for staking. But they can be used in missions after manually refreshing your wallet.</p>";
+					?>
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterPolicies("collections");
