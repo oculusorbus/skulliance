@@ -2193,7 +2193,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			}else{
 		    	echo $reveal_prefix."<div class='nft'><div class='nft-data'>";
 			}
-			echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
+			echo "<span class='nft-name'>".substr($row["nfts_name"], 0, 19)."</span>";
 			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]))."</a>";
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
