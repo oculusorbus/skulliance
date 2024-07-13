@@ -272,7 +272,12 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 			updateNFT($conn, $fingerprint, $user_id);
 		}else{
 			$collection_id = getCollectionId($conn, $policy_id);
-			createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+			// Check if NFT exists because it was added during verification
+			if(checkNFT($conn, $fingerprint)){
+				updateNFT($conn, $fingerprint, $user_id);
+			}else{
+				createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+			}
 		}
 	}
 }

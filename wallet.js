@@ -42,12 +42,12 @@ function capitalizeFirstLetter(string) {
          'nami',
 		 'eternl',
 		 'vespr',
-		 'yoroi',
 		 'typhoncip30',
 		 'gerowallet',
 		 'flint',
 		 'LodeWallet',
-		 'nufi'
+		 'nufi',
+		 'yoroi'
     ];
 
     let retries = 10;
