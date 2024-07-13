@@ -41,6 +41,7 @@ function capitalizeFirstLetter(string) {
     const SupportedWallets = [
          'nami',
 		 'eternl',
+		 'vespr',
 		 'yoroi',
 		 'typhoncip30',
 		 'gerowallet',
