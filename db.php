@@ -995,7 +995,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	echo "<h2>".$quest["title"]."</h2>";
 	echo "<ul>";
 	$extension = "png";
-	if($project_id == 3 || $project_id == 6){
+	if($project_id == 3 || $project_id == 6 || $project_id == 4 || $project_id == 11 || $project_id == 22 || $project_id == 23){
 		$extension = "gif";
 	}
 	$filename = "images/missions/".strtolower(str_replace(" ", "-", $quest["title"]));
