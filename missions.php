@@ -16,8 +16,8 @@ if(isset($_GET['username'])){
 <div class="row" id="row1">
   <?php 
   $rate_tally = 0;
-  $project_id = 0;
-  $quest_id = 0;
+  $project_id = 1;
+  $quest_id = 1;
   if(isset($_POST["project_id"]) && isset($_POST["quest_id"])){ 
 	  $project_id = $_POST["project_id"];
 	  $quest_id = $_POST["quest_id"];
