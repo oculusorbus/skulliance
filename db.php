@@ -751,8 +751,8 @@ function getMissions($conn, $quest_id) {
 			}else{
 				echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 				//echo "<div class='nft-data".$class." mission-data disabled'>";
-				//$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
-				//$image = "icons/padlock";
+				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
+				$image = "icons/padlock";
 			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
