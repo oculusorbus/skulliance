@@ -291,7 +291,7 @@ if(isset($_POST['stakeaddress'])){
 	$asset_ids = getNFTAssetIDs($conn);
 	verifyNFTs($conn, $addresses, $policies, $asset_ids);
 	assignRole($_SESSION['userData']['discord_id'], "1119732763956871199");
-	alert("Your wallet with stake address: ".$_POST['stakeaddress']." has been successfully connected. The qualifying NFTs in your wallet have now been verified and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallet you just connected. You have also been assigned the Staker role in the Skulliance discord. Enjoy Skulliance staking!");
+	alert("YOUR NFTs ARE NOW STAKED! Your wallet with stake address: ".$_POST['stakeaddress']." has been successfully connected. The qualifying NFTs in your wallet have now been verified and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallet you just connected. You have also been assigned the Staker role in the Skulliance discord. Enjoy Skulliance staking!");
 }
 
 // Refresh User Wallets
