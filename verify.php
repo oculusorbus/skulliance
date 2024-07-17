@@ -290,7 +290,7 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 			}else{
 				// Prevent double creation of the same NFT for a specific user
-				if(!checkNFTOwner($conn, $fingerprint, $user_id){
+				if(!checkNFTOwner($conn, $fingerprint, $user_id)){
 					$collection_id = getCollectionId($conn, $policy_id);
 					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
 					$asset_ids[$last_id] = $fingerprint;
@@ -298,7 +298,7 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 			}
 		}else{
 			// Prevent double creation of the same NFT for a specific user
-			if(!checkNFTOwner($conn, $fingerprint, $user_id){
+			if(!checkNFTOwner($conn, $fingerprint, $user_id)){
 				$collection_id = getCollectionId($conn, $policy_id);
 				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
 				$asset_ids[$last_id] = $fingerprint;
