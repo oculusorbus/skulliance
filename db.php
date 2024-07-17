@@ -1682,9 +1682,9 @@ function updateNFT($conn, $asset_id, $user_id) {
 	}
 }
 
-// Check if NFT already exists
-function checkNFT($conn, $asset_id){
-	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."'";
+// Check if NFT is already owned by user
+function checkNFTOwner($conn, $asset_id, $user_id){
+	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."' AND user_id = '".$user_id."'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {

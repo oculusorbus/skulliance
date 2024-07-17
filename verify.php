@@ -179,7 +179,7 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
 								$nft_data->AssetName = $asset_name;
 							}
 							if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
-								processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
+								$asset_ids = processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
 							}else{
 								//echo "NFT is missing an asset name, name, image, or fingerprint.";
 							}
@@ -234,7 +234,7 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
 				}
 			}
 			if(isset($traits["name"]) && isset($traits["image"]) && isset($tokenresponsedata->fingerprint)){
-				processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids);
+				$asset_ids = processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids);
 			}
 		}
 	// Fallback to Blockfrost for CIP68
@@ -253,7 +253,7 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
 				$metadata = $blockfrostresponse->onchain_metadata;
 				// Convert CIP68 asset name from hex to str and strip out extra b.s.
 				$asset_name = clean(hex2str($blockfrostresponse->asset_name));
-				processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
+				$asset_ids = processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
 		}
 	} // End if
 }
@@ -280,6 +280,7 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 	}
 	$last_id = 0;
 	if(isset($name)){
+		// Keep this database check before creating an NFT in case someone connects a wallet during nightly verification
 		// Check if NFT already exists in the database or has been added during verification
 		if(in_array($fingerprint, $asset_ids)){
 			// Check to see if there is an NFT with no owner in the database
@@ -288,16 +289,24 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 				updateNFT($conn, $fingerprint, $user_id);
 			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 			}else{
+				// Prevent double creation of the same NFT for a specific user
+				if(!checkNFTOwner($conn, $fingerprint, $user_id){
+					$collection_id = getCollectionId($conn, $policy_id);
+					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+					$asset_ids[$last_id] = $fingerprint;
+				}
+			}
+		}else{
+			// Prevent double creation of the same NFT for a specific user
+			if(!checkNFTOwner($conn, $fingerprint, $user_id){
 				$collection_id = getCollectionId($conn, $policy_id);
 				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
 				$asset_ids[$last_id] = $fingerprint;
 			}
-		}else{
-			$collection_id = getCollectionId($conn, $policy_id);
-			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
-			$asset_ids[$last_id] = $fingerprint;
 		}
 	}
+	// Return altered asset ids to ensure new NFTs created are included in the array
+	return $asset_ids;
 }
 
 function hex2str($hex) {
