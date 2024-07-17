@@ -31,8 +31,10 @@ if(isset($_GET['verify'])){
 	deployDiamondSkullRewards($conn, $percentages);
 }
 
+$nft_owners = array();
+
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
-	global $blockfrost_project_id;
+	global $blockfrost_project_id, $nft_owners;
 	
 	$offsets = array();
 	$offsets[1] = "";
@@ -119,13 +121,15 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 				if(is_array($tokenresponse)){
 					foreach($tokenresponse AS $index => $tokenresponsedata){
 						// Prevent double creation or update of the same NFT for a specific user
-						if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
+						//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
+						if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
 							// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
 							if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
 								// Check to see if there is an NFT with no owner in the database
 								if(checkAvailableNFT($conn, $tokenresponsedata->fingerprint)){
 									// Limit update to 1 record and only for NFTs with no current owner
 									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+									$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
 								// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 								}else{
 									processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
@@ -271,6 +275,8 @@ function sendDM($discord_id, $message){
 }
 
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
+	global $nft_owners;
+	
 	if(isset($image)){
 		$ipfs = substr($image, 7, strlen($image));
 	}else{
@@ -289,16 +295,19 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 			if(checkAvailableNFT($conn, $fingerprint)){
 				// Limit update to 1 record and only for NFTs with no current owner
 				updateNFT($conn, $fingerprint, $user_id);
+				$nft_owners[] = $user_id."-".$fingerprint;
 			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 			}else{
 				$collection_id = getCollectionId($conn, $policy_id);
 				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
 				$asset_ids[$last_id] = $fingerprint;
+				$nft_owners[] = $user_id."-".$fingerprint;
 			}
 		}else{
 			$collection_id = getCollectionId($conn, $policy_id);
 			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
 			$asset_ids[$last_id] = $fingerprint;
+			$nft_owners[] = $user_id."-".$fingerprint;
 		}
 	}
 	// Return altered asset ids to ensure new NFTs created are included in the array
