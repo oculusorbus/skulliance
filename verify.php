@@ -32,6 +32,7 @@ if(isset($_GET['verify'])){
 }
 
 $nft_owners = array();
+$nft_owners[] = "";
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	global $blockfrost_project_id, $nft_owners;
