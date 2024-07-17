@@ -120,103 +120,16 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 							}else{
 								$user_id = getUserId($conn, $address);
 							}
-							updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
-						}else{
-							// Handle creation of NFTs by cycling through NFT metadata
-							if(isset($tokenresponsedata->minting_tx_metadata)){
-								foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
-									$policy_id = $tokenresponsedata->policy_id;
-									if(isset($tokenresponsedata->asset_name_ascii)){
-										$asset_name = $tokenresponsedata->asset_name_ascii;
-										if(isset($metadata->$policy_id)){
-											$nft = $metadata->$policy_id;
-											if(isset($nft)){
-												$nft_data = $nft->$asset_name;
-												if(isset($nft_data)){
-													// Account for NFT with NaN value for asset name
-													if($asset_name == "NaN"){
-														$nft_data->AssetName = "DROPSHIP012";
-													}else{
-														$nft_data->AssetName = $asset_name;
-													}
-													if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
-														processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
-													}else{
-														//echo "NFT is missing an asset name, name, image, or fingerprint.";
-													}
-												}else{
-													// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
-													/* This is no longer needed because we're checking for updates above before determining whether processing NFT metadata is necessary to add new NFTs
-													echo $asset_name." was missing NFT data, but was still updated in the db. \r\n";
-													if(isset($_SESSION['userData']['user_id'])){
-														$user_id = $_SESSION['userData']['user_id'];
-													}else{
-														$user_id = getUserId($conn, $address);
-													}
-													if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
-														updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
-													}*/
-												}
-											}
-										}
-									}
-								} // End foreach
-							// Use Koios CIP-68 metadata
-							}else if(isset($tokenresponsedata->cip68_metadata)){
-								$traits = array();
-								$alternate = "key";
-								$key = "";
-								$value = "";
-								foreach($tokenresponsedata->cip68_metadata AS $metadata){
-									foreach($metadata AS $fields){
-										if(is_array($fields)){
-											foreach($fields AS $maps){
-												foreach($maps AS $map){
-													if(is_array($map)){
-														foreach($map AS $pairings){
-															foreach($pairings AS $pairing){
-																if(isset($pairing->bytes)){
-																	if($alternate == "key"){
-																		$key = hex2str($pairing->bytes);
-																		$alternate = "value";
-																	}else{
-																		$value = hex2str($pairing->bytes);
-																		$alternate = "key";
-																	}
-																}
-															}
-															if($key != "" && $value != ""){
-																$traits[$key] = $value;
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-									if(isset($traits["name"]) && isset($traits["image"]) && isset($tokenresponsedata->fingerprint)){
-										processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids);
-									}
-								}
-							// Fallback to Blockfrost for CIP68
+							// Check to see if there is an NFT with no owner in the database
+							if(checkAvailableNFT($conn, $tokenresponsedata->fingerprint)){
+								// Limit update to 1 record and only for NFTs with no current owner
+								updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+							// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 							}else{
-								$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
-								curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json', "project_id: ".$blockfrost_project_id));
-								curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
-								curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
-								curl_setopt( $blockfrostch, CURLOPT_RETURNTRANSFER, 1);
-								$blockfrostresponse = curl_exec( $blockfrostch );
-								$blockfrostresponse = json_decode($blockfrostresponse);
-						
-								curl_close( $blockfrostch );
-						
-								if(is_object($blockfrostresponse)){
-										$metadata = $blockfrostresponse->onchain_metadata;
-										// Convert CIP68 asset name from hex to str and strip out extra b.s.
-										$asset_name = clean(hex2str($blockfrostresponse->asset_name));
-										processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
-								}
-							} // End if
+								processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
+							}
+						}else{
+							processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
 						} // End if
 					} // End foreach
 				}else{
@@ -245,6 +158,104 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		} // Offset End if
 	} // End foreach
 	} // End offset foreach
+}
+
+function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
+	// Handle creation of NFTs by cycling through NFT metadata
+	if(isset($tokenresponsedata->minting_tx_metadata)){
+		foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
+			$policy_id = $tokenresponsedata->policy_id;
+			if(isset($tokenresponsedata->asset_name_ascii)){
+				$asset_name = $tokenresponsedata->asset_name_ascii;
+				if(isset($metadata->$policy_id)){
+					$nft = $metadata->$policy_id;
+					if(isset($nft)){
+						$nft_data = $nft->$asset_name;
+						if(isset($nft_data)){
+							// Account for NFT with NaN value for asset name
+							if($asset_name == "NaN"){
+								$nft_data->AssetName = "DROPSHIP012";
+							}else{
+								$nft_data->AssetName = $asset_name;
+							}
+							if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
+								processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
+							}else{
+								//echo "NFT is missing an asset name, name, image, or fingerprint.";
+							}
+						}else{
+							// Handles cases where the NFT data is empty for whatever reason, but the NFT still exists in the database and ownership needs to be assigned
+							/* This is no longer needed because we're checking for updates above before determining whether processing NFT metadata is necessary to add new NFTs
+							echo $asset_name." was missing NFT data, but was still updated in the db. \r\n";
+							if(isset($_SESSION['userData']['user_id'])){
+								$user_id = $_SESSION['userData']['user_id'];
+							}else{
+								$user_id = getUserId($conn, $address);
+							}
+							if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
+								updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+							}*/
+						}
+					}
+				}
+			}
+		} // End foreach
+	// Use Koios CIP-68 metadata
+	}else if(isset($tokenresponsedata->cip68_metadata)){
+		$traits = array();
+		$alternate = "key";
+		$key = "";
+		$value = "";
+		foreach($tokenresponsedata->cip68_metadata AS $metadata){
+			foreach($metadata AS $fields){
+				if(is_array($fields)){
+					foreach($fields AS $maps){
+						foreach($maps AS $map){
+							if(is_array($map)){
+								foreach($map AS $pairings){
+									foreach($pairings AS $pairing){
+										if(isset($pairing->bytes)){
+											if($alternate == "key"){
+												$key = hex2str($pairing->bytes);
+												$alternate = "value";
+											}else{
+												$value = hex2str($pairing->bytes);
+												$alternate = "key";
+											}
+										}
+									}
+									if($key != "" && $value != ""){
+										$traits[$key] = $value;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if(isset($traits["name"]) && isset($traits["image"]) && isset($tokenresponsedata->fingerprint)){
+				processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids);
+			}
+		}
+	// Fallback to Blockfrost for CIP68
+	}else{
+		$blockfrostch = curl_init("https://cardano-mainnet.blockfrost.io/api/v0/assets/".$tokenresponsedata->policy_id.$tokenresponsedata->asset_name);
+		curl_setopt( $blockfrostch, CURLOPT_HTTPHEADER, array('Content-type: application/json', "project_id: ".$blockfrost_project_id));
+		curl_setopt( $blockfrostch, CURLOPT_FOLLOWLOCATION, 1);
+		curl_setopt( $blockfrostch, CURLOPT_HEADER, 0);
+		curl_setopt( $blockfrostch, CURLOPT_RETURNTRANSFER, 1);
+		$blockfrostresponse = curl_exec( $blockfrostch );
+		$blockfrostresponse = json_decode($blockfrostresponse);
+
+		curl_close( $blockfrostch );
+
+		if(is_object($blockfrostresponse)){
+				$metadata = $blockfrostresponse->onchain_metadata;
+				// Convert CIP68 asset name from hex to str and strip out extra b.s.
+				$asset_name = clean(hex2str($blockfrostresponse->asset_name));
+				processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
+		}
+	} // End if
 }
 
 function sendDM($discord_id, $message){
