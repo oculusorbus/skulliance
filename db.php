@@ -1696,6 +1696,24 @@ function checkNFTOwner($conn, $asset_id, $user_id){
 	}
 }
 
+// Generate array of concatenated user ids and asset ids to reduce db queries
+function getNFTOwners($conn){
+	$sql = "SELECT asset_id, user_id FROM nfts WHERE user_id != '0'";
+	$result = $conn->query($sql);
+	
+    $nft_owners = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$nft_owners[] = $row["user_id"]."-".$row["asset_id"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $nft_owners;
+}
+
 // Check if available NFT
 function checkAvailableNFT($conn, $asset_id){
 	$sql = "SELECT user_id FROM nfts WHERE asset_id='".$asset_id."' AND user_id = '0' LIMIT 1";
