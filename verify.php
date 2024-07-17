@@ -45,6 +45,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			$offset_flag = true;
 		}
 	foreach($addresses AS $index => $address){
+		if(isset($_SESSION['userData']['user_id'])){
+			$user_id = $_SESSION['userData']['user_id'];
+		}else{
+			$user_id = getUserId($conn, $address);
+		}
 		// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
 		if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null".$offset);
@@ -113,24 +118,22 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 			
 				if(is_array($tokenresponse)){
 					foreach($tokenresponse AS $index => $tokenresponsedata){
-						// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
-						if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
-							if(isset($_SESSION['userData']['user_id'])){
-								$user_id = $_SESSION['userData']['user_id'];
-							}else{
-								$user_id = getUserId($conn, $address);
-							}
-							// Check to see if there is an NFT with no owner in the database
-							if(checkAvailableNFT($conn, $tokenresponsedata->fingerprint)){
-								// Limit update to 1 record and only for NFTs with no current owner
-								updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
-							// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+						// Prevent double creation or update of the same NFT for a specific user
+						if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
+							// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
+							if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
+								// Check to see if there is an NFT with no owner in the database
+								if(checkAvailableNFT($conn, $tokenresponsedata->fingerprint)){
+									// Limit update to 1 record and only for NFTs with no current owner
+									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+								// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+								}else{
+									processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
+								}
 							}else{
 								processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
-							}
-						}else{
-							processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
-						} // End if
+							} // End if
+						}
 					} // End foreach
 				}else{
 					$message = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
@@ -280,7 +283,6 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 	}
 	$last_id = 0;
 	if(isset($name)){
-		// Keep this database check before creating an NFT in case someone connects a wallet during nightly verification
 		// Check if NFT already exists in the database or has been added during verification
 		if(in_array($fingerprint, $asset_ids)){
 			// Check to see if there is an NFT with no owner in the database
@@ -289,20 +291,14 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 				updateNFT($conn, $fingerprint, $user_id);
 			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 			}else{
-				// Prevent double creation of the same NFT for a specific user
-				if(!checkNFTOwner($conn, $fingerprint, $user_id)){
-					$collection_id = getCollectionId($conn, $policy_id);
-					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
-					$asset_ids[$last_id] = $fingerprint;
-				}
-			}
-		}else{
-			// Prevent double creation of the same NFT for a specific user
-			if(!checkNFTOwner($conn, $fingerprint, $user_id)){
 				$collection_id = getCollectionId($conn, $policy_id);
 				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
 				$asset_ids[$last_id] = $fingerprint;
 			}
+		}else{
+			$collection_id = getCollectionId($conn, $policy_id);
+			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+			$asset_ids[$last_id] = $fingerprint;
 		}
 	}
 	// Return altered asset ids to ensure new NFTs created are included in the array
