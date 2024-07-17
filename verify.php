@@ -267,17 +267,24 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 	}else{
 		$user_id = getUserId($conn, $address);
 	}
+	$last_id = 0;
 	if(isset($name)){
+		// Check if NFT already exists in the database or has been added during verification
 		if(in_array($fingerprint, $asset_ids)){
-			updateNFT($conn, $fingerprint, $user_id);
+			// Check to see if there is an NFT with no owner in the database
+			if(checkAvailableNFT($conn, $fingerprint)){
+				// Limit update to 1 record and only for NFTs with no current owner
+				updateNFT($conn, $fingerprint, $user_id);
+			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+			}else{
+				$collection_id = getCollectionId($conn, $policy_id);
+				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+				$asset_ids[$last_id] = $fingerprint;
+			}
 		}else{
 			$collection_id = getCollectionId($conn, $policy_id);
-			// Check if NFT exists because it was added during verification
-			if(checkNFT($conn, $fingerprint)){
-				updateNFT($conn, $fingerprint, $user_id);
-			}else{
-				createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
-			}
+			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+			$asset_ids[$last_id] = $fingerprint;
 		}
 	}
 }

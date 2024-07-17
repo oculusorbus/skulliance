@@ -1664,15 +1664,17 @@ function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, 
 	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id)
 	VALUES ('".$asset_id."', '".mysqli_real_escape_string($conn, $asset_name)."', '".mysqli_real_escape_string($conn, $name)."', '".$ipfs."', '".$collection_id."', '".$user_id."')";
 	if ($conn->query($sql) === TRUE) {
-	  //echo "New record created successfully";
+  	  $last_id = $conn->insert_id;
+  	  return $last_id;
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	  return false;
 	}
 }
 
 // Update NFT for user
 function updateNFT($conn, $asset_id, $user_id) {
-	$sql = "UPDATE nfts SET user_id='".$user_id."' WHERE asset_id='".$asset_id."'";
+	$sql = "UPDATE nfts SET user_id='".$user_id."' WHERE asset_id='".$asset_id."' WHERE user_id = '0' LIMIT 1";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
@@ -1683,6 +1685,20 @@ function updateNFT($conn, $asset_id, $user_id) {
 // Check if NFT already exists
 function checkNFT($conn, $asset_id){
 	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  return true;
+	} else {
+	  //echo "0 results";
+	  return false;
+	}
+}
+
+// Check if available NFT
+function checkAvailableNFT($conn, $asset_id){
+	$sql = "SELECT user_id FROM nfts WHERE asset_id='".$asset_id."' AND user_id = '0' LIMIT 1";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
