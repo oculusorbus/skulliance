@@ -32,11 +32,14 @@ if(isset($_GET['verify'])){
 }
 
 $nft_owners = array();
+$collections = getCollectionIDs($conn);
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
-	global $blockfrost_project_id, $nft_owners;
+	global $blockfrost_project_id, $nft_owners, $collections;
 	
 	$nft_owners = array();
+	$collections = getCollectionIDs($conn);
+	
 	$offsets = array();
 	$offsets[1] = "";
 	$offsets[2] = "offset=1000";
@@ -276,7 +279,7 @@ function sendDM($discord_id, $message){
 }
 
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
-	global $nft_owners;
+	global $nft_owners, $collections;
 	
 	if(isset($image)){
 		$ipfs = substr($image, 7, strlen($image));
@@ -299,14 +302,14 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 				$nft_owners[] = $user_id."-".$fingerprint;
 			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 			}else{
-				$collection_id = getCollectionId($conn, $policy_id);
-				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+				//$collection_id = getCollectionId($conn, $policy_id);
+				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
 				$asset_ids[$last_id] = $fingerprint;
 				$nft_owners[] = $user_id."-".$fingerprint;
 			}
 		}else{
-			$collection_id = getCollectionId($conn, $policy_id);
-			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collection_id, $user_id);
+			//$collection_id = getCollectionId($conn, $policy_id);
+			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
 			$asset_ids[$last_id] = $fingerprint;
 			$nft_owners[] = $user_id."-".$fingerprint;
 		}

@@ -1659,6 +1659,24 @@ function getCollectionId($conn, $policy){
 	}
 }
 
+// Get all collection policies and ids
+function getCollectionIDs($conn){
+	$sql = "SELECT id, policy FROM collections";
+	$result = $conn->query($sql);
+	
+	$collections = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+    	$collections[$row["policy"]] = $row["id"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $collections;
+}
+
 // Create NFT
 function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, $user_id){
 	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id)
