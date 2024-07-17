@@ -31,8 +31,8 @@ if(isset($_GET['verify'])){
 	deployDiamondSkullRewards($conn, $percentages);
 }
 
-$nft_owners = array();
-$nft_owners[] = "";
+$GLOBALS['nft_owners'] = array();
+
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	global $blockfrost_project_id, $nft_owners;
