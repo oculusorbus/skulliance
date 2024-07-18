@@ -189,6 +189,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 }
 
 function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections){
+	$payload = array();
 	// Handle creation of NFTs by cycling through NFT metadata
 	if(isset($tokenresponsedata->minting_tx_metadata)){
 		foreach($tokenresponsedata->minting_tx_metadata AS $metadata){

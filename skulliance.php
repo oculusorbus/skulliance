@@ -300,6 +300,8 @@ if(isset($_POST['refresh'])){
 		// Get all NFT asset IDs to determine whether to update DB records, saves on DB resources instead of individual DB calls to check NFT presence
 		$asset_ids = array();
 		$asset_ids = getNFTAssetIDs($conn);
+		// Remove user's association with their NFTs in preparation for verification
+		removeUser($conn, $_SESSION['userData']['user_id']);
 		// Verify all NFTs from wallets in the DB for a specific user
 		verifyNFTs($conn, getAddresses($conn), getPolicies($conn), $asset_ids);
 		alert("Your wallet(s) have been successfully refreshed. Any newly acquired qualifying NFTs have been accounted for in your wallet and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallets you have already connected. Enjoy Skulliance staking!");

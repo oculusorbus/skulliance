@@ -1757,6 +1757,17 @@ function removeUsers($conn){
 	}
 }
 
+// Remove specific user from their NFTs
+function removeUser($conn, $user_id){
+	$sql = "UPDATE nfts set	user_id = 0 WHERE user_id = '".$user_id."'";
+	
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Render IPFS
 function getIPFS($ipfs, $collection_id){
 	$ipfs = str_replace("ipfs/", "", $ipfs);
