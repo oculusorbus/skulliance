@@ -282,13 +282,16 @@ if(isset($_POST['stakeaddress'])){
 	checkUser($conn);
 	checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
 	$addresses = array();
-	//$addresses = getAddresses($conn);
-	$addresses[0] = $_POST['stakeaddress'];
+	$addresses = getAddresses($conn);
+	//$addresses[0] = $_POST['stakeaddress'];
 	$policies = array();
 	$policies = getPolicies($conn);
 	// Get all NFT asset IDs to determine whether to update DB records, saves on DB resources instead of individual DB calls to check NFT presence
 	$asset_ids = array();
 	$asset_ids = getNFTAssetIDs($conn);
+	// Remove user's association with their NFTs in preparation for verification
+	removeUser($conn, $_SESSION['userData']['user_id']);
+	
 	verifyNFTs($conn, $addresses, $policies, $asset_ids);
 	assignRole($_SESSION['userData']['discord_id'], "1119732763956871199");
 	alert("YOUR NFTs ARE NOW STAKED! Your wallet with stake address: ".$_POST['stakeaddress']." has been successfully connected. The qualifying NFTs in your wallet have now been verified and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallet you just connected. You have also been assigned the Staker role in the Skulliance discord. Enjoy Skulliance staking!");
