@@ -31,12 +31,8 @@ if(isset($_GET['verify'])){
 	deployDiamondSkullRewards($conn, $percentages);
 }
 
-$nft_owners = array();
-$collections = getCollectionIDs($conn);
-$attempts = 0;
-
-function verifyNFTs($conn, $addresses, $policies, $asset_ids){
-	global $blockfrost_project_id, $nft_owners, $collections, $attempts;
+function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(), $attempts=0){
+	global $blockfrost_project_id;
 	
 	$nft_owners = array();
 	$collections = getCollectionIDs($conn);
@@ -139,10 +135,14 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 									$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
 								// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 								}else{
-									processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
+									$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
+									$asset_ids = $payload["asset_ids"];
+									$nft_owners = $payload["nft_owners"];
 								}
 							}else{
-								processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids);
+								$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
+								$asset_ids = $payload["asset_ids"];
+								$nft_owners = $payload["nft_owners"];
 							} // End if
 						}
 					} // End foreach
@@ -177,7 +177,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	} // End offset foreach
 	if(!empty($failed_addresses)){
 		if($attempts <= 10){
-			verifyNFTs($conn, $failed_addresses, $policies, $asset_ids);
+			verifyNFTs($conn, $failed_addresses, $policies, $asset_ids, $nft_owners, $attempts);
 		}else{
 			$message = "There were 10 verification attempts yet the following addresses continued to fail: \r\n";
 			$message .= print_r($failed_addresses, true);
@@ -188,7 +188,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 	}
 }
 
-function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
+function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections){
 	// Handle creation of NFTs by cycling through NFT metadata
 	if(isset($tokenresponsedata->minting_tx_metadata)){
 		foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
@@ -207,7 +207,9 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
 								$nft_data->AssetName = $asset_name;
 							}
 							if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
-								$asset_ids = processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids);
+								$payload = processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids, $nft_owners, $collections);
+								$asset_ids = $payload["asset_ids"];
+								$nft_owners = $payload["nft_owners"];
 							}else{
 								//echo "NFT is missing an asset name, name, image, or fingerprint.";
 							}
@@ -262,7 +264,9 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
 				}
 			}
 			if(isset($traits["name"]) && isset($traits["image"]) && isset($tokenresponsedata->fingerprint)){
-				$asset_ids = processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids);
+				$payload = processNFT($conn, $tokenresponsedata->policy_id, $traits["name"], $traits["name"], $traits["image"], $tokenresponsedata->fingerprint, $address, $asset_ids, $nft_owners, $collections);
+				$asset_ids = $payload["asset_ids"];
+				$nft_owners = $payload["nft_owners"];
 			}
 		}
 	// Fallback to Blockfrost for CIP68
@@ -281,9 +285,14 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
 				$metadata = $blockfrostresponse->onchain_metadata;
 				// Convert CIP68 asset name from hex to str and strip out extra b.s.
 				$asset_name = clean(hex2str($blockfrostresponse->asset_name));
-				$asset_ids = processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids);
+				$payload = processNFT($conn, $blockfrostresponse->policy_id, $asset_name , $metadata->name, $metadata->image, $blockfrostresponse->fingerprint, $address, $asset_ids, $nft_owners, $collections);
+				$asset_ids = $payload["asset_ids"];
+				$nft_owners = $payload["nft_owners"];
 		}
 	} // End if
+	$payload["asset_ids"] = $asset_ids;
+	$payload["nft_owners"] = $nft_owners;
+	return $payload;
 }
 
 function sendDM($discord_id, $message){
@@ -295,9 +304,7 @@ function sendDM($discord_id, $message){
 	}
 }
 
-function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids){
-	global $nft_owners, $collections;
-	
+function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids, $nft_owners, $collections){
 	if(isset($image)){
 		$ipfs = substr($image, 7, strlen($image));
 	}else{
@@ -332,7 +339,10 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 		}
 	}
 	// Return altered asset ids to ensure new NFTs created are included in the array
-	return $asset_ids;
+	$payload = array();
+	$payload["asset_ids"] = $asset_ids;
+	$payload["nft_owners"] = $nft_owners;
+	return $payload;
 }
 
 function hex2str($hex) {
