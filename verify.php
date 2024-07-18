@@ -34,7 +34,6 @@ if(isset($_GET['verify'])){
 function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(), $attempts=0){
 	global $blockfrost_project_id;
 	
-	$nft_owners = array();
 	$collections = getCollectionIDs($conn);
 	$failed_addresses = array();
 	$attempts++;
@@ -178,6 +177,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 	if(!empty($failed_addresses)){
 		if($attempts <= 10){
 			verifyNFTs($conn, $failed_addresses, $policies, $asset_ids, $nft_owners, $attempts);
+			echo "Attempt: ".$attempts." \r\n";
 		}else{
 			$message = "There were 10 verification attempts yet the following addresses continued to fail: \r\n";
 			$message .= print_r($failed_addresses, true);
