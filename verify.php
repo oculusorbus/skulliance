@@ -48,132 +48,133 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 		if($i == 2){
 			$offset_flag = true;
 		}
-	foreach($addresses AS $index => $address){
-		if(isset($_SESSION['userData']['user_id'])){
-			$user_id = $_SESSION['userData']['user_id'];
-		}else{
-			$user_id = getUserId($conn, $address);
-		}
-		// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
-		if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
-		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null".$offset);
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
-		curl_setopt( $ch, CURLOPT_POST, 1);
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
-		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-		curl_setopt( $ch, CURLOPT_HEADER, 0);
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-
-		$response = curl_exec( $ch );
-		// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
-		$response = json_decode($response);
-		//print_r($response[0]->asset_list);
-		//exit;
-		curl_close( $ch );
-
-		//$_SESSION['userData']['nfts'] = array();
-		if(is_array($response)){
-	    if(isset($response[0])){
-			$asset_names = array();
-			$counter = 0;
-			$asset_list = array();
-			$asset_list["_asset_list"] = array();
-			foreach($response AS $index => $list){
-				foreach($list->asset_list AS $index => $token){
-					if(in_array($token->policy_id, $policies)){
-						$asset_list["_asset_list"][$counter] = array();
-						$asset_list["_asset_list"][$counter][0] = $token->policy_id;
-						$asset_list["_asset_list"][$counter][1] = $token->asset_name;
-						$counter++;
-					
-					} // End if
-				} // End foreach
-			}
-			
-			// Batch asset list into arrays of 50 items or less to allow for successful queries
-			$batch_asset_lists = array();
-			$final_asset_lists = array();
-			$batch_index = 0;
-			if(count($asset_list["_asset_list"]) < 50){
-				$final_asset_lists[$batch_index] = array();
-				$final_asset_lists[$batch_index]["_asset_list"] = $asset_list["_asset_list"];
+		foreach($addresses AS $index => $address){
+			if(isset($_SESSION['userData']['user_id'])){
+				$user_id = $_SESSION['userData']['user_id'];
 			}else{
-				$batch_asset_lists = array_chunk($asset_list["_asset_list"], 50);
-				foreach($batch_asset_lists AS $index => $batch_asset_list){
-					$final_asset_lists[$index] = array();
-					$final_asset_lists[$index]["_asset_list"] = $batch_asset_list;
-				}
+				$user_id = getUserId($conn, $address);
 			}
-			
-			foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
-				$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-				curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
-				curl_setopt( $tokench, CURLOPT_POST, 1);
-				curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
-				curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
-				curl_setopt( $tokench, CURLOPT_HEADER, 0);
-				curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
-			
-				//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
-				//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
-				$tokenresponse = curl_exec( $tokench );
-				$tokenresponse = json_decode($tokenresponse);
-				curl_close( $tokench );
-			
-				if(is_array($tokenresponse)){
-					foreach($tokenresponse AS $index => $tokenresponsedata){
-						// Prevent double creation or update of the same NFT for a specific user
-						//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
-						if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
-							// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
-							if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
-								// Check to see if there is an NFT with no owner in the database
-								if(checkAvailableNFT($conn, $tokenresponsedata->fingerprint)){
-									// Limit update to 1 record and only for NFTs with no current owner
-									updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
-									$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
-								// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
-								}else{
-									$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
-									$asset_ids = $payload["asset_ids"];
-									$nft_owners = $payload["nft_owners"];
-								}
-							}else{
-								$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
-								$asset_ids = $payload["asset_ids"];
-								$nft_owners = $payload["nft_owners"];
+			// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
+			if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
+				$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null".$offset);
+				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
+				curl_setopt( $ch, CURLOPT_POST, 1);
+				curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
+				curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
+				curl_setopt( $ch, CURLOPT_HEADER, 0);
+				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+
+				$response = curl_exec( $ch );
+				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
+				$response = json_decode($response);
+				//print_r($response[0]->asset_list);
+				//exit;
+				curl_close( $ch );
+
+				//$_SESSION['userData']['nfts'] = array();
+				if(is_array($response)){
+			    if(isset($response[0])){
+					$asset_names = array();
+					$counter = 0;
+					$asset_list = array();
+					$asset_list["_asset_list"] = array();
+					foreach($response AS $index => $list){
+						foreach($list->asset_list AS $index => $token){
+							if(in_array($token->policy_id, $policies)){
+								$asset_list["_asset_list"][$counter] = array();
+								$asset_list["_asset_list"][$counter][0] = $token->policy_id;
+								$asset_list["_asset_list"][$counter][1] = $token->asset_name;
+								$counter++;
+					
 							} // End if
+						} // End foreach
+					}
+			
+					// Batch asset list into arrays of 50 items or less to allow for successful queries
+					$batch_asset_lists = array();
+					$final_asset_lists = array();
+					$batch_index = 0;
+					if(count($asset_list["_asset_list"]) < 50){
+						$final_asset_lists[$batch_index] = array();
+						$final_asset_lists[$batch_index]["_asset_list"] = $asset_list["_asset_list"];
+					}else{
+						$batch_asset_lists = array_chunk($asset_list["_asset_list"], 50);
+						foreach($batch_asset_lists AS $index => $batch_asset_list){
+							$final_asset_lists[$index] = array();
+							$final_asset_lists[$index]["_asset_list"] = $batch_asset_list;
+						}
+					}
+			
+					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
+						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
+						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
+						curl_setopt( $tokench, CURLOPT_POST, 1);
+						curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
+						curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
+						curl_setopt( $tokench, CURLOPT_HEADER, 0);
+						curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+			
+						//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
+						//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+						$tokenresponse = curl_exec( $tokench );
+						$tokenresponse = json_decode($tokenresponse);
+						curl_close( $tokench );
+			
+						if(is_array($tokenresponse)){
+							foreach($tokenresponse AS $index => $tokenresponsedata){
+								// Prevent double creation or update of the same NFT for a specific user
+								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
+								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
+									// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
+									if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
+										// Check to see if there is an NFT with no owner in the database
+										if(checkAvailableNFT($conn, $tokenresponsedata->fingerprint)){
+											// Limit update to 1 record and only for NFTs with no current owner
+											updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+											$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
+										// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+										}else{
+											$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
+											$asset_ids = $payload["asset_ids"];
+											$nft_owners = $payload["nft_owners"];
+										}
+									}else{
+										$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
+										$asset_ids = $payload["asset_ids"];
+										$nft_owners = $payload["nft_owners"];
+									} // End if
+								}
+							} // End foreach
+						}else{
+							$message = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+							$failed_addresses[] = $address;
+							echo $message;
+							print_r($tokenresponse);
+							sendDM("772831523899965440", $message);
+							exit();
 						}
 					} // End foreach
+					//updateNFTs($conn, implode("', '", $asset_names));
 				}else{
-					$message = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+					$message = "There was no response data for stake address: ".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
-					print_r($tokenresponse);
-					//sendDM("772831523899965440", $message);
-					//exit();
+					print_r($response);
+					sendDM("772831523899965440", $message);
+					exit();
 				}
-			} // End foreach
-			//updateNFTs($conn, implode("', '", $asset_names));
-		}else{
-			$message = "There was no response data for stake address: ".$address." \r\n";
-			$failed_addresses[] = $address;
-			echo $message;
-			print_r($response);
-			//sendDM("772831523899965440", $message);
-			//exit();
-		}
-		}else{
-			$message = "There was no response for stake address: ".$address." \r\n";
-			$failed_addresses[] = $address;
-			echo $message;
-			print_r($response);
-			//sendDM("772831523899965440", $message);
-			//exit();
-		}
-		} // Offset End if
-	} // End foreach
+				}else{
+					$message = "There was no response for stake address: ".$address." \r\n";
+					$failed_addresses[] = $address;
+					echo $message;
+					print_r($response);
+					sendDM("772831523899965440", $message);
+					exit();
+				}
+			} // Offset End if
+		} // End foreach
 	} // End offset foreach
+	/* This is not working for some reason. It keeps having unverified assets that mess up Diamond Skull delegation.
 	if(!empty($failed_addresses)){
 		if($attempts <= 10){
 			verifyNFTs($conn, $failed_addresses, $policies, $asset_ids, $nft_owners, $attempts);
@@ -185,7 +186,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			sendDM("772831523899965440", $message);
 			exit();
 		}
-	}
+	}*/
 }
 
 function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections){
