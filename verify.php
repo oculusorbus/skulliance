@@ -33,12 +33,15 @@ if(isset($_GET['verify'])){
 
 $nft_owners = array();
 $collections = getCollectionIDs($conn);
+$attempts = 0;
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids){
-	global $blockfrost_project_id, $nft_owners, $collections;
+	global $blockfrost_project_id, $nft_owners, $collections, $attempts;
 	
 	$nft_owners = array();
 	$collections = getCollectionIDs($conn);
+	$failed_addresses = array();
+	$attempts++;
 	
 	$offsets = array();
 	$offsets[1] = "";
@@ -145,30 +148,42 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 					} // End foreach
 				}else{
 					$message = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+					$failed_addresses[] = $address;
 					echo $message;
 					print_r($tokenresponse);
-					sendDM("772831523899965440", $message);
-					exit();
+					//sendDM("772831523899965440", $message);
+					//exit();
 				}
 			} // End foreach
 			//updateNFTs($conn, implode("', '", $asset_names));
 		}else{
 			$message = "There was no response data for stake address: ".$address." \r\n";
+			$failed_addresses[] = $address;
 			echo $message;
 			print_r($response);
-			sendDM("772831523899965440", $message);
-			exit();
+			//sendDM("772831523899965440", $message);
+			//exit();
 		}
 		}else{
 			$message = "There was no response for stake address: ".$address." \r\n";
+			$failed_addresses[] = $address;
 			echo $message;
 			print_r($response);
-			sendDM("772831523899965440", $message);
-			exit();
+			//sendDM("772831523899965440", $message);
+			//exit();
 		}
 		} // Offset End if
 	} // End foreach
 	} // End offset foreach
+	if(!empty($failed_addresses) && $attempts <= 10){
+		verifyNFTs($conn, $failed_addresses, $policies, $asset_ids);
+	}else{
+		$message = "There were 10 verification attempts yet the following addresses continued to fail: \r\n";
+		$message .= print_r($failed_addresses, true);
+		echo $message;
+		sendDM("772831523899965440", $message);
+		exit();
+	}
 }
 
 function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids){
