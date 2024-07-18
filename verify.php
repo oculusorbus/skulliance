@@ -123,8 +123,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						if(is_array($tokenresponse)){
 							foreach($tokenresponse AS $index => $tokenresponsedata){
 								// Prevent double creation or update of the same NFT for a specific user
-								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
-								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
+								if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
+								//if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
 									// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
 									if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
 										// Check to see if there is an NFT with no owner in the database
@@ -150,8 +150,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 							$failed_addresses[] = $address;
 							echo $message;
 							print_r($tokenresponse);
-							sendDM("772831523899965440", $message);
-							exit();
+							//sendDM("772831523899965440", $message);
+							//exit();
 						}
 					} // End foreach
 					//updateNFTs($conn, implode("', '", $asset_names));
@@ -160,33 +160,33 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
-					sendDM("772831523899965440", $message);
-					exit();
+					//sendDM("772831523899965440", $message);
+					//exit();
 				}
 				}else{
 					$message = "There was no response for stake address: ".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
-					sendDM("772831523899965440", $message);
-					exit();
+					//sendDM("772831523899965440", $message);
+					//exit();
 				}
 			} // Offset End if
 		} // End foreach
 	} // End offset foreach
-	/* This is not working for some reason. It keeps having unverified assets that mess up Diamond Skull delegation.
+	// This is not working for some reason. It keeps having unverified assets that mess up Diamond Skull delegation.
 	if(!empty($failed_addresses)){
-		if($attempts <= 10){
+		if($attempts <= 3){
 			verifyNFTs($conn, $failed_addresses, $policies, $asset_ids, $nft_owners, $attempts);
 			echo "Attempt: ".$attempts." \r\n";
 		}else{
-			$message = "There were 10 verification attempts yet the following addresses continued to fail: \r\n";
+			$message = "There were 3 verification attempts yet the following addresses continued to fail: \r\n";
 			$message .= print_r($failed_addresses, true);
 			echo $message;
 			sendDM("772831523899965440", $message);
 			exit();
 		}
-	}*/
+	}
 }
 
 function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections){
