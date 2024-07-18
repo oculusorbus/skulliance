@@ -175,14 +175,16 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids){
 		} // Offset End if
 	} // End foreach
 	} // End offset foreach
-	if(!empty($failed_addresses) && $attempts <= 10){
-		verifyNFTs($conn, $failed_addresses, $policies, $asset_ids);
-	}else{
-		$message = "There were 10 verification attempts yet the following addresses continued to fail: \r\n";
-		$message .= print_r($failed_addresses, true);
-		echo $message;
-		sendDM("772831523899965440", $message);
-		exit();
+	if(!empty($failed_addresses)){
+		if($attempts <= 10){
+			verifyNFTs($conn, $failed_addresses, $policies, $asset_ids);
+		}else{
+			$message = "There were 10 verification attempts yet the following addresses continued to fail: \r\n";
+			$message .= print_r($failed_addresses, true);
+			echo $message;
+			sendDM("772831523899965440", $message);
+			exit();
+		}
 	}
 }
 
