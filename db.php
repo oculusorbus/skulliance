@@ -1387,6 +1387,8 @@ function retreatMission($conn, $mission_id, $quest_id){
 	$sql = "SELECT * FROM missions WHERE id = '".$mission_id."' AND status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
+		echo "Your Retreat was successful.\r\n\r\n";
+		
 	  	// output data of each row
 	  	$sql = "DELETE FROM missions WHERE id = '".$mission_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	  	if ($conn->query($sql) === TRUE) {
@@ -1451,7 +1453,6 @@ function retreatMission($conn, $mission_id, $quest_id){
     	} else {
     	  //echo "Error: " . $sql . "<br>" . $conn->error;
     	}
-  		echo "Your Retreat was successful.\r\n\r\n";
 	} else {
 	    echo "Your Retreat was unsuccessful.\r\n\r\nPlease refresh the webpage and try again.";
 	}
