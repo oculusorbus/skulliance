@@ -1412,7 +1412,7 @@ function retreatMission($conn, $mission_id, $quest_id){
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
-			echo $row["consumable_id"]." Restored\r\n";
+			echo $row["name"]." Restored\r\n";
 		    updateAmount($conn, $_SESSION['userData']['user_id'], $row["consumable_id"], 1);
 		  }
 		} else {
