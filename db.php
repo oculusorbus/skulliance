@@ -1380,7 +1380,7 @@ function completeMission($conn, $mission_id, $quest_id){
 function retreatMission($conn, $mission_id, $quest_id){
 	$cost = 0;
 	$project_id = 0;
-	$sql = "DELETE FROM missions WHERE id = '".$mission_id."' AND status = '0' user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "DELETE FROM missions WHERE id = '".$mission_id."' AND status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	if ($conn->query($sql) === TRUE) {
 	  	//echo "Record deleted successfully";
 		
