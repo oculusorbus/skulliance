@@ -683,6 +683,7 @@ function retreat(mission_id, quest_id){
 				}*/
 				//document.getElementById('claim-button-'+mission_id).style.display = "none";
 				alert(data);
+				document.getElementById("retreat-button-"+mission_id).style.display = "none";
 				window.location.href = "missions.php";
 				console.log(data);
 				// Do something with the data
