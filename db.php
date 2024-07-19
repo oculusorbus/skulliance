@@ -1453,7 +1453,7 @@ function retreatMission($conn, $mission_id, $quest_id){
     	}
   		echo "Your Retreat was successful.\r\n\r\n";
 	} else {
-	    echo "Your Retreat was unsuccessful. Please refresh the webpage and try again.";
+	    echo "Your Retreat was unsuccessful.\r\n\r\nPlease refresh the webpage and try again.";
 	}
 }
 
