@@ -1402,7 +1402,7 @@ function retreatMission($conn, $mission_id, $quest_id){
 		
 		// Restore mission cost if not zero
 		if($cost != 0 && $project_id != 0){
-			echo $cost." ".$$row["currency"]." Refunded\r\n";
+			echo $cost." ".$currency." Refunded\r\n";
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost);
 		}
 		
