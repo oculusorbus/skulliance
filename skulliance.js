@@ -661,6 +661,41 @@ function completeMissions(mission_ids, quest_ids) {
 	};
 }
 
+function retreat(mission_id, quest_id){
+	var result = confirm( "Are you sure you want to retreat? The cost of your mission will be refunded and all items used will be restored.");    
+    if ( result ) {
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/retreat-mission.php?mission_id='+mission_id+"&quest_id="+quest_id, true);
+		xhttp.send();
+
+		xhttp.onreadystatechange = function() {
+		  if (xhttp.readyState == XMLHttpRequest.DONE) {
+		    // Check the status of the response
+		    if (xhttp.status == 200) {
+				// Access the data returned by the server
+				var data = xhttp.responseText;
+				/*
+				const obj = JSON.parse(data);
+				if(obj == null){
+
+				}else{
+
+				}*/
+				//document.getElementById('claim-button-'+mission_id).style.display = "none";
+				alert(data);
+				console.log(data);
+				// Do something with the data
+		    } else {
+		      // Handle error
+				alert("AJAX Error");
+		    }
+		  }
+		};
+    } else {
+        // the user clicked cancel or closed the confirm dialog.
+    }
+}
+
 
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();

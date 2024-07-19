@@ -914,7 +914,7 @@ function getCurrentMissions($conn){
   		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
 		  echo $completed;
 		  if($completed == "In Progress"){
-			  echo "&nbsp;&nbsp;<input type='button' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\");'";
+			  echo "&nbsp;&nbsp;<input type='button' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'";
 		  }
 		  echo "</td>";
   		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
@@ -1374,6 +1374,72 @@ function completeMission($conn, $mission_id, $quest_id){
 		return $mission_result;
 	}else{
 		echo "No Session";
+	}
+}
+
+function retreatMission($mission_id, $quest_id){
+	$cost = 0;
+	$project_id = 0;
+	$sql = "DELETE FROM missions WHERE id = '".$mission_id."' AND status = '0' user_id = '".$_SESSION['userData']['user_id']."'";
+	if ($conn->query($sql) === TRUE) {
+	  	//echo "Record deleted successfully";
+		
+		// Get quest cost
+		$sql = "SELECT cost, project_id FROM quests WHERE id = '".$quest_id."'";
+		$result = $conn->query($sql);
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+		    $cost = $row["cost"];
+			$project_id = $row["project_id"];
+		  }
+		} else {
+		  //echo "0 results";
+		}
+		
+		// Restore mission cost if not zero
+		if($cost != 0 && $project_id != 0){
+			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost);
+		}
+		
+		// Restore consumable items
+		$sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id = '".$mission_id."'";
+		$result = $conn->query($sql);
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+		    updateAmount($conn, $_SESSION['userData']['user_id'], $row["consumable_id"], 1);
+		  }
+		} else {
+		  //echo "0 results";
+		}
+		
+		// Delete Mission NFTs
+	  	$sql = "DELETE FROM missions_nfts WHERE mission_id = '".$mission_id."'";
+	  	if ($conn->query($sql) === TRUE) {
+	  	  //echo "Record deleted successfully";
+	  	} else {
+	  	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	  	}
+		
+		// Delete Mission Consumables
+	  	$sql = "DELETE FROM missions_consumables WHERE mission_id = '".$mission_id."'";
+	  	if ($conn->query($sql) === TRUE) {
+	  	  //echo "Record deleted successfully";
+	  	} else {
+	  	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	  	}
+		
+		// Delete Mission Transaction History
+	  	$sql = "DELETE FROM transactions WHERE mission_id = '".$mission_id."'";
+	  	if ($conn->query($sql) === TRUE) {
+	  	  //echo "Record deleted successfully";
+	  	} else {
+	  	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	  	}
+		echo "Your Retreat was successful. The cost of your mission and your items used have been restored.";
+	} else {
+		echo "Your Retreat was unsuccessful. Please refresh the webpage and try again.";
 	}
 }
 
