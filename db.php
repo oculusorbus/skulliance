@@ -1387,7 +1387,7 @@ function retreatMission($conn, $mission_id, $quest_id){
 		echo "Your Retreat was successful.\r\n\r\nThe cost of your mission and your items used have been restored.\r\n\r\n";
 		
 		// Get quest cost
-		$sql = "SELECT currency, cost, project_id FROM quests INNER JOIN projects.id = quests.project_id WHERE id = '".$quest_id."'";
+		$sql = "SELECT currency, cost, project_id FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE id = '".$quest_id."'";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
 		  // output data of each row
