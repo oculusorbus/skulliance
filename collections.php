@@ -20,7 +20,6 @@ include 'header.php';
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterPolicies("collections");
-						echo "<p>* Rich Fungible Tokens don't qualify for staking. But they can be used in missions after manually refreshing your wallet.</p>";
 						getPoliciesListing($conn, $filterby);
 					?>
 				</div>
