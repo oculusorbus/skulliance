@@ -1384,9 +1384,9 @@ function retreatMission($conn, $mission_id, $quest_id){
 	$sql = "DELETE FROM missions WHERE id = '".$mission_id."' AND status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	if ($conn->query($sql) === TRUE) {
 	  	//echo "Record deleted successfully";
-		echo "Your Retreat was successful.\r\n\r\nThe cost of your mission and your items used have been restored.\r\n\r\n";
+		echo "Your Retreat was successful.\r\n\r\n";
 		
-		// Get quest cost
+		// Get quest cost, project id, and currency
 		$sql = "SELECT currency, cost, project_id FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id = '".$quest_id."'";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
