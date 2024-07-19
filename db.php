@@ -1380,18 +1380,21 @@ function completeMission($conn, $mission_id, $quest_id){
 function retreatMission($conn, $mission_id, $quest_id){
 	$cost = 0;
 	$project_id = 0;
+	$currency = "";
 	$sql = "DELETE FROM missions WHERE id = '".$mission_id."' AND status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'";
 	if ($conn->query($sql) === TRUE) {
 	  	//echo "Record deleted successfully";
+		echo "Your Retreat was successful.\r\n\r\nThe cost of your mission and your items used have been restored.\r\n\r\n";
 		
 		// Get quest cost
-		$sql = "SELECT cost, project_id FROM quests WHERE id = '".$quest_id."'";
+		$sql = "SELECT currency, cost, project_id FROM quests INNER JOIN projects.id = quests.project_id WHERE id = '".$quest_id."'";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
 		    $cost = $row["cost"];
 			$project_id = $row["project_id"];
+			$currency = $row["currency"];
 		  }
 		} else {
 		  //echo "0 results";
@@ -1399,15 +1402,17 @@ function retreatMission($conn, $mission_id, $quest_id){
 		
 		// Restore mission cost if not zero
 		if($cost != 0 && $project_id != 0){
+			echo $cost." ".$$row["currency"]." Refunded\r\n";
 			updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost);
 		}
 		
 		// Restore consumable items
-		$sql = "SELECT consumable_id FROM missions_consumables WHERE mission_id = '".$mission_id."'";
+		$sql = "SELECT name, consumable_id FROM missions_consumables INNER JOIN consumables ON consumables.id = missions_consumables.consumable_id WHERE mission_id = '".$mission_id."'";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
+			echo $row["consumable_id"]." Restored\r\n";
 		    updateAmount($conn, $_SESSION['userData']['user_id'], $row["consumable_id"], 1);
 		  }
 		} else {
@@ -1437,7 +1442,6 @@ function retreatMission($conn, $mission_id, $quest_id){
 	  	} else {
 	  	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	  	}
-		echo "Your Retreat was successful. The cost of your mission and your items used have been restored.";
 	} else {
 		echo "Your Retreat was unsuccessful. Please refresh the webpage and try again.";
 	}
