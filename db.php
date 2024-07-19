@@ -913,7 +913,7 @@ function getCurrentMissions($conn){
 		  echo "</td>";
   		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
 		  echo $completed;
-		  if($completed = "In Progress"){
+		  if($completed == "In Progress"){
 			  echo "<input type='button' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\");'";
 		  }
 		  echo "</td>";
