@@ -1173,7 +1173,7 @@ function getQuestInfo($conn, $quest_id){
 function startMission($conn){
 	if(!isset($_SESSION['userData']['mission']['nfts']) && 
 	  (!isset($_SESSION['userData']['mission']['consumables'][1]) && !isset($_SESSION['userData']['mission']['consumables'][2]) && !isset($_SESSION['userData']['mission']['consumables'][3]) && !isset($_SESSION['userData']['mission']['consumables'][4]) )){
-		echo 'Your selected consumable items were not saved properly. Please hard refresh the webpage and try again.';
+		echo 'Your selected consumable items were not saved properly. Your mission did not start and nothing has been deducted from your balances. Please hard refresh the webpage and try again.';
 	}else{
 		if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
