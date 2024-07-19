@@ -664,6 +664,7 @@ function completeMissions(mission_ids, quest_ids) {
 function retreat(mission_id, quest_id){
 	var result = confirm( "Are you sure you want to retreat?\r\n\r\nThe cost of your mission will be refunded.\r\n\r\nAll items used will be restored.");    
     if ( result ) {
+		document.getElementById("retreat-button-"+mission_id).style.display = "none";
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/retreat-mission.php?mission_id='+mission_id+"&quest_id="+quest_id, true);
 		xhttp.send();
