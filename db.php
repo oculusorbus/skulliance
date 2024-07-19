@@ -1173,7 +1173,7 @@ function getQuestInfo($conn, $quest_id){
 function startMission($conn){
 	if(!isset($_SESSION['userData']['mission']['nfts']) && 
 	  (!isset($_SESSION['userData']['mission']['consumables'][1]) && !isset($_SESSION['userData']['mission']['consumables'][2]) && !isset($_SESSION['userData']['mission']['consumables'][3]) && !isset($_SESSION['userData']['mission']['consumables'][4]) )){
-		echo 'You cannot start a mission with no NFTs, 0% success rate, and no percentage success rate consumable items. A bug might have occurred. Please hard refresh the webpage and try again.';
+		echo 'You cannot start a mission with no NFTs, 0% success rate, and no percentage success consumable items.\r\n\r\nA bug might have occurred when attempting to store your session.\r\n\r\nPlease hard refresh the webpage and try again.';
 	}else{
 		if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
