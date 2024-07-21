@@ -462,7 +462,7 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 	$consumables[4] = "fast-forward";
 	$consumables[3] = "50-success";
 	$consumables[5] = "75-success";
-	$consumables[6] = "double-reward";
+	$consumables[6] = "double-rewards";
 	$consumables[7] = "100-success";
 	$greyed_out = "";
 	if(str_contains($currency, "RANDOM")){
