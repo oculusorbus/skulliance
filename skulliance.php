@@ -456,6 +456,14 @@ function renderDailyRewards($rewards){
 }
 
 function renderDailyReward($day, $currency, $amount, $reward=false) {
+	$consumables = array();
+	$consumables[1] = "random-reward";
+	$consumables[2] = "25-success";
+	$consumables[4] = "fast-forward";
+	$consumables[3] = "50-success";
+	$consumables[5] = "75-success";
+	$consumables[6] = "double-reward";
+	$consumables[7] = "100-success";
 	$greyed_out = "";
 	if(str_contains($currency, "RANDOM")){
 		$greyed_out = " greyed-out";
@@ -465,7 +473,7 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 	}else{
 		echo "<li class='role".$greyed_out."'>";
 	}
-	echo "<strong>Day ".$day.":</strong> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($currency).".png'/> +".$amount." ".preg_replace('/[0-9]+/', '', $currency);
+	echo "<strong>Day ".$day.":</strong>&nbsp;&nbsp;<img class='icon' src='icons/".$consumables[$day].".png'/> &nbsp;&nbsp;<img class='icon' src='icons/".strtolower($currency).".png'/> +".$amount." ".preg_replace('/[0-9]+/', '', $currency);
 	echo "</li>";
 }
 
