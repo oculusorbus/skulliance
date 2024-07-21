@@ -708,13 +708,21 @@ function dailyReward(){
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
 	      // Access the data returned by the server
+		  const consumables = [];
+		  consumables[1] = "random-reward";
+		  consumables[2] = "25-success";
+		  consumables[3] = "fast-forward";
+		  consumables[4] = "50-success";
+		  consumables[5] = "75-success";
+		  consumables[6] = "double-rewards";
+		  consumables[7] = "100-success";
 	      var data = xhttp.responseText;
 		  const obj = JSON.parse(data);
 		  if(obj == null){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
 		    document.getElementById('reward').style.opacity = 1;
-		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong> &nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
+		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong><img class='icon' src='icons/"+consumables[obj.day]+".png'/>+&nbsp;&nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
 			document.getElementById('claimed').style.display = "flex";
 			document.getElementById('remaining').style.display = "flex";
 			document.getElementById('remaining').innerHTML = obj.remaining;
