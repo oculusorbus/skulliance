@@ -492,8 +492,23 @@ function getRandomReward($conn){
 		$project["amount"] = $reward_tiers[$current_streak];
 		updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $project["amount"]);
 		logCredit($conn, $_SESSION['userData']['user_id'], $project["amount"], $project_id, $crafting=0, $bonus=1);
+		getDailyConsumable($conn, $current_streak);
 		return $project;
 	}
+}
+
+// Get daily consumable reward for user
+function getDailyConsumable($conn, $current_streak){
+	$consumables = array();
+	$consumables[1] = 7; // Random Reward
+	$consumables[2] = 4; // 25% Success
+	$consumables[3] = 5; // Fast Forward
+	$consumables[4] = 3; // 50% Success
+	$consumables[5] = 2; // 75% Success
+	$consumables[6] = 6; // Double Rewards
+	$consumables[7] = 1; // 100% Success
+	$consumable_id = $consumables[$current_streak];
+	updateAmount($conn, $_SESSION['userData']['user_id'], $consumable_id, 1);
 }
 
 // Reward tiers

@@ -24,11 +24,12 @@
 	<?php //do_action( 'storefront_sidebar' ); ?>
 
 <?php //get_footer(); ?>
-<html>
+<html lang="en">
 <head>
   <title>Skulliance</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="The mission of Skulliance is to connect art collectors with the premier skull NFT artists on Cardano and elevate the art form and community within the space."/>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="https://www.skulliance.io/staking/dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
@@ -47,6 +48,11 @@
 	      align-items: center !important;
 		  display: flex !important;
 	  }
+	  
+	  h1 {
+		  display: none;
+	  }
+	  
 	  .banner {
 	  	  background-image: url('https://www.skulliance.io/staking/images/skulliancebackground.png');
 		  background-color: #36393F;
@@ -134,11 +140,11 @@
 <body>
 <div class="container">
 	<div id="burger-menu">
-		<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
+		<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png" alt="Burger Menu"/>
 	</div>
 	<!-- Navigation Bar -->
 	<div class="navbar" id="navbar">
-	  <img onclick="location.reload();" class="icon" src="https://www.skulliance.io/staking/images/skull.png" />
+	  <img onclick="location.reload();" class="icon" src="https://www.skulliance.io/staking/images/skull.png" alt="Skulliance Icon"/>
 	  <a class="navbar-first" href="#mission">Mission</a>
 	  <a href="#artists">Artists</a>
 	  <a href="#partners">Partners</a>
@@ -147,14 +153,15 @@
 	  <a href="https://www.jpg.store/collection/skulliance">Diamond Skulls</a>
 	  <a href="https://www.skulliance.io/shop">Merch</a>
   	  <a href="https://skulliance.gitbook.io/skulliance" target="_blank">Skull Paper</a>
-	  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" /></a>
-	  <a class="social" href="https://www.x.com/skulliance"><img src="https://www.skulliance.io/staking/images/x.png" /></a>
+	  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" alt="Discord Icon"/></a>
+	  <a class="social" href="https://www.x.com/skulliance"><img src="https://www.skulliance.io/staking/images/x.png" alt="X Icon"/></a>
 	</div>
 
 <!-- The flexible grid (content) -->
 <div class="row banner" id="row1">
   <div class="main">
-	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png"></div>
+	<h1>Skulliance</h1>
+	<div class="logo"><img src="https://www.skulliance.io/staking/images/skulliancelogo.png" alt="Skulliance Logo"></div>
   </div>
 </div>
 </div>
@@ -164,7 +171,7 @@
 <br>
 <h2>Mission</h2>
 <p>The mission of Skulliance is to connect skull art investors with the premier skull NFT artists on the Cardano blockchain and elevate the collective art form and community within the space.</p>
-<img src="https://www.skulliance.io/staking/images/skulliance-group.jpg" width="100%"/>
+<img src="https://www.skulliance.io/staking/images/skulliance-group.jpg" width="100%" alt="Skulliance Founding Artists"/>
 <a id="artists" name="artists"></a>
 <br><br>
 <h2>Founding Artists</h2>
@@ -172,26 +179,26 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/SinderSkullz" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png"/></a>
+			<a href="https://x.com/SinderSkullz" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png" alt="Sinder Skullz"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/Nft4R" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png"/></a>
+			<a href="https://x.com/Nft4R" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png" alt="Kimosabe Art"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/cryptiesnft" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/crypties.png"/></a>
+			<a href="https://x.com/cryptiesnft" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/crypties.png" alt="Crypties"/></a>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/GalacticoNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/galactico.png"/></a>
+			<a href="https://x.com/GalacticoNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/galactico.png" alt="Galactico"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/ohh_meed" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ohhmeed.png"/></a>
+			<a href="https://x.com/ohh_meed" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ohhmeed.png" alt="Ohh Meed"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/haveyouseenhype" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/hype.png"/></a>
+			<a href="https://x.com/haveyouseenhype" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/hype.png" alt="H.Y.P.E."/></a>
 		</div>
 	</div>
 </div>
@@ -202,13 +209,13 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg"/></a>
+			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/discosolaris" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png"/></a>
+			<a href="https://x.com/discosolaris" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png"/></a>
+			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png" alt="Danketsu"/></a>
 		</div>
 
 	</div>
@@ -216,52 +223,52 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/Joshua_Squashua" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg"/></a>
+			<a href="https://x.com/Joshua_Squashua" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg" alt="Squashua"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png"/></a>
+			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png" alt="Netanel Cohen"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/madmaxi__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png"/></a>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
-			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/deadpophell" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/deadpophell.png"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png"/></a>
+			<a href="https://x.com/madmaxi__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png" alt="Maxingo"/></a>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg"/></a>
+			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png" alt="Apprentices"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/diexgrey" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/grey.png"/></a>
+			<a href="https://x.com/deadpophell" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/deadpophell.png" alt="Dead Pop Hell"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/JordiLeitao" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/jordi.png"/></a>
+			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold"/></a>
 		</div>
 	</div>
 </div>
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/AscenderOne" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ascenderone.jpg"/></a>
+			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg" alt="Cardano Camera"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/thecgritual" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ritual.png"/></a>
+			<a href="https://x.com/diexgrey" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/grey.png" alt="Grey"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/MipaToys" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg"/></a>
+			<a href="https://x.com/JordiLeitao" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/jordi.png" alt="Jordi"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://x.com/AscenderOne" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ascenderone.jpg" alt="Ascender One"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/thecgritual" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/ritual.png" alt="Ritual"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/MipaToys" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg" alt="Mipa Toys"/></a>
 		</div>
 	</div>
 </div>
@@ -273,15 +280,15 @@
 	<div class="projects">
 		<div class="project">
 			<h3>Dashboard</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"/></a>
+			<a href="https://skulliance.io/staking/dashboard.php"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png" alt="Dashboard Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Staking Store</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/store.png"/></a>
+			<a href="https://skulliance.io/staking/store.php"><img src="https://www.skulliance.io/staking/images/screenshots/store.png" alt="Store Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Showcase</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/showcase.png"/></a>
+			<a href="https://skulliance.io/staking/showcase.php"><img src="https://www.skulliance.io/staking/images/screenshots/showcase.png" alt="Showcase Screenshot"/></a>
 		</div>
 	</div>
 </div>
@@ -289,15 +296,15 @@
 	<div class="projects">
 		<div class="project">
 			<h3>Missions</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/missions.png"/></a>
+			<a href="https://skulliance.io/staking/missions.php"><img src="https://www.skulliance.io/staking/images/screenshots/missions.png" alt="Missions Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Inventory</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/inventory.png"/></a>
+			<a href="https://skulliance.io/staking/missions.php#inventory"><img src="https://www.skulliance.io/staking/images/screenshots/inventory.png" alt="Inventory Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Stats</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/stats.png"/></a>
+			<a href="https://skulliance.io/staking/missions.php#stats"><img src="https://www.skulliance.io/staking/images/screenshots/stats.png" alt="Mission Stats Screenshot"/></a>
 		</div>
 	</div>
 </div>
@@ -305,15 +312,15 @@
 	<div class="projects">
 		<div class="project">
 			<h3>Diamond Skulls</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"/></a>
+			<a href="https://skulliance.io/staking/diamond-skulls.php"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png" alt="Diamond Skulls Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Delegations</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png"/></a>
+			<a href="https://skulliance.io/staking/diamond-skulls.php#delegation"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png" alt="Delegations Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Skulliverse</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png"/></a>
+			<a href="https://skulliance.io/staking/skulliverse.php"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png" alt="Skulliverse Screenshot"/></a>
 		</div>
 	</div>
 </div>
@@ -321,15 +328,15 @@
 	<div class="projects">
 		<div class="project">
 			<h3>Leaderboards</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png"/></a>
+			<a href="https://skulliance.io/staking/leaderboards.php"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png" alt="Leaderboards Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Collections</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png"/></a>
+			<a href="https://skulliance.io/staking/collections.php"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png" alt="Collections Screenshot"/></a>
 		</div>
 		<div class="project">
 			<h3>Transaction History</h3>
-			<a href="https://skulliance.io/staking"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png"/></a>
+			<a href="https://skulliance.io/staking/transactions.php"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png" alt="Transactions Screenshot"/></a>
 		</div>
 	</div>
 </div>
@@ -343,7 +350,7 @@
 		<div class="project">
 		</div>
 		<div class="project">
-			<img src="https://www.skulliance.io/staking/images/skulliance.jpg"/>
+			<img src="https://www.skulliance.io/staking/images/skulliance.jpg" alt="Skulliance Membership"/>
 		</div>
 		<div class="project">
 		</div>
@@ -361,25 +368,25 @@
 			<h3>Founder & Developer</h3>
 			<p><strong>Oculus Orbus</strong></p>
 			<a href="https://www.x.com/oculusorbus" target="_blank">
-			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg"/></a>
+			<img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg" alt="Founder and Developer"/></a>
 		</div>
 		<div class="member">
 			<h3>Co-Founder</h3>
 			<p><strong>Kryptman</strong></p>
 			<a href="https://www.x.com/TheKryptman" target="_blank">
-			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg"/></a>
+			<img src="https://www.skulliance.io/staking/images/team/kryptman.jpg" alt="Co-Founder"/></a>
 		</div>
 		<div class="member">
 			<h3>Artist / Visual Creative</h3>
 			<p><strong>Diex Grey (Galactico)</strong></p>
 			<a href="https://www.x.com/diexgrey" target="_blank">
-			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg"/></a>
+			<img src="https://www.skulliance.io/staking/images/team/diexgrey.jpg" alt="Artist / Visual Cretive"/></a>
 		</div>
 		<div class="member">
 			<h3>Diamond Skulls Artist</h3>
 			<p><strong>Sinder Skullz</strong></p>
 			<a href="https://www.x.com/SinderSkullz" target="_blank">
-			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg"/></a>
+			<img src="https://www.skulliance.io/staking/images/team/sinderskullz.jpg" alt="Diamond Skulls Artist"/></a>
 		</div>
 	</div>
 </div>
@@ -389,7 +396,7 @@
 		<div class="project">
 		</div>
 		<div class="project">
-			<img src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png"/>
+			<img src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="Skulliance Cardano Logo"/>
 		</div>
 		<div class="project">
 		</div>
