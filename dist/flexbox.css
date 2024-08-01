@@ -10,7 +10,8 @@ html {
 body {
   font-family: Arial;
   margin: 0;
-  background-color: #222;
+  /*background-color: #222;*/
+  background-color: #000;
   height:100%;
   /*background-image: url("../images/dropshipbackground.jpg");  The image used */
   background-position: top; /* Center the image */
@@ -18,7 +19,7 @@ body {
   background-size: cover; /* Resize the background image to cover the entire container */
   background-attachment: fixed;
   background-blend-mode: multiply;
-  background-image: url("../images/og.jpg");
+  /*background-image: url("../images/og.jpg");*/
 }
 
 form {
@@ -47,7 +48,7 @@ form {
 
 .container {
   height: 100%;
-  max-width: 1780px;
+  /*max-width: 1780px;*/
   margin: 0 auto;
   min-height: 100%;
 }
