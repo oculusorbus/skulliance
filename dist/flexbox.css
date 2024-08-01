@@ -19,7 +19,7 @@ body {
   background-size: cover; /* Resize the background image to cover the entire container */
   background-attachment: fixed;
   background-blend-mode: multiply;
-  /*background-image: url("../images/og.jpg");*/
+  background-image: url("../images/og.jpg");
 }
 
 form {
