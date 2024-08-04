@@ -1016,7 +1016,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if($project_id == 1 || $project_id == 3 || $project_id == 5 || $project_id == 6 || $project_id == 4 || $project_id == 10 || $project_id == 11  || $project_id == 14 || $project_id == 22 || $project_id == 23){
 		$extension = "gif";
 	}
-	$filename = "images/missions/".strtolower(str_replace(" ", "-", $quest["title"]));
+	$filename = "images/missions/".strtolower(str_replace("'", "", str_replace(" ", "-", $quest["title"])));
 	echo "<li class='role no-border-style'>";
 	if($project_id != 3 && $project_id != 6 && $project_id != 4 && $project_id != 10 && $project_id != 11 && $project_id != 14 && $project_id != 22 && $project_id != 23){
 		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
