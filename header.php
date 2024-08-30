@@ -45,6 +45,7 @@
 		  <a href="transactions.php">Transactions</a>
   		  <a href="diamond-skulls.php">Diamond Skulls</a>
 		  <a href="skulliverse.php">Skulliverse</a>
+		  <a href="https://www.madballs.net/drop-ship" target="_blank">Drop Ship</a>
     	  <a href="wallets.php">Wallets</a>
 		  <a href="logout.php">Logout</a>
 		  <?php } ?>
