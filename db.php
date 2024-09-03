@@ -901,7 +901,7 @@ function getCurrentMissions($conn){
 			//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
-		echo "<tr id='mission-row-".$row["mission_id"]."' style='background-image:url(\"images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png\");background-repeat:no-repeat;background-size:cover' >";
+		echo "<tr id='mission-row-".$row["mission_id"]."' style='background-image:url(\"images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png\");background-repeat:no-repeat;background-size:cover;background-position:center' >";
 		  echo "<td align='center'>";
 		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
 		  echo "</td>";
