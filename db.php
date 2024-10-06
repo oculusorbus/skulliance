@@ -1349,6 +1349,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		if ($nft_result->num_rows > 0) {
 			$render_button = "true";
 		}
+	  }
 	}
 	if($render_button == "true"){
   	  echo "<br><form id='startFreeMissionsForm' action='missions.php' method='post'>
