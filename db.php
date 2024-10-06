@@ -948,6 +948,10 @@ function getCurrentMissions($conn){
 		  $quest_ids = substr($quest_ids, 1);
 		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
   	  }
+	  echo "<br><form id='startFreeMissionsForm' action='missions.php' method='post'>
+	  <input type='hidden' id='start_all' name='start_all' value='true'>	
+	  <input type='submit' value='Start All Free Elibible Missions' class='button'>
+	  </form>";
 	  echo "</div>";
 	} else {
 	  //echo "0 results";
