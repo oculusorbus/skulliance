@@ -1295,7 +1295,7 @@ function startAllFreeEligibleMissions($conn){
 			
 			$mission_id = 0;
 			if ($conn->query($mission_sql) === TRUE) {
-				$max_sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$_SESSION['userData']['mission']['quest_id']."'";
+				$max_sql = "SELECT MAX(id) AS mission_id FROM missions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND quest_id = '".$row['id']."'";
 				$max_result = $conn->query($max_sql);
 		
 				if ($max_result->num_rows > 0) {
