@@ -50,6 +50,10 @@ if(isset($_GET['username'])){
 	<?php 
 	if(isset($_SESSION['userData']['user_id'])){
 		getCurrentMissions($conn);
+		echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
+		<input type='hidden' id='start_all' name='start_all' value='true'>	
+	    <input type='submit' value='Start All Free Elibible Missions' class='button'>
+	    </form>";
 	}else{
 		echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 	} 
