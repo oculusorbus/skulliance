@@ -15,7 +15,7 @@ if(isset($_GET['username'])){
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <?php 
-  if(isset($_POST["start_all"]){
+  if(isset($_POST["start_all"])){
   	startAllFreeEligibleMissions($conn);
   }
   $rate_tally = 0;
