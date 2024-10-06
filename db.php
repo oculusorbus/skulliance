@@ -1275,7 +1275,7 @@ function startMission($conn){
 	}
 }
 
-function startAllEligibleFreeMissions($conn){
+function startAllFreeEligibleMissions($conn){
 	$sql = "SELECT id, cost, project_id FROM quests WHERE level = '1'";
 	$result = $conn->query($sql);
 	
