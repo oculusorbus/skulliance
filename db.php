@@ -1276,6 +1276,7 @@ function startMission($conn){
 }
 
 function startAllFreeEligibleMissions($conn){
+	$rate_flag = "false";
 	$sql = "SELECT id, cost, project_id FROM quests WHERE level = '1'";
 	$result = $conn->query($sql);
 	
@@ -1319,6 +1320,8 @@ function startAllFreeEligibleMissions($conn){
 							} else {
 							  //echo "Error: " . $sql . "<br>" . $conn->error;
 							}
+						}else{
+							$rate_flag = "true";
 						}
 					}
 				}
@@ -1326,6 +1329,9 @@ function startAllFreeEligibleMissions($conn){
 		}
 	  }
     }
+	if($rate_flag == "true"){
+		startAllFreeEligibleMissions($conn);
+	}
 }
 
 function completeMission($conn, $mission_id, $quest_id){
