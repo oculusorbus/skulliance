@@ -1360,7 +1360,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	if($render_button == "true"){
   	  echo "<br><form id='startFreeMissionsForm' action='missions.php' method='post'>
   	  <input type='hidden' id='start_all' name='start_all' value='true'>	
-  	  <input type='submit' value='Start All Free Elibible Missions' class='button'>
+  	  <input type='submit' value='Start All Free Eligible Missions' class='button'>
   	  </form>";
 	}
 }
