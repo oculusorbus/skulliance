@@ -946,7 +946,7 @@ function getCurrentMissions($conn){
 		  }
 		  $mission_ids = substr($mission_ids, 1);
 		  $quest_ids = substr($quest_ids, 1);
-		  echo "<br><input type='button' class='button' value='Claim All Completed Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
+		  echo "<br><input type='button' class='button' value='Claim All Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
   	  }
 	  renderStartAllFreeEligibleMissionsButton($conn);
 	  echo "</div>";
