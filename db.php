@@ -946,7 +946,7 @@ function getCurrentMissions($conn){
 		  }
 		  $mission_ids = substr($mission_ids, 1);
 		  $quest_ids = substr($quest_ids, 1);
-		  echo "<br><input type='button' class='button' value='Claim All Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
+		  echo "<br><input type='button' class='button' value='Claim Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
   	  }
 	  renderStartAllFreeEligibleMissionsButton($conn);
 	  echo "</div>";
@@ -1360,7 +1360,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	if($render_button == "true"){
   	  echo "<br><br><form id='startFreeMissionsForm' action='missions.php' method='post'>
   	  <input type='hidden' id='start_all' name='start_all' value='true'>	
-  	  <input type='submit' value='Start Free Missions' class='button'>
+  	  <input type='submit' value='Start Missions' class='button'>
   	  </form>";
 	}
 }
