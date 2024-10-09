@@ -310,6 +310,9 @@ function sendDM($discord_id, $message){
 
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids, $nft_owners, $collections){
 	if(isset($image)){
+		if(is_array($image)){
+			$image = $image[0];
+		}
 		$ipfs = substr($image, 7, strlen($image));
 	}else{
 		$ipfs = "";
