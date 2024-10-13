@@ -170,5 +170,5 @@ $_SESSION['userData'] = [
 /*	'guilds'=>getUsersGuilds($access_token)*/
 ];
 
-header("location: dashboard.php");
+header("location: missions.php");
 exit();
