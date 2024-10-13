@@ -1022,7 +1022,7 @@ function getInventory($conn, $project_id, $quest_id) {
 	if($project_id != 3 && $project_id != 6 && $project_id != 4 && $project_id != 10 && $project_id != 11 && $project_id != 14 && $project_id != 22 && $project_id != 23){
 		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
 	}else{
-		echo "<video width='100%' height='100%' controls autoplay loop poster='".$filename.".".$extension."'>
+		echo "<video width='100%' height='100%' controls muted autoplay loop poster='".$filename.".".$extension."'>
   		  		<source src='".$filename.".mp4' type='video/mp4'>
 				Your browser does not support the video tag.	
 			  </video>";
