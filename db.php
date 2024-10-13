@@ -848,7 +848,7 @@ function getCurrentMissions($conn){
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='center'>Project</th><th align='left'>Deployed</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
+	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Deployed</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		// Handle consumables for each mission
@@ -912,13 +912,13 @@ function getCurrentMissions($conn){
 		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
 		  echo "</td>";
 		  echo "<td align='left'>";
-		  echo $row["total_nfts"]." NFTs";
-		  echo "</td>";
-		  echo "<td align='left'>";
 		  echo number_format($row["cost"])." ".$row["currency"];
 		  echo "</td>";
 		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
 		  echo number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
+		  echo "</td>";
+		  echo "<td align='left'>";
+		  echo $row["total_nfts"]." NFTs";
 		  echo "</td>";
   		  echo "<td align='left'>";
 		  echo $success_rate+$row["success_rate"]."%";
