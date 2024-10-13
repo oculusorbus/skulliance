@@ -43,7 +43,7 @@ if(isset($_GET['username'])){
   <?php
   }else{?>
 	  <div class="side">
-			<h2>Points</h2>
+			<h2>Skulliance Missions</h2>
 			<div class="content" id="player-stats">
 					<?php renderWalletConnection("dashboard"); ?>
 					<?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn); }?>
