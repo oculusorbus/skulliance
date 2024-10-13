@@ -45,7 +45,7 @@ if(isset($_GET['username'])){
 	  <div class="side">
 			<h2>Skulliance Missions</h2>
 			<div class="content" id="player-stats">
-					<?php renderWalletConnection("dashboard"); ?>
+					<?php renderWalletConnection("missions"); ?>
 					<?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn); }?>
 			</div>
 			<?php if(isset($_SESSION['userData']['user_id'])){ ?>
@@ -55,7 +55,7 @@ if(isset($_GET['username'])){
 			</div>
 			<h2>Crafting</h2>
 			<div class="content" id="player-stats">
-				<?php renderCrafting($conn, "dashboard"); ?>
+				<?php renderCrafting($conn, "missions"); ?>
 			</div>
 			<h2>Partners</h2>
 			<div class="content" id="player-stats">
