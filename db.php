@@ -909,7 +909,7 @@ function getCurrentMissions($conn){
 		  echo $row["title"];
 		  echo "</td>";
 		  echo "<td align='left'>";
-		  echo "<img class='icon' src='icons/".strtolower($row["currency"]).".png' />";
+		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
 		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo $row["total_nfts"]." NFTs";
