@@ -848,7 +848,7 @@ function getCurrentMissions($conn){
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th align='left'>Title</th><th align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Deployed</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
+	  echo "<th align='center' width='55'>Icon</th><th align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Deployed</th><th align='left'>Success Rate</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		// Handle consumables for each mission
@@ -904,9 +904,6 @@ function getCurrentMissions($conn){
 		echo "<tr id='mission-row-".$row["mission_id"]."'>";
 		  echo "<td align='center'>";
 		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
-		  echo "</td>";
-		  echo "<td align='left'>";
-		  echo $row["title"];
 		  echo "</td>";
 		  echo "<td align='center'>";
 		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
