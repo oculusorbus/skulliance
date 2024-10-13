@@ -43,9 +43,11 @@ if(isset($_GET['username'])){
   <?php
   }else{?>
 	  <div class="side">
+			<h2>Skulliance Missions</h2>
 			<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 			<h2>Daily Rewards</h2>
 			<div class="content" id="player-stats">
+				<?php renderWalletConnection("missions"); ?>
 				<?php renderDailyRewardsSection(); ?>
 			</div>
 			<?php } ?>
