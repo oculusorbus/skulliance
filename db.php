@@ -908,7 +908,7 @@ function getCurrentMissions($conn){
 		  echo "<td align='left'>";
 		  echo $row["title"];
 		  echo "</td>";
-		  echo "<td align='left'>";
+		  echo "<td align='center'>";
 		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
 		  echo "</td>";
 		  echo "<td align='left'>";
