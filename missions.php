@@ -44,7 +44,7 @@ if(isset($_GET['username'])){
   }else{?>
 	  <div class="side">
 			<?php if(isset($_SESSION['userData']['user_id'])){ ?>
-			<h2>Daily Rewards</h2>
+			<h2>Missions</h2>
 			<div class="content" id="player-stats">
 				<?php renderWalletConnection("missions"); ?>
 				<?php renderDailyRewardsSection(); ?>
