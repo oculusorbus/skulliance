@@ -1335,7 +1335,6 @@ function startAllFreeEligibleMissions($conn){
 }
 
 function renderStartAllFreeEligibleMissionsButton($conn){
-	$render_button = "false";
 	$sql = "SELECT id, project_id FROM quests WHERE level = '1'";
 	$result = $conn->query($sql);
 	
@@ -1350,15 +1349,13 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
-			$render_button = "true";
+	    	  echo "<br><br><form id='startFreeMissionsForm' action='missions.php' method='post'>
+	    	  <input type='hidden' id='start_all' name='start_all' value='true'>	
+	    	  <input type='submit' value='Start Missions' class='button'>
+	    	  </form>";
+			  break;
 		}
 	  }
-	}
-	if($render_button == "true"){
-  	  echo "<br><br><form id='startFreeMissionsForm' action='missions.php' method='post'>
-  	  <input type='hidden' id='start_all' name='start_all' value='true'>	
-  	  <input type='submit' value='Start Missions' class='button'>
-  	  </form>";
 	}
 }
 
