@@ -1347,7 +1347,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	  $nft_ids = substr_replace($nft_ids, "", -1);
   	}
 	if($nft_ids != ""){
-		$nft_ids = " AND nft.id NOT IN(".$nft_ids.")";
+		$nft_ids = " AND nfts.id NOT IN(".$nft_ids.")";
 	}
 	
 	$sql = "SELECT id, project_id FROM quests WHERE level = '1'";
