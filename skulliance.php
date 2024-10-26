@@ -3,6 +3,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+$_SESSION['logged_in'] = false;
+
 if(!$_SESSION['logged_in']){
 	if(isset($_COOKIE['SessionCookie'])){
 		$cookie = $_COOKIE['SessionCookie'];
@@ -17,6 +19,7 @@ extract($_SESSION['userData']);
 //print_r($_SESSION['userData']);
 //print_r($_POST);
 //exit();
+$expire = 6*30*24*3600;
 $value = json_encode($_SESSION);
 setcookie("SessionCookie", $value, time()+3600);
 
