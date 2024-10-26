@@ -1336,7 +1336,6 @@ function startAllFreeEligibleMissions($conn){
 
 function renderStartAllFreeEligibleMissionsButton($conn){
 	$nft_ids = "";
-	/*
 	$sql = "SELECT nft_id
 	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
@@ -1346,7 +1345,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		 $nft_ids .= $row['nft_id'].",";
 	  }
 	  $nft_ids = substr_replace($nft_ids, "", -1);
-  	}*/
+  	}
 	if($nft_ids != ""){
 		$nft_ids = " AND nft.id NOT IN(".$nft_ids.")";
 	}
