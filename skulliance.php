@@ -13,9 +13,9 @@ if(!isset($_SESSION['logged_in'])){
   		exit();
 	}
 }
-$expire = 6*30*24*3600;
+
 $value = json_encode($_SESSION);
-setcookie("SessionCookie", $value, $expire);
+setcookie("SessionCookie", $value, time()+(6*30*24*3600));
 
 extract($_SESSION['userData']);
 //print_r($_SESSION['userData']);
