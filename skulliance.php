@@ -20,6 +20,7 @@ setcookie("SessionCookie", $value, time()+3600);
 if(isset($_SESSION->userData)){
 	$array = (array) $_SESSION->userData;
 	extract($array);
+	$_SESSION['userData'] = $array;
 }else{
 	extract($_SESSION['userData']);
 }
