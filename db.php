@@ -1342,7 +1342,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		 $nft_ids += $row['nft_id'].",";
+		 $nft_ids .= $row['nft_id'].",";
 	  }
 	  $nft_ids = substr_replace($nft_ids, "", -1);
   	}
