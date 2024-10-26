@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-if(!$_SESSION['logged_in']){
+if(!$_SESSION['logged_in'] || !isset($_SESSION['logged_in'])){
 	if(isset($_COOKIE['SessionCookie'])){
 		$cookie = $_COOKIE['SessionCookie'];
 		$cookie = json_decode($cookie);
