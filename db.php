@@ -1336,6 +1336,7 @@ function startAllFreeEligibleMissions($conn){
 
 function renderStartAllFreeEligibleMissionsButton($conn){
 	$nft_ids = "";
+	/*
 	$sql = "SELECT nft_id
 	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
@@ -1345,9 +1346,10 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		 $nft_ids .= $row['nft_id'].",";
 	  }
 	  $nft_ids = substr_replace($nft_ids, "", -1);
-  	}
-	
-	echo $_SESSION['userData']['user_id'];
+  	}*/
+	if($nft_ids != ""){
+		$nft_ids = " AND nft.id NOT IN(".$nft_ids.")";
+	}
 	
 	$sql = "SELECT id, project_id FROM quests WHERE level = '1'";
 	$result = $conn->query($sql);
@@ -1355,8 +1357,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-	  	$nft_sql = "SELECT nfts.id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
-	  		NOT IN(".$nft_ids.")";
+	  	$nft_sql = "SELECT nfts.id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."'".$nft_ids;
 	
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
