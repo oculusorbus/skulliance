@@ -3,7 +3,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Check if logged in
 if(!isset($_SESSION['logged_in'])){
+	// Check is session cookie exists
 	if(isset($_COOKIE['SessionCookie'])){
 		$cookie = $_COOKIE['SessionCookie'];
 		$cookie = json_decode($cookie, true);
@@ -13,9 +15,6 @@ if(!isset($_SESSION['logged_in'])){
   		exit();
 	}
 }
-
-$value = json_encode($_SESSION);
-setcookie("SessionCookie", $value, time()+(6*30*24*3600));
 
 extract($_SESSION['userData']);
 //print_r($_SESSION['userData']);
@@ -929,4 +928,7 @@ function filterItems($page){
 	</div>';
 }
 
+// Update session cookie
+$value = json_encode($_SESSION);
+setcookie("SessionCookie", $value, time()+(6*30*24*3600));
 ?>
