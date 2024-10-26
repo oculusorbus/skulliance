@@ -12,9 +12,9 @@ if(!isset($_SESSION['logged_in'])){
   		header('Location: error.php');
   		exit();
 	}
+}else{
+	extract($_SESSION['userData']);
 }
-print_r($_SESSION);
-extract($_SESSION['userData']);
 //print_r($_SESSION['userData']);
 //print_r($_POST);
 //exit();
