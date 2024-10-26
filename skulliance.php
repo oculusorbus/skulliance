@@ -146,8 +146,8 @@ function member($status, $message, $roles=array()){
 			$title = "Congratulations ".$_SESSION['userData']['name']."!";
 			$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance!";
 			$imageurl = "https://www.madballs.net/skulliance/gifs/meme3.gif";
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "member");
+			//discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			//discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "member");
 		}
 		return true;
 	}else{
@@ -169,8 +169,8 @@ function elite($status, $message, $roles=array()){
 			$title = "Congratulations ".$_SESSION['userData']['name']."!";
 			$description = "<@".$_SESSION['userData']['discord_id']."> just became an elite member of the Skulliance!";
 			$imageurl = "https://www.madballs.net/skulliance/gifs/meme2.gif";
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "elite");
+			//discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			//discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "elite");
 		}
 		return true;
 	}else{
@@ -192,8 +192,8 @@ function innercircle($status, $message, $roles=array()){
 			$title = "Congratulations ".$_SESSION['userData']['name']."!";
 			$description = "<@".$_SESSION['userData']['discord_id']."> just became an official member of the Skulliance Inner Circle!";
 			$imageurl = "https://www.madballs.net/skulliance/gifs/meme1.gif";
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "innercircle");
+			//discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "general");
+			//discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "innercircle");
 		}
 		return true;
 	}else{
