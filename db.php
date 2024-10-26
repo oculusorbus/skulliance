@@ -1355,6 +1355,8 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	  while($row = $result->fetch_assoc()) {
 	  	$nft_sql = "SELECT nfts.id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
 	  		NOT IN(".$nft_ids.")";
+		
+		echo $nft_sql;
 	
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
