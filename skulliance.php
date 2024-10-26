@@ -18,7 +18,8 @@ $value = json_encode($_SESSION);
 setcookie("SessionCookie", $value, time()+3600);
 
 if(isset($_SESSION->userData)){
-	extract($_SESSION->userData);
+	$array = (array) $_SESSION->userData;
+	extract($array);
 }else{
 	extract($_SESSION['userData']);
 }
