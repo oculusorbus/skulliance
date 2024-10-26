@@ -13,6 +13,7 @@ if(!isset($_SESSION['logged_in'])){
   		exit();
 	}
 }
+print_r($_SESSION);
 extract($_SESSION['userData']);
 //print_r($_SESSION['userData']);
 //print_r($_POST);
