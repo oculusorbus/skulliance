@@ -17,6 +17,8 @@ $expire = 6*30*24*3600;
 $value = json_encode($_SESSION);
 setcookie("SessionCookie", $value, time()+3600);
 
+print_r($_SESSION['userData']);
+
 if(isset($_SESSION['userData'])){
 	extract($_SESSION['userData']);
 }else{
