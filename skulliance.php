@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 if(!isset($_SESSION['logged_in'])){
 	if(isset($_COOKIE['SessionCookie'])){
 		$cookie = $_COOKIE['SessionCookie'];
-		$cookie = json_decode($cookie);
+		$cookie = json_decode($cookie, true);
 		$_SESSION = $cookie;
 	}else{
   		header('Location: error.php');
@@ -17,14 +17,7 @@ $expire = 6*30*24*3600;
 $value = json_encode($_SESSION);
 setcookie("SessionCookie", $value, time()+3600);
 
-if(isset($_SESSION->userData)){
-	$array = (array) $_SESSION->userData;
-	extract($array);
-	unset($_SESSION->userData);
-	$_SESSION['userData'] = $array;
-}else{
-	extract($_SESSION['userData']);
-}
+extract($_SESSION['userData']);
 //print_r($_SESSION['userData']);
 //print_r($_POST);
 //exit();
