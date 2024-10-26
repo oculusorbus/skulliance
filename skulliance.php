@@ -19,6 +19,7 @@ extract($_SESSION['userData']);
 //exit();
 $expire = 6*30*24*3600;
 $value = json_encode($_SESSION);
+echo $value;
 setcookie("SessionCookie", $value, time()+3600);
 
 $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
