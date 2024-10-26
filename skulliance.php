@@ -4,7 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 if(!$_SESSION['logged_in']){
-	if(isset($_COOKIE['SessionCookie']))
+	if(isset($_COOKIE['SessionCookie'])){
 		$cookie = $_COOKIE['SessionCookie'];
 		$cookie = json_decode($cookie);
 		$_SESSION = $cookie;
