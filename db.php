@@ -933,7 +933,7 @@ function getCurrentMissions($conn){
 		echo "</tr>";
 		echo "<tr>";
 		echo "<td colspan='8' style='padding:0px;'>";
-		echo "<div class='w3-border' style='background-image:url("."../images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-size:cover;background-position:center;'>";
+		echo "<div class='w3-border' style='background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-size:cover;background-position:center;'>";
 		$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		echo "<div class='w3-grey' style='width:".$percentage."%'></div>";
 		echo "</div>";
