@@ -848,7 +848,7 @@ function getCurrentMissions($conn){
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
+	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='center'>Cost</th><th align='center'>Reward</th><th align='center'>NFTs</th><th align='center'>Success</th><th align='center'>Time Left</th><th align='center'>Status</th><th id='consumable-header' style='display:none' align='center'>Item</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		// Handle consumables for each mission
@@ -908,28 +908,28 @@ function getCurrentMissions($conn){
 		  echo "<td align='center'>";
 		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
 		  echo "</td>";
-		  echo "<td align='left'>";
+		  echo "<td align='center'>";
 		  echo number_format($row["cost"])." ".$row["currency"];
 		  echo "</td>";
-		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
+		  echo "<td align='center' id='mission-reward-".$row["mission_id"]."'>";
 		  echo number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
 		  echo "</td>";
-		  echo "<td align='left'>";
+		  echo "<td align='center'>";
 		  echo $row["total_nfts"];
 		  echo "</td>";
-  		  echo "<td align='left'>";
+  		  echo "<td align='center'>";
 		  echo $success_rate+$row["success_rate"]."%";
 		  echo "</td>";
-  		  echo "<td align='left'>";
+  		  echo "<td align='center'>";
 		  echo $time_message;
 		  echo "</td>";
-  		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
+  		  echo "<td align='center' id='mission-result-".$row["mission_id"]."'>";
 		  echo $completed;
 		  if($completed == "In Progress"){
 			  echo "&nbsp;&nbsp;<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
 		  }
 		  echo "</td>";
-  		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
+  		  echo "<td align='center' style='display:none' id='consumable-".$row["mission_id"]."'></td>";
 		echo "</tr>";
 		echo "<tr>";
 		echo "<td colspan='8' style='padding:0px;'>";
