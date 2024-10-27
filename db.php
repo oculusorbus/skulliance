@@ -939,7 +939,7 @@ function getCurrentMissions($conn){
 		}else{
 			$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		}
-		echo "<div class='w3-grey' style='width:".$percentage."%;background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-position:center;opacity:0.25;'></div>";
+		echo "<div class='w3-grey' style='width:".$percentage."%;background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-position:center;background-blend-mode:exclusion;opacity:0.5;'></div>";
 		echo "</div>";
 		echo "</td>";
 		echo "</tr>";
