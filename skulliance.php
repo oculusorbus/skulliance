@@ -535,7 +535,7 @@ function getRewardTimeRemaining($conn){
 		$minutes_remaining = floor(($remaining % 3600) / 60);
 		echo '</li>';
 		echo "<div class='w3-border'>";
-		$percentage = 100-(((($hours_remaining/24)+($minutes_remaining/1440)) / 24)*100);
+		$percentage = 100-(((($hours_remaining/24)+($minutes_remaining/1440)))*100);
 		echo "<div class='w3-grey' style='width:".$percentage."%'></div>";
 		echo "</div>";
 		echo '<li class="role">';
