@@ -931,6 +931,13 @@ function getCurrentMissions($conn){
 		  echo "</td>";
   		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
 		echo "</tr>";
+		echo "<tr>";
+		echo "<td colspan='8'>";
+		echo "<div class='w3-border'>";
+		echo "<div class='w3-grey' style='width:".($days_remaining+($hours_remaining/24)+($minutes_remaining/1440))/$row["duration"]."%'></div>";
+		echo "</div>";
+		echo "</td>";
+		echo "</tr>";
 	  }
 	  echo "</table>";
 	  //json_encode(
