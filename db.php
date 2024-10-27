@@ -932,7 +932,7 @@ function getCurrentMissions($conn){
   		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
 		echo "</tr>";
 		echo "<tr>";
-		echo "<td colspan='8'>";
+		echo "<td colspan='8' style='padding:0px;'>";
 		echo "<div class='w3-border'>";
 		$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		echo "<div class='w3-grey' style='width:".$percentage."%'></div>";
