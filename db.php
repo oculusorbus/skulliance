@@ -934,7 +934,7 @@ function getCurrentMissions($conn){
 		echo "<tr>";
 		echo "<td colspan='8'>";
 		echo "<div class='w3-border'>";
-		$percentage = ( ($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"] )*100;
+		$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		echo "<div class='w3-grey' style='width:".$percentage."%'></div>";
 		echo "</div>";
 		echo "</td>";
