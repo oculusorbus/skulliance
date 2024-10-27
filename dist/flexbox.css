@@ -632,15 +632,15 @@ li form {
 }*/
 
 .w3-border {
-    border: 1px solid #ccc !important;
+    /*border: 1px solid #ccc !important;*/
 	width: 100%;
-	background-color: #202225;
+	background-color: #121212;
 }
 
 .w3-grey {
     color: #000 !important;
-    background-color: #F2FFFF !important;
-    height: 24px;
+    background-color: #444444 !important;
+    height: 10px;
 }
 
 .achievements{
