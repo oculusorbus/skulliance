@@ -651,6 +651,12 @@ li form {
     width: 95%;
 }
 
+.w3-grey-rewards {
+    color: #000 !important;
+    background-color: #444444 !important;
+    height: 24px;
+}
+
 .achievements{
 	font-family: arial;
 }
