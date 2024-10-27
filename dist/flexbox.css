@@ -643,6 +643,13 @@ li form {
     height: 10px;
 }
 
+.w3-border-rewards {
+    border: 1px solid #202225;
+    margin: 10px;
+    margin-top: 20px;
+    width: 95%;
+}
+
 .achievements{
 	font-family: arial;
 }
