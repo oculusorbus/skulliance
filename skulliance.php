@@ -533,11 +533,12 @@ function getRewardTimeRemaining($conn){
 		$remaining = $date - time();
 		$hours_remaining = floor(($remaining % 86400) / 3600);
 		$minutes_remaining = floor(($remaining % 3600) / 60);
-		echo "<div class='w3-border-rewards'>";
+		$progress_bar = "";
+		$progress_bar .= "<div class='w3-border-rewards'>";
 		$percentage = 100-(((($hours_remaining/24)+($minutes_remaining/1440)))*100);
-		echo "<div class='w3-grey-rewards' style='width:".$percentage."%'></div>";
-		echo "</div>";
-		return $hours_remaining." hours and ".$minutes_remaining." minutes until next reward";
+		$progress_bar .= "<div class='w3-grey-rewards' style='width:".$percentage."%'></div>";
+		$progress_bar .= "</div>";
+		return $progress_bar.$hours_remaining." hours and ".$minutes_remaining." minutes until next reward";
 	}else{
 		return "";
 	}
