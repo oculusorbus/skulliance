@@ -506,7 +506,7 @@ function renderDailyRewardsSection(){
 		echo '<strong>Daily Reward Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role" id="progress_bar" style="display:none;">';
-		echo '</li><br>';
+		echo '</li>';
 		echo '<li class="role" id="remaining" style="display:none;">';
 		echo '</li><br>';
 		echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
