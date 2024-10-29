@@ -505,6 +505,8 @@ function renderDailyRewardsSection(){
 		echo '<li class="role no-border-style" id="claimed" style="display:none;">';
 		echo '<strong>Daily Reward Claimed</strong>';
 		echo '</li>';
+		echo '<li class="role" id="progress_bar" style="display:none;">';
+		echo '</li><br>';
 		echo '<li class="role" id="remaining" style="display:none;">';
 		echo '</li><br>';
 		echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
@@ -520,6 +522,9 @@ function renderDailyRewardsSection(){
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
 		echo '<li class="role">';
+		echo getRewardProgressBar($conn);
+		echo '</li>';
+		echo '<li class="role">';
 		echo getRewardTimeRemaining($conn);
 		echo '</li>';
  	} 
@@ -533,14 +538,25 @@ function getRewardTimeRemaining($conn){
 		$remaining = $date - time();
 		$hours_remaining = floor(($remaining % 86400) / 3600);
 		$minutes_remaining = floor(($remaining % 3600) / 60);
+		return $hours_remaining." hours and ".$minutes_remaining." minutes until next reward";
+	}else{
+		return "";
+	}
+}
+
+function getRewardProgressBar($conn){
+	$maxdate = getMaxDateCreated($conn);
+	if(isset($maxdate)){
+		$date = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', strtotime($maxdate))));
+		$remaining = $date - time();
+		$hours_remaining = floor(($remaining % 86400) / 3600);
+		$minutes_remaining = floor(($remaining % 3600) / 60);
 		$progress_bar = "";
-		$progress_bar .= "</li>";
-		$progress_bar .= "<div class='w3-border-rewards'>";
-		$percentage = 100-(((($hours_remaining/24)+($minutes_remaining/1440)))*100);
-		$progress_bar .= "<div class='w3-grey-rewards' style='width:".$percentage."%'></div>";
+		$progress_bar .= "<div class='w3-border'>";
+		$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
+		$progress_bar .= "<div class='w3-grey' style='width:".$percentage."%'></div>";
 		$progress_bar .= "</div>";
-		$progress_bar .= "<li class='role'>";
-		return $progress_bar.$hours_remaining." hours and ".$minutes_remaining." minutes until next reward";
+		return $progress_bar;
 	}else{
 		return "";
 	}

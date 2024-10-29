@@ -724,6 +724,8 @@ function dailyReward(){
 		    document.getElementById('reward').style.opacity = 1;
 		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong>&nbsp;&nbsp;<img class='icon' src='icons/"+consumables[obj.day]+".png'/>+&nbsp;&nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
 			document.getElementById('claimed').style.display = "flex";
+			document.getElementById('progress_bar').style.display = "flex";
+			document.getElementById('progress_bar').innerHTML = obj.progress_bar;
 			document.getElementById('remaining').style.display = "flex";
 			document.getElementById('remaining').innerHTML = obj.remaining;
 	  	  }
