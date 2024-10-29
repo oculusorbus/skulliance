@@ -553,7 +553,7 @@ function getRewardProgressBar($conn){
 		$minutes_remaining = floor(($remaining % 3600) / 60);
 		$progress_bar = "";
 		$progress_bar .= "<div class='w3-border'>";
-		$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
+		$percentage = 100-(((($hours_remaining/24)+($minutes_remaining/1440)))*100);
 		$progress_bar .= "<div class='w3-grey' style='width:".$percentage."%'></div>";
 		$progress_bar .= "</div>";
 		return $progress_bar;
