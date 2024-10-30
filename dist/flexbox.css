@@ -1265,6 +1265,23 @@ section.active {
 	  display: none !important;
 }
 
+#quick-menu {
+	position: fixed;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
+    background-color: black;
+    bottom: 0;
+    display: block;
+    padding: 5px;
+}
+
+#quick-menu img {
+	max-width: 275px;
+	padding: 20px;
+	width: 18%;
+}
+
 @media screen and (max-width: 1780px) {
 	body{
   	  background-position: bottom;
