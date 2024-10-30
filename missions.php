@@ -122,30 +122,32 @@ if($filterby != ""){
 	}
 	
 	function toggleSections(selection){
-		if ($('#rewards').length > 0) {
-			document.getElementById('rewards').style.display = "none";
-		}
-		document.getElementById('stats').style.display = "none";
-		document.getElementById('filter').style.display = "none";
-		document.getElementById('quests').style.display = "none";
-		document.getElementById('available').style.display = "none";
-		if ($('#mission').length > 0) {
-		  document.getElementById('mission').style.display = "none";
-		}
-		if ($('#'+selection).length > 0) {
-			document.getElementById(selection).style.display = "block";
-			if(selection == "filter" || selection == "quests"){
-				document.getElementById('available').style.display = "block";
+		if($(window).width() <= 1517){
+			if ($('#rewards').length > 0) {
+				document.getElementById('rewards').style.display = "none";
+			}
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('filter').style.display = "none";
+			document.getElementById('quests').style.display = "none";
+			document.getElementById('available').style.display = "none";
+			if ($('#mission').length > 0) {
+			  document.getElementById('mission').style.display = "none";
+			}
+			if ($('#'+selection).length > 0) {
+				document.getElementById(selection).style.display = "block";
+				if(selection == "filter" || selection == "quests"){
+					document.getElementById('available').style.display = "block";
+				}else{
+					document.getElementById('available').style.display = "none";
+				}
 			}else{
-				document.getElementById('available').style.display = "none";
-			}
-		}else{
-			if(selection == "mission"){
-				document.getElementById('available').style.display = "block";
-				document.getElementById('quests').style.display = "block";
-			}
-			if(selection == "rewards"){
-				window.location.href = 'missions.php';
+				if(selection == "mission"){
+					document.getElementById('available').style.display = "block";
+					document.getElementById('quests').style.display = "block";
+				}
+				if(selection == "rewards"){
+					window.location.href = 'missions.php';
+				}
 			}
 		}
 	}
