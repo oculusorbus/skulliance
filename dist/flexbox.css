@@ -1266,13 +1266,13 @@ section.active {
 }
 
 #quick-menu {
+	display: none;
 	position: fixed;
     width: 100%;
     text-align: center;
     margin: 0 auto;
     background-color: black;
     bottom: 0;
-    display: block;
     padding: 5px;
 }
 
