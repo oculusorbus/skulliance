@@ -117,7 +117,7 @@ if($filterby != ""){
 <script type='text/javascript'>
 	if($(window).width() <= 1517){
 		document.getElementById('quick-menu').style.display = "block";
-		if(window.location.hash == "inventory"){
+		if(window.location.hash == "#inventory"){
 			document.getElementById('mission-icon').classList.add("selected");
 		}
 	}else{
