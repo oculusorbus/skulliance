@@ -120,6 +120,14 @@ if($filterby != ""){
 		if(window.location.hash == "#inventory"){
 			document.getElementById('mission-icon').classList.add("selected");
 		}else{
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('filter').style.display = "none";
+			document.getElementById('filter-icon').classList.remove("selected");
+			document.getElementById('quests').style.display = "none";
+			document.getElementById('quests-icon').classList.remove("selected");
+			document.getElementById('mission-icon').classList.remove("selected");
+			document.getElementById('available').style.display = "none";
 			document.getElementById('rewards-icon').classList.add("selected");
 		}
 	}else{
