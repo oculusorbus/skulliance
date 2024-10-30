@@ -1277,7 +1277,7 @@ section.active {
 }
 
 #quick-menu img {
-	max-width: 275px;
+	max-width: 100px;
 	padding: 20px;
 	width: 16%;
 }
