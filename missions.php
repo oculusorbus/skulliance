@@ -107,8 +107,7 @@ if($filterby != ""){
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type='text/javascript'>setSuccessRate('<?php echo $rate_tally; ?>');</script>
 <script type='text/javascript'>
-	alert(window.screen.availWidth);
-	if(window.screen.availWidth <= 1517){
+	if(window.screen.width <= 1517){
 		document.getElementById('quick-menu').style.display == "block";
 	}else{
 		document.getElementById('quick-menu').style.display == "none";
