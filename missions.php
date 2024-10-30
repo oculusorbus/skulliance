@@ -92,7 +92,7 @@ if(isset($_GET['username'])){
   </div>
 </div>
 <div id="quick-menu">
-	<img id="rewards-icon" src="icons/rewards.png" onclick="toggleSections('rewards');">
+	<img id="rewards-icon" src="icons/rewards.png" class="selected" onclick="toggleSections('rewards');">
 	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
 	<img id="filter-icon" src="icons/filter.png" onclick="toggleSections('filter');">
 	<img id="quests-icon" src="icons/missions.png" onclick="toggleSections('quests');">
