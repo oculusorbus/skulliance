@@ -1280,15 +1280,10 @@ section.active {
 #quick-menu img {
 	max-width: 100px;
 	padding: 20px;
-	width: 16%;
+	width: 19%;
 }
 
 .selected{
-	border: 1px solid gray;
-    border-radius: 10px;
-}
-
-#quick-menu img:hover {
 	border: 1px solid gray;
     border-radius: 10px;
 }
