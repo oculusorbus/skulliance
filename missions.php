@@ -116,7 +116,7 @@ if($filterby != ""){
 <script type='text/javascript'>setSuccessRate('<?php echo $rate_tally; ?>');</script>
 <script type='text/javascript'>
 	if($(window).width() <= 1517){
-		document.getElementById('back-to-top-button').remove();
+		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
 		if(window.location.hash == "#inventory"){
 			document.getElementById('mission-icon').classList.add("selected");
