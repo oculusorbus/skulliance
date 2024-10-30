@@ -116,7 +116,7 @@ if($filterby != ""){
 	if($(window).width() <= 1517){
 		document.getElementById('quick-menu').style.display = "block";
 	}else{
-		document.getElementById('quick-menu').style.display =3 "none";
+		document.getElementById('quick-menu').style.display = "none";
 	}
 	
 	function toggleSections(selection){
