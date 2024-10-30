@@ -124,8 +124,12 @@ if($filterby != ""){
 		document.getElementById('stats').style.display = "none";
 		document.getElementById('filter').style.display = "none";
 		document.getElementById('missions').style.display = "none";
-		document.getElementById('mission').style.display = "none";
-		document.getElementById(selection).style.display = "block";
+		if ($('#mission').length > 0) {
+		  document.getElementById('mission').style.display = "none";
+		}
+		if ($('#'+selection).length > 0) {
+			document.getElementById(selection).style.display = "block";
+		}
 	}
 </script>
 </html>
