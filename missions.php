@@ -145,15 +145,17 @@ if($filterby != ""){
 				if(selection == "filter" || selection == "quests"){
 					document.getElementById('available').style.display = "block";
 				}else{
-					document.getElementById('available').style.display = "none";3
+					document.getElementById('available').style.display = "none";
 				}
 			}else{
 				if(selection == "mission"){
 					document.getElementById('available').style.display = "block";
 					document.getElementById('quests').style.display = "block";
+					document.getElementById('mission-icon').classList.add("selected");
 				}
 				if(selection == "rewards"){
 					document.getElementById('mission').style.display = "block";
+					document.getElementById('rewards-icon').classList.add("selected");
 					window.location.href = 'missions.php';
 				}
 			}
