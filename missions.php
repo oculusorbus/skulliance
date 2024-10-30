@@ -83,7 +83,13 @@ if(isset($_GET['username'])){
     </div>
   </div>
 </div>
-
+<div id="quick-menu">
+	<img src="icons/rewards.png">
+	<img src="icons/stats.png">
+	<img src="icons/filter.png">
+	<img src="icons/missions.png">
+	<img src="icons/shield.png">
+</div>
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
