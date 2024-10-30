@@ -29,7 +29,7 @@ if(isset($_GET['username'])){
 	  $_SESSION['userData']['mission']['nfts'] = array();
 	  $_SESSION['userData']['mission']['consumables'] = array();
   ?>	
-  <div class="side">
+  <div class="side" id="mission">
   	<a name="inventory" id="inventory"></a>
 	<div class="content inventory">
 		<?php 
@@ -42,7 +42,7 @@ if(isset($_GET['username'])){
   </div>
   <?php
   }else{?>
-	  <div class="side">
+	  <div class="side" id="rewards">
 			<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 			<h2>Missions</h2>
 			<div class="content" id="player-stats">
@@ -55,6 +55,7 @@ if(isset($_GET['username'])){
   }
   ?>
   <div class="main">
+	<div id='stats'>
 	<?php
 	if(isset($_SESSION['userData']['user_id'])){
 		getTotalMissions($conn);
@@ -68,14 +69,19 @@ if(isset($_GET['username'])){
 		echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 	} 
 	?>
+	</div>
 	<h2>Available Missions</h2>
 	<a name="missions" id="missions"></a>
     <div class="content missions">
 		<?php //filterMissions($project_id); ?>
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
+				echo "<div id='filter'>";
 				getMissionsFilters($conn, $quest_id);
+				echo "</div>";
+				echo "<div id='missions'>";
 				getMissions($conn, $quest_id);
+				echo "</div>";
 			}else{
 				echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 			} 
@@ -84,11 +90,11 @@ if(isset($_GET['username'])){
   </div>
 </div>
 <div id="quick-menu">
-	<img src="icons/rewards.png">
-	<img src="icons/stats.png">
-	<img src="icons/filter.png">
-	<img src="icons/missions.png">
-	<img src="icons/shield.png">
+	<img src="icons/rewards.png" onclick="toggleSections('rewards');">
+	<img src="icons/stats.png" onclick="toggleSections('stats');">
+	<img src="icons/filter.png" onclick="toggleSections('filter');">
+	<img src="icons/missions.png" onclick="toggleSections('missions');">
+	<img src="icons/shield.png" onclick="toggleSections('mission');">
 </div>
 	<!-- Footer -->
 	<div class="footer">
@@ -110,7 +116,16 @@ if($filterby != ""){
 	if($(window).width() <= 1517){
 		document.getElementById('quick-menu').style.display = "block";
 	}else{
-		document.getElementById('quick-menu').style.display = "none";
+		document.getElementById('quick-menu').style.display =3 "none";
+	}
+	
+	function toggleSections(selection){
+		document.getElementById('rewards').style.display = "none";
+		document.getElementById('stats').style.display = "none";
+		document.getElementById('filter').style.display = "none";
+		document.getElementById('missions').style.display = "none";
+		document.getElementById('mission').style.display = "none";
+		document.getElementById(selection).style.display = "block";
 	}
 </script>
 </html>
