@@ -1287,6 +1287,11 @@ section.active {
     border-radius: 10px;
 }
 
+#quick-menu img:hover {
+	border: 1px solid gray;
+    border-radius: 10px;
+}
+
 @media screen and (max-width: 1780px) {
 	body{
   	  background-position: bottom;
