@@ -925,9 +925,10 @@ function getCurrentMissions($conn){
 		  echo $time_message;
 		  echo "</td>";
   		  echo "<td align='left' id='mission-result-".$row["mission_id"]."'>";
-		  echo $completed;
 		  if($completed == "In Progress"){
 			  echo "&nbsp;&nbsp;<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
+		  }else{
+ 			  echo $completed;
 		  }
 		  echo "</td>";
   		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
