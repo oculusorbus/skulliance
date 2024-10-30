@@ -134,6 +134,7 @@ if($filterby != ""){
 			document.getElementById('filter-icon').classList.remove("selected");
 			document.getElementById('quests').style.display = "none";
 			document.getElementById('quests-icon').classList.remove("selected");
+			document.getElementById('mission-icon').classList.remove("selected");
 			document.getElementById('available').style.display = "none";
 			if ($('#mission').length > 0) {
 			  document.getElementById('mission').style.display = "none";
