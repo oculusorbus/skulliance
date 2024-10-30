@@ -95,8 +95,8 @@ if(isset($_GET['username'])){
 	<img id="rewards-icon" src="icons/rewards.png" onclick="toggleSections('rewards');">
 	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
 	<img id="filter-icon" src="icons/filter.png" onclick="toggleSections('filter');">
-	<img id="quests-icon" src="icons/missions.png" onclick="toggleSections('quests');">
-	<img id="mission-icon" src="icons/shield.png" onclick="toggleSections('mission');">
+	<img id="quests-icon" src="icons/quests.png" onclick="toggleSections('quests');">
+	<img id="mission-icon" src="icons/mission.png" onclick="toggleSections('mission');">
 </div>
 	<!-- Footer -->
 	<div class="footer">
