@@ -140,8 +140,13 @@ if($filterby != ""){
 				document.getElementById('available').style.display = "none";
 			}
 		}else{
-			document.getElementById('available').style.display = "block";
-			document.getElementById('quests').style.display = "block";
+			if(selection == "mission"){
+				document.getElementById('available').style.display = "block";
+				document.getElementById('quests').style.display = "block";
+			}
+			if(selection == "rewards"){
+				location.reload();
+			}
 		}
 	}
 </script>
