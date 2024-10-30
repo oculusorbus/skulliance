@@ -127,7 +127,7 @@ if($filterby != ""){
 			if ($('#rewards').length > 0) {
 				document.getElementById('rewards').style.display = "none";
 			}
-			document.getElementById('rewards').classList.remove("selected");
+			document.getElementById('rewards-icon').classList.remove("selected");
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('filter').style.display = "none";
