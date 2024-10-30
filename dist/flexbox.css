@@ -1282,7 +1282,7 @@ section.active {
 	width: 16%;
 }
 
-#quick-menu img .selected{
+.selected{
 	border: 1px solid gray;
     border-radius: 10px;
 }

@@ -126,8 +126,8 @@ if($filterby != ""){
 			window.scrollTo(0, 0);
 			if ($('#rewards').length > 0) {
 				document.getElementById('rewards').style.display = "none";
-				document.getElementById('rewards').classList.remove("selected");
 			}
+			document.getElementById('rewards').classList.remove("selected");
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('filter').style.display = "none";
@@ -145,7 +145,7 @@ if($filterby != ""){
 				if(selection == "filter" || selection == "quests"){
 					document.getElementById('available').style.display = "block";
 				}else{
-					document.getElementById('available').style.display = "none";
+					document.getElementById('available').style.display = "none";3
 				}
 			}else{
 				if(selection == "mission"){
