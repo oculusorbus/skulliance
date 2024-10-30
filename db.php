@@ -670,12 +670,12 @@ function getMissionsFilters($conn, $quest_id) {
 	$result = $conn->query($sql);
 	
 	echo "<div class='missions-filters'>";
-	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);'>All</div>";
-	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);hideIneligibleMissions();'>Eligible</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);toggleSections(\"quests\");'>All</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);hideIneligibleMissions();toggleSections(\"quests\");'>Eligible</div>";
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
-				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -687,7 +687,7 @@ function getMissionsFilters($conn, $quest_id) {
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] >= 8){
-				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
 			}
 		}
 	}
