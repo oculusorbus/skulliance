@@ -846,6 +846,7 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
+  	  renderStartAllFreeEligibleMissionsButton($conn);
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
@@ -957,7 +958,6 @@ function getCurrentMissions($conn){
 		  $quest_ids = substr($quest_ids, 1);
 		  echo "<br><input type='button' class='button' value='Claim Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
   	  }
-	  renderStartAllFreeEligibleMissionsButton($conn);
 	  echo "</div>";
 	} else {
 	  //echo "0 results";
