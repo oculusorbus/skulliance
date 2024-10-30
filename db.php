@@ -846,8 +846,8 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
 	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
-  	  renderStartAllFreeEligibleMissionsButton($conn);
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
+   	  renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='left'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
 	  // output data of each row
@@ -1372,10 +1372,10 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
-	    	  echo "<br><br><form id='startFreeMissionsForm' action='missions.php' method='post'>
+	    	  echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
 	    	  <input type='hidden' id='start_all' name='start_all' value='true'>	
 	    	  <input type='submit' value='Start Missions' class='button'>
-	    	  </form>";
+	    	  </form><br>";
 			  break;
 		}
 	  }
