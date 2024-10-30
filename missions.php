@@ -119,6 +119,8 @@ if($filterby != ""){
 		document.getElementById('quick-menu').style.display = "block";
 		if(window.location.hash == "#inventory"){
 			document.getElementById('mission-icon').classList.add("selected");
+		}else{
+			document.getElementById('rewards-icon').classList.add("selected");
 		}
 	}else{
 		document.getElementById('quick-menu').style.display = "none";
