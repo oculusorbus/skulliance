@@ -1411,7 +1411,7 @@ section.active {
 	    filter: drop-shadow(5px 5px 5px #202225);
 	}
 	#transactions th, #transactions td {
-		padding: 0px;
+		padding: 1px;
 		width: 0;
 	}
 	#transactions .icon {
