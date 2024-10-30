@@ -132,7 +132,7 @@ if($filterby != ""){
 		}
 		if ($('#'+selection).length > 0) {
 			document.getElementById(selection).style.display = "block";
-			if(selection == "filter" || selection = "quests"){
+			if(selection == "filter" || selection == "quests"){
 				document.getElementById('available').style.display = "block";
 			}else{
 				document.getElementById('available').style.display = "none";
