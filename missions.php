@@ -79,7 +79,7 @@ if(isset($_GET['username'])){
 				echo "<div id='filter'>";
 				getMissionsFilters($conn, $quest_id);
 				echo "</div>";
-				echo "<div id='missions'>";
+				echo "<div id='quests'>";
 				getMissions($conn, $quest_id);
 				echo "</div>";
 			}else{
@@ -93,7 +93,7 @@ if(isset($_GET['username'])){
 	<img src="icons/rewards.png" onclick="toggleSections('rewards');">
 	<img src="icons/stats.png" onclick="toggleSections('stats');">
 	<img src="icons/filter.png" onclick="toggleSections('filter');">
-	<img src="icons/missions.png" onclick="toggleSections('missions');">
+	<img src="icons/missions.png" onclick="toggleSections('quests');">
 	<img src="icons/shield.png" onclick="toggleSections('mission');">
 </div>
 	<!-- Footer -->
@@ -123,7 +123,7 @@ if($filterby != ""){
 		document.getElementById('rewards').style.display = "none";
 		document.getElementById('stats').style.display = "none";
 		document.getElementById('filter').style.display = "none";
-		document.getElementById('missions').style.display = "none";
+		document.getElementById('quests').style.display = "none";
 		if ($('#mission').length > 0) {
 		  document.getElementById('mission').style.display = "none";
 		}
