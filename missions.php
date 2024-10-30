@@ -123,6 +123,7 @@ if($filterby != ""){
 	
 	function toggleSections(selection){
 		if($(window).width() <= 1517){
+			window.scrollTo(0, 0);
 			if ($('#rewards').length > 0) {
 				document.getElementById('rewards').style.display = "none";
 			}
