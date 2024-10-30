@@ -70,6 +70,7 @@ if(isset($_GET['username'])){
 	} 
 	?>
 	</div>
+	<div id='available'>
 	<h2>Available Missions</h2>
 	<a name="missions" id="missions"></a>
     <div class="content missions">
@@ -87,6 +88,7 @@ if(isset($_GET['username'])){
 			} 
 			?>
     </div>
+	</div>
   </div>
 </div>
 <div id="quick-menu">
@@ -124,11 +126,17 @@ if($filterby != ""){
 		document.getElementById('stats').style.display = "none";
 		document.getElementById('filter').style.display = "none";
 		document.getElementById('quests').style.display = "none";
+		document.getElementById('available').style.display = "none";
 		if ($('#mission').length > 0) {
 		  document.getElementById('mission').style.display = "none";
 		}
 		if ($('#'+selection).length > 0) {
 			document.getElementById(selection).style.display = "block";
+			if(selection == "filter" || selection = "quests"){
+				document.getElementById('available').style.display = "block";
+			}else{
+				document.getElementById('available').style.display = "none";
+			}
 		}
 	}
 </script>
