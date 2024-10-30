@@ -145,7 +145,7 @@ if($filterby != ""){
 				document.getElementById('quests').style.display = "block";
 			}
 			if(selection == "rewards"){
-				location.reload();
+				window.location.href = 'missions.php';
 			}
 		}
 	}
