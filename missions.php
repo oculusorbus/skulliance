@@ -138,7 +138,7 @@ if($filterby != ""){
 				document.getElementById('available').style.display = "none";
 			}
 			if(selection == "mission"){
-				if ($('#mission').length !> 0) {
+				if ($('#mission').length < 1) {
 					document.getElementById('rewards').style.display = "block";
 				}
 			}
