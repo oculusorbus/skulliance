@@ -92,11 +92,11 @@ if(isset($_GET['username'])){
   </div>
 </div>
 <div id="quick-menu">
-	<img src="icons/rewards.png" onclick="toggleSections('rewards');">
-	<img src="icons/stats.png" onclick="toggleSections('stats');">
-	<img src="icons/filter.png" onclick="toggleSections('filter');">
-	<img src="icons/missions.png" onclick="toggleSections('quests');">
-	<img src="icons/shield.png" onclick="toggleSections('mission');">
+	<img id="rewards-icon" src="icons/rewards.png" onclick="toggleSections('rewards');">
+	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
+	<img id="filter-icon" src="icons/filter.png" onclick="toggleSections('filter');">
+	<img id="quests-icon" src="icons/missions.png" onclick="toggleSections('quests');">
+	<img id="mission-icon" src="icons/shield.png" onclick="toggleSections('mission');">
 </div>
 	<!-- Footer -->
 	<div class="footer">
@@ -126,16 +126,22 @@ if($filterby != ""){
 			window.scrollTo(0, 0);
 			if ($('#rewards').length > 0) {
 				document.getElementById('rewards').style.display = "none";
+				document.getElementById('rewards').classList.remove("selected");
 			}
 			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('filter').style.display = "none";
+			document.getElementById('filter-icon').classList.remove("selected");
 			document.getElementById('quests').style.display = "none";
+			document.getElementById('quests-icon').classList.remove("selected");
 			document.getElementById('available').style.display = "none";
 			if ($('#mission').length > 0) {
 			  document.getElementById('mission').style.display = "none";
+			  document.getElementById('mission-icon').classList.remove("selected");
 			}
 			if ($('#'+selection).length > 0) {
 				document.getElementById(selection).style.display = "block";
+				document.getElementById(selection+"-icon").classList.add("selected");
 				if(selection == "filter" || selection == "quests"){
 					document.getElementById('available').style.display = "block";
 				}else{
