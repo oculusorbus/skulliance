@@ -1412,6 +1412,7 @@ section.active {
 	}
 	#transactions th, #transactions td {
 		padding: 0px;
+		width: 0;
 	}
 	#transactions .icon {
 	    width: 8px;
