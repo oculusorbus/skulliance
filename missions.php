@@ -122,7 +122,9 @@ if($filterby != ""){
 	}
 	
 	function toggleSections(selection){
-		document.getElementById('rewards').style.display = "none";
+		if ($('#rewards').length > 0) {
+			document.getElementById('rewards').style.display = "none";
+		}
 		document.getElementById('stats').style.display = "none";
 		document.getElementById('filter').style.display = "none";
 		document.getElementById('quests').style.display = "none";
