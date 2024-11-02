@@ -1023,19 +1023,16 @@ function getInventory($conn, $project_id, $quest_id) {
 	$balance = getBalance($conn, $project_id);
 	echo "<h2>".$quest["title"]."</h2>";
 	echo "<ul>";
-	$extension = "png";
-	if($project_id == 1 || $project_id == 3 || $project_id == 5 || $project_id == 6 || $project_id == 4 || $project_id == 10 || $project_id == 11  || $project_id == 14 || $project_id == 22 || $project_id == 23){
-		$extension = "gif";
-	}
+	$extension = $quest["extension"];
 	$filename = "images/missions/".strtolower(str_replace("'", "", str_replace(" ", "-", $quest["title"])));
 	echo "<li class='role no-border-style'>";
-	if($project_id != 3 && $project_id != 6 && $project_id != 4 && $project_id != 10 && $project_id != 11 && $project_id != 14 && $project_id != 22 && $project_id != 23){
-		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
-	}else{
-		echo "<video width='100%' height='100%' controls muted autoplay loop poster='".$filename.".".$extension."'>
-  		  		<source src='".$filename.".mp4' type='video/mp4'>
+	if($extension == "mp4"){
+		echo "<video width='100%' height='100%' controls muted autoplay loop poster='".$filename.".gif'>
+  		  		<source src='".$filename.".".$extension."' type='video/mp4'>
 				Your browser does not support the video tag.	
 			  </video>";
+	}else{
+		echo "<img class='mission-image' width='100%' src='".$filename.".".$extension."'/>";
 	}
 	echo "</li>";
 	echo "<li class='role'>".$quest["description"]."</li>";
@@ -1176,7 +1173,7 @@ function renderInventoryButton($selection, $quest_id, $project_id){
 }
 
 function getQuestInfo($conn, $quest_id){
-	$sql = "SELECT title, description, cost, reward, duration, level, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
+	$sql = "SELECT title, description, extension, cost, reward, duration, level, project_id, projects.name, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 	$result = $conn->query($sql);
 	
 	$quest = array();
@@ -1191,6 +1188,7 @@ function getQuestInfo($conn, $quest_id){
 		  $quest["duration"] = $row["duration"];
 		  $quest["level"] = $row["level"];
 		  $quest["description"] = $row["description"];
+		  $quest["extension"] = $row["extension"];
 	  }
 	  return $quest;
     }
