@@ -78,7 +78,7 @@ if(isset($_GET['username'])){
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
 				echo "<div id='filter'>";
-				getMissionsFilters($conn, $quest_id);
+				//getMissionsFilters($conn, $quest_id);
 				echo "</div>";
 				echo "<div id='quests'>";
 				//getMissions($conn, $quest_id);
