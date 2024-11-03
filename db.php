@@ -904,10 +904,10 @@ function getCurrentMissions($conn){
 		}
 		echo "<tr id='mission-row-".$row["mission_id"]."'>";
 		  echo "<td align='center'>";
-		 // echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
+		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
 		  echo "</td>";
 		  echo "<td align='center'>";
-		//  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
+		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
 		  echo "</td>";
 		  echo "<td align='left'>";
 		  echo number_format($row["cost"])." ".$row["currency"];
@@ -941,7 +941,7 @@ function getCurrentMissions($conn){
 		}else{
 			$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		}
-		//echo "<div class='w3-grey' style='width:".$percentage."%;background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-position:center;background-blend-mode:exclusion;opacity:0.3;'></div>";
+		echo "<div class='w3-grey' style='width:".$percentage."%;background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-position:center;background-blend-mode:exclusion;opacity:0.3;'></div>";
 		echo "</div>";
 		echo "</td>";
 		echo "</tr>";
