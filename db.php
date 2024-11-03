@@ -1009,10 +1009,10 @@ function getInventory($conn, $project_id, $quest_id) {
 		}
 	}
 	
-	$sql = "SELECT nfts.id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
+	$sql = "SELECT nfts.id, asset_id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."' AND asset_id 
 		NOT IN(
-        SELECT nft_id
-        FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."') 
+        SELECT asset_id
+        FROM missions_nfts INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."') 
 		ORDER BY collection_id ASC, rate DESC";
 	
 	$result = $conn->query($sql);
