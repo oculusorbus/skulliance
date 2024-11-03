@@ -419,7 +419,9 @@ function toggleCurrentMissions(arrow){
 }
 
 function setSuccessRate(rate) {
-	document.getElementById('success-rate').innerHTML = rate;
+	if(document.getElementById('success-rate') !== null){
+		document.getElementById('success-rate').innerHTML = rate;
+	}
 }
 
 function processConsumable(action, consumable_id){
