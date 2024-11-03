@@ -71,6 +71,12 @@
 }
 .progress-circle:not(.over50) .first50-bar{ display: none; }
 
+@media screen and (max-width: 700px) {
+	.progress-circle {
+		display: none;
+	}
+}
+
 
 /* Progress bar rotation position */
 .progress-circle.p0 .value-bar { display: none; }
