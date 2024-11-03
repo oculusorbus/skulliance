@@ -3393,7 +3393,7 @@ function getTotalMissions($conn){
 			$success_percentage = 0;
 			$over50 = "";
 			if($month_row["total"]-$month_row["progress"] != 0){
-				$success_percentage = round($month_row["success"]/($month_row["total"]-$month_row["progress"])*100);
+				$success_percentage = round($month_row["success"]/($month_row["total"]-$month_row["progress"])*100, 2);
 				if($success_percentage > 50){
 					$over50 = "over50";
 				}
@@ -3411,8 +3411,9 @@ function getTotalMissions($conn){
 			echo "</td>";
 			echo "<td align='center'>";
 			$failure_percentage = 0;
+			$over50 = "";
 			if($month_row["total"]-$month_row["progress"] != 0){
-				$failure_percentage = round($month_row["failure"]/($month_row["total"]-$month_row["progress"])*100);
+				$failure_percentage = round($month_row["failure"]/($month_row["total"]-$month_row["progress"])*100, 2);
 				if($failure_percentage > 50){
 					$over50 = "over50";
 				}
@@ -3460,7 +3461,7 @@ function getTotalMissions($conn){
 				$success_percentage = 0;
 				$over50 = "";
 				if($row["total"]-$row["progress"] != 0){
-					$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
+					$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100, 2);
 					if($success_percentage > 50){
 						$over50 = "over50";
 					}
@@ -3478,8 +3479,9 @@ function getTotalMissions($conn){
 				echo "</td>";
 				echo "<td align='center'>";
 				$failure_percentage = 0;
+				$over50 = "";
 				if($row["total"]-$row["progress"] != 0){
-					$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100);
+					$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100, 2);
 					if($failure_percentage > 50){
 						$over50 = "over50";
 					}
