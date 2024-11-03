@@ -67,7 +67,7 @@ function capitalizeFirstLetter(string) {
 					option.text = capitalizeFirstLetter(displayText);
 					option.value = wallet;
 					var select = document.getElementById("wallets");
-					if(option !== null) {
+					if(select !== null) {
 						select.appendChild(option);
 					}
                 });
