@@ -3395,7 +3395,7 @@ function getTotalMissions($conn){
 				}
 				?>
 				<div class="progress-circle <?php echo $over50;?> p<?php echo $success_percentage;?>">
-				   <span><?php echo $success_percentage;?></span>
+				   <span><?php echo $success_percentage."%";?></span>
 				   <div class="left-half-clipper">
 				      <div class="first50-bar"></div>
 				      <div class="value-bar success-bar"></div>
@@ -3414,7 +3414,7 @@ function getTotalMissions($conn){
 				}
 				?>
 				<div class="progress-circle <?php echo $over50;?> p<?php echo $failure_percentage;?>">
-				   <span><?php echo $failure_percentage;?></span>
+				   <span><?php echo $failure_percentage."%";?></span>
 				   <div class="left-half-clipper">
 				      <div class="first50-bar"></div>
 				      <div class="value-bar failure-bar"></div>
@@ -3458,7 +3458,7 @@ function getTotalMissions($conn){
 					}
 					?>
 					<div class="progress-circle <?php echo $over50;?> p<?php echo $success_percentage;?>">
-					   <span><?php echo $success_percentage;?></span>
+					   <span><?php echo $success_percentage."%";?></span>
 					   <div class="left-half-clipper">
 					      <div class="first50-bar"></div>
 					      <div class="value-bar success-bar"></div>
@@ -3477,7 +3477,7 @@ function getTotalMissions($conn){
 					}
 					?>
 					<div class="progress-circle <?php echo $over50;?> p<?php echo $failure_percentage;?>">
-					   <span><?php echo $failure_percentage;?></span>
+					   <span><?php echo $failure_percentage."%";?></span>
 					   <div class="left-half-clipper">
 					      <div class="first50-bar"></div>
 					      <div class="value-bar failure-bar"></div>
