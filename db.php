@@ -3578,10 +3578,10 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["score"];
+			echo number_format($row["score"]);
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["total"];
+			echo number_format($row["total"]);
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["success"];
