@@ -64,7 +64,7 @@
    /*Progress bar for the first 50%, filling the whole right half*/
    position: absolute; /*needed for clipping*/
    clip: rect(0, 5em, 5em, 2.5em);
-   background-color: #53777A;
+   background-color: #43464D;
    border-radius: 50%;
    width: 5em;
    height: 5em;
