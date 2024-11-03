@@ -896,7 +896,7 @@ li form {
 }
 
 .success {
-	background-color: #37004f;
+	background-color: #37004f !important;
 }
 
 .success-bar {
@@ -904,7 +904,7 @@ li form {
 }
 
 .failure {
-	background-color: #510936;
+	background-color: #510936 !important;
 }
 
 .failure-bar {
