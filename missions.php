@@ -74,7 +74,7 @@ if(isset($_GET['username'])){
 	<h2>Available Missions</h2>
 	<a name="missions" id="missions"></a>
     <div class="content missions">
-		<?php filterMissions($project_id); ?>
+		<?php //filterMissions($project_id); ?>
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
 				echo "<div id='filter'>";
