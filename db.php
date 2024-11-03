@@ -1356,15 +1356,14 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		foreach($results AS $index => $pairing){
 			$pairings[$index] = $pairing[0];
 		}
-		echo(implode("," , $pairings));
-		exit;
-		//print_r(implode(",", ));
-		exit;
+		$nft_ids = implode("," , $pairings);
+		/*
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		 $nft_ids .= $row['nft_id'].",";
 	  }
 	  $nft_ids = substr_replace($nft_ids, "", -1);
+		*/
   	}
 	if($nft_ids != ""){
 		$nft_ids = " AND nfts.id NOT IN(".$nft_ids.")";
