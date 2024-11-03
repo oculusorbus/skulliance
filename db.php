@@ -1360,14 +1360,6 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 				$pairings[$pairing[1]] = $pairing[0].",";
 			}
 		}
-		//$nft_ids = implode("," , $pairings);
-		/*
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-		 $nft_ids .= $row['nft_id'].",";
-	  }
-	  $nft_ids = substr_replace($nft_ids, "", -1);
-		*/
   	}
 	
 	$sql = "SELECT id, project_id FROM quests WHERE level = '1'";
