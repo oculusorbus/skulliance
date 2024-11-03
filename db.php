@@ -3436,7 +3436,7 @@ function getTotalMissions($conn){
 					   <span><?php echo $success_percentage;?></span>
 					   <div class="left-half-clipper">
 					      <div class="first50-bar"></div>
-					      <div class="value-bar success"></div>
+					      <div class="value-bar success-bar"></div>
 					   </div>
 					</div>
 					<?php
