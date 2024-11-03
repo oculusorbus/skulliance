@@ -8,6 +8,7 @@
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <link href="dist/circular-progress-bar.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
   <script type="text/javascript">
 	  // Toggle burger menu
 	  function toggleMenu(){

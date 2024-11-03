@@ -3425,8 +3425,21 @@ function getTotalMissions($conn){
 				echo "</td>";
 				echo "<td align='center'>";
 				$success_percentage = 0;
+				$over50 = "";
 				if($row["total"]-$row["progress"] != 0){
 					$success_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
+					if($success_percentage > 50){
+						$over50 = "over50";
+					}
+					?>
+					<div class="progress-circle <?php echo $over50;?> p<?php echo $success_percentage;?>">
+					   <span><?php echo $success_percentage;?></span>
+					   <div class="left-half-clipper">
+					      <div class="first50-bar"></div>
+					      <div class="value-bar"></div>
+					   </div>
+					</div>
+					<?php
 				}
 				echo number_format($row["success"])." (".$success_percentage."%)";
 				echo "</td>";
