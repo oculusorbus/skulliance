@@ -1351,7 +1351,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
-		print_r($result->fetch_array(MYSQL_NUM));
+		print_r($result->fetch_array(MYSQLI_NUM));
 		//print_r(implode(",", ));
 		exit;
 	  // output data of each row
