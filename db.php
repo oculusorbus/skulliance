@@ -3403,7 +3403,7 @@ function getTotalMissions($conn){
 				</div>
 				<?php
 			}
-			echo $month_row["success"]." (".$success_percentage."%)";
+			echo $month_row["success"];
 			echo "</td>";
 			echo "<td align='center'>";
 			$failure_percentage = 0;
@@ -3422,7 +3422,7 @@ function getTotalMissions($conn){
 				</div>
 				<?php
 			}
-			echo $month_row["failure"]." (".$failure_percentage."%)";;
+			echo $month_row["failure"];
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $month_row["progress"];
@@ -3466,7 +3466,7 @@ function getTotalMissions($conn){
 					</div>
 					<?php
 				}
-				echo number_format($row["success"])." (".$success_percentage."%)";
+				echo number_format($row["success"]);
 				echo "</td>";
 				echo "<td align='center'>";
 				$failure_percentage = 0;
@@ -3485,7 +3485,7 @@ function getTotalMissions($conn){
 					</div>
 					<?php
 				}
-				echo number_format($row["failure"])." (".$failure_percentage."%)";;
+				echo number_format($row["failure"]);
 				echo "</td>";
 				echo "<td align='center'>";
 				echo $row["progress"];
