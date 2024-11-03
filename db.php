@@ -1473,6 +1473,7 @@ function completeMission($conn, $mission_id, $quest_id){
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 		
+		/* Still deciding on whether this is the best approach
 	  	// Delete Mission NFTs since they are unecessary after a mission is completed and take up a ton of table space which degrades query performance
     	$sql = "DELETE FROM missions_nfts WHERE mission_id = '".$mission_id."'";
     	if ($conn->query($sql) === TRUE) {
@@ -1488,6 +1489,7 @@ function completeMission($conn, $mission_id, $quest_id){
     	} else {
     	  //echo "Error: " . $sql . "<br>" . $conn->error;
     	}
+		*/
 		
 		$mission_result = array();
 		$project = getProjectInfo($conn, $project_id);
