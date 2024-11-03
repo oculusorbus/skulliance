@@ -3387,8 +3387,21 @@ function getTotalMissions($conn){
 			echo "</td>";
 			echo "<td align='center'>";
 			$success_percentage = 0;
+			$over50 = "";
 			if($month_row["total"]-$month_row["progress"] != 0){
 				$success_percentage = round($month_row["success"]/($month_row["total"]-$month_row["progress"])*100);
+				if($success_percentage > 50){
+					$over50 = "over50";
+				}
+				?>
+				<div class="progress-circle <?php echo $over50;?> p<?php echo $success_percentage;?>">
+				   <span><?php echo $success_percentage;?></span>
+				   <div class="left-half-clipper">
+				      <div class="first50-bar"></div>
+				      <div class="value-bar success-bar"></div>
+				   </div>
+				</div>
+				<?php
 			}
 			echo $month_row["success"]." (".$success_percentage."%)";
 			echo "</td>";
@@ -3396,6 +3409,18 @@ function getTotalMissions($conn){
 			$failure_percentage = 0;
 			if($month_row["total"]-$month_row["progress"] != 0){
 				$failure_percentage = round($month_row["failure"]/($month_row["total"]-$month_row["progress"])*100);
+				if($failure_percentage > 50){
+					$over50 = "over50";
+				}
+				?>
+				<div class="progress-circle <?php echo $over50;?> p<?php echo $failure_percentage;?>">
+				   <span><?php echo $failure_percentage;?></span>
+				   <div class="left-half-clipper">
+				      <div class="first50-bar"></div>
+				      <div class="value-bar failure-bar"></div>
+				   </div>
+				</div>
+				<?php
 			}
 			echo $month_row["failure"]." (".$failure_percentage."%)";;
 			echo "</td>";
