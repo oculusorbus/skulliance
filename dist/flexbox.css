@@ -900,7 +900,7 @@ li form {
 }
 
 .success-bar {
-	border: 0.45em solid #37004f;
+	border: 0.45em solid #37004f !important;
 }
 
 .failure {
@@ -908,7 +908,7 @@ li form {
 }
 
 .failure-bar {
-	border: 0.45em solid #510936;
+	border: 0.45em solid #510936 !important;
 }
 
 .nft-level{

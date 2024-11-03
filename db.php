@@ -3447,6 +3447,19 @@ function getTotalMissions($conn){
 				$failure_percentage = 0;
 				if($row["total"]-$row["progress"] != 0){
 					$failure_percentage = round($row["failure"]/($row["total"]-$row["progress"])*100);
+					$failure_percentage = round($row["success"]/($row["total"]-$row["progress"])*100);
+					if($failure_percentage > 50){
+						$over50 = "over50";
+					}
+					?>
+					<div class="progress-circle <?php echo $over50;?> p<?php echo $failure_percentage;?>">
+					   <span><?php echo $failure_percentage;?></span>
+					   <div class="left-half-clipper">
+					      <div class="first50-bar"></div>
+					      <div class="value-bar failure-bar"></div>
+					   </div>
+					</div>
+					<?php
 				}
 				echo number_format($row["failure"])." (".$failure_percentage."%)";;
 				echo "</td>";
