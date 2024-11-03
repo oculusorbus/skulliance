@@ -1346,7 +1346,52 @@ function startAllFreeEligibleMissions($conn){
 }
 
 function renderStartAllFreeEligibleMissionsButton($conn){
-
+	$nft_ids = "";
+	$sql = "SELECT nft_id, project_id
+	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	if ($result->num_rows > 0) {
+		$results = $result->fetch_all();
+		$pairings = array();
+		foreach($results AS $index => $pairing){
+			if(isset($pairings[$pairing[1]])){
+				$pairings[$pairing[1]] .= $pairing[0].",";
+			}else{
+				$pairings[$pairing[1]] = $pairing[0].",";
+			}
+		}
+		//$nft_ids = implode("," , $pairings);
+		/*
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		 $nft_ids .= $row['nft_id'].",";
+	  }
+	  $nft_ids = substr_replace($nft_ids, "", -1);
+		*/
+  	}
+	
+	$sql = "SELECT id, project_id FROM quests WHERE level = '1'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		$nft_ids = "";
+		if(isset($pairings[$row['project_id']])){
+			$nft_ids = " AND nfts.id NOT IN(".substr_replace($pairings[$row['project_id']], "", -1).")";
+		}
+	  	$nft_sql = "SELECT nfts.id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."'".$nft_ids;
+	
+	  	$nft_result = $conn->query($nft_sql);
+		if ($nft_result->num_rows > 0) {
+	    	  echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
+	    	  <input type='hidden' id='start_all' name='start_all' value='true'>	
+	    	  <input type='submit' value='Start Missions' class='button'>
+	    	  </form><br>";
+			  break;
+		}
+	  }
+	}
 }
 
 function completeMission($conn, $mission_id, $quest_id){
