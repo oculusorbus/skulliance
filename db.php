@@ -3443,6 +3443,7 @@ function getTotalMissions($conn){
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
 				echo "<td align='left'>";
+				echo "<img src='icons/all-time.png'/>";
 				echo "All Time";
 				echo "</td>";
 				echo "<td align='center'>";
