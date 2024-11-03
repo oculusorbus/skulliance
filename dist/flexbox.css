@@ -911,6 +911,12 @@ li form {
 	border: 0.45em solid #510936 !important;
 }
 
+.missions-icon {
+	width: 6em;
+	margin: 20px;
+	display: block;
+}
+
 .nft-level{
 	color: #bbb;
 }

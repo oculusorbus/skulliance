@@ -3380,9 +3380,11 @@ function getTotalMissions($conn){
 		while($month_row = $month_result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='left'>";
+			echo "<img class='missions-icon' src='icons/calendar.png'/>";
 			echo date('F');
 			echo "</td>";
 			echo "<td align='center'>";
+			echo "<img class='missions-icon' src='icons/total.png'/>";
 			echo $month_row["total"];
 			echo "</td>";
 			echo "<td align='center'>";
@@ -3425,6 +3427,7 @@ function getTotalMissions($conn){
 			echo $month_row["failure"];
 			echo "</td>";
 			echo "<td align='center'>";
+			echo "<img class='missions-icon' src='icons/time.png'/>";
 			echo $month_row["progress"];
 			echo "</td>";
 			echo "<td align='center'>";
@@ -3443,10 +3446,11 @@ function getTotalMissions($conn){
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
 				echo "<td align='left'>";
-				echo "<img src='icons/all-time.png'/>";
+				echo "<img class='missions-icon' src='icons/all.png'/>";
 				echo "All Time";
 				echo "</td>";
 				echo "<td align='center'>";
+				echo "<img class='missions-icon' src='icons/grand-total.png'/>";
 				echo number_format($row["total"]);
 				echo "</td>";
 				echo "<td align='center'>";
@@ -3489,6 +3493,7 @@ function getTotalMissions($conn){
 				echo number_format($row["failure"]);
 				echo "</td>";
 				echo "<td align='center'>";
+				echo "<img class='missions-icon' src='icons/all-time.png'/>";
 				echo $row["progress"];
 				echo "</td>";
 				echo "<td align='center'>";
