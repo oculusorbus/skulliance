@@ -1352,8 +1352,6 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 		$results = $result->fetch_all();
-		print_r($results);
-		exit;
 		$pairings = array();
 		foreach($results AS $index => $pairing){
 			$pairings[$pairing[1]] .= $pairing[0];
