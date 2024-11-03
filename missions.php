@@ -46,8 +46,8 @@ if(isset($_GET['username'])){
 			<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 			<h2>Daily Rewards</h2>
 			<div class="content" id="player-stats">
-				<?php //renderWalletConnection("missions"); ?>
-				<?php //renderDailyRewardsSection(); ?>
+				<?php renderWalletConnection("missions"); ?>
+				<?php renderDailyRewardsSection(); ?>
 			</div>
 			<?php } ?>
 	  </div>
@@ -74,7 +74,7 @@ if(isset($_GET['username'])){
 	<h2>Available Missions</h2>
 	<a name="missions" id="missions"></a>
     <div class="content missions">
-		<?php //filterMissions($project_id); ?>
+		<?php filterMissions($project_id); ?>
 			<?php 
 			if(isset($_SESSION['userData']['user_id'])){
 				echo "<div id='filter'>";
