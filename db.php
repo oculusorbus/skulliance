@@ -1356,9 +1356,11 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		exit;
 		$pairings = array();
 		foreach($results AS $index => $pairing){
-			$pairings[$index] = $pairing[0];
+			$pairings[$pairing[1]] .= $pairing[0];
 		}
-		$nft_ids = implode("," , $pairings);
+		print_r($pairings);
+		exit;
+		//$nft_ids = implode("," , $pairings);
 		/*
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
