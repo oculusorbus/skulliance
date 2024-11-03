@@ -1347,11 +1347,13 @@ function startAllFreeEligibleMissions($conn){
 
 function renderStartAllFreeEligibleMissionsButton($conn){
 	$nft_ids = "";
-	$sql = "SELECT nft_id
-	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT nft_id, project_id
+	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON mission_nfts.nft_id = nfts.id INNER JOIN collections ON nfts.collection_id = collections.id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 		$results = $result->fetch_all();
+		print_r($results);
+		exit;
 		$pairings = array();
 		foreach($results AS $index => $pairing){
 			$pairings[$index] = $pairing[0];
