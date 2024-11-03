@@ -3584,10 +3584,10 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo number_format($row["total"]);
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["success"];
+			echo number_format($row["success"]);
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["failure"];
+			echo number_format($row["failure"]);
 			echo "</td>";
 			echo "<td align='center'>";
 			echo $row["progress"];
