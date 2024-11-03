@@ -58,13 +58,13 @@ if(isset($_GET['username'])){
 	<div id='stats'>
 	<?php
 	if(isset($_SESSION['userData']['user_id'])){
-		getTotalMissions($conn);
+		//getTotalMissions($conn);
 	}else{
 		echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 	}?>
 	<?php 
 	if(isset($_SESSION['userData']['user_id'])){
-		getCurrentMissions($conn);
+		//getCurrentMissions($conn);
 	}else{
 		echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 	} 
@@ -81,7 +81,7 @@ if(isset($_GET['username'])){
 				getMissionsFilters($conn, $quest_id);
 				echo "</div>";
 				echo "<div id='quests'>";
-				getMissions($conn, $quest_id);
+				//getMissions($conn, $quest_id);
 				echo "</div>";
 			}else{
 				echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
