@@ -915,6 +915,7 @@ li form {
 	width: 6em;
 	margin: 20px !important;
 	display: block;
+	opacity: 0.25;
 }
 
 .nft-level{
