@@ -1352,7 +1352,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 		$results = $result->fetch_all();
-		$pairings = array;
+		$pairings = array();
 		foreach($results AS $index => $pairing){
 			$pairings[$index] = $pairing["nft_id"];
 		}
