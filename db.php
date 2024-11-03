@@ -1356,7 +1356,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		foreach($results AS $index => $pairing){
 			$pairings[$index] = $pairing[0];
 		}
-		echo(implode("," , $pairings);
+		echo(implode("," , $pairings));
 		exit;
 		//print_r(implode(",", ));
 		exit;
