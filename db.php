@@ -3414,7 +3414,7 @@ function getTotalMissions($conn){
 		echo "<tr>";
 		foreach($consumables AS $id => $consumable){
 			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/>";
+			echo "<img class='icon' style='border:0px' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/>";
 			echo $consumable["amount"];
 			echo "</li>";
 		}
