@@ -3412,7 +3412,7 @@ function getTotalMissions($conn){
 			echo "</td>";
 			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/score.png'/>";
-			echo calculateScore($month_row["total_duration"], $month_row["success"], $month_row["failure"], $month_row["progress"]);
+			echo number_format(calculateScore($month_row["total_duration"], $month_row["success"], $month_row["failure"], $month_row["progress"]));
 			echo "</td>";
 			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/total.png'/>";
@@ -3484,7 +3484,7 @@ function getTotalMissions($conn){
 				echo "</td>";
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/all-score.png'/>";
-				echo calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]);
+				echo number_format(calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]));
 				echo "</td>";
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/grand-total.png'/>";
