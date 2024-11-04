@@ -3423,19 +3423,21 @@ function getTotalMissions($conn){
 			$over50 = "";
 			if($month_row["total"]-$month_row["progress"] != 0){
 				$success_percentage = $month_row["success"]/($month_row["total"]-$month_row["progress"])*100;
-				if(round($success_percentage) > 50){
-					$over50 = "over50";
-				}
-				?>
-				<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
-				   <span><?php echo round($success_percentage, 2)."%";?></span>
-				   <div class="left-half-clipper">
-				      <div class="first50-bar success"></div>
-				      <div class="value-bar success-bar"></div>
-				   </div>
-				</div>
-				<?php
+			}else{
+				$success_percentage = 0;
 			}
+			if(round($success_percentage) > 50){
+				$over50 = "over50";
+			}
+			?>
+			<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
+			   <span><?php echo round($success_percentage, 2)."%";?></span>
+			   <div class="left-half-clipper">
+			      <div class="first50-bar success"></div>
+			      <div class="value-bar success-bar"></div>
+			   </div>
+			</div>
+			<?php
 			echo $month_row["success"];
 			echo "</td>";
 			echo "<td align='center'>";
@@ -3443,19 +3445,21 @@ function getTotalMissions($conn){
 			$over50 = "";
 			if($month_row["total"]-$month_row["progress"] != 0){
 				$failure_percentage = $month_row["failure"]/($month_row["total"]-$month_row["progress"])*100;
-				if(round($failure_percentage) > 50){
-					$over50 = "over50";
-				}
-				?>
-				<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
-				   <span><?php echo round($failure_percentage, 2)."%";?></span>
-				   <div class="left-half-clipper">
-				      <div class="first50-bar failure"></div>
-				      <div class="value-bar failure-bar"></div>
-				   </div>
-				</div>
-				<?php
+			}else{
+				$failure_percentage = 0;
 			}
+			if(round($failure_percentage) > 50){
+				$over50 = "over50";
+			}
+			?>
+			<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
+			   <span><?php echo round($failure_percentage, 2)."%";?></span>
+			   <div class="left-half-clipper">
+			      <div class="first50-bar failure"></div>
+			      <div class="value-bar failure-bar"></div>
+			   </div>
+			</div>
+			<?php
 			echo $month_row["failure"];
 			echo "</td>";
 			echo "<td align='center'>";
@@ -3495,19 +3499,21 @@ function getTotalMissions($conn){
 				$over50 = "";
 				if($row["total"]-$row["progress"] != 0){
 					$success_percentage = $row["success"]/($row["total"]-$row["progress"])*100;
-					if(round($success_percentage) > 50){
-						$over50 = "over50";
-					}
-					?>
-					<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
-					   <span><?php echo round($success_percentage, 2)."%";?></span>
-					   <div class="left-half-clipper">
-					      <div class="first50-bar success"></div>
-					      <div class="value-bar success-bar"></div>
-					   </div>
-					</div>
-					<?php
+				}else{
+					$success_percentage = 0;
 				}
+				if(round($success_percentage) > 50){
+					$over50 = "over50";
+				}
+				?>
+				<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
+				   <span><?php echo round($success_percentage, 2)."%";?></span>
+				   <div class="left-half-clipper">
+				      <div class="first50-bar success"></div>
+				      <div class="value-bar success-bar"></div>
+				   </div>
+				</div>
+				<?php
 				echo number_format($row["success"]);
 				echo "</td>";
 				echo "<td align='center'>";
@@ -3515,19 +3521,21 @@ function getTotalMissions($conn){
 				$over50 = "";
 				if($row["total"]-$row["progress"] != 0){
 					$failure_percentage = $row["failure"]/($row["total"]-$row["progress"])*100;
-					if(round($failure_percentage) > 50){
-						$over50 = "over50";
-					}
-					?>
-					<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
-					   <span><?php echo round($failure_percentage, 2)."%";?></span>
-					   <div class="left-half-clipper">
-					      <div class="first50-bar failure"></div>
-					      <div class="value-bar failure-bar"></div>
-					   </div>
-					</div>
-					<?php
+				}else{
+					$failure_percentage = 0;
 				}
+				if(round($failure_percentage) > 50){
+					$over50 = "over50";
+				}
+				?>
+				<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
+				   <span><?php echo round($failure_percentage, 2)."%";?></span>
+				   <div class="left-half-clipper">
+				      <div class="first50-bar failure"></div>
+				      <div class="value-bar failure-bar"></div>
+				   </div>
+				</div>
+				<?php
 				echo number_format($row["failure"]);
 				echo "</td>";
 				echo "<td align='center'>";
