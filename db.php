@@ -903,7 +903,6 @@ function getCurrentMissions($conn){
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
 		$consumables = getMissionConsumables($conn, $row["mission_id"]);
-		print_r($consumables);
 		echo "<tr id='mission-row-".$row["mission_id"]."'>";
 		  echo "<td align='center'>";
 		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
@@ -1710,7 +1709,7 @@ function getConsumables($conn){
 }
 
 function getMissionConsumables($conn, $mission_id){
-	$sql = "SELECT consumable_id, name FROM consumables INNER JOIN missions_consumables ON consumables.id = missions_consumables.mission_id WHERE mission_id = '".$mission_id."'";
+	$sql = "SELECT consumables.id AS consumable_id, name FROM consumables INNER JOIN missions_consumables ON consumables.id = missions_consumables.mission_id WHERE missions_consumables.mission_id = '".$mission_id."'";
 	$result = $conn->query($sql);
 	
 	$consumables = array();
