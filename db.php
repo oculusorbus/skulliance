@@ -955,7 +955,7 @@ function getCurrentMissions($conn){
 		echo "</td>";
 		echo "</tr>";
 	  }
-	  echo "</table>";
+	  echo "</table><br>";
 	  //json_encode(
 	  if(!empty($completed_missions)){
 		  $mission_ids = "";
@@ -971,7 +971,7 @@ function getCurrentMissions($conn){
 			  document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 		  	  </script>";
   	  }
-	  echo "</div><br>";
+	  echo "</div>";
 	} else {
 	  //echo "0 results";
 	}
