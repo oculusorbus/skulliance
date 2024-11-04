@@ -47,7 +47,7 @@ form {
 
 .container {
   height: 100%;
-  max-width: 1866.65px;
+  /*max-width: 1866.65px;*/
   margin: 0 auto;
   min-height: 100%;
 }
@@ -142,6 +142,7 @@ a{
   /* Side background commented out
   background-color: #2F3136;*/
   padding: 20px;
+  max-width: 500px;
 }
 
 /* Main column */
