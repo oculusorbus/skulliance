@@ -1482,7 +1482,7 @@ function completeMission($conn, $mission_id, $quest_id){
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 		
-		/* Still deciding on whether this is the best approach
+		/* Still deciding on whether this is the best approach. Considering archiving mission nft and consumable data in a separate table for reference.
 	  	// Delete Mission NFTs since they are unecessary after a mission is completed and take up a ton of table space which degrades query performance
     	$sql = "DELETE FROM missions_nfts WHERE mission_id = '".$mission_id."'";
     	if ($conn->query($sql) === TRUE) {
