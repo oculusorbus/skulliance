@@ -85,6 +85,7 @@ if(isset($_POST["start_all"])){
   }else{
 	echo "<div class='main>";
 	echo "<h2>Welcome to Skulliance</h2>";
+    echo "<div class='content' id='player-stats'>";
   	echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
     renderWalletConnection("missions");
 	echo "</div>";
