@@ -3406,7 +3406,6 @@ function getTotalMissions($conn){
 		$consumables = array();
 		$consumables = getCurrentAmounts($conn);
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th align='center' width='14%'>Timeframe</th><th width='14%'>Total Missions</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>In Progress</th><th width='14%'>Leaderboard</th><th width='14%'>Leaderboard</th>";
 		foreach($consumables AS $id => $consumable){
 			echo "<th align='center' width='14%'>";
 			echo $consumable["name"];
