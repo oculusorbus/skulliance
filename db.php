@@ -1709,7 +1709,7 @@ function getConsumables($conn){
 }
 
 function getMissionConsumables($conn, $mission_id){
-	$sql = "SELECT consumables.id AS consumable_id, name FROM consumables INNER JOIN missions_consumables ON consumables.id = missions_consumables.mission_id WHERE missions_consumables.mission_id = '".$mission_id."'";
+	$sql = "SELECT consumables.id AS consumable_id, name FROM consumables INNER JOIN missions_consumables ON consumables.id = missions_consumables.consumables_id WHERE missions_consumables.mission_id = '".$mission_id."'";
 	$result = $conn->query($sql);
 	
 	$consumables = array();
