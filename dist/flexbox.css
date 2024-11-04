@@ -1323,6 +1323,7 @@ section.active {
 	.nft-image {
 		margin-right: 10px;
 		position: relative;
+		float: left;
 		top: -18px;
 		left: 18px;
 	}
