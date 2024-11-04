@@ -10,15 +10,15 @@ html {
 body {
   font-family: Arial;
   margin: 0;
-  background-color: #222;
+  background-color: #161616;
   height:100%;
   /*background-image: url("../images/dropshipbackground.jpg");  The image used */
   background-position: top; /* Center the image */
   background-repeat: no-repeat; /* Do not repeat the image */
   background-size: cover; /* Resize the background image to cover the entire container */
   background-attachment: fixed;
-  background-blend-mode: multiply;
-  background-image: url("../images/og.jpg");
+  /*background-blend-mode: multiply;*/
+  /*background-image: url("../images/og.jpg");*/
 }
 
 form {
