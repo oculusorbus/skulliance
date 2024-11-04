@@ -1359,8 +1359,8 @@ function startAllFreeEligibleMissions($conn){
 
 function renderStartAllFreeEligibleMissionsButton($conn){
 	$nft_ids = "";
-	$sql = "SELECT nft_id, project_id
-	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT asset_id, project_id
+	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	if ($result->num_rows > 0) {
 		$results = $result->fetch_all();
@@ -1380,11 +1380,11 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-		$nft_ids = "";
+		$asset_ids = "";
 		if(isset($pairings[$row['project_id']])){
-			$nft_ids = " AND nfts.id NOT IN(".substr_replace($pairings[$row['project_id']], "", -1).")";
+			$asset_ids = " AND asset_id NOT IN(".substr_replace($pairings[$row['project_id']], "", -1).")";
 		}
-	  	$nft_sql = "SELECT nfts.id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."'".$nft_ids;
+	  	$nft_sql = "SELECT asset_id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."'".$asset_ids;
 	
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
