@@ -18,17 +18,8 @@ if(isset($_POST["start_all"])){
 <div class="row" id="stats">
   <div class="main">
 	<?php
-	if(isset($_SESSION['userData']['user_id'])){
 		getTotalMissions($conn);
-	}else{
-		echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
-	}?>
-	<?php 
-	if(isset($_SESSION['userData']['user_id'])){
 		getCurrentMissions($conn);
-	}else{
-		echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
-	} 
 	?>
 	</div>
 </div>
@@ -36,6 +27,7 @@ if(isset($_POST["start_all"])){
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <?php 
+  if(isset($_SESSION['userData']['user_id'])){
   $rate_tally = 0;
   $project_id = 0;
   $quest_id = 0;
@@ -61,13 +53,11 @@ if(isset($_POST["start_all"])){
   <?php
   }else{?>
 	  <div class="side" id="rewards">
-			<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 			<h2>Daily Rewards</h2>
 			<div class="content" id="player-stats">
 				<?php renderWalletConnection("missions"); ?>
 				<?php renderDailyRewardsSection(); ?>
 			</div>
-			<?php } ?>
 	  </div>
   <?php
   }
@@ -79,20 +69,22 @@ if(isset($_POST["start_all"])){
     <div class="content missions">
 		<?php //filterMissions($project_id); ?>
 			<?php 
-			if(isset($_SESSION['userData']['user_id'])){
 				echo "<div id='filter'>";
 				getMissionsFilters($conn, $quest_id);
 				echo "</div>";
 				echo "<div id='quests'>";
 				getMissions($conn, $quest_id);
 				echo "</div>";
-			}else{
-				echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
-			} 
 			?>
     </div>
 	</div>
   </div>
+  <?php
+  else{
+  	echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
+    renderWalletConnection("missions");
+  } 
+  ?>
 </div>
 <div id="quick-menu">
 	<img id="rewards-icon" src="icons/rewards.png" onclick="toggleSections('rewards');">
