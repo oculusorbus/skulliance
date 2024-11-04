@@ -747,6 +747,7 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		$title = $row["title"];
 		$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
+		$style = "'background-image: url('".image."')'";
 		$quest_ids[$row["id"]] = $row["id"];
 		if(!checkMissionInventory($conn, $row["project_id"])){
 			$ineligible_quest_ids[$row["id"]] = $row["id"];
@@ -757,7 +758,7 @@ function getMissions($conn, $quest_id) {
 		}
 		if(($max_level+1) >= $row["level"]){
 			echo "<div class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
-    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
+    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()' ".$style.">";
 		}else{
 			$locked_quest_ids[$row["id"]] = $row["id"];
 			echo "<div style='display:none' class='nft project-".$row["project_id"]."' id='quest-".$row["id"]."'>";
