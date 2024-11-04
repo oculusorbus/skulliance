@@ -382,7 +382,7 @@ a{
 }*/
 
 .main h3 {
-	color: white;
+	color: #D6DDDE;
 }
 
 #results {
@@ -595,6 +595,8 @@ h2 {
 
 h3{
 	font-size: 1.5rem;
+	font-family: Courier;
+	text-align: left;
 }
 
 p {
