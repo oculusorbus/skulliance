@@ -918,7 +918,7 @@ function getCurrentMissions($conn){
 				  echo "<img class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
 		  	  }
 		  }else{
-			  echo "<img class='icon consumable' src='icons/nothing.png'/>";
+			  //echo "<img class='icon consumable' src='icons/nothing.png'/>";
 		  }
 		  echo "</td>";
 		  echo "<td align='left'>";
