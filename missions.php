@@ -11,12 +11,6 @@ if(isset($_GET['username'])){
 	$username = $_GET['username'];
 }
 ?>
-<style>
-	.row{
-		position:relative;
-		top:-40px
-	}
-</style>
 <!-- The flexible grid (content) -->
 <div class="row" id="stats">
   <div class="main">
