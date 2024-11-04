@@ -3297,8 +3297,10 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					if($leaderboardCounter == 1){
 						//$width = 50;
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+						if(isset($_SESSION['userData']['user_id'])){
 						if($_SESSION['userData']['user_id'] == $row["user_id"]){
 							$fireworks = true;
+						}
 						}
 					}else if($leaderboardCounter == 2){
 						//$width = 45;
@@ -3308,8 +3310,10 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 							$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 							$leaderboardCounter--;
 						}
+						if(isset($_SESSION['userData']['user_id'])){
 						if($_SESSION['userData']['user_id'] == $row["user_id"]){
 							$fireworks = true;
+						}
 						}
 					}else if($leaderboardCounter == 3){
 						//$width = 40;
@@ -3320,14 +3324,18 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 							$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 							$leaderboardCounter--;
 						}
+						if(isset($_SESSION['userData']['user_id'])){
 						if($_SESSION['userData']['user_id'] == $row["user_id"]){
 							$fireworks = true;
+						}
 						}
 					}else if($leaderboardCounter > 3 && $third_total == $row["total"]){
 						$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 						$leaderboardCounter--;
+						if(isset($_SESSION['userData']['user_id'])){
 						if($_SESSION['userData']['user_id'] == $row["user_id"]){
 							$fireworks = true;
+						}
 						}
 					}else if($leaderboardCounter > 3 && $last_total == $row["total"]){
 						$leaderboardCounter--;
