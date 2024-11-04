@@ -3554,21 +3554,23 @@ function getTotalMissions($conn){
 		echo "</table><br>";
 		$consumables = array();
 		$consumables = getCurrentAmounts($conn);
-		echo "<h3>Item Inventory</h3>";
-		echo "<table id='transactions' cellspacing='0'>";
-		foreach($consumables AS $id => $consumable){
-			echo "<th align='center' width='14%'>";
-			echo $consumable["name"];
-			echo "</th>";
+		if(!empty($consumables)){
+			echo "<h3>Item Inventory</h3>";
+			echo "<table id='transactions' cellspacing='0'>";
+			foreach($consumables AS $id => $consumable){
+				echo "<th align='center' width='14%'>";
+				echo $consumable["name"];
+				echo "</th>";
+			}
+			echo "<tr>";
+			foreach($consumables AS $id => $consumable){
+				echo "<td align='center'>";
+				echo "<img class='icon' style='border:0px' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/><br><br>";
+				echo "<span class='amount'>".$consumable["amount"]."</span>";
+				echo "</li>";
+			}
+			echo "</tr></table>";
 		}
-		echo "<tr>";
-		foreach($consumables AS $id => $consumable){
-			echo "<td align='center'>";
-			echo "<img class='icon' style='border:0px' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/><br><br>";
-			echo "<span class='amount'>".$consumable["amount"]."</span>";
-			echo "</li>";
-		}
-		echo "</tr></table>";
 		echo "</div>";
 	}
 }
