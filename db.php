@@ -3563,8 +3563,9 @@ function getTotalMissions($conn){
 	}
 }
 
+// Calculate score for mission stats and monthly and all time high leaderboards
 function calculateScore($total_duration, $success, $failure, $progress){
-	return round(((($row["total_duration"]+($row["success"]*2))-($row["failure"]/2))-$row["progress"])+1);
+	return round(((($total_duration+($success*2))-($failure/2))-$progress)+1);
 }
 
 function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
