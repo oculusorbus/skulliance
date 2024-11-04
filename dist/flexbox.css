@@ -1329,6 +1329,8 @@ section.active {
 	}
 	.nft-name {
 		padding-right: 5px !important;
+		font-size: 1.5rem;
+		font-family: Courier;
 	}
 	.nft-level {
 		padding-right: 5px !important;
