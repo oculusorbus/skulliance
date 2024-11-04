@@ -689,6 +689,10 @@ function retreat(mission_id, quest_id){
 				//window.location.href = "missions.php";
 				// Hide consumables since they were restored to the user upon successful retreat
 				document.getElementById("consumable-"+mission_id).style.display = "none";
+				// Hide mission row
+				document.getElementById("mission-row-"+mission_id).style.display = "none";
+				// Hide mission progress bar
+				document.getElementById("mission-progress-"+mission_id).style.display = "none";
 				console.log(data);
 				// Do something with the data
 		    } else {

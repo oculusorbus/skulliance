@@ -942,7 +942,7 @@ function getCurrentMissions($conn){
 		  }
 		  echo "</td>";
 		echo "</tr>";
-		echo "<tr>";
+		echo "<tr id='mission-progress-".$row["mission_id"]."'>";
 		echo "<td colspan='9' style='padding:0px;'>";
 		echo "<div class='w3-border'>";
 		if($completed == "Completed"){
