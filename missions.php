@@ -10,6 +10,9 @@ $username="";
 if(isset($_GET['username'])){
 	$username = $_GET['username'];
 }
+if(isset($_POST["start_all"])){
+	startAllFreeEligibleMissions($conn);
+}
 ?>
 <!-- The flexible grid (content) -->
 <div class="row" id="stats">
@@ -33,9 +36,6 @@ if(isset($_GET['username'])){
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <?php 
-  if(isset($_POST["start_all"])){
-  	startAllFreeEligibleMissions($conn);
-  }
   $rate_tally = 0;
   $project_id = 0;
   $quest_id = 0;
