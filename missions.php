@@ -11,6 +11,12 @@ if(isset($_GET['username'])){
 	$username = $_GET['username'];
 }
 ?>
+<style>
+	.row{
+		position:relative;
+		top:-40px
+	}
+</style>
 <!-- The flexible grid (content) -->
 <div class="row" id="stats">
   <div class="main">
@@ -31,7 +37,7 @@ if(isset($_GET['username'])){
 </div>
 
 <!-- The flexible grid (content) -->
-<div class="row" id="row1" style="position:relative;top:-40px">
+<div class="row" id="row1">
   <?php 
   if(isset($_POST["start_all"])){
   	startAllFreeEligibleMissions($conn);
