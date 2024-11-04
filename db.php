@@ -3418,7 +3418,7 @@ function getTotalMissions($conn){
 			echo $consumable["amount"];
 			echo "</li>";
 		}
-		echo "</tr></table>";
+		echo "</tr></table><br>";
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th align='center' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
