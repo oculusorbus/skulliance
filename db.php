@@ -1367,9 +1367,9 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		$pairings = array();
 		foreach($results AS $index => $pairing){
 			if(isset($pairings[$pairing[1]])){
-				$pairings[$pairing[1]] .= $pairing[0].",";
+				$pairings[$pairing[1]] .= "'".$pairing[0]."',";
 			}else{
-				$pairings[$pairing[1]] = $pairing[0].",";
+				$pairings[$pairing[1]] = "'".$pairing[0]."',";
 			}
 		}
   	}
@@ -1385,8 +1385,6 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 			$asset_ids = " AND asset_id NOT IN(".substr_replace($pairings[$row['project_id']], "", -1).")";
 		}
 	  	$nft_sql = "SELECT asset_id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."'".$asset_ids;
-		echo $nft_sql;
-	
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
 	    	  echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
