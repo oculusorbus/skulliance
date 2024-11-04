@@ -583,7 +583,7 @@ function renderCrafting($conn, $page){
 				$zero = true;
 			}
 		}
-		if($zero){
+		if($zero || empty($balances)){
 			echo "You do not have balances for all core currency listed above to craft.<br><br>Purchase NFTs from every core project in the Skulliance in order to craft DIAMOND.";
 		}else{
 			?>
