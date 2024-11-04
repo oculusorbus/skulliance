@@ -3403,6 +3403,23 @@ function getTotalMissions($conn){
 	  	echo "<h2>Missions Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
+		$consumables = array();
+		$consumables = getCurrentAmounts($conn);
+		echo "<table id='transactions' cellspacing='0'>";
+		echo "<th align='center' width='14%'>Timeframe</th><th width='14%'>Total Missions</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>In Progress</th><th width='14%'>Leaderboard</th><th width='14%'>Leaderboard</th>";
+		echo "<tr>";
+		foreach($consumables AS $id => $consumable){
+			echo "<th align='center' width='14%'>";
+			echo $consumable["name"];
+			echo "</th>";
+		}
+		foreach($consumables AS $id => $consumable){
+			echo "<td align='center'>";
+			echo "<img class='missions-icon' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/>";
+			echo $$consumable["amount"];
+			echo "</li>";
+		}
+		echo "</tr></table>";
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th align='center' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
