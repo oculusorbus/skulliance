@@ -925,7 +925,7 @@ function getCurrentMissions($conn){
   		  echo "<td align='left'>";
 		  echo $time_message;
 		  echo "</td>";
-  		  echo "<td align='center' style='padding:1px' id='consumable-".$row["mission_id"]."'>";
+  		  echo "<td align='left' style='padding:1px' id='consumable-".$row["mission_id"]."'>";
 		  if(is_array($consumables)){
 		  	  foreach($consumables AS $consumable_id => $consumable_name){
 				  echo "<img class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
