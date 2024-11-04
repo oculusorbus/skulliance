@@ -48,6 +48,7 @@ form {
 .container {
   height: 100%;
   /*max-width: 1866.65px;*/
+  max-width: 2000px;
   margin: 0 auto;
   min-height: 100%;
 }
