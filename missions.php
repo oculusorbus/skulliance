@@ -31,7 +31,7 @@ if(isset($_GET['username'])){
 </div>
 
 <!-- The flexible grid (content) -->
-<div class="row" id="row1">
+<div class="row" id="row1" style="position:relative;top:-65px">
   <?php 
   if(isset($_POST["start_all"])){
   	startAllFreeEligibleMissions($conn);
