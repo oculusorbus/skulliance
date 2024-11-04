@@ -17,7 +17,7 @@ body {
   background-repeat: no-repeat; /* Do not repeat the image */
   background-size: cover; /* Resize the background image to cover the entire container */
   background-attachment: fixed;
-  /*background-blend-mode: multiply;*/
+  background-blend-mode: multiply;
   /*background-image: url("../images/og.jpg");*/
 }
 
