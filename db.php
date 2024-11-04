@@ -3403,7 +3403,7 @@ function getTotalMissions($conn){
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th align='center' width='16%'>Timeframe</th><th width='16%'>Total Missions</th><th width='16%'>Success</th><th width='16%'>Failure</th><th width='16%'>In Progress</th><th width='16%'>Leaderboard</th>";
+		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Missions</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>In Progress</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='center'>";
