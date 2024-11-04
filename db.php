@@ -849,7 +849,7 @@ function getCurrentMissions($conn){
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
    	  renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th><th id='consumable-header' style='display:none'>Item</th>";
+	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th><th id='consumable-header'>Consumables</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		// Handle consumables for each mission
