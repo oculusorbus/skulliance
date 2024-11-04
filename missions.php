@@ -15,6 +15,7 @@ if(isset($_POST["start_all"])){
 }
 ?>
 <!-- The flexible grid (content) -->
+<?php if(isset($_SESSION['userData']['user_id'])){ ?>
 <div class="row" id="stats">
   <div class="main">
 	<?php
@@ -23,6 +24,7 @@ if(isset($_POST["start_all"])){
 	?>
 	</div>
 </div>
+<?php } ?>
 
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
