@@ -12,9 +12,8 @@ if(isset($_GET['username'])){
 }
 ?>
 <!-- The flexible grid (content) -->
-<div class="row" id="row1">
+<div class="row" id="stats">
   <div class="main">
-	<div id='stats'>
 	<?php
 	if(isset($_SESSION['userData']['user_id'])){
 		getTotalMissions($conn);
@@ -29,7 +28,6 @@ if(isset($_GET['username'])){
 	} 
 	?>
 	</div>
-  </div>
 </div>
 
 <!-- The flexible grid (content) -->
