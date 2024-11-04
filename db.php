@@ -902,6 +902,7 @@ function getCurrentMissions($conn){
 			//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
+		$consumables = getMissionConsumables($conn, $row["mission_id"]);
 		echo "<tr id='mission-row-".$row["mission_id"]."'>";
 		  echo "<td align='center'>";
 		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
@@ -931,7 +932,13 @@ function getCurrentMissions($conn){
  			  echo $completed;
 		  }
 		  echo "</td>";
-  		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'></td>";
+  		  echo "<td style='display:none' id='consumable-".$row["mission_id"]."'>";
+		  if(is_array($consumables)){
+		  	  foreach($consumables AS $consumable_id => $consumable_name){
+				  echo "<img class='icon' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
+		  	  }
+		  }  
+		  echo "</td>";
 		echo "</tr>";
 		echo "<tr>";
 		echo "<td colspan='8' style='padding:0px;'>";
@@ -1689,6 +1696,20 @@ function getConsumableRanges($conn){
 // Get consumables ids and names
 function getConsumables($conn){
 	$sql = "SELECT id, name FROM consumables";
+	$result = $conn->query($sql);
+	
+	$consumables = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+		  $consumables[$row["id"]] = $row["name"];
+	  }
+	  return $consumables;
+    }
+}
+
+function getMissionConsumables($conn, $mission_id){
+	$sql = "SELECT id, name FROM consumables INNER JOIN missions_consumables ON consumables.id = missions_consumables.mission_id WHERE mission.id = '".$mission_id."'";
 	$result = $conn->query($sql);
 	
 	$consumables = array();
