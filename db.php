@@ -1303,10 +1303,10 @@ function startAllFreeEligibleMissions($conn){
 		// output data of each row
 		while($row = $result->fetch_assoc()) {
 			// Get all user NFTs for a specific project that aren't currently deployed in missions
-			$nft_sql = "SELECT nfts.id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
+			$nft_sql = "SELECT nfts.id, asset_id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."' AND nfts.id 
 				NOT IN(
-			      SELECT nft_id
-			      FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."') 
+			      SELECT asset_id
+			      FROM missions_nfts INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."') 
 				ORDER BY collection_id ASC, rate DESC";
 
 			$nft_result = $conn->query($nft_sql);
