@@ -634,10 +634,10 @@ function completeMissions(mission_ids, quest_ids) {
 				var withNoDigits = contents.replace(/[0-9]/g, '');
 			  	document.getElementById('mission-reward-'+i).innerHTML = "0"+withNoDigits;
 				document.getElementById('mission-row-'+i).className = "failure";
-				document.getElementById('consumable-'+i).innerHTML += "<img class='icon consumable' src='icons/nothing.png'/>";
+				document.getElementById('consumable-'+i).innerHTML = "<img class='icon consumable' src='icons/nothing.png'/>";
 			  }else{
 			  	document.getElementById('mission-row-'+i).className = "success";
-				document.getElementById('consumable-'+i).innerHTML += "<img class='icon consumable' src='icons/"+obj[i].consumable+".png'/>";
+				document.getElementById('consumable-'+i).innerHTML = "<img class='icon consumable' src='icons/"+obj[i].consumable+".png'/>";
 			  }
 			}
 			
