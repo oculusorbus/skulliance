@@ -3538,11 +3538,7 @@ function getTotalMissions($conn){
 		$consumables = array();
 		$consumables = getCurrentAmounts($conn);
 		echo "<table id='transactions' cellspacing='0'>";
-		foreach($consumables AS $id => $consumable){
-			echo "<th align='center' width='14%'>";
-			echo $consumable["name"];
-			echo "</th>";
-		}
+
 		echo "<tr>";
 		foreach($consumables AS $id => $consumable){
 			echo "<td align='center'>";
