@@ -941,7 +941,7 @@ function getCurrentMissions($conn){
 		  echo "</td>";
 		echo "</tr>";
 		echo "<tr>";
-		echo "<td colspan='8' style='padding:0px;'>";
+		echo "<td colspan='9' style='padding:0px;'>";
 		echo "<div class='w3-border'>";
 		if($completed == "Completed"){
 			$percentage = 100;
