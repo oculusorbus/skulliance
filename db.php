@@ -3411,6 +3411,10 @@ function getTotalMissions($conn){
 			echo date('F');
 			echo "</td>";
 			echo "<td align='center'>";
+			echo "<img class='missions-icon' src='icons/score.png'/>";
+			echo calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]);
+			echo "</td>";
+			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/total.png'/>";
 			echo $month_row["total"];
 			echo "</td>";
@@ -3467,7 +3471,7 @@ function getTotalMissions($conn){
 		$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
 		               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
 					   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
-		        COUNT(missions.id) AS total, users.id AS user_id
+		        COUNT(missions.id) AS total, SUM(quests.duration) AS total_duration, users.id AS user_id
 			    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."'";
 		$result = $conn->query($sql);
 	
@@ -3477,6 +3481,10 @@ function getTotalMissions($conn){
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/infinity.png'/>";
 				echo "All Time";
+				echo "</td>";
+				echo "<td align='center'>";
+				echo "<img class='missions-icon' src='icons/all-score.png'/>";
+				echo calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]);
 				echo "</td>";
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/grand-total.png'/>";
@@ -3555,6 +3563,10 @@ function getTotalMissions($conn){
 	}
 }
 
+function calculateScore($total_duration, $success, $failure, $progress){
+	return round(((($row["total_duration"]+($row["success"]*2))-($row["failure"]/2))-$row["progress"])+1);
+}
+
 function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 100000;
 	$where = "";
@@ -3579,7 +3591,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Calculated Score</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
@@ -3604,7 +3616,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$missions[$index]["success"] = $row["success"];
 			$missions[$index]["failure"] = $row["failure"];
 			$missions[$index]["progress"] = $row["progress"];
-			$missions[$index]["score"] = round(((($row["total_duration"]+($row["success"]*2))-($row["failure"]/2))-$row["progress"])+1);
+			$missions[$index]["score"] = calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]);
 			$index++;
 		}
 		array_sort_by_column($missions, "score");
