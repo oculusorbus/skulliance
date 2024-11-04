@@ -849,7 +849,7 @@ function getCurrentMissions($conn){
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
    	  renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th><th id='consumable-header'>Consumables</th>";
+	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th id='consumable-header'>Items</th><th align='center'>Status</th>";
 	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
 		// Handle consumables for each mission
@@ -925,19 +925,19 @@ function getCurrentMissions($conn){
   		  echo "<td align='left'>";
 		  echo $time_message;
 		  echo "</td>";
-  		  echo "<td align='center' id='mission-result-".$row["mission_id"]."'>";
-		  if($completed == "In Progress"){
-			  echo "<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
-		  }else{
- 			  echo $completed;
-		  }
-		  echo "</td>";
   		  echo "<td align='left' style='padding:1px' id='consumable-".$row["mission_id"]."'>";
 		  if(is_array($consumables)){
 		  	  foreach($consumables AS $consumable_id => $consumable_name){
 				  echo "<img class='icon' style='border:0px;' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
 		  	  }
 		  }  
+		  echo "</td>";
+  		  echo "<td align='center' id='mission-result-".$row["mission_id"]."'>";
+		  if($completed == "In Progress"){
+			  echo "<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
+		  }else{
+ 			  echo $completed;
+		  }
 		  echo "</td>";
 		echo "</tr>";
 		echo "<tr>";
