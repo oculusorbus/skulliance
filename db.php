@@ -966,7 +966,11 @@ function getCurrentMissions($conn){
 		  }
 		  $mission_ids = substr($mission_ids, 1);
 		  $quest_ids = substr($quest_ids, 1);
-		  echo "<br><input type='button' class='button' value='Claim Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
+		  echo "<input id='claim-missions-button' type='button' class='button' value='Claim Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
+		  echo "<script type='text/javascript'>document.getElementById('current-missions-container')
+              .appendChild(
+                  document.getElementById('claim-missions-button')
+              )</script>";
   	  }
 	  echo "</div>";
 	} else {
