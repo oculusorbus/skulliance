@@ -968,7 +968,7 @@ function getCurrentMissions($conn){
 		  $quest_ids = substr($quest_ids, 1);
 		  echo "<input id='claim-missions-button' type='button' class='button' value='Claim Missions' onclick='completeMissions(\"".$mission_ids."\", \"".$quest_ids."\");this.style.display=\"none\";'/>";
 		  echo "<script type='text/javascript'>
-			  document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
+			  document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button')+'<br>', document.getElementById('current-missions-container').firstChild);
 		  	  </script>";
   	  }
 	  echo "</div>";
