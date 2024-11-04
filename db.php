@@ -932,10 +932,10 @@ function getCurrentMissions($conn){
  			  echo $completed;
 		  }
 		  echo "</td>";
-  		  echo "<td id='consumable-".$row["mission_id"]."'>";
+  		  echo "<td align='left' id='consumable-".$row["mission_id"]."'>";
 		  if(is_array($consumables)){
 		  	  foreach($consumables AS $consumable_id => $consumable_name){
-				  echo "<img class='icon' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
+				  echo "<img class='icon' style='border:0px;' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
 		  	  }
 		  }  
 		  echo "</td>";
