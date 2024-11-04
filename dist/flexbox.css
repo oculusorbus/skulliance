@@ -1461,6 +1461,9 @@ section.active {
 	.consumable {
 		margin-right: 0px !important;
 	}
+	.amount {
+		font-size: 20px;
+	}
 	/*
 	.wallet-connect {
 		display: none;
