@@ -180,17 +180,19 @@ function verifyRitualNFTs($conn, $roles){
 
 // Get NFT Collection Leaderboard Visibility
 function getVisibility($conn){
-	$sql = "SELECT visibility FROM users WHERE id = '".$_SESSION['userData']['user_id']."'";
-	$result = $conn->query($sql);
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT visibility FROM users WHERE id = '".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
 	
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	return $row["visibility"];
-	  }
-	} else {
-	  //echo "0 results";
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+		    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+	    	return $row["visibility"];
+		  }
+		} else {
+		  //echo "0 results";
+		}
 	}
 }
 
