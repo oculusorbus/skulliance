@@ -26,10 +26,10 @@ if(isset($_POST["start_all"])){
 </div>
 <?php } ?>
 
+<?php if(isset($_SESSION['userData']['user_id'])){?>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">
   <?php 
-  if(isset($_SESSION['userData']['user_id'])){
 	  $rate_tally = 0;
 	  $project_id = 0;
 	  $quest_id = 0;
@@ -81,17 +81,19 @@ if(isset($_POST["start_all"])){
 	    </div>
 		</div>
 	  </div>
-  <?php
-  }else{
+</div>
+<?php
+}else{
+	echo "<div class='row'>";
 	echo "<div class='main'>";
 	echo "<h2>Welcome to Skulliance</h2>";
-    echo "<div class='content'>";
-  	echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
-    renderWalletConnection("missions");
+	echo "<div class='content'>";
+	echo "<p>Please connect a Cardano wallet to view missions.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member before you can claim items from the store.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
+	renderWalletConnection("missions");
 	echo "</div>";
-  } 
-  ?>
-</div>
+	echo "</div>";
+} 
+?>
 <div id="quick-menu">
 	<img id="rewards-icon" src="icons/rewards.png" onclick="toggleSections('rewards');">
 	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
