@@ -971,7 +971,7 @@ function getCurrentMissions($conn){
 			  document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 		  	  </script>";
   	  }
-	  echo "</div>";
+	  echo "</div><br>";
 	} else {
 	  //echo "0 results";
 	}
