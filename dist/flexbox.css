@@ -1308,6 +1308,32 @@ section.active {
     border-radius: 10px;
 }
 
+@media screen and (min-width: 2000px) {
+	.nft {
+		width: 100%;
+		float: left;
+	}
+	.nft-data {
+		min-height: 170px;
+		background-color: #222;
+		background-blend-mode: multiply;
+	    background-size: cover;
+		text-align: right;
+	}
+	.nft-image {
+		margin-right: 10px;
+		position: relative;
+		top: -18px;
+		left: 18px;
+	}
+	.nft-name {
+		padding-right: 5px !important;
+	}
+	.nft-level {
+		padding-right: 5px !important;
+	}
+}
+
 @media screen and (max-width: 1780px) {
 	body{
   	  background-position: bottom;
