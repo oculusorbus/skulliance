@@ -1315,7 +1315,7 @@ section.active {
 	}
 	.nft-data {
 		min-height: 170px !important;
-		background-color: #222;
+		background-color: #1d1d1d;
 		background-blend-mode: multiply;
 	    background-size: cover;
 		background-position: center;
