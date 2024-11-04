@@ -1456,6 +1456,9 @@ section.active {
 	.wallet-connect{
 		display: none;
 	}
+	.consumable {
+		margin-right: 0px !important;
+	}
 	/*
 	.wallet-connect {
 		display: none;
