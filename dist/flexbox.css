@@ -1372,10 +1372,6 @@ section.active {
 	.missions .nft-level {
 		padding-right: 5px !important;
 	}
-	.outcome-total {
-	    position: relative;
-	    top: -13px;
-	}
 }
 
 @media screen and (max-width: 1780px) {
@@ -1439,6 +1435,10 @@ section.active {
 	}
 	#navbar{
 		  display: flex;
+	}
+	.outcome-total {
+	    position: relative;
+	    top: -13px;
 	}
 }
 
