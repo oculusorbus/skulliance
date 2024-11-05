@@ -1317,6 +1317,10 @@ section.active {
     border-radius: 10px;
 }
 
+.missions-filter .eligible {
+    border-color: #014579;
+}
+
 @media screen and (min-width: 1201px) {
 	.missions .nft {
 		width: 100%;
