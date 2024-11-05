@@ -1308,7 +1308,7 @@ section.active {
     border-radius: 10px;
 }
 
-@media screen and (min-width: 2000px) {
+@media screen and (min-width: 1200px) {
 	.nft {
 		width: 100%;
 		float: left;
@@ -1338,7 +1338,7 @@ section.active {
 	}
 }
 
-@media screen and (max-width: 1999px) {
+@media screen and (max-width: 1199px) {
 	.nft-data {
 		background-image: none !important;
 	}
