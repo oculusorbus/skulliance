@@ -871,6 +871,7 @@ li form {
 
 .disabled {
 	opacity: 0.5;
+	background-color: #121212 !important;
 }
 
 .disabled:hover{
