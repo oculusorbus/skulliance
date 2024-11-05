@@ -751,7 +751,7 @@ function getMissions($conn, $quest_id) {
 		if($row["extension"] != "png"){
 			$extension = "gif";
 		}
-		$style = "background-image: url(".$image.".png)";
+		$style = "background-image: url(".$image.".$extension)";
 		$quest_ids[$row["id"]] = $row["id"];
 		if(!checkMissionInventory($conn, $row["project_id"])){
 			$ineligible_quest_ids[$row["id"]] = $row["id"];
