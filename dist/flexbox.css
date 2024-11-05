@@ -1328,7 +1328,7 @@ section.active {
 		top: -18px;
 		left: 18px;
 	}
-	.nft-image hover {
+	.nft-data:hover {
 		background-attachment: fixed;
 	}
 	.nft-name {
