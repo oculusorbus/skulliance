@@ -1317,7 +1317,7 @@ section.active {
     border-radius: 10px;
 }
 
-.missions-filter .eligible {
+.missions-filter.eligible {
     border-color: #014579;
 }
 
