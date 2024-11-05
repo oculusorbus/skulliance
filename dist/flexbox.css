@@ -1328,6 +1328,9 @@ section.active {
 		top: -18px;
 		left: 18px;
 	}
+	.nft-image hover {
+		background-attachment: fixed;
+	}
 	.nft-name {
 		padding-right: 5px !important;
 		font-size: 1.5rem;
