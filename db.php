@@ -731,7 +731,7 @@ function getMissions($conn, $quest_id) {
 		$project_id = $_SESSION['userData']['project_id'];
 	}
 	//CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.id ASC";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name, extension FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.id ASC";
 	
 	$result = $conn->query($sql);
 	
@@ -747,6 +747,10 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		$title = $row["title"];
 		$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
+		$extension = "png";
+		if($row["extension"] != "png"){
+			$extension = "gif";
+		}
 		$style = "background-image: url(".$image.".png)";
 		$quest_ids[$row["id"]] = $row["id"];
 		if(!checkMissionInventory($conn, $row["project_id"])){
