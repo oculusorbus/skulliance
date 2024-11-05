@@ -980,6 +980,10 @@ li form {
 	min-height: 150px;
 }
 
+.diamond-data .nft-image {
+	float: none;
+}
+
 .carbon-icon {
 	opacity: 0.7;
 	width: 40% !important;
