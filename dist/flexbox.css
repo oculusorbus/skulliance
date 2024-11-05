@@ -1027,6 +1027,7 @@ li form {
 	font-size: 0.85rem;
 	font-weight: bold;
 	padding-top: 20px;
+	font-family: Courier;
 }
 
 .nft-owner {
@@ -1322,10 +1323,10 @@ section.active {
 		background-blend-mode: multiply;
 	    background-size: cover;
 		background-position: center;
-		text-align: right;
+		text-align: right !important;
 	}
 	.nft-image {
-		margin-right: 10px;
+		margin-right: 10px !important;
 		position: relative;
 		float: left;
 		top: -18px;
@@ -1338,7 +1339,7 @@ section.active {
 	}
 	.nft-name {
 		padding-right: 5px !important;
-		font-size: 1.5rem;
+		font-size: 1.5rem !important;
 		font-family: Courier;
 	}
 	.nft-level {
