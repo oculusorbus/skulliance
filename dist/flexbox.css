@@ -929,6 +929,10 @@ li form {
 	color: #bbb;
 }
 
+.diamond-skull-data .nft-name {
+	text-align: left;
+}
+
 .diamond-skull-data table{
 	margin: 0 auto;
 }
@@ -977,7 +981,7 @@ li form {
 }
 
 .store-item .nft-data {
-	min-height: 420px;
+	min-height: 250px;
 }
 
 .nft-image{
