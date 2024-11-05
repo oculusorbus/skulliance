@@ -3475,7 +3475,7 @@ function getTotalMissions($conn){
 			   </div>
 			</div>
 			<?php
-			echo $month_row["success"];
+			echo "<span class='outcome-total'>".$month_row["success"]."</span>";
 			echo "</td>";
 			echo "<td align='center'>";
 			$failure_percentage = 0;
@@ -3497,7 +3497,7 @@ function getTotalMissions($conn){
 			   </div>
 			</div>
 			<?php
-			echo $month_row["failure"];
+			echo "<span class='outcome-total'>".$month_row["failure"]."</span>";
 			echo "</td>";
 			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/trophy.png'/>";
@@ -3551,7 +3551,7 @@ function getTotalMissions($conn){
 				   </div>
 				</div>
 				<?php
-				echo number_format($row["success"]);
+				echo "<span class='outcome-total'>".number_format($row["success"])."</span>";
 				echo "</td>";
 				echo "<td align='center'>";
 				$failure_percentage = 0;
@@ -3573,7 +3573,7 @@ function getTotalMissions($conn){
 				   </div>
 				</div>
 				<?php
-				echo number_format($row["failure"]);
+				echo "<span class='outcome-total'>".number_format($row["failure"])."</span>";
 				echo "</td>";
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/crown.png'/>";
