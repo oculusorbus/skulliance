@@ -1313,11 +1313,11 @@ section.active {
 }
 
 @media screen and (min-width: 1201px) {
-	.nft {
+	.missions .nft {
 		width: 100%;
 		float: left;
 	}
-	.nft-data {
+	.missions .nft-data {
 		min-height: 170px !important;
 		background-color: #1d1d1d;
 		background-blend-mode: multiply;
@@ -1325,24 +1325,24 @@ section.active {
 		background-position: center;
 		text-align: right !important;
 	}
-	.nft-image {
+	.missions .nft-image {
 		margin-right: 10px !important;
 		position: relative;
 		float: left;
 		top: -18px;
 		left: 18px;
 	}
-	.nft-data:hover {
+	.missions .nft-data:hover {
 		background-attachment: fixed;
 		background-size: contain;
 		background-position: center;
 	}
-	.nft-name {
+	.missions .nft-name {
 		padding-right: 5px !important;
 		font-size: 1.5rem !important;
 		font-family: Courier;
 	}
-	.nft-level {
+	.missions .nft-level {
 		padding-right: 5px !important;
 	}
 }
@@ -1362,7 +1362,7 @@ section.active {
 	}
 }
 @media screen and (max-width: 1200px) {
-	.nft-data {
+	.missions .nft-data {
 		background-blend-mode: multiply;
 	    background-size: cover;
 		background-position: center;
