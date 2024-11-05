@@ -1363,7 +1363,9 @@ section.active {
 }
 @media screen and (max-width: 1200px) {
 	.nft-data {
-		background-image: none !important;
+		background-blend-mode: multiply;
+	    background-size: cover;
+		background-position: center;
 	}
 	
 	.nft {
