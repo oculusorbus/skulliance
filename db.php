@@ -3438,7 +3438,7 @@ function getTotalMissions($conn){
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Missions</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
-			echo "<tr style='background-color:#1a1a1a'>";
+			echo "<tr class='month-row'>";
 			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/calendar.png'/>";
 			echo date('F');

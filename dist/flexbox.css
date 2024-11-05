@@ -1338,6 +1338,10 @@ section.active {
     border-radius: 10px;
 }
 
+.month-row {
+	background-color: #1a1a1a;
+}
+
 @media screen and (min-width: 1201px) {
 	.missions .nft {
 		width: 100%;
