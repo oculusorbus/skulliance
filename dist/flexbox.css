@@ -1566,6 +1566,10 @@ section.active {
 		width: 20px !important;
 	}
 	
+	#transactions tr {
+		height: 30px;
+	}
+	
 	#carbon {
 	    max-width: 180px;
 	}
