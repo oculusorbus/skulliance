@@ -8,6 +8,10 @@
    background-color: #4D4D4D; 
    border-radius: 50%;
    line-height: 5em;
+   -webkit-transform:scale(0.8);
+   -moz-transform:scale(0.8);
+   -ms-transform:scale(0.8);
+   transform:scale(0.8);
 }
 
 .progress-circle:after{
