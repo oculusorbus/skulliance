@@ -798,7 +798,15 @@ li form {
 	font-size: 1.084rem;
 }
 
+.missions-filter.eligible {
+    border-color: #014579;
+}
+
 .missions-filter:hover {
+	border: 1px solid white;
+}
+
+.missions-filter.eligible:hover {
 	border: 1px solid white;
 }
 
@@ -1315,10 +1323,6 @@ section.active {
 .selected{
 	border: 1px solid gray;
     border-radius: 10px;
-}
-
-.missions-filter.eligible {
-    border-color: #014579;
 }
 
 @media screen and (min-width: 1201px) {
