@@ -3435,7 +3435,7 @@ function getTotalMissions($conn){
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Missions</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>In Progress</th><th width='14%'>Leaderboard</th>";
+		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Missions</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
 			echo "<tr>";
 			echo "<td align='center'>";
@@ -3449,6 +3449,10 @@ function getTotalMissions($conn){
 			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/total.png'/>";
 			echo $month_row["total"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo "<img class='missions-icon' src='icons/time.png'/>";
+			echo $month_row["progress"];
 			echo "</td>";
 			echo "<td align='center'>";
 			$success_percentage = 0;
@@ -3495,10 +3499,6 @@ function getTotalMissions($conn){
 			echo $month_row["failure"];
 			echo "</td>";
 			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/time.png'/>";
-			echo $month_row["progress"];
-			echo "</td>";
-			echo "<td align='center'>";
 			echo "<img class='missions-icon' src='icons/trophy.png'/>";
 			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly'/><input type='submit' class='small-button' value='".date("F")."'/></form>";
 			echo "</td>";
@@ -3525,6 +3525,10 @@ function getTotalMissions($conn){
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/grand-total.png'/>";
 				echo number_format($row["total"]);
+				echo "</td>";
+				echo "<td align='center'>";
+				echo "<img class='missions-icon' src='icons/all-time.png'/>";
+				echo $row["progress"];
 				echo "</td>";
 				echo "<td align='center'>";
 				$success_percentage = 0;
@@ -3569,10 +3573,6 @@ function getTotalMissions($conn){
 				</div>
 				<?php
 				echo number_format($row["failure"]);
-				echo "</td>";
-				echo "<td align='center'>";
-				echo "<img class='missions-icon' src='icons/all-time.png'/>";
-				echo $row["progress"];
 				echo "</td>";
 				echo "<td align='center'>";
 				echo "<img class='missions-icon' src='icons/crown.png'/>";
