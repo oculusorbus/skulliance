@@ -1330,6 +1330,8 @@ section.active {
 	}
 	.nft-data:hover {
 		background-attachment: fixed;
+		background-size: contain;
+		background-position: center;
 	}
 	.nft-name {
 		padding-right: 5px !important;
