@@ -666,7 +666,8 @@ function getMissionLevels($conn) {
 }
 
 
-function getMissionsFilters($conn, $quest_id) {
+function getMissionsFilters($conn, $quest_id, $projects) {
+	$eligible = "";
 	$sql = "SELECT DISTINCT projects.id, projects.name FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.name";
 	
 	$result = $conn->query($sql);
@@ -677,7 +678,12 @@ function getMissionsFilters($conn, $quest_id) {
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
-				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				if(isset($projects[$row["id"]])){
+					$eligible = " eligible";
+				}else{
+					$eligible = "";
+				}
+				echo "<div class='missions-filter".$eligible."' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -689,7 +695,12 @@ function getMissionsFilters($conn, $quest_id) {
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] >= 8){
-				echo "<div class='missions-filter' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				if(isset($projects[$row["id"]])){
+					$eligible = " eligible";
+				}else{
+					$eligible = "";
+				}
+				echo "<div class='missions-filter ".$eligible."' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -831,6 +842,7 @@ function getMissions($conn, $quest_id) {
 
 // Get Current Missions for User
 function getCurrentMissions($conn){
+	$projects = array();
 	$sql = "SELECT DISTINCT missions.id AS mission_id, quest_id, title, projects.name AS project_name, cost, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions LEFT JOIN quests ON missions.quest_id = quests.id LEFT JOIN projects ON projects.id = quests.project_id LEFT JOIN missions_nfts ON missions.id = missions_nfts.mission_id LEFT JOIN nfts ON nfts.id = missions_nfts.nft_id LEFT JOIN collections ON collections.id = nfts.collection_id 
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY duration ASC, missions.created_date ASC";
@@ -854,7 +866,7 @@ function getCurrentMissions($conn){
 	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 	  echo '<a name="current-missions" id="current-missions"></a>';
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
-   	  renderStartAllFreeEligibleMissionsButton($conn);
+   	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
@@ -982,6 +994,7 @@ function getCurrentMissions($conn){
 	} else {
 	  //echo "0 results";
 	}
+	return $projects;
 }
 
 // Get missions inventory
@@ -1365,6 +1378,7 @@ function startAllFreeEligibleMissions($conn){
 }
 
 function renderStartAllFreeEligibleMissionsButton($conn){
+	$projects = array();
 	$nft_ids = "";
 	$sql = "SELECT asset_id, project_id
 	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
@@ -1394,14 +1408,17 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	  	$nft_sql = "SELECT asset_id, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."'".$asset_ids;
 	  	$nft_result = $conn->query($nft_sql);
 		if ($nft_result->num_rows > 0) {
-	    	  echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
-	    	  <input type='hidden' id='start_all' name='start_all' value='true'>	
-	    	  <input type='submit' value='Start Missions' class='button'>
-	    	  </form><br>";
-			  break;
+	  		$projects[$row['project_id']] = true;
 		}
 	  }
+	  if(!empty($projects)){
+		  echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
+		  <input type='hidden' id='start_all' name='start_all' value='true'>	
+		  <input type='submit' value='Start Missions' class='button'>
+		  </form><br>";
+  	  }
 	}
+	return $projects;
 }
 
 function completeMission($conn, $mission_id, $quest_id){
