@@ -938,7 +938,11 @@ li form {
 }
 
 .diamond-skull-data .nft-name {
-	text-align: left;
+	text-align: center;
+}
+
+.diamond-skull-data .nft-image {
+	float: none;
 }
 
 .diamond-skull-data table{
