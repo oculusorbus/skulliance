@@ -851,7 +851,8 @@ li form {
 }
 
 .missions .nft-data {
-	min-height: 375px;
+	min-height: 215px;
+	text-align: left;
 }
 
 .mission-data:hover{
@@ -982,6 +983,8 @@ li form {
 	min-height: 170px;
 	max-height: 170px;
 	overflow-y: hidden;
+	float: left;
+	margin-right: 5px;
 }
 
 .diamond-data .nft-image img{
