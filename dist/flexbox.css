@@ -643,9 +643,11 @@ li form {
 
 .w3-grey {
     color: #000 !important;
-    background-color: #444444 !important;
+    /*background-color: #444444 !important;*/
+	background-color: #888 !important;
     height: 24px;
 	border-right: 0px solid #D6DDDE;
+    background-image: none !important;
 }
 
 .w3-border-rewards {
