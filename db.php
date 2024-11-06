@@ -872,7 +872,7 @@ function getCurrentMissions($conn){
 	  // output data of each row
 	  $current_level = "";
 	  while($row = $result->fetch_assoc()) {
-		if($row['level'] != $current_level){
+		if($row['level'] != $current_level && $row['level'] != 1){
 			echo "<tr><th class='level' align='left' colspan='9'>&nbsp;&nbsp;LEVEL ".$row['level']."</th></tr>";
 		}  
 	    $current_level = $row["level"];
