@@ -873,7 +873,7 @@ function getCurrentMissions($conn){
 	  $current_level = "";
 	  while($row = $result->fetch_assoc()) {
 		if($row['level'] != $current_level){
-			echo "<th colspan='9'>Level ".$row['level']."</th>";
+			echo "<tr><th colspan='9'>Level ".$row['level']."</th></tr>";
 		}  
 	    $current_level = $row["level"];
 		// Handle consumables for each mission
