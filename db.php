@@ -1380,6 +1380,7 @@ function startAllFreeEligibleMissions($conn){
 
 function renderStartAllFreeEligibleMissionsButton($conn){
 	$projects = array();
+    $display = "none";
 	$nft_ids = "";
 	$sql = "SELECT asset_id, project_id
 	          FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id INNER JOIN nfts ON nfts.id = missions_nfts.nft_id INNER JOIN collections ON nfts.collection_id = collections.id WHERE status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'";
@@ -1413,12 +1414,13 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		}
 	  }
 	  if(!empty($projects)){
-		  echo "<form id='startFreeMissionsForm' action='missions.php' method='post'>
-		  <input type='hidden' id='start_all' name='start_all' value='true'>	
-		  <input type='submit' value='Start Missions' class='button'>
-		  </form><br>";
+		  $display = "block";
   	  }
 	}
+	echo "<form style='display:".$display."' id='startFreeMissionsForm' action='missions.php' method='post'>
+	<input type='hidden' id='start_all' name='start_all' value='true'>	
+	<input type='submit' value='Start Missions' class='button'>
+	</form><br>";
 	return $projects;
 }
 

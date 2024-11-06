@@ -623,6 +623,8 @@ function completeMissions(mission_ids, quest_ids) {
 			}else{
 
 			}*/
+			// Since missions are being claimed, automatically display start missions button.
+			document.getElementById('startFreeMissionsForm').style.display = "block";
 			const obj = JSON.parse(data);
 			//document.getElementById('consumable-header').style.display = 'block';
 			for(var i in obj){
