@@ -843,9 +843,9 @@ function getMissions($conn, $quest_id) {
 // Get Current Missions for User
 function getCurrentMissions($conn){
 	$projects = array();
-	$sql = "SELECT DISTINCT missions.id AS mission_id, quest_id, title, projects.name AS project_name, cost, reward, currency, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
+	$sql = "SELECT DISTINCT missions.id AS mission_id, quest_id, title, projects.name AS project_name, cost, reward, currency, level, missions.created_date, duration, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions LEFT JOIN quests ON missions.quest_id = quests.id LEFT JOIN projects ON projects.id = quests.project_id LEFT JOIN missions_nfts ON missions.id = missions_nfts.mission_id LEFT JOIN nfts ON nfts.id = missions_nfts.nft_id LEFT JOIN collections ON collections.id = nfts.collection_id 
-	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY duration ASC, missions.created_date ASC";
+	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";
 	
 	$result = $conn->query($sql);
 	
@@ -870,7 +870,12 @@ function getCurrentMissions($conn){
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
+	  $current_level = "";
 	  while($row = $result->fetch_assoc()) {
+		if($row['level'] != $current_level){
+			echo "<th colspan='9'>Level ".$row['level']."</th>";
+		}  
+	    $current_level = $row["level"];
 		// Handle consumables for each mission
 	  	$consumables = array();
 	  	$random_reward = false;
