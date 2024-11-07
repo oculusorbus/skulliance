@@ -983,7 +983,7 @@ function getCurrentMissions($conn){
 		$rows[$decimal] .= "</td>";
 		$rows[$decimal] .= "</tr>";
 	  }
-	  $rows = ksort($rows);
+	  ksort($rows);
 	  foreach($rows AS $duration => $output){
 		  echo $output;
 	  }
