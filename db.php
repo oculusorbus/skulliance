@@ -870,13 +870,8 @@ function getCurrentMissions($conn){
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
-	  //$current_level = "";
 	  $rows = array();
 	  while($row = $result->fetch_assoc()) {
-		//if($row['level'] != $current_level && $row['level'] != 1){
-			//echo "<tr><th class='level' align='left' colspan='9'>LEVEL ".$row['level']."</th></tr>";
-		//}  
-	    //$current_level = $row["level"];
 		// Handle consumables for each mission
 	  	$consumables = array();
 	  	$random_reward = false;
