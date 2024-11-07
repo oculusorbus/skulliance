@@ -919,7 +919,7 @@ function getCurrentMissions($conn){
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
 		if($date > time()){
-			$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+			$time_message = $days_remaining."d ".($hours_remaining<10)?"0".$hours_remaining:$hours_remaining."h ".($hours_remaining<10)?"0".$minutes_remaining:$minutes_remaining."m";
 			$completed = "In Progress";
 		}else{
 			$time_message = "0d 0h 0m";
