@@ -923,7 +923,7 @@ function getCurrentMissions($conn){
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
 		$consumables = getMissionConsumables($conn, $row["mission_id"]);
-		$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining);
+		$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["mission_id"];
 		$rows[$decimal] = "";
 		$rows[$decimal] .= "<tr id='mission-row-".$row["mission_id"]."'>";
 		  $rows[$decimal] .= "<td align='center'>";
