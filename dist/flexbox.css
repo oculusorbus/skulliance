@@ -1580,10 +1580,6 @@ section.active {
 		width: 20px !important;
 	}
 	
-	#transactions tr {
-		height: 35px;
-	}
-	
 	#carbon {
 	    max-width: 180px;
 	}
