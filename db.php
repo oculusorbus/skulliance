@@ -871,9 +871,10 @@ function getCurrentMissions($conn){
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
 	  $current_level = "";
+	  $rows = array();
 	  while($row = $result->fetch_assoc()) {
 		if($row['level'] != $current_level && $row['level'] != 1){
-			echo "<tr><th class='level' align='left' colspan='9'>LEVEL ".$row['level']."</th></tr>";
+			//echo "<tr><th class='level' align='left' colspan='9'>LEVEL ".$row['level']."</th></tr>";
 		}  
 	    $current_level = $row["level"];
 		// Handle consumables for each mission
@@ -927,58 +928,64 @@ function getCurrentMissions($conn){
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
 		}
 		$consumables = getMissionConsumables($conn, $row["mission_id"]);
-		echo "<tr id='mission-row-".$row["mission_id"]."'>";
-		  echo "<td align='center'>";
-		  echo "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
-		  echo "</td>";
-		  echo "<td align='center'>";
-		  echo "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
-		  echo "</td>";
-  		  echo "<td align='left' id='consumable-".$row["mission_id"]."'>";
+		$decimal = $days_remaining.".".$hours_remaining.$minutes_remaining;
+		$rows[$decimal] = "";
+		$rows[$decimal] .= "<tr id='mission-row-".$row["mission_id"]."'>";
+		  $rows[$decimal] .= "<td align='center'>";
+		  $rows[$decimal] .= "<img class='icon' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
+		  $rows[$decimal] .= "</td>";
+		  $rows[$decimal] .= "<td align='center'>";
+		  $rows[$decimal] .= "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
+		  $rows[$decimal] .= "</td>";
+  		  $rows[$decimal] .= "<td align='left' id='consumable-".$row["mission_id"]."'>";
 		  if(is_array($consumables)){
 		  	  foreach($consumables AS $consumable_id => $consumable_name){
-				  echo "<img class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
+				  $rows[$decimal] .= "<img class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
 		  	  }
 		  }else{
 			  //echo "<img class='icon consumable' src='icons/nothing.png'/>";
 		  }
-		  echo "</td>";
-		  echo "<td align='left'>";
-		  echo number_format($row["cost"])." ".$row["currency"];
-		  echo "</td>";
-		  echo "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
-		  echo number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
-		  echo "</td>";
-		  echo "<td align='left'>";
-		  echo $row["total_nfts"];
-		  echo "</td>";
-  		  echo "<td align='left'>";
-		  echo $success_rate+$row["success_rate"]."%";
-		  echo "</td>";
-  		  echo "<td align='left'>";
-		  echo $time_message;
-		  echo "</td>";
-  		  echo "<td align='center' id='mission-result-".$row["mission_id"]."'>";
+		  $rows[$decimal] .= "</td>";
+		  $rows[$decimal] .= "<td align='left'>";
+		  $rows[$decimal] .= number_format($row["cost"])." ".$row["currency"];
+		  $rows[$decimal] .= "</td>";
+		  $rows[$decimal] .= "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
+		  $rows[$decimal] .= number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
+		  $rows[$decimal] .= "</td>";
+		  $rows[$decimal] .= "<td align='left'>";
+		  $rows[$decimal] .= $row["total_nfts"];
+		  $rows[$decimal] .= "</td>";
+  		  $rows[$decimal] .= "<td align='left'>";
+		  $rows[$decimal] .= $success_rate+$row["success_rate"]."%";
+		  $rows[$decimal] .= "</td>";
+  		  $rows[$decimal] .= "<td align='left'>";
+		  $rows[$decimal] .= $time_message;
+		  $rows[$decimal] .= "</td>";
+  		  $rows[$decimal] .= "<td align='center' id='mission-result-".$row["mission_id"]."'>";
 		  if($completed == "In Progress"){
-			  echo "<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
+			  $rows[$decimal] .= "<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
 		  }else{
- 			  echo $completed;
+ 			  $rows[$decimal] .= $completed;
 		  }
-		  echo "</td>";
-		echo "</tr>";
-		echo "<tr id='mission-progress-".$row["mission_id"]."'>";
-		echo "<td colspan='9' style='padding:0px;'>";
-		echo "<div class='w3-border'>";
+		  $rows[$decimal] .= "</td>";
+		$rows[$decimal] .= "</tr>";
+		$rows[$decimal] .= "<tr id='mission-progress-".$row["mission_id"]."'>";
+		$rows[$decimal] .= "<td colspan='9' style='padding:0px;'>";
+		$rows[$decimal] .= "<div class='w3-border'>";
 		if($completed == "Completed"){
 			$percentage = 100;
 		}else{
 			$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		}
 		// background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-position:center;background-blend-mode:exclusion;
-		echo "<div class='w3-grey' style='width:".$percentage."%;opacity:0.3;'></div>";
-		echo "</div>";
-		echo "</td>";
-		echo "</tr>";
+		$rows[$decimal] .= "<div class='w3-grey' style='width:".$percentage."%;opacity:0.3;'></div>";
+		$rows[$decimal] .= "</div>";
+		$rows[$decimal] .= "</td>";
+		$rows[$decimal] .= "</tr>";
+	  }
+	  $rows = ksort($rows);
+	  foreach($rows AS $duration => $output){
+		  echo $output;
 	  }
 	  echo "</table><br>";
 	  //json_encode(
