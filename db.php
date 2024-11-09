@@ -753,6 +753,7 @@ function getMissions($conn, $quest_id) {
 	echo "<div class='nfts'>";
 	if($result->num_rows > 0) {
 	  // output data of each row
+	  $flags = array();
 	  while($row = $result->fetch_assoc()) {
 	  	$max_level = 0;
     	$class = "";
@@ -782,10 +783,13 @@ function getMissions($conn, $quest_id) {
 				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
 				$image = "icons/padlock";
 			}else{
-				echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
-				//echo "<div class='nft-data".$class." mission-data disabled'>";
-				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
-				$image = "icons/padlock";
+				if(!isset($flags[$row["project_id"]])){
+					echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
+					//echo "<div class='nft-data".$class." mission-data disabled'>";
+					$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
+					$image = "icons/padlock";
+				}
+				$flags[$row["project_id"]] = true;
 			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
