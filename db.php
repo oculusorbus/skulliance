@@ -758,8 +758,9 @@ function getMissions($conn, $quest_id) {
     	$class = "";
 		$title = $row["title"];
 		$image = "images/missions/".strtolower(str_replace(" ", "-", $row["title"]));
-		$extension = "png";
-		if($row["extension"] != "png"){
+		if($row["extension"] != "mp4"){
+			$extension = $row["extension"];
+		}else{
 			$extension = "gif";
 		}
 		$style = "background-image: url(".$image.".$extension)";
