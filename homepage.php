@@ -249,19 +249,6 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/stagwolf" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/stagwolf.jpg" alt="Stagwolf"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/diexgrey" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/grey.png" alt="Grey"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/skowllwoks" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/skowl.jpg" alt="Skowl"/></a>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
 			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg" alt="Cardano Camera"/></a>
 		</div>
 		<div class="project">
@@ -282,6 +269,19 @@
 		</div>
 		<div class="project">
 			<a href="https://x.com/MipaToys" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg" alt="Mipa Toys"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://x.com/stagwolf" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/stagwolf.jpg" alt="Stagwolf"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/diexgrey" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/grey.png" alt="Grey"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/skowllwoks" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/skowl.jpg" alt="Skowl"/></a>
 		</div>
 	</div>
 </div>
