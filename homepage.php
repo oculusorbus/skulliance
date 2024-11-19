@@ -239,7 +239,7 @@
 			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png" alt="Apprentices"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/deadpophell" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/deadpophell.png" alt="Dead Pop Hell"/></a>
+			<a href="https://x.com/heistonalpha" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/heistonalpha.jpg" alt="Heist on Alpha"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold"/></a>
@@ -249,10 +249,23 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg" alt="Cardano Camera"/></a>
+			<a href="https://x.com/stagwolf" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/stagwolf.jpg" alt="Stagwolf"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/diexgrey" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/grey.png" alt="Grey"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/skowllwoks" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/skowl.jpg" alt="Skowl"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://x.com/cardanocamera" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg" alt="Cardano Camera"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/deadpophell" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/deadpophell.png" alt="Dead Pop Hell"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/JordiLeitao" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/jordi.png" alt="Jordi"/></a>
