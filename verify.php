@@ -105,7 +105,6 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						}
 					}
 					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
-						$final_asset_list = array_slice($final_asset_list, 0, 1);
 						print_r($final_asset_list);
 						exit;
 						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
