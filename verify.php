@@ -90,7 +90,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						} // End foreach
 					}
 			
-					// Batch asset list into arrays of 30 items or less to allow for successful queries, had to reduce from 50 to 30 to remain under the free Koios plan limits.
+					// Batch asset list into arrays of 35 items or less to allow for successful queries, had to reduce from 50 to 35 to remain under the free Koios plan limits.
 					$batch_asset_lists = array();
 					$final_asset_lists = array();
 					$batch_index = 0;
