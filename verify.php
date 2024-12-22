@@ -57,18 +57,21 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
 			if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
 				$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null".$offset);
-				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
+				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
 				curl_setopt( $ch, CURLOPT_POST, 1);
 				curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
 				curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 				curl_setopt( $ch, CURLOPT_HEADER, 0);
 				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt( $ch, CURLOPT_VERBOSE, true);
-				$streamVerboseHandle = fopen('php://temp', 'w+');
-				curl_setopt( $ch, CURLOPT_STDERR, $streamVerboseHandle);
+				
+				// Verbose Debugging Parameters
+				//curl_setopt( $ch, CURLOPT_VERBOSE, true);
+				//$streamVerboseHandle = fopen('php://temp', 'w+');
+				//curl_setopt( $ch, CURLOPT_STDERR, $streamVerboseHandle);
 
 				$response = curl_exec( $ch );
 				
+				/* Verbose Debugging Response Handling
 				if ($response === FALSE) {
 				    printf("cUrl error (#%d): %s<br>\n",
 				           curl_errno($ch),
@@ -80,7 +83,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 				$verboseLog = stream_get_contents($streamVerboseHandle);
 
 				echo "cUrl verbose information:\n", 
-				     "<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+				     "<pre>", htmlspecialchars($verboseLog), "</pre>\n";*/
 				
 				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
 				$response = json_decode($response);
@@ -123,7 +126,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					}
 					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
 						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
+						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
 						curl_setopt( $tokench, CURLOPT_POST, 1);
 						curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
 						curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
