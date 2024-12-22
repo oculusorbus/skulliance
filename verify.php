@@ -63,12 +63,16 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 				curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 				curl_setopt( $ch, CURLOPT_HEADER, 0);
 				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+				curl_setopt( $ch, CURLOPT_VERBOSE, true);
+				curl_setopt( $ch, CURLOPT_STDERR, fopen('php://stderr', 'w'));
 
 				$response = curl_exec( $ch );
 				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
 				$response = json_decode($response);
 				//print_r($response[0]->asset_list);
 				//exit;
+				$info = curl_getinfo($ch);
+				var_dump($info);
 				curl_close( $ch );
 
 				//$_SESSION['userData']['nfts'] = array();
