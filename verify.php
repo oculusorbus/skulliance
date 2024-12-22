@@ -64,15 +64,28 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 				curl_setopt( $ch, CURLOPT_HEADER, 0);
 				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
 				curl_setopt( $ch, CURLOPT_VERBOSE, true);
-				curl_setopt( $ch, CURLOPT_STDERR, fopen('php://stderr', 'w'));
+				$streamVerboseHandle = fopen('php://temp', 'w+');
+				curl_setopt( $ch, CURLOPT_STDERR, $streamVerboseHandle);
 
 				$response = curl_exec( $ch );
+				
+				if ($response === FALSE) {
+				    printf("cUrl error (#%d): %s<br>\n",
+				           curl_errno($ch),
+				           htmlspecialchars(curl_error($ch)))
+				           ;
+				}
+
+				rewind($streamVerboseHandle);
+				$verboseLog = stream_get_contents($streamVerboseHandle);
+
+				echo "cUrl verbose information:\n", 
+				     "<pre>", htmlspecialchars($verboseLog), "</pre>\n";
+				
 				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
 				$response = json_decode($response);
 				//print_r($response[0]->asset_list);
 				//exit;
-				$info = curl_getinfo($ch);
-				var_dump($info);
 				curl_close( $ch );
 
 				//$_SESSION['userData']['nfts'] = array();
