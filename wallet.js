@@ -42,11 +42,13 @@ function capitalizeFirstLetter(string) {
          'nami',
 		 'eternl',
 		 'vespr',
-		 'typhoncip30',
 		 'gerowallet',
 		 'flint',
+		 'lace',
 		 'LodeWallet',
 		 'nufi',
+		 'tokeo',
+		 'typhoncip30',
 		 'yoroi'
     ];
 
