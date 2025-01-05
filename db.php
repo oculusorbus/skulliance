@@ -931,7 +931,7 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "<img class='icon' title='".$row["title"]."' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
 		  $rows[$decimal] .= "</td>";
 		  $rows[$decimal] .= "<td align='center'>";
-		  $rows[$decimal] .= "<img class='icon' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
+		  $rows[$decimal] .= "<img class='icon' title='".$row["currency"]."' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
 		  $rows[$decimal] .= "</td>";
   		  $rows[$decimal] .= "<td align='left' id='consumable-".$row["mission_id"]."'>";
 		  if(is_array($consumables)){
