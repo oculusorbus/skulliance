@@ -4216,13 +4216,17 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 }
 
 function getRealms($conn){
-	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, users.username AS username FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id";
+	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, users.username AS username FROM realms, users.avatar AS avatar, realms_locations.level AS level, locations.name AS location_name 
+		    INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id";
 	$result = $conn->query($sql);
 	print_r($result);
 	
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			
+			echo $row['realm_name'];
+			echo "<br>";
+			echo $row['location_name'];
+			echo "<br>";
 		}
 	}else{
 		
