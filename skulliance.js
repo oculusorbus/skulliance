@@ -750,7 +750,7 @@ function dailyReward(){
 }
 
 function upgradeRealmLocation(realmID, locationID){
-	
+	alert(realmID+" "+locationID);
 }
 
 // Get the button
