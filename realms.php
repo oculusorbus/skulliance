@@ -17,11 +17,15 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				
 			}else{
 				?>
+				<ul>
+				<li class="role">
 				<h2>Create Realm</h2>
 				<form action="realms.php" method="post">
 					<label for="realm">Realm Name</label><br>
 					<input type="text" id="realm" name="realm"><br>
 				</form>
+				</li>
+				</ul>
 				<?php
 			}
 			?>
