@@ -41,7 +41,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div id="realm">
 		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
 	    <div class="content realm">
-
+			<img src="images/realm.jpg" width="100%"/>
 	    </div>
 		</div>
 	  </div>
