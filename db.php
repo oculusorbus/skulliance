@@ -4227,10 +4227,18 @@ function getRealms($conn){
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
+					echo "</td>";
+					echo "<td>";
 					echo "<br>".$balances_display;
+					echo "</td>";
+					echo "</tr>";
+					echo "</table>";
 					echo "</li>";
 				}
 				echo "<li class='role'>";
+				echo "<table>";
+				echo "<tr>";
+				echo "<td>";
 				echo $row['realm_name']." - ".$row["username"];
 				echo "<br><br>";
 				$balances_display = "";
