@@ -4243,7 +4243,7 @@ function getRealms($conn){
 				echo $row["username"]."<br><br>";
 				echo "<input type='button' class='button' value='Raid'>";
 				echo "</td>";
-				echo "<td width='25%' valign='top'>";
+				echo "<td width='25%' valign='top' align='left'>";
 				$balances_display = "";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
