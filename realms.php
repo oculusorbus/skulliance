@@ -29,9 +29,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						<li class="role">
 							<img src="icons/locations/<?php echo $name; ?>.png"> 
 						</li>
-				<?php}
+				<?php
+				}
 				?>
-				
 				</ul>
 				<?php
 			}else{
