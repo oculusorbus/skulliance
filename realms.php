@@ -43,7 +43,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
 							<?php 
 							if(!isset($status[$location_id])){  ?>
-							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(<?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>)'>
+								<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>)'>
 							<?php 
 						    }else{ 
 								echo $status[$location_id];

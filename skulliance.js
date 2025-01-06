@@ -749,7 +749,7 @@ function dailyReward(){
 	};
 }
 
-function upgradeRealmLocation(realmID, locationID, duration){
+function upgradeRealmLocation(upgradeButton, realmID, locationID, duration){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration, true);
 	xhttp.send();
@@ -761,6 +761,8 @@ function upgradeRealmLocation(realmID, locationID, duration){
 	      var data = xhttp.responseText;
 		  if(data != ""){
 		  	alert(data);
+		  }else{
+			  upgradeButton.style.display = 'none';
 		  }
 		  console.log(data);
 	      // Do something with the data
