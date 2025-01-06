@@ -91,6 +91,17 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		</div>
 	  </div>
 </div>
+<div class="row" id="row2">	
+	<div class="main">
+	<div id="realms">
+		<div class="content realms">
+			<?php
+			getRealms($conn);
+			?>
+		</div>
+	</div>
+	</div>
+</div>
 <?php
 }else{
 	echo "<div class='row'>";
