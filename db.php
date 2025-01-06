@@ -4229,7 +4229,7 @@ function getRealms($conn){
 				if($last_realm_id != 0){
 					echo "</td>";
 					echo "<td width='25%' valign='top'>";
-					echo "<br>".$balances_display;
+					echo $balances_display;
 					echo "</td>";
 					echo "</tr>";
 					echo "</table>";
@@ -4255,7 +4255,7 @@ function getRealms($conn){
 		}
 		echo "</td>";
 		echo "<td width='25%' valign='top'>";
-		echo "<br>".$balances_display;
+		echo $balances_display;
 		echo "</td>";
 		echo "</tr>";
 		echo "</table>";
