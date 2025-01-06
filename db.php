@@ -3143,7 +3143,6 @@ function transactionHistory($conn) {
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
-					getLocationInfo
 				}else{
 					echo "Crafting";
 				}
@@ -3161,7 +3160,10 @@ function transactionHistory($conn) {
 					$mission = getMission($conn, $row["mission_id"]);
 					echo "<td>Mission Cost: ".$mission["title"]."</td>";
 				}
-
+				if($row["location_id"] != 0){
+					$locations = getLocationInfo($conn);
+					echo "<td>Upgrade: ".$locations[$row["project_id"]]."</td>";
+				}
 				
 			}
 			echo "</tr>";
