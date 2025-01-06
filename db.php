@@ -4242,8 +4242,9 @@ function getRealms($conn){
 				echo "<table width='100%' cellspacing='10' cellpadding='10'>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top'>";
-				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
+				echo "<h3>".$row['realm_name']."</h3>";
 				echo "<img src='images/realm.jpg' style='width:100%;max-width:450px;'/><br><br>";
+				echo $row["username"]."<br>";
 				echo "<input type='button' class='button' value='Attack'>";
 				echo "</td>";
 				echo "<td width='25%' valign='top'>";
