@@ -4229,6 +4229,7 @@ function getRealms($conn){
 				if($last_realm_id != 0){
 					echo "</td>";
 					echo "<td width='25%' valign='top'>";
+					echo "<h3>Balances</h3>";
 					echo $balances_display;
 					echo "</td>";
 					echo "</tr>";
@@ -4236,10 +4237,10 @@ function getRealms($conn){
 					echo "</li>";
 				}
 				echo "<li class='role'>";
-				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
 				echo "<table width='100%'>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top'>";
+				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
 				echo "<img src='images/realm.jpg' style='width:100%;max-width:600px;'/><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top'>";
@@ -4248,6 +4249,7 @@ function getRealms($conn){
 				foreach($balances AS $currency => $balance){
 					$balances_display .= $currency." - ".number_format($balance)."<br>";
 				}
+				echo "<h3>Levels</h3>";
 			}
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
 			echo "<br>";
@@ -4255,6 +4257,7 @@ function getRealms($conn){
 		}
 		echo "</td>";
 		echo "<td width='25%' valign='top'>";
+		echo "<h3>Balances</h3>";
 		echo $balances_display;
 		echo "</td>";
 		echo "</tr>";
