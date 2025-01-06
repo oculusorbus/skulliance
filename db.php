@@ -4011,8 +4011,38 @@ function createRealm($conn, $realm){
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
+		  $realm_id = getRealmID($conn);
+	  		foreach(getLocationIDs($conn) AS $location_id){
+	  			$sql = "INSERT INTO realms_locations (realm_id, location_id, level)
+	  			VALUES ('".$realm_id."', '".$location_id."', '0')";
+
+	  			if ($conn->query($sql) === TRUE) {
+	  			  //echo "New record created successfully";
+	  			} else {
+	  			  //echo "Error: " . $sql . "<br>" . $conn->error;
+	  			}
+	  		}
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+		
+		
+		
+		
+	}
+}
+
+function getRealmID($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				return $row['id'];
+			}
+		} else {
+
 		}
 	}
 }
@@ -4040,6 +4070,21 @@ function getLocationNames($conn){
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			$locations[$row['project_id']] = $row['name'];
+		}
+	} else {
+
+	}
+	return $locations;
+}
+
+function getLocationIDs($conn){
+	$sql = "SELECT name, project_id FROM locations";
+	$result = $conn->query($sql);
+	
+	$locations = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$locations[$row['id']] = $row['id'];
 		}
 	} else {
 
