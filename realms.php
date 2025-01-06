@@ -95,6 +95,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	<div class="main">
 	<div id="realms">
 		<div class="content realms">
+			<h2>Realms</h2>
 			<?php
 			getRealms($conn);
 			?>
