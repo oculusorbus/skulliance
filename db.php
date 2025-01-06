@@ -4125,7 +4125,7 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration){
 function getRealmLocationUpgrades($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
-		$sql = "SELECT location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."'";
+		$sql = "SELECT id, location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."'";
 		$result = $conn->query($sql);
 		
 		$status = array();
@@ -4138,20 +4138,54 @@ function getRealmLocationUpgrades($conn){
 				$minutes_remaining = floor(($remaining % 3600) / 60);
 				if($date > time()){
 					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+					$status[$row['location_id']] = $time_message;
 				}else{
-					$time_message = "";
+					incrementRealmLocationLevel($conn, $realm_id, $row['location_id']);
+					deleteRealmLocationUpgrade($conn, $realm_id, $row['location_id']);
 					// Update Realm Location Level
 					// Delete Upgrade
 		
 					//$time_message = "0d 0h 0m";
-					//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 				}
-				$status[$row['location_id']] = $time_message;
 			}
 		} else {
 
 		}
 		return $status;
+	}
+}
+
+function getRealmLocationLevel($conn, $realm_id, $location_id){
+	$sql = "SELECT level FROM realms_locations WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			return $row["level"];
+		}
+	}else{
+		
+	}
+}
+
+function incrementRealmLocationLevel($conn, $realm_id, $location_id){
+	$current_level = getRealmLocationLevel($conn, $realm_id, $location_id);
+	$new_level = $current_level + 1;
+	$sql = "UPDATE realms_locations SET level = '".$new_level."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
+	$sql = "DELETE FROM upgrades WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "Record deleted successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
 
