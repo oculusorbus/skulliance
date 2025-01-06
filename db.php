@@ -4228,16 +4228,14 @@ function getRealms($conn){
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
 					echo "</td>";
-					echo "<td width='25%' valign='top' align='left'>";
+					echo "<td width='33%' valign='top' align='left'>";
 					echo "<h3>Balances</h3>";
 					echo $balances_display;
-					echo "</td>";
-					echo "<td width='25%' valign='top' align='left'>";
 					echo "</td>";
 					echo "</tr>";
 				}
 				echo "<tr>";
-				echo "<td width='25%' valign='top' align='left'>";
+				echo "<td width='33%' valign='top' align='left'>";
 				echo "<h3>".$row['realm_name']."</h3>";
 				echo "<img src='images/realm.jpg' style='width:100%;max-width:450px;'/><br>";
 				echo "<span style='position:relative;left:10px;top:-80px;'>";
@@ -4247,7 +4245,7 @@ function getRealms($conn){
 				echo "<br>".$row["username"]."</span>";
 				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;'>";
 				echo "</td>";
-				echo "<td width='25%' valign='top' align='left'>";
+				echo "<td width='33%' valign='top' align='left'>";
 				$balances_display = "";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
@@ -4260,11 +4258,9 @@ function getRealms($conn){
 			$last_realm_id = $row['realm_id'];
 		}
 		echo "</td>";
-		echo "<td width='25%' valign='top' align='left'>";
+		echo "<td width='33%' valign='top' align='left'>";
 		echo "<h3>Balances</h3>";
 		echo $balances_display;
-		echo "</td>";
-		echo "<td width='25%' valign='top' align='left'>";
 		echo "</td>";
 		echo "</tr>";
 		echo "</table>";
