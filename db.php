@@ -4245,7 +4245,7 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				echo "<br>".$row["username"]."</span>";
-				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-80px;'>";
+				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-70px;'>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
 				$balances_display = "";
