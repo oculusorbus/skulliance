@@ -4163,9 +4163,6 @@ function getRealmLocationsUpgrades($conn){
 				}else{
 					incrementRealmLocationLevel($conn, $realm_id, $row['location_id']);
 					deleteRealmLocationUpgrade($conn, $realm_id, $row['location_id']);
-					// Update Realm Location Level
-					// Delete Upgrade
-		
 					//$time_message = "0d 0h 0m";
 				}
 			}
