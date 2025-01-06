@@ -4233,7 +4233,7 @@ function getRealms($conn){
 			}
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
 			echo "<br>";
-			if($last_realm_id == $row['realm_id']){
+			if($last_realm_id != $row['realm_id']){
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo $currency." ".$balance."<br>";
