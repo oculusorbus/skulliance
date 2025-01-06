@@ -4242,7 +4242,7 @@ function getRealms($conn){
 				echo "<img src='images/realm.jpg' style='width:100%;max-width:450px;'/><br>";
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					$avatar = "<img style='width:100px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				echo $row["username"]."<br><br>";
 				echo "<input type='button' class='button' value='Raid'>";
