@@ -4239,7 +4239,7 @@ function getRealms($conn){
 					echo "</li>";
 				}
 				echo "<li class='role'>";
-				echo "<table width='100%'>";
+				echo "<table width='100%' cellspacing='10' cellpadding='10'>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top'>";
 				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
