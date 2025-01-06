@@ -3988,4 +3988,22 @@ function getPoliciesListing($conn, $project_id=0) {
 	}
 	echo "</table>";
 }
+
+/* REALMS */
+
+function checkRealm($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
+/* END REALMS */
+
 ?>

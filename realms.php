@@ -12,7 +12,19 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="side" id="mission">
 	  	<a name="inventory" id="inventory"></a>
 		<div class="content inventory">
-
+			<?php
+			if(checkRealm($conn)){
+				
+			}else{
+				?>
+				<h2>Create Realm</h2>
+				<form action="realms.php" method="post">
+					<label for="realm">Realm Name</label><br>
+					<input type="text" id="realm" name="realm"><br>
+				</form>
+				<?php
+			}
+			?>
 		</div>
 	  </div>
 	  <div class="main">
