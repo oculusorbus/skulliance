@@ -4222,6 +4222,7 @@ function getRealms($conn){
 	
 	$last_realm_id = 0;
 	$balances_display = "";
+	echo "<ul>";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
