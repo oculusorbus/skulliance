@@ -4058,14 +4058,17 @@ function getRealmName($conn){
 	}
 }
 
-function getLocationNames($conn){
-	$sql = "SELECT name, project_id FROM locations";
+function getLocationInfo($conn){
+	$sql = "SELECT name, description, project_id FROM locations";
 	$result = $conn->query($sql);
 	
 	$locations = array();
+	$location = array();
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$locations[$row['project_id']] = $row['name'];
+			$location['name'] = $row['name'];
+			$location['description'] = $row['description'];
+			$locations[$row['project_id']] = $location;
 		}
 	} else {
 
