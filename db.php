@@ -4240,7 +4240,7 @@ function getRealms($conn){
 				echo "<tr>";
 				echo "<td width='25%' valign='top'>";
 				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
-				echo "<img src='images/realm.jpg' style='max-width:600px;'/><br>";
+				echo "<img src='images/realm.jpg' style='width:auto;max-width:600px;'/><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top'>";
 				$balances_display = "";
