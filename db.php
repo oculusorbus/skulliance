@@ -4109,8 +4109,17 @@ function getRealmLocationLevels($conn){
 	}
 }
 
-function upgradeRealmLocation($conn){
-	
+function upgradeRealmLocation($conn, $realm_id, $location_id, $duration){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "INSERT INTO upgrades (realm_id, location_id, duration)
+		VALUES ('".$realm_id."', '".$location_id."', '".$duration."')";
+
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}
 }
 
 /* END REALMS */

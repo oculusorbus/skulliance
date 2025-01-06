@@ -760,12 +760,9 @@ function upgradeRealmLocation(realmID, locationID, duration){
 	    if (xhttp.status == 200) {
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
-		  const obj = JSON.parse(data);
-		  if(obj == null){
-
-		  }else{
-
-	  	  }
+		  if(data != ""){
+		  	alert(data);
+		  }
 		  console.log(data);
 	      // Do something with the data
 	    } else {
