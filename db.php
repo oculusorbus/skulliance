@@ -3162,7 +3162,7 @@ function transactionHistory($conn) {
 				}
 				if($row["location_id"] != 0){
 					$locations = getLocationInfo($conn);
-					echo "<td>Upgrade: ".$locations[$row["project_id"]]."</td>";
+					echo "<td>Upgrade: ".$locations[$row["project_id"]]['name']."</td>";
 				}
 				
 			}
