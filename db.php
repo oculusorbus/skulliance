@@ -4241,6 +4241,7 @@ function getRealms($conn){
 				echo "<td width='50%'>";
 				echo $row['realm_name']." - ".$row["username"];
 				echo "<br><br>";
+				echo "<img src='images/realm.jpg'/>";
 				$balances_display = "";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
