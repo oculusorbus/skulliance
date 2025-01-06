@@ -49,7 +49,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>)'>
 							<?php
 								}else{
-									echo "Need ".($cost-$balance)." ".$projects[$location_id]['currency'];
+									echo "Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency'];
 								}
 						    }else{ 
 								echo $status[$location_id];
