@@ -4251,7 +4251,12 @@ function getRealms($conn){
 			echo "<br>";
 			$last_realm_id = $row['realm_id'];
 		}
+		echo "</td>";
+		echo "<td>";
 		echo "<br>".$balances_display;
+		echo "</td>";
+		echo "</tr>";
+		echo "</table>";
 		echo "</li>";
 		echo "</ul>";
 	}else{
