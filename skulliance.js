@@ -749,8 +749,30 @@ function dailyReward(){
 	};
 }
 
-function upgradeRealmLocation(realmID, locationID){
-	alert(realmID+" "+locationID);
+function upgradeRealmLocation(realmID, locationID, duration){
+	alert(realmID+" "+locationID+" "+duration);
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+		  const obj = JSON.parse(data);
+		  if(obj == null){
+
+		  }else{
+
+	  	  }
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
 }
 
 // Get the button

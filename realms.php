@@ -38,8 +38,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<strong><?php echo strtoupper($location['name']); ?></strong><br>
 							<strong>Level:</strong> <?php echo $levels[$location_id]; ?><br>
 							<strong>Cost:</strong> <?php echo number_format((($levels[$location_id]+1)*1000))." ".$projects[$location_id]['currency']; ?><br>
-							<strong>Duration:</strong> <?php echo ($levels[$location_id]+1); ?> <?php echo ($levels[$location_id]+1 == 1)?"Day":"Days"; ?><br>
-							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(<?php echo $realm_id;?>, <?php echo $location_id;?>)'>
+							<?php $duration = $levels[$location_id]+1;?>
+							<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
+							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(<?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>)'>
 								</td>
 							</tr>
 							</table>
