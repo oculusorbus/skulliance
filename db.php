@@ -4094,7 +4094,7 @@ function getRealmLocationLevels($conn){
 		$sql = "SELECT id, level FROM realms_locations WHERE realm_id = '".$realm_id."'";
 		$result = $conn->query($sql);
 		
-		$levels = array;
+		$levels = array();
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				$levels[$row['id']] = $row['level'];
