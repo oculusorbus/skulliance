@@ -18,7 +18,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="side" id="realm">
 		<div class="content realm">
 			<?php
-			if(checkRealm($conn)){
+			if(!checkRealm($conn)){
 				$locations = getLocationInfo($conn);
 				?>
 				<h2>Locations</h2>
@@ -56,6 +56,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<form action="realms.php" method="post">
 					<label for="realm">Realm Name</label><br>
 					<input type="text" id="realm" name="realm" size="30"><br><br>
+					<label for="disclaimer">Disclaimer</label><br>
+					<p id="disclaimer">By creating a realm, you agree to being subject to raids from other realm owners which may damage your realm and steal your points.</p>
 					<input class="button" type="submit" value="Create">
 				</form>
 				</li>
