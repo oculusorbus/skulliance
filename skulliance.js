@@ -760,9 +760,7 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  if(data != ""){
-		  	alert(data);
-		  }else{
-			  upgradeButton.outerHTML = data;
+		  	upgradeButton.outerHTML = data;
 		  }
 		  console.log(data);
 	      // Do something with the data
