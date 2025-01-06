@@ -1343,6 +1343,10 @@ section.active {
 	background-color: #1a1a1a;
 }
 
+.realm label {
+	font-weight: bold;
+}
+
 @media screen and (min-width: 1201px) {
 	.missions .nft {
 		width: 50%;
