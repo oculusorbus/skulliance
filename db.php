@@ -4224,8 +4224,8 @@ function getRealms($conn){
 	if ($result->num_rows > 0) {
 		echo "<ul>";
 		while($row = $result->fetch_assoc()) {
-			echo "<li class='role'>";
 			if($last_realm_id != $row['realm_id']){
+				echo "<li class='role'>";
 				echo $row['realm_name'];
 				echo "<br>";
 			}
