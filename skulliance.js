@@ -750,7 +750,6 @@ function dailyReward(){
 }
 
 function upgradeRealmLocation(realmID, locationID, duration){
-	alert(realmID+" "+locationID+" "+duration);
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration, true);
 	xhttp.send();

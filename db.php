@@ -4115,9 +4115,9 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration){
 		VALUES ('".$realm_id."', '".$location_id."', '".$duration."')";
 
 		if ($conn->query($sql) === TRUE) {
-		  //echo "New record created successfully";
+		  echo "New record created successfully";
 		} else {
-		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		  echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 	}
 }
