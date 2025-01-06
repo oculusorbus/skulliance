@@ -29,7 +29,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						<li class="role">
 							<span>
 							<img width="25%" src="icons/locations/<?php echo $name; ?>.png"><br>
-							<?php echo ucfirst($name); ?> - Level <?php echo $levels[$project_id]; ?>
+							<?php echo ucfirst($name); ?><br>Level <?php echo $levels[$project_id]; ?>
 							</span>
 						</li>
 				<?php
