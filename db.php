@@ -4222,7 +4222,7 @@ function getRealms($conn){
 	
 	$last_realm_id = 0;
 	$balances_display = "";
-	echo "<ul>";
+	echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
@@ -4235,11 +4235,7 @@ function getRealms($conn){
 					echo "<td width='25%' valign='top'>";
 					echo "</td>";
 					echo "</tr>";
-					echo "</table>";
-					echo "</li>";
 				}
-				echo "<li class='role'>";
-				echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top'>";
 				echo "<h3>".$row['realm_name']."</h3>";
@@ -4268,8 +4264,6 @@ function getRealms($conn){
 		echo "</td>";
 		echo "</tr>";
 		echo "</table>";
-		echo "</li>";
-		echo "</ul>";
 	}else{
 		
 	}
