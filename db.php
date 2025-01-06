@@ -4225,6 +4225,14 @@ function getRealms($conn){
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
+					$core_balances = getBalances(true);
+					$partner_balances = getBalances();
+					foreach($core_balances AS $currency => $balance){
+						echo $currency." ".$balance;
+					}
+					foreach($partner_balances AS $currency => $balance){
+						echo $currency." ".$balance;
+					}
 					echo "</li>";
 				}
 				echo "<li class='role'>";
