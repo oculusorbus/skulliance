@@ -28,13 +28,19 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				$projects = getProjects($conn, "core");
 				foreach($locations AS $project_id => $name){?>
 						<li class="role">
-							<span>
+							<table>
+							<tr>
+								<td>
 							<img width="25%" src="icons/locations/<?php echo $name; ?>.png"><br>
-							<?php echo ucfirst($name); ?><br>Level <?php echo $levels[$project_id]; ?><br><br>
+							<?php echo ucfirst($name); ?><br>Level <?php echo $levels[$project_id]; ?>
+								</td>
+								<td>
 							<strong>Cost:</strong> <?php echo (($levels[$project_id]+1)*100)." ".$projects[$project_id]['currency']; ?><br>
 							<strong>Duration:</strong> <?php echo ($levels[$project_id]+1); ?> Day(s)<br>
 							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$project_id]+1); ?>'>
-							</span>
+								</td>
+							</tr>
+							</table>
 						</li>
 				<?php
 				}
