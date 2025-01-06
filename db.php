@@ -4228,7 +4228,7 @@ function getRealms($conn){
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
 					echo "</td>";
-					echo "<td>";
+					echo "<td width='50%'>";
 					echo "<br>".$balances_display;
 					echo "</td>";
 					echo "</tr>";
@@ -4238,7 +4238,7 @@ function getRealms($conn){
 				echo "<li class='role'>";
 				echo "<table>";
 				echo "<tr>";
-				echo "<td>";
+				echo "<td width='50%'>";
 				echo $row['realm_name']." - ".$row["username"];
 				echo "<br><br>";
 				$balances_display = "";
@@ -4252,7 +4252,7 @@ function getRealms($conn){
 			$last_realm_id = $row['realm_id'];
 		}
 		echo "</td>";
-		echo "<td>";
+		echo "<td width='50%'>";
 		echo "<br>".$balances_display;
 		echo "</td>";
 		echo "</tr>";
