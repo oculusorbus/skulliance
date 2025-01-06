@@ -4017,6 +4017,21 @@ function createRealm($conn, $realm){
 	}
 }
 
+function getRealmName($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT name FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				return $row['name'];
+			}
+		} else {
+
+		}
+	}
+}
+
 /* END REALMS */
 
 ?>

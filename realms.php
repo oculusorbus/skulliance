@@ -39,7 +39,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  </div>
 	  <div class="main">
 		<div id="realm">
-		<h2>Realm</h2>
+		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
 	    <div class="content realm">
 
 	    </div>
