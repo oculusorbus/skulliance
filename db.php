@@ -4122,6 +4122,39 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration){
 	}
 }
 
+function getRealmLocationUpgrades($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$realm_id = getRealmID($conn);
+		$sql = "SELECT location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."'";
+		$result = $conn->query($sql);
+		
+		$status = array();
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				$date = strtotime('+'.$row["duration"].' day', $row["created_date"]);
+				$remaining = $date - time();
+				$days_remaining = floor(($remaining / 86400));
+				$hours_remaining = floor(($remaining % 86400) / 3600);
+				$minutes_remaining = floor(($remaining % 3600) / 60);
+				if($date > time()){
+					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+				}else{
+					$time_message = "";
+					// Update Realm Location Level
+					// Delete Upgrade
+		
+					//$time_message = "0d 0h 0m";
+					//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
+				}
+				$status[$row['location_id']] = $time_message;
+			}
+		} else {
+
+		}
+		return $status;
+	}
+}
+
 /* END REALMS */
 
 ?>

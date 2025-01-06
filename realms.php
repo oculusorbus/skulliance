@@ -19,6 +19,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			if(checkRealm($conn)){
+				$status = getRealmLocationUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
 				<h2>Locations</h2>
@@ -40,7 +41,13 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<strong>Cost:</strong> <?php echo number_format((($levels[$location_id]+1)*1000))." ".$projects[$location_id]['currency']; ?><br>
 							<?php $duration = $levels[$location_id]+1;?>
 							<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
+							<?php 
+							if(!isset($status[$location_id])){  ?>
 							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(<?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>)'>
+							<?php 
+						    }else{ 
+								echo $status[$location_id];
+							} ?>
 								</td>
 							</tr>
 							</table>
