@@ -24,6 +24,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<h2>Locations</h2>
 				<ul>
 				<?php
+				$levels = array();
 				$levels = getRealmLocationLevels($conn);
 				foreach($locations AS $project_id => $name){?>
 						<li class="role">
