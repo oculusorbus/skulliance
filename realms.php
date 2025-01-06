@@ -37,7 +37,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<strong><?php echo ucfirst($name); ?></strong><br>
 							Level <?php echo $levels[$project_id]; ?><br>
 							<strong>Cost:</strong> <?php echo (($levels[$project_id]+1)*100)." ".$projects[$project_id]['currency']; ?><br>
-							<strong>Duration:</strong> <?php echo ($levels[$project_id]+1); ?> Day(s)<br>
+							<strong>Duration:</strong> <?php echo ($levels[$project_id]+1); ?> <?php echo ($levels[$project_id]+1 == 1)?"Day":"Days"; ?><br>
 							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$project_id]+1); ?>'>
 								</td>
 							</tr>
