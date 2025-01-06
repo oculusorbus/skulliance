@@ -4131,7 +4131,7 @@ function getRealmLocationUpgrades($conn){
 		$status = array();
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				$date = strtotime('+'.$row["duration"].' day', $row["created_date"]);
+				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 				$remaining = $date - time();
 				$days_remaining = floor(($remaining / 86400));
 				$hours_remaining = floor(($remaining % 86400) / 3600);
