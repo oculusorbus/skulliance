@@ -4248,7 +4248,7 @@ function getRealms($conn){
 
 // Get realm balances
 function getRealmBalances($conn, $user_id){
-	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE projects.id != '15' AND user_id = '".$user_id."'";
+	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE projects.id != '15' AND user_id = '".$user_id."' ORDER BY balance DESC";
 	$result = $conn->query($sql);
 
 	$balances = array();
