@@ -4221,24 +4221,28 @@ function getRealms($conn){
 	$result = $conn->query($sql);
 	
 	$last_realm_id = 0;
+	$balances_display = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
+					echo $balances_display;
 					echo "</li>";
 				}
 				echo "<li class='role'>";
 				echo $row['realm_name']." - ".$row["username"];
 				echo "<br><br>";
+				$balances_display = "";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
-					echo $currency." - ".number_format($balance)."<br>";
+					$balances_display .= $currency." - ".number_format($balance)."<br>";
 				}
 			}
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
 			echo "<br>";
 			$last_realm_id = $row['realm_id'];
 		}
+		echo $balances_display;
 		echo "</li>";
 		echo "</ul>";
 	}else{
