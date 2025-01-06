@@ -209,7 +209,7 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum"/></a>
+			<a href="https://x.com/_nemonium" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/discosolaris" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris"/></a>
@@ -217,7 +217,6 @@
 		<div class="project">
 			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png" alt="Danketsu"/></a>
 		</div>
-
 	</div>
 </div>
 <div class="row project-row" id="row1">
@@ -236,10 +235,23 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png" alt="Apprentices"/></a>
+			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/heistonalpha" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/heistonalpha.jpg" alt="Heist on Alpha"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/ApprenticesCNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png" alt="Apprentices"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://x.com/cnftfart" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/fart.jpg" alt="f.ART"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/darkula__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/darkula.jpg" alt="Darkula"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold"/></a>
