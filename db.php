@@ -4236,10 +4236,10 @@ function getRealms($conn){
 					echo "</li>";
 				}
 				echo "<li class='role'>";
+				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
 				echo "<table width='100%'>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top'>";
-				echo "<h3>".$row['realm_name']." - ".$row["username"]."</h3>";
 				echo "<img src='images/realm.jpg' style='width:100%;max-width:600px;'/><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top'>";
