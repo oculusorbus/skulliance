@@ -4222,9 +4222,11 @@ function getRealms($conn){
 	
 	$last_realm_id = 0;
 	if ($result->num_rows > 0) {
-		echo "<ul>";
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
+				if($last_realm_id != 0){
+					echo "</li>";
+				}
 				echo "<li class='role'>";
 				echo $row['realm_name'];
 				echo "<br>";
@@ -4232,8 +4234,9 @@ function getRealms($conn){
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
 			echo "<br>";
 			$last_realm_id = $row['realm_id'];
-			echo "</li>";
+			
 		}
+		echo "</li>";
 		echo "</ul>";
 	}else{
 		
