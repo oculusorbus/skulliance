@@ -3118,7 +3118,7 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, 
 // Display transaction history for user
 function transactionHistory($conn) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions 
+		$sql = "SELECT transactions.type, amount, items.name, project_id, crafting, bonus, mission_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions 
 			    LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id 
 		        WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC LIMIT 1000";
 		$result = $conn->query($sql);
@@ -3143,6 +3143,7 @@ function transactionHistory($conn) {
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
+					getLocationInfo
 				}else{
 					echo "Crafting";
 				}
@@ -3160,6 +3161,11 @@ function transactionHistory($conn) {
 					$mission = getMission($conn, $row["mission_id"]);
 					echo "<td>Mission Cost: ".$mission["title"]."</td>";
 				}
+				if($row["location_id"] != 0){
+					$locations = getLocationInfo($conn);
+					echo "<td>Upgrade: ".$locations[$row["project_id"]]."</td>";
+				}
+				
 			}
 			echo "</tr>";
 	  	}
@@ -4117,7 +4123,7 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost){
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
 		  $project_id = $location_id;
-		  updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost);
+		  updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
 		  logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, $crafting=0, $mission_id=0, $location_id);
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
