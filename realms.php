@@ -25,11 +25,13 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<ul>
 				<?php
 				$levels = getRealmLocationLevels($conn);
+				$projects = getProjects($conn, "core");
 				foreach($locations AS $project_id => $name){?>
 						<li class="role">
 							<span>
 							<img width="25%" src="icons/locations/<?php echo $name; ?>.png"><br>
 							<?php echo ucfirst($name); ?><br>Level <?php echo $levels[$project_id]; ?>
+							<input class='small-button' type='button' value='Upgrade for <?php echo ($levels[$project_id]*100)." ".$projects[$project_id]['currency']; ?>'>
 							</span>
 						</li>
 				<?php
