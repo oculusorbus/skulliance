@@ -4232,7 +4232,7 @@ function getRealms($conn){
 				echo "<br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
-					echo $currency." ".$balance."<br>";
+					echo $currency." - ".number_format($balance)."<br>";
 				}
 			}
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
