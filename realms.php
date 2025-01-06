@@ -9,9 +9,8 @@ include 'header.php';
 if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">	
-	  <div class="side" id="mission">
-	  	<a name="inventory" id="inventory"></a>
-		<div class="content inventory">
+	  <div class="side" id="realm">
+		<div class="content realm">
 			<?php
 			if(checkRealm($conn)){
 				
@@ -33,10 +32,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		</div>
 	  </div>
 	  <div class="main">
-		<div id='available'>
-		<h2>Realms</h2>
-		<a name="missions" id="missions"></a>
-	    <div class="content missions">
+		<div id="realm">
+		<h2>Realm</h2>
+	    <div class="content realm">
 
 	    </div>
 		</div>
