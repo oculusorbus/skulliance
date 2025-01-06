@@ -4117,7 +4117,7 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost){
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
 		  $project_id = $location_id;
-		  updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost){
+		  updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost);
 		  logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, $crafting=0, $mission_id=0, $location_id);
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
