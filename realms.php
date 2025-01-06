@@ -6,7 +6,7 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
-?>
+if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">	
 	  <div class="side" id="mission">
