@@ -31,7 +31,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<table>
 							<tr>
 								<td width="50%">
-							<img width="100%" src="icons/locations/<?php echo $name; ?>.png"><br>
+							<img width="75%" src="icons/locations/<?php echo $name; ?>.png"><br>
 								</td>
 								<td width="50%">
 							<?php echo ucfirst($name); ?><br>Level <?php echo $levels[$project_id]; ?><br><br>
