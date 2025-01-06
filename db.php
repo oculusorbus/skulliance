@@ -3118,7 +3118,7 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, 
 // Display transaction history for user
 function transactionHistory($conn) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT transactions.type, amount, items.name, project_id, crafting, bonus, mission_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name FROM transactions 
+		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name, transactions.project_id AS project_id FROM transactions 
 			    LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id 
 		        WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC LIMIT 1000";
 		$result = $conn->query($sql);
