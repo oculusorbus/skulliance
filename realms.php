@@ -19,11 +19,19 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			if(checkRealm($conn)){
+				$locations = getLocationNames($conn);
 				?>
 				<h2>Locations</h2>
 				<ul>
-				<li class="role">
-				</li>
+				<?php
+				foreach($locations AS $project_id -> $name){?>
+					    <h3><?php echo $name; ?></h3>
+						<li class="role">
+							<img src="icons/locations/<?php echo $name; ?>.png"> 
+						</li>
+				<?php}
+				?>
+				
 				</ul>
 				<?php
 			}else{
