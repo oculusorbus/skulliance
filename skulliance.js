@@ -762,7 +762,7 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration){
 		  if(data != ""){
 		  	alert(data);
 		  }else{
-			  upgradeButton.style.display = 'none';
+			  upgradeButton.outerHTML = data;
 		  }
 		  console.log(data);
 	      // Do something with the data

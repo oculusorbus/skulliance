@@ -4122,7 +4122,28 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration){
 	}
 }
 
-function getRealmLocationUpgrades($conn){
+function getRealmLocationUpgrade($conn, $realm_id, $location_id){
+	$sql = "SELECT id, location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
+	$result = $conn->query($sql);
+	
+	$status = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
+			$remaining = $date - time();
+			$days_remaining = floor(($remaining / 86400));
+			$hours_remaining = floor(($remaining % 86400) / 3600);
+			$minutes_remaining = floor(($remaining % 3600) / 60);
+			if($date > time()){
+				$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+				$status[$row['location_id']] = $time_message;
+			}
+		}
+	}
+	return $status;
+}
+
+function getRealmLocationsUpgrades($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
 		$sql = "SELECT id, location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."'";
