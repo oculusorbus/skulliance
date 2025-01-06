@@ -4240,7 +4240,7 @@ function getRealms($conn){
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<h3>".$row['realm_name']."</h3>";
 				echo "<img src='images/realm.jpg' style='width:100%;max-width:450px;'/><br>";
-				echo "<span style='position:relative;top:-80px;'>";
+				echo "<span style='position:relative;left:10px;top:-80px;'>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
