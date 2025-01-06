@@ -19,7 +19,13 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			if(checkRealm($conn)){
-				
+				?>
+				<h2>Locations</h2>
+				<ul>
+				<li class="role">
+				</li>
+				</ul>
+				<?php
 			}else{
 				?>
 				<h2>Create Your Realm</h2>
