@@ -24,13 +24,12 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<h2>Locations</h2>
 				<ul>
 				<?php
-				$levels = array();
 				$levels = getRealmLocationLevels($conn);
 				foreach($locations AS $project_id => $name){?>
 						<li class="role">
 							<span>
 							<img width="25%" src="icons/locations/<?php echo $name; ?>.png"><br>
-							<?php echo ucfirst($name); ?> - Level <?php echo $level[$project_id]; ?>
+							<?php echo ucfirst($name); ?> - Level <?php echo $levels[$project_id]; ?>
 							</span>
 						</li>
 				<?php
