@@ -30,10 +30,10 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						<li class="role">
 							<table>
 							<tr>
-								<td width="60%">
+								<td width="40%">
 							<img width="75%" src="icons/locations/<?php echo $name; ?>.png"><br>
 								</td>
-								<td width="40%">
+								<td width="60%">
 							<strong><?php echo ucfirst($name); ?></strong><br>
 							Level <?php echo $levels[$project_id]; ?><br><br>
 							<strong>Cost:</strong> <?php echo (($levels[$project_id]+1)*100)." ".$projects[$project_id]['currency']; ?><br>
