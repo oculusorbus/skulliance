@@ -4004,6 +4004,19 @@ function checkRealm($conn){
 	}
 }
 
+function createRealm($conn, $realm){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "INSERT INTO realms (name, user_id)
+		VALUES ('".$realm."', '".$_SESSION['userData']['user_id']."')";
+
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}
+}
+
 /* END REALMS */
 
 ?>

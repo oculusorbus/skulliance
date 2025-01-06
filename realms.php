@@ -6,6 +6,12 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
+if(isset($_POST['realm'])){
+	if(!checkRealm($conn)){
+		createRealm($conn, $_POST['realm']);
+	}
+}
+
 if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
 <div class="row" id="row1">	
