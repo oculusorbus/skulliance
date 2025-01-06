@@ -749,6 +749,10 @@ function dailyReward(){
 	};
 }
 
+function upgradeRealmLocation(realmID, locationID){
+	
+}
+
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 

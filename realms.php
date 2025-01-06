@@ -24,9 +24,10 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<h2>Locations</h2>
 				<ul>
 				<?php
+				$realm_id = getRealmID($conn);
 				$levels = getRealmLocationLevels($conn);
 				$projects = getProjects($conn, "core");
-				foreach($locations AS $project_id => $location){?>
+				foreach($locations AS $location_id => $location){?>
 						<li class="role">
 							<table>
 							<tr>
@@ -35,10 +36,10 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								</td>
 								<td width="60%">
 							<strong><?php echo strtoupper($location['name']); ?></strong><br>
-							<strong>Level:</strong> <?php echo $levels[$project_id]; ?><br>
-							<strong>Cost:</strong> <?php echo number_format((($levels[$project_id]+1)*1000))." ".$projects[$project_id]['currency']; ?><br>
-							<strong>Duration:</strong> <?php echo ($levels[$project_id]+1); ?> <?php echo ($levels[$project_id]+1 == 1)?"Day":"Days"; ?><br>
-							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$project_id]+1); ?>'>
+							<strong>Level:</strong> <?php echo $levels[$location_id]; ?><br>
+							<strong>Cost:</strong> <?php echo number_format((($levels[$location_id]+1)*1000))." ".$projects[$location_id]['currency']; ?><br>
+							<strong>Duration:</strong> <?php echo ($levels[$location_id]+1); ?> <?php echo ($levels[$location_id]+1 == 1)?"Day":"Days"; ?><br>
+							<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(<?php echo $realm_id;?>, <?php echo $location_id;?>)'>
 								</td>
 							</tr>
 							</table>

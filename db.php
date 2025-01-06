@@ -4109,6 +4109,10 @@ function getRealmLocationLevels($conn){
 	}
 }
 
+function upgradeRealmLocation($conn){
+	
+}
+
 /* END REALMS */
 
 ?>
