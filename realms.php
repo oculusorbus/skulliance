@@ -18,7 +18,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="side" id="realm">
 		<div class="content realm">
 			<?php
-			if(!checkRealm($conn)){
+			if(checkRealm($conn)){
 				$locations = getLocationInfo($conn);
 				?>
 				<h2>Locations</h2>
