@@ -4225,10 +4225,6 @@ function getRealms($conn){
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
-					$balances = getRealmBalances($conn, $row['user_id']);
-					foreach($balances AS $currency => $balance){
-						echo $currency." ".$balance."<br>";
-					}
 					echo "</li>";
 				}
 				echo "<li class='role'>";
@@ -4237,12 +4233,13 @@ function getRealms($conn){
 			}
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
 			echo "<br>";
+			if($last_realm_id != $row['realm_id']){
+				$balances = getRealmBalances($conn, $row['user_id']);
+				foreach($balances AS $currency => $balance){
+					echo $currency." ".$balance."<br>";
+				}
+			}
 			$last_realm_id = $row['realm_id'];
-			
-		}
-		$balances = getRealmBalances($conn, $row['user_id']);
-		foreach($balances AS $currency => $balance){
-			echo $currency." ".$balance."<br>";
 		}
 		echo "</li>";
 		echo "</ul>";
