@@ -4025,10 +4025,6 @@ function createRealm($conn, $realm){
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
-		
-		
-		
-		
 	}
 }
 
@@ -4078,7 +4074,7 @@ function getLocationNames($conn){
 }
 
 function getLocationIDs($conn){
-	$sql = "SELECT name, project_id FROM locations";
+	$sql = "SELECT id FROM locations";
 	$result = $conn->query($sql);
 	
 	$locations = array();
