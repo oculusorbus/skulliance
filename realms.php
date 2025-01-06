@@ -20,7 +20,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<ul>
 				<li class="role">
 				<form action="realms.php" method="post">
-					<label for="realm">Realm Name</label><br>
+					<label for="realm">Realm Name</label><br><br>
 					<input type="text" id="realm" name="realm" size="30"><br><br>
 					<input class="button" type="submit" value="Create">
 				</form>
