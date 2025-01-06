@@ -235,7 +235,7 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum"/></a>
+			<a href="https://x.com/darkula__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/darkula.jpg" alt="Darkula"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/heistonalpha" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/heistonalpha.jpg" alt="Heist on Alpha"/></a>
@@ -248,10 +248,10 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/cnftfart" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/fart.jpg" alt="f.ART"/></a>
+			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/darkula__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/darkula.jpg" alt="Darkula"/></a>
+			<a href="https://x.com/cnftfart" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/fart.jpg" alt="f.ART"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold"/></a>
