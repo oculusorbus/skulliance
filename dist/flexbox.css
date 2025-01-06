@@ -1347,6 +1347,10 @@ section.active {
 	font-weight: bold;
 }
 
+.realms li {
+	text-align: left;
+}
+
 @media screen and (min-width: 1201px) {
 	.missions .nft {
 		width: 50%;
