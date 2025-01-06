@@ -3092,9 +3092,9 @@ function burn($conn, $balance, $project_id){
 
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -3104,9 +3104,9 @@ function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0,
 }
 
 // Log a specific user debit for an item purchase
-function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission_id)
-	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission_id."')";
+function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0) {
+	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission_id, location_id)
+	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission_id."', '".$location_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -4109,13 +4109,16 @@ function getRealmLocationLevels($conn){
 	}
 }
 
-function upgradeRealmLocation($conn, $realm_id, $location_id, $duration){
+function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "INSERT INTO upgrades (realm_id, location_id, duration)
 		VALUES ('".$realm_id."', '".$location_id."', '".$duration."')";
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
+		  $project_id = $location_id;
+		  updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $cost){
+		  logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, $crafting=0, $mission_id=0, $location_id);
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
