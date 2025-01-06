@@ -4033,7 +4033,7 @@ function getRealmName($conn){
 }
 
 function getLocationNames($conn){
-	$sql = "SELECT project_id, name FROM locations";
+	$sql = "SELECT name, project_id FROM locations";
 	$result = $conn->query($sql);
 	
 	$locations = array();

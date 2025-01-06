@@ -24,7 +24,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<h2>Locations</h2>
 				<ul>
 				<?php
-				foreach($locations AS $project_id -> $name){?>
+				foreach($locations AS $project_id => $name){?>
 					    <h3><?php echo $name; ?></h3>
 						<li class="role">
 							<img src="icons/locations/<?php echo $name; ?>.png"> 
