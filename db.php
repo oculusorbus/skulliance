@@ -4232,6 +4232,8 @@ function getRealms($conn){
 					echo "<h3>Balances</h3>";
 					echo $balances_display;
 					echo "</td>";
+					echo "<td width='25%' valign='top'>";
+					echo "</td>";
 					echo "</tr>";
 					echo "</table>";
 					echo "</li>";
@@ -4259,6 +4261,8 @@ function getRealms($conn){
 		echo "<td width='25%' valign='top'>";
 		echo "<h3>Balances</h3>";
 		echo $balances_display;
+		echo "</td>";
+		echo "<td width='25%' valign='top'>";
 		echo "</td>";
 		echo "</tr>";
 		echo "</table>";
