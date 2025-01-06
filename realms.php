@@ -26,9 +26,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<?php
 				foreach($locations AS $project_id => $name){?>
 						<li class="role">
-							<h3><?php echo ucfirst($name); ?></h3>
-						</li>
-						<li class="role">
+							<?php echo ucfirst($name); ?>
 							<img width="25%" src="icons/locations/<?php echo $name; ?>.png"> 
 						</li>
 				<?php
