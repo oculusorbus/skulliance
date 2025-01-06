@@ -4228,7 +4228,7 @@ function getRealms($conn){
 					echo "</li>";
 				}
 				echo "<li class='role'>";
-				echo $row['realm_name'];
+				echo "<strong>".$row['realm_name']."</strong>";
 				echo "<br>";
 			}
 			echo ucfirst($row['location_name'])." - Level ".$row['level'];
