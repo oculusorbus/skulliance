@@ -4216,7 +4216,7 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 }
 
 function getRealms($conn){
-	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.username AS username, users.avatar AS avatar, realms_locations.level AS level, locations.name AS location_name FROM realms 
+	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, realms_locations.level AS level, locations.name AS location_name FROM realms 
 		    INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN projects ON projects.id = balances.project_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id";
 	$result = $conn->query($sql);
 	
@@ -4225,13 +4225,9 @@ function getRealms($conn){
 		while($row = $result->fetch_assoc()) {
 			if($last_realm_id != $row['realm_id']){
 				if($last_realm_id != 0){
-					$core_balances = getBalances($conn, true);
-					$partner_balances = getBalances($conn, false);
-					foreach($core_balances AS $currency => $balance){
-						echo $currency." ".$balance;
-					}
-					foreach($partner_balances AS $currency => $balance){
-						echo $currency." ".$balance;
+					$balances = getBalances($conn, $row['user_id']);
+					foreach($balances AS $currency => $balance){
+						echo $currency." ".$balance."<br>";
 					}
 					echo "</li>";
 				}
@@ -4249,6 +4245,24 @@ function getRealms($conn){
 	}else{
 		
 	}
+}
+
+// Get realm balances
+function getRealmBalances($conn, $user_id){
+	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE projects.id != '15' AND user_id = '".$user_id."'";
+	$result = $conn->query($sql);
+
+	$balances = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
+        $balances[$row["currency"]] = $row["balance"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $balances;
 }
 
 /* END REALMS */
