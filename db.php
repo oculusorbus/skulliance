@@ -4234,7 +4234,7 @@ function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
 		$sql = "SELECT DISTINCT realms.id AS realm_id, balance, SUM(balance) AS total_balance, realms.name AS realm_name, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
-			    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id GROUP BY balance WITH ROLLUP";
+			    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id GROUP BY realm_id WITH ROLLUP";
 				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
 		$result = $conn->query($sql);
 	
