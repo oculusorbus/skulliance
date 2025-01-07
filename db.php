@@ -4391,7 +4391,7 @@ function getRaids($conn, $type){
 			$id1 = "origin_id";
 			$id2 = "destination_id";
 		}
-		$sql = "SELECT realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
+		$sql = "SELECT raids.id AS raid_id, realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
 			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome = '0'";
 		$result = $conn->query($sql);
 		
@@ -4412,6 +4412,7 @@ function getRaids($conn, $type){
 				}else{
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
+					endRaid($conn, $row['raid_id']);
 				}
 				echo "<tr>";
 				echo "<td>";
@@ -4435,6 +4436,16 @@ function getRaids($conn, $type){
 		} else {
 		  //echo "0 results";
 	    }
+	}
+}
+
+function endRaid($conn, $raid_id){
+	$outcome = rand(1, 2);
+	$sql = "UPDATE raids SET outcome = '".$outcome."' WHERE id='".$raid_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
 
