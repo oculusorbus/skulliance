@@ -4252,7 +4252,9 @@ function getRealms($conn){
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			}
 			echo "<br>".$row["username"]."</span>";
-			$duration = calculateRaidDefense($conn, $row["realm_id"]);
+			$offense = calculateRaidOffense($conn, $origin_id);
+			$defense = calculateRaidDefense($conn, $row['realm_id'])
+			$duration = round($defense-$offense);
 			if($row["outcome"] == 0){
 				echo "<br>Raid in Progress";
 			}else{
@@ -4268,8 +4270,8 @@ function getRealms($conn){
 			}
 			echo "<h3>Raid Info</h3>";
 			echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
-			echo "Your Offense - ".calculateRaidOffense($conn, $origin_id)."<br>";
-			echo "Their Defense - ".calculateRaidDefense($conn, $row['realm_id'])."<br>";
+			echo "Your Offense - ".$offense."<br>";
+			echo "Their Defense - ".$defense."<br>";
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
 			echo "<h3>Balances</h3>";
