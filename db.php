@@ -4255,7 +4255,8 @@ function getRealms($conn){
 			if($row["outcome"] == 0){
 				echo "<br>Raid in Progress";
 			}else{
-				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".calculateRaidDuration($conn, $row["realm_id"]).");'>";
+				$duration = calculateRaidDuration($conn, $row["realm_id"]);
+				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 			}
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
@@ -4265,6 +4266,8 @@ function getRealms($conn){
 				echo ucfirst($location_name)." - Level ".$level;
 				echo "<br>";
 			}
+			echo "<h3>Location Levels</h3>";
+			echo "Duration - ".$duration." ".($duration == 1)?"Day":"Days";
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
 			echo "<h3>Balances</h3>";
@@ -4304,7 +4307,7 @@ function calculateRaidDuration($conn, $realm_id){
 		if($duration == 0){
 			$duration = 1;
 		}
-	} else {
+	}else{
 
 	}
 	return $duration;
