@@ -4335,7 +4335,7 @@ function getRaids($conn){
 				echo "</td>";
 				echo "</tr>";
 			}
-			echo "</table";
+			echo "</table>";
 		} else {
 		  //echo "0 results";
 	    }
