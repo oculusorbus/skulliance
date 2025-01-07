@@ -4397,6 +4397,42 @@ function startRaid($conn, $defense_id, $duration){
 	}
 }
 
+function checkMaxRaids($conn, $realm_id){
+	$sql = "SELECT location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."' AND location_id = '1'";
+	$result = $conn->query($sql);
+	
+	$max_raids = 1;
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row['location_id'] == 1){
+				if($row["level"] != 0){
+					$max_raids = $row["level"];
+				}
+			}
+		}
+	}else{
+
+	}
+	
+	$raid_count = 0;
+	$sql = "SELECT COUNT(id) AS raid_count FROM raids WHERE offense_id = '".$realm_id."' AND outcome = '0'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$raid_count = $row["raid_count"];
+		}
+	}else{
+		
+	}
+	
+	if($raid_count < $max_raids){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 function getRaids($conn, $type){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
@@ -4438,7 +4474,7 @@ function getRaids($conn, $type){
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
 					$results = "Pending";
-					endRaid($conn, $row['raid_id']);
+					endRaid($conn, $row['raid_id'], $type);
 				}
 				echo "<tr>";
 				echo "<td>";
@@ -4471,50 +4507,64 @@ function getRaids($conn, $type){
 	}
 }
 
-function endRaid($conn, $raid_id){
+function getRaidRealmID($conn, $raid_id, $faction){
+	$sql = "SELECT ".$faction."_id FROM raids WHERE id = '".$raid_id."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			return $row[$faction."_id"];
+		}
+	}else{
+		
+	}
+}
+
+function endRaid($conn, $raid_id, $type){
+	// Get raid faction realm ID
+	$defense_id = getRaidRealmID($conn, $raid_id, "defense");
+	$offense_id = getRaidRealmID($conn, $raid_id, "offense");
+	
+	// Calculate faction score based on locations
+	$defense = calculateRaidDefense($conn, $defense_id);
+	$offense = calculateRaidOffense($conn, $offense_id);
+	
+	// Total scores and calculate percentage
+	$total = $defense + $offense;
+	$percentage = (100/$total);
+	
+	// Calculate thresholds for random number generation
+	$defense_threshold = $percentage * $defense;
+	$offense_threshold = $percentage * $offense;
+	
 	// Failure = 2, Success = 1
-	$outcome = rand(1, 2);
+	$outcome = rand(1, 100);
+	
+	// Determine faction winner based on threshold
+	$winner = "";
+	if($outcome < $defense_threshold){
+		$winner = "defense";
+	}else{
+		$winner = "offense";
+	}
+	
+	// Determine outcome through the lens of whether a raid is outgoing or incoming from the staker perspective of the interface and translate that to the database faction.
+	if($type == "outgoing" && $winner == "offense"){
+		$outcome = 1;
+	}else if($type == "outgoing" && $winner == "defense"){
+		$outcome = 2;
+	}
+	if($type == "incoming" && $winner == "defense"){
+		$outcome = 2;
+	}else if($type == "incoming" && $winner == "offense"){
+		$outcome = 1;
+	}
+	
 	$sql = "UPDATE raids SET outcome = '".$outcome."' WHERE id='".$raid_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
-	}
-}
-
-function checkMaxRaids($conn, $realm_id){
-	$sql = "SELECT location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."' AND location_id = '1'";
-	$result = $conn->query($sql);
-	
-	$max_raids = 1;
-	if ($result->num_rows > 0) {
-		while($row = $result->fetch_assoc()) {
-			if($row['location_id'] == 1){
-				if($row["level"] != 0){
-					$max_raids = $row["level"];
-				}
-			}
-		}
-	}else{
-
-	}
-	
-	$raid_count = 0;
-	$sql = "SELECT COUNT(id) AS raid_count FROM raids WHERE offense_id = '".$realm_id."' AND outcome = '0'";
-	$result = $conn->query($sql);
-	
-	if ($result->num_rows > 0) {
-		while($row = $result->fetch_assoc()) {
-			$raid_count = $row["raid_count"];
-		}
-	}else{
-		
-	}
-	
-	if($raid_count < $max_raids){
-		return true;
-	}else{
-		return false;
 	}
 }
 
