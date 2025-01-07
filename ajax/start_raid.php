@@ -8,7 +8,7 @@ if(isset($_GET['destination_id']) && isset($_GET['duration'])){
 	if(checkMaxRaids($conn, $realm_id)){
 		startRaid($conn, $_GET['destination_id'], $_GET['duration']);
 	}else{
-		"Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
+		echo "Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
 	}
 }else{
 	echo "No Get Variables";

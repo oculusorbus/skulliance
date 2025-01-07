@@ -4258,10 +4258,10 @@ function getRealms($conn){
 			if($duration <= 0){
 				$duration = 1;
 			}
-			if($row["outcome"] == 0){
-				echo "<br>Raid in Progress";
-			}else{
+			if(checkMaxRaids($conn, $realm_id)){
 				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
+			}else{
+				echo "Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
 			}
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
