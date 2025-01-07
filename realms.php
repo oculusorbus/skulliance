@@ -16,6 +16,14 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
 
 <div class="row" id="row0">	
+	  <div class="main">
+		<div id="realm">
+		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
+	    <div class="content realm">
+			<img src="images/realm.jpg" width="100%"/>
+	    </div>
+		</div>
+	  </div>
 	  <div class="side" id="realm">
 		<div class="content realm">
 			<?php
@@ -81,14 +89,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<?php
 			}
 			?>
-		</div>
-	  </div>
-	  <div class="main">
-		<div id="realm">
-		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
-	    <div class="content realm">
-			<img src="images/realm.jpg" width="100%"/>
-	    </div>
 		</div>
 	  </div>
 </div>
