@@ -4407,13 +4407,13 @@ function getRaids($conn, $type){
 		if($type == "outgoing"){
 			$id1 = "destination_id";
 			$id2 = "origin_id";
-			$results1 = "Your Results";
-			$results2 = "Their Results";
+			$results1 = "Your Casulaties or Reward";
+			$results2 = "Their Revenge or Damage";
 		}else if($type == "incoming"){
 			$id1 = "origin_id";
 			$id2 = "destination_id";
-			$results1 = "Their Results";
-			$results2 = "Your Results";
+			$results1 = "Their Revenge or Damage";
+			$results2 = "Your Casulaties or Reward";
 		}
 		$sql = "SELECT raids.id AS raid_id, realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
 			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome = '0'";
