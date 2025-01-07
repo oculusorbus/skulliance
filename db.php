@@ -4305,6 +4305,23 @@ function startRaid($conn, $destination_id, $duration){
 	}
 }
 
+function getRaids($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$origin_id = getRealmID($conn);
+		$sql = "SELECT realms.name AS realm_name FROM raids INNER JOIN realms ON realms.id = raids.destination_id WHERE origin_id = '".$origin_id."' AND outcome = '0'";
+		$result = $conn->query($sql);
+
+		if ($result->num_rows > 0) {
+		  // output data of each row
+		  while($row = $result->fetch_assoc()) {
+			  echo $row["realm_name"];
+		  }
+		} else {
+		  //echo "0 results";
+		}
+	}
+}
+
 /* END REALMS */
 
 ?>
