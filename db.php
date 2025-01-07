@@ -4114,6 +4114,21 @@ function getRealmLocationLevels($conn){
 	}
 }
 
+function getRealmLocationNamesLevels($conn, $realm_id){
+	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	
+	$levels = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$levels[$row['name']] = $row['level'];
+		}
+	} else {
+
+	}
+	return $levels;
+}
+
 function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "INSERT INTO upgrades (realm_id, location_id, duration)
@@ -4218,8 +4233,8 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, CASE WHEN outcome IS NULL THEN 'NONE' ELSE outcome END AS outcome, realms_locations.level AS level, locations.name AS location_name   
-		    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN projects ON projects.id = balances.project_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id LEFT JOIN raids ON raids.destination_id = realms.id";
+	$sql = "SELECT realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, CASE WHEN outcome IS NULL THEN 'NONE' ELSE outcome END AS outcome 
+		    FROM realms INNER JOIN users ON users.id = realms.user_id LEFT JOIN raids ON raids.destination_id = realms.id";
 			/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
 	$result = $conn->query($sql);
 	
@@ -4260,8 +4275,11 @@ function getRealms($conn){
 				}
 				echo "<h3>Location Levels</h3>";
 			}
-			echo ucfirst($row['location_name'])." - Level ".$row['level'];
-			echo "<br>";
+			$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
+			foreach($levels AS $location_name => $level){
+				echo ucfirst($location_name)." - Level ".$level;
+				echo "<br>";
+			}
 			$last_realm_id = $row['realm_id'];
 		}
 		echo "</td>";
