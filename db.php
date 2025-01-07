@@ -4268,8 +4268,8 @@ function getRealms($conn){
 			}
 			echo "<h3>Raid Info</h3>";
 			echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days");
-			echo "Your Offense - ".calculateRaidOffense($conn, $origin_id);
-			echo "Their Defense - ".calculateRaidDefense($conn, $row['realm_id']);
+			echo "Your Offense - ".calculateRaidOffense($conn, $origin_id)."<br>";
+			echo "Their Defense - ".calculateRaidDefense($conn, $row['realm_id'])."<br>";
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
 			echo "<h3>Balances</h3>";
