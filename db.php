@@ -4255,7 +4255,7 @@ function getRealms($conn){
 			if($row["outcome"] == 0){
 				echo "<br>Raid in Progress";
 			}else{
-				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
+				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".calculateRaidDuration($conn, $realm_id).");'>";
 			}
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
@@ -4281,6 +4281,30 @@ function getRealms($conn){
 		
 	}
 	}
+}
+
+function calculateRaidDuration($conn, $realm_id){
+	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	
+	$defense = 0;
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row['location_id'] == 3){
+				$defense += $row["level"];
+			}
+			if($row['location_id'] == 5){
+				$defense += $row["level"];
+			}
+			if($row['location_id'] == 7){
+				$defense += $row["level"];
+			}
+		}
+		$duration = ceil($defense/3);
+	} else {
+
+	}
+	return $duration;
 }
 
 // Get realm balances
