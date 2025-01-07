@@ -18,9 +18,15 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	<div class="main">
 	<div id="raids">
 		<div class="content raids">
-			<h2>Raids</h2>
+			<h2>Outgoing Raids</h2>
 			<?php
-			getRaids($conn);
+			getRaids($conn, "outgoing");
+			?>
+		</div>
+		<div class="content raids">
+			<h2>Incoming Raids</h2>
+			<?php
+			getRaids($conn, "incoming");
 			?>
 		</div>
 	</div>

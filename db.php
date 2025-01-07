@@ -4309,11 +4309,19 @@ function startRaid($conn, $destination_id, $duration){
 	}
 }
 
-function getRaids($conn){
+function getRaids($conn, $type){
 	if(isset($_SESSION['userData']['user_id'])){
-		$origin_id = getRealmID($conn);
+		$realm_id = getRealmID($conn);
+		$id = "";
+		if($type == "outgoing"){
+			$where = "origin_id = '".$_id."'";
+			$id = "destination_id";
+		}else if($type == "incoming"){
+			$where = "destination_id = '".$_id."'";
+			$id = "origin_id";
+		}
 		$sql = "SELECT realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
-			    FROM raids INNER JOIN realms ON realms.id = raids.destination_id INNER JOIN users ON users.id = realms.user_id WHERE origin_id = '".$origin_id."' AND outcome = '0'";
+			    FROM raids INNER JOIN realms ON realms.id = raids.".$id." INNER JOIN users ON users.id = realms.user_id WHERE ".$where." AND outcome = '0'";
 		$result = $conn->query($sql);
 		
 		$status = "";
