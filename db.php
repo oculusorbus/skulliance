@@ -4450,6 +4450,42 @@ function endRaid($conn, $raid_id){
 	}
 }
 
+function checkMaxRaids($conn, $realm_id){
+	$sql = "SELECT location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."' AND location_id = '1'";
+	$result = $conn->query($sql);
+	
+	$max_raids = 1;
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row['location_id'] == 1){
+				if($row["level"] != 0){
+					$max_raids = $row["level"];
+				}
+			}
+		}
+	}else{
+
+	}
+	
+	$raid_count = 0;
+	$sql = "SELECT COUNT(id) AS raid_count FROM raids WHERE origin_id = '".$realm_id."' AND outcome = '0'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$raid_count = $row["raid_count"];
+		}
+	}else{
+		
+	}
+	
+	if($raid_count < $max_raids){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 /* END REALMS */
 
 ?>
