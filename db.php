@@ -4308,13 +4308,14 @@ function startRaid($conn, $destination_id, $duration){
 function getRaids($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-		$sql = "SELECT realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date FROM raids INNER JOIN realms ON realms.id = raids.destination_id WHERE origin_id = '".$origin_id."' AND outcome = '0'";
+		$sql = "SELECT realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
+			    FROM raids INNER JOIN realms ON realms.id = raids.destination_id INNER JOIN users ON users.id = realms.user_id WHERE origin_id = '".$origin_id."' AND outcome = '0'";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
 			// output data of each row
 			echo "<table id='transactions'>";
-			echo "<th>Realm</th><th>Remaining</th>";
+			echo "<th>Realm</th><th>Username</th><th>Remaining</th>";
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 				$remaining = $date - time();
@@ -4329,6 +4330,9 @@ function getRaids($conn){
 				echo "<tr>";
 				echo "<td>";
 				echo $row["realm_name"];
+				echo "</td>";
+				echo "<td>";
+				echo $row["username"];
 				echo "</td>";
 				echo "<td>";
 				echo $time_message;
