@@ -771,6 +771,28 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 	};
 }
 
+function startRaid(raidButton, destinationID, duration){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/start_raid.php?destination_id='+destinationID+'&duration='+duration, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+		  if(data != ""){
+		  	raidButton.outerHTML = data;
+		  }
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 

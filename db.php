@@ -4243,7 +4243,7 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				echo "<br>".$row["username"]."</span>";
-				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;'>";
+				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
 				$balances_display = "";
@@ -4285,6 +4285,20 @@ function getRealmBalances($conn, $user_id){
 	  //echo "0 results";
 	}
 	return $balances;
+}
+
+function startRaid($conn, $destination_id, $duration){
+	if(isset($_SESSION['userData']['user_id'])){
+		$origin_id = getRealmID($conn);
+		$sql = "INSERT INTO raids (origin_id, destination_id, duration)
+		VALUES ('".$origin_id."', '".$destination_id."', '".$duration."')";
+
+		if ($conn->query($sql) === TRUE) {
+		  echo "Raid Started";
+		} else {
+		  echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}
 }
 
 /* END REALMS */
