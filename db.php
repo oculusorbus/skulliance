@@ -4252,7 +4252,7 @@ function getRealms($conn){
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			}
 			echo "<br>".$row["username"]."</span>";
-			$duration = calculateRaidDuration($conn, $row["realm_id"]);
+			$duration = calculateRaidDefense($conn, $row["realm_id"]);
 			if($row["outcome"] == 0){
 				echo "<br>Raid in Progress";
 			}else{
@@ -4268,6 +4268,8 @@ function getRealms($conn){
 			}
 			echo "<h3>Raid Info</h3>";
 			echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days");
+			echo "Your Offense - ".calculateRaidOffense($conn, $origin_id);
+			echo "Their Defense - ".calculateRaidDefense($conn, $row['realm_id']);
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
 			echo "<h3>Balances</h3>";
@@ -4286,7 +4288,7 @@ function getRealms($conn){
 	}
 }
 
-function calculateRaidDuration($conn, $realm_id){
+function calculateRaidDefense($conn, $realm_id){
 	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
 	$result = $conn->query($sql);
 	
@@ -4303,14 +4305,41 @@ function calculateRaidDuration($conn, $realm_id){
 				$defense += $row["level"];
 			}
 		}
-		$duration = ceil($defense/3);
-		if($duration == 0){
-			$duration = 1;
+		$defense = ceil($defense/3);
+		if($defense == 0){
+			$defense = 1;
 		}
 	}else{
 
 	}
-	return $duration;
+	return $defense;
+}
+
+function calculateRaidOffense($conn, $realm_id){
+	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	
+	$offense = 0;
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row['location_id'] == 2){
+				$offense += $row["level"];
+			}
+			if($row['location_id'] == 4){
+				$offense += $row["level"];
+			}
+			if($row['location_id'] == 6){
+				$offense += $row["level"];
+			}
+		}
+		$offense = ceil($offense/3);
+		if($offense == 0){
+			$offense = 1;
+		}
+	}else{
+
+	}
+	return $offense;
 }
 
 // Get realm balances
