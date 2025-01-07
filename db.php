@@ -4243,51 +4243,39 @@ function getRealms($conn){
 	echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			if($last_realm_id != $row['realm_id']){
-				if($last_realm_id != 0){
-					echo "</td>";
-					echo "<td width='33%' valign='top' align='left'>";
-					echo "<h3>Balances</h3>";
-					echo $balances_display;
-					echo "</td>";
-					echo "</tr>";
-				}
-				echo "<tr>";
-				echo "<td width='33%' valign='top' align='left'>";
-				echo "<h3>".$row['realm_name']."</h3>";
-				echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
-				echo "<span style='position:relative;left:10px;top:-80px;'>";
-				if($row["avatar"] != ""){
-					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
-				}
-				echo "<br>".$row["username"]."</span>";
-				if($row["outcome"] == 0){
-					echo "<br>Raid in Progress";
-				}else{
-					echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
-				}
-				echo "</td>";
-				echo "<td width='33%' valign='top' align='left'>";
-				$balances_display = "";
-				$balances = getRealmBalances($conn, $row['user_id']);
-				foreach($balances AS $currency => $balance){
-					$balances_display .= $currency." - ".number_format($balance)."<br>";
-				}
-				echo "<h3>Location Levels</h3>";
+			echo "<tr>";
+			echo "<td width='33%' valign='top' align='left'>";
+			echo "<h3>".$row['realm_name']."</h3>";
+			echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
+			echo "<span style='position:relative;left:10px;top:-80px;'>";
+			if($row["avatar"] != ""){
+				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			}
+			echo "<br>".$row["username"]."</span>";
+			if($row["outcome"] == 0){
+				echo "<br>Raid in Progress";
+			}else{
+				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
+			}
+			echo "</td>";
+			echo "<td width='33%' valign='top' align='left'>";
+			echo "<h3>Location Levels</h3>";
 			$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 			foreach($levels AS $location_name => $level){
 				echo ucfirst($location_name)." - Level ".$level;
 				echo "<br>";
 			}
-			$last_realm_id = $row['realm_id'];
+			echo "</td>";
+			echo "<td width='33%' valign='top' align='left'>";
+			echo "<h3>Balances</h3>";
+			$balances = getRealmBalances($conn, $row['user_id']);
+			foreach($balances AS $currency => $balance){
+				echo $currency." - ".number_format($balance);
+				echo "<br>";
+			}
+			echo "</td>";
+			echo "</tr>";
 		}
-		echo "</td>";
-		echo "<td width='33%' valign='top' align='left'>";
-		echo "<h3>Balances</h3>";
-		echo $balances_display;
-		echo "</td>";
-		echo "</tr>";
 		echo "</table>";
 	}else{
 		
