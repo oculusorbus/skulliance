@@ -4300,7 +4300,7 @@ function getRealms($conn){
 function checkRealmRaidStatus($conn, $realm_id){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-		$sql = "SELECT id FROM raids WHERE origin_id = '".$realm_id."' AND destination_id = '".$realm_id."' AND outcome ='0'";
+		$sql = "SELECT id FROM raids WHERE origin_id = '".$origin_id."' AND destination_id = '".$realm_id."' AND outcome ='0'";
 		$result = $conn->query($sql);
 	
 		if ($result->num_rows > 0) {
