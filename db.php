@@ -4218,8 +4218,8 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, realms_locations.level AS level, locations.name AS location_name FROM realms 
-		    INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN projects ON projects.id = balances.project_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id LEFT JOIN raids ON raids.destination_id = realms.id";
+	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, realms_locations.level AS level, locations.name AS location_name, outcome  
+		    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN projects ON projects.id = balances.project_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id LEFT JOIN raids ON raids.destination_id = realms.id";
 			/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
 	$result = $conn->query($sql);
 	
@@ -4246,7 +4246,11 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				echo "<br>".$row["username"]."</span>";
-				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
+				if($row["outcome"] == 0){
+					echo "Raid in Progress";
+				}else{
+					echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
+				}
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
 				$balances_display = "";
