@@ -4247,7 +4247,7 @@ function getRealms($conn){
 				}
 				echo "<br>".$row["username"]."</span>";
 				if($row["outcome"] == 0){
-					echo "Raid in Progress";
+					echo "<br>Raid in Progress";
 				}else{
 					echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", 1);'>";
 				}
