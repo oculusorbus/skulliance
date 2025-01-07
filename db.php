@@ -4266,7 +4266,7 @@ function getRealms($conn){
 				echo ucfirst($location_name)." - Level ".$level;
 				echo "<br>";
 			}
-			echo "<h3>Raid</h3>";
+			echo "<h3>Raid Info</h3>";
 			echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days");
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
