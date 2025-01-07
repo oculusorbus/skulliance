@@ -4474,7 +4474,7 @@ function getRaids($conn, $type){
 				}else{
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
-					$outcome = endRaid($conn, $row['raid_id'], $type);
+					$outcome = endRaid($conn, $row['raid_id']);
 					if($outcome == 1){
 						$offense_results = "Success";
 						$defense_results = "Failure";
@@ -4527,7 +4527,7 @@ function getRaidRealmID($conn, $raid_id, $faction){
 	}
 }
 
-function endRaid($conn, $raid_id, $type){
+function endRaid($conn, $raid_id){
 	// Get raid faction realm ID
 	$defense_id = getRaidRealmID($conn, $raid_id, "defense");
 	$offense_id = getRaidRealmID($conn, $raid_id, "offense");
@@ -4555,16 +4555,11 @@ function endRaid($conn, $raid_id, $type){
 		$winner = "offense";
 	}
 	
-	// Determine outcome through the lens of whether a raid is outgoing or incoming from the staker perspective of the interface and translate that to the database faction.
-	if($type == "outgoing" && $winner == "offense"){
+	// Determine outcome based on winner
+	if($winner == "offense"){
 		$outcome = 1;
-	}else if($type == "outgoing" && $winner == "defense"){
+	}else if($winner == "defense"){
 		$outcome = 2;
-	}
-	if($type == "incoming" && $winner == "defense"){
-		$outcome = 2;
-	}else if($type == "incoming" && $winner == "offense"){
-		$outcome = 1;
 	}
 	
 	$sql = "UPDATE raids SET outcome = '".$outcome."' WHERE id='".$raid_id."'";
