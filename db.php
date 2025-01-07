@@ -4261,6 +4261,7 @@ function getRealms($conn){
 			if(checkMaxRaids($conn, $origin_id)){
 				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 			}else{
+				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 				echo "Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
 			}
 			echo "</td>";
