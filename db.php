@@ -4218,7 +4218,7 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, CASE WHEN outcome IS NULL THEN NULL ELSE outcome END AS outcome, realms_locations.level AS level, locations.name AS location_name   
+	$sql = "SELECT DISTINCT locations.id AS location_id, realms.name AS realm_name, realms.id AS realm_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, CASE WHEN outcome IS NULL THEN 'NONE' ELSE outcome END AS outcome, realms_locations.level AS level, locations.name AS location_name   
 		    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON users.id = balances.user_id INNER JOIN projects ON projects.id = balances.project_id INNER JOIN realms_locations ON realms_locations.realm_id = realms.id INNER JOIN locations ON locations.id = realms_locations.location_id LEFT JOIN raids ON raids.destination_id = realms.id";
 			/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
 	$result = $conn->query($sql);
