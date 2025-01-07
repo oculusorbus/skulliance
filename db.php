@@ -4232,10 +4232,10 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 
 function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
-		$origin_id = getRealmID($conn);
+		$offense_id = getRealmID($conn);
 		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
 			    FROM realms INNER JOIN users ON users.id = realms.user_id";
-				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
+				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.offense_id != '".$offense_id."' AND raids.outcome != '0'"; */
 		$result = $conn->query($sql);
 	
 		$last_realm_id = 0;
@@ -4252,13 +4252,13 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 				echo "<br>".$row["username"]."</span>";
-				$offense = calculateRaidOffense($conn, $origin_id);
+				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$duration = ceil($defense/$offense);
 				if($duration <= 0){
 					$duration = 1;
 				}
-				if(checkMaxRaids($conn, $origin_id)){
+				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 					}else{
@@ -4299,8 +4299,8 @@ function getRealms($conn){
 
 function checkRealmRaidStatus($conn, $realm_id){
 	if(isset($_SESSION['userData']['user_id'])){
-		$origin_id = getRealmID($conn);
-		$sql = "SELECT id FROM raids WHERE origin_id = '".$origin_id."' AND destination_id = '".$realm_id."' AND outcome ='0'";
+		$offense_id = getRealmID($conn);
+		$sql = "SELECT id FROM raids WHERE offense_id = '".$offense_id."' AND defense_id = '".$realm_id."' AND outcome ='0'";
 		$result = $conn->query($sql);
 	
 		if ($result->num_rows > 0) {
@@ -4383,11 +4383,11 @@ function getRealmBalances($conn, $user_id){
 	return $balances;
 }
 
-function startRaid($conn, $destination_id, $duration){
+function startRaid($conn, $defense_id, $duration){
 	if(isset($_SESSION['userData']['user_id'])){
-		$origin_id = getRealmID($conn);
-		$sql = "INSERT INTO raids (origin_id, destination_id, duration)
-		VALUES ('".$origin_id."', '".$destination_id."', '".$duration."')";
+		$offense_id = getRealmID($conn);
+		$sql = "INSERT INTO raids (offense_id, defense_id, duration)
+		VALUES ('".$offense_id."', '".$defense_id."', '".$duration."')";
 
 		if ($conn->query($sql) === TRUE) {
 		  echo "Raid Started";
@@ -4405,13 +4405,13 @@ function getRaids($conn, $type){
 		$results1 = "";
 		$results2 = "";
 		if($type == "outgoing"){
-			$id1 = "destination_id";
-			$id2 = "origin_id";
+			$id1 = "defense_id";
+			$id2 = "offense_id";
 			$results1 = "Your";
 			$results2 = "Their";
 		}else if($type == "incoming"){
-			$id1 = "origin_id";
-			$id2 = "destination_id";
+			$id1 = "offense_id";
+			$id2 = "defense_id";
 			$results1 = "Their";
 			$results2 = "Your";
 		}
@@ -4500,7 +4500,7 @@ function checkMaxRaids($conn, $realm_id){
 	}
 	
 	$raid_count = 0;
-	$sql = "SELECT COUNT(id) AS raid_count FROM raids WHERE origin_id = '".$realm_id."' AND outcome = '0'";
+	$sql = "SELECT COUNT(id) AS raid_count FROM raids WHERE offense_id = '".$realm_id."' AND outcome = '0'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {

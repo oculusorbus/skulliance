@@ -771,9 +771,9 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 	};
 }
 
-function startRaid(raidButton, destinationID, duration){
+function startRaid(raidButton, defenseID, duration){
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/start_raid.php?destination_id='+destinationID+'&duration='+duration, true);
+	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration, true);
 	xhttp.send();
 	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
