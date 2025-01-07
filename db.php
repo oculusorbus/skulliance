@@ -4312,24 +4312,32 @@ function getRaids($conn){
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
-		  // output data of each row
-		  while($row = $result->fetch_assoc()) {
-			$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
-			$remaining = $date - time();
-			$days_remaining = floor(($remaining / 86400));
-			$hours_remaining = floor(($remaining % 86400) / 3600);
-			$minutes_remaining = floor(($remaining % 3600) / 60);
-			if($date > time()){
-				$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
-			}else{
-				$time_message = "0d 0h 0m";
+			// output data of each row
+			echo "<table id='transactions'>";
+			while($row = $result->fetch_assoc()) {
+				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
+				$remaining = $date - time();
+				$days_remaining = floor(($remaining / 86400));
+				$hours_remaining = floor(($remaining % 86400) / 3600);
+				$minutes_remaining = floor(($remaining % 3600) / 60);
+				if($date > time()){
+					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+				}else{
+					$time_message = "0d 0h 0m";
+				}
+				echo "<tr>";
+				echo "<td>";
+				echo $row["realm_name"];
+				echo "</td>";
+				echo "<td>";
+				echo $time_message;
+				echo "</td>";
+				echo "</tr>";
 			}
-			echo $row["realm_name"];
-			echo $time_message;
-		  }
+			echo "</table";
 		} else {
 		  //echo "0 results";
-		}
+	    }
 	}
 }
 
