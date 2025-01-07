@@ -4308,13 +4308,24 @@ function startRaid($conn, $destination_id, $duration){
 function getRaids($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-		$sql = "SELECT realms.name AS realm_name FROM raids INNER JOIN realms ON realms.id = raids.destination_id WHERE origin_id = '".$origin_id."' AND outcome = '0'";
+		$sql = "SELECT realms.name AS realm_name, raids.duration AS duration, raids.created_date AS created_date FROM raids INNER JOIN realms ON realms.id = raids.destination_id WHERE origin_id = '".$origin_id."' AND outcome = '0'";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
-			  echo $row["realm_name"];
+			$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
+			$remaining = $date - time();
+			$days_remaining = floor(($remaining / 86400));
+			$hours_remaining = floor(($remaining % 86400) / 3600);
+			$minutes_remaining = floor(($remaining % 3600) / 60);
+			if($date > time()){
+				$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+			}else{
+				$time_message = "0d 0h 0m";
+			}
+			echo $row["realm_name"];
+			echo $time_message;
 		  }
 		} else {
 		  //echo "0 results";
