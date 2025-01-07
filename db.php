@@ -4233,63 +4233,81 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$origin_id = getRealmID($conn);
-	$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
-		    FROM realms INNER JOIN users ON users.id = realms.user_id";
-			/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
-	$result = $conn->query($sql);
+		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
+			    FROM realms INNER JOIN users ON users.id = realms.user_id";
+				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.origin_id != '".$origin_id."' AND raids.outcome != '0'"; */
+		$result = $conn->query($sql);
 	
-	$last_realm_id = 0;
-	$balances_display = "";
-	echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
-	if ($result->num_rows > 0) {
-		while($row = $result->fetch_assoc()) {
-			echo "<tr>";
-			echo "<td width='33%' valign='top' align='left'>";
-			echo "<h3>".$row['realm_name']."</h3>";
-			echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
-			echo "<span style='position:relative;left:10px;top:-80px;'>";
-			if($row["avatar"] != ""){
-				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+		$last_realm_id = 0;
+		$balances_display = "";
+		echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				echo "<tr>";
+				echo "<td width='33%' valign='top' align='left'>";
+				echo "<h3>".$row['realm_name']."</h3>";
+				echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
+				echo "<span style='position:relative;left:10px;top:-80px;'>";
+				if($row["avatar"] != ""){
+					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+				}
+				echo "<br>".$row["username"]."</span>";
+				$offense = calculateRaidOffense($conn, $origin_id);
+				$defense = calculateRaidDefense($conn, $row['realm_id']);
+				$duration = ceil($defense/$offense);
+				if($duration <= 0){
+					$duration = 1;
+				}
+				if(checkMaxRaids($conn, $origin_id)){
+					if(checkRealmRaidStatus($conn, $realm_id)){
+						echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
+					}else{
+						echo "Raid in Progress";
+					}
+				}else{
+					echo "Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
+				}
+				echo "</td>";
+				echo "<td width='33%' valign='top' align='left'>";
+				echo "<h3>Location Levels</h3>";
+				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
+				foreach($levels AS $location_name => $level){
+					echo ucfirst($location_name)." - Level ".$level;
+					echo "<br>";
+				}
+				echo "<h3>Raid Info</h3>";
+				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
+				echo "Your Offense - ".$offense."<br>";
+				echo "Their Defense - ".$defense."<br>";
+				echo "</td>";
+				echo "<td width='33%' valign='top' align='left'>";
+				echo "<h3>Balances</h3>";
+				$balances = getRealmBalances($conn, $row['user_id']);
+				foreach($balances AS $currency => $balance){
+					echo $currency." - ".number_format($balance);
+					echo "<br>";
+				}
+				echo "</td>";
+				echo "</tr>";
 			}
-			echo "<br>".$row["username"]."</span>";
-			$offense = calculateRaidOffense($conn, $origin_id);
-			$defense = calculateRaidDefense($conn, $row['realm_id']);
-			$duration = ceil($defense/$offense);
-			if($duration <= 0){
-				$duration = 1;
-			}
-			if(checkMaxRaids($conn, $origin_id)){
-				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
-			}else{
-				echo "Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
-			}
-			echo "</td>";
-			echo "<td width='33%' valign='top' align='left'>";
-			echo "<h3>Location Levels</h3>";
-			$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
-			foreach($levels AS $location_name => $level){
-				echo ucfirst($location_name)." - Level ".$level;
-				echo "<br>";
-			}
-			echo "<h3>Raid Info</h3>";
-			echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
-			echo "Your Offense - ".$offense."<br>";
-			echo "Their Defense - ".$defense."<br>";
-			echo "</td>";
-			echo "<td width='33%' valign='top' align='left'>";
-			echo "<h3>Balances</h3>";
-			$balances = getRealmBalances($conn, $row['user_id']);
-			foreach($balances AS $currency => $balance){
-				echo $currency." - ".number_format($balance);
-				echo "<br>";
-			}
-			echo "</td>";
-			echo "</tr>";
-		}
-		echo "</table>";
-	}else{
+			echo "</table>";
+		}else{
 		
+		}
 	}
+}
+
+function checkRealmRaidStatus($conn, $realm_id){
+	if(isset($_SESSION['userData']['user_id'])){
+		$origin_id = getRealmID($conn);
+		$sql = "SELECT id FROM raids WHERE origin_id = '".$realm_id."' AND destination_id = '".$realm_id."' AND outcome ='0'";
+		$result = $conn->query($sql);
+	
+		if ($result->num_rows > 0) {
+			return false;
+		}else{
+			return true;
+		}
 	}
 }
 
