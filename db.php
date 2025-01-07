@@ -4475,17 +4475,10 @@ function getRaids($conn, $type){
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
 					$outcome = endRaid($conn, $row['raid_id'], $type);
-					if($type == "outgoing" && $outcome == 1){
+					if($outcome == 1){
 						$offense_results = "Success";
 						$defense_results = "Failure";
-					}else if($type == "outgoing" && $outcome == 2){
-						$offense_results = "Failure";
-						$defense_results = "Success";
-					}
-					if($type == "incoming" && $outcome == 1){
-						$offense_results = "Success";
-						$defense_results = "Failure";
-					}else if($type == "incoming" && $outcome == 2){
+					}else if($outcome == 2){
 						$offense_results = "Failure";
 						$defense_results = "Success";
 					}
