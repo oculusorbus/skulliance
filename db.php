@@ -4440,6 +4440,7 @@ function getRaids($conn, $type){
 }
 
 function endRaid($conn, $raid_id){
+	// Failure = 2, Success = 1
 	$outcome = rand(1, 2);
 	$sql = "UPDATE raids SET outcome = '".$outcome."' WHERE id='".$raid_id."'";
 	if ($conn->query($sql) === TRUE) {
