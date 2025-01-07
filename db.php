@@ -4253,7 +4253,7 @@ function getRealms($conn){
 			}
 			echo "<br>".$row["username"]."</span>";
 			$offense = calculateRaidOffense($conn, $origin_id);
-			$defense = calculateRaidDefense($conn, $row['realm_id'])
+			$defense = calculateRaidDefense($conn, $row['realm_id']);
 			$duration = round($defense-$offense);
 			if($row["outcome"] == 0){
 				echo "<br>Raid in Progress";
