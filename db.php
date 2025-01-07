@@ -4252,10 +4252,10 @@ function getRealms($conn){
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			}
 			echo "<br>".$row["username"]."</span>";
+			$duration = calculateRaidDuration($conn, $row["realm_id"]);
 			if($row["outcome"] == 0){
 				echo "<br>Raid in Progress";
 			}else{
-				$duration = calculateRaidDuration($conn, $row["realm_id"]);
 				echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 			}
 			echo "</td>";
@@ -4266,7 +4266,7 @@ function getRealms($conn){
 				echo ucfirst($location_name)." - Level ".$level;
 				echo "<br>";
 			}
-			echo "<h3>Location Levels</h3>";
+			echo "<h3>Raid</h3>";
 			echo "Duration - ".$duration." ".($duration == 1)?"Day":"Days";
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
