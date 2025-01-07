@@ -14,25 +14,8 @@ if(isset($_POST['realm'])){
 
 if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
+
 <div class="row" id="row0">	
-	<div class="main">
-	<div id="raids">
-		<div class="content raids">
-			<h2>Outgoing Raids</h2>
-			<?php
-			getRaids($conn, "outgoing");
-			?>
-		</div>
-		<div class="content raids">
-			<h2>Incoming Raids</h2>
-			<?php
-			getRaids($conn, "incoming");
-			?>
-		</div>
-	</div>
-	</div>
-</div>
-<div class="row" id="row1">	
 	  <div class="side" id="realm">
 		<div class="content realm">
 			<?php
@@ -108,6 +91,24 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	    </div>
 		</div>
 	  </div>
+</div>
+<div class="row" id="row1">	
+	<div class="main">
+	<div id="raids">
+		<div class="content raids">
+			<h2>Outgoing Raids</h2>
+			<?php
+			getRaids($conn, "outgoing");
+			?>
+		</div>
+		<div class="content raids">
+			<h2>Incoming Raids</h2>
+			<?php
+			getRaids($conn, "incoming");
+			?>
+		</div>
+	</div>
+	</div>
 </div>
 <div class="row" id="row2">	
 	<div class="main">
