@@ -4259,7 +4259,7 @@ function getRealms($conn){
 					$duration = 1;
 				}
 				if(checkMaxRaids($conn, $origin_id)){
-					if(checkRealmRaidStatus($conn, $realm_id)){
+					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						echo "<input type='button' class='button' value='Raid' style='position:relative;top:-60px;' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 					}else{
 						echo "Raid in Progress";
