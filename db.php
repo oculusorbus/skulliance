@@ -4301,6 +4301,9 @@ function calculateRaidDuration($conn, $realm_id){
 			}
 		}
 		$duration = ceil($defense/3);
+		if($duration == 0){
+			$duration = 1;
+		}
 	} else {
 
 	}
