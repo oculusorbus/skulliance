@@ -4267,7 +4267,7 @@ function getRealms($conn){
 				echo "<br>";
 			}
 			echo "<h3>Raid</h3>";
-			echo "Duration - ".$duration." ".($duration == 1)?"Day":"Days";
+			echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days");
 			echo "</td>";
 			echo "<td width='33%' valign='top' align='left'>";
 			echo "<h3>Balances</h3>";
