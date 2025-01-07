@@ -4469,12 +4469,26 @@ function getRaids($conn, $type){
 				if($date > time()){
 					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 					$status = "In Progress";
-					$results = "Pending";
+					$offense_results = "Pending";
+					$defense_results = "Pending";
 				}else{
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
-					$results = "Pending";
-					endRaid($conn, $row['raid_id'], $type);
+					$outcome = endRaid($conn, $row['raid_id'], $type);
+					if($type == "outgoing" && $outcome == 1){
+						$offense_results = "Success";
+						$defense_results = "Failure";
+					}else if($type == "outgoing" && $outcome == 2){
+						$offense_results = "Failure";
+						$defense_results = "Success";
+					}
+					if($type == "incoming" && $outcome == 1){
+						$offense_results = "Success";
+						$defense_results = "Failure";
+					}else if($type == "incoming" && $outcome == 2){
+						$offense_results = "Failure";
+						$defense_results = "Success";
+					}
 				}
 				echo "<tr>";
 				echo "<td>";
@@ -4493,10 +4507,10 @@ function getRaids($conn, $type){
 				echo $status;
 				echo "</td>";
 				echo "<td>";
-				echo $results;
+				echo $offense_results;
 				echo "</td>";
 				echo "<td>";
-				echo $results;
+				echo $defense_results;
 				echo "</td>";
 				echo "</tr>";
 			}
@@ -4566,6 +4580,16 @@ function endRaid($conn, $raid_id, $type){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+	
+	// Based on pure outcome of raid, determine location leveling and project rewards (if any), update cross reference tables, update balances, and record transactions accordingly
+	if($outcome == 1){
+		// Damage random defense location for defense
+		// Reward random points to offense from defense, credit defense and debit offense for raid
+	}else if($outcome == 2){
+		// Damage to random offense location for offense
+		// Improve same offense location for defense
+	}
+	return $outcome;
 }
 
 /* END REALMS */
