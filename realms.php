@@ -116,7 +116,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					echo '<option value="'.$id.'">'.$project["name"].'</option>';
 				}
 				echo '</optgroup>';
+				echo '</optgroup><optgroup label="Founder">';
 				echo '<option value="0">Oculus Orbus</option>';
+				echo '</optgroup>';
 			echo '
 			</select>
 			<form id="filterNFTsForm" action="realms.php#realm-image" method="post">
