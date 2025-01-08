@@ -4624,13 +4624,41 @@ function endRaid($conn, $raid_id){
 	// Based on pure outcome of raid, determine location leveling and project rewards (if any), update cross reference tables, update balances, and record transactions accordingly
 	if($outcome == 1){
 		// Damage random defense location for defense
+		alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
 		// Reward random points to offense from defense, credit offense and debit defense the same project points
 	}else if($outcome == 2){
 		// Damage to random offense location for offense
-		// Damage offense portal
+		$offense_id = selectRandomLocationID($conn, "offense");
+		alterRealmLocationLevel($conn, $raid_id, "offense", $offense_id, 1, "debit");
 		// Improve same offense location for defense
+		alterRealmLocationLevel($conn, $raid_id, "defense", $offense_id, 1, "credit");
+		// Damage offense portal
+		$portal_id = 1;
+		alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
 	}
 	return $outcome;
+}
+
+function selectRandomLocationID($conn, $faction){
+	if($faction == "offense"){
+		$offense_id = array_rand(array(2,4,6), 1);
+		return $offense_id;
+	}
+	if($faction == "defense"){
+		$defense_id = array_rand(array(3,5,7), 1);
+		return $defense_id;
+	}
+}
+
+function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amount, $type){
+	$sql = "INSERT INTO raids_locations (raid_id, faction, location_id, amount, type)
+	VALUES ('".$raid_id."', '".$faction."', '".$location_id."', '".$amount."', '".$type."')";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
 }
 
 /* END REALMS */
