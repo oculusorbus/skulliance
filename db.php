@@ -4646,12 +4646,10 @@ function endRaid($conn, $raid_id){
 function selectRandomLocationID($conn, $faction){
 	if($faction == "offense"){
 		$offense_id = array_rand(array(2,4,6), 1);
-		alert($offense_id);
 		return $offense_id;
 	}
 	if($faction == "defense"){
 		$defense_id = array_rand(array(3,5,7), 1);
-		alert($defense_id);
 		return $defense_id;
 	}
 }
