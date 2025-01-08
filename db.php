@@ -4296,7 +4296,7 @@ function getRealms($conn){
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
-				echo "<br><br>Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
+				echo "<br><br>Duration: ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
 				echo "Your Offense: ".$offense."<br><br>";
 				echo "Their Defense: ".$defense."<br><br>";
 				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
@@ -4313,7 +4313,7 @@ function getRealms($conn){
 				echo "<strong>Points</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
-					echo $currency.": ".number_format($balance);
+					echo $currency." ".number_format($balance);
 					echo "<br>";
 				}
 				echo "<br><br>";
