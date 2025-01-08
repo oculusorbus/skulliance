@@ -4033,6 +4033,28 @@ function createRealm($conn, $realm){
 	}
 }
 
+function updateRealmTheme($conn, $realm_id, $theme_id){
+	$sql = "UPDATE realms SET theme_id='".$theme_id."' WHERE id='".$realm_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+function getRealmThemeID($conn, $realm_id){
+	$sql = "SELECT theme_id FROM realms WHERE id='".$realm_id."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			return $row['theme_id'];
+		}
+	} else {
+
+	}
+}
+
 function getRealmID($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";

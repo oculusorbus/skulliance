@@ -92,8 +92,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<?php
 		if(isset($_POST['filterby'])){
 			$image = $_POST['filterby'];
+			updateRealmTheme($conn, $realm_id, $_POST['filterby']);
 		}else{
-			$image = "realm";
+			$image = getRealmThemeID($conn, $realm_id);
 		}
 		echo '
 		<div id="filter-nfts">
