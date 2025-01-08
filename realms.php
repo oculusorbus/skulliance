@@ -58,7 +58,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									echo $status[$location_id];
 								}
 							}else{
-								echo "Reached Max Level";
+								echo "<br>Reached Max Level";
 							}
 							 ?>
 								</td>
