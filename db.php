@@ -4515,7 +4515,9 @@ function getRaids($conn, $type){
 					// Defense Success
 					else if($outcome == 2){
 						$offense_results = "Failure";
+						$offense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Success";
+						$defense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 				}
 				if($status == "Completed"){
