@@ -4508,7 +4508,11 @@ function getRaids($conn, $type){
 						$defense_results = "Success";
 					}
 				}
-				$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
+				if($status == "Completed"){
+					$decimal = 1;
+				}else}
+					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
+				}
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<tr>";
 				$rows[$decimal] .= "<td>";
@@ -4540,7 +4544,7 @@ function getRaids($conn, $type){
 				$rows[$decimal] .= "<td colspan='8' style='padding:0px;'>";
 				$rows[$decimal] .= "<div class='w3-border'>";
 				if($status == "Completed"){
-					$percentage = 0;
+					$percentage = 100;
 				}else{
 					$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 				}
