@@ -99,7 +99,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div id="filter-nfts">
 			<label for="filterNFTs"><strong>Theme:</strong></label>
 			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">';
-				$projects = array_reverse($projects);
+				$projects = array_reverse($projects, true);
 				foreach($projects AS $id => $project){
 					echo '<option value="'.$id.'">'.$project["name"].'</option>';
 				}
