@@ -4594,7 +4594,7 @@ function getRaidLocationLevelAmount($conn, $raid_id, $faction){
 	$location_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$location_results .= $row["location_name"]." ".($row["type"] == "debit")?"-":"+").$row["amount"]."<br>";
+			$location_results .= $row["location_name"]." ".(($row["type"] == "debit")?"-":"+").$row["amount"]."<br>";
 		}
 	}else{
 		
