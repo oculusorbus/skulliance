@@ -4245,7 +4245,7 @@ function getRealms($conn){
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<h3>".$row['realm_name']."</h3>";
+				echo "<strong>".$row['realm_name']."</strong>";
 				echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
 				echo "<span style='position:relative;left:10px;top:-80px;'>";
 				if($row["avatar"] != ""){
@@ -4269,19 +4269,19 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<h3>Location Levels</h3>";
+				echo "<strong>Location Levels</strong>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo ucfirst($location_name)." - Level ".$level;
 					echo "<br>";
 				}
-				echo "<h3>Raid Info</h3>";
+				echo "<strong>Raid Info</strong>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<h3>Balances</h3>";
+				echo "<strong>Balances</strong>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo $currency." - ".number_format($balance);
@@ -4572,9 +4572,10 @@ function endRaid($conn, $raid_id){
 	// Based on pure outcome of raid, determine location leveling and project rewards (if any), update cross reference tables, update balances, and record transactions accordingly
 	if($outcome == 1){
 		// Damage random defense location for defense
-		// Reward random points to offense from defense, credit defense and debit offense for raid
+		// Reward random points to offense from defense, credit offense and debit defense the same project points
 	}else if($outcome == 2){
 		// Damage to random offense location for offense
+		// Damage offense portal
 		// Improve same offense location for defense
 	}
 	return $outcome;
