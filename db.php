@@ -4100,7 +4100,7 @@ function getLocationIDs($conn){
 function getRealmLocationLevels($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
-		$sql = "SELECT location_id, level FROM realms_locations WHERE realm_id = '".$realm_id."' ORDER BY type DESC";
+		$sql = "SELECT location_id, level FROM realms_locations WHERE realm_id = '".$realm_id."'";
 		$result = $conn->query($sql);
 		
 		$levels = array();
