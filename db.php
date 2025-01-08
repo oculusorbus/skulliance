@@ -4507,44 +4507,50 @@ function getRaids($conn, $type){
 						$defense_results = "Success";
 					}
 				}
-				echo "<tr>";
-				echo "<td>";
-				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='images/".$row["theme_id"].".jpg' class='icon'/>";
-				echo "</td>";
-				echo "<td align='left'>";
-				echo $row["realm_name"];
-				echo "</td>";
-				echo "<td>";
-				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
-				echo "</td>";
-				echo "<td align='left'>";
-				echo $row["username"];
-				echo "</td>";
-				echo "<td>";
-				echo $time_message;
-				echo "</td>";
-				echo "<td>";
-				echo $status;
-				echo "</td>";
-				echo "<td>";
-				echo $offense_results;
-				echo "</td>";
-				echo "<td>";
-				echo $defense_results;
-				echo "</td>";
-				echo "</tr>";
-				echo "<tr id='raid-progress-".$row["raid_id"]."'>";
-				echo "<td colspan='8' style='padding:0px;'>";
-				echo "<div class='w3-border'>";
+				$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
+				$rows[$decimal] = "";
+				$rows[$decimal] =  "<tr>";
+				$rows[$decimal] =  "<td>";
+				$rows[$decimal] =  "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='images/".$row["theme_id"].".jpg' class='icon'/>";
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td align='left'>";
+				$rows[$decimal] =  $row["realm_name"];
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td>";
+				$rows[$decimal] =  "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td align='left'>";
+				$rows[$decimal] =  $row["username"];
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td>";
+				$rows[$decimal] =  $time_message;
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td>";
+				$rows[$decimal] =  $status;
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td>";
+				$rows[$decimal] =  $offense_results;
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "<td>";
+				$rows[$decimal] =  $defense_results;
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "</tr>";
+				$rows[$decimal] =  "<tr id='raid-progress-".$row["raid_id"]."'>";
+				$rows[$decimal] =  "<td colspan='8' style='padding:0px;'>";
+				$rows[$decimal] =  "<div class='w3-border'>";
 				if($status == "Completed"){
 					$percentage = 100;
 				}else{
 					$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 				}
-				echo "<div class='w3-grey' style='width:".$percentage."%;opacity:0.3;'></div>";
-				echo "</div>";
-				echo "</td>";
-				echo "</tr>";
+				$rows[$decimal] =  "<div class='w3-grey' style='width:".$percentage."%;opacity:0.3;'></div>";
+				$rows[$decimal] =  "</div>";
+				$rows[$decimal] =  "</td>";
+				$rows[$decimal] =  "</tr>";
+			}
+			ksort($rows);
+			foreach($rows AS $duration => $output){
+			  echo $output;
 			}
 			echo "</table>";
 		} else {
