@@ -4272,13 +4272,13 @@ function getRealms($conn){
 					echo "<br>";
 				}
 				echo "<br><strong>Raid Info</strong><br><br>";
-				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
-				echo "Your Offense - ".$offense."<br>";
-				echo "Their Defense - ".$defense."<br>";
+				echo "<br>".$row["username"]."</span>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
-				echo "<br>".$row["username"]."</span>";
+				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
+				echo "Your Offense - ".$offense."<br>";
+				echo "Their Defense - ".$defense."<br>";
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
 				echo "<strong>Balances</strong><br><br>";
