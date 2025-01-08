@@ -4011,8 +4011,8 @@ function checkRealm($conn){
 
 function createRealm($conn, $realm){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "INSERT INTO realms (name, user_id)
-		VALUES ('".mysqli_real_escape_string($conn, $realm)."', '".$_SESSION['userData']['user_id']."')";
+		$sql = "INSERT INTO realms (name, user_id, theme_id)
+		VALUES ('".mysqli_real_escape_string($conn, $realm)."', '".$_SESSION['userData']['user_id']."', '7')";
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
