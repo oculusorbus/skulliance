@@ -39,7 +39,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								<td width="60%">
 							<strong><?php echo strtoupper($location['name']); ?></strong><br>
 							<strong>Level:</strong> <?php echo $levels[$location_id]; ?><br>
-							<strong>Type:</strong> <?php ucfirst($location['type']); ?><br>
+							<strong>Type:</strong> <?php ucfirst($location['category']); ?><br>
 							<?php $cost = (($levels[$location_id]+1)*1000); ?>
 							<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
 							<?php $duration = $levels[$location_id]+1;?>
