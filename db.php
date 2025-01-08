@@ -4732,7 +4732,7 @@ function selectRandomProjectID($conn, $realm_id){
 	$selected_project[$random_project_id] = $project_ids[$random_project_id];
 	return $selected_project;
 }
-
+/*
 function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	$sql = "INSERT INTO raids_projects (raid_id, project_id, amount) 
 	VALUES ('".$raid_id."', '".$project_id."', '".$amount."')";
@@ -4742,7 +4742,7 @@ function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
-}
+}*/
 
 /* END REALMS */
 
