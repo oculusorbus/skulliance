@@ -4509,8 +4509,8 @@ function getRaids($conn, $type){
 					// Offense Success
 					if($outcome == 1){
 						$offense_results = "Success";
-						$offense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Failure";
+						$defense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
@@ -4588,7 +4588,7 @@ function getRaidRealmID($conn, $raid_id, $faction){
 }
 
 function getRaidLocationLevelAmount($conn, $raid_id, $faction){
-	$sql = "SELECT amount, raids_locations.type AS type, locations.name AS location_name FROM raids_locations INNER JOIN locations ON locations.id = raids_locations.location_id WHERE raid_id = '".$raid_id."'";
+	$sql = "SELECT amount, raids_locations.type AS type, locations.name AS location_name FROM raids_locations INNER JOIN locations ON locations.id = raids_locations.location_id WHERE raid_id = '".$raid_id."' AND faction = '".$faction."'";
 	$result = $conn->query($sql);
 
 	$location_results = "";
