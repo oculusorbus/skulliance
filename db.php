@@ -4503,6 +4503,8 @@ function getRaids($conn, $type){
 					$status = "Completed";
 					if($row["outcome"] == 0){
 						$outcome = endRaid($conn, $row['raid_id']);
+					}else{
+						$outcome = $row["outcome"];
 					}
 					if($outcome == 1){
 						$offense_results = "Success";
@@ -4511,6 +4513,7 @@ function getRaids($conn, $type){
 						$offense_results = "Failure";
 						$defense_results = "Success";
 					}
+										}
 				}
 				if($status == "Completed"){
 					$decimal = $row["raid_id"];
