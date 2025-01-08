@@ -2,7 +2,7 @@
 include '../db.php';
 include '../skulliance.php';
 
-if(isset($_GET['destination_id']) && isset($_GET['duration'])){
+if(isset($_GET['defense_id']) && isset($_GET['duration'])){
 	// Need to double check duration in case someone tries to manually override these variables in the JS function
 	$realm_id = getRealmID($conn);
 	if(checkMaxRaids($conn, $realm_id)){
