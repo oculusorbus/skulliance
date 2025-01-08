@@ -4244,7 +4244,7 @@ function getRealms($conn){
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
-				echo "<td width='33%' valign='top' align='left'>";
+				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
 				echo "<img src='images/realm.jpg' style='width:100%;'/><br><br>";
 				$offense = calculateRaidOffense($conn, $offense_id);
@@ -4263,7 +4263,7 @@ function getRealms($conn){
 					echo "Maximum Raids Reached. Upgrade Portal to Increase Number of Raids.";
 				}
 				echo "</td>";
-				echo "<td width='33%' valign='top' align='left'>";
+				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row["username"]."</strong><br><br>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
@@ -4279,7 +4279,7 @@ function getRealms($conn){
 					echo "<br>";
 				}
 				echo "</td>";
-				echo "<td width='33%' valign='top' align='right'>";
+				echo "<td width='50%' valign='top' align='right'>";
 				echo "<strong>Balances</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
