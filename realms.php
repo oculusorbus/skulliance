@@ -87,7 +87,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="main">
 		<div id="realm">
 		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
-	    <div class="content realm" id="filter_content">
+	    <div class="content realm" id="filtered_content">
 		<?php
 		echo '
 		<div id="filter-nfts">
