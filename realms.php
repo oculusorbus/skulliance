@@ -116,7 +116,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					echo '<option value="'.$id.'">'.$project["name"].'</option>';
 				}
 				echo '</optgroup>';
-				if($_SESSION['userData']['discord_id'] != '772831523899965440'){
+				if($_SESSION['userData']['discord_id'] == '772831523899965440'){
 				echo '</optgroup><optgroup label="Founder">';
 				echo '<option value="0">Oculus Orbus</option>';
 				echo '</optgroup>';
