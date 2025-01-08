@@ -4264,11 +4264,11 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<strong>Raid Info</strong><br><br>";
+				echo "<strong>".$row["username"]."</strong><br><br>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
-				echo "<br><strong>".$row["username"]."</strong><br><br>";
+				echo "<strong>Raid Info</strong><br><br>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
