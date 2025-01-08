@@ -4266,7 +4266,7 @@ function getRealms($conn){
 		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th align='left'>Realm</th><th align='left'>Information</th><th align='right'>Points</th>";
+				echo "<br><th align='left'>Realm</th><th align='left'>Information</th><th align='right'>Points</th><br>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
