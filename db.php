@@ -4275,7 +4275,7 @@ function getRealms($conn){
 					echo ucfirst($location_name)." - Level ".$level;
 					echo "<br>";
 				}
-				echo "<strong>Raid Info</strong><br>";
+				echo "<br><strong>Raid Info</strong><br>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
