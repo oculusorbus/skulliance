@@ -4588,7 +4588,7 @@ function getRaidRealmID($conn, $raid_id, $faction){
 }
 
 function getRaidLocationLevelAmount($conn, $raid_id, $faction){
-	$sql = "SELECT amount, type, locations.name AS location_name FROM raids_locations INNER JOIN locations ON locations.id = raids_locations.location_id WHERE raid_id = '".$raid_id."'";
+	$sql = "SELECT amount, raids_locations.type AS type, locations.name AS location_name FROM raids_locations INNER JOIN locations ON locations.id = raids_locations.location_id WHERE raid_id = '".$raid_id."'";
 	$result = $conn->query($sql);
 
 	$location_results = "";
