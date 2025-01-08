@@ -4245,7 +4245,7 @@ function getRealms($conn){
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<strong>".$row['realm_name']."</strong>";
+				echo "<strong>".$row['realm_name']."</strong><br>";
 				echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
 				echo "<span style='position:relative;left:10px;top:-80px;'>";
 				if($row["avatar"] != ""){
@@ -4269,19 +4269,19 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<strong>Location Levels</strong>";
+				echo "<strong>Location Levels</strong><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo ucfirst($location_name)." - Level ".$level;
 					echo "<br>";
 				}
-				echo "<strong>Raid Info</strong>";
+				echo "<strong>Raid Info</strong><br>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
 				echo "</td>";
 				echo "<td width='33%' valign='top' align='left'>";
-				echo "<strong>Balances</strong>";
+				echo "<strong>Balances</strong><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo $currency." - ".number_format($balance);
