@@ -4292,7 +4292,7 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<strong>Raid Details</strong><br><br>";
+				echo "<strong>Details</strong><br><br>";
 				echo "<strong>".$row["username"]."</strong><br><br>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
