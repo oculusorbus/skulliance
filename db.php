@@ -4613,7 +4613,7 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 	$project_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$project_results .= ($row["project_currency"])." ".(($row["faction"] == "defense")?"Minus":"Plus").$row["amount"]."<br>";
+			$project_results .= ($row["project_currency"])." ".(($faction == "defense")?"Minus":"Plus").$row["amount"]."<br>";
 		}
 	}else{
 		
@@ -4669,7 +4669,6 @@ function endRaid($conn, $raid_id){
 		alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
 		// Reward random points to offense from defense, credit offense and debit defense the same project points
 		$project = selectRandomProjectID($conn, $defense_id);
-		$project_id
 		$project_balance = 0;
 		foreach($project AS $id => $balance){
 			$project_balance = $balance;
