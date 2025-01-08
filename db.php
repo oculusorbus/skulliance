@@ -4263,7 +4263,7 @@ function getRealms($conn){
 	
 		$last_realm_id = 0;
 		$balances_display = "";
-		echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
+		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				echo "<th align='left'>Realm</th><th align='left'>Information</th><th align='right'>Points</th>";
