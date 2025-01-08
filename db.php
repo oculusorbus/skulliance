@@ -4279,7 +4279,7 @@ function getRealms($conn){
 				}
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
-						echo "<input type='button' class='button' value='Raid' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
+						echo "<input type='button' class='button' value='Raid' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
 						echo "Raid in Progress";
 					}
@@ -4308,7 +4308,7 @@ function getRealms($conn){
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo $currency." - ".number_format($balance);
-					echo "<br>";
+					echo "<br><br>";
 				}
 				echo "</td>";
 				echo "</tr>";
