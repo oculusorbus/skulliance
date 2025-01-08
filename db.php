@@ -4714,7 +4714,7 @@ function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amoun
 	// Get Realm ID from raid based on faction
 	// Use Realm ID to update altered location level
 }
-/*
+
 function selectRandomProjectID($conn, $realm_id){
 	$sql = "SELECT project_id, balance FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON balances.user_id = users.id WHERE id = '".$realm_id."'";
 	$result = $conn->query($sql);
@@ -4727,11 +4727,11 @@ function selectRandomProjectID($conn, $realm_id){
 	}else{
 		
 	}
-	$random_project_id = array_rand(array($project_ids, 1);
+	$random_project_id = array_rand($project_ids, 1);
 	$selected_project = array();
 	$selected_project[$random_project_id] = $project_ids[$random_project_id];
 	return $selected_project;
-}*/
+}
 
 function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	$sql = "INSERT INTO raids_projects (raid_id, project_id, amount) 
