@@ -4513,7 +4513,6 @@ function getRaids($conn, $type){
 						$offense_results = "Failure";
 						$defense_results = "Success";
 					}
-										}
 				}
 				if($status == "Completed"){
 					$decimal = $row["raid_id"];
