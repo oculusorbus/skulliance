@@ -4266,10 +4266,9 @@ function getRealms($conn){
 		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th align='left'>Realm</th><th align='left'>Raid</th><th align='left'>Location</th><th align='right'>Balance</th>";
+				echo "<th align='left'>".$row['realm_name']."</th><th align='left'>".$row["username"]."</th><th align='left'>Location Levels</th><th align='right'>Points Balances</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<strong>".$row['realm_name']."</strong><br><br>";
 				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/><br><br>";
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
@@ -4292,7 +4291,6 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<strong>".$row["username"]."</strong><br><br>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
@@ -4302,7 +4300,6 @@ function getRealms($conn){
 				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<strong>Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo ucfirst($location_name).": ".$level;
@@ -4310,7 +4307,6 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
-				echo "<strong>Points</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo "".$currency." - ".number_format($balance);
