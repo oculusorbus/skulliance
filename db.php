@@ -4485,7 +4485,7 @@ function getRaids($conn, $type){
 		if ($result->num_rows > 0) {
 			// output data of each row
 			echo "<table id='transactions'>";
-			echo "<th width='6%'>Icon</th><th width='18%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='22%' align='left'>Username</th><th width='12%'>Time Left</th><th width='12%'>Status</th></th><th width='12%'>".$results1." Results</th></th><th width='12%'>".$results2." Results</th>";
+			echo "<th width='6%'>Icon</th><th width='18%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='22%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>Status</th></th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
 			$rows = array();
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
@@ -4541,16 +4541,16 @@ function getRaids($conn, $type){
 				$rows[$decimal] .= "<td align='left'>";
 				$rows[$decimal] .= $row["username"];
 				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td>";
+				$rows[$decimal] .= "<td align='left'>";
 				$rows[$decimal] .= $time_message;
 				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td>";
+				$rows[$decimal] .= "<td align='left'>";
 				$rows[$decimal] .= $status;
 				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td>";
+				$rows[$decimal] .= "<td align='left'>";
 				$rows[$decimal] .= $offense_results;
 				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td>";
+				$rows[$decimal] .= "<td align='left'>";
 				$rows[$decimal] .= $defense_results;
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "</tr>";
