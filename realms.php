@@ -90,6 +90,12 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
 	    <div class="content realm" id="filtered-content">
 		<?php
+		if(isset($_POST['filterby'])){
+			$image = $_POST['filterby'];
+		}else{
+			$image = "realm";
+		}
+		
 		echo '
 		<div id="filter-nfts">
 			<label for="filterNFTs"><strong>Theme:</strong></label>
@@ -107,7 +113,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 			</form>
 		</div>';
 		?>
-			<img src="images/realm.jpg" width="100%"/>
+			<img src="images/<?php echo "realm";?>.jpg" width="100%"/>
 	    </div>
 		</div>
 	  </div>
