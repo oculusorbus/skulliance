@@ -95,8 +95,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		}else{
 			$image = "realm";
 		}
-		print_r($_POST);
-		
 		echo '
 		<div id="filter-nfts">
 			<label for="filterNFTs"><strong>Theme:</strong></label>
