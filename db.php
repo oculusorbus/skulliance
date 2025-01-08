@@ -4300,7 +4300,7 @@ function getRealms($conn){
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
-				echo "Chance of Success - ".$offense_threshold."%";
+				echo "Chance of Success - ".$offense_threshold."%<br>";
 				echo "<br><strong>Location Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
