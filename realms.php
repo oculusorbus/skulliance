@@ -86,7 +86,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  </div>
 	  <div class="main">
 		<div id="realm">
-		<a id="realm" name="realm"></a>
+		<a id="#realm" name="#realm"></a>
 		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
 	    <div class="content realm" id="filtered-content">
 		<?php
