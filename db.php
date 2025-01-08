@@ -4667,6 +4667,7 @@ function endRaid($conn, $raid_id){
 	if($outcome == 1){
 		// Damage random defense location for defense
 		alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
+		/*
 		// Reward random points to offense from defense, credit offense and debit defense the same project points
 		$project = selectRandomProjectID($conn, $defense_id);
 		$project_balance = 0;
@@ -4677,6 +4678,7 @@ function endRaid($conn, $raid_id){
 		// Divide balance by 100 and multiply by offense score, max amount can be 10% if offense is completely leveled up
 		$amount = round(($balance/100)*$offense);
 		assignRealmProjectRewards($conn, $raid_id, $project_id, $amount);
+		*/
 	}else if($outcome == 2){
 		// Damage to random offense location for offense
 		$offense_id = selectRandomLocationID($conn, "offense");
