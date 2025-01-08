@@ -4509,8 +4509,10 @@ function getRaids($conn, $type){
 					// Offense Success
 					if($outcome == 1){
 						$offense_results = "Success";
+						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $raid_id, "offense");
 						$defense_results = "Failure";
 						$defense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
+						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $raid_id, "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
@@ -4604,6 +4606,21 @@ function getRaidLocationLevelAmount($conn, $raid_id, $faction){
 	return $location_results;
 }
 
+function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
+	$sql = "SELECT amount, projects.currency AS project_currency FROM raids_projects INNER JOIN projects ON projects.id = raids_projects.project_id WHERE raid_id = '".$raid_id."'";
+	$result = $conn->query($sql);
+
+	$project_results = "";
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$project_results .= ($row["project_currency"])." ".(($row["faction"] == "defense")?"Minus":"Plus").$row["amount"]."<br>";
+		}
+	}else{
+		
+	}
+	return $project_results;
+}
+
 function endRaid($conn, $raid_id){
 	// Get raid faction realm ID
 	$defense_id = getRaidRealmID($conn, $raid_id, "defense");
@@ -4651,6 +4668,16 @@ function endRaid($conn, $raid_id){
 		// Damage random defense location for defense
 		alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
 		// Reward random points to offense from defense, credit offense and debit defense the same project points
+		$project = selectRandomProjectID($conn, $defense_id);
+		$project_id
+		$project_balance = 0;
+		foreach($project AS $id => $balance){
+			$project_balance = $balance;
+			$project_id = $id;
+		}
+		// Divide balance by 100 and multiply by offense score, max amount can be 10% if offense is completely leveled up
+		$amount = round(($balance/100)*$offense);
+		assignRealmProjectRewards($conn, $raid_id, $project_id, $amount);
 	}else if($outcome == 2){
 		// Damage to random offense location for offense
 		$offense_id = selectRandomLocationID($conn, "offense");
@@ -4658,8 +4685,8 @@ function endRaid($conn, $raid_id){
 		// Improve same offense location for defense
 		alterRealmLocationLevel($conn, $raid_id, "defense", $offense_id, 1, "credit");
 		// Damage offense portal
-		//$portal_id = 1;
-		//alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
+		$portal_id = 1;
+		alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
 	}
 	return $outcome;
 }
@@ -4687,6 +4714,35 @@ function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amoun
 	
 	// Get Realm ID from raid based on faction
 	// Use Realm ID to update altered location level
+}
+
+function selectRandomProjectID($conn, $realm_id){
+	$sql = "SELECT project_id, balance FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON balances.user_id = users.id WHERE id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	
+	$project_ids = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$project_ids[$row['project_id']] = $row["balance"];
+		}
+	}else{
+		
+	}
+	$random_project_id = array_rand(array($project_ids, 1);
+	$selected_project = array();
+	$selected_project[$random_project_id] = $project_ids[$random_project_id];
+	return $selected_project;
+}
+
+function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
+	$sql = "INSERT INTO raids_projects (raid_id, project_id, amount)
+	VALUES ('".$raid_id."', '".$project_id."', '".$amount."')";
+
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
 }
 
 /* END REALMS */
