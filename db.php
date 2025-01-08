@@ -4269,7 +4269,7 @@ function getRealms($conn){
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
-				echo "<img src='images/".$row["theme_id"]."' style='width:100%;'/><br><br>";
+				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/><br><br>";
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$duration = ceil($defense/$offense);
