@@ -4299,7 +4299,7 @@ function getRealms($conn){
 				echo "<br><br>Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
 				echo "Your Offense - ".$offense."<br><br>";
 				echo "Their Defense - ".$defense."<br><br>";
-				echo "Chance of Success - ".round($offense_threshold)."%<br><br>";
+				echo "Success Chance - ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>Levels</strong><br><br>";
