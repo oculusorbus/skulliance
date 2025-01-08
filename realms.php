@@ -108,7 +108,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<optgroup label="Core Projects">';
 				$projects = array_reverse($projects, true);
 				foreach($projects AS $id => $project){
-					echo '<option value="'.$id.'">'.'<img width="100" src="images/0.jpg" class="icon"/>'.$project["name"].'</option>';
+					echo '<option value="'.$id.'">'.$project["name"].'</option>';
 				}
 				echo '</optgroup><optgroup label="Partner Projects">';
 				$partner_projects = getProjects($conn, "partner");
