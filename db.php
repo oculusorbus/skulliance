@@ -4279,7 +4279,7 @@ function getRealms($conn){
 					echo "<br>";
 				}
 				echo "</td>";
-				echo "<td width='33%' valign='top' align='left'>";
+				echo "<td width='33%' valign='top' align='right'>";
 				echo "<strong>Balances</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
