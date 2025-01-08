@@ -4273,6 +4273,10 @@ function getRealms($conn){
 				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/><br><br>";
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
+				$total = $defense + $offense;
+				$percentage = (100/$total);
+				$defense_threshold = $percentage * $defense;
+				$offense_threshold = $percentage * $offense;
 				$duration = ceil($defense/$offense);
 				if($duration <= 0){
 					$duration = 1;
@@ -4296,6 +4300,7 @@ function getRealms($conn){
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
+				echo "Chance of Success - ".$offense_threshold."%";
 				echo "<br><strong>Location Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
