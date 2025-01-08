@@ -4308,8 +4308,9 @@ function getRealms($conn){
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo $currency." - ".number_format($balance);
-					echo "<br><br>";
+					echo "<br>";
 				}
+				echo "<br>";
 				echo "</td>";
 				echo "</tr>";
 			}
