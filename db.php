@@ -4658,8 +4658,8 @@ function endRaid($conn, $raid_id){
 		// Improve same offense location for defense
 		alterRealmLocationLevel($conn, $raid_id, "defense", $offense_id, 1, "credit");
 		// Damage offense portal
-		$portal_id = 1;
-		alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
+		//$portal_id = 1;
+		//alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
 	}
 	return $outcome;
 }
