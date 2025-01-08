@@ -4313,7 +4313,7 @@ function getRealms($conn){
 				echo "<strong>Points</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
-					echo number_format($balance)." - <strong>".$currency."</strong>";
+					echo "<strong>".$currency."</strong> - ".number_format($balance);
 					echo "<br>";
 				}
 				echo "<br><br>";
