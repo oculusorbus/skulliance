@@ -4297,17 +4297,17 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				echo "<br><br><strong>Raid Details</strong><br><br>";
-				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
-				echo "Your Offense - ".$offense."<br>";
-				echo "Their Defense - ".$defense."<br>";
-				echo "Chance of Success - ".round($offense_threshold)."%<br>";
+				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
+				echo "Your Offense - ".$offense."<br><br>";
+				echo "Their Defense - ".$defense."<br><br>";
+				echo "Chance of Success - ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<br><strong>Location Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo ucfirst($location_name)." - Level ".$level;
-					echo "<br>";
+					echo "<br><br>";
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
