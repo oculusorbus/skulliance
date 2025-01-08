@@ -4064,7 +4064,7 @@ function getRealmName($conn){
 }
 
 function getLocationInfo($conn){
-	$sql = "SELECT name, description, category, project_id FROM locations ORDER BY type DESC";
+	$sql = "SELECT name, description, category, project_id FROM locations ORDER BY category DESC";
 	$result = $conn->query($sql);
 	
 	$locations = array();
