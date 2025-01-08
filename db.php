@@ -4264,10 +4264,10 @@ function getRealms($conn){
 		$last_realm_id = 0;
 		$balances_display = "";
 		echo "<table width='100%' cellspacing='10' cellpadding='10' id='transactions'>";
-		echo "<th align='left'>Realm</th><th align='left'>Information</th><th align='right'>Points</th>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
+				echo "<th align='left'>Realm</th><th align='left'>Information</th><th align='right'>Points</th>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
 				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/><br><br>";
