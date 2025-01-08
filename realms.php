@@ -103,7 +103,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		}
 		echo '
 		<div id="filter-nfts">
-			<label for="filterNFTs"><strong>Theme:</strong></label>
+			<label for="filterNFTs"><strong>AI Themes Inspired By:</strong></label>
 			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 				<optgroup label="Core Projects">';
 				$projects = array_reverse($projects, true);
