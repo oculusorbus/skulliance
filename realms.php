@@ -86,7 +86,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  </div>
 	  <div class="main">
 		<div id="realm">
-		<a id="#realm" name="#realm"></a>
+		<a name="realm-image" id="realm-image"></a>
 		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
 	    <div class="content realm" id="filtered-content">
 		<?php
@@ -101,7 +101,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				}
 			echo '
 			</select>
-			<form id="filterNFTsForm" action="realms.php#realm" method="post">
+			<form id="filterNFTsForm" action="realms.php#realm-image" method="post">
 			  <input type="hidden" id="filterby" name="filterby" value="">
 			  <input type="submit" value="Submit" style="display:none;">
 			</form>
