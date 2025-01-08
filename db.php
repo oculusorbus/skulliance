@@ -4303,7 +4303,7 @@ function getRealms($conn){
 				echo "Chance of Success - ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<br><strong>Location Levels</strong><br><br>";
+				echo "<strong>Location Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo ucfirst($location_name)." - ".$level;
