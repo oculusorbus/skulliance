@@ -4247,7 +4247,6 @@ function getRealms($conn){
 				echo "<td width='33%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
 				echo "<img src='images/realm.jpg' style='width:100%;'/><br>";
-				echo "<span style='position:relative;left:10px;top:-80px;'>";
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$duration = ceil($defense/$offense);
@@ -4275,7 +4274,7 @@ function getRealms($conn){
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
-				echo "<br>".$row["username"]."</span>";
+				echo "<br>".$row["username"]."<br>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
