@@ -4481,7 +4481,7 @@ function getRaids($conn, $type){
 		if ($result->num_rows > 0) {
 			// output data of each row
 			echo "<table id='transactions'>";
-			echo "<th>Image</th><th>Realm</th><th>Avatar</th><th>Username</th><th>Time Left</th><th>Status</th></th><th>".$results1." Results</th></th><th>".$results2." Results</th>";
+			echo "<th>Icon</th><th>Realm</th><th>Avatar</th><th>Username</th><th>Time Left</th><th>Status</th></th><th>".$results1." Results</th></th><th>".$results2." Results</th>";
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 				$remaining = $date - time();
