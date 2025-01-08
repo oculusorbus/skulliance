@@ -4509,10 +4509,10 @@ function getRaids($conn, $type){
 					// Offense Success
 					if($outcome == 1){
 						$offense_results = "Success";
-						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $raid_id, "offense");
+						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Failure";
 						$defense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
-						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $raid_id, "defense");
+						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
