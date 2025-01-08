@@ -41,7 +41,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<strong>Level:</strong> <?php echo $levels[$location_id]; ?><br>
 							<strong>Type:</strong> <?php echo ucfirst($location['type']); ?><br>
 							<?php if($levels[$location_id] != 10){ ?>
-								<?php $cost = (($levels[$location_id]+1)*1000); ?>
+								<?php $cost = (($levels[$location_id]+1)*100); ?>
 								<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
 								<?php $duration = $levels[$location_id]+1;?>
 								<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
