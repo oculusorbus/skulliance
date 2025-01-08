@@ -4274,7 +4274,7 @@ function getRealms($conn){
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
-				echo "<br>".$row["username"]."<br>";
+				echo "<br>".$row["username"]."<br><br>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
 				echo "Your Offense - ".$offense."<br>";
 				echo "Their Defense - ".$defense."<br>";
