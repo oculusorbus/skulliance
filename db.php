@@ -4073,7 +4073,7 @@ function getLocationInfo($conn){
 		while($row = $result->fetch_assoc()) {
 			$location['name'] = $row['name'];
 			$location['description'] = $row['description'];
-			$location['category'] = $row['category'];
+			$location['type'] = $row['type'];
 			$locations[$row['project_id']] = $location;
 		}
 	} else {
