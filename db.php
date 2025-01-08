@@ -4481,7 +4481,7 @@ function getRaids($conn, $type){
 		if ($result->num_rows > 0) {
 			// output data of each row
 			echo "<table id='transactions'>";
-			echo "<th>Icon</th><th align='left'>Realm</th><th>Avatar</th><th align='left'>Username</th><th>Time Left</th><th>Status</th></th><th>".$results1." Results</th></th><th>".$results2." Results</th>";
+			echo "<th>Icon</th><th>Realm</th><th>Avatar</th><th>Username</th><th>Time Left</th><th>Status</th></th><th>".$results1." Results</th></th><th>".$results2." Results</th>";
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 				$remaining = $date - time();
@@ -4509,13 +4509,13 @@ function getRaids($conn, $type){
 				echo "<td>";
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='images/".$row["theme_id"].".jpg' class='icon'/>";
 				echo "</td>";
-				echo "<td align='left'>";
+				echo "<td>";
 				echo $row["realm_name"];
 				echo "</td>";
 				echo "<td>";
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				echo "</td>";
-				echo "<td align='left'>";
+				echo "<td>";
 				echo $row["username"];
 				echo "</td>";
 				echo "<td>";
