@@ -4509,17 +4509,17 @@ function getRaids($conn, $type){
 					// Offense Success
 					if($outcome == 1){
 						$offense_results = "Success";
-						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
+						$offense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Failure";
-						$defense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
-						$defense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
+						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense")."<br>";
+						$defense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
 						$offense_results = "Failure";
-						$offense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
+						$offense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "offense")."<br>";
 						$defense_results = "Success";
-						$defense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
+						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense")."<br>";
 					}
 				}
 				if($status == "Completed"){
@@ -4598,7 +4598,7 @@ function getRaidLocationLevelAmount($conn, $raid_id, $faction){
 	$location_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$location_results .= ucfirst($row["location_name"])." ".(($row["type"] == "debit")?"Minus":"Plus")." ".$row["amount"]."<br>";
+			$location_results .= "<br>".ucfirst($row["location_name"])." ".(($row["type"] == "debit")?"Minus":"Plus")." ".$row["amount"].;
 		}
 	}else{
 		
@@ -4613,7 +4613,7 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 	$project_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$project_results .= ($row["project_currency"])." ".(($faction == "defense")?"Minus":"Plus")." ".$row["amount"];
+			$project_results .= "<br>".($row["project_currency"])." ".(($faction == "defense")?"Minus":"Plus")." ".$row["amount"];
 		}
 	}else{
 		
