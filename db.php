@@ -4256,7 +4256,7 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$offense_id = getRealmID($conn);
-		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
+		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, theme_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
 			    FROM realms INNER JOIN users ON users.id = realms.user_id";
 				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.offense_id != '".$offense_id."' AND raids.outcome != '0'"; */
 		$result = $conn->query($sql);
@@ -4269,7 +4269,7 @@ function getRealms($conn){
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
-				echo "<img src='images/realm.jpg' style='width:100%;'/><br><br>";
+				echo "<img src='images/".$row["theme_id"]."' style='width:100%;'/><br><br>";
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$duration = ceil($defense/$offense);
