@@ -4540,7 +4540,7 @@ function getRaids($conn, $type){
 				$rows[$decimal] .= "<td colspan='8' style='padding:0px;'>";
 				$rows[$decimal] .= "<div class='w3-border'>";
 				if($status == "Completed"){
-					$percentage = 100;
+					$percentage = 0;
 				}else{
 					$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 				}
