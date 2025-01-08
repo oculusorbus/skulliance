@@ -17,11 +17,28 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 
 <div class="row" id="row0">	
 	  <div class="side" id="realm">
-		<div class="content realm">
+		<div class="content realm" id="filtered_content">
 			<?php
 			if(checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
+				?>
+				<div id="filter-nfts">
+					<label for="filterNFTs"><strong>Change Theme:</strong></label>
+					<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+						<option value="default">Default</option>
+						foreach($locations AS $id => $location){
+							echo '<option value="'.$id.'">'.$location["name"].'</option>';
+						}
+					echo '
+					</select>
+					<form id="filterNFTsForm" action="realms.php#realm" method="post">
+					  <input type="hidden" id="filterby" name="filterby" value="">
+					  <input type="submit" value="Submit" style="display:none;">
+					</form>
+				</div>';
+				<?php
+
 				?>
 				<h2>Locations</h2>
 				<ul>
@@ -85,6 +102,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		</div>
 	  </div>
 	  <div class="main">
+		<a id="realm" name="realm"/>
 		<div id="realm">
 		<h2><?php echo checkRealm($conn)?getRealmName($conn):"Realm"; ?></h2>
 	    <div class="content realm">
