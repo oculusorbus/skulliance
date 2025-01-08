@@ -4310,7 +4310,7 @@ function getRealms($conn){
 					echo $currency." - ".number_format($balance);
 					echo "<br>";
 				}
-				echo "<br>";
+				echo "<br><br>";
 				echo "</td>";
 				echo "</tr>";
 			}
