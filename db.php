@@ -4297,15 +4297,15 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				echo "<br><br>Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
-				echo "Your Offense - ".$offense."<br><br>";
-				echo "Their Defense - ".$defense."<br><br>";
-				echo "Success Chance - ".round($offense_threshold)."%<br><br>";
+				echo "Your Offense: ".$offense."<br><br>";
+				echo "Their Defense: ".$defense."<br><br>";
+				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
-					echo ucfirst($location_name)." - ".$level;
+					echo ucfirst($location_name).": ".$level;
 					echo "<br><br>";
 				}
 				echo "</td>";
@@ -4313,7 +4313,7 @@ function getRealms($conn){
 				echo "<strong>Points</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
-					echo $currency." - ".number_format($balance);
+					echo $currency.": ".number_format($balance);
 					echo "<br>";
 				}
 				echo "<br><br>";
