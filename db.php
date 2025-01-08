@@ -4289,7 +4289,7 @@ function getRealms($conn){
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row["username"]."</strong><br><br>";
 				if($row["avatar"] != ""){
-					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				echo "<br><br><strong>Raid Info</strong><br><br>";
 				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br>";
@@ -4513,7 +4513,7 @@ function getRaids($conn, $type){
 				echo $row["realm_name"];
 				echo "</td>";
 				echo "<td>";
-				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				echo "</td>";
 				echo "<td>";
 				echo $row["username"];
