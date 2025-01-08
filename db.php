@@ -4266,7 +4266,7 @@ function getRealms($conn){
 		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th align='left'>Realm</th><th align='left'>Raid</th><th align='left'>Levels</th><th align='right'>Points</th>";
+				echo "<th align='left'>Realm</th><th align='left'>Raid</th><th align='left'>Location</th><th align='right'>Points</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
@@ -4292,18 +4292,18 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
+				echo "<strong>Raid Details</strong><br><br>";
 				echo "<strong>".$row["username"]."</strong><br><br>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
-				echo "<br><br><strong>Raid Details</strong><br><br>";
-				echo "Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
+				echo "<br><br>Duration - ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
 				echo "Your Offense - ".$offense."<br><br>";
 				echo "Their Defense - ".$defense."<br><br>";
 				echo "Chance of Success - ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<strong>Location Levels</strong><br><br>";
+				echo "<strong>Levels</strong><br><br>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo ucfirst($location_name)." - ".$level;
