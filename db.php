@@ -4506,10 +4506,14 @@ function getRaids($conn, $type){
 					}else{
 						$outcome = $row["outcome"];
 					}
+					// Offense Success
 					if($outcome == 1){
 						$offense_results = "Success";
+						$offense_results .= "<br>".getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Failure";
-					}else if($outcome == 2){
+					}
+					// Defense Success
+					else if($outcome == 2){
 						$offense_results = "Failure";
 						$defense_results = "Success";
 					}
@@ -4581,6 +4585,21 @@ function getRaidRealmID($conn, $raid_id, $faction){
 	}else{
 		
 	}
+}
+
+function getRaidLocationLevelAmount($conn, $raid_id, $faction){
+	$sql = "SELECT amount, type, locations.name AS location_name FROM raids_locations INNER JOIN locations ON locations.id = raids_locations.location_id WHERE raid_id = '".$raid_id."'";
+	$result = $conn->query($sql);
+
+	$location_results = "";
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$location_results .= $row["location_name"]." ".($row["type"] == "debit")?"-":"+").$row["amount"]."<br>";
+		}
+	}else{
+		
+	}
+	return $location_results;
 }
 
 function endRaid($conn, $raid_id){
@@ -4663,6 +4682,9 @@ function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amoun
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+	
+	// Get Realm ID from raid based on faction
+	// Use Realm ID to update altered location level
 }
 
 /* END REALMS */
