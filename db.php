@@ -4511,15 +4511,15 @@ function getRaids($conn, $type){
 						$offense_results = "Success";
 						$offense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Failure";
-						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense")."<br>";
+						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
 						$offense_results = "Failure";
-						$offense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "offense")."<br>";
+						$offense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
 						$defense_results = "Success";
-						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense")."<br>";
+						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 				}
 				if($status == "Completed"){
@@ -4603,7 +4603,7 @@ function getRaidLocationLevelAmount($conn, $raid_id, $faction){
 	}else{
 		
 	}
-	return $location_results;
+	return $location_results."<br>";
 }
 
 function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
@@ -4613,7 +4613,7 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 	$project_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$project_results .= "<br>".($row["project_currency"])." ".(($faction == "defense")?"Minus":"Plus")." ".$row["amount"];
+			$project_results .= ($row["project_currency"])." ".(($faction == "defense")?"Minus":"Plus")." ".$row["amount"];
 		}
 	}else{
 		
