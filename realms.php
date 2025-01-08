@@ -22,11 +22,12 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 			if(checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
-				?>
+				
+				echo '
 				<div id="filter-nfts">
 					<label for="filterNFTs"><strong>Change Theme:</strong></label>
 					<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
-						<option value="default">Default</option>
+						<option value="default">Default</option>';
 						foreach($locations AS $id => $location){
 							echo '<option value="'.$id.'">'.$location["name"].'</option>';
 						}
@@ -37,7 +38,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					  <input type="submit" value="Submit" style="display:none;">
 					</form>
 				</div>';
-				<?php
 
 				?>
 				<h2>Locations</h2>
