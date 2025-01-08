@@ -4281,10 +4281,10 @@ function getRealms($conn){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						echo "<input type='button' class='button' value='Raid' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
-						echo "Raid in Progress<br><br>";
+						echo "<strong>Raid in Progress</strong><br><br>";
 					}
 				}else{
-					echo "Maximum Raids Reached.<br>Upgrade Portal to Increase.<br><br>";
+					echo "<strong>Maximum Raids Reached</strong><br><strong>Upgrade Portal to Increase Raids</strong><br><br>";
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
