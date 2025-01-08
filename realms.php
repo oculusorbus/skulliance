@@ -92,7 +92,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<?php
 		echo '
 		<div id="filter-nfts">
-			<label for="filterNFTs"><strong>Change Theme:</strong></label>
+			<label for="filterNFTs"><strong>Theme:</strong></label>
 			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 				<option value="default">Default</option>';
 				$core_projects = getProjects($conn, "core");
