@@ -4509,13 +4509,13 @@ function getRaids($conn, $type){
 				echo "<td>";
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='images/".$row["theme_id"].".jpg' class='icon'/>";
 				echo "</td>";
-				echo "<td>";
+				echo "<td align='left'>";
 				echo $row["realm_name"];
 				echo "</td>";
 				echo "<td>";
 				echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				echo "</td>";
-				echo "<td>";
+				echo "<td align='left'>";
 				echo $row["username"];
 				echo "</td>";
 				echo "<td>";
