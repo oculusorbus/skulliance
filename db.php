@@ -4266,7 +4266,7 @@ function getRealms($conn){
 		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th align='left'>Realm</th><th align='left'>Raid</th><th align='left'>Location</th><th align='right'>Points</th>";
+				echo "<th align='left'>Realm</th><th align='left'>Raid</th><th align='left'>Location</th><th align='right'>Balances</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<strong>".$row['realm_name']."</strong><br><br>";
@@ -4311,7 +4311,7 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
-				echo "<strong>Balances</strong><br><br>";
+				echo "<strong>Points</strong><br><br>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo $currency." - ".number_format($balance);
