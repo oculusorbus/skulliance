@@ -4303,7 +4303,7 @@ function getRealms($conn){
 		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th align='left'>".$row['realm_name']."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
+				echo "<th>".$row['realm_name']."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<table id='transactions' style='border-style:none'>";
