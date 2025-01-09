@@ -94,7 +94,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<a name="realm-image" id="realm-image"></a>
 		<h2><?php echo checkRealm($conn)?"<span style='z-index:99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
 		<form id='updateRealmName'>
-			<input type="text" id="realm" name="realm" size="30" required>
+			<input type="text" id="realmText" name="realmText" size="30" required>
 		</form>
 	    <div class="content realm" id="filtered-content">
 		<?php
