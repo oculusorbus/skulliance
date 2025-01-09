@@ -3141,7 +3141,7 @@ function transactionHistory($conn) {
 						$mission = getMission($conn, $row["mission_id"]);
 						echo "Mission Reward: ".$mission["title"];
 					}else if($row["raid_id"] != 0){
-						echo "Raid Offense Success Reward";
+						echo "<td>Raid Reward: Offense Success</td>";
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
@@ -3167,7 +3167,7 @@ function transactionHistory($conn) {
 					echo "<td>Realm Upgrade: ".ucfirst($locations[$row["project_id"]]['name'])."</td>";
 				}
 				if($row["raid_id"] != 0){
-					echo "<td>Raid Defense Failure Deduction</td>";
+					echo "<td>Raid Deduction: Defense Failure</td>";
 				}
 				
 			}
