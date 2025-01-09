@@ -4556,7 +4556,7 @@ function getRaids($conn, $type, $status="pending"){
 				}
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<tr>";
-				$rows[$decimal] .= "<td valign='top'><br>";
+				$rows[$decimal] .= "<td valign='top'>";
 				$rows[$decimal] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='images/".$row["theme_id"].".jpg' class='icon'/>";
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
@@ -4576,10 +4576,10 @@ function getRaids($conn, $type, $status="pending"){
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $offense_results;
-				$rows[$decimal] .= "</td>";
+				$rows[$decimal] .= "<br></td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $defense_results;
-				$rows[$decimal] .= "</td>";
+				$rows[$decimal] .= "<br></td>";
 				$rows[$decimal] .= "</tr>";
 				$rows[$decimal] .= "<tr id='raid-progress-".$row["raid_id"]."'>";
 				$rows[$decimal] .= "<td colspan='8' style='padding:0px;'>";
