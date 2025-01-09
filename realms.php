@@ -9,6 +9,7 @@ include 'header.php';
 if(isset($_POST['realm'])){
 	if(checkRealm($conn)){
 		createRealm($conn, $_POST['realm']);
+		$realm_id = getRealmID($conn);
 		$core_projects = getProjects($conn, "core");
 		$partner_projects = getProjects($conn, "partner");
 		$all_projects = array_merge($core_projects, $partner_projects);
