@@ -4306,7 +4306,7 @@ function getRealms($conn){
 				echo "<th align='left'>".$row['realm_name']."</th><th align='left'>".$row["username"]."</th><th align='left'>Location Levels</th><th align='left'>Points Balances</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table>";
+				echo "<table id='transactions'>";
 				echo "<tr><td>";
 				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/>";
 				echo "</td></tr>";
