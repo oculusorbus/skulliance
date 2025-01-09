@@ -4091,7 +4091,7 @@ function getRealmName($conn){
 }
 
 function getRealmUserID($conn, $realm_id){
-	$sql = "SELECT realms.id AS realm_id, users.id AS user_id FROM realms WHERE realms.id = '".$realm_id."'";
+	$sql = "SELECT realms.id AS realm_id, users.id AS user_id FROM realms INNER JOIN users ON users.id = realms.user_id WHERE realms.id = '".$realm_id."'";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
