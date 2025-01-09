@@ -4085,6 +4085,19 @@ function getRealmName($conn){
 	}
 }
 
+function getRealmUserID($conn, $realm_id){
+	$sql = "SELECT realms.id AS realm_id, users.id AS user_id FROM realms WHERE realms.id = '".$realm_id."'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			return $row["user_id"];
+		}
+	}else{
+		
+	}
+}
+
 function getLocationInfo($conn){
 	$sql = "SELECT name, description, type, project_id FROM locations ORDER BY type DESC";
 	$result = $conn->query($sql);
@@ -4774,8 +4787,21 @@ function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+	
+	// Get Realm IDs from raid based on factions
+	$offense_id = getRaidRealmID($conn, $raid_id, "offense");
+	$defense_id = getRaidRealmID($conn, $raid_id, "defense");
+	
+	// Get User IDs based on realms by faction
+	$offense_user_id = getRealmUserID($conn, $offense_id);
+	$defense_user_id = getRealmUserID($conn, $defense_id);
+	
+	// Update balances, credit offense user, debit defense user
+	updateBalance($conn, $offense_user_id, $project_id, $amount);
+	updateBalance($conn, $defense_user_id, $project_id, -$amount);
+	
+	// Log transactions
 }
 
 /* END REALMS */
-
 ?>
