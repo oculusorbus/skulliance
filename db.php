@@ -4590,11 +4590,11 @@ function getRaids($conn, $type){
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "</tr>";
 			}
-			$progress_rows = ksort($progress_rows);
+			ksort($progress_rows);
 			foreach($progress_rows AS $progress_duration => $progress_output){
 			  echo $progress_output;
 			}
-			$completed_rows = ksort($completed_rows);
+			ksort($completed_rows);
 			$completed_rows = array_reverse($completed_rows);
 			foreach($completed_rows AS $completed_duration => $completed_output){
 			  echo $completed_output;
