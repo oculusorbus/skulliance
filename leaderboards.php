@@ -8,7 +8,7 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <?php
-					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks"){
+					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
 					}else if($filterby == null || $filterby == 0){
@@ -26,6 +26,12 @@ include 'header.php';
 					}else if($filterby == "monthly-streaks"){
 						$title = date("F")." Daily Rewards Streaks";
 						$filterby = "monthly-streaks";
+					}else if($filterby == "raids"){
+						$title = "Raids";
+						$filterby = "streaks";
+					}else if($filterby == "monthly-streaks"){
+						$title = date("F")." Raids";
+						$filterby = "monthly-raids";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
@@ -41,6 +47,10 @@ include 'header.php';
 						}else if($filterby == "streaks"){
 							checkStreaksLeaderboard($conn);
 						}else if($filterby == "monthly-streaks"){
+							checkStreaksLeaderboard($conn, true);
+						}else if($filterby == "raids"){
+							checkStreaksLeaderboard($conn);
+						}else if($filterby == "monthly-raids"){
 							checkStreaksLeaderboard($conn, true);
 						}
 					?>
