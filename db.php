@@ -4060,6 +4060,15 @@ function getRealmThemeID($conn, $realm_id){
 	}
 }
 
+function updateRealmName($conn, $realm_id, $name){
+	$sql = "UPDATE realms SET name='".$name."' WHERE id='".$realm_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 function getRealmID($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
