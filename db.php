@@ -4808,8 +4808,8 @@ function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	updateBalance($conn, $defense_user_id, $project_id, -$amount);
 	
 	// Log transactions
-	logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id);
-	logDebit($conn, $user_id, $item_id=0, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0, $raid_id);
+	logCredit($conn, $offense_user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id);
+	logDebit($conn, $defense_user_id, $item_id=0, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0, $raid_id);
 }
 
 /* END REALMS */
