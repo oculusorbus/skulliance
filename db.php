@@ -4457,7 +4457,7 @@ function startRaid($conn, $defense_id, $duration){
 		VALUES ('".$offense_id."', '".$defense_id."', '".$duration."')";
 
 		if ($conn->query($sql) === TRUE) {
-		  echo "Raid Started";
+		  echo "<strong>Raid Started</strong>";
 		} else {
 		  echo "Error: " . $sql . "<br>" . $conn->error;
 		}
