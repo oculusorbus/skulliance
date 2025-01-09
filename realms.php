@@ -34,7 +34,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<table>
 							<tr>
 								<td width="40%">
-									<img style="opacity:0.75" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
+									<img style="opacity:0.85" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
 								</td>
 								<td width="60%">
 									<strong><?php echo strtoupper($location['name']); ?></strong><br>
