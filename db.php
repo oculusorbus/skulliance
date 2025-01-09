@@ -4303,7 +4303,7 @@ function getRealms($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$offense_id = getRealmID($conn);
 		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, theme_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
-			    FROM realms INNER JOIN users ON users.id = realms.user_id";
+			    FROM realms INNER JOIN users ON users.id = realms.user_id ORDER BY rand()";
 				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.offense_id != '".$offense_id."' AND raids.outcome != '0'"; */
 		$result = $conn->query($sql);
 	
