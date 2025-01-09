@@ -4319,7 +4319,7 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table>";
+				echo "<table id='transactions'>";
 				echo "<tr>";
 				echo "<td colspan='2'>";
 				if($row["avatar"] != ""){
@@ -4363,7 +4363,7 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table>";
+				echo "<table id='transactions'>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo "<tr>";
