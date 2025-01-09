@@ -4333,8 +4333,8 @@ function getRealms($conn){
 				echo "<td>&nbsp;</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right' width='50%'>Username:</td>";
-				echo "<td width='50%'>".$row["username"]."</td>";
+				echo "<td align='right' width='50%'>".$row["username"]."</td>";
+				echo "<td width='50%'>&nbsp;</td>";
 				echo "</tr>";
 				echo "</tr>";
 				echo "<tr>";
