@@ -31,7 +31,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
-			if(!checkRealm($conn)){
+			if(checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
