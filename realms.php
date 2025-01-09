@@ -106,7 +106,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		}
 		if(isset($image)){
 		echo '
-		<div id="filter-nfts">
+		<div id="filter-nfts" style="z-index:-1">
 			<label for="filterNFTs"><strong>AI Themes Inspired By:</strong></label>
 			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 				<optgroup label="Core Projects">';
