@@ -137,30 +137,52 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <div class="row" id="row1">	
 	<div class="main">
 	<div id="raids">
+		<?php 
+		$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
+		if(isset($outgoing_raids)){
+		?>
 		<div class="content raids">
 			<h2>Outgoing Raids</h2>
 			<?php
-			getRaids($conn, "outgoing", "pending");
+				echo $outgoing_raids;
 			?>
 		</div>
+		<?php
+		}	
+		$outgoing_completed = getRaids($conn, "outgoing", "completed"); 
+		if(isset($outgoing_completed)){
+		?>
 		<div class="content raids">
 			<h2>Outgoing Completed</h2>
 			<?php
-			getRaids($conn, "outgoing", "completed");
+			echo $outgoing_completed;
 			?>
 		</div>
+		<?php
+		}	
+		$incoming_raids = getRaids($conn, "incoming", "pending"); 
+		if(isset($incoming_raids)){
+		?>
 		<div class="content raids">
 			<h2>Incoming Raids</h2>
 			<?php
-			getRaids($conn, "incoming", "pending");
+			echo $incoming_raids;
 			?>
 		</div>
+		<?php
+		}	
+		$incoming_completed = getRaids($conn, "incoming", "completed"); 
+		if(isset($incoming_completed)){
+		?>
 		<div class="content raids">
 			<h2>Incoming Completed</h2>
 			<?php
-			getRaids($conn, "incoming", "completed");
+			echo $incoming_raids;
 			?>
 		</div>
+		<?php
+		}	
+		?>
 	</div>
 	</div>
 </div>
