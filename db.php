@@ -4504,10 +4504,11 @@ function getRaids($conn, $type, $status="pending"){
 		$result = $conn->query($sql);
 		
 		$status = "";
+		$final_output = "";
 		if ($result->num_rows > 0) {
 			// output data of each row
-			echo "<table id='transactions'>";
-			echo "<th width='6%'>Icon</th><th width='18%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='22%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>Status</th></th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
+			$final_output .= "<table id='transactions'>";
+			$final_output .=  "<th width='6%'>Icon</th><th width='18%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='22%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>Status</th></th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
 			$rows = array();
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
@@ -4594,9 +4595,10 @@ function getRaids($conn, $type, $status="pending"){
 				$rows = array_reverse($rows);
 			}
 			foreach($rows AS $duration => $output){
-			  echo $output;
+			    $final_output .= $output;
 			}
-			echo "</table>";
+			$final_output .=  "</table>";
+			return $final_output;
 		} else {
 		  //echo "0 results";
 	    }
