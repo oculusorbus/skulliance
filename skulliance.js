@@ -795,7 +795,10 @@ function startRaid(raidButton, defenseID, duration){
 
 function editRealmName(editIcon){
 	editIcon.display = "none";
-	document.getElementById('realmName').innerHTML = document.getElementById('updateRealmName').outerHTML;
+	document.getElementById('realmName').innerHTML = 
+	"<form id='updateRealmName'>
+	 <input type='text' id='realmText' name='realmText' size='30' required>
+	 </form>";
 }
 
 // Get the button
