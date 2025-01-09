@@ -4540,8 +4540,6 @@ function getRaids($conn, $type){
 					}
 				}
 				if($status == "Completed"){
-					$decimal = $row["raid_id"];
-				}else{
 					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
 				}
 				$rows[$decimal] = "";
