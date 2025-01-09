@@ -4333,7 +4333,7 @@ function getRealms($conn){
 				echo "</tr>";
 				echo "<tr>";
 				echo "<td>Duration:</td>";
-				echo "<td>".$duration." ".(($duration == 1)?"Day":"Days")."</td>";
+				echo "<td>".$duration." ".(($duration == 1)?"day":"days")."</td>";
 				echo "</tr>";
 				echo "<tr>";
 				echo "<td>Your Offense:</td>";
