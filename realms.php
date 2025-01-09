@@ -19,6 +19,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="side" id="realm">
 		<div class="content realm">
 			<?php
+			$projects = getProjects($conn, "core");
 			if(checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
@@ -28,7 +29,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<?php
 				$realm_id = getRealmID($conn);
 				$levels = getRealmLocationLevels($conn);
-				$projects = getProjects($conn, "core");
 				foreach($locations AS $location_id => $location){?>
 						<li class="role">
 							<table>
