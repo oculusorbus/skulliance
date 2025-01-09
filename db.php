@@ -3813,17 +3813,17 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 	if($rewards){
 		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
 	}
-	$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN users AS success_users ON success_users.id = success_raids.user_id 
+	$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.origin_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id 
 					WHERE success_raids.outcome = '1' AND success_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "success_raids", $where)).") AS success, 
 	               
-				   (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN users AS failed_users ON failed_users.id = failed_raids.user_id 
+				   (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN realms AS failed_realms ON failed_realms.id = failed_raids.origin_id INNER JOIN users AS failed_users ON failed_users.id = failed_realms.user_id 
 				    WHERE failed_raids.ouctome = '2' AND failed_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "failed_raids", $where)).") AS failure, 
 				   
-				   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN users AS progress_users ON progress_users.id = progress_raids.user_id 
+				   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.origin_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id 
 				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
 	        
 			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, discord_id, username, avatar, discord_id, visibility 
-		    FROM users INNER JOIN raids ON raids.user_id = users.id ".$where." GROUP BY users.id ORDER BY total DESC";
+		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.origin_id = realms.id ".$where." GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
