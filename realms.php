@@ -129,7 +129,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 			</form>
 		</div>';
 		?>
-			<img src="images/<?php echo (isset($image)?$image:'1');?>.jpg" width="100%"/>
+			<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 	    </div>
 		</div>
 	  </div>
