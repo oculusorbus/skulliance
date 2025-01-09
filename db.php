@@ -4317,6 +4317,15 @@ function getRealms($conn){
 				if($duration <= 0){
 					$duration = 1;
 				}
+				echo "</td>";
+				echo "<td width='25%' valign='top' align='left'>";
+				if($row["avatar"] != ""){
+					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+				}
+				echo "<br><br>Duration: ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
+				echo "Your Offense: ".$offense."<br><br>";
+				echo "Their Defense: ".$defense."<br><br>";
+				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "Raid";
@@ -4330,15 +4339,6 @@ function getRealms($conn){
 				}else{
 					echo "<strong>Maximum Raids Reached</strong><br><strong>Upgrade Portal to Increase Raids</strong><br><br>";
 				}
-				echo "</td>";
-				echo "<td width='25%' valign='top' align='left'>";
-				if($row["avatar"] != ""){
-					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
-				}
-				echo "<br><br>Duration: ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
-				echo "Your Offense: ".$offense."<br><br>";
-				echo "Their Defense: ".$defense."<br><br>";
-				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
