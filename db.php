@@ -4328,7 +4328,7 @@ function getRealms($conn){
 				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
-						$value = "Raid";
+						$value = "Start Raid";
 						if($offense_id == $row["realm_id"]){
 							$value = "Friendly Fire";
 						}
