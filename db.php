@@ -4374,12 +4374,15 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
+				echo "<table>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
-					echo "".$currency." - ".number_format($balance);
-					echo "<br>";
+					echo "<tr>";
+					echo "<td>".$currency." -</td>";
+					echo "<td>".number_format($balance)."</td>";
+					echo "</tr>";
 				}
-				echo "<br><br>";
+				echo "</table>";
 				echo "</td>";
 				echo "</tr>";
 			}
