@@ -4500,7 +4500,7 @@ function getRaids($conn, $type, $status="pending"){
 			$outcome_operator = " != '0'";
 		}
 		$sql = "SELECT raids.id AS raid_id, outcome, realms.name AS realm_name, theme_id, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
-			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome." ORDER BY outcome ASC LIMIT 10";
+			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY outcome ASC LIMIT 10";
 		$result = $conn->query($sql);
 		
 		$status = "";
