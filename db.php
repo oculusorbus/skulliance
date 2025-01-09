@@ -4307,8 +4307,8 @@ function getRealms($conn){
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<table id='transactions' style='border-style:none'>";
-				echo "<tr><td>";
-				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/>";
+				echo "<tr><td align='center'>";
+				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
 				echo "</td></tr>";
 				echo "</table>";
 				$offense = calculateRaidOffense($conn, $offense_id);
