@@ -4325,11 +4325,12 @@ function getRealms($conn){
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<table id='transactions' style='border-style:none'>";
 				echo "<tr>";
-				echo "<td align='center' colspan='2'>";
+				echo "<td align='right'>";
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				echo "</td>";
+				echo "<td>&nbsp;</td>";
 				echo "</tr>";
 				echo "<tr>";
 				echo "<td align='right' width='50%'>Raid Duration:</td>";
