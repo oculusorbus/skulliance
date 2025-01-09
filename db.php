@@ -4367,7 +4367,7 @@ function getRealms($conn){
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo "<tr>";
-					echo "<td>".ucfirst($location_name).":</tr>";
+					echo "<td>".ucfirst($location_name).":</td>";
 					echo "<td>".$level."</td>";
 					echo "</tr>";
 				}
