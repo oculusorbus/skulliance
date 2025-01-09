@@ -4325,7 +4325,7 @@ function getRealms($conn){
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<table id='transactions' style='border-style:none'>";
 				echo "<tr>";
-				echo "<td align='right' width='50%'>".$row["username"]."</td>";
+				echo "<td align='right' width='50%'>".$row["username"].":</td>";
 				echo "<td width='50%'>";
 					if($row["avatar"] != ""){
 						echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
