@@ -19,7 +19,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="side" id="realm">
 		<div class="content realm">
 			<?php
-			if(checkRealm($conn)){
+			if(!checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
@@ -77,7 +77,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<li class="role">
 				<form action="realms.php" method="post">
 					<label for="realm">Realm Name</label><br>
-					<input type="text" id="realm" name="realm" size="30"><br><br>
+					<input type="text" id="realm" name="realm" size="30" required><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
 					<p id="disclaimer">By creating your realm, you agree to being vulnerable to raids from other realm owners which may damage your realm and steal your points. You can also raid other realms but raid failures result in damage to your realm. If you find that you are not dedicated to protecting your realm and raiding on a regular basis, it is your responsibility to deactivate your abandoned realm or you could be subject to complete devastation and constant looting. Choose wisely.</p>
 					<input class="button" type="submit" value="Create">
