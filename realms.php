@@ -13,7 +13,7 @@ if(isset($_POST['realm'])){
 }
 
 if(isset($_POST['realmText'])){
-	checkRealm($conn){
+	if checkRealm($conn){
 		$realm_id = getRealmID($conn);
 		updateRealmName($conn, $realm_id, $_POST['realmText']);
 	}
