@@ -141,6 +141,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 		if(isset($outgoing_raids)){
 			echo '<div class="content raids"><h2>Outgoing Raids</h2>';
+			alert("h2");
 			echo $outgoing_raids;
 			echo '</div>';
 		}	
