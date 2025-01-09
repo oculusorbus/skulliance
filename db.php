@@ -4615,7 +4615,7 @@ function getRaidLocationLevelAmount($conn, $raid_id, $faction){
 	$location_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$location_results .= "<br>".ucfirst($row["location_name"])." ".(($row["type"] == "debit")?"Minus":"Plus")." ".$row["amount"];
+			$location_results .= "<br>".(($row["type"] == "debit")?"-":"+").$row["amount"]." ".ucfirst($row["location_name"]);
 		}
 	}else{
 		
@@ -4630,7 +4630,7 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 	$project_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$project_results .= ($row["project_currency"])." ".(($faction == "defense")?"Minus":"Plus")." ".$row["amount"];
+			$project_results .= (($faction == "defense")?"-":"+").$row["amount"]."".($row["project_currency"]);
 		}
 	}else{
 		
