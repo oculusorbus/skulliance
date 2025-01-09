@@ -4363,7 +4363,7 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions' cellspacing='0'>";
+				echo "<table id='transactions'>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo "<tr>";
@@ -4374,7 +4374,7 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
-				echo "<table id='transactions'>";
+				echo "<table id='transactions' cellspacing='0'>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo "<tr>";
