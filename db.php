@@ -3828,7 +3828,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th><th>Total Missions</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
