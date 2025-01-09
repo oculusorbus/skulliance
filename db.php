@@ -4363,10 +4363,13 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
+				echo "<table>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
-					echo ucfirst($location_name).": ".$level;
-					echo "<br><br>";
+					echo "<tr>";
+					echo "<td>".ucfirst($location_name).":</tr>";
+					echo "<td>".$level."</td>";
+					echo "</tr>";
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
