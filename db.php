@@ -4325,29 +4325,29 @@ function getRealms($conn){
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<table id='transactions' style='border-style:none'>";
 				echo "<tr>";
-				echo "<td align='right' width='50%'>".$row["username"]."</td>";
 				echo "<td width='50%'>";
 					if($row["avatar"] != ""){
 						echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 					}
 				echo "</td>";
+				echo "<td align='right' width='50%'>".$row["username"]."</td>";
 				echo "</tr>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right' width='50%'>Raid Duration</td>";
 				echo "<td width='50%'>".$duration." ".(($duration == 1)?"day":"days")."</td>";
+				echo "<td align='right' width='50%'>Raid Duration</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right'>Your Offense</td>";
 				echo "<td>".$offense."</td>";
+				echo "<td align='right'>Your Offense</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right'>Their Defense</td>";
 				echo "<td>".$defense."</td>";
+				echo "<td align='right'>Their Defense</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right'>Success Chance</td>";
 				echo "<td>".round($offense_threshold)."%"."</td>";
+				echo "<td align='right'>Success Chance</td>";
 				echo "</tr>";
 				echo "<tr>";
 				echo "<td align='right'>";
@@ -4375,8 +4375,8 @@ function getRealms($conn){
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo "<tr>";
-					echo "<td align='right' width='50%'>".ucfirst($location_name)."</td>";
 					echo "<td width='50%'>".$level."</td>";
+					echo "<td align='right' width='50%'>".ucfirst($location_name)."</td>";
 					echo "</tr>";
 				}
 				echo "</table>";
@@ -4387,8 +4387,8 @@ function getRealms($conn){
 				$balances = array_slice($balances, 0, 7, true);
 				foreach($balances AS $currency => $balance){
 					echo "<tr>";
-					echo "<td align='right' width='50%'>".$currency."</td>";
 					echo "<td width='50%'>".number_format($balance)."</td>";
+					echo "<td align='right' width='50%'>".$currency."</td>";
 					echo "</tr>";
 				}
 				echo "</table>";
