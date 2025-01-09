@@ -4374,7 +4374,7 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
-				echo "<table>";
+				echo "<table id='transactions'>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo "<tr>";
