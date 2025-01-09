@@ -9,6 +9,10 @@ include 'header.php';
 if(isset($_POST['realm'])){
 	if(!checkRealm($conn)){
 		createRealm($conn, $_POST['realm']);
+		$core_projects = getProjects($conn, "core");
+		$partner_projects = getProjects($conn, "partner");
+		$all_projects = array_merge($core_projects, $partner_projects);
+		updateRealmTheme($conn, $realm_id, array_rand($all_projects, 1));
 	}
 }
 
@@ -27,7 +31,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
-			if(checkRealm($conn)){
+			if(!checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
