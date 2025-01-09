@@ -4350,7 +4350,7 @@ function getRealms($conn){
 				echo "<td>Success Chance</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td";
+				echo "<td>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "Start Raid";
