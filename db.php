@@ -3813,13 +3813,13 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 	if($rewards){
 		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
 	}
-	$sql = "SELECT (SELECT COUNT(success_missions.id) FROM raids AS success_raids INNER JOIN users AS success_users ON success_users.id = success_raids.user_id 
+	$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN users AS success_users ON success_users.id = success_raids.user_id 
 					WHERE success_raids.outcome = '1' AND success_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "success_raids", $where)).") AS success, 
 	               
-				   (SELECT COUNT(failed_missions.id) FROM raids AS failed_raids INNER JOIN users AS failed_users ON failed_users.id = failed_raids.user_id 
+				   (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN users AS failed_users ON failed_users.id = failed_raids.user_id 
 				    WHERE failed_raids.ouctome = '2' AND failed_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "failed_raids", $where)).") AS failure, 
 				   
-				   (SELECT COUNT(progress_missions.id) FROM raids AS progress_raids INNER JOIN users AS progress_users ON progress_users.id = progress_raids.user_id 
+				   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN users AS progress_users ON progress_users.id = progress_raids.user_id 
 				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
 	        
 			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, discord_id, username, avatar, discord_id, visibility 
