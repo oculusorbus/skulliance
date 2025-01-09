@@ -92,7 +92,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="main">
 		<div id="realm">
 		<a name="realm-image" id="realm-image"></a>
-		<h2><?php echo checkRealm($conn)?"<span style='z-index=99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px' src='icons/edit.png' class='icon' onclick='editRealmName();'/>":"Realm"; ?></h2>
+		<h2><?php echo checkRealm($conn)?"<span style='z-index:99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px' src='icons/edit.png' class='icon' onclick='editRealmName();'/>":"Realm"; ?></h2>
 		<form id='updateRealmName' style='display:none;'>
 			<input type="text" id="realm" name="realm" size="30" required>
 		</form>
