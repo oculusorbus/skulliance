@@ -570,6 +570,32 @@ input {
   transform: translateY(2px);
 }
 
+.raid-button {
+  background-color: #014579; /* Green */
+  border: none;
+  color: white;
+  padding: 3px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  cursor:pointer;
+  border-radius: 0;
+  font-weight: bold;
+  box-shadow: 0 4px #011B37;
+  font-family: Courier;
+}
+
+.raid-button:hover {
+	background-color: #023E74;
+}
+
+.raid-button:active {
+  background-color: #023E74;
+  box-shadow: 0 2px #24071E;
+  transform: translateY(2px);
+}
+
 .activated {
 	background-color: #555 !important;
 	

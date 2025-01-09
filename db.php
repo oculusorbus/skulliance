@@ -4357,7 +4357,7 @@ function getRealms($conn){
 						if($offense_id == $row["realm_id"]){
 							$value = "Friendly Fire";
 						}
-						echo "<input type='button' class='button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+						echo "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
 						echo "<strong>Raid in Progress</strong><br><br>";
 					}
