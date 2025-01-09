@@ -4595,7 +4595,7 @@ function getRaids($conn, $type){
 			  echo $progress_output;
 			}
 			ksort($completed_rows);
-			array_reverse($completed_rows);
+			$completed_rows = array_reverse($completed_rows);
 			foreach($completed_rows AS $completed_duration => $completed_output){
 			  echo $completed_output;
 			}
