@@ -4504,6 +4504,8 @@ function getRaids($conn, $type){
 			echo "<table id='transactions'>";
 			echo "<th width='6%'>Icon</th><th width='18%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='22%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>Status</th></th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
 			$rows = array();
+			$progress_rows = array();
+			$completed_rows = array();
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 				$remaining = $date - time();
@@ -4541,8 +4543,12 @@ function getRaids($conn, $type){
 				}
 				if($status == "Completed"){
 					$decimal = $row["raid_id"];
+					$completed_rows = array_merge($rows, $completed_rows);
+					unset($rows);
 				}else{
 					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
+					$progress_rows = array_merge($rows, $progress_rows);
+					unset($rows);
 				}
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<tr>";
@@ -4584,8 +4590,13 @@ function getRaids($conn, $type){
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "</tr>";
 			}
-			ksort($rows);
-			foreach($rows AS $duration => $output){
+			ksort($progress_rows);
+			foreach($progress_rows AS $duration => $output){
+			  echo $output;
+			}
+			ksort($completed_rows);
+			array_reverse($completed_rows);
+			foreach($completed_rows AS $duration => $output){
 			  echo $output;
 			}
 			echo "</table>";
