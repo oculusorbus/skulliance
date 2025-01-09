@@ -4535,17 +4535,17 @@ function getRaids($conn, $type, $status="pending"){
 					}
 					// Offense Success
 					if($outcome == 1){
-						$offense_results = "<strong>Success</strong>";
+						$offense_results = "<strong>Success</strong><br>";
 						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
-						$defense_results = "<strong>Failure</strong>";
+						$defense_results = "<strong>Failure</strong><br>";
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
-						$offense_results = "<strong>Failure</strong>";
+						$offense_results = "<strong>Failure</strong><br>";
 						$offense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
-						$defense_results = "<strong>Success</strong>";
+						$defense_results = "<strong>Success</strong><br>";
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 				}
