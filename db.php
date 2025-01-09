@@ -4339,7 +4339,7 @@ function getRealms($conn){
 						echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 					}
 				echo "</td>";
-				echo "<td width='50%'>Username<br><br>".$row["username"]."</td>";
+				echo "<td width='50%'>".$row["username"]."</td>";
 				echo "</tr>";
 				echo "</tr>";
 				echo "<tr>";
