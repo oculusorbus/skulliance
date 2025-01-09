@@ -101,6 +101,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<a name="realm-image" id="realm-image"></a>
 		<h2><?php echo checkRealm($conn)?"<span style='z-index:99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px;cursor: pointer;' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
 	    <div class="content realm" id="filtered-content">
+		<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php
 		if(isset($_POST['filterby'])){
 			$image = $_POST['filterby'];
@@ -110,7 +111,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		}
 		if(isset($image)){
 		echo '
-		<div id="filter-nfts" style="z-index:-1">
+		<div id="filter-nfts" style="z-index:99">
 			<label for="filterNFTs"><strong>AI Themes Inspired By:</strong></label>
 			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 				<optgroup label="Core Projects">';
@@ -138,7 +139,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		</div>';
 		}
 		?>
-			<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 	    </div>
 		</div>
 	  </div>
