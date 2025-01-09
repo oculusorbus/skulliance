@@ -3141,7 +3141,7 @@ function transactionHistory($conn) {
 						$mission = getMission($conn, $row["mission_id"]);
 						echo "Mission Reward: ".$mission["title"];
 					}else if($row["raid_id"] != 0){
-						echo "<td>Raid Reward: Offense Success</td>";
+						echo "Raid Reward: Offense Success";
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
