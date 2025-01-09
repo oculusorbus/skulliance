@@ -4265,9 +4265,11 @@ function updateRealmLocationLevel($conn, $realm_id, $location_id, $amount, $type
 	$current_level = getRealmLocationLevel($conn, $realm_id, $location_id);
 	if($type == "credit"){
 		$new_level = $current_level + $amount;
-	}if($type == "debit"){
+	}else if($type == "debit"){
 		if($current_level != 0){
 			$new_level = $current_level - $amount;
+		}else{
+			$new_level = 0;
 		}
 	}
 	$sql = "UPDATE realms_locations SET level = '".$new_level."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'";
