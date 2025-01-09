@@ -92,7 +92,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="main">
 		<div id="realm">
 		<a name="realm-image" id="realm-image"></a>
-		<h2><?php echo checkRealm($conn)?getRealmName($conn)."&nbsp;<img width='50%' src='/icons/edit.png' class='icon'/>":"Realm"; ?></h2>
+		<h2><?php echo checkRealm($conn)?getRealmName($conn)."&nbsp;<img style='width:50%' src='icons/edit.png' class='icon'/>":"Realm"; ?></h2>
 	    <div class="content realm" id="filtered-content">
 		<?php
 		if(isset($_POST['filterby'])){
