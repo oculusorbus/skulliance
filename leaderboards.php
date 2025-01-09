@@ -28,7 +28,7 @@ include 'header.php';
 						$filterby = "monthly-streaks";
 					}else if($filterby == "raids"){
 						$title = "Raids";
-						$filterby = "streaks";
+						$filterby = "raids";
 					}else if($filterby == "monthly-streaks"){
 						$title = date("F")." Raids";
 						$filterby = "monthly-raids";
