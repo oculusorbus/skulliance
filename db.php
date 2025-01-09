@@ -4630,7 +4630,7 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 	$project_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$project_results .= (($faction == "defense")?"-":"+").$row["amount"]."".($row["project_currency"]);
+			$project_results .= (($faction == "defense")?"-":"+").$row["amount"]." ".($row["project_currency"]);
 		}
 	}else{
 		
