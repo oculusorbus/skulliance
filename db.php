@@ -4306,7 +4306,7 @@ function getRealms($conn){
 				echo "<th align='left'>".$row['realm_name']."</th><th align='left'>".$row["username"]."</th><th align='left'>Location Levels</th><th align='left'>Points Balances</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions'>";
+				echo "<table id='transactions' style='border-style:none'>";
 				echo "<tr><td>";
 				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;'/>";
 				echo "</td></tr>";
@@ -4323,7 +4323,7 @@ function getRealms($conn){
 				}
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions'>";
+				echo "<table id='transactions' style='border-style:none'>";
 				echo "<tr>";
 				echo "<td colspan='2'>";
 				if($row["avatar"] != ""){
@@ -4367,7 +4367,7 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions'>";
+				echo "<table id='transactions' style='border-style:none'>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo "<tr>";
@@ -4378,7 +4378,7 @@ function getRealms($conn){
 				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
-				echo "<table id='transactions' cellspacing='0' cellpadding='0'>";
+				echo "<table id='transactions' cellspacing='0' cellpadding='0' style='border-style:none'>";
 				$balances = getRealmBalances($conn, $row['user_id']);
 				foreach($balances AS $currency => $balance){
 					echo "<tr>";
