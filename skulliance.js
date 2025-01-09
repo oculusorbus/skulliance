@@ -793,6 +793,11 @@ function startRaid(raidButton, defenseID, duration){
 	};
 }
 
+function editRealmName(){
+	document.getElementById('realmName').innerHTML = document.getElementById('updateRealmName');
+	document.getElementById('updateRealmName').style.display = "block";
+}
+
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 
