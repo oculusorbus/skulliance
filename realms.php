@@ -100,7 +100,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div id="realm">
 		<a name="realm-image" id="realm-image"></a>
 		<h2><?php echo checkRealm($conn)?"<span style='z-index:99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px;cursor: pointer;' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
-	    <div class="content realm" id="filtered-content">
+	    <div class="content realm">
 		<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php
 		if(isset($_POST['filterby'])){
