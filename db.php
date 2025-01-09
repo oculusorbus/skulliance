@@ -4322,10 +4322,24 @@ function getRealms($conn){
 				if($row["avatar"] != ""){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
-				echo "<br><br>Duration: ".$duration." ".(($duration == 1)?"Day":"Days")."<br><br>";
-				echo "Your Offense: ".$offense."<br><br>";
-				echo "Their Defense: ".$defense."<br><br>";
-				echo "Success Chance: ".round($offense_threshold)."%<br><br>";
+				echo "<table>";
+				echo "<tr>";
+				echo "<td>Duration</td>";
+				echo "<td>".$duration." ".(($duration == 1)?"Day":"Days")."</td>";
+				echo "</tr>";
+				echo "<tr>";
+				echo "<td>Your Offense</td>";
+				echo "<td>".$offense."</td>";
+				echo "</tr>";
+				echo "<tr>";
+				echo "<td>Their Defense</td>";
+				echo "<td>".$defense."</td>";
+				echo "</tr>";
+				echo "<tr>";
+				echo "<td>Success Chance</td>";
+				echo "<td>".round($offense_threshold)."%"."</td>";
+				echo "</tr>";
+				echo "</table>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "Start Raid";
