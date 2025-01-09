@@ -101,6 +101,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		}else{
 			$image = getRealmThemeID($conn, $realm_id);
 		}
+		if(isset($image)){
 		echo '
 		<div id="filter-nfts">
 			<label for="filterNFTs"><strong>AI Themes Inspired By:</strong></label>
@@ -128,6 +129,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 			  <input type="submit" value="Submit" style="display:none;">
 			</form>
 		</div>';
+		}
 		?>
 			<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 	    </div>
