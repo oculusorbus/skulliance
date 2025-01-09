@@ -27,7 +27,7 @@ include 'header.php';
 						$title = date("F")." Daily Rewards Streaks";
 						$filterby = "monthly-streaks";
 					}else if($filterby == "raids"){
-						$title = "Raids";
+						$title = "All Raids";
 						$filterby = "raids";
 					}else if($filterby == "monthly-raids"){
 						$title = date("F")." Raids";
