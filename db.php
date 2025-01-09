@@ -3808,10 +3808,10 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 500000;
 	$where = "";
 	if($monthly){
-		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
 	}
 	if($rewards){
-		$where = "WHERE DATE(missions.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
+		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
 	}
 	$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id 
 					WHERE success_raids.outcome = '1' AND success_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "success_raids", $where)).") AS success, 
