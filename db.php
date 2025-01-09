@@ -4330,7 +4330,7 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				echo "</td>";
-				echo "<td>&nbsp;</td>";3
+				echo "<td>&nbsp;</td>";
 				echo "</tr>";
 				echo "<tr>";
 				echo "<td align='right' width='50%'>Raid Duration:</td>";
