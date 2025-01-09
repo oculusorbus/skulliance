@@ -7,7 +7,7 @@ include 'skulliance.php';
 include 'header.php';
 
 if(isset($_POST['realm'])){
-	if(!checkRealm($conn)){
+	if(checkRealm($conn)){
 		createRealm($conn, $_POST['realm']);
 		$core_projects = getProjects($conn, "core");
 		$partner_projects = getProjects($conn, "partner");
@@ -31,7 +31,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
-			if(checkRealm($conn)){
+			if(!checkRealm($conn)){
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
