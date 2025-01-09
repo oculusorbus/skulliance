@@ -140,13 +140,25 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content raids">
 			<h2>Outgoing Raids</h2>
 			<?php
-			getRaids($conn, "outgoing");
+			getRaids($conn, "outgoing", "pending");
+			?>
+		</div>
+		<div class="content raids">
+			<h2>Outgoing Completed</h2>
+			<?php
+			getRaids($conn, "outgoing", "completed");
 			?>
 		</div>
 		<div class="content raids">
 			<h2>Incoming Raids</h2>
 			<?php
-			getRaids($conn, "incoming");
+			getRaids($conn, "incoming", "pending");
+			?>
+		</div>
+		<div class="content raids">
+			<h2>Incoming Completed</h2>
+			<?php
+			getRaids($conn, "incoming", "completed");
 			?>
 		</div>
 	</div>
