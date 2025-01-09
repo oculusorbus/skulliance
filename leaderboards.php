@@ -29,7 +29,7 @@ include 'header.php';
 					}else if($filterby == "raids"){
 						$title = "Raids";
 						$filterby = "raids";
-					}else if($filterby == "monthly-streaks"){
+					}else if($filterby == "monthly-raids"){
 						$title = date("F")." Raids";
 						$filterby = "monthly-raids";
 					}
