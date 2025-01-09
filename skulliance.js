@@ -794,9 +794,8 @@ function startRaid(raidButton, defenseID, duration){
 }
 
 function editRealmName(editIcon){
-	editIcon.style.display = "none";
+	editIcon.display = "none";
 	document.getElementById('realmName').innerHTML = document.getElementById('updateRealmName').outerHTML;
-	document.getElementById('updateRealmName').style.display = "block";
 }
 
 // Get the button
