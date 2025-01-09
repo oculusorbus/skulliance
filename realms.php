@@ -101,15 +101,15 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<a name="realm-image" id="realm-image"></a>
 		<h2><?php echo checkRealm($conn)?"<span style='z-index:99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px;cursor: pointer;' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
 	    <div class="content realm">
-		<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php
 		if(isset($_POST['filterby'])){
 			$image = $_POST['filterby'];
 			updateRealmTheme($conn, $realm_id, $_POST['filterby']);
 		}else{
 			$image = getRealmThemeID($conn, $realm_id);
-		}
-		if(isset($image)){
+		}?>
+		<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
+		<?php if(isset($image)){
 		echo '
 		<div id="filter-nfts" style="z-index:99">
 			<label for="filterNFTs"><strong>AI Themes Inspired By:</strong></label>
