@@ -37,7 +37,7 @@ include 'header.php';
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterLeaderboard("leaderboards");
-						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks"){
+						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids"){
 							getTotalNFTs($conn, $filterby);
 							checkLeaderboard($conn, false, $filterby);
 						}else if($filterby == "missions"){
