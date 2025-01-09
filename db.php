@@ -3805,7 +3805,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 }
 
 function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
-	$carbon = 500000;
+	$carbon = 1000000;
 	$where = "";
 	if($monthly){
 		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
