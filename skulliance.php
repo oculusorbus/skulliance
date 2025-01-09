@@ -871,7 +871,7 @@ function filterLeaderboard($page){
 			</optgroup>
 			<optgroup label="Raids">
 				<option value="raids">All Raids</option>
-				<option value="raids">'.date('F').' Raids</option>
+				<option value="monthly-raids">'.date('F').' Raids</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>
