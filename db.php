@@ -4371,6 +4371,7 @@ function getRealms($conn){
 					echo "<td>".$level."</td>";
 					echo "</tr>";
 				}
+				echo "</table>";
 				echo "</td>";
 				echo "<td width='25%' valign='top' align='right'>";
 				$balances = getRealmBalances($conn, $row['user_id']);
