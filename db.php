@@ -4579,7 +4579,7 @@ function getRaids($conn, $type, $status="pending"){
 				$rows[$decimal] .= "<br></td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $defense_results;
-				$rows[$decimal] .= "<br></td>";
+				$rows[$decimal] .= "<br><br></td>";
 				$rows[$decimal] .= "</tr>";
 				$rows[$decimal] .= "<tr id='raid-progress-".$row["raid_id"]."'>";
 				$rows[$decimal] .= "<td colspan='8' style='padding:0px;'>";
