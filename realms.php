@@ -140,47 +140,27 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<?php 
 		$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 		if(isset($outgoing_raids)){
-		?>
-		<div class="content raids">
-			<h2>Outgoing Raids</h2>
-			<?php
+				echo '<div class="content raids"><h2>Outgoing Raids</h2>';
 				echo $outgoing_raids;
-			?>
-		</div>
-		<?php
+				echo '</div>';
 		}	
 		$outgoing_completed = getRaids($conn, "outgoing", "completed"); 
 		if(isset($outgoing_completed)){
-		?>
-		<div class="content raids">
-			<h2>Outgoing Completed</h2>
-			<?php
+			echo '<div class="content raids"><h2>Outgoing Completed</h2>';
 			echo $outgoing_completed;
-			?>
-		</div>
-		<?php
+			echo '</div>';
 		}	
 		$incoming_raids = getRaids($conn, "incoming", "pending"); 
 		if(isset($incoming_raids)){
-		?>
-		<div class="content raids">
-			<h2>Incoming Raids</h2>
-			<?php
+			echo '<div class="content raids"><h2>Incoming Raids</h2>';
 			echo $incoming_raids;
-			?>
-		</div>
-		<?php
+			echo '</div>';
 		}	
 		$incoming_completed = getRaids($conn, "incoming", "completed"); 
 		if(isset($incoming_completed)){
-		?>
-		<div class="content raids">
-			<h2>Incoming Completed</h2>
-			<?php
-			echo $incoming_raids;
-			?>
-		</div>
-		<?php
+			echo '<div class="content raids"><h2>Incoming Completed</h2>';
+			echo $incoming_completed;
+			echo '</div>';
 		}	
 		?>
 	</div>
