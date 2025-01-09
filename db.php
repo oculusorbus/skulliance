@@ -4371,8 +4371,8 @@ function getRealms($conn){
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					echo "<tr>";
-					echo "<td>".ucfirst($location_name).":</td>";
-					echo "<td>".$level."</td>";
+					echo "<td width='50%'>".ucfirst($location_name).":</td>";
+					echo "<td width='50%'>".$level."</td>";
 					echo "</tr>";
 				}
 				echo "</table>";
@@ -4383,8 +4383,8 @@ function getRealms($conn){
 				$balances = array_slice($balances, 0, 7, true);
 				foreach($balances AS $currency => $balance){
 					echo "<tr>";
-					echo "<td>".$currency."</td>";
-					echo "<td>".number_format($balance)."</td>";
+					echo "<td width='50%'>".$currency."</td>";
+					echo "<td width='50%'>".number_format($balance)."</td>";
 					echo "</tr>";
 				}
 				echo "</table>";
