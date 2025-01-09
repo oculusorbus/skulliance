@@ -4303,7 +4303,7 @@ function getRealms($conn){
 		echo "<table width='100%' id='transactions'>";
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th align='left'>".$row['realm_name']."</th><th>".$row["username"]."</th><th>Location Levels</th><th>Top Points Balances</th>";
+				echo "<th align='left'>".$row['realm_name']."</th><th align='left'>".$row["username"]."</th><th>Location Levels</th><th>Top Points Balances</th>";
 				echo "<tr>";
 				echo "<td width='25%' valign='top' align='left'>";
 				echo "<table id='transactions' style='border-style:none'>";
@@ -4330,7 +4330,7 @@ function getRealms($conn){
 					echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				}
 				echo "</td>";
-				echo "<td>&nbsp;</td>";
+				echo "<td>&nbsp;</td>";3
 				echo "</tr>";
 				echo "<tr>";
 				echo "<td align='right' width='50%'>Raid Duration:</td>";
