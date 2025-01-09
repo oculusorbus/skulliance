@@ -49,9 +49,9 @@ include 'header.php';
 						}else if($filterby == "monthly-streaks"){
 							checkStreaksLeaderboard($conn, true);
 						}else if($filterby == "raids"){
-							checkStreaksLeaderboard($conn);
+							checkRaidsLeaderboard($conn);
 						}else if($filterby == "monthly-raids"){
-							checkStreaksLeaderboard($conn, true);
+							checkRaidsLeaderboard($conn, true);
 						}
 					?>
 				</div>
