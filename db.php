@@ -4299,7 +4299,11 @@ function getRealms($conn){
 				}
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
-						echo "<input type='button' class='button' value='Raid' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+						$value = "Raid";
+						if($offense_id == $row["realm_id"]){
+							$value = "Suicide Mission";
+						}
+						echo "<input type='button' class='button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
 						echo "<strong>Raid in Progress</strong><br><br>";
 					}
