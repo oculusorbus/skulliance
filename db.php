@@ -4364,7 +4364,7 @@ function getRealms($conn){
 						echo "<strong>Raid in Progress</strong><br><br>";
 					}
 				}else{
-					echo "<strong>Maximum Raids Reached</strong><br><strong>Upgrade Portal to Increase Raids</strong><br><br>";
+					echo "<strong>Max Raids Reached</strong><br><br>";
 				}
 				echo "</td>";
 				echo "</tr>";
