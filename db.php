@@ -3966,7 +3966,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 		if($rewards){
 			$last_month = date('F', strtotime('last month'));
-			$title = $last_month." $raids Leaderboard Results";
+			$title = $last_month." Raids Leaderboard Results";
 			$imageurl = "";
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}

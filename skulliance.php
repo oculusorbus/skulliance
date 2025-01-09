@@ -865,13 +865,13 @@ function filterLeaderboard($page){
 			<optgroup label="Projects">
 				<option value="0">All Projects</option>
 			</optgroup>
-			<optgroup label="Missions">
-				<option value="missions">All Missions</option>
-				<option value="monthly">'.date('F').' Missions</option>
-			</optgroup>
 			<optgroup label="Raids">
 				<option value="raids">All Raids</option>
 				<option value="monthly-raids">'.date('F').' Raids</option>
+			</optgroup>
+			<optgroup label="Missions">
+				<option value="missions">All Missions</option>
+				<option value="monthly">'.date('F').' Missions</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>
