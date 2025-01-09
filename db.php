@@ -4338,11 +4338,11 @@ function getRealms($conn){
 				echo "<td width='50%'>Raid Duration</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right'>".$offense."</td>";
+				echo "<td align='right'>Level ".$offense."</td>";
 				echo "<td>Your Offense</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td align='right'>".$defense."</td>";
+				echo "<td align='right'>Level ".$defense."</td>";
 				echo "<td>Their Defense</td>";
 				echo "</tr>";
 				echo "<tr>";
