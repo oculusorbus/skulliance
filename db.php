@@ -4243,6 +4243,23 @@ function incrementRealmLocationLevel($conn, $realm_id, $location_id){
 	}
 }
 
+function updateRealmLocationLevel($conn, $realm_id, $location_id, $amount, $type){
+	$current_level = getRealmLocationLevel($conn, $realm_id, $location_id);
+	if($type == "credit"){
+		$new_level = $current_level + $amount;
+	}if($type == "debit"){
+		if($current_level != 0){
+			$new_level = $current_level - $amount;
+		}
+	}
+	$sql = "UPDATE realms_locations SET level = '".$new_level."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 	$sql = "DELETE FROM upgrades WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
 
@@ -4710,9 +4727,10 @@ function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amoun
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
-	
 	// Get Realm ID from raid based on faction
-	// Use Realm ID to update altered location level
+	$realm_id = getRaidRealmID($conn, $raid_id, $faction);
+	// Use Realm ID to update location level
+	updateRealmLocationLevel($conn, $realm_id, $location_id, $amount, $type);
 }
 
 function selectRandomProjectID($conn, $realm_id){
