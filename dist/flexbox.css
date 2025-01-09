@@ -1517,8 +1517,8 @@ section.active {
 	}
 	#transactions {
 		font-size: 7px;
-		-webkit-filter: drop-shadow(5px 5px 5px #202225);
-	    filter: drop-shadow(5px 5px 5px #202225);
+		/*-webkit-filter: drop-shadow(5px 5px 5px #202225);
+	    filter: drop-shadow(5px 5px 5px #202225);*/
 	}
 	#transactions th, #transactions td {
 		padding: 1px;
