@@ -4654,10 +4654,9 @@ function getRaids($conn, $type, $status="pending"){
 				$rows[$decimal] .= "</tr>";
 			}
 			ksort($rows);
-			/*
 			if(strtolower($status) == "completed"){
 				$rows = array_reverse($rows);
-			}*/
+			}
 			foreach($rows AS $duration => $output){
 			    $final_output .= $output;
 			}
