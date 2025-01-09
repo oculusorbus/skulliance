@@ -4539,8 +4539,11 @@ function getRaids($conn, $type){
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 				}
+				if($status == "Completed"){
+					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).round($row["raid_id"]/2);
+				}else{
 					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
-				
+				}
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<tr>";
 				$rows[$decimal] .= "<td>";
