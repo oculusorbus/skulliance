@@ -3092,9 +3092,9 @@ function burn($conn, $balance, $project_id){
 
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id, raid_id)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."', '".$raid_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -3104,9 +3104,9 @@ function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0,
 }
 
 // Log a specific user debit for an item purchase
-function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission_id, location_id)
-	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission_id."', '".$location_id."')";
+function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0, $raid_id=0) {
+	$sql = "INSERT INTO transactions (type, user_id, item_id, amount, project_id, crafting, mission_id, location_id, raid_id)
+	VALUES ('debit', '".$user_id."', '".$item_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$mission_id."', '".$location_id."', '".$raid_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -3118,7 +3118,7 @@ function logDebit($conn, $user_id, $item_id, $amount, $project_id, $crafting=0, 
 // Display transaction history for user
 function transactionHistory($conn) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, location_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name, transactions.project_id AS project_id FROM transactions 
+		$sql = "SELECT transactions.type, amount, items.name, crafting, bonus, mission_id, location_id, raid_id, transactions.date_created, projects.currency AS currency, projects.name AS project_name, transactions.project_id AS project_id FROM transactions 
 			    LEFT JOIN items ON transactions.item_id = items.id LEFT JOIN projects ON projects.id = transactions.project_id 
 		        WHERE transactions.user_id='".$_SESSION['userData']['user_id']."' ORDER BY date_created DESC LIMIT 1000";
 		$result = $conn->query($sql);
@@ -3140,6 +3140,8 @@ function transactionHistory($conn) {
 					}else if($row["mission_id"] != 0){
 						$mission = getMission($conn, $row["mission_id"]);
 						echo "Mission Reward: ".$mission["title"];
+					}else if($row["raid_id"] != 0){
+						echo "<td>Raid Offense Success Reward</td>";
 					}else{
 						echo "Staking Reward: ".$row["project_name"];
 					}
@@ -3163,6 +3165,9 @@ function transactionHistory($conn) {
 				if($row["location_id"] != 0){
 					$locations = getLocationInfo($conn);
 					echo "<td>Realm Upgrade: ".ucfirst($locations[$row["project_id"]]['name'])."</td>";
+				}
+				if($row["raid_id"] != 0){
+					echo "<td>Raid Defense Failure Deduction</td>";
 				}
 				
 			}
@@ -4801,6 +4806,8 @@ function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	updateBalance($conn, $defense_user_id, $project_id, -$amount);
 	
 	// Log transactions
+	logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id);
+	logDebit($conn, $user_id, $item_id=0, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0, $raid_id);
 }
 
 /* END REALMS */
