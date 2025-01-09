@@ -4348,7 +4348,7 @@ function getRealms($conn){
 				echo "<td>".round($offense_threshold)."%"."</td>";
 				echo "</tr>";
 				echo "<tr>";
-				echo "<td colspan='2'>";
+				echo "<td align='right'>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "Start Raid";
@@ -4362,6 +4362,8 @@ function getRealms($conn){
 				}else{
 					echo "<strong>Maximum Raids Reached</strong><br><strong>Upgrade Portal to Increase Raids</strong><br><br>";
 				}
+				echo "</td>";
+				echo "<td>&nbsp;";
 				echo "</td>";
 				echo "</tr>";
 				echo "</table>";
