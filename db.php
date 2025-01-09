@@ -4234,7 +4234,7 @@ function getRealmThemeID($conn, $realm_id){
 }
 
 function updateRealmName($conn, $realm_id, $name){
-	$sql = "UPDATE realms SET name='".$name."' WHERE id='".$realm_id."'";
+	$sql = "UPDATE realms SET name='".mysqli_real_escape_string($conn, $name)."' WHERE id='".$realm_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
