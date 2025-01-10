@@ -49,9 +49,10 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						</td>
 						<td width="60%">
 						</td>
-					<tr>
+					</tr>
 				<?php
 				foreach($locations AS $location_id => $location){?>
+							<tr>	
 								<td width="40%">
 									<img style="opacity:0.85" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
 								</td>
