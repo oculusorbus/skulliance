@@ -36,7 +36,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
-				<ul style='position:relative;top: -71px'>
+				<ul style='position:relative;top:-51px'>
 				<?php
 				$realm_id = getRealmID($conn);
 				$levels = getRealmLocationLevels($conn);
@@ -45,7 +45,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<table>
 					<tr> 
 						<td width="40%">
-							<img src="images/realms-logo.png" width="100%"/>
+							<img src="images/realms-logo.png" width="80%"/>
 						</td>
 						<td width="60%">&nbsp;
 						</td>
