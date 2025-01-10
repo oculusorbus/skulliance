@@ -41,8 +41,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				$realm_id = getRealmID($conn);
 				$levels = getRealmLocationLevels($conn);
 				?>
-				<li class="role" style="positon:relative;top:-40px">
-					<table>
+				<li class="role">
+					<table style="positon:relative;top:-40px">
 					<tr> 
 						<td width="40%">
 							<img src="images/realms-logo.png" width="100%"/>
@@ -54,8 +54,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				</li>
 				<?php
 				foreach($locations AS $location_id => $location){?>
-					<li class="role" style="positon:relative;top:-40px">
-						<table>
+					<li class="role">
+						<table style="positon:relative;top:-40px">
 							<tr>	
 								<td width="40%">
 									<img style="opacity:0.85" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
