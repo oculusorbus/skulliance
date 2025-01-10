@@ -50,8 +50,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								</td>
 								<td width="60%">
 									<strong><?php echo strtoupper($location['name']); ?></strong><br>
-									<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
 									<strong>Type:</strong> <?php echo ucfirst($location['type']); ?><br>
+									<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
 									<?php if($levels[$location_id] != 10){ ?>
 										<?php 
 										if(!isset($status[$location_id])){  
