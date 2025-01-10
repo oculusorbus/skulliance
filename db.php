@@ -4381,7 +4381,8 @@ function getRealmLocationUpgrade($conn, $realm_id, $location_id){
 			$hours_remaining = floor(($remaining % 86400) / 3600);
 			$minutes_remaining = floor(($remaining % 3600) / 60);
 			if($date > time()){
-				$time_message = $row["duration"]." ".(($row["duration"]==1)?"Day":"Days").": ".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+				$time_message = "<strong>".$row["duration"]." ".(($row["duration"]==1)?"Day":"Days").":</strong> ";
+				$time_message .= $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 				$status[$row['location_id']] = $time_message;
 			}
 		}
@@ -4404,7 +4405,8 @@ function getRealmLocationsUpgrades($conn){
 				$hours_remaining = floor(($remaining % 86400) / 3600);
 				$minutes_remaining = floor(($remaining % 3600) / 60);
 				if($date > time()){
-					$time_message = $row["duration"]." ".(($row["duration"]==1)?"Day":"Days").": ".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+					$time_message = "<strong>".$row["duration"]." ".(($row["duration"]==1)?"Day":"Days").":</strong> ";
+					$time_message .= $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 					$status[$row['location_id']] = $time_message;
 				}else{
 					upgradeRealmLocationLevel($conn, $realm_id, $row['location_id'], $row["duration"]);
