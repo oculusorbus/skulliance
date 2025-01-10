@@ -4322,7 +4322,7 @@ function getLocationIDs($conn){
 function getRealmLocationLevels($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
-		$sql = "SELECT location_id, level FROM realms_locations WHERE realm_id = '".$realm_id."' ORDER BY location_id ASC";
+		$sql = "SELECT location_id, level FROM realms_locations WHERE realm_id = '".$realm_id."'";
 		$result = $conn->query($sql);
 		
 		$levels = array();
@@ -4795,7 +4795,7 @@ function getRaids($conn, $type, $status="pending"){
 					}
 				}
 				if($status == "Completed"){
-					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
+					$decimal = $row["created_date"].$row["raid_id"];
 				}else{
 					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
 				}
