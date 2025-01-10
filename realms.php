@@ -41,7 +41,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				$realm_id = getRealmID($conn);
 				$levels = getRealmLocationLevels($conn);
 				?>
-				<li class="role">
+				<li class="role" style="positon:relative;top:-40px">
 					<table>
 					<tr> 
 						<td width="40%">
@@ -54,7 +54,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				</li>
 				<?php
 				foreach($locations AS $location_id => $location){?>
-					<li class="role">
+					<li class="role" style="positon:relative;top:-40px">
 						<table>
 							<tr>	
 								<td width="40%">
