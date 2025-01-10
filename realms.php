@@ -36,7 +36,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
-				<h2>Locations</h2>
+				<img src="images/realms-logo.png" width="100%"/>
 				<ul>
 				<?php
 				$realm_id = getRealmID($conn);
