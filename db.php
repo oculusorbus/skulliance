@@ -4407,7 +4407,7 @@ function getRealmLocationsUpgrades($conn){
 					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 					$status[$row['location_id']] = $time_message;
 				}else{
-					incrementRealmLocationLevel($conn, $realm_id, $row['location_id'], $row["duration"]);
+					upgradeRealmLocationLevel($conn, $realm_id, $row['location_id'], $row["duration"]);
 					deleteRealmLocationUpgrade($conn, $realm_id, $row['location_id']);
 					//$time_message = "0d 0h 0m";
 				}
@@ -4432,7 +4432,7 @@ function getRealmLocationLevel($conn, $realm_id, $location_id){
 	}
 }
 
-function incrementRealmLocationLevel($conn, $realm_id, $location_id, $duration){
+function upgradeRealmLocationLevel($conn, $realm_id, $location_id, $duration){
 	//$current_level = getRealmLocationLevel($conn, $realm_id, $location_id);
 	//$new_level = $current_level + 1;
 	$sql = "UPDATE realms_locations SET level = '".$duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'";
