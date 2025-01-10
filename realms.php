@@ -36,7 +36,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				$status = getRealmLocationsUpgrades($conn);
 				$locations = getLocationInfo($conn);
 				?>
-				<ul>
+				<ul style='position:relative;top-40px'>
 				<?php
 				$realm_id = getRealmID($conn);
 				$levels = getRealmLocationLevels($conn);
