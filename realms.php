@@ -48,7 +48,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<img src="images/realms-logo.png" width="80%" style="position:relative;top:10px"/>
 						</td>
 						<td width="60%" valign="bottom">
-							<strong>Locations</strong>
+							<h3>Locations</h3>
 						</td>
 					</tr>
 					</table>
