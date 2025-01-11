@@ -279,7 +279,7 @@ if($filterByRealms != ""){
 		document.getElementById('raids').style.position = "relative";
 		document.getElementById('raids').style.top = '-65px';
 		document.getElementById('realms').style.position = "relative";
-		document.getElementById('realms').style.top = '-120px';
+		document.getElementById('realms').style.top = '-100px';
 		if(window.location.hash == "#realms"){
 			document.getElementById('realms').style.display = "block";
 			document.getElementById('realms-icon').classList.add("selected");
