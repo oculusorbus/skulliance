@@ -8,7 +8,7 @@ include 'header.php';
 			<div class="main col1of3">
 				<h2><img style="max-width:300px;width:100%;" src="images/skulliancelogoweb.png"/></h2>
 				<p>
-					In order to claim items in the Skulliance staking store, you will need to become a member.
+					In order to claim items in the Skulliance Staking Store, create a Realm, and participate in Raids, you will need to become a member.
 				</p>
 				<p>
 					Membership requires owning at least 1 NFT from ALL of the following projects:
@@ -26,7 +26,7 @@ include 'header.php';
 					The staking site will automatically assign roles and membership. You may have to hit the refresh button next to the wallet dropdown or log out and back in to the staking platform.
 				</p>
 				<p>
-					Once the necessary NFTs are verified on the staking platform and you're automatically assigned membership, you will be able to claim NFT/FT rewards from the staking store. 
+					Once the necessary NFTs are verified on the staking platform and you're automatically assigned membership, you will be able to claim NFT/FT rewards from the Staking Store, create a Realm, and participate in Raids. 
 				</p>
 				<!--
 				<video width="100%" style="background-color:black" poster="images/og.jpg" controls>
