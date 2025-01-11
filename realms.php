@@ -28,7 +28,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
 
 <div class="row" id="row0">	
-	  <div class="side" id="realm">
+	  <div class="side" id="locations">
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
@@ -118,7 +118,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	  <div class="main">
 		<div id="realm">
 		<a name="realm-image" id="realm-image"></a>
-		<h2><?php echo checkRealm($conn)?"<span style='z-index:99' id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px;cursor: pointer;' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
+		<h2><?php echo checkRealm($conn)?"<span id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px;cursor: pointer;' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
 	    <div class="content realm">
 		<?php
 		if(isset($_POST['filterby'])){
@@ -131,7 +131,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php if(isset($image)){
 		echo '
-		<div id="filter-nfts" style="z-index:99;top:25px">
+		<div id="filter-nfts" style="top:25px">
 			<label for="filterNFTs"><strong>Theme:</strong></label>
 			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 				<optgroup label="Core Projects">';
@@ -198,9 +198,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 </div>
 <div class="row" id="row2">	
 	<div class="main">
-	<a name="realms" id="realms"></a>
-	<h2>Realms</h2>		
 	<div id="realms">
+		<a name="realms" id="realms"></a>	
+		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
 			<?php
 			if(isset($_POST['filterByRealms'])){
@@ -272,4 +272,83 @@ if($filterByRealms != ""){
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type='text/javascript'>
+	if($(window).width() <= 700){
+		document.getElementById('back-to-top-button').style.zIndex = "-1";
+		document.getElementById('quick-menu').style.display = "block";
+		if(window.location.hash == "#realms"){
+			document.getElementById('realms').style.display = "block";
+			document.getElementById('realms-icon').classList.add("selected");
+			document.getElementById('locations').style.display = "none";
+			document.getElementById('locations-icon').classList.remove("selected");
+			document.getElementById('realm').style.display = "none";
+			document.getElementById('realm-icon').classList.remove("selected");
+			document.getElementById('raids').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
+		}else if(window.location.hash == "#realm-image"){{
+			document.getElementById('realm').style.display = "block";
+			document.getElementById('realm-icon').classList.add("selected");
+			document.getElementById('locations').style.display = "none";
+			document.getElementById('locations-icon').classList.remove("selected");
+			document.getElementById('realm-icon').classList.add("selected");
+			document.getElementById('raids').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('realms').style.display = "none";
+			document.getElementById('realms-icon').classList.remove("selected");
+		}else{
+			document.getElementById('locations').style.display = "block";
+			document.getElementById('locations-icon').classList.add("selected");
+			document.getElementById('realm').style.display = "none";
+			document.getElementById('realm-icon').classList.remove("selected");
+			document.getElementById('raids').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('realms').style.display = "none";
+			document.getElementById('realms-icon').classList.remove("selected");
+		}
+	}else{
+		document.getElementById('quick-menu').style.display = "none";
+		//document.getElementById('row1').style.position = "relative";
+		//document.getElementById('row1').style.top = '-65px';
+	}
+	
+	function toggleSections(selection){
+		if($(window).width() <= 700){
+			window.scrollTo(0, 0);
+			if ($('#realms').length > 0) {
+				document.getElementById('realms').style.display = "none";
+			}
+			document.getElementById('locations-icon').classList.remove("selected");
+			document.getElementById('realm').style.display = "none";
+			document.getElementById('realm-icon').classList.remove("selected");
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('realms').style.display = "none";
+			document.getElementById('realms-icon').classList.remove("selected");
+			if ($('#realm-image').length > 0) {
+			  document.getElementById('realm').style.display = "none";
+			  document.getElementById('realm-icon').classList.remove("selected");
+			}
+			if ($('#'+selection).length > 0) {
+				document.getElementById(selection).style.display = "block";
+				document.getElementById(selection+"-icon").classList.add("selected");
+				if(selection == "filter" || selection == "quests"){
+					document.getElementById('available').style.display = "block";
+				}else{
+					document.getElementById('available').style.display = "none";
+				}
+			}else{
+				if(selection == "mission"){
+					document.getElementById('available').style.display = "block";
+					document.getElementById('quests').style.display = "block";
+					document.getElementById('mission-icon').classList.add("selected");
+				}
+				if(selection == "rewards"){
+					document.getElementById('mission').style.display = "block";
+					document.getElementById('rewards-icon').classList.add("selected");
+					window.location.href = 'missions.php';
+				}
+			}
+		}
+	}
+</script>
 </html>
