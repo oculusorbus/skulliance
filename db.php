@@ -4391,6 +4391,18 @@ function getRealmLocationUpgrade($conn, $realm_id, $location_id){
 	return $status;
 }
 
+function checkRealmLocationUpgrade($conn, $realm_id, $location_id){
+	$sql = "SELECT id FROM upgrades WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
+	$result = $conn->query($sql);
+	
+	$status = array();
+	if ($result->num_rows > 0) {
+		return true;
+	}else{
+		return false;
+	}
+}
+
 function getRealmLocationsUpgrades($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
