@@ -4990,13 +4990,13 @@ function getTotalRaids($conn){
 			echo "</tr>";
 		}
 	}
-		$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id WHERE success_raids.outcome = '1' AND success_users.id = users.id) AS success, 
-		               (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN realms AS failed_realms ON failed_realms.id = failed_raids.offense_id INNER JOIN users AS failed_users ON failed_users.id = failed_realms.user_id  WHERE failed_raids.outcome = '2' AND failed_users.id = users.id) AS failure, 
-					   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.offense_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id  WHERE progress_raids.outcome = '0' AND progress_users.id = users.id) AS progress, 
+$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id WHERE success_raids.outcome = '1' AND success_users.id = users.id) AS success, 
+               (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN realms AS failed_realms ON failed_realms.id = failed_raids.offense_id INNER JOIN users AS failed_users ON failed_users.id = failed_realms.user_id  WHERE failed_raids.outcome = '2' AND failed_users.id = users.id) AS failure, 
+     		   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.offense_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id  WHERE progress_raids.outcome = '0' AND progress_users.id = users.id) AS progress, 
 		        COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id
 			    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE users.id = '".$_SESSION['userData']['user_id']."'";
 		$result = $conn->query($sql);
-		/*
+	
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
@@ -5068,9 +5068,8 @@ function getTotalRaids($conn){
 				}
 			}
 		echo "</table><br>";
-		}*/
+		}
 		echo "</div>";
-		//}
 }
 
 function getRaidRealmID($conn, $raid_id, $faction){
