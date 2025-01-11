@@ -124,6 +124,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		if(isset($_POST['filterby'])){
 			$image = $_POST['filterby'];
 			updateRealmTheme($conn, $realm_id, $_POST['filterby']);
+			$filterby = $_POST['filterby'];
 		}else{
 			$image = getRealmThemeID($conn, $realm_id);
 		}?>
@@ -200,6 +201,12 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	<h2>Realms</h2>		
 	<div id="realms">
 		<div class="content realms" id="filtered-content">
+			<?php
+			if(isset($_POST['filterByRealms'])){
+				$filterByRealms = $_POST['filterByRealms'];
+			}else{
+				$filterByRealms = "random";
+			}?>
 			<?php echo '
 			<div id="filter-nfts">
 				<label for="filterRealms"><strong>Sort By:</strong></label>
@@ -251,7 +258,11 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 $conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
-}?>
+}
+if($filterByRealms != ""){
+	echo "<script type='text/javascript'>document.getElementById('filterRealms').value = '".$filterByRealms."';</script>";
+}
+?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 </html>
