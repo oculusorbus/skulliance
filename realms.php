@@ -243,7 +243,7 @@ if(isset($_SESSION['userData']['user_id'])){
 		echo "</div>";
 		echo "<div class='main'>";
 		echo "<h2>Skulliance Realms</h2>";
-		echo "<p>Please connect a Cardano wallet to view realms.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member to participate in raids.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
+		echo "<p>Please connect a Cardano wallet to sync your qualifying NFTs.<br><br>You will need to become a Skulliance member to participate in realms and embark on raids.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
 		echo "</div>";
 		echo "</div>";
 	}
