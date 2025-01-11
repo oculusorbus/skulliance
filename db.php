@@ -4806,7 +4806,7 @@ function getRaids($conn, $type, $status="pending"){
 		$final_output = "";
 		if ($result->num_rows > 0) {
 			// output data of each row
-			$final_output .= "<h2>".ucfirst($type)." ".ucfirst($status)."&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleRaids(this, '".$type."', '".$status."')'/></h2>";
+			$final_output .= "<h2>".ucfirst($type)." ".ucfirst($status)."&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleRaids(this, \"".$type."\", \"".$status."\")'/></h2>";
 			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container" style="display:'.$display.'">';
 			$status = "";
 			$final_output .= "<table id='transactions'>";
