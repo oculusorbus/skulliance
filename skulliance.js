@@ -389,7 +389,7 @@ function toggleTotalMissions(arrow){
 	};
 }
 
-function toggleTotalMissions(arrow){
+function toggleCurrentMissions(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
@@ -397,15 +397,15 @@ function toggleTotalMissions(arrow){
 		arrow.id = 'up';
 		arrow.src = 'icons/up.png';
 		visibility = 'hide';
-		document.getElementById('total-missions-container').style.display = 'none';
+		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'down';
 		arrow.src = 'icons/down.png';
 		visibility = 'show';
-		document.getElementById('total-missions-container').style.display = 'block';
+		document.getElementById('current-missions-container').style.display = 'block';
 	}
 	
-	xhttp.open('GET', 'ajax/toggle-total-missions.php?visibility='+visibility, true);
+	xhttp.open('GET', 'ajax/toggle-current-missions.php?visibility='+visibility, true);
 	
 	xhttp.send();
 
@@ -423,7 +423,7 @@ function toggleTotalMissions(arrow){
 	};
 }
 
-function toggleCurrentRaids(arrow){
+function toggleTotalRaids(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
@@ -431,15 +431,15 @@ function toggleCurrentRaids(arrow){
 		arrow.id = 'up';
 		arrow.src = 'icons/up.png';
 		visibility = 'hide';
-		document.getElementById('current-missions-container').style.display = 'none';
+		document.getElementById('total-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'down';
 		arrow.src = 'icons/down.png';
 		visibility = 'show';
-		document.getElementById('current-missions-container').style.display = 'block';
+		document.getElementById('total-missions-container').style.display = 'block';
 	}
 	
-	xhttp.open('GET', 'ajax/toggle-current-raids.php?visibility='+visibility, true);
+	xhttp.open('GET', 'ajax/toggle-total-raids.php?visibility='+visibility, true);
 	
 	xhttp.send();
 
