@@ -250,7 +250,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <div id="quick-menu">
 	<img id="locations-icon" src="icons/locations.png" onclick="toggleSections('locations');">
 	<img id="realm-icon" src="icons/realm.png" onclick="toggleSections('realm');">
-	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
+	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('raids');">
 	<img id="realms-icon" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
 	<!-- Footer -->
@@ -284,7 +284,7 @@ if($filterByRealms != ""){
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('raids-icon').classList.remove("selected");
 		}else if(window.location.hash == "#realm-image"){
 			document.getElementById('realm').style.display = "block";
 			document.getElementById('realm-icon').classList.add("selected");
@@ -292,7 +292,7 @@ if($filterByRealms != ""){
 			document.getElementById('locations-icon').classList.remove("selected");
 			document.getElementById('realm-icon').classList.add("selected");
 			document.getElementById('raids').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
 			document.getElementById('realms-icon').classList.remove("selected");
 		}else{
@@ -301,7 +301,7 @@ if($filterByRealms != ""){
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
 			document.getElementById('realms-icon').classList.remove("selected");
 		}
@@ -325,22 +325,8 @@ if($filterByRealms != ""){
 			if ($('#'+selection).length > 0) {
 				document.getElementById(selection).style.display = "block";
 				document.getElementById(selection+"-icon").classList.add("selected");
-				if(selection == "filter" || selection == "quests"){
-					document.getElementById('available').style.display = "block";
-				}else{
-					document.getElementById('available').style.display = "none";
-				}
 			}else{
-				if(selection == "mission"){
-					document.getElementById('available').style.display = "block";
-					document.getElementById('quests').style.display = "block";
-					document.getElementById('mission-icon').classList.add("selected");
-				}
-				if(selection == "rewards"){
-					document.getElementById('mission').style.display = "block";
-					document.getElementById('rewards-icon').classList.add("selected");
-					window.location.href = 'missions.php';
-				}
+
 			}
 		}
 	}
