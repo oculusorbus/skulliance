@@ -431,12 +431,12 @@ function toggleRaids(arrow, category, results){
 		arrow.id = 'up';
 		arrow.src = 'icons/up.png';
 		visibility = 'hide';
-		document.getElementById(category+'-'+results+'raids-container').style.display = 'none';
+		document.getElementById(category+'-'+results+'-raids-container').style.display = 'none';
 	}else{
 		arrow.id = 'down';
 		arrow.src = 'icons/down.png';
 		visibility = 'show';
-		document.getElementById(category+'-'+results+'raids-container').style.display = 'block';
+		document.getElementById(category+'-'+results+'-raids-container').style.display = 'block';
 	}
 	
 	xhttp.open('GET', 'ajax/toggle-raids.php?visibility='+visibility+'&type='+category+'&status='+results, true);
