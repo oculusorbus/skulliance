@@ -291,7 +291,7 @@ if($filterByRealms != ""){
 			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
-		}else if(window.location.hash == "#realm-image"){
+		}else if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
 			document.getElementById('realm').style.display = "block";
 			document.getElementById('realm-icon').classList.add("selected");
 			document.getElementById('locations').style.display = "none";

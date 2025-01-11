@@ -869,7 +869,7 @@ function startRaid(raidButton, defenseID, duration){
 function editRealmName(editIcon){
 	editIcon.style.display = "none";
 	realmName = document.getElementById('realmName').innerHTML;
-	document.getElementById('realmName').innerHTML = "<form id='updateRealmName' action='realms.php' method='post' style='max-height:0px'><input type='text' id='realmText' name='realmText' size='30' required>&nbsp;<input class='small-button' type='submit' value='Update'></form>";
+	document.getElementById('realmName').innerHTML = "<form id='updateRealmName' action='realms.php#realm-name' method='post' style='max-height:0px'><input type='text' id='realmText' name='realmText' size='30' required>&nbsp;<input class='small-button' type='submit' value='Update'></form>";
 	document.getElementById('realmText').value = realmName;
 	document.getElementById('realmText').focus();
 }
