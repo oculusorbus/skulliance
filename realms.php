@@ -250,7 +250,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <div id="quick-menu">
 	<img id="locations-icon" src="icons/locations.png" onclick="toggleSections('locations');">
 	<img id="realm-icon" src="icons/realm.png" onclick="toggleSections('realm');">
-	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('raids');">
+	<img id="raids-icon" src="icons/raids.png" onclick="toggleSections('raids');">
 	<img id="realms-icon" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
 	<!-- Footer -->
