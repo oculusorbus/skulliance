@@ -280,6 +280,11 @@ function filterNFTs(criteria){
 	document.getElementById("filterNFTsForm").submit();
 }
 
+function filterRealms(criteria){
+	document.getElementById('filterByRealms').value = criteria;
+	document.getElementById("filterRealmsForm").submit();
+}
+
 function filterDiamondSkulls(criteria){
 	document.getElementById('filterbydiamond').value = criteria;
 	document.getElementById("filterDiamondSkullsForm").submit();

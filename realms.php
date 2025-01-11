@@ -212,7 +212,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				echo '
 				</select>
 				<form id="filterRealmsForm" action="realms.php#realms" method="post">
-				  <input type="hidden" id="filterRealms" name="filterRealms" value="">
+				  <input type="hidden" id="filterByRealms" name="filterByRealms" value="">
 				  <input type="submit" value="Submit" style="display:none;">
 				</form>
 			</div>';?>
