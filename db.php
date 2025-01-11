@@ -4506,92 +4506,91 @@ function getRealms($conn, $sort){
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).$row['realm_id'];
 				}
-				$output["key"] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td width='25%' valign='top' align='left'>";
-				$output["key"] .= "<table id='transactions' style='border-style:none'>";
-				$output["key"] .= "<tr><td align='center'>";
-				$output["key"] .= "<img src='images/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
-				$output["key"] .= "</td></tr>";
-				$output["key"] .= "</table>";
+				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td width='25%' valign='top' align='left'>";
+				$output[$key] .= "<table id='transactions' style='border-style:none'>";
+				$output[$key] .= "<tr><td align='center'>";
+				$output[$key] .= "<img src='images/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
+				$output[$key] .= "</td></tr>";
+				$output[$key] .= "</table>";
 				if($duration <= 0){
 					$duration = 1;
 				}
-				$output["key"] .= "</td>";
-				$output["key"] .= "<td width='25%' valign='top' align='left'>";
-				$output["key"] .= "<table id='transactions' style='border-style:none'>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td align='right' width='50%'>";
+				$output[$key] .= "</td>";
+				$output[$key] .= "<td width='25%' valign='top' align='left'>";
+				$output[$key] .= "<table id='transactions' style='border-style:none'>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right' width='50%'>";
 					if($row["avatar"] != ""){
-						$output["key"] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+						$output[$key] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 					}
-				$output["key"] .= "</td>";
-				$output["key"] .= "<td width='50%'>".$row["username"]."</td>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td align='right'>Level ".$offense."</td>";
-				$output["key"] .= "<td>Your Offense</td>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td align='right'>Level ".$defense."</td>";
-				$output["key"] .= "<td>Their Defense</td>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td align='right' width='50%'>".$duration." ".(($duration == 1)?"day":"days")."</td>";
-				$output["key"] .= "<td width='50%'>Raid Duration</td>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td align='right'>".round($offense_threshold)."%"."</td>";
-				$output["key"] .= "<td>Success Chance</td>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "<tr>";
-				$output["key"] .= "<td align='right'>&nbsp;";
-				$output["key"] .= "</td>";
-				$output["key"] .= "<td>";
+				$output[$key] .= "</td>";
+				$output[$key] .= "<td width='50%'>".$row["username"]."</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right'>Level ".$offense."</td>";
+				$output[$key] .= "<td>Your Offense</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right'>Level ".$defense."</td>";
+				$output[$key] .= "<td>Their Defense</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right' width='50%'>".$duration." ".(($duration == 1)?"day":"days")."</td>";
+				$output[$key] .= "<td width='50%'>Raid Duration</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right'>".round($offense_threshold)."%"."</td>";
+				$output[$key] .= "<td>Success Chance</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right'>&nbsp;";
+				$output[$key] .= "</td>";
+				$output[$key] .= "<td>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "Start Raid";
 						if($offense_id == $row["realm_id"]){
 							$value = "Friendly Fire";
 						}
-						$output["key"] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+						$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
-						$output["key"] .= "<strong>Raid in Progress</strong><br><br>";
+						$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
 					}
 				}else{
-					$output["key"] .= "<strong>Max Raids Reached</strong><br><br>";
+					$output[$key] .= "<strong>Max Raids Reached</strong><br><br>";
 				}
-				$output["key"] .= "</td>";
-				$output["key"] .= "</tr>";
-				$output["key"] .= "</table>";
-				$output["key"] .= "</td>";
-				$output["key"] .= "<td width='25%' valign='top' align='left'>";
-				$output["key"] .= "<table id='transactions' style='border-style:none'>";
+				$output[$key] .= "</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "</table>";
+				$output[$key] .= "</td>";
+				$output[$key] .= "<td width='25%' valign='top' align='left'>";
+				$output[$key] .= "<table id='transactions' style='border-style:none'>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
-					$output["key"] .= "<tr>";
-					$output["key"] .= "<td align='right' width='50%'>".$level."</td>";
-					$output["key"] .= "<td width='50%'>".ucfirst($location_name)."</td>";
-					$output["key"] .= "</tr>";
+					$output[$key] .= "<tr>";
+					$output[$key] .= "<td align='right' width='50%'>".$level."</td>";
+					$output[$key] .= "<td width='50%'>".ucfirst($location_name)."</td>";
+					$output[$key] .= "</tr>";
 				}
-				$output["key"] .= "</table>";
-				$output["key"] .= "</td>";
-				$output["key"] .= "<td width='25%' valign='top' align='right'>";
-				$output["key"] .= "<table id='transactions' style='border-style:none'>";
+				$output[$key] .= "</table>";
+				$output[$key] .= "</td>";
+				$output[$key] .= "<td width='25%' valign='top' align='right'>";
+				$output[$key] .= "<table id='transactions' style='border-style:none'>";
 				$balances = array_slice($balances, 0, 7, true);
 				foreach($balances AS $currency => $balance){
-					$output["key"] .= "<tr>";
-					$output["key"] .= "<td align='right' width='50%'>".number_format($balance)."</td>";
-					$output["key"] .= "<td width='50%'>".$currency."</td>";
-					$output["key"] .= "</tr>";
+					$output[$key] .= "<tr>";
+					$output[$key] .= "<td align='right' width='50%'>".number_format($balance)."</td>";
+					$output[$key] .= "<td width='50%'>".$currency."</td>";
+					$output[$key] .= "</tr>";
 				}
-				$output["key"] .= "</table>";
-				$output["key"] .= "</td>";
-				$output["key"] .= "</tr>";
+				$output[$key] .= "</table>";
+				$output[$key] .= "</td>";
+				$output[$key] .= "</tr>";
 			}
-			$output["key"] = "<table width='100%' id='transactions'>".$output["key"];
-			$output["key"] .= "</table>";
+			
 			if($sort == "random"){
 				ksort($output);
 			}else if($sort == "weakness"){
@@ -4603,7 +4602,11 @@ function getRealms($conn, $sort){
 				ksort($output);
 				$output = array_reverse($output);
 			}
-			echo $output;
+			echo "<table width='100%' id='transactions'>";
+			foreach($output AS $key => $val);
+				echo $val;
+			}
+			echo "</table>";
 		}else{
 		
 		}
