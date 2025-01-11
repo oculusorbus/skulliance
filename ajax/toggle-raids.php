@@ -3,7 +3,7 @@ include '../db.php';
 include '../skulliance.php';
 
 if(isset($_GET['visibility']) && isset($_GET['type']) && isset($_GET['status'])){
-	$_SESSION['userData']['total_raids'] = $_GET['visibility'];
+	$_SESSION['userData'][$_GET['type'].'-'.$_GET['status'].'-raids'] = $_GET['visibility'];
 }else{
 	echo "No Session";
 }
