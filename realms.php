@@ -281,7 +281,7 @@ if($filterByRealms != ""){
 		document.getElementById('realms').style.position = "relative";
 		document.getElementById('realms').style.top = '-105px';
 		document.getElementById('realm').style.position = "relative";
-		document.getElementById('realm').style.top = '-20px';
+		document.getElementById('realm').style.top = '-25px';
 		if(window.location.hash == "#realms"){
 			document.getElementById('realms').style.display = "block";
 			document.getElementById('realms-icon').classList.add("selected");
