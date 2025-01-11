@@ -449,7 +449,6 @@ function toggleRaids(arrow, category, results){
 	    if (xhttp.status == 200) {
 			// Access the data returned by the server
 			var data = xhttp.responseText;
-			console.log(data);
 	    } else {
 	      // Handle error
 			alert("AJAX Error");
