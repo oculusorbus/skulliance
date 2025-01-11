@@ -4506,6 +4506,7 @@ function getRealms($conn, $sort){
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).$row['realm_id'];
 				}
+				$output[$key] = "";
 				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
@@ -4603,7 +4604,7 @@ function getRealms($conn, $sort){
 				$output = array_reverse($output);
 			}
 			echo "<table width='100%' id='transactions'>";
-			foreach($output AS $key => $val);
+			foreach($output AS $key => $val){
 				echo $val;
 			}
 			echo "</table>";
