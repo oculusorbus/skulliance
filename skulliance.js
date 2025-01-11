@@ -423,6 +423,40 @@ function toggleCurrentMissions(arrow){
 	};
 }
 
+function toggleRaids(this, category, results){
+	var xhttp = new XMLHttpRequest();
+	var visibility = "";
+	
+	if(arrow.id == 'down'){
+		arrow.id = 'up';
+		arrow.src = 'icons/up.png';
+		visibility = 'hide';
+		document.getElementById(category+'-'+results+'raids-container').style.display = 'none';
+	}else{
+		arrow.id = 'down';
+		arrow.src = 'icons/down.png';
+		visibility = 'show';
+		document.getElementById(category+'-'+results+'raids-container').style.display = 'block';
+	}
+	
+	xhttp.open('GET', 'ajax/toggle-raids.php?visibility='+visibility+'&type='+category+'&status='+results, true);
+	
+	xhttp.send();
+
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
+}
+
 function toggleTotalRaids(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";

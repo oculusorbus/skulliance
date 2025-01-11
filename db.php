@@ -4793,10 +4793,10 @@ function getRaids($conn, $type, $status="pending"){
 		$arrow = "down";
 		$display = "block";
 		if(isset($_SESSION['userData'][$type."-".$status])){
-			if($_SESSION['userData'][$type."-".$status] == "show"){
+			if($_SESSION['userData'][$type."-".$status."-raids"] == "show"){
 				$arrow = "down";
 				$display = "block";
-			}else if($_SESSION['userData'][$type."-".$status] == "hide"){
+			}else if($_SESSION['userData'][$type."-".$status."-raids"] == "hide"){
 				$arrow = "up";
 				$display = "none";
 			}
