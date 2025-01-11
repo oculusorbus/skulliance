@@ -167,7 +167,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	<div class="main">
 	<div id="raids">
 		<?php 
-		//getTotalRaids($conn);
+		getTotalRaids($conn);
 		$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 		if(isset($outgoing_raids)){
 			echo '<div class="content raids"><h2>Outgoing Raids</h2>';
