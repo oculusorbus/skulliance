@@ -4568,9 +4568,9 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
-						$value = "Start Raid";
+						$value = "START RAID";
 						if($offense_id == $row["realm_id"]){
-							$value = "Friendly Fire";
+							$value = "FRIENDLY FIRE";
 						}
 						$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
