@@ -280,6 +280,8 @@ if($filterByRealms != ""){
 		document.getElementById('raids').style.top = '-65px';
 		document.getElementById('realms').style.position = "relative";
 		document.getElementById('realms').style.top = '-105px';
+		document.getElementById('realm').style.position = "relative";
+		document.getElementById('realm').style.top = '-35px';
 		if(window.location.hash == "#realms"){
 			document.getElementById('realms').style.display = "block";
 			document.getElementById('realms-icon').classList.add("selected");
