@@ -315,7 +315,7 @@ if($filterByRealms != ""){
 		if($(window).width() <= 700){
 			window.scrollTo(0, 0);
 			document.getElementById('locations').style.display = "none";
-			document.getElementById('locations-icon').classList.add("selected");
+			document.getElementById('locations-icon').classList.remove("selected");
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
