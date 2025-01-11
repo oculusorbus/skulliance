@@ -11,4 +11,7 @@ if(isset($_GET['missions'])){
 if(isset($_GET['streaks'])){
 	checkStreaksLeaderboard($conn, false, true);
 }
+if(isset($_GET['raids'])){
+	checkRaidsLeaderboard($conn, false, true);
+}
 ?>
