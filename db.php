@@ -4859,7 +4859,7 @@ function getRaids($conn, $type, $status="pending"){
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<tr>";
 				$rows[$decimal] .= "<td valign='top'>";
-				$rows[$decimal] .= "<img style='width:50px;padding-top:10px;' onError='this.src=\"/staking/icons/skull.png\";' src='images/".$row["theme_id"].".jpg' class='icon'/>";
+				$rows[$decimal] .= "<img style='width:50px;padding-top:10px;' onError='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg' class='icon'/>";
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $row["realm_name"];
