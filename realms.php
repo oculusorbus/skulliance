@@ -106,7 +106,7 @@ if(isset($_SESSION['userData']['user_id'])){
 					<label for="realm">Realm Name</label><br>
 					<input type="text" id="realm" name="realm" size="30" required><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
-					<p id="disclaimer">By creating your realm, you agree to being vulnerable to raids from other realm owners who may attack your realm, damage your locations, and steal your points. You can raid other realms but raid failures also result in damage to your locations. If you anticipate that you are not going to be dedicated to protecting your realm and raiding on a regular basis, don't create a realm. Abandoned realms are a prime target for plundering which can lead to complete poverty and devastation. Choose wisely.</p>
+					<p id="disclaimer">By creating your realm, you agree to being vulnerable to raids from other realm owners who may attack your realm, damage your locations, and steal your points. You can raid other realms but raid failures also result in damage to your locations. If you anticipate that you are not going to be dedicated to protecting your realm and raiding on a regular basis, don't create a realm. Abandoned realms are a prime target for plundering which can lead to complete poverty and devastation. Choose your path wisely, there is no turning back.</p>
 					<input class="button" type="submit" value="Create">
 				</form>
 				</li>
