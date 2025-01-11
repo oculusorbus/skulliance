@@ -319,7 +319,7 @@ if($filterByRealms != ""){
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
+			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
 			document.getElementById('realms-icon').classList.remove("selected");
 			if ($('#'+selection).length > 0) {
