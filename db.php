@@ -4914,81 +4914,8 @@ function getTotalRaids($conn){
 			$display = "none";
 		}
 	}
-	/*
-	if ($month_result->num_rows > 0) {
-	  	echo "<h2>Raids Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
-	  	echo '<a name="total-missions" id="total-missions"></a>';
-	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
-		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Raids</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
-		while($month_row = $month_result->fetch_assoc()) {
-			echo "<tr class='month-row'>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/calendar.png'/>";
-			echo date('F');
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/score.png'/>";
-			echo number_format(calculateScore($month_row["total_duration"], $month_row["success"], $month_row["failure"], $month_row["progress"]));
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/total.png'/>";
-			echo $month_row["total"];
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/time.png'/>";
-			echo $month_row["progress"];
-			echo "</td>";
-			echo "<td align='center'>";
-			$success_percentage = 0;
-			$over50 = "";
-			if($month_row["total"]-$month_row["progress"] != 0){
-				$success_percentage = $month_row["success"]/($month_row["total"]-$month_row["progress"])*100;
-			}else{
-				$success_percentage = 0;
-			}
-			if(round($success_percentage) > 50){
-				$over50 = "over50";
-			}
-			?>
-			<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
-			   <span><?php echo round($success_percentage, 2)."%";?></span>
-			   <div class="left-half-clipper">
-			      <div class="first50-bar success"></div>
-			      <div class="value-bar success-bar"></div>
-			   </div>
-			</div>
-			<?php
-			echo "<span class='outcome-total'>".$month_row["success"]."</span>";
-			echo "</td>";
-			echo "<td align='center'>";
-			$failure_percentage = 0;
-			$over50 = "";
-			if($month_row["total"]-$month_row["progress"] != 0){
-				$failure_percentage = $month_row["failure"]/($month_row["total"]-$month_row["progress"])*100;
-			}else{
-				$failure_percentage = 0;
-			}
-			if(round($failure_percentage) > 50){
-				$over50 = "over50";
-			}
-			?>
-			<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
-			   <span><?php echo round($failure_percentage, 2)."%";?></span>
-			   <div class="left-half-clipper">
-			      <div class="first50-bar failure"></div>
-			      <div class="value-bar failure-bar"></div>
-			   </div>
-			</div>
-			<?php
-			echo "<span class='outcome-total'>".$month_row["failure"]."</span>";
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/trophy.png'/>";
-			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly-raids'/><input type='submit' class='small-button' value='".date("F")."'/></form>";
-			echo "</td>";
-			echo "</tr>";
-		}
+	
+
 		$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id WHERE success_raids.outcome = '1' AND success_users.id = users.id) AS success, 
 		               (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN realms AS failed_realms ON failed_realms.id = failed_raids.offense_id INNER JOIN users AS failed_users ON failed_users.id = failed_realms.user_id  WHERE failed_raids.outcome = '2' AND failed_users.id = users.id) AS failure, 
 					   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.offense_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id  WHERE progress_raids.outcome = '0' AND progress_users.id = users.id) AS progress, 
