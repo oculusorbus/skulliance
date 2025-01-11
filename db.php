@@ -4792,7 +4792,7 @@ function getRaids($conn, $type, $status="pending"){
 		// Handle Toggle Sessions
 		$arrow = "down";
 		$display = "block";
-		if(isset($_SESSION['userData'][$type."-".$status])){
+		if(isset($_SESSION['userData'][$type."-".$status."-raids"])){
 			if($_SESSION['userData'][$type."-".$status."-raids"] == "show"){
 				$arrow = "down";
 				$display = "block";
