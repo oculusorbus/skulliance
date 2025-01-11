@@ -256,6 +256,19 @@ a{
 	font-family: Courier;
 }
 
+#filterRealms {
+    width: 190px;
+    border-radius: 0;
+    height: 30px;
+    font-weight: bold;
+    background-color: #2F3136;
+    color: #D6DDDE;
+    text-align: left;
+    font-size: 20px;
+    border: 1px solid #43464D;
+	font-family: Courier;
+}
+
 #filterLeaderboard {
     width: 190px;
     border-radius: 0;
