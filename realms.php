@@ -307,8 +307,10 @@ if($filterByRealms != ""){
 		}
 	}else{
 		document.getElementById('quick-menu').style.display = "none";
-		//document.getElementById('row1').style.position = "relative";
-		//document.getElementById('row1').style.top = '-65px';
+		document.getElementById('raids').style.position = "relative";
+		document.getElementById('raids').style.top = '-65px';
+		document.getElementById('realms').style.position = "relative";
+		document.getElementById('realms').style.top = '-65px';
 	}
 	
 	function toggleSections(selection){
