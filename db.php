@@ -4789,10 +4789,24 @@ function getRaids($conn, $type, $status="pending"){
 			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY outcome, raids.id ASC LIMIT 10";
 		$result = $conn->query($sql);
 		
-		$status = "";
+		// Handle Toggle Sessions
+		if(isset($_SESSION['userData'][$type."-".$status])){
+			if($_SESSION['userData'][$type."-".$status] == "show"){
+				$arrow = "down";
+				$display = "block";
+			}else if($_SESSION['userData'][$type."-".$status] == "hide"){
+				$arrow = "up";
+				$display = "none";
+			}
+		}
+		
+
 		$final_output = "";
 		if ($result->num_rows > 0) {
 			// output data of each row
+			$final_output .= "<h2>".ucfirst($type)." ".ucfirst($status)."&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleRaids(this, ".$type.", ".$status.")'/></h2>";
+			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container" style="display:'.$display.'">';
+			$status = "";
 			$final_output .= "<table id='transactions'>";
 			$final_output .=  "<th width='6%'>Icon</th><th width='20%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='20%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>Status</th></th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
 			$rows = array();
@@ -4883,7 +4897,7 @@ function getRaids($conn, $type, $status="pending"){
 			foreach($rows AS $duration => $output){
 			    $final_output .= $output;
 			}
-			$final_output .=  "</table>";
+			$final_output .=  "</table></div>";
 			return $final_output;
 		} else {
 		  //echo "0 results";
