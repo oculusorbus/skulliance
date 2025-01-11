@@ -199,6 +199,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	<div id="realms">
 		<a name="realms" id="realms"></a>
 		<div class="content realms">
+			<h2>Realms</h2>
 			<?php echo '
 			<div id="filter-nfts" style="z-index:99;top:25px">
 				<label for="filterNFTs"><strong>Theme:</strong></label>
@@ -215,7 +216,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				  <input type="submit" value="Submit" style="display:none;">
 				</form>
 			</div>';?>
-			<h2>Realms</h2>
 			<?php
 			getRealms($conn);
 			?>
