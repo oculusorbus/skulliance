@@ -201,7 +201,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<a name="realms" id="realms"></a>
 		<div class="content realms" id="filtered-content">
 			<?php echo '
-			<div id="filter-nfts" style="z-index:99;top:25px">
+			<div id="filter-nfts">
 				<label for="filterNFTs"><strong>Theme:</strong></label>
 				<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">';
 					echo '<option value="random">Default</option>';
