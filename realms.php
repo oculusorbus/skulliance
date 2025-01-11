@@ -176,7 +176,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		}	
 		$outgoing_completed = getRaids($conn, "outgoing", "completed"); 
 		if(isset($outgoing_completed)){
-			echo '<div class="content raids"><h2>Outgoing Completed</h2>';
+			echo '<div class="content raids">';
 			echo $outgoing_completed;
 			echo '</div>';
 		}	
