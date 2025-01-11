@@ -211,7 +211,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 			<div id="filter-nfts">
 				<label for="filterRealms"><strong>Sort By:</strong></label>
 				<select onchange="javascript:filterRealms(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealms">';
-					echo '<option value="random">Default</option>';
 					echo '<option value="random">Random</option>';
 					echo '<option value="weakness">Weakness</option>';
 					echo '<option value="strength">Strength</option>';
