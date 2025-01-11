@@ -311,6 +311,8 @@ if($filterByRealms != ""){
 		}
 	}else{
 		document.getElementById('quick-menu').style.display = "none";
+		//document.getElementById('row1').style.position = "relative";
+		//document.getElementById('row1').style.top = '-65px';
 	}
 	
 	function toggleSections(selection){
