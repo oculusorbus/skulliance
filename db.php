@@ -4812,7 +4812,6 @@ function getRaids($conn, $type, $status="pending"){
 					$status = "Completed";
 					if($row["outcome"] == 0){
 						$outcome = endRaid($conn, $row['raid_id']);
-						break;
 					}else{
 						$outcome = $row["outcome"];
 					}
