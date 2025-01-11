@@ -4996,7 +4996,7 @@ $sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER
 		        COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id 
 			    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE users.id = '".$_SESSION['userData']['user_id']."'";
 		$result = $conn->query($sql);
-		/*
+
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				echo "<tr>";
@@ -5065,11 +5065,10 @@ $sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER
 				echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='raids'/><input type='submit' class='small-button' value='All Time'/></form>";
 				echo "</td>";
 				echo "</tr>";
-				}
 			}
-		echo "</table><br>";
 		}
-		echo "</div>";*/
+		echo "</table><br>";
+		echo "</div>";
 }
 
 function getRaidRealmID($conn, $raid_id, $faction){
