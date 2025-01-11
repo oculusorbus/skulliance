@@ -224,7 +224,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				</form>
 			</div>';?>
 			<?php
-			getRealms($conn);
+			$sort = $filterByRealms;
+			getRealms($conn, $sort);
 			?>
 		</div>
 	</div>

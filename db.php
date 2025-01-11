@@ -4476,7 +4476,7 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 	}
 }
 
-function getRealms($conn){
+function getRealms($conn, $sort){
 	if(isset($_SESSION['userData']['user_id'])){
 		$offense_id = getRealmID($conn);
 		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, theme_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id
@@ -4486,17 +4486,9 @@ function getRealms($conn){
 	
 		$last_realm_id = 0;
 		$balances_display = "";
-		echo "<table width='100%' id='transactions'>";
+		$output = array();
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
-				echo "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
-				echo "<tr>";
-				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions' style='border-style:none'>";
-				echo "<tr><td align='center'>";
-				echo "<img src='images/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
-				echo "</td></tr>";
-				echo "</table>";
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$total = $defense + $offense;
@@ -4504,84 +4496,114 @@ function getRealms($conn){
 				$defense_threshold = $percentage * $defense;
 				$offense_threshold = $percentage * $offense;
 				$duration = ceil($defense/$offense);
+				$balances = getRealmBalances($conn, $row['user_id']);
+				
+				$key = "";
+				if($sort == "random"){
+					$key = $row['realm_id'];
+				}else if($sort == "weakness" || $sort == "strength"){
+					$key = $defense_threshold.$row['realm_id'];
+				}else if($sort == "wealth"){
+					$key = array_sum($balances).$row['realm_id'];
+				}
+				$output["key"] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td width='25%' valign='top' align='left'>";
+				$output["key"] .= "<table id='transactions' style='border-style:none'>";
+				$output["key"] .= "<tr><td align='center'>";
+				$output["key"] .= "<img src='images/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
+				$output["key"] .= "</td></tr>";
+				$output["key"] .= "</table>";
 				if($duration <= 0){
 					$duration = 1;
 				}
-				echo "</td>";
-				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions' style='border-style:none'>";
-				echo "<tr>";
-				echo "<td align='right' width='50%'>";
+				$output["key"] .= "</td>";
+				$output["key"] .= "<td width='25%' valign='top' align='left'>";
+				$output["key"] .= "<table id='transactions' style='border-style:none'>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td align='right' width='50%'>";
 					if($row["avatar"] != ""){
-						echo "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+						$output["key"] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 					}
-				echo "</td>";
-				echo "<td width='50%'>".$row["username"]."</td>";
-				echo "</tr>";
-				echo "</tr>";
-				echo "<tr>";
-				echo "<td align='right'>Level ".$offense."</td>";
-				echo "<td>Your Offense</td>";
-				echo "</tr>";
-				echo "<tr>";
-				echo "<td align='right'>Level ".$defense."</td>";
-				echo "<td>Their Defense</td>";
-				echo "</tr>";
-				echo "<tr>";
-				echo "<td align='right' width='50%'>".$duration." ".(($duration == 1)?"day":"days")."</td>";
-				echo "<td width='50%'>Raid Duration</td>";
-				echo "</tr>";
-				echo "<tr>";
-				echo "<td align='right'>".round($offense_threshold)."%"."</td>";
-				echo "<td>Success Chance</td>";
-				echo "</tr>";
-				echo "<tr>";
-				echo "<td align='right'>&nbsp;";
-				echo "</td>";
-				echo "<td>";
+				$output["key"] .= "</td>";
+				$output["key"] .= "<td width='50%'>".$row["username"]."</td>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td align='right'>Level ".$offense."</td>";
+				$output["key"] .= "<td>Your Offense</td>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td align='right'>Level ".$defense."</td>";
+				$output["key"] .= "<td>Their Defense</td>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td align='right' width='50%'>".$duration." ".(($duration == 1)?"day":"days")."</td>";
+				$output["key"] .= "<td width='50%'>Raid Duration</td>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td align='right'>".round($offense_threshold)."%"."</td>";
+				$output["key"] .= "<td>Success Chance</td>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "<tr>";
+				$output["key"] .= "<td align='right'>&nbsp;";
+				$output["key"] .= "</td>";
+				$output["key"] .= "<td>";
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "Start Raid";
 						if($offense_id == $row["realm_id"]){
 							$value = "Friendly Fire";
 						}
-						echo "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+						$output["key"] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 					}else{
-						echo "<strong>Raid in Progress</strong><br><br>";
+						$output["key"] .= "<strong>Raid in Progress</strong><br><br>";
 					}
 				}else{
-					echo "<strong>Max Raids Reached</strong><br><br>";
+					$output["key"] .= "<strong>Max Raids Reached</strong><br><br>";
 				}
-				echo "</td>";
-				echo "</tr>";
-				echo "</table>";
-				echo "</td>";
-				echo "<td width='25%' valign='top' align='left'>";
-				echo "<table id='transactions' style='border-style:none'>";
+				$output["key"] .= "</td>";
+				$output["key"] .= "</tr>";
+				$output["key"] .= "</table>";
+				$output["key"] .= "</td>";
+				$output["key"] .= "<td width='25%' valign='top' align='left'>";
+				$output["key"] .= "<table id='transactions' style='border-style:none'>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
-					echo "<tr>";
-					echo "<td align='right' width='50%'>".$level."</td>";
-					echo "<td width='50%'>".ucfirst($location_name)."</td>";
-					echo "</tr>";
+					$output["key"] .= "<tr>";
+					$output["key"] .= "<td align='right' width='50%'>".$level."</td>";
+					$output["key"] .= "<td width='50%'>".ucfirst($location_name)."</td>";
+					$output["key"] .= "</tr>";
 				}
-				echo "</table>";
-				echo "</td>";
-				echo "<td width='25%' valign='top' align='right'>";
-				echo "<table id='transactions' style='border-style:none'>";
-				$balances = getRealmBalances($conn, $row['user_id']);
+				$output["key"] .= "</table>";
+				$output["key"] .= "</td>";
+				$output["key"] .= "<td width='25%' valign='top' align='right'>";
+				$output["key"] .= "<table id='transactions' style='border-style:none'>";
 				$balances = array_slice($balances, 0, 7, true);
 				foreach($balances AS $currency => $balance){
-					echo "<tr>";
-					echo "<td align='right' width='50%'>".number_format($balance)."</td>";
-					echo "<td width='50%'>".$currency."</td>";
-					echo "</tr>";
+					$output["key"] .= "<tr>";
+					$output["key"] .= "<td align='right' width='50%'>".number_format($balance)."</td>";
+					$output["key"] .= "<td width='50%'>".$currency."</td>";
+					$output["key"] .= "</tr>";
 				}
-				echo "</table>";
-				echo "</td>";
-				echo "</tr>";
+				$output["key"] .= "</table>";
+				$output["key"] .= "</td>";
+				$output["key"] .= "</tr>";
 			}
-			echo "</table>";
+			$output["key"] = "<table width='100%' id='transactions'>".$output["key"];
+			$output["key"] .= "</table>";
+			if($sort == "random"){
+				ksort($output);
+			}else if($sort == "weakness"){
+				ksort($output);
+			}else if($sort == "strength"){
+				ksort($output);
+				$output = array_reverse($output);
+			}else if($sort == "wealth"){
+				ksort($output);
+				$output = array_reverse($output);
+			}
+			echo $output;
 		}else{
 		
 		}
