@@ -389,7 +389,41 @@ function toggleTotalMissions(arrow){
 	};
 }
 
-function toggleCurrentMissions(arrow){
+function toggleTotalMissions(arrow){
+	var xhttp = new XMLHttpRequest();
+	var visibility = "";
+	
+	if(arrow.id == 'down'){
+		arrow.id = 'up';
+		arrow.src = 'icons/up.png';
+		visibility = 'hide';
+		document.getElementById('total-missions-container').style.display = 'none';
+	}else{
+		arrow.id = 'down';
+		arrow.src = 'icons/down.png';
+		visibility = 'show';
+		document.getElementById('total-missions-container').style.display = 'block';
+	}
+	
+	xhttp.open('GET', 'ajax/toggle-total-missions.php?visibility='+visibility, true);
+	
+	xhttp.send();
+
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
+}
+
+function toggleCurrentRaids(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
@@ -405,7 +439,7 @@ function toggleCurrentMissions(arrow){
 		document.getElementById('current-missions-container').style.display = 'block';
 	}
 	
-	xhttp.open('GET', 'ajax/toggle-current-missions.php?visibility='+visibility, true);
+	xhttp.open('GET', 'ajax/toggle-current-raids.php?visibility='+visibility, true);
 	
 	xhttp.send();
 
