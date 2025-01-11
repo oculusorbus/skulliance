@@ -4528,7 +4528,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
 				$output[$key] .= "<tr><td align='center'>";
-				$output[$key] .= "<img src='images/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
+				$output[$key] .= "<img src='images/themes/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
 				$output[$key] .= "</td></tr>";
 				$output[$key] .= "</table>";
 				if($duration <= 0){
