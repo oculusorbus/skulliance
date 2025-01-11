@@ -423,7 +423,7 @@ function toggleCurrentMissions(arrow){
 	};
 }
 
-function toggleRaids(this, category, results){
+function toggleRaids(arrow, category, results){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
