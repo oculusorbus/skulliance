@@ -197,7 +197,24 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <div class="row" id="row2">	
 	<div class="main">
 	<div id="realms">
+		<a name="realms" id="realms"></a>
 		<div class="content realms">
+			<?php echo '
+			<div id="filter-nfts" style="z-index:99;top:25px">
+				<label for="filterNFTs"><strong>Theme:</strong></label>
+				<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">';
+					echo '<option value="random">Default</option>';
+					echo '<option value="random">Random</option>';
+					echo '<option value="weakness">Weakness</option>';
+					echo '<option value="strength">Strength</option>';
+					echo '<option value="wealth">Wealth</option>';
+				echo '
+				</select>
+				<form id="filterNFTsForm" action="realms.php#realms" method="post">
+				  <input type="hidden" id="filterRealms" name="filterRealms" value="">
+				  <input type="submit" value="Submit" style="display:none;">
+				</form>
+			</div>';?>
 			<h2>Realms</h2>
 			<?php
 			getRealms($conn);
