@@ -4502,9 +4502,9 @@ function getRealms($conn, $sort){
 				if($sort == "random"){
 					$key = $row['realm_id'];
 				}else if($sort == "weakness" || $sort == "strength"){
-					$key = $defense_threshold.$row['realm_id'];
+					$key = $defense_threshold.".".$row['realm_id'];
 				}else if($sort == "wealth"){
-					$key = array_sum($balances).$row['realm_id'];
+					$key = array_sum($balances).".".$row['realm_id'];
 				}
 				$output[$key] = "";
 				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
