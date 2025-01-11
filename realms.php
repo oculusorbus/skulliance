@@ -24,7 +24,8 @@ if(isset($_POST['realmText'])){
 	}
 }
 
-if(isset($_SESSION['userData']['user_id'])){ ?>
+if(isset($_SESSION['userData']['user_id'])){ 
+	if($member){?>
 <!-- The flexible grid (content) -->
 
 <div class="row" id="row0">	
@@ -232,6 +233,20 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	</div>
 </div>
 <?php
+	}else{
+		echo "<div class='row'>";
+		echo "<div class='side'>";
+		echo "<h2>Connect Wallet</h2>";
+		echo "<div class='content' id='player-stats'>";
+		renderWalletConnection("missions");
+		echo "</div>";
+		echo "</div>";
+		echo "<div class='main'>";
+		echo "<h2>Skulliance Realms</h2>";
+		echo "<p>Please connect a Cardano wallet to view realms.<br><br>Once you begin staking your NFTs, you will need to become a Skulliance member to participate in raids.<br><br><a href='info.php'>View info on how to become a member of Skulliance.</a></p>";
+		echo "</div>";
+		echo "</div>";
+	}
 }else{
 	echo "<div class='row'>";
 	echo "<div class='side'>";
