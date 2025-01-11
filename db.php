@@ -4931,7 +4931,7 @@ function getTotalRaids($conn){
 	}
 	
 	if ($month_result->num_rows > 0) {
-	  	echo "<h2 class='raid-title'>Raids Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalRaids(this)'/></h2>";
+	  	echo "<h2 class='raid-title'>Raid Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalRaids(this)'/></h2>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		echo "<table id='transactions' cellspacing='0'>";
