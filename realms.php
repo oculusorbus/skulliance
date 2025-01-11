@@ -25,7 +25,7 @@ if(isset($_POST['realmText'])){
 }
 
 if(isset($_SESSION['userData']['user_id'])){ 
-	if(!$member){?>
+	if($member){?>
 <!-- The flexible grid (content) -->
 
 <div class="row" id="row0">	
