@@ -196,6 +196,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 </div>
 <div class="row" id="row2">	
 	<div class="main">
+	<h2>Realms</h2>		
 	<div id="realms">
 		<a name="realms" id="realms"></a>
 		<div class="content realms" id="filtered-content">
@@ -215,7 +216,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				  <input type="submit" value="Submit" style="display:none;">
 				</form>
 			</div>';?>
-			<h2>Realms</h2>
 			<?php
 			getRealms($conn);
 			?>
