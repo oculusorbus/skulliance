@@ -202,8 +202,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realms" id="filtered-content">
 			<?php echo '
 			<div id="filter-nfts">
-				<label for="filterNFTs"><strong>Theme:</strong></label>
-				<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">';
+				<label for="filterRealms"><strong>Sort By:</strong></label>
+				<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealmss">';
 					echo '<option value="random">Default</option>';
 					echo '<option value="random">Random</option>';
 					echo '<option value="weakness">Weakness</option>';
@@ -211,7 +211,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					echo '<option value="wealth">Wealth</option>';
 				echo '
 				</select>
-				<form id="filterNFTsForm" action="realms.php#realms" method="post">
+				<form id="filterRealmsForm" action="realms.php#realms" method="post">
 				  <input type="hidden" id="filterRealms" name="filterRealms" value="">
 				  <input type="submit" value="Submit" style="display:none;">
 				</form>
