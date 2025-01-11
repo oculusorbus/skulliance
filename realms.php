@@ -247,6 +247,12 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 	echo "</div>";
 } 
 ?>
+<div id="quick-menu">
+	<img id="locations-icon" src="icons/locations.png" onclick="toggleSections('locations');">
+	<img id="realm-icon" src="icons/realm.png" onclick="toggleSections('realm');">
+	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
+	<img id="realms-icon" src="icons/quests.png" onclick="toggleSections('realms');">
+</div>
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
