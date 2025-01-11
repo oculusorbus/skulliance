@@ -276,6 +276,10 @@ if($filterByRealms != ""){
 	if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
+		document.getElementById('raids').style.position = "relative";
+		document.getElementById('raids').style.top = '-65px';
+		document.getElementById('realms').style.position = "relative";
+		document.getElementById('realms').style.top = '-65px';
 		if(window.location.hash == "#realms"){
 			document.getElementById('realms').style.display = "block";
 			document.getElementById('realms-icon').classList.add("selected");
@@ -307,10 +311,6 @@ if($filterByRealms != ""){
 		}
 	}else{
 		document.getElementById('quick-menu').style.display = "none";
-		document.getElementById('raids').style.position = "relative";
-		document.getElementById('raids').style.top = '-65px';
-		document.getElementById('realms').style.position = "relative";
-		document.getElementById('realms').style.top = '-65px';
 	}
 	
 	function toggleSections(selection){
