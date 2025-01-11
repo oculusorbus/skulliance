@@ -4593,7 +4593,7 @@ function getRealms($conn, $sort){
 			}
 			
 			if($sort == "random"){
-				ksort($output);
+				// Do nothing
 			}else if($sort == "weakness"){
 				ksort($output);
 			}else if($sort == "strength"){
