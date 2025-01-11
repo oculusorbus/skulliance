@@ -196,9 +196,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 </div>
 <div class="row" id="row2">	
 	<div class="main">
+	<a name="realms" id="realms"></a>
 	<h2>Realms</h2>		
 	<div id="realms">
-		<a name="realms" id="realms"></a>
 		<div class="content realms" id="filtered-content">
 			<?php echo '
 			<div id="filter-nfts">
