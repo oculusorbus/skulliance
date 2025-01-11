@@ -129,7 +129,7 @@ if(isset($_SESSION['userData']['user_id'])){
 		}else{
 			$image = getRealmThemeID($conn, $realm_id);
 		}?>
-		<img src="images/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
+		<img src="images/themes/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php if(isset($image)){
 		echo '
 		<div id="filter-nfts" style="top:25px">
@@ -233,6 +233,7 @@ if(isset($_SESSION['userData']['user_id'])){
 	</div>
 </div>
 <?php
+	// Non-member message
 	}else{
 		echo "<div class='row'>";
 		echo "<div class='side'>";
