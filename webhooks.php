@@ -3,7 +3,7 @@ include('credentials/webhooks_credentials.php');
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $avatar_url="") {
+    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="") {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -23,8 +23,8 @@ include('credentials/webhooks_credentials.php');
 		}else{
 			$webhook = getWebhook();
 		}
-		if($avatar_url == ""){
-			$avatar_url = "https://skulliance.io/staking/icons/skulliance.png";
+		if($thumbnail == ""){
+			$thumbnail = "https://skulliance.io/staking/icons/skulliance.png";
 		}
 	    $timestamp = date("c", strtotime("now"));
 	    $msg = json_encode([
@@ -36,7 +36,7 @@ include('credentials/webhooks_credentials.php');
 
 	    // Avatar URL.
 	    // Uncomment to use custom avatar instead of bot's pic
-	    "avatar_url" => $avatar_url,
+	    "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
 
 	    // text-to-speech
 	    "tts" => false,
@@ -79,7 +79,7 @@ include('credentials/webhooks_credentials.php');
 
 		            // thumbnail
 		            "thumbnail" => [
-		                "url" => "https://skulliance.io/staking/icons/skulliance.png"
+		                "url" => $thumbnail
 		            ],
 
 		            // Author name & url

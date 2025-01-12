@@ -19,8 +19,8 @@ if(isset($_POST['realm'])){
 		$title = $realm_name;
 		$description = $realm_name." has been established by:\r\n\r\n".getUsername($conn)." <@".$_SESSION['userData']['discord_id'].">";
 		$imageurl = "https://www.skulliance.io/staking/images/themes/".$theme_id.".jpg";
-		$avatar_url = "https://cdn.discordapp.com/avatars/".$_SESSION['userData']["discord_id"]."/".$_SESSION['userData']["avatar"].".jpg";
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "", $avatar_url);
+		$thumbnail = "https://cdn.discordapp.com/avatars/".$_SESSION['userData']["discord_id"]."/".$_SESSION['userData']["avatar"].".jpg";
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "", $thumbnail);
 	}
 }
 
