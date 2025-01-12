@@ -17,7 +17,7 @@ if(isset($_POST['realm'])){
 		updateRealmTheme($conn, $realm_id, $theme_id);
 		$realm_name = ucfirst(getRealmName($conn));
 		$title = $realm_name;
-		$description = " <@".$_SESSION['userData']['discord_id']."> ".getUsername($conn)." has just established ".$realm_name." in the Skulliverse!";
+		$description = $realm_name." has been established by ".getUsername($conn)." <@".$_SESSION['userData']['discord_id'].">";
 		$imageurl = "https://www.skulliance.io/images/themes/".$theme_id.".jpg";
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "realms");
 		echo $title."<br>";
