@@ -19,7 +19,7 @@ if(isset($_POST['realm'])){
 		$title = $realm_name;
 		$description = " <@".$_SESSION['userData']['discord_id']."> ".getUsername($conn)." has just established ".$realm_name." in the Skulliverse!";
 		$imageurl = "https://www.skulliance.io/images/themes/".$theme_id.".jpg";
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "members");
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "realms");
 		echo $title."<br>";
 		echo $description."<br>";
 		echo $imageurl."<br>";
