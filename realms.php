@@ -13,7 +13,7 @@ if(isset($_POST['realm'])){
 		$core_projects = getProjects($conn, "core");
 		$partner_projects = getProjects($conn, "partner");
 		$all_projects = array_merge($core_projects, $partner_projects);
-		$theme_id = array_rand($all_projects, 1);
+		$theme_id = $all_projects[array_rand($all_projects, 1)];
 		updateRealmTheme($conn, $realm_id, $theme_id);
 		$realm_name = ucfirst(getRealmName($conn));
 		$title = $realm_name;
