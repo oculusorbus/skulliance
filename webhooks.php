@@ -23,6 +23,9 @@ include('credentials/webhooks_credentials.php');
 		}else{
 			$webhook = getWebhook();
 		}
+		if($avatar_url == ""){
+			$avatar_url = "https://skulliance.io/staking/icons/skulliance.png";
+		}
 	    $timestamp = date("c", strtotime("now"));
 	    $msg = json_encode([
 	    // Message
@@ -33,9 +36,6 @@ include('credentials/webhooks_credentials.php');
 
 	    // Avatar URL.
 	    // Uncomment to use custom avatar instead of bot's pic
-		if($avatar_url == ""){
-			$avatar_url = "https://skulliance.io/staking/icons/skulliance.png";
-		}
 	    "avatar_url" => $avatar_url,
 
 	    // text-to-speech
