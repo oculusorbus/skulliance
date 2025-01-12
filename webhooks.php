@@ -17,7 +17,6 @@ include('credentials/webhooks_credentials.php');
 		}else if($channel == "innercircle"){
 			$webhook = getInnerCircleWebhook();
 		}else if($channel == "realms"){
-			alert('realms');
 			$webhook = getRealmsWebhook();
 		}else if($channel == "raids"){
 			$webhook = getRaidsWebhook();
