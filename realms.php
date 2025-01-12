@@ -15,8 +15,8 @@ if(isset($_POST['realm'])){
 		$all_projects = array_merge($core_projects, $partner_projects);
 		$theme_id = array_rand($all_projects, 1);
 		updateRealmTheme($conn, $realm_id, $theme_id);
-		$realm_name = getRealmName($conn);
-		$title = ucfirst(getRealmName($conn));
+		$realm_name = ucfirst(getRealmName($conn))
+		$title = $realm_name;
 		$description = " <@".$_SESSION['userData']['discord_id']."> ".getUsername($conn)." has just established ".$realm_name." in the Skulliverse!";
 		$imageurl = "https://www.skulliance.io/images/themes/".$theme_id.".jpg";
 		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "realms");
