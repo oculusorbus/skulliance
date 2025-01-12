@@ -6,6 +6,8 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
+print_r($_SESSION['userData']);
+
 if(isset($_POST['realm'])){
 	if(!checkRealm($conn)){
 		createRealm($conn, $_POST['realm']);
