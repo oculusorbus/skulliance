@@ -136,7 +136,7 @@ if(isset($_SESSION['userData']['user_id'])){
 				$filterby = $_POST['filterby'];
 			}else{
 				$project_info = getProjectInfo($conn, $_POST['filterby']);
-				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to save this theme.\n\r\n\rPurchase an NFT and refresh your wallet(s) to try again.");
+				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to save this theme./n/r/n/rPurchase an NFT and refresh your wallet(s) to try again.");
 			}
 		}else{
 			$image = getRealmThemeID($conn, $realm_id);
