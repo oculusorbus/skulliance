@@ -4220,6 +4220,23 @@ function updateRealmTheme($conn, $realm_id, $theme_id){
 	}
 }
 
+function verifyRealmTheme($conn, $theme_id){
+	$sql = "SELECT DISTINCT collections.project_id AS project_id, nfts.user_id AS user_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id 
+		    WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row["project_id"] == $theme_id){
+				return true;
+			}
+		}
+	} else {
+		return false;
+	}
+	return false;
+}
+
 function getRealmThemeID($conn, $realm_id){
 	$sql = "SELECT theme_id FROM realms WHERE id='".$realm_id."'";
 	$result = $conn->query($sql);
@@ -4810,7 +4827,6 @@ function getRaids($conn, $type, $status="pending"){
 			}
 		}
 		
-
 		$final_output = "";
 		if ($result->num_rows > 0) {
 			// output data of each row
