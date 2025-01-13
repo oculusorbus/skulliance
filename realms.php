@@ -137,6 +137,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			}else{
 				$project_info = getProjectInfo($conn, $_POST['filterby']);
 				$image = getRealmThemeID($conn, $realm_id);
+				$filterby = $image;
 				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to save this theme. Purchase an NFT and refresh your wallet(s) to try again.");
 			}
 		}else{
