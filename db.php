@@ -4858,9 +4858,9 @@ function getRaids($conn, $type, $status="pending"){
 					// Offense Success
 					if($outcome == 1){
 						$offense_results = "<strong>Success</strong><br>";
-						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
+						$offense_results .= "<br>".number_format(getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense"));
 						$defense_results = "<strong>Failure</strong><br>";
-						$defense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
+						$defense_results .= "<br>".number_format(getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense"));
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
