@@ -130,7 +130,7 @@ if(isset($_SESSION['userData']['user_id'])){
 	    <div class="content realm">
 		<?php
 		if(isset($_POST['filterby'])){
-			if(verifyRealmTheme($conn, $_POST['filterby'])){
+			if(verifyRealmTheme($conn, $_POST['filterby']) || $_POST['filterby'] == 0){
 				$image = $_POST['filterby'];
 				updateRealmTheme($conn, $realm_id, $_POST['filterby']);
 				$filterby = $_POST['filterby'];
