@@ -216,6 +216,10 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nf
 	if(isset($tokenresponsedata->minting_tx_metadata)){
 		foreach($tokenresponsedata->minting_tx_metadata AS $metadata){
 			$policy_id = $tokenresponsedata->policy_id;
+			if($policy_id == '3bcc312ebe7cd9281ab3e3d641bf70f207012e539b0e6e7c3f1560d7'){
+				print_r($tokenresponsedata);
+				exit;
+			}
 			if(isset($tokenresponsedata->asset_name_ascii)){
 				$asset_name = $tokenresponsedata->asset_name_ascii;
 				if(isset($metadata->$policy_id)){
