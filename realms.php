@@ -62,7 +62,15 @@ if(isset($_SESSION['userData']['user_id'])){
 					</table>
 				</li>
 				<?php
-				foreach($locations AS $location_id => $location){?>
+				$previous_type = "";
+				foreach($locations AS $location_id => $location){
+					if($previous_type == ""){
+						echo "<div class='location-wrapper ".$location['type']."'>";
+					}else if($previous_type != $location['type']){
+						echo "</div>";
+						echo "<div class='location-wrapper ".$location['type']."'>";
+					}
+					?>
 					<li class="role">
 						<table>
 							<tr>	
@@ -100,7 +108,9 @@ if(isset($_SESSION['userData']['user_id'])){
 							</table>
 						</li>
 				<?php
+				$previous_type = $location['type'];
 				}
+				echo "</div>";
 				?>
 				</ul>
 				<?php
