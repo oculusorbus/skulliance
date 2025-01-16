@@ -1401,11 +1401,11 @@ section.active {
 }
 
 .transport {
-    border: 3px solid #fa00ff;
+    border: 3px solid #00ffff;
 }
 
 .offense {
-    border: 3px solid #00ffff;
+    border: 3px solid #fa00ff;
 }
 
 .defense {
