@@ -4355,7 +4355,7 @@ function getRealmLocationLevels($conn){
 }
 
 function getRealmLocationNamesLevels($conn, $realm_id){
-	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
+	$sql = "SELECT locations.name AS name, location_id, level, locations.type AS location_type FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."' ORDER BY locations.type DESC";
 	$result = $conn->query($sql);
 	
 	$levels = array();
