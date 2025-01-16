@@ -229,6 +229,12 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nf
 							}else{
 								$nft_data->AssetName = $asset_name;
 							}
+							// When name is not present, but Name is present, make name Name
+							if(!isset($nft_data->name)){
+								if(isset($nft_data->Name)){
+									$nft_data->name = $nft_data->Name;
+								}
+							}
 							if(isset($nft_data->AssetName) && isset($nft_data->name) && isset($nft_data->image) && isset($tokenresponsedata->fingerprint)){
 								$payload = processNFT($conn, $policy_id, $nft_data->AssetName, $nft_data->name, $nft_data->image, $tokenresponsedata->fingerprint, $address, $asset_ids, $nft_owners, $collections);
 								$asset_ids = $payload["asset_ids"];
