@@ -1396,20 +1396,22 @@ section.active {
     font-weight: bold;
     width: 100%;
     height: 100%;
-    padding: 10px;
+    padding: 15px;
 	margin-top: 28px;
+	border: 4px solid #fff;
+	border-radius: 15px;
 }
 
 .transport {
-    border: 3px solid #00ffff;
+    border-color: #00ffff;
 }
 
 .offense {
-    border: 3px solid #fa00ff;
+    border-color: #fa00ff;
 }
 
 .defense {
-    border: 3px solid #b500ff;
+    border-color: #b500ff;
 }
 
 @media screen and (min-width: 1201px) {
