@@ -65,10 +65,10 @@ if(isset($_SESSION['userData']['user_id'])){
 				$previous_type = "";
 				foreach($locations AS $location_id => $location){
 					if($previous_type == ""){
-						echo "<div class='location-wrapper ".$location['type']."'>";
+						echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
 					}else if($previous_type != $location['type']){
 						echo "</div>";
-						echo "<div class='location-wrapper ".$location['type']."'>";
+						echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
 					}
 					?>
 					<li class="role">
