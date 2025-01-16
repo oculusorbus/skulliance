@@ -5248,7 +5248,7 @@ function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amoun
 }
 
 function selectRandomProjectID($conn, $realm_id){
-	$sql = "SELECT realms.id AS realm_id, project_id, balance FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON balances.user_id = users.id WHERE realms.id = '".$realm_id."'";
+	$sql = "SELECT realms.id AS realm_id, project_id, balance FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN balances ON balances.user_id = users.id WHERE realms.id = '".$realm_id."' AND balance > 0";
 	$result = $conn->query($sql);
 	
 	$project_ids = array();
