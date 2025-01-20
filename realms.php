@@ -120,6 +120,7 @@ if(isset($_SESSION['userData']['user_id'])){
 					$realm_id = getRealmID($conn);
 					echo "<h2>Realm Status</h2>";
 					$activation = checkRealmActivation($conn);
+					echo $activation;
 					if($activation == true){
 						echo '<input class="button" type="button" value="Reactivate Realm" onclick="reactivateRealm('.$realm_id.');">';
 					}else{
