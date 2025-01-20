@@ -5296,11 +5296,24 @@ function toggleRealmState($conn, $realm_id, $type){
 	if($type == "deactivate"){
 		$sql = "UPDATE realms SET active = '0', created_date = '".date('Y-m-d H:i:s')."' WHERE id='".$realm_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 		if ($conn->query($sql) === TRUE) {
-		  //echo "New record created successfully";
+			echo "Your Realm has been deactivated. You will not be able to reactivate it for 30 days.";
 		} else {
-		  //echo "Error: " . $sql . "<br>" . $conn->error;
+			echo "Error: " . $sql . "<br>" . $conn->error;
 		}
 	}else if($type == "activate"){
+		
+	}
+}
+
+function checkRealmState($conn){
+	$sql = "SELECT active FROM realms WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			return $row['active'];
+		}
+	}else{
 		
 	}
 }

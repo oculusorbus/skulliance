@@ -41,80 +41,84 @@ if(isset($_SESSION['userData']['user_id'])){
 			<?php
 			$projects = getProjects($conn, "core");
 			if(checkRealm($conn)){
-				$status = getRealmLocationsUpgrades($conn);
-				$locations = getLocationInfo($conn);
-				?>
-				<ul style='position:relative;top:-51px'>
-				<?php
-				$realm_id = getRealmID($conn);
-				$levels = getRealmLocationLevels($conn);
-				?>
-				<li class="role">
-					<table>
-					<tr> 
-						<td width="40%">
-							<img src="images/realms-logo.png" width="80%" style="position:relative;top:10px"/>
-						</td>
-						<td width="60%" valign="bottom">
-							<?php echo '<input class="small-button" type="button" value="Deactivate Realm" onclick="deactivateRealm('.$realm_id.');">';?>
-							<br><br>
-							<strong>Locations</strong>
-						</td>
-					</tr>
-					</table>
-				</li>
-				<?php
-				$previous_type = "";
-				foreach($locations AS $location_id => $location){
-					if($previous_type == ""){
-						echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
-					}else if($previous_type != $location['type']){
-						echo "</div>";
-						echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
-					}
+				if(checkRealmState($conn) == 1){
+					$status = getRealmLocationsUpgrades($conn);
+					$locations = getLocationInfo($conn);
+					?>
+					<ul style='position:relative;top:-51px'>
+					<?php
+					$realm_id = getRealmID($conn);
+					$levels = getRealmLocationLevels($conn);
 					?>
 					<li class="role">
 						<table>
-							<tr>	
-								<td width="40%">
-									<img style="opacity:0.85" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
-								</td>
-								<td width="60%">
-									<strong><?php echo strtoupper($location['name']); ?></strong><br>
-									<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
-									<?php if($levels[$location_id] != 10){ ?>
-										<?php 
-										if(!isset($status[$location_id])){  
-											$cost = (($levels[$location_id]+1)*100); ?>
-											<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
-											<?php $duration = $levels[$location_id]+1;?>
-											<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
-										<?php 
-											$balance = getBalance($conn, $location_id);
-											if($balance >= $cost){ ?>
-												<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost;?>)'>
-										<?php
-											}else{
-												echo "Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency'];
+						<tr> 
+							<td width="40%">
+								<img src="images/realms-logo.png" width="80%" style="position:relative;top:10px"/>
+							</td>
+							<td width="60%" valign="bottom">
+								<?php echo '<input class="small-button" type="button" value="Deactivate Realm" onclick="deactivateRealm('.$realm_id.');">';?>
+								<br><br>
+								<strong>Locations</strong>
+							</td>
+						</tr>
+						</table>
+					</li>
+					<?php
+					$previous_type = "";
+					foreach($locations AS $location_id => $location){
+						if($previous_type == ""){
+							echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
+						}else if($previous_type != $location['type']){
+							echo "</div>";
+							echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
+						}
+						?>
+						<li class="role">
+							<table>
+								<tr>	
+									<td width="40%">
+										<img style="opacity:0.85" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
+									</td>
+									<td width="60%">
+										<strong><?php echo strtoupper($location['name']); ?></strong><br>
+										<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
+										<?php if($levels[$location_id] != 10){ ?>
+											<?php 
+											if(!isset($status[$location_id])){  
+												$cost = (($levels[$location_id]+1)*100); ?>
+												<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
+												<?php $duration = $levels[$location_id]+1;?>
+												<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
+											<?php 
+												$balance = getBalance($conn, $location_id);
+												if($balance >= $cost){ ?>
+													<input class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost;?>)'>
+											<?php
+												}else{
+													echo "Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency'];
+												}
+										    }else{ 
+												echo $status[$location_id];
 											}
-									    }else{ 
-											echo $status[$location_id];
+										}else{
+											echo "<br>Reached Max Level";
 										}
-									}else{
-										echo "<br>Reached Max Level";
-									}
-									?>
-								</td>
-							</tr>
-							</table>
-						</li>
+										?>
+									</td>
+								</tr>
+								</table>
+							</li>
+					<?php
+					$previous_type = $location['type'];
+					}
+					echo "</div>";
+					?>
+					</ul>
 				<?php
-				$previous_type = $location['type'];
+				}else{
+					echo '<input class="button" type="button" value="Reactivate Realm" onclick="reactivateRealm('.$realm_id.');">';
 				}
-				echo "</div>";
-				?>
-				</ul>
-				<?php
 			}else{
 				?>
 				<h2>Create Your Realm</h2>
