@@ -5292,5 +5292,18 @@ function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 	logDebit($conn, $defense_user_id, $item_id=0, $amount, $project_id, $crafting=0, $mission_id=0, $location_id=0, $raid_id);
 }
 
+function toggleRealmState($conn, $realm_id, $type){
+	if($type == "deactivate"){
+		$sql = "UPDATE realms SET active = '0', created_date = '".date('Y-m-d H:i:s')."' WHERE id='".$realm_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
+		if ($conn->query($sql) === TRUE) {
+		  //echo "New record created successfully";
+		} else {
+		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+	}else if($type == "activate"){
+		
+	}
+}
+
 /* END REALMS */
 ?>
