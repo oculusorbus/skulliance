@@ -875,7 +875,7 @@ function editRealmName(editIcon){
 }
 
 function deactivateRealm(realmID){
-    if (confirm("Are you sure you want to deactivate your realm? You will not be able to reactivate it until after 30 days have passed. Deactivating your realm prevents other realms from raiding you, damaging your locations, and looting your points.")) {
+    if (confirm("Are you sure you want to deactivate your realm?\r\n\r\nYou will not be able to reactivate it until after 30 days have passed.\r\n\r\nDeactivating your realm prevents other realms from raiding you, damaging your locations, and looting your points.")) {
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/toggle-realm-state.php?type=deactivate&realm_id='+realmID, true);
 		xhttp.send();
