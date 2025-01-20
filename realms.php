@@ -234,12 +234,13 @@ if(isset($_SESSION['userData']['user_id'])){
 		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
 			<?php
+			if(isset($_POST['filterByRealms'])){
+				$filterByRealms = $_POST['filterByRealms'];
+			}else{
+				$filterByRealms = "random";
+			}
 			if(checkRealmState($conn) == 1){
-				if(isset($_POST['filterByRealms'])){
-					$filterByRealms = $_POST['filterByRealms'];
-				}else{
-					$filterByRealms = "random";
-				}?>
+				?>
 				<?php echo '
 				<div id="filter-nfts">
 					<label for="filterRealms"><strong>Sort By:</strong></label>
