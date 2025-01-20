@@ -180,6 +180,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			  <input type="hidden" id="filterby" name="filterby" value="">
 			  <input type="submit" value="Submit" style="display:none;">
 			</form>
+			<input class="small-button" type="button" value="Deactivate Realm" onclick="">
 		</div>';
 		}
 		?>
