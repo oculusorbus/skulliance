@@ -5324,7 +5324,7 @@ function checkRealmState($conn){
 }
 
 function checkRealmActivation($conn){
-	$sql = "SELECT id FROM realms WHERE user_id = '".$_SESSION['userData']['user_id']."' AND DATE(created_date) <= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
+	$sql = "SELECT id FROM realms WHERE user_id = '".$_SESSION['userData']['user_id']."' AND DATE(created_date) <= DATE_FORMAT((CURDATE() - INTERVAL 30 DAY),'%Y-%m-01')";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
