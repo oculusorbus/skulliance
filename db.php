@@ -5330,7 +5330,7 @@ function checkRealmActivation($conn){
 	if ($result->num_rows > 0) {
 		return true;
 	}else{
-		$sql = "SELECT DATE(created_date) + INTERVAL 30 DAY AS activation_date FROM realms WHERE user_id = '".$_SESSION['userData']['user_id']."')";
+		$sql = "SELECT DATE_ADD(DATE(created_date), INTERVAL 30 DAY) AS activation_date FROM realms WHERE user_id = '".$_SESSION['userData']['user_id']."')";
 		$result = $conn->query($sql);
 	
 		if ($result->num_rows > 0) {
