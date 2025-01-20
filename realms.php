@@ -243,6 +243,7 @@ if(isset($_SESSION['userData']['user_id'])){
 		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
 			<?php
+			$filterByRealms = "";
 			if(!checkRealm($conn)){
 				if(isset($_POST['filterByRealms'])){
 					$filterByRealms = $_POST['filterByRealms'];
