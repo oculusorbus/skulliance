@@ -56,6 +56,7 @@ if(isset($_SESSION['userData']['user_id'])){
 							<img src="images/realms-logo.png" width="80%" style="position:relative;top:10px"/>
 						</td>
 						<td width="60%" valign="bottom">
+							<input class="small-button" type="button" value="Deactivate Realm" onclick="">
 							<strong>Locations</strong>
 						</td>
 					</tr>
@@ -179,8 +180,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			<form id="filterNFTsForm" action="realms.php#realm-image" method="post">
 			  <input type="hidden" id="filterby" name="filterby" value="">
 			  <input type="submit" value="Submit" style="display:none;">
-			</form><br>
-			<input class="small-button" type="button" value="Deactivate Realm" onclick="">
+			</form>
 		</div>';
 		}
 		?>
