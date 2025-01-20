@@ -909,7 +909,6 @@ function reactivateRealm(realmID){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 	      // Do something with the data
-		  alert(data);
 		  window.location.href = "realms.php";
 	    } else {
 	      // Handle error
