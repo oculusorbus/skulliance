@@ -179,7 +179,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			<form id="filterNFTsForm" action="realms.php#realm-image" method="post">
 			  <input type="hidden" id="filterby" name="filterby" value="">
 			  <input type="submit" value="Submit" style="display:none;">
-			</form><br><br>
+			</form><br>
 			<input class="small-button" type="button" value="Deactivate Realm" onclick="">
 		</div>';
 		}
