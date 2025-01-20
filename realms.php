@@ -123,7 +123,7 @@ if(isset($_SESSION['userData']['user_id'])){
 					if($activation == "true"){
 						echo '<input class="button" type="button" value="Reactivate Realm" onclick="reactivateRealm('.$realm_id.');">';
 					}else{
-						echo '<p>Your Realm cannot be reactivated yet until '.$activation.'</p>';
+						echo '<p>Your Realm cannot be reactivated until '.date('m-d-Y', strtotime($activation)).'</p>';
 					}
 				}
 			}else{
