@@ -898,6 +898,26 @@ function deactivateRealm(realmID){
     }
 }
 
+function reactivateRealm(realmID){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/toggle-realm-state.php?type=reactivate&realm_id='+realmID, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+	      // Do something with the data
+		  alert(data);
+		  window.location.href = "realms.php";
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 
