@@ -21,7 +21,7 @@ if(isset($_POST["start_all"])){
 	<?php
 		getTotalMissions($conn);
 		$projects = array();
-		//$projects = getCurrentMissions($conn);
+		$projects = getCurrentMissions($conn);
 	?>
 	</div>
 </div>
@@ -76,7 +76,7 @@ if(isset($_POST["start_all"])){
 					getMissionsFilters($conn, $quest_id, $projects);
 					echo "</div>";
 					echo "<div id='quests'>";
-					getMissions($conn, $quest_id);
+					//getMissions($conn, $quest_id);
 					echo "</div>";
 				?>
 	    </div>
