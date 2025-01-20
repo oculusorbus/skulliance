@@ -5296,7 +5296,7 @@ function toggleRealmState($conn, $realm_id, $type){
 	if($type == "deactivate"){
 		$sql = "UPDATE realms SET active = '0', created_date = '".date('Y-m-d H:i:s')."' WHERE id='".$realm_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 		if ($conn->query($sql) === TRUE) {
-			echo "Your Realm has been deactivated. You will not be able to reactivate it for 30 days.";
+			echo "Your Realm has been deactivated.\r\n\r\nYou will not be able to reactivate it for 30 days.";
 		} else {
 			echo "Error: " . $sql . "<br>" . $conn->error;
 		}
