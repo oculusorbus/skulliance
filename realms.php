@@ -119,6 +119,7 @@ if(isset($_SESSION['userData']['user_id'])){
 				}else{
 					$realm_id = getRealmID($conn);
 					echo '<input class="button" type="button" value="Reactivate Realm" onclick="reactivateRealm('.$realm_id.');">';
+					exit;
 				}
 			}else{
 				?>
