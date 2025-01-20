@@ -205,7 +205,7 @@ if(isset($_SESSION['userData']['user_id'])){
 	<div class="main">
 	<div id="raids">
 		<?php 
-		if(checkRealm($conn)){
+		if(!checkRealm($conn)){
 			getTotalRaids($conn);
 			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 			if(isset($outgoing_raids)){
@@ -243,7 +243,7 @@ if(isset($_SESSION['userData']['user_id'])){
 		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
 			<?php
-			if(checkRealm($conn)){
+			if(!checkRealm($conn)){
 				if(isset($_POST['filterByRealms'])){
 					$filterByRealms = $_POST['filterByRealms'];
 				}else{
