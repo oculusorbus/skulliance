@@ -205,31 +205,33 @@ if(isset($_SESSION['userData']['user_id'])){
 	<div class="main">
 	<div id="raids">
 		<?php 
-		getTotalRaids($conn);
-		$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
-		if(isset($outgoing_raids)){
-			echo '<div class="content raids">';
-			echo $outgoing_raids;
-			echo '</div>';
-		}	
-		$outgoing_completed = getRaids($conn, "outgoing", "completed"); 
-		if(isset($outgoing_completed)){
-			echo '<div class="content raids">';
-			echo $outgoing_completed;
-			echo '</div>';
-		}	
-		$incoming_raids = getRaids($conn, "incoming", "pending"); 
-		if(isset($incoming_raids)){
-			echo '<div class="content raids">';
-			echo $incoming_raids;
-			echo '</div>';
-		}	
-		$incoming_completed = getRaids($conn, "incoming", "completed"); 
-		if(isset($incoming_completed)){
-			echo '<div class="content raids">';
-			echo $incoming_completed;
-			echo '</div>';
-		}	
+		if(checkRealm($conn)){
+			getTotalRaids($conn);
+			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
+			if(isset($outgoing_raids)){
+				echo '<div class="content raids">';
+				echo $outgoing_raids;
+				echo '</div>';
+			}	
+			$outgoing_completed = getRaids($conn, "outgoing", "completed"); 
+			if(isset($outgoing_completed)){
+				echo '<div class="content raids">';
+				echo $outgoing_completed;
+				echo '</div>';
+			}	
+			$incoming_raids = getRaids($conn, "incoming", "pending"); 
+			if(isset($incoming_raids)){
+				echo '<div class="content raids">';
+				echo $incoming_raids;
+				echo '</div>';
+			}	
+			$incoming_completed = getRaids($conn, "incoming", "completed"); 
+			if(isset($incoming_completed)){
+				echo '<div class="content raids">';
+				echo $incoming_completed;
+				echo '</div>';
+			}	
+		}
 		?>
 	</div>
 	</div>
@@ -241,31 +243,33 @@ if(isset($_SESSION['userData']['user_id'])){
 		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
 			<?php
-			if(isset($_POST['filterByRealms'])){
-				$filterByRealms = $_POST['filterByRealms'];
-			}else{
-				$filterByRealms = "random";
-			}
-			if(checkRealmState($conn) == 1){
-				?>
-				<?php echo '
-				<div id="filter-nfts">
-					<label for="filterRealms"><strong>Sort By:</strong></label>
-					<select onchange="javascript:filterRealms(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealms">';
-						echo '<option value="random">Random</option>';
-						echo '<option value="weakness">Weakness</option>';
-						echo '<option value="strength">Strength</option>';
-						echo '<option value="wealth">Wealth</option>';
-					echo '
-					</select>
-					<form id="filterRealmsForm" action="realms.php#realms" method="post">
-					  <input type="hidden" id="filterByRealms" name="filterByRealms" value="">
-					  <input type="submit" value="Submit" style="display:none;">
-					</form>
-				</div>';?>
-				<?php
-				$sort = $filterByRealms;
-				getRealms($conn, $sort);
+			if(checkRealm($conn)){
+				if(isset($_POST['filterByRealms'])){
+					$filterByRealms = $_POST['filterByRealms'];
+				}else{
+					$filterByRealms = "random";
+				}
+				if(checkRealmState($conn) == 1){
+					?>
+					<?php echo '
+					<div id="filter-nfts">
+						<label for="filterRealms"><strong>Sort By:</strong></label>
+						<select onchange="javascript:filterRealms(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealms">';
+							echo '<option value="random">Random</option>';
+							echo '<option value="weakness">Weakness</option>';
+							echo '<option value="strength">Strength</option>';
+							echo '<option value="wealth">Wealth</option>';
+						echo '
+						</select>
+						<form id="filterRealmsForm" action="realms.php#realms" method="post">
+						  <input type="hidden" id="filterByRealms" name="filterByRealms" value="">
+						  <input type="submit" value="Submit" style="display:none;">
+						</form>
+					</div>';?>
+					<?php
+					$sort = $filterByRealms;
+					getRealms($conn, $sort);
+				}
 			}
 			?>
 		</div>
