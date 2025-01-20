@@ -119,7 +119,6 @@ if(isset($_SESSION['userData']['user_id'])){
 				}else{
 					$realm_id = getRealmID($conn);
 					echo '<input class="button" type="button" value="Reactivate Realm" onclick="reactivateRealm('.$realm_id.');">';
-					exit;
 				}
 			}else{
 				?>
@@ -235,29 +234,31 @@ if(isset($_SESSION['userData']['user_id'])){
 		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
 			<?php
-			if(isset($_POST['filterByRealms'])){
-				$filterByRealms = $_POST['filterByRealms'];
-			}else{
-				$filterByRealms = "random";
-			}?>
-			<?php echo '
-			<div id="filter-nfts">
-				<label for="filterRealms"><strong>Sort By:</strong></label>
-				<select onchange="javascript:filterRealms(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealms">';
-					echo '<option value="random">Random</option>';
-					echo '<option value="weakness">Weakness</option>';
-					echo '<option value="strength">Strength</option>';
-					echo '<option value="wealth">Wealth</option>';
-				echo '
-				</select>
-				<form id="filterRealmsForm" action="realms.php#realms" method="post">
-				  <input type="hidden" id="filterByRealms" name="filterByRealms" value="">
-				  <input type="submit" value="Submit" style="display:none;">
-				</form>
-			</div>';?>
-			<?php
-			$sort = $filterByRealms;
-			getRealms($conn, $sort);
+			if(checkRealmState($conn) == 1){
+				if(isset($_POST['filterByRealms'])){
+					$filterByRealms = $_POST['filterByRealms'];
+				}else{
+					$filterByRealms = "random";
+				}?>
+				<?php echo '
+				<div id="filter-nfts">
+					<label for="filterRealms"><strong>Sort By:</strong></label>
+					<select onchange="javascript:filterRealms(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealms">';
+						echo '<option value="random">Random</option>';
+						echo '<option value="weakness">Weakness</option>';
+						echo '<option value="strength">Strength</option>';
+						echo '<option value="wealth">Wealth</option>';
+					echo '
+					</select>
+					<form id="filterRealmsForm" action="realms.php#realms" method="post">
+					  <input type="hidden" id="filterByRealms" name="filterByRealms" value="">
+					  <input type="submit" value="Submit" style="display:none;">
+					</form>
+				</div>';?>
+				<?php
+				$sort = $filterByRealms;
+				getRealms($conn, $sort);
+			}
 			?>
 		</div>
 	</div>
