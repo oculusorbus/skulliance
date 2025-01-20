@@ -40,7 +40,7 @@ if(isset($_SESSION['userData']['user_id'])){
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
-			if(!checkRealm($conn)){
+			if(checkRealm($conn)){
 				if(checkRealmState($conn) == 1){
 					$status = getRealmLocationsUpgrades($conn);
 					$locations = getLocationInfo($conn);
@@ -205,7 +205,7 @@ if(isset($_SESSION['userData']['user_id'])){
 	<div class="main">
 	<div id="raids">
 		<?php 
-		if(!checkRealm($conn)){
+		if(checkRealm($conn)){
 			getTotalRaids($conn);
 			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 			if(isset($outgoing_raids)){
@@ -244,7 +244,7 @@ if(isset($_SESSION['userData']['user_id'])){
 		<div class="content realms" id="filtered-content">
 			<?php
 			$filterByRealms = "";
-			if(!checkRealm($conn)){
+			if(checkRealm($conn)){
 				if(isset($_POST['filterByRealms'])){
 					$filterByRealms = $_POST['filterByRealms'];
 				}else{
