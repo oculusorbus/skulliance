@@ -874,6 +874,30 @@ function editRealmName(editIcon){
 	document.getElementById('realmText').focus();
 }
 
+function deactivateRealm(realmID){
+    if (confirm("Are you sure you want to deactivate your realm? You will not be able to reactivate it until after 30 days have passed.")) {
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/toggle_realm_state.php?type=deactivate&realm_id='+realmID, true);
+		xhttp.send();
+		xhttp.onreadystatechange = function() {
+		  if (xhttp.readyState == XMLHttpRequest.DONE) {
+		    // Check the status of the response
+		    if (xhttp.status == 200) {
+		      // Access the data returned by the server
+		      var data = xhttp.responseText;
+		      // Do something with the data
+			  alert(data);
+			  window.location.href = "realms.php";
+		    } else {
+		      // Handle error
+		    }
+		  }
+		};
+    } else {
+
+    }
+}
+
 // Get the button
 let mybutton = document.getElementById("back-to-top-button");
 
