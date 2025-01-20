@@ -5300,7 +5300,7 @@ function toggleRealmState($conn, $realm_id, $type){
 		} else {
 			echo "Error: " . $sql . "<br>" . $conn->error;
 		}
-	}else if($type == "activate"){
+	}else if($type == "reactivate"){
 		$sql = "UPDATE realms SET active = '1' WHERE id='".$realm_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 		if ($conn->query($sql) === TRUE) {
 			echo "Your Realm has been reactivated.";
