@@ -119,7 +119,6 @@ if(isset($_SESSION['userData']['user_id'])){
 				}else{
 					$realm_id = getRealmID($conn);
 					echo "<h2>Realm Status</h2>";
-					echo '<img src="images/realms-logo.png" width="100%"/>';
 					$activation = checkRealmActivation($conn);
 					if($activation == "true"){
 						echo '<input class="button" type="button" value="Reactivate Realm" onclick="reactivateRealm('.$realm_id.');">';
@@ -130,6 +129,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			}else{
 				?>
 				<h2>Create Your Realm</h2>
+				<img src="images/realms-logo.png" width="100%"/>
 				<ul>
 				<li class="role">
 				<form action="realms.php" method="post">
