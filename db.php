@@ -876,7 +876,7 @@ function getCurrentMissions($conn){
 	    p.currency, 
 	    q.level, 
 	    md.created_date, 
-	    q.duration AS duration, 
+	    q.duration, 
 	    md.status
 	FROM mission_data md
 	INNER JOIN quests q ON md.quest_id = q.id
@@ -988,7 +988,7 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= $row["level"];
 		  $rows[$decimal] .= "</td>";
 		  $rows[$decimal] .= "<td align='left'>";
-		  $rows[$decimal] .= $row["duration"]." ".($row["duration"] == 1)?"Day":"Days";
+		  $rows[$decimal] .= $row["duration"]." ".(($row["duration"] == 1)?"Day":"Days");
 		  $rows[$decimal] .= "</td>";
 		  /* Removed these fields to speed up query
 		  $rows[$decimal] .= "<td align='left'>";
