@@ -418,6 +418,7 @@ function toggleCurrentMissions(arrow){
 			var data = xhttp.responseText;
 			document.getElementById('current-missions-container').innerHTML = data;
 			if(data != ""){
+				alert(arrow);
 				arrow.src = 'icons/down.png';
 				var claimButton = document.getElementById('claim-missions-button');
 				if (typeof(claimButton) != 'undefined' && claimButton != null){
