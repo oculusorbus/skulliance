@@ -1022,7 +1022,6 @@ function getCurrentMissions($conn){
 			  document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 		  	  </script>";
   	  }
-	  //echo "</div>";
 	} else {
 	  //echo "0 results";
 	}
@@ -3477,22 +3476,7 @@ function getTotalMissions($conn){
 	
 	$month_result = $conn->query($month_sql);
 	
-	$arrow = "down";
-	$display = "block";
-	if(isset($_SESSION['userData']['total_missions'])){
-		if($_SESSION['userData']['total_missions'] == "show"){
-			$arrow = "down";
-			$display = "block";
-		}else if($_SESSION['userData']['total_missions'] == "hide"){
-			$arrow = "up";
-			$display = "none";
-		}
-	}
-	
 	if ($month_result->num_rows > 0) {
-	  	echo "<h2>Missions Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
-	  	echo '<a name="total-missions" id="total-missions"></a>';
-	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Missions</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
@@ -3674,7 +3658,6 @@ function getTotalMissions($conn){
 			}
 			echo "</tr></table>";
 		}
-		echo "</div>";
 	}
 }
 
