@@ -873,7 +873,7 @@ SELECT
     p.name AS project_name, 
     q.cost, 
     q.reward, 
-    q.currency, 
+    p.currency, 
     q.level, 
     md.created_date, 
     q.duration, 
