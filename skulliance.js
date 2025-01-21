@@ -396,7 +396,7 @@ function toggleCurrentMissions(arrow){
 	
 	if(arrow.id == 'down'){
 		arrow.id = 'up';
-		arrow.src = 'icons/up.png';
+		arrow.src = 'icons/loading.gif';
 		visibility = 'hide';
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
@@ -419,6 +419,7 @@ function toggleCurrentMissions(arrow){
 			document.getElementById('current-missions-container').innerHTML = data;
 			if(data != ""){
 				document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
+				arrow.src = 'icons/up.png';
 			}
 	    } else {
 	      // Handle error
