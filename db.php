@@ -882,22 +882,8 @@ function getCurrentMissions($conn){
 	$result = $conn->query($sql);
 	
 	$completed_missions = array();
-	
-	$arrow = "down";
-	$display = "block";
-	if(isset($_SESSION['userData']['current_missions'])){
-		if($_SESSION['userData']['current_missions'] == "show"){
-			$arrow = "down";
-			$display = "block";
-		}else if($_SESSION['userData']['current_missions'] == "hide"){
-			$arrow = "up";
-			$display = "none";
-		}
-	}
+
 	if ($result->num_rows > 0) {
-	  echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
-	  echo '<a name="current-missions" id="current-missions"></a>';
-	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
    	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
 	  // Removed <th align='left'>NFTs</th><th align='left'>Success</th> to speed up query
@@ -1036,7 +1022,7 @@ function getCurrentMissions($conn){
 			  document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 		  	  </script>";
   	  }
-	  echo "</div>";
+	  //echo "</div>";
 	} else {
 	  //echo "0 results";
 	}

@@ -19,9 +19,26 @@ if(isset($_POST["start_all"])){
 <div class="row" id="stats">
   <div class="main">
 	<?php
-		getTotalMissions($conn);
+		getTotalMissions($conn);		
+		$arrow = "down";
+		$display = "block";
+		if(isset($_SESSION['userData']['current_missions'])){
+			if($_SESSION['userData']['current_missions'] == "show"){
+				$arrow = "down";
+				$display = "block";
+			}else if($_SESSION['userData']['current_missions'] == "hide"){
+				$arrow = "up";
+				$display = "none";
+			}
+		}
+		echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
+		echo '<a name="current-missions" id="current-missions"></a>';
+		echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
 		$projects = array();
-		$projects = getCurrentMissions($conn);
+		if($display == 'block'){
+			$projects = getCurrentMissions($conn);
+		}
+		echo '</div>';
 	?>
 	</div>
 </div>
