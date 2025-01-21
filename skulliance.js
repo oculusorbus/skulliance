@@ -410,13 +410,14 @@ function toggleCurrentMissions(arrow){
 	
 	xhttp.send();
 
-	xhttp.onreadystatechange = function() {
+	xhttp.onreadystatechange = function(arrow) {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
 			// Access the data returned by the server
 			var data = xhttp.responseText;
 			document.getElementById('current-missions-container').innerHTML = data;
+			arrow.src = 'icons/down.png';
 			if(data != ""){
 				document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 			}
@@ -426,9 +427,6 @@ function toggleCurrentMissions(arrow){
 	    }
 	  }
 	};
-	if(arrow.id == 'down'){
-		arrow.src = 'icons/down.png';
-	}
 }
 
 function toggleRaids(arrow, category, results){
