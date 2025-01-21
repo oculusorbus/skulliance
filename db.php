@@ -905,7 +905,7 @@ function getCurrentMissions($conn){
    	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
 	  // Removed <th align='left'>NFTs</th><th align='left'>Success</th> to speed up query
-	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Level</th><th align='left'>Time Left</th><th align='center'>Status</th>";
+	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Level</th><th align='left'>Duration</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
 	  $rows = array();
 	  while($row = $result->fetch_assoc()) {
@@ -987,6 +987,9 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "<td align='left'>";
 		  $rows[$decimal] .= $row["level"];
 		  $rows[$decimal] .= "</td>";
+		  $rows[$decimal] .= "<td align='left'>";
+		  $rows[$decimal] .= $row["duration"]." ".($row["duration"] == 1)?"Day":"Days";
+		  $rows[$decimal] .= "</td>";
 		  /* Removed these fields to speed up query
 		  $rows[$decimal] .= "<td align='left'>";
 		  $rows[$decimal] .= $row["total_nfts"];
@@ -1007,7 +1010,7 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "</td>";
 		$rows[$decimal] .= "</tr>";
 		$rows[$decimal] .= "<tr id='mission-progress-".$row["mission_id"]."'>";
-		$rows[$decimal] .= "<td colspan='8' style='padding:0px;'>";
+		$rows[$decimal] .= "<td colspan='9' style='padding:0px;'>";
 		$rows[$decimal] .= "<div class='w3-border'>";
 		if($completed == "Completed"){
 			$percentage = 100;
