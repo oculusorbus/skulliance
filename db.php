@@ -862,7 +862,7 @@ function getCurrentMissions($conn){
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";*/
 	
 	$sql = "WITH mission_data AS (
-    SELECT id, quest_id, created_date 
+    SELECT id, quest_id, status, created_date 
     FROM missions 
     WHERE status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'
 )
