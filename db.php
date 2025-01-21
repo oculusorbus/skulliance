@@ -862,21 +862,21 @@ function getCurrentMissions($conn){
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";*/
 	
 	$sql = "WITH mission_data AS (
-    SELECT id, quest_id, title, created_date, duration, status, level
+    SELECT id, quest_id, created_date 
     FROM missions 
     WHERE status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'
 )
 SELECT
     md.id AS mission_id, 
     md.quest_id, 
-    md.title, 
+    q.title, 
     p.name AS project_name, 
     q.cost, 
     q.reward, 
     q.currency, 
-    md.level, 
+    q.level, 
     md.created_date, 
-    md.duration, 
+    q.duration, 
     md.status, 
     COUNT(mn.nft_id) AS total_nfts, 
     SUM(n.rate) AS success_rate
