@@ -781,6 +781,28 @@ function retreat(mission_id, quest_id){
     }
 }
 
+function getQuest(projectID){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/get-quests.php?project_id='+projectID, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+		  if(data != ""){
+		  	document.getElementById('quests').outerHTML = data;
+		  }
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();

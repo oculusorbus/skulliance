@@ -683,7 +683,7 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 				}else{
 					$eligible = "";
 				}
-				echo "<div class='missions-filter".$eligible."' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -736,13 +736,18 @@ function getQuestProjectID($conn, $quest_id){
 }
 
 // Get missions
-function getMissions($conn, $quest_id) {
+function getMissions($conn, $quest_id, $project_id) {
 	$project_id = 1;
+	$where = "";
+	if(isset($project_id)){
+		$_SESSION['userData']['project_id'] = $project_id;
+		$where = "projects.id = '".$project_id"'";
+	}
 	if(isset($_SESSION['userData']['project_id'])){
 		$project_id = $_SESSION['userData']['project_id'];
 	}
 	//CASE WHEN quests.id = '".$quest_id."' THEN 1 ELSE 2 END
-	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name, extension FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.id, level ASC";
+	$sql = "SELECT quests.id, title, description, cost, reward, project_id, duration, level, currency, name, extension FROM quests INNER JOIN projects ON projects.id = quests.project_id ".$where." ORDER BY projects.id, level ASC";
 	
 	$result = $conn->query($sql);
 	
