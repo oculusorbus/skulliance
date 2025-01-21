@@ -673,8 +673,9 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 	$result = $conn->query($sql);
 	
 	echo "<div class='missions-filters'>";
+	/*
 	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);toggleSections(\"quests\");'>All</div>";
-	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);hideIneligibleMissions();toggleSections(\"quests\");'>Eligible</div>";
+	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);hideIneligibleMissions();toggleSections(\"quests\");'>Eligible</div>";*/
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row["id"] <= 7){
