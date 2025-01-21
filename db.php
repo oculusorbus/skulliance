@@ -3466,14 +3466,29 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function getTotalMissions($conn){
-	$month_sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id 
+	/*$month_sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id 
 				  WHERE success_missions.status = '1' AND success_users.id = users.id AND DATE(success_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS success, 
 	             (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id 
 				  WHERE failed_missions.status = '2' AND failed_users.id = users.id AND DATE(failed_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS failure, 
 				 (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id 
 				  WHERE progress_missions.status = '0' AND progress_users.id = users.id AND DATE(progress_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS progress, 
 	        	  COUNT(missions.id) AS total, SUM(quests.duration) AS total_duration, users.id AS user_id 
-		    	  FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+		    	  FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";*/
+				  
+    $month_sql = "SELECT 
+    users.id AS user_id,
+    SUM(IF(missions.status = '1', 1, 0)) AS success,
+    SUM(IF(missions.status = '2', 1, 0)) AS failure,
+    SUM(IF(missions.status = '0', 1, 0)) AS progress,
+    COUNT(missions.id) AS total,
+    SUM(quests.duration) AS total_duration
+	FROM users 
+	INNER JOIN missions ON missions.user_id = users.id 
+	INNER JOIN quests ON quests.id = missions.quest_id 
+	WHERE users.id = '".$_SESSION['userData']['user_id']."' 
+	  AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
+	GROUP BY users.id;"
+	
 	$month_result = $conn->query($month_sql);
 	
 	$arrow = "down";
