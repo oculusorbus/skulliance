@@ -3487,7 +3487,7 @@ function getTotalMissions($conn){
 	INNER JOIN quests ON quests.id = missions.quest_id 
 	WHERE users.id = '".$_SESSION['userData']['user_id']."' 
 	  AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
-	GROUP BY users.id;"
+	GROUP BY users.id;";
 	
 	$month_result = $conn->query($month_sql);
 	
