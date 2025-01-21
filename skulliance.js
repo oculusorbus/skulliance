@@ -401,7 +401,7 @@ function toggleCurrentMissions(arrow){
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'down';
-		arrow.src = 'icons/loading.gif';
+		arrow.src = 'icons/down.png';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
 	}
@@ -410,7 +410,7 @@ function toggleCurrentMissions(arrow){
 	
 	xhttp.send();
 
-	xhttp.onreadystatechange = function(arrow) {
+	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
@@ -418,8 +418,7 @@ function toggleCurrentMissions(arrow){
 			var data = xhttp.responseText;
 			document.getElementById('current-missions-container').innerHTML = data;
 			if(data != ""){
-				arrow.src = 'icons/down.png';
-				//document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
+				document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 			}
 	    } else {
 	      // Handle error
