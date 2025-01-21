@@ -862,31 +862,31 @@ function getCurrentMissions($conn){
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";*/
 	
 	$sql = "WITH mission_data AS (
-    SELECT id, quest_id, status, created_date 
-    FROM missions 
-    WHERE status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'
-)
-SELECT
-    md.id AS mission_id, 
-    md.quest_id, 
-    q.title, 
-    p.name AS project_name, 
-    q.cost, 
-    q.reward, 
-    p.currency, 
-    q.level, 
-    md.created_date, 
-    q.duration, 
-    md.status, 
-    COUNT(mn.nft_id) AS total_nfts, 
-    SUM(c.rate) AS success_rate
-FROM mission_data md
-INNER JOIN quests q ON md.quest_id = q.id
-INNER JOIN projects p ON p.id = q.project_id
-LEFT JOIN missions_nfts mn ON md.id = mn.mission_id
-LEFT JOIN nfts n ON n.id = mn.nft_id
-LEFT JOIN collections c ON c.id = n.collection_id
-GROUP BY md.id ORDER BY q.level ASC, md.created_date ASC;";
+	    SELECT id, quest_id, status, created_date 
+	    FROM missions 
+	    WHERE status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'
+	)
+	SELECT
+	    md.id AS mission_id, 
+	    md.quest_id, 
+	    q.title, 
+	    p.name AS project_name, 
+	    q.cost, 
+	    q.reward, 
+	    p.currency, 
+	    q.level, 
+	    md.created_date, 
+	    q.duration, 
+	    md.status, 
+	    COUNT(mn.nft_id) AS total_nfts, 
+	    SUM(c.rate) AS success_rate
+	FROM mission_data md
+	INNER JOIN quests q ON md.quest_id = q.id
+	INNER JOIN projects p ON p.id = q.project_id
+	LEFT JOIN missions_nfts mn ON md.id = mn.mission_id
+	LEFT JOIN nfts n ON n.id = mn.nft_id
+	LEFT JOIN collections c ON c.id = n.collection_id
+	GROUP BY md.id ORDER BY md.created_date ASC;";
 	
 	$result = $conn->query($sql);
 	
