@@ -684,7 +684,7 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 					$eligible = "";
 				}
 				//echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
-				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");</div>";
+				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
 	}
@@ -702,7 +702,7 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 					$eligible = "";
 				}
 				//echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
-				echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");</div>";
+				echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");'>".$row["name"]."</div>";
 			}
 		}
 	}
