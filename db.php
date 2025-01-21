@@ -862,27 +862,23 @@ function getCurrentMissions($conn){
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";*/
 	
 	// AI optimized query to speed things up as much as possible, original query with nft left joins that was problematic is above
-	$sql = "WITH mission_data AS (
-	    SELECT id, quest_id, status, created_date 
-	    FROM missions 
-	    WHERE status = '0' AND user_id = '".$_SESSION['userData']['user_id']."'
-	)
-	SELECT
-	    md.id AS mission_id, 
-	    md.quest_id, 
-	    q.title, 
-	    p.name AS project_name, 
-	    q.cost, 
-	    q.reward, 
-	    p.currency, 
-	    q.level, 
-	    md.created_date, 
-	    q.duration, 
-	    md.status
-	FROM mission_data md
-	INNER JOIN quests q ON md.quest_id = q.id
+	$sql = "SELECT
+    m.id AS mission_id, 
+    m.quest_id, 
+    q.title, 
+    p.name AS project_name, 
+    q.cost, 
+    q.reward, 
+    p.currency, 
+    q.level, 
+    m.created_date, 
+    q.duration, 
+    m.status
+	FROM missions m
+	INNER JOIN quests q ON m.quest_id = q.id
 	INNER JOIN projects p ON p.id = q.project_id
-	ORDER BY md.created_date ASC;";
+	WHERE m.status = '0' AND m.user_id = '".$_SESSION['userData']['user_id']."'
+	ORDER BY m.created_date ASC;";
 	
 	$result = $conn->query($sql);
 	
