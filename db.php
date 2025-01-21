@@ -879,7 +879,7 @@ SELECT
     q.duration, 
     md.status, 
     COUNT(mn.nft_id) AS total_nfts, 
-    SUM(n.rate) AS success_rate
+    SUM(c.rate) AS success_rate
 FROM mission_data md
 INNER JOIN quests q ON md.quest_id = q.id
 INNER JOIN projects p ON p.id = q.project_id
