@@ -882,6 +882,7 @@ function getCurrentMissions($conn){
 	LEFT JOIN nfts n ON n.id = mn.nft_id
 	LEFT JOIN collections c ON c.id = n.collection_id
 	WHERE m.status = '0' AND m.user_id = '".$_SESSION['userData']['user_id']."'
+	GROUP BY m.id 
 	ORDER BY m.created_date ASC;";
 	
 	$result = $conn->query($sql);
