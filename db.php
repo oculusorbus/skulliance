@@ -683,7 +683,8 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 				}else{
 					$eligible = "";
 				}
-				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				//echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");</div>";
 			}
 		}
 	}
@@ -700,7 +701,8 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 				}else{
 					$eligible = "";
 				}
-				echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				//echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");</div>";
 			}
 		}
 	}
@@ -818,6 +820,7 @@ function getMissions($conn, $quest_id, $project_id) {
 	  //echo "0 results";
 	}
 	echo "</div></div>";
+	/*
 	echo "<script type='text/javascript'>";
 	if(isset($_SESSION['userData']['project_id'])){
 		echo "toggleMissions('none');";
@@ -845,7 +848,7 @@ function getMissions($conn, $quest_id, $project_id) {
 	    projects[i].style.display = 'block';
 	}";
 	echo "}";
-	echo "</script>";
+	echo "</script>";*/
 }
 
 // Get Current Missions for User
