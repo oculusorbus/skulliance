@@ -881,7 +881,7 @@ function getCurrentMissions($conn){
 	FROM mission_data md
 	INNER JOIN quests q ON md.quest_id = q.id
 	INNER JOIN projects p ON p.id = q.project_id
-	GROUP BY md.id ORDER BY md.created_date ASC;";
+	ORDER BY md.created_date ASC;";
 	
 	$result = $conn->query($sql);
 	
