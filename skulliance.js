@@ -417,9 +417,12 @@ function toggleCurrentMissions(arrow){
 			// Access the data returned by the server
 			var data = xhttp.responseText;
 			document.getElementById('current-missions-container').innerHTML = data;
-			arrow.src = 'icons/down.png';
 			if(data != ""){
-				document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
+				arrow.src = 'icons/down.png';
+				var claimButton = document.getElementById('claim-missions-button');
+				if (typeof(claimButton) != 'undefined' && claimButton != null){
+					document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
+				}
 			}
 	    } else {
 	      // Handle error
