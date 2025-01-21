@@ -870,7 +870,6 @@ function getCurrentMissions($conn){
     q.cost, 
     q.reward, 
     p.currency, 
-    q.level, 
     m.created_date, 
     q.duration, 
     m.status
