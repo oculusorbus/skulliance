@@ -417,6 +417,9 @@ function toggleCurrentMissions(arrow){
 			// Access the data returned by the server
 			var data = xhttp.responseText;
 			document.getElementById('current-missions-container').innerHTML = data;
+			if(data != ""){
+				document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
+			}
 	    } else {
 	      // Handle error
 			alert("AJAX Error");
