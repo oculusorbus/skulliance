@@ -76,6 +76,9 @@ if(isset($_POST["start_all"])){
 					getMissionsFilters($conn, $quest_id, $projects);
 					echo "</div>";
 					echo "<div id='quests'>";
+					if(isset($_SESSION['userData']['project_id'])){
+						getMissions($conn, $quest_id=0, $_SESSION['userData']['project_id']);
+					}
 					//getMissions($conn, $quest_id);
 					echo "</div>";
 				?>
