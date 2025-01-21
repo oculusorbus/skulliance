@@ -30,7 +30,7 @@ if(isset($_POST["start_all"])){
 				$display = "none";
 			}
 		}
-	  	echo "<h2>Missions Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='total-".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
+	  	echo "<h2>Missions Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		if($display == 'block'){
@@ -49,7 +49,7 @@ if(isset($_POST["start_all"])){
 				$display = "none";
 			}
 		}
-		echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='current-".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
+		echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
 		echo '<a name="current-missions" id="current-missions"></a>';
 		echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
 		$projects = array();
