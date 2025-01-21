@@ -426,7 +426,9 @@ function toggleCurrentMissions(arrow){
 	    }
 	  }
 	};
-
+	if(arrow.id == 'down'){
+		arrow.src = 'icons/down.png';
+	}
 }
 
 function toggleRaids(arrow, category, results){
