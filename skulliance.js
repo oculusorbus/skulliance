@@ -410,7 +410,7 @@ function toggleCurrentMissions(arrow){
 	
 	xhttp.send();
 
-	xhttp.onreadystatechange = function() {
+	xhttp.onreadystatechange = function(arrow) {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
@@ -419,7 +419,7 @@ function toggleCurrentMissions(arrow){
 			document.getElementById('current-missions-container').innerHTML = data;
 			if(data != ""){
 				document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
-				document.getElementById('current-down').src = 'icons/down.png';
+				arrow.src = 'icons/down.png';
 			}
 	    } else {
 	      // Handle error
