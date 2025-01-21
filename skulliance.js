@@ -381,6 +381,7 @@ function toggleTotalMissions(arrow){
 	    if (xhttp.status == 200) {
 			// Access the data returned by the server
 			var data = xhttp.responseText;
+			document.getElementById('total-missions-container').innerHTML = data;
 	    } else {
 	      // Handle error
 			alert("AJAX Error");
@@ -450,7 +451,6 @@ function toggleRaids(arrow, category, results){
 	    if (xhttp.status == 200) {
 			// Access the data returned by the server
 			var data = xhttp.responseText;
-			document.getElementById('total-missions-container').innerHTML = data;
 	    } else {
 	      // Handle error
 			alert("AJAX Error");
