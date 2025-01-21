@@ -394,13 +394,13 @@ function toggleCurrentMissions(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
-	if(arrow.id == 'down'){
-		arrow.id = 'up';
+	if(arrow.id == 'current-down'){
+		arrow.id = 'current-up';
 		arrow.src = 'icons/up.png';
 		visibility = 'hide';
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
-		arrow.id = 'down';
+		arrow.id = 'current-down';
 		arrow.src = 'icons/loading.gif';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
@@ -410,7 +410,7 @@ function toggleCurrentMissions(arrow){
 	
 	xhttp.send();
 
-	xhttp.onreadystatechange = function(arrow) {
+	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
 	    // Check the status of the response
 	    if (xhttp.status == 200) {
@@ -418,8 +418,7 @@ function toggleCurrentMissions(arrow){
 			var data = xhttp.responseText;
 			document.getElementById('current-missions-container').innerHTML = data;
 			if(data != ""){
-				alert(arrow.src);
-				arrow.src = 'icons/down.png';
+				document.getElementById('current-down').src = 'icons/down.png';
 				var claimButton = document.getElementById('claim-missions-button');
 				if (typeof(claimButton) != 'undefined' && claimButton != null){
 					//document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
