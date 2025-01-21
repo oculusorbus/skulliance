@@ -984,7 +984,7 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
 		  $rows[$decimal] .= number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
 		  $rows[$decimal] .= "</td>";
-		  /*
+		  /* Removed these fields to speed up query
 		  $rows[$decimal] .= "<td align='left'>";
 		  $rows[$decimal] .= $row["total_nfts"];
 		  $rows[$decimal] .= "</td>";
@@ -1004,6 +1004,7 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "</td>";
 		$rows[$decimal] .= "</tr>";
 		$rows[$decimal] .= "<tr id='mission-progress-".$row["mission_id"]."'>";
+		// Reduced colspan from 9 to 7 for removal of total NFTs and Success Rate
 		$rows[$decimal] .= "<td colspan='7' style='padding:0px;'>";
 		$rows[$decimal] .= "<div class='w3-border'>";
 		if($completed == "Completed"){
