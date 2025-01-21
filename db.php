@@ -861,6 +861,7 @@ function getCurrentMissions($conn){
 	FROM missions INNER JOIN quests ON missions.quest_id = quests.id INNER JOIN projects ON projects.id = quests.project_id LEFT JOIN missions_nfts ON missions.id = missions_nfts.mission_id LEFT JOIN nfts ON nfts.id = missions_nfts.nft_id LEFT JOIN collections ON collections.id = nfts.collection_id 
 	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";*/
 	
+	// AI optimized query to speed things up as much as possible, original query with nft left joins that was problematic is above
 	$sql = "WITH mission_data AS (
 	    SELECT id, quest_id, status, created_date 
 	    FROM missions 
