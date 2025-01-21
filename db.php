@@ -881,7 +881,6 @@ function getCurrentMissions($conn){
 	FROM mission_data md
 	INNER JOIN quests q ON md.quest_id = q.id
 	INNER JOIN projects p ON p.id = q.project_id
-
 	GROUP BY md.id ORDER BY md.created_date ASC;";
 	
 	$result = $conn->query($sql);
@@ -905,7 +904,8 @@ function getCurrentMissions($conn){
 	  echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
    	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Time Left</th><th align='center'>Status</th>";
+	  // Removed <th align='left'>NFTs</th><th align='left'>Success</th> to speed up query
+	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
 	  $rows = array();
 	  while($row = $result->fetch_assoc()) {
@@ -984,12 +984,14 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
 		  $rows[$decimal] .= number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
 		  $rows[$decimal] .= "</td>";
+		  /*
 		  $rows[$decimal] .= "<td align='left'>";
-		  //$rows[$decimal] .= $row["total_nfts"];
+		  $rows[$decimal] .= $row["total_nfts"];
 		  $rows[$decimal] .= "</td>";
   		  $rows[$decimal] .= "<td align='left'>";
-		  //$rows[$decimal] .= $success_rate+$row["success_rate"]."%";
+		  $rows[$decimal] .= $success_rate+$row["success_rate"]."%";
 		  $rows[$decimal] .= "</td>";
+		  */
   		  $rows[$decimal] .= "<td align='left'>";
 		  $rows[$decimal] .= $time_message;
 		  $rows[$decimal] .= "</td>";
@@ -1002,7 +1004,7 @@ function getCurrentMissions($conn){
 		  $rows[$decimal] .= "</td>";
 		$rows[$decimal] .= "</tr>";
 		$rows[$decimal] .= "<tr id='mission-progress-".$row["mission_id"]."'>";
-		$rows[$decimal] .= "<td colspan='9' style='padding:0px;'>";
+		$rows[$decimal] .= "<td colspan='7' style='padding:0px;'>";
 		$rows[$decimal] .= "<div class='w3-border'>";
 		if($completed == "Completed"){
 			$percentage = 100;
