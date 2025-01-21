@@ -879,7 +879,7 @@ function getCurrentMissions($conn){
 	INNER JOIN quests q ON m.quest_id = q.id
 	INNER JOIN projects p ON p.id = q.project_id
 	LEFT JOIN missions_nfts mn ON m.id = mn.mission_id
-	LEFT JOIN nfts n ON nfts.id = mn.nft_id
+	LEFT JOIN nfts n ON n.id = mn.nft_id
 	LEFT JOIN collections c ON c.id = n.collection_id
 	WHERE m.status = '0' AND m.user_id = '".$_SESSION['userData']['user_id']."'
 	ORDER BY m.created_date ASC;";
