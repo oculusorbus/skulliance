@@ -883,8 +883,8 @@ function getCurrentMissions($conn){
 	FROM mission_data md
 	INNER JOIN quests q ON md.quest_id = q.id
 	INNER JOIN projects p ON p.id = q.project_id
-	LEFT JOIN missions_nfts mn ON md.id = mn.mission_id
-	INNER JOIN nfts n ON n.id = mn.nft_id
+	INNER JOIN missions_nfts mn ON md.id = mn.mission_id
+	LEFT JOIN nfts n ON n.id = mn.nft_id
 	INNER JOIN collections c ON c.id = n.collection_id
 	GROUP BY md.id ORDER BY md.created_date ASC;";
 	
