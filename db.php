@@ -886,7 +886,7 @@ INNER JOIN projects p ON p.id = q.project_id
 LEFT JOIN missions_nfts mn ON md.id = mn.mission_id
 LEFT JOIN nfts n ON n.id = mn.nft_id
 LEFT JOIN collections c ON c.id = n.collection_id
-GROUP BY md.id ORDER BY md.level ASC, md.created_date ASC;";
+GROUP BY md.id ORDER BY q.level ASC, md.created_date ASC;";
 	
 	$result = $conn->query($sql);
 	
