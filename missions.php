@@ -19,9 +19,9 @@ if(isset($_POST["start_all"])){
 <div class="row" id="stats">
   <div class="main">
 	<?php
-		//getTotalMissions($conn);
+		getTotalMissions($conn);
 		$projects = array();
-		//$projects = getCurrentMissions($conn);
+		$projects = getCurrentMissions($conn);
 	?>
 	</div>
 </div>
