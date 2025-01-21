@@ -700,7 +700,7 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 				}else{
 					$eligible = "";
 				}
-				echo "<div class='missions-filter ".$eligible."' onclick='toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+				echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
 			}
 		}
 	}
