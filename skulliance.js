@@ -401,7 +401,7 @@ function toggleCurrentMissions(arrow){
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'down';
-		arrow.src = 'icons/down.png';
+		arrow.src = 'icons/loading.gif';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
 	}
@@ -426,6 +426,9 @@ function toggleCurrentMissions(arrow){
 	    }
 	  }
 	};
+	if(arrow.id == 'down'){
+		arrow.src = 'icons/down.png';
+	}
 }
 
 function toggleRaids(arrow, category, results){
