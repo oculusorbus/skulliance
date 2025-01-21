@@ -781,7 +781,7 @@ function retreat(mission_id, quest_id){
     }
 }
 
-function getQuest(projectID){
+function getQuests(projectID){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/get-quests.php?project_id='+projectID, true);
 	xhttp.send();
