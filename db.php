@@ -756,6 +756,7 @@ function getMissions($conn, $quest_id, $project_id) {
 	$quest_ids = array();
 	$locked_quest_ids = array();
 	$ineligible_quest_ids = array();
+	echo "<div id='quests'>";
 	echo "<div class='nfts'>";
 	if($result->num_rows > 0) {
 	  // output data of each row
@@ -816,7 +817,7 @@ function getMissions($conn, $quest_id, $project_id) {
 	} else {
 	  //echo "0 results";
 	}
-	echo "</div>";
+	echo "</div></div>";
 	echo "<script type='text/javascript'>";
 	if(isset($_SESSION['userData']['project_id'])){
 		echo "toggleMissions('none');";
