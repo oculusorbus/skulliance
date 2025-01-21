@@ -858,7 +858,7 @@ function getCurrentMissions($conn){
 	$projects = array();
 	$sql = "SELECT DISTINCT missions.id AS mission_id, quest_id, title, projects.name AS project_name, cost, reward, currency, level, missions.created_date, duration, status, COUNT(nft_id) AS total_nfts, SUM(rate) AS success_rate 
 	FROM missions LEFT JOIN quests ON missions.quest_id = quests.id LEFT JOIN projects ON projects.id = quests.project_id LEFT JOIN missions_nfts ON missions.id = missions_nfts.mission_id LEFT JOIN nfts ON nfts.id = missions_nfts.nft_id LEFT JOIN collections ON collections.id = nfts.collection_id 
-	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND missions.status = '0' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC";
+	WHERE status = 0 AND missions.user_id = '".$_SESSION['userData']['user_id']."' AND missions.status = '0' GROUP BY missions.id ORDER BY level ASC, missions.created_date ASC LIMIT 10";
 	
 	$result = $conn->query($sql);
 	
