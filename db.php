@@ -738,11 +738,7 @@ function getQuestProjectID($conn, $quest_id){
 // Get missions
 function getMissions($conn, $quest_id, $project_id) {
 	$project_id = 1;
-	$where = "";
-	if(isset($project_id)){
-		$_SESSION['userData']['project_id'] = $project_id;
-		$where = "projects.id = '".$project_id"'";
-	}
+
 	if(isset($_SESSION['userData']['project_id'])){
 		$project_id = $_SESSION['userData']['project_id'];
 	}
