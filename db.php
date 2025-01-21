@@ -876,7 +876,7 @@ function getCurrentMissions($conn){
 	    p.currency, 
 	    q.level, 
 	    md.created_date, 
-	    q.duration, 
+	    q.duration AS duration, 
 	    md.status
 	FROM mission_data md
 	INNER JOIN quests q ON md.quest_id = q.id
