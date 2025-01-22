@@ -864,7 +864,8 @@ function checkDiscordStatus(){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  if(data == "true"){
-			  document.getElementById("checkDiscordSection").outerHTML = '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
+			  document.getElementById("checkDiscordSection").style.display = 'none';
+			  document.getElementById("claimRewardButton").style.display = 'block';
 		  }else{
 			  buttonValue = document.getElementById("checkDiscordStatusButton").value;
 			  if(buttonValue == 'Check Status'){

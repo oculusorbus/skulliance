@@ -513,6 +513,7 @@ function renderDailyRewardsSection(){
 		if($status["message"] == 1 && $status["reaction"] == 1){
 			echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 		}else{
+			echo '<input style="display:none" id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 			echo '<span id="checkDiscordSection">';
 			echo '<li class="role no-border-style">You must send a message and add a reaction to a message in discord in order to claim your daily reward.</li>';
 			echo '<input id="checkDiscordStatusButton" type="button" value="Check Status" class="button" onclick="javascript:checkDiscordStatus();">';
