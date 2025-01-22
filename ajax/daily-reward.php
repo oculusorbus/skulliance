@@ -8,6 +8,7 @@ if(isset($project)){
 	$project["remaining"] = getRewardTimeRemaining($conn);
 	$project["progress_bar"] = getRewardProgressBar($conn);
 }
+resetDiscordStatus($conn);
 
 echo json_encode($project);
 
