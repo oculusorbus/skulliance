@@ -251,8 +251,8 @@ function resetDiscordStatus($conn){
 	}
 }
 
-function getDiscordStatus($conn){
-	$sql = "SELECT message, reaction FROM users WHERE id='".$_SESSION['userData']['user_id']."'";
+function getDiscordStatus($conn, $discord_id){
+	$sql = "SELECT message, reaction FROM users WHERE discord_id='".$discord_id."'";
 	$result = $conn->query($sql);
 	
 	$status = array();

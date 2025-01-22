@@ -3,7 +3,7 @@ include '../db.php';
 include '../skulliance.php';
 
 $status = array();
-$status = getDiscordStatus($conn);
+$status = getDiscordStatus($conn, getDiscordID($conn));
 
 if($status['message'] == 1 && $status['reaction'] == 1){
 	echo "true";
