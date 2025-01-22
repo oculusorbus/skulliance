@@ -222,6 +222,26 @@ function updateVisibility($conn, $visibility){
 	}
 }
 
+// Update Discord Message Status
+function updateDiscordMessageStatus($conn, $discord_id, $status){
+	$sql = "UPDATE users SET message='".$status."' WHERE discord_id='".$discord_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+// Update Discord Reaction Status
+function updateDiscordReactionStatus($conn, $discord_id, $status){
+	$sql = "UPDATE users SET reaction='".$status."' WHERE discord_id='".$discord_id."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Get all users
 function getUsers($conn){
 	$sql = "SELECT * FROM users";
