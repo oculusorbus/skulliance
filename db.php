@@ -4686,7 +4686,7 @@ function getRealms($conn, $sort){
 						if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
-							$output[$key] .= "<strong>Successfully Raided Recently</strong><br><br>";
+							$output[$key] .= "<strong>Raided Too Recently</strong><br><br>";
 						}
 					}else{
 						$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
