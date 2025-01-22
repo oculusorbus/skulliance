@@ -139,7 +139,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 <br><br>
 Realms require core project points as well as DIAMOND to upgrade offense, defense, and transport locations. The more core projects points you have, the stronger your realm will be. Without being able to upgrade all your locations, your ability to attack, defend, and travel may be impeded.
 <br><br>
-With that being said, Skulliance is offering a promotional incentive to participate in realms. Stakers establishing realms will receive the following starter pack of core project points:
+With that being said, Skulliance is offering a promotional incentive to participate in realms. Stakers establishing new realms will receive the following starter pack of core project points:
 <ul>
 	<li>1K STAR</li>
 	<li>1K DREAD</li>
