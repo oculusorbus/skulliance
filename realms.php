@@ -149,7 +149,7 @@ With that being said, Skulliance is offering a promotional incentive to particip
 	<li>1K CRYPT</li>
 	<li>1K DIAMOND</li>
 </ul>
-<br><br>
+<br>
 This allocation of core project points should provide you the opportunity to upgrade your locations to level 4. You can choose to deactivate your realm at any time and no longer participate in raids. But you will have to wait a month before being allowed to reactivate your realm. If you have not raided in over a month, your realm is subject to being automatically deactivated. You can reactivate an automatically deactivated realm at any time with no penalty.</p>
 					<input class="button" type="submit" value="Create Realm">
 				</form>
