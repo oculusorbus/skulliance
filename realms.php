@@ -135,7 +135,22 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<label for="realm">Realm Name</label><br>
 					<input type="text" id="realm" name="realm" size="30" required><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
-					<p id="disclaimer">By creating your realm, you agree to being vulnerable to raids from other realm owners who may attack your realm, damage your locations, and steal your points. You can raid other realms but raid failures also result in damage to your locations. If you anticipate that you are not going to be dedicated to protecting your realm and raiding on a regular basis, don't feel obligated to create a realm. Abandoned realms are a prime target for plundering which can lead to complete poverty and devastation.<br><br>Realms require core project points as well as DIAMOND to upgrade offense, defense, and transport locations. The more core projects points you have, the stronger your realm will be. Without being able to upgrade all your locations, your ability to attack, defend, and travel may be impeded.<br><br>You can choose to deactivate your realm at any time and no longer participate in raids. But you will have to wait a month before being allowed to reactivate your realm. If you have not raided in over a month, your realm is subject to being automatically deactivated. You can reactivate an automatically deactivated realm at any time with no penalty.</p>
+					<p id="disclaimer">By creating your realm, you agree to being vulnerable to raids from other realm owners who may attack your realm, damage your locations, and steal some of your points. You can raid other realms but raid failures also result in damage to your locations. If you anticipate that you are not going to be dedicated to protecting your realm and upgrading/raiding on a regular basis, don't feel obligated to create a realm. Abandoned realms are a prime target for plundering which can lead to complete poverty and devastation.
+<br><br>
+Realms require core project points as well as DIAMOND to upgrade offense, defense, and transport locations. The more core projects points you have, the stronger your realm will be. Without being able to upgrade all your locations, your ability to attack, defend, and travel may be impeded.
+<br><br>
+With that being said, Skulliance is offering a promotional incentive to participate in realms. Stakers establishing realms will receive the following starter pack of core project points:
+<ul>
+	<li>1K STAR</li>
+	<li>1K DREAD</li>
+	<li>1K HYPE</li>
+	<li>1K SINDER</li>
+	<li>1K CYBER</li>
+	<li>1K CRYPT</li>
+	<li>1K DIAMOND</li>
+</ul>
+<br><br>
+You can choose to deactivate your realm at any time and no longer participate in raids. But you will have to wait a month before being allowed to reactivate your realm. If you have not raided in over a month, your realm is subject to being automatically deactivated. You can reactivate an automatically deactivated realm at any time with no penalty.</p>
 					<input class="button" type="submit" value="Create Realm">
 				</form>
 				</li>
