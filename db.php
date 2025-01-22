@@ -242,6 +242,32 @@ function updateDiscordReactionStatus($conn, $discord_id, $status){
 	}
 }
 
+function resetDiscordStatus($conn){
+	$sql = "UPDATE users SET message='0', reaction='0' WHERE id='".$_SESSION['userData']['user_id']."'";
+	if ($conn->query($sql) === TRUE) {
+	  //echo "New record created successfully";
+	} else {
+	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+function getDiscordStatus($conn){
+	$sql = "SELECT message, reaction FROM users WHERE id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+	$status = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+    	$status['message'] = $row['message'];
+		$status['reaction'] = $row['reaction'];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $status;
+}
+
 // Get all users
 function getUsers($conn){
 	$sql = "SELECT * FROM users";

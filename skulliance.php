@@ -509,7 +509,13 @@ function renderDailyRewardsSection(){
 		echo '</li>';
 		echo '<li class="role" id="remaining" style="display:none;">';
 		echo '</li><br>';
-		echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
+		$status = getDiscordStatus($conn);
+		if($status["message"] == 1 && $status["reaction"] == 1){
+			echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
+		}else{
+			echo '<p>You must send a message and react to a message in Skulliance discord in order to claim your daily reward.</p>';
+			echo '<input id="checkDiscordStatusButton" type="button" value="Check Status" class="button" onclick="javascript:checkDiscordStatus();">';
+		}
 	} else { 
 			// Display 7 day completed rewards despite streak being reset
 			/*
