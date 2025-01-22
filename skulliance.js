@@ -866,7 +866,7 @@ function checkDiscordStatus(){
 		  if(data == "true"){
 			  document.getElementById("checkDiscordSection").outerHTML = '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 		  }else{
-			  alert("You have not sent a message and added a reaction to a message in Skulliance discord.");
+			  document.getElementById("checkDiscordStatusButton").value = 'Check Again';
 		  }
 		  console.log(data);
 	      // Do something with the data
