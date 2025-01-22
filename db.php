@@ -4745,17 +4745,15 @@ function getRealms($conn, $sort){
 	}
 }
 
+// Check if ANYONE is currently raiding this realm
 function checkRealmRaidStatus($conn, $realm_id){
-	if(isset($_SESSION['userData']['user_id'])){
-		$offense_id = getRealmID($conn);
-		$sql = "SELECT id FROM raids WHERE offense_id = '".$offense_id."' AND defense_id = '".$realm_id."' AND outcome ='0'";
-		$result = $conn->query($sql);
-	
-		if ($result->num_rows > 0) {
-			return false;
-		}else{
-			return true;
-		}
+	$sql = "SELECT id FROM raids WHERE defense_id = '".$realm_id."' AND outcome ='0'";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		return false;
+	}else{
+		return true;
 	}
 }
 
