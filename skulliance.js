@@ -866,7 +866,12 @@ function checkDiscordStatus(){
 		  if(data == "true"){
 			  document.getElementById("checkDiscordSection").outerHTML = '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 		  }else{
-			  document.getElementById("checkDiscordStatusButton").value = 'Check Again';
+			  if(document.getElementById("checkDiscordStatusButton").value == 'Check Status'){
+			  	document.getElementById("checkDiscordStatusButton").value = 'Check Again';
+		  	  }
+			  if(document.getElementById("checkDiscordStatusButton").value == 'Check Again'){
+			  	document.getElementById("checkDiscordStatusButton").value = 'Check Status';
+		  	  }
 		  }
 		  console.log(data);
 	      // Do something with the data
