@@ -866,10 +866,11 @@ function checkDiscordStatus(){
 		  if(data == "true"){
 			  document.getElementById("checkDiscordSection").outerHTML = '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 		  }else{
-			  if(document.getElementById("checkDiscordStatusButton").value == 'Check Status'){
+			  buttonValue = document.getElementById("checkDiscordStatusButton").value;
+			  if(buttonValue == 'Check Status'){
 			  	document.getElementById("checkDiscordStatusButton").value = 'Check Again';
 		  	  }
-			  if(document.getElementById("checkDiscordStatusButton").value == 'Check Again'){
+			  if(buttonValue == 'Check Again'){
 			  	document.getElementById("checkDiscordStatusButton").value = 'Check Status';
 		  	  }
 		  }
