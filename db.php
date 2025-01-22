@@ -4279,18 +4279,26 @@ function createRealm($conn, $realm){
 		VALUES ('".mysqli_real_escape_string($conn, $realm)."', '".$_SESSION['userData']['user_id']."', '7')";
 
 		if ($conn->query($sql) === TRUE) {
-		  //echo "New record created successfully";
-		  $realm_id = getRealmID($conn);
-	  		foreach(getLocationIDs($conn) AS $location_id){
-	  			$sql = "INSERT INTO realms_locations (realm_id, location_id, level)
-	  			VALUES ('".$realm_id."', '".$location_id."', '0')";
+		    //echo "New record created successfully";
+		    $realm_id = getRealmID($conn);
+			foreach(getLocationIDs($conn) AS $location_id){
+				$sql = "INSERT INTO realms_locations (realm_id, location_id, level)
+				VALUES ('".$realm_id."', '".$location_id."', '0')";
 
-	  			if ($conn->query($sql) === TRUE) {
-	  			  //echo "New record created successfully";
-	  			} else {
-	  			  //echo "Error: " . $sql . "<br>" . $conn->error;
-	  			}
-	  		}
+				if ($conn->query($sql) === TRUE) {
+				  //echo "New record created successfully";
+				} else {
+				  //echo "Error: " . $sql . "<br>" . $conn->error;
+				}
+			}
+			// Promotion to provide core project points to realm creators
+			$projects = getProjects($conn, "core");
+			foreach($projects AS $project_id => $project){
+				// Update balance
+				updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, 1000);
+				// Log transactions
+				logCredit($conn, $_SESSION['userData']['user_id'], 1000, $project_id);
+			}
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
