@@ -163,7 +163,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to save this theme. Purchase an NFT and refresh your wallet(s) to try again.");
 			}
 		}else{
-			$image = getRealmThemeID($conn, $realm_id);
+			if(isset($realm_id)){
+				$image = getRealmThemeID($conn, $realm_id);
+			}
 		}?>
 		<img src="images/themes/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php if(isset($image)){
