@@ -242,6 +242,7 @@ function updateDiscordReactionStatus($conn, $discord_id, $status){
 	}
 }
 
+// Reset Discord Message and Reaction Status
 function resetDiscordStatus($conn){
 	$sql = "UPDATE users SET message='0', reaction='0' WHERE id='".$_SESSION['userData']['user_id']."'";
 	if ($conn->query($sql) === TRUE) {
@@ -251,6 +252,7 @@ function resetDiscordStatus($conn){
 	}
 }
 
+// Get Discord Message and Reaction Status
 function getDiscordStatus($conn, $discord_id){
 	$sql = "SELECT message, reaction FROM users WHERE discord_id='".$discord_id."'";
 	$result = $conn->query($sql);
