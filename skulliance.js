@@ -853,6 +853,30 @@ function dailyReward(){
 	};
 }
 
+function checkDiscordStatus(){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/check-discord-status.php', true);
+	xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+		  if(data == "true"){
+		  	
+		  }else{
+			  alert("You have not sent a message and added a reaction to a message in Skulliance discord.");
+		  }
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost, true);
