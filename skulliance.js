@@ -864,7 +864,7 @@ function checkDiscordStatus(){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  if(data == "true"){
-		  	
+			  document.getElementById("checkDiscordSection").outerHTML = '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 		  }else{
 			  alert("You have not sent a message and added a reaction to a message in Skulliance discord.");
 		  }
