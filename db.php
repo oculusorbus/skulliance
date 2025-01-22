@@ -4683,7 +4683,11 @@ function getRealms($conn, $sort){
 						if($offense_id == $row["realm_id"]){
 							$value = "FRIENDLY FIRE";
 						}
-						$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+						if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
+							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+						}else{
+							$output[$key] .= "<strong>Successfully Raided Recently</strong><br><br>";
+						}
 					}else{
 						$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
 					}
@@ -4745,6 +4749,7 @@ function getRealms($conn, $sort){
 	}
 }
 
+// Check if realm is already raiding another realm
 function checkRealmRaidStatus($conn, $realm_id){
 	if(isset($_SESSION['userData']['user_id'])){
 		$offense_id = getRealmID($conn);
@@ -4758,6 +4763,32 @@ function checkRealmRaidStatus($conn, $realm_id){
 		}
 	}
 }
+
+// Get recent successfully raided realms limited by current portal level
+function getRecentRaidedRealms($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$offense_id = getRealmID($conn);
+		$portal_level = getRealmLocationLevel($conn, $offense_id, 1);
+		if($portal_level == 0){
+			$portal_level = 1;
+		}
+		$sql = "SELECT defense_id, outcome FROM raids WHERE offense_id = '".$offense_id."' AND outcome != '0' ORDER BY id DESC LIMIT ".$portal_level;
+		$result = $conn->query($sql);
+		
+		$recent_realms = array();
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				// Check successful outcome
+				if($row['outcome'] == 1){
+					$recent_realms[$row['defense_id']] = $row['defense_id'];
+				}
+			}
+		}
+		return $recent_realms;
+	}
+}
+
+
 
 function calculateRaidDefense($conn, $realm_id){
 	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
