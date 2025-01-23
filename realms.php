@@ -99,7 +99,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 												}
 												?>
 												<br><br>
-												<input class='small-button' type='button' value='<?php echo $point_multiplier; ?> Points Option' onclick='pointsOption(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost; ?>)'>
+												<input class='small-button' type='button' value='<?php echo $points_multiplier; ?> Points Option' onclick='pointsOption(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost; ?>)'>
 												<?php
 										    }else{ 
 												echo $status[$location_id];
