@@ -12,7 +12,7 @@ if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['durat
 		}
 	}
 	echo '</select>';
-	echo "<input class='small-button' type='button' value='Upgrade ".$points_multiplier*$_GET['cost']." Points' onclick='upgradeRealmLocationPoints();'>"
+	echo "<input class='small-button' type='button' value='Upgrade ".($points_multiplier*$_GET['cost'])." Points' onclick='upgradeRealmLocationPoints();'>"
 }else{
 	echo "No Get Variables";
 }
