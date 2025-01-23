@@ -897,9 +897,7 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 		  if(data != ""){
 		  	upgradeButton.outerHTML = data;
 			// Destroy partner points option section upon successful DB update
-			if(projectID > 7){
-				document.getElementById("points-section-"+locationID).outerHTML = "";
-			}
+			document.getElementById("points-section-"+locationID).outerHTML = "";
 		  }
 		  console.log(data);
 	      // Do something with the data
