@@ -948,6 +948,17 @@ function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
 	};
 }
 
+function togglePointsButtons(status){
+	if(status == "disabled"){
+		flag = true;
+	}else if(status == "enabled"){
+		flag = false;
+	}
+	for (let i = 1; i <= 7; i++) {
+		document.getElementById('points-button-'+i).disabled = flag;
+	}
+}
+
 function startRaid(raidButton, defenseID, duration){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration, true);
