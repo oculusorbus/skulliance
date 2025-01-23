@@ -906,7 +906,7 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 	};
 }
 
-upgradeRealmLocationPoints(upgradePointsButton, realmID, locationID, duration, cost){
+function upgradeRealmLocationPoints(upgradePointsButton, realmID, locationID, duration, cost){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost, true);
 	xhttp.send();
