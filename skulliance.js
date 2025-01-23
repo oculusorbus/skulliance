@@ -898,6 +898,7 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 		  	upgradeButton.outerHTML = data;
 			// Destroy partner points option section upon successful DB update
 			document.getElementById("points-section-"+locationID).outerHTML = "";
+			togglePointsButtons('enable');
 		  }
 		  console.log(data);
 	      // Do something with the data
@@ -949,14 +950,15 @@ function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
 }
 
 function togglePointsButtons(status){
-	flag = '';
-	if(status == "disable"){
-		flag = 'true';
-	}else if(status == "enable"){
-		flag = 'false';
-	}
 	for (let i = 1; i <= 7; i++) {
-		document.getElementById('points-button-'+i).disabled = flag;
+		pointsButton = document.getElementById('points-button-'+i);
+		if (typeof(pointsButton) != 'undefined' && pointsButton != null){
+			if(status == "disable"){
+				pointsButton.disabled = true;
+			}else if(status == "enable"){
+				pointsButton.removeAttribute("disabled");
+			}
+		}
 	}
 }
 
