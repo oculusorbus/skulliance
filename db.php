@@ -4860,7 +4860,7 @@ function getRealmBalances($conn, $user_id){
 	}
 	return $balances;
 }
-
+/*
 // Get location balances
 function getLocationBalances($conn, $user_id){
 	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id AND user_id = '".$user_id."' WHERE projects.id != '15' ORDER BY balance DESC";
@@ -4878,7 +4878,7 @@ function getLocationBalances($conn, $user_id){
 	  //echo "0 results";
 	}
 	return $balances;
-}
+}*/
 
 function startRaid($conn, $defense_id, $duration){
 	if(isset($_SESSION['userData']['user_id'])){
