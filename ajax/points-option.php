@@ -7,7 +7,7 @@ if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['durat
 	$balances = getLocationBalances($conn, $_SESSION['userData']['user_id']);
 	echo '<span id="points-section-'.$_GET['location_id'].'">';
 	echo '<select class="dropdown" name="points" id="points-'.$_GET['location_id'].'" onchange="document.getElementById(\'points-button-'.$_GET['location_id'].'\').value=\'Upgrade '.number_format($points_multiplier*$_GET['cost']).' \'+this.options[this.selectedIndex].id;">';
-	echo '<option id="Points" name="Points" value="0">Select Points Balance</option>';
+	echo '<option id="Points" name="Points" value="0">Select Points</option>';
 	foreach($balances AS $project_id => $balance){
 		if($balance["balance"] >= ($points_multiplier*$_GET['cost']) && $project_id != $_GET['location_id']){
 		  echo '<option id="'.$balance["currency"].'" name="'.$balance["currency"].'" value="'.$project_id.'">'.$balance["currency"].' ('.number_format($balance["balance"]).')</option>';
