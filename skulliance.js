@@ -909,7 +909,12 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 function upgradeRealmLocationPoints(upgradePointsButton, realmID, locationID, duration, cost){
 	projectID = document.getElementById('points-'+locationID).value;
 	upgradeButton = document.getElementById('upgrade-button-'+locationID);
-	upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost, projectID);
+	
+	if(projectID != 0){
+		upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost, projectID);
+	}else{
+		alert('Please select a points balance to deduct from.');
+	}
 }
 
 function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
