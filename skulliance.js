@@ -910,10 +910,17 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 
 function upgradeRealmLocationPoints(upgradePointsButton, realmID, locationID, duration, cost){
 	projectID = document.getElementById('points-'+locationID).value;
+	
+	// Check if button is present, if not retrieve message
 	upgradeButton = document.getElementById('upgrade-button-'+locationID);
+	if (typeof(upgradeButton) != 'undefined' && upgradeButton != null){
+		element = upgradeButton;
+	}else{
+		element = document.getElementById('upgrade-message-'+locationID);
+	}
 	
 	if(projectID != 0){
-		upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost, projectID);
+		upgradeRealmLocation(element, realmID, locationID, duration, cost, projectID);
 	}else{
 		alert('Please select a points balance to deduct from.');
 	}
