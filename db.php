@@ -4564,6 +4564,10 @@ function upgradeRealmLocationLevel($conn, $realm_id, $location_id, $duration){
 	if($current_level > $duration){
 		$duration = $current_level;
 	}
+	// Safety precaution in case someone manages to level up a location past 10
+	if($duration > 10){
+		$duration = 10;
+	}
 	//$new_level = $current_level + 1;
 	$sql = "UPDATE realms_locations SET level = '".$duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'";
 	if ($conn->query($sql) === TRUE) {

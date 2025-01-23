@@ -84,7 +84,11 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 										<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
 										<?php 
 										if(!isset($status[$location_id])){  
-											if($levels[$location_id] == 10){
+											if($levels[$location_id] > 10){
+												// Safety precaution to prevent leveling above 10
+												$duration = 10;
+											}else if($levels[$location_id] == 10){
+												// Maintain max level of 10 for all max uprgrades
 												$duration = $levels[$location_id];
 											}else{
 												$duration = $levels[$location_id]+1;
