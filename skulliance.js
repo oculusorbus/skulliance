@@ -884,9 +884,9 @@ function checkDiscordStatus(){
 	};
 }
 
-function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost){
+function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost, projectID){
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost, true);
+	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost+'&project_id='+projectID, true);
 	xhttp.send();
 	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
@@ -907,25 +907,9 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 }
 
 function upgradeRealmLocationPoints(upgradePointsButton, realmID, locationID, duration, cost){
-	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost, true);
-	xhttp.send();
-	xhttp.onreadystatechange = function() {
-	  if (xhttp.readyState == XMLHttpRequest.DONE) {
-	    // Check the status of the response
-	    if (xhttp.status == 200) {
-	      // Access the data returned by the server
-	      var data = xhttp.responseText;
-		  if(data != ""){
-		  	upgradeButton.outerHTML = data;
-		  }
-		  console.log(data);
-	      // Do something with the data
-	    } else {
-	      // Handle error
-	    }
-	  }
-	};
+	projectID = document.getElementById('points-'+locationID).value;
+	upgradeButton = document.getElementById('upgrade-button-'+locationID);
+	upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost, projectID);
 }
 
 function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){

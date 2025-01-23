@@ -4463,14 +4463,13 @@ function getRealmLocationNamesLevels($conn, $realm_id){
 	return $levels;
 }
 
-function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost){
+function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, $project_id){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "INSERT INTO upgrades (realm_id, location_id, duration)
 		VALUES ('".$realm_id."', '".$location_id."', '".$duration."')";
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
-		  $project_id = $location_id;
 		  updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$cost);
 		  logDebit($conn, $_SESSION['userData']['user_id'], 0, $cost, $project_id, $crafting=0, $mission_id=0, $location_id);
 		} else {
@@ -4855,6 +4854,25 @@ function getRealmBalances($conn, $user_id){
 	  while($row = $result->fetch_assoc()) {
 	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
         $balances[$row["currency"]] = $row["balance"];
+	  }
+	} else {
+	  //echo "0 results";
+	}
+	return $balances;
+}
+
+// Get location balances
+function getLocationBalances($conn, $user_id){
+	$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id AND user_id = '".$user_id."' WHERE projects.id != '15' ORDER BY balance DESC";
+	$result = $conn->query($sql);
+
+	$balances = array();
+	if ($result->num_rows > 0) {
+	  // output data of each row
+	  while($row = $result->fetch_assoc()) {
+	    $balances[$row["project_id"]] = array();
+		$balances[$row["project_id"]]["currency"] = $row["currency"];
+        $balances[$row["project_id"]]["balance"] = $row["balance"];
 	  }
 	} else {
 	  //echo "0 results";
