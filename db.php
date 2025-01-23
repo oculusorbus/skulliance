@@ -4632,7 +4632,7 @@ function getRealms($conn, $sort){
 				if($sort == "random"){
 					$key = $row['realm_id'];
 				}else if($sort == "weakness" || $sort == "strength"){
-					$key = $defense_threshold.".".$row['realm_id'];
+					$key = calculateRawRaidDefense($conn, $row['realm_id']).".".$row['realm_id'];
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
@@ -4791,7 +4791,28 @@ function getRecentRaidedRealms($conn){
 	}
 }
 
+function calculateRawRaidDefense($conn, $realm_id){
+	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	
+	$defense = 0;
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row['location_id'] == 3){
+				$defense += $row["level"];
+			}
+			if($row['location_id'] == 5){
+				$defense += $row["level"];
+			}
+			if($row['location_id'] == 7){
+				$defense += $row["level"];
+			}
+		}
+	}else{
 
+	}
+	return $defense;
+}
 
 function calculateRaidDefense($conn, $realm_id){
 	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
