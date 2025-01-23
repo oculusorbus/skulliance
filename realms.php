@@ -98,6 +98,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 													echo "Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency'];
 												}
 												?>
+												<br>
 												<input class='small-button' type='button' value='5x Points Option' onclick='pointsOption(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost; ?>)'>
 												<?php
 										    }else{ 
