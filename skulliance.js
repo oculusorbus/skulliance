@@ -937,7 +937,7 @@ function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
 	      // Access the data returned by the server
 	      var data = xhttp.responseText;
 		  if(data != ""){
-		  	pointsOptionButton.after(data);
+		  	pointsOptionButton.outerHTML = data;
 		  }
 		  console.log(data);
 	      // Do something with the data
