@@ -92,7 +92,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 											<?php 
 												$balance = getBalance($conn, $location_id);
 												if($balance >= $cost){ ?>
-
+													<input id='upgrade-button-<?php echo $location_id; ?>' class='small-button' type='button' value='Upgrade to Level <?php echo ($levels[$location_id]+1); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost;?>, <?php echo $location_id; ?>)'>
 											<?php
 												}else{
 													echo "Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency'];
