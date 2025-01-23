@@ -4791,6 +4791,7 @@ function getRecentRaidedRealms($conn){
 	}
 }
 
+// Calculate Raw Raid Defense to better sort Realm results for strength and weakness
 function calculateRawRaidDefense($conn, $realm_id){
 	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
 	$result = $conn->query($sql);
