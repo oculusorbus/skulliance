@@ -223,6 +223,10 @@ This allocation of core project points should provide you the opportunity to upg
 </div>
 <div class="row" id="row1">	
 	<div class="main">
+	<h2>Crafting</h2>
+	<div class="content" id="player-stats">
+		<?php renderCrafting($conn, "store"); ?>
+	</div>
 	<div id="raids">
 		<?php 
 		if(checkRealm($conn)){
