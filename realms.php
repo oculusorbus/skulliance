@@ -84,15 +84,13 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 										<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
 										<?php 
 										if(!isset($status[$location_id])){  
-											$cost = (($levels[$location_id]+1)*100); ?>
-											<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
-											<?php
 											if($levels[$location_id] == 10){
 												$duration = $levels[$location_id];
 											}else{
 												$duration = $levels[$location_id]+1;
 											}
-											?>
+											$cost = $duration*100; ?>
+											<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
 											<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
 										<?php 
 											$balance = getBalance($conn, $location_id);
