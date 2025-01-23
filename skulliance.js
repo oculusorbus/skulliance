@@ -949,10 +949,11 @@ function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
 }
 
 function togglePointsButtons(status){
-	if(status == "disabled"){
-		flag = true;
-	}else if(status == "enabled"){
-		flag = false;
+	flag = '';
+	if(status == "disable"){
+		flag = 'true';
+	}else if(status == "enable"){
+		flag = 'false';
 	}
 	for (let i = 1; i <= 7; i++) {
 		document.getElementById('points-button-'+i).disabled = flag;
