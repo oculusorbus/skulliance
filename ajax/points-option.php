@@ -9,11 +9,11 @@ if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['durat
 	 echo '<option value="">Select Points Balance</option>';
 	foreach($balances AS $currency => $balance){
 		if($currency != "CARBON" && $balance >= ($points_multiplier*$_GET['cost'])){
-		  echo '<option value="'.$currency.'">'.$currency.' ('.number_format($balance).')</option>';
+		  echo '<option onclick="document.getElementById(\'points-button-'.$_GET['location_id'].'\').value=\'Upgrade '.number_format($points_multiplier*$_GET['cost']).' '.$currency.' \'" value="'.$currency.'">'.$currency.' ('.number_format($balance).')</option>';
 		}
 	}
 	echo '</select>';
-	echo "<input class='small-button' type='button' value='Upgrade ".number_format($points_multiplier*$_GET['cost'])." Points' onclick='upgradeRealmLocationPoints();'>";
+	echo "<input id='points-button-".$_GET['location_id']."' class='small-button' type='button' value='Upgrade ".number_format($points_multiplier*$_GET['cost'])." Points' onclick='upgradeRealmLocationPoints();'>";
 }else{
 	echo "No Get Variables";
 }
