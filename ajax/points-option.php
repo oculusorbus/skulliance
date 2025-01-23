@@ -7,7 +7,7 @@ if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['durat
 	$balances = getRealmBalances($conn, $_SESSION['userData']['user_id']);
 	echo '<select name="points" id="points-'.$_GET['location_id'].'">';
 	foreach($balances AS $currency => $balance){
-		if($currency != "CARBON"){
+		if($currency != "CARBON" && $balance >= ($points_multiplier*$_GET['cost'])){
 		  echo '<option value="'.$currency.'">'.$currency.' ('.number_format($balance).')</option>';
 		}
 	}
