@@ -954,8 +954,10 @@ function togglePointsButtons(status){
 		pointsButton = document.getElementById('points-button-'+i);
 		if (typeof(pointsButton) != 'undefined' && pointsButton != null){
 			if(status == "disable"){
+				pointsButton.disabled = true;
 				pointsButton.style.display = "none";
 			}else if(status == "enable"){
+				pointsButton.removeAttribute("disabled");
 				pointsButton.style.display = "block";
 			}
 		}
