@@ -906,6 +906,28 @@ function upgradeRealmLocation(upgradeButton, realmID, locationID, duration, cost
 	};
 }
 
+upgradeRealmLocationPoints(upgradePointsButton, realmID, locationID, duration, cost){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/upgrade-realm-location.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+	      // Access the data returned by the server
+	      var data = xhttp.responseText;
+		  if(data != ""){
+		  	upgradeButton.outerHTML = data;
+		  }
+		  console.log(data);
+	      // Do something with the data
+	    } else {
+	      // Handle error
+	    }
+	  }
+	};
+}
+
 function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/points-option.php?realm_id='+realmID+'&location_id='+locationID+'&duration='+duration+'&cost='+cost, true);
