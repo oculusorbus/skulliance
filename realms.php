@@ -97,6 +97,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 												}else{
 													echo "Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency'];
 												}
+												?>
+												<input class='small-button' type='button' value='5x Partner Points Option' onclick='partnerPointsOption(this, <?php echo $cost; ?>)'>
+												<?php
 										    }else{ 
 												echo $status[$location_id];
 											}
