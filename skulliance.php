@@ -35,7 +35,7 @@ if(sizeof(getAddressesDiscord($conn)) != 0){
 }
 
 // Realm Location Upgrades
-$points_multiplier = 5;
+$points_multiplier = 3;
 
 // Initiate variables
 $member = false;
