@@ -9,7 +9,7 @@ if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['durat
 	 echo '<option value="">Select Points Balance</option>';
 	foreach($balances AS $currency => $balance){
 		if($currency != "CARBON" && $balance >= ($points_multiplier*$_GET['cost'])){
-		  echo '<option onclick="document.getElementById(\'points-button-'.$_GET['location_id'].'\').value=\'Upgrade '.number_format($points_multiplier*$_GET['cost']).' '.$currency.' \'" value="'.$currency.'">'.$currency.' ('.number_format($balance).')</option>';
+		  echo '<option onselect="document.getElementById(\'points-button-'.$_GET['location_id'].'\').value=\'Upgrade '.number_format($points_multiplier*$_GET['cost']).' '.$currency.'\'" value="'.$currency.'">'.$currency.' ('.number_format($balance).')</option>';
 		}
 	}
 	echo '</select>';
