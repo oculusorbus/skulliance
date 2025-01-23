@@ -14,6 +14,7 @@ if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['durat
 		}
 	}
 	echo '</select>';
+	echo "<br><br>";
 	echo "<input id='points-button-".$_GET['location_id']."' class='small-button' type='button' value='Upgrade ".number_format($points_multiplier*$_GET['cost'])." Points' 
 		   onclick='upgradeRealmLocationPoints(this, ".$_GET['realm_id'].", ".$_GET['location_id'].", ".$_GET['duration'].", ".($points_multiplier*$_GET['cost']).");'>";
 	echo "</span>";
