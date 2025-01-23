@@ -3237,7 +3237,7 @@ function transactionHistory($conn) {
 				}
 				if($row["location_id"] != 0){
 					$locations = getLocationInfo($conn);
-					echo "<td>Realm Upgrade: ".ucfirst($locations[$row["project_id"]]['name'])."</td>";
+					echo "<td>Realm Upgrade: ".ucfirst($locations[$row["location_id"]]['name'])."</td>";
 				}
 				if($row["raid_id"] != 0){
 					echo "<td>Raid Deduction: Defense Failure</td>";
