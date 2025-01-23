@@ -1,0 +1,21 @@
+<?php
+include '../db.php';
+include '../skulliance.php';
+
+if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['duration']) && isset($_GET['cost'])){
+	// Need to double check duration and cost in case someone tries to manually override these variables in the JS function
+	$balances = getRealmBalances($conn, $_SESSION['userData']['user_id']);
+	echo '<select name="points" id="points-'.$_GET['location_id'].'">';
+	foreach($balances AS $currency => $balance){
+		if($currency != "CARBON"){
+		  echo '<option value="'.$currency.'">'.$currency.' ('.number_format($balance).')</option>';
+		}
+	}
+	echo '</select>';
+}else{
+	echo "No Get Variables";
+}
+
+// Close DB Connection
+$conn->close();
+?>
