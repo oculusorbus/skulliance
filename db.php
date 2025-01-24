@@ -4688,6 +4688,7 @@ function getRealms($conn, $sort){
 						if($offense_id == $row["realm_id"]){
 							$value = "FRIENDLY FIRE";
 						}
+						// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 						if($raw_defense == 0 && $raw_raider_defense != 0){
 							$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
 						}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
