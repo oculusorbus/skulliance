@@ -4827,7 +4827,7 @@ function calculateRawRaidOffense($conn, $realm_id){
 	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
 	$result = $conn->query($sql);
 	
-	$defense = 0;
+	$offense = 0;
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
 			if($row['location_id'] == 2){
