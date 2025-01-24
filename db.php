@@ -4628,6 +4628,7 @@ function getRealms($conn, $sort){
 				$duration = ceil($defense/$offense);
 				$balances = getRealmBalances($conn, $row['user_id']);
 				$raw_defense = calculateRawRaidDefense($conn, $row['realm_id']);
+				$raw_raider_defense = calculateRawRaidDefense($conn, $offense_id);
 				
 				$key = "";
 				if($sort == "random"){
@@ -4687,7 +4688,7 @@ function getRealms($conn, $sort){
 						if($offense_id == $row["realm_id"]){
 							$value = "FRIENDLY FIRE";
 						}
-						if($raw_defense == 0){
+						if($raw_defense == 0 && $raw_raider_defense != 0){
 							$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
 						}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
