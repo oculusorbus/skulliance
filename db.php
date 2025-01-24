@@ -1925,7 +1925,7 @@ function createAddress($conn, $stake_address, $address) {
 // Check user's Cardano address
 function checkAddress($conn, $stake_address, $address) {
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT stake_address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' AND stake_address='".$stake_address."'";
+		$sql = "SELECT stake_address FROM wallets WHERE stake_address='".$stake_address."'";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
