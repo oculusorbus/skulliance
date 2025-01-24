@@ -4627,12 +4627,13 @@ function getRealms($conn, $sort){
 				$offense_threshold = $percentage * $offense;
 				$duration = ceil($defense/$offense);
 				$balances = getRealmBalances($conn, $row['user_id']);
+				$raw_defense = calculateRawRaidDefense($conn, $row['realm_id']);
 				
 				$key = "";
 				if($sort == "random"){
 					$key = $row['realm_id'];
 				}else if($sort == "weakness" || $sort == "strength"){
-					$key = calculateRawRaidDefense($conn, $row['realm_id']).".".$row['realm_id'];
+					$key = $raw_defense.".".$row['realm_id'];
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
@@ -4686,7 +4687,9 @@ function getRealms($conn, $sort){
 						if($offense_id == $row["realm_id"]){
 							$value = "FRIENDLY FIRE";
 						}
-						if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
+						if($raw_defense == 0){
+							$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
+						}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
 							$output[$key] .= "<strong>Recovering from Raid</strong><br><br>";
