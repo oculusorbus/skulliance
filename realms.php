@@ -164,7 +164,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <br>
 This allocation of core project points should provide you the opportunity to upgrade your locations to level 4 before having to rely on other points at a 3x higher cost.
 <br><br>
-You can choose to deactivate your realm at any time and no longer participate in raids. But you will have to wait a month before being allowed to reactivate your realm. If you have not raided in over a month, your realm is subject to being automatically deactivated. You can reactivate an automatically deactivated realm at any time with no penalty.
+You can choose to deactivate your realm at any time and no longer participate in raids. But you will have to wait a month before being allowed to reactivate your realm. This prevents abuse of the deactivation function. If you have not raided in over a month, your realm is subject to being automatically deactivated. You can reactivate an automatically deactivated realm at any time with no penalty.
 </p>
 				</form>
 				</li>
