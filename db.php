@@ -4619,6 +4619,8 @@ function getRealms($conn, $sort){
 		$output = array();
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
+				$raw_offense = calculateRawRaidOffense($conn, $offense_id);
+				$raw_defense = calculateRawRaidDefense($conn, $row['realm_id']);
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$total = $defense + $offense;
@@ -4627,8 +4629,8 @@ function getRealms($conn, $sort){
 				$offense_threshold = $percentage * $offense;
 				$duration = ceil($defense/$offense);
 				$balances = getRealmBalances($conn, $row['user_id']);
+				$raw_offense = calculateRawRaidOffense($conn, $offense_id);
 				$raw_defense = calculateRawRaidDefense($conn, $row['realm_id']);
-				$raw_raider_defense = calculateRawRaidDefense($conn, $offense_id);
 				
 				$key = "";
 				if($sort == "random"){
@@ -4689,7 +4691,7 @@ function getRealms($conn, $sort){
 							$value = "FRIENDLY FIRE";
 						}
 						// Prevents established realms from rading new realms, but allows for new realms to raid each other.
-						if($raw_defense == 0 && $raw_raider_defense != 0){
+						if($raw_defense == 0 && $raw_offense != 0){
 							$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
 						}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
@@ -4818,6 +4820,30 @@ function calculateRawRaidDefense($conn, $realm_id){
 
 	}
 	return $defense;
+}
+
+// Calculate Raw Raid Offense to identify newly established or heavily damaged realms
+function calculateRawRaidOffense($conn, $realm_id){
+	$sql = "SELECT locations.name AS name, location_id, level FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	
+	$defense = 0;
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row['location_id'] == 2){
+				$offense += $row["level"];
+			}
+			if($row['location_id'] == 4){
+				$offense += $row["level"];
+			}
+			if($row['location_id'] == 6){
+				$offense += $row["level"];
+			}
+		}
+	}else{
+
+	}
+	return $offense;
 }
 
 function calculateRaidDefense($conn, $realm_id){
