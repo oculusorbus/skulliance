@@ -104,7 +104,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 											}else{
 												echo "<span id='upgrade-message-".$location_id."'>Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency']."</span>";
 											?>
-											<br><br>
+											<br>
 											<input id="points-button-<?php echo $location_id; ?>" class="small-button" type="button" value="<?php echo $points_multiplier; ?>x Points Upgrade" onclick="togglePointsButtons('disable');pointsOption(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost; ?>)">
 											<?php
 											}
