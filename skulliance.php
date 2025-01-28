@@ -512,16 +512,16 @@ function renderDailyRewardsSection(){
 		echo '</li>';
 		echo '<li class="role" id="remaining" style="display:none;">';
 		echo '</li><br>';
-		$status = getDiscordStatus($conn, getDiscordID($conn));
-		if(($status["message"] == 1 && $status["reaction"] == 1) || $_SESSION['userData']['discord_id'] == '214061010011553792'){
+		//$status = getDiscordStatus($conn, getDiscordID($conn));
+		//if(($status["message"] == 1 && $status["reaction"] == 1) || $_SESSION['userData']['discord_id'] == '214061010011553792'){
 			echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
-		}else{
+		/*}else{
 			echo '<input style="display:none" id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
 			echo '<span id="checkDiscordSection">';
 			echo '<li class="role no-border-style">You must send a message and add a reaction to a message in discord in order to claim your daily reward.</li>';
 			echo '<input id="checkDiscordStatusButton" type="button" value="Check Status" class="button" onclick="javascript:checkDiscordStatus();">';
 			echo '</span>';
-		}
+		}*/
 	} else { 
 			// Display 7 day completed rewards despite streak being reset
 			/*
