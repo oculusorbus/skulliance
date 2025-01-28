@@ -53,6 +53,7 @@ if(isset($_POST["start_all"])){
 		echo '<a name="current-missions" id="current-missions"></a>';
 		echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
 		$projects = array();
+		// Re-add if statement and activate AJAX JS if the query takes too long
 		//if($display == 'block'){
 			$projects = getCurrentMissions($conn);
 		//}

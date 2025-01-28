@@ -391,7 +391,7 @@ function toggleTotalMissions(arrow){
 }
 
 function toggleCurrentMissions(arrow){
-	//var xhttp = new XMLHttpRequest();
+	var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
 	if(arrow.id == 'current-down'){
@@ -401,12 +401,12 @@ function toggleCurrentMissions(arrow){
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'current-down';
+		// Swap for loading.gif if needing to use AJAX for performance
 		arrow.src = 'icons/down.png';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
 	}
 	
-	/*
 	xhttp.open('GET', 'ajax/toggle-current-missions.php?visibility='+visibility, true);
 	
 	xhttp.send();
@@ -417,6 +417,7 @@ function toggleCurrentMissions(arrow){
 	    if (xhttp.status == 200) {
 			// Access the data returned by the server
 			var data = xhttp.responseText;
+			/* Only reactivate if there are performance issues with the current missions query
 			document.getElementById('current-missions-container').innerHTML = data;
 			if(data != ""){
 				document.getElementById('current-down').src = 'icons/down.png';
@@ -424,7 +425,7 @@ function toggleCurrentMissions(arrow){
 				if (typeof(claimButton) != 'undefined' && claimButton != null){
 					document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
 				}
-			}
+			}*/
 	    } else {
 	      // Handle error
 			alert("AJAX Error");
