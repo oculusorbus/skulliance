@@ -431,7 +431,7 @@ function toggleCurrentMissions(arrow){
 			alert("AJAX Error");
 	    }
 	  }
-	};*/
+	};
 }
 
 function toggleRaids(arrow, category, results){
