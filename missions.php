@@ -53,9 +53,9 @@ if(isset($_POST["start_all"])){
 		echo '<a name="current-missions" id="current-missions"></a>';
 		echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
 		$projects = array();
-		if($display == 'block'){
+		//if($display == 'block'){
 			$projects = getCurrentMissions($conn);
-		}
+		//}
 		echo '</div>';
 	?>
 	</div>

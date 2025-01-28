@@ -391,7 +391,7 @@ function toggleTotalMissions(arrow){
 }
 
 function toggleCurrentMissions(arrow){
-	var xhttp = new XMLHttpRequest();
+	//var xhttp = new XMLHttpRequest();
 	var visibility = "";
 	
 	if(arrow.id == 'current-down'){
@@ -401,11 +401,12 @@ function toggleCurrentMissions(arrow){
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'current-down';
-		arrow.src = 'icons/loading.gif';
+		arrow.src = 'icons/down.png';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
 	}
 	
+	/*
 	xhttp.open('GET', 'ajax/toggle-current-missions.php?visibility='+visibility, true);
 	
 	xhttp.send();
@@ -429,7 +430,7 @@ function toggleCurrentMissions(arrow){
 			alert("AJAX Error");
 	    }
 	  }
-	};
+	};*/
 }
 
 function toggleRaids(arrow, category, results){
