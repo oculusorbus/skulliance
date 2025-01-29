@@ -5408,6 +5408,9 @@ function endRaid($conn, $raid_id){
 		}
 		// Divide balance by 100 and multiply by the absolute value of the difference between offense and defense level, this ensures that a weaker realm successfully raiding a stronger realm is rewarded for their risk taking by extracting the absolute value of the negative result
 		$difference = abs($offense-$defense);
+		if($difference == 0){
+			$difference = 1;
+		}
 		$amount = round(($balance/100)*$difference);
 		assignRealmProjectRewards($conn, $raid_id, $project_id, $amount);
 	}else if($outcome == 2){
