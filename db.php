@@ -5406,8 +5406,9 @@ function endRaid($conn, $raid_id){
 			$project_balance = $balance;
 			$project_id = $id;
 		}
-		// Divide balance by 100 and multiply by offense score, max amount can be 10% if offense is completely leveled up
-		$amount = round(($balance/100)*$offense);
+		// Divide balance by 100 and multiply by the absolute value of the difference between offense and defense level, this ensures that a weaker realm successfully raiding a stronger realm is rewarded for their risk taking by extracting the absolute value of the negative result
+		$difference = abs($offense-$defense);
+		$amount = round(($balance/100)*$difference);
 		assignRealmProjectRewards($conn, $raid_id, $project_id, $amount);
 	}else if($outcome == 2){
 		// Damage to random offense location for offense
