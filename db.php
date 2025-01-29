@@ -4693,6 +4693,9 @@ function getRealms($conn, $sort){
 						// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 						if($raw_defense == 0 && $raw_offense != 0){
 							$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
+						}else if(($offense-$defense) > 3){
+							$level_range = (($offense-$defense)-3);
+							$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
 						}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
