@@ -147,7 +147,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<p id="disclaimer">
 Skulliance Realms is offering a unique multiplayer experience to holders that allows for competition between players. Realms is currently in beta development and relying heavily on player feedback to optimize and balance gameplay dynamics.
 <br><br>
-<a href="https://skulliance.gitbook.io/skulliance/realms" target="_blank">For an exhaustive synpopsis of Realms and Raids, read the details outlined in the Skull Paper</a>
+<a href="https://skulliance.gitbook.io/skulliance/realms" target="_blank">Learn more about Realms and Raids in the Skull Paper</a>
 <br><br>
 Skulliance is offering a promotional incentive to participate in realms. Stakers establishing new realms will receive the following starter pack of core project points:
 <ul>
@@ -159,14 +159,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<li>1K CRYPT</li>
 	<li>1K DIAMOND</li>
 </ul>
-<br>
-This allocation of core project points should provide you the opportunity to upgrade your locations to level 4 before having to rely on other points at a 3x higher cost.
-<br><br>
-By creating your realm, you agree to being vulnerable to raids from other realm owners who may attack your realm, damage your locations, and steal a small percentage of your points from a random project. You can raid other realms but raid failures also result in damage to your locations. If you anticipate that you are not going to be dedicated to protecting your realm and upgrading/raiding on a regular basis, don't feel obligated to create a realm. Abandoned realms are a prime target for looting and continual damage. Please note that all realms are susceptible to damage or theft. Your defense level just augments those odds, but no realm is impenetrable. Strategic decision-making about which realms to raid can spell the difference between success and defeat.
-<br><br>
-Realms require core project points as well as DIAMOND to upgrade offense, defense, and transport locations. The more core projects points you have, the stronger your realm will be. Without being able to upgrade all your locations, your ability to attack, defend, and travel may be impeded. With that being said, you can now upgrade locations using any other project points, but it will be 3 times costlier than using core project points. You can also burn CARBON to form DIAMOND and shatter it into equal parts core project points. Realm owners earn a fair share of 1 million CARBON every month based on their raid performance. CARBON can also be obtained monthly from participating in Missions.
-<br><br>
-You can choose to deactivate your realm at any time and no longer participate in raids. But you will have to wait a month before being allowed to reactivate your realm. This prevents abuse of the deactivate function. If you have not raided in over a month, your realm is subject to being automatically deactivated. You can reactivate an automatically deactivated realm at any time with no penalty.
 </p>
 				</form>
 				</li>
