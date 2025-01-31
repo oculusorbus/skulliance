@@ -5630,9 +5630,9 @@ function getTotalFactionRaids($conn){
 	if ($month_result->num_rows > 0) {
 		$project = getProjectInfo($conn, $project_id);
 	  	echo "<h2 class='raid-title'>Faction Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalFactions(this)'/></h2>";
-		echo "<h3>".$project["name"]."</h3>";
 	  	echo '<a name="total-factions" id="total-factions"></a>';
 	    echo '<div class="content missions" id="total-factions-container" style="display:'.$display.'">';
+		echo "<h3>".$project["name"]."</h3>";
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Raids</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
