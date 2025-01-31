@@ -257,12 +257,12 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		<?php
 		$projects = array_reverse($projects, true);
 		foreach($projects AS $id => $project){
-			echo '<option '.(($project_id == $id)?'selected'.'').' value="'.$id.'">'.$project["name"].'</option>';
+			echo '<option value="'.$id.'">'.$project["name"].'</option>';
 		}
 		echo '</optgroup><optgroup label="Partner Factions">';
 		$partner_projects = getProjects($conn, "partner");
 		foreach($partner_projects AS $id => $project){
-			echo '<option '.(($project_id == $id)?'selected'.'').' value="'.$id.'">'.$project["name"].'</option>';
+			echo '<option value="'.$id.'">'.$project["name"].'</option>';
 		}
 		echo '</optgroup>';
 		?>
