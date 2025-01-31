@@ -268,7 +268,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		$selected = "";
 		$project_id = getRealmFaction($conn, $realm_id);
 		$core_projects = getProjects($conn, "core");
-		$core_projects = array_reverse($core_projects, true);
 		$partner_projects = getProjects($conn, "partner");
 		?>
 		<optgroup label="Core Factions">';
