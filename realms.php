@@ -246,7 +246,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		?>
 		<form id="factionsForm" action="realms.php" method="post">
 		<label for="faction"><strong>Faction:</strong></label>
-		<select class="dropdown" name="faction" id="faction">
+		<select onchange="document.getElementById('factionsForm').submit();" class="dropdown" name="faction" id="faction">
 		<?php
 		$project_id = getRealmFaction($conn, $realm_id);
 		$core_projects = getProjects($conn, "core");
