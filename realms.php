@@ -163,7 +163,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					echo '</optgroup>';
 					?>
 					</select><br><br>
-					<input class="button" type="submit" value="Create Realm"><br><br>
+					<input class="button" type="submit" value="Create Realm">
+					</form>
+					<br><br>
 					<label for="disclaimer">Disclaimer</label><br>
 					<p id="disclaimer">
 Skulliance Realms is offering a unique multiplayer experience to holders that allows for competition between players. Realms is currently in beta development and relying heavily on player feedback to optimize and balance gameplay dynamics.
@@ -181,7 +183,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<li>1K DIAMOND</li>
 </ul>
 </p>
-				</form>
 				</li>
 				</ul>
 				<?php
