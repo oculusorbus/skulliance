@@ -38,8 +38,9 @@ include 'header.php';
 				    <?php
 						filterLeaderboard("leaderboards");
 						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids"){
-							getTotalNFTs($conn, $filterby);
-							checkLeaderboard($conn, false, $filterby);
+							//getTotalNFTs($conn, $filterby);
+							//checkLeaderboard($conn, false, $filterby);
+							checkFactionsLeaderboard($conn, $monthly=true, $rewards=false);
 						}else if($filterby == "missions"){
 							checkMissionsLeaderboard($conn);
 						}else if($filterby == "monthly"){

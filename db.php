@@ -4063,6 +4063,175 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 	}
 }
 
+function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
+	$carbon = 1000000;
+	$where = "";
+	if($monthly){
+		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+	}
+	if($rewards){
+		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
+	}
+	$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id 
+					WHERE success_raids.outcome = '1' AND success_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "success_raids", $where)).") AS success, 
+	               
+				   (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN realms AS failed_realms ON failed_realms.id = failed_raids.offense_id INNER JOIN users AS failed_users ON failed_users.id = failed_realms.user_id 
+				    WHERE failed_raids.outcome = '2' AND failed_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "failed_raids", $where)).") AS failure, 
+				   
+				   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.offense_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id 
+				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
+	        
+			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, currency, realms.project_id AS project_id, projects.name AS project_name   
+		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY realms.project_id ORDER BY total DESC";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		echo "<table id='transactions' cellspacing='0'>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Project</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		if($monthly){
+			echo "<th>Projected Rewards</th>";
+		}
+		$fireworks = false;
+		$leaderboardCounter = 0;
+		$last_total = 0;
+		$third_total = 0;
+		$width = 40;
+		$raids = array();
+		$index = 0;
+		$description = "";
+		$counter = 0;
+		while($row = $result->fetch_assoc()) {
+			$raids[$index] = array();
+			$raids[$index]["project_id"] = $row["project_id"];
+			$raids[$index]["project_name"] = $row["project_name"];
+			$raids[$index]["currency"] = $row["currency"];
+			$raids[$index]["total"] = $row["total"];
+			$raids[$index]["success"] = $row["success"];
+			$raids[$index]["failure"] = $row["failure"];
+			$raids[$index]["progress"] = $row["progress"];
+			$raids[$index]["score"] = calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]);
+			$index++;
+		}
+		array_sort_by_column($raids, "score");
+		foreach($raids AS $index => $row){
+			$leaderboardCounter++;
+			$counter++;
+			$trophy = "";
+			if($leaderboardCounter == 1){
+				//$width = 50;
+				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter == 2){
+				//$width = 45;
+				if($last_total != $row["score"]){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+				}else{
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+					$leaderboardCounter--;
+				}
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter == 3){
+				//$width = 40;
+				if($last_total != $row["score"]){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+					$third_total = $row["score"];
+				}else{
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+					$leaderboardCounter--;
+				}
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter > 3 && $third_total == $row["score"]){
+				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+				$leaderboardCounter--;
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter > 3 && $last_total == $row["score"]){
+				$leaderboardCounter--;
+			}
+			$highlight = "";
+			if(isset($_SESSION['userData']['user_id'])){
+				if($row["user_id"] == $_SESSION['userData']['user_id']){
+					$highlight = "highlight";
+				}
+			}
+			echo "<tr class='".$highlight."'>";
+			echo "<td align='center'>";
+			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".$row["currency"].".png' class='icon rounded-full'/>";
+			echo $avatar;
+			echo "</td>";
+			echo "<td align='left'>";
+			$project_name = "";
+			$project_name = $row["project_name"];
+			echo "<strong style='font-size:20px'>".$project_name."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["score"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["total"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["success"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["failure"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["progress"];
+			echo "</td>";
+			if($monthly){
+				echo "<td align='center'>";
+				echo number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND";
+				echo "</td>";
+			}
+			echo "</tr>";
+			$last_total = $row["score"];
+			if($rewards){
+				updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+				
+				// Limit number of rows added to description to prevent going over Discord notification text length limit
+				if($counter <= 45){
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
+					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
+					$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
+				}
+			}
+		}
+		if($rewards){
+			$last_month = date('F', strtotime('last month'));
+			$title = $last_month." Raids Leaderboard Results";
+			$imageurl = "";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+		}
+		echo "</table>";
+		if($fireworks){
+			fireworks();
+		}
+	}
+}
+
+
+
+
 // Check Daily Rewards Streak Leaderboard
 function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 10000;
