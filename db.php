@@ -4092,7 +4092,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
     SUM(CASE WHEN raids.outcome = '0' THEN 1 ELSE 0 END) AS progress,
     COUNT(raids.id) AS total,
     SUM(raids.duration) AS total_duration,
-    currency
+    MAX(users.currency) AS currency -- Assuming currency is per user, we take max or another aggregate if needed
 	FROM 
     users 
     INNER JOIN realms ON users.id = realms.user_id 
