@@ -4224,7 +4224,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
-					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."".$row["project_name"]."> - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."".$row["project_name"]." - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
 					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
 					$description .= "        ".number_format(round($points/$leaderboardCounter))." ".$row["currency"]." rewarded to each member of this faction.\r\n";
 				}
