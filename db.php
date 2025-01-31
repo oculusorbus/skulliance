@@ -4174,7 +4174,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px'  src='/staking/icons/".$row["currency"].".png' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
