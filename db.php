@@ -4087,12 +4087,12 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 	$sql = "SELECT 
     realms.project_id AS project_id,
     projects.name AS project_name,
+    projects.currency AS currency, -- Currency is from the projects table, no need for aggregation
     SUM(CASE WHEN raids.outcome = '1' THEN 1 ELSE 0 END) AS success,
     SUM(CASE WHEN raids.outcome = '2' THEN 1 ELSE 0 END) AS failure,
     SUM(CASE WHEN raids.outcome = '0' THEN 1 ELSE 0 END) AS progress,
     COUNT(raids.id) AS total,
-    SUM(raids.duration) AS total_duration,
-    MAX(users.currency) AS currency -- Assuming currency is per user, we take max or another aggregate if needed
+    SUM(raids.duration) AS total_duration
 	FROM 
     users 
     INNER JOIN realms ON users.id = realms.user_id 
