@@ -4101,7 +4101,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
     GROUP BY 
     realms.project_id
 	ORDER BY 
-    total DESC;"
+    total DESC;";
 	
 	$result = $conn->query($sql);
 
