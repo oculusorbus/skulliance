@@ -4221,7 +4221,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			if($monthly){
 				echo "<td align='center'>";
-				echo number_format(round($points/$leaderboardCounter))." ".$row["currency"];
+				echo number_format(round($points/$leaderboardCounter))." ".$row["currency"]." to each faction member";
 				echo "</td>";
 			}
 			echo "</tr>";
