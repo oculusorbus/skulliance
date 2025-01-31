@@ -6,11 +6,8 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
-print_r($_POST);
-exit;
-
 if(isset($_POST['realm']) && isset($_POST['faction'])){
-	if(!checkRealm($conn)){
+	if(checkRealm($conn)){
 		createRealm($conn, $_POST['realm'], $_POST['faction']);
 		$realm_id = getRealmID($conn);
 		$core_projects = getProjects($conn, "core");
