@@ -151,7 +151,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					foreach($all_projects AS $id => $project){
 						echo '<option value="'.$id.'">'.$project["name"].'</option>';
 					}
-					}?>
+					?>
 					</select>	
 					<input class="button" type="submit" value="Create Realm"><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
