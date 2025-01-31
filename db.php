@@ -4096,9 +4096,9 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Project</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Faction</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
-			echo "<th>Rewards For Each Faction Member</th>";
+			echo "<th>Rewards For Each Member</th>";
 		}
 		$fireworks = false;
 		$leaderboardCounter = 0;
