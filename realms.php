@@ -240,11 +240,15 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			  <input type="submit" value="Submit" style="display:none;">
 			</form><br>';
 		}
+		if(isset($_POST['faction'])){
+			updateRealmFaction($conn, $realm_id, $_POST['faction']);
+		}
 		?>
 		<form id="factionsForm" action="realms.php" method="post">
 		<label for="faction"><strong>Faction:</strong></label>
 		<select class="dropdown" name="faction" id="faction">
 		<?php
+		$project_id = getRealmFaction($conn, $realm_id);
 		$core_projects = getProjects($conn, "core");
 		$core_projects = array_reverse($core_projects, true);
 		$partner_projects = getProjects($conn, "partner");
@@ -253,12 +257,12 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		<?php
 		$projects = array_reverse($projects, true);
 		foreach($projects AS $id => $project){
-			echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			echo '<option '.(($project_id == $id)?'selected'.'').' value="'.$id.'">'.$project["name"].'</option>';
 		}
 		echo '</optgroup><optgroup label="Partner Factions">';
 		$partner_projects = getProjects($conn, "partner");
 		foreach($partner_projects AS $id => $project){
-			echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			echo '<option '.(($project_id == $id)?'selected'.'').' value="'.$id.'">'.$project["name"].'</option>';
 		}
 		echo '</optgroup>';
 		?>
