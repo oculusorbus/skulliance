@@ -4121,7 +4121,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 				//$width = 50;
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+					if($_SESSION['userData']['user_id'] == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4134,7 +4134,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 					$leaderboardCounter--;
 				}
 				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+					if($_SESSION['userData']['user_id'] == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4148,7 +4148,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 					$leaderboardCounter--;
 				}
 				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+					if($_SESSION['userData']['user_id'] == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4156,7 +4156,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				$leaderboardCounter--;
 				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+					if($_SESSION['userData']['user_id'] == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4165,7 +4165,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			}
 			$highlight = "";
 			if(isset($_SESSION['userData']['user_id'])){
-				if($row["user_id"] == $_SESSION['userData']['user_id']){
+				if($row["user_id"] == $_SESSION['userData']['project_id']){
 					$highlight = "highlight";
 				}
 			}
