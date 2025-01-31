@@ -4756,7 +4756,7 @@ function getRealms($conn, $sort){
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "START RAID";
-						if($offense_id == $row["realm_id"] && $offense_faction == $row["project_id"]){
+						if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
 							$value = "FRIENDLY FIRE";
 						}
 						// Prevents established realms from rading new realms, but allows for new realms to raid each other.
