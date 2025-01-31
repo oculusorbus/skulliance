@@ -4680,7 +4680,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td align='right' width='50%'>";
 					if($row["avatar"] != ""){
-						$output[$key] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+						$output[$key] .= "<img style='width:50px' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 					}
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='50%'>".$row["username"]."</td>";
