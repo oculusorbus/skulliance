@@ -5593,9 +5593,9 @@ function getTotalFactionRaids($conn){
 		    	  FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";*/
 				  
     $month_sql = "SELECT 
-    realms.project_id AS project_id,
-    projects.name AS project_name,
-    projects.currency AS currency, -- Currency is from the projects table, no need for aggregation
+    realms.project_id AS project_id, 
+    projects.name AS project_name, 
+    projects.currency AS currency, 
     SUM(CASE WHEN raids.outcome = '1' THEN 1 ELSE 0 END) AS success,
     SUM(CASE WHEN raids.outcome = '2' THEN 1 ELSE 0 END) AS failure,
     SUM(CASE WHEN raids.outcome = '0' THEN 1 ELSE 0 END) AS progress,
@@ -5609,11 +5609,7 @@ function getTotalFactionRaids($conn){
 	WHERE 
 	DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01' 
 	AND 
-	realms.project_id = '".$project_id."' ".
-    "GROUP BY 
-    realms.project_id
-	ORDER BY 
-    total DESC;";
+	realms.project_id = '".$project_id."' GROUP BY realms.project_id ORDER BY total DESC;";
 	
 	$month_result = $conn->query($month_sql);
 	
@@ -5711,9 +5707,9 @@ function getTotalFactionRaids($conn){
 			    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE users.id = '".$_SESSION['userData']['user_id']."'";*/
 	
 		$sql = "SELECT 
-	    realms.project_id AS project_id,
-	    projects.name AS project_name,
-	    projects.currency AS currency, -- Currency is from the projects table, no need for aggregation
+	    realms.project_id AS project_id, 
+	    projects.name AS project_name, 
+	    projects.currency AS currency, 
 	    SUM(CASE WHEN raids.outcome = '1' THEN 1 ELSE 0 END) AS success,
 	    SUM(CASE WHEN raids.outcome = '2' THEN 1 ELSE 0 END) AS failure,
 	    SUM(CASE WHEN raids.outcome = '0' THEN 1 ELSE 0 END) AS progress,
@@ -5725,11 +5721,7 @@ function getTotalFactionRaids($conn){
 	    INNER JOIN projects ON projects.id = realms.project_id 
 	    INNER JOIN raids ON raids.offense_id = realms.id 
 		WHERE 
-		realms.project_id = '".$project_id."' ".
-	    "GROUP BY 
-	    realms.project_id
-		ORDER BY 
-	    total DESC;"
+		realms.project_id = '".$project_id."' GROUP BY realms.project_id ORDER BY total DESC;"
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
