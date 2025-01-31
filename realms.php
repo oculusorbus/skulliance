@@ -150,8 +150,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					?>
 					<optgroup label="Core Factions">';
 					<?php
-					$projects = array_reverse($projects, true);
-					foreach($projects AS $id => $project){
+					unset($core_projects[7]);
+					foreach($core_projects AS $id => $project){
 						echo '<option value="'.$id.'">'.$project["name"].'</option>';
 					}
 					echo '</optgroup><optgroup label="Partner Factions">';
@@ -273,8 +273,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		?>
 		<optgroup label="Core Factions">';
 		<?php
-		$projects = array_reverse($projects, true);
-		foreach($projects AS $id => $project){
+		unset($core_projects[7]);
+		foreach($core_projects AS $id => $project){
 			if($project_id == $id){
 				$selected = "selected";
 			}else{
