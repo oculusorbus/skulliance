@@ -4072,7 +4072,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 	if($rewards){
 		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01')";
 	}
-	$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id 
+	/*$sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id 
 					WHERE success_raids.outcome = '1' AND success_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "success_raids", $where)).") AS success, 
 	               
 				   (SELECT COUNT(failed_raids.id) FROM raids AS failed_raids INNER JOIN realms AS failed_realms ON failed_realms.id = failed_raids.offense_id INNER JOIN users AS failed_users ON failed_users.id = failed_realms.user_id 
@@ -4082,7 +4082,27 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
 	        
 			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, currency, realms.project_id AS project_id, projects.name AS project_name   
-		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY realms.project_id ORDER BY total DESC";
+		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY realms.project_id ORDER BY total DESC";*/
+	
+	$sql = "SELECT 
+    realms.project_id AS project_id,
+    projects.name AS project_name,
+    SUM(CASE WHEN raids.outcome = '1' THEN 1 ELSE 0 END) AS success,
+    SUM(CASE WHEN raids.outcome = '2' THEN 1 ELSE 0 END) AS failure,
+    SUM(CASE WHEN raids.outcome = '0' THEN 1 ELSE 0 END) AS progress,
+    COUNT(raids.id) AS total,
+    SUM(raids.duration) AS total_duration,
+    currency
+	FROM 
+    users 
+    INNER JOIN realms ON users.id = realms.user_id 
+    INNER JOIN projects ON projects.id = realms.project_id 
+    INNER JOIN raids ON raids.offense_id = realms.id ".$where." 
+    GROUP BY 
+    realms.project_id
+	ORDER BY 
+    total DESC;"
+	
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
