@@ -4688,7 +4688,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td align='right' width='50%'>";
 					if($row["currency"] != ""){
-						$output[$key] .= "<img style='width:50px' src='/staking/icons/".$row["currency"].".png' class='icon'/>";
+						$output[$key] .= "<img style='width:50px' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
 					}
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='50%'>".$row["project_name"]."</td>";
