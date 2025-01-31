@@ -8,7 +8,7 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <?php
-					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids"){
+					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
 					}else if($filterby == null || $filterby == 0){
@@ -32,15 +32,20 @@ include 'header.php';
 					}else if($filterby == "monthly-raids"){
 						$title = date("F")." Raids";
 						$filterby = "monthly-raids";
+					}else if($filterby == "factions"){
+						$title = "All Factions";
+						$filterby = "factions";
+					}else if($filterby == "monthly-factions"){
+						$title = date("F")." Factions";
+						$filterby = "monthly-factions";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterLeaderboard("leaderboards");
-						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids"){
-							//getTotalNFTs($conn, $filterby);
-							//checkLeaderboard($conn, false, $filterby);
-							checkFactionsLeaderboard($conn, $monthly=true, $rewards=false);
+						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions"){
+							getTotalNFTs($conn, $filterby);
+							checkLeaderboard($conn, false, $filterby);
 						}else if($filterby == "missions"){
 							checkMissionsLeaderboard($conn);
 						}else if($filterby == "monthly"){
@@ -53,6 +58,10 @@ include 'header.php';
 							checkRaidsLeaderboard($conn);
 						}else if($filterby == "monthly-raids"){
 							checkRaidsLeaderboard($conn, true);
+						}else if($filterby == "factions"){
+							checkFactionsLeaderboard($conn);
+						}else if($filterby == "monthly-factions"){
+							checkFactionsLeaderboard($conn, true);
 						}
 					?>
 				</div>
