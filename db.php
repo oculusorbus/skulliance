@@ -4744,8 +4744,8 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
 				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'>Level</td>";
-				$output[$key] .= "<td width='50%'>Location</td>";
+				$output[$key] .= "<td align='right' width='50%'><strong>Level</strong></td>";
+				$output[$key] .= "<td width='50%'><strong>Location</strong></td>";
 				$output[$key] .= "</tr>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
@@ -4762,7 +4762,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td align='right' width='50%'>".number_format(array_sum($balances))."</td>";
 				$output[$key] .= "<td width='50%'>TOTAL POINTS</td>";
 				$output[$key] .= "</tr>";
-				$balances = array_slice($balances, 0, 8, true);
+				$balances = array_slice($balances, 0, 7, true);
 				foreach($balances AS $currency => $balance){
 					$output[$key] .= "<tr>";
 					$output[$key] .= "<td align='right' width='50%'>".number_format($balance)."</td>";
