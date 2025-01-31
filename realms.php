@@ -144,9 +144,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<input type="text" id="realm" name="realm" size="30" required><br><br>
 					<label for="faction"><strong>Faction:</strong></label><br><br>
 					<select required class="dropdown" name="faction" id="faction">
-					<option value="">Select Faction</option>
 					<?php
 					$core_projects = getProjects($conn, "core");
+					$core_projects = array_reverse($core_projects, true);
 					$partner_projects = getProjects($conn, "partner");
 					$all_projects = $core_projects+$partner_projects;
 					foreach($all_projects AS $id => $project){
