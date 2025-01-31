@@ -152,7 +152,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						echo '<option value="'.$id.'">'.$project["name"].'</option>';
 					}
 					?>
-					</select>	
+					</select><br><br>
 					<input class="button" type="submit" value="Create Realm"><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
 					<p id="disclaimer">
