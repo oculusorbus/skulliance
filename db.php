@@ -4631,8 +4631,8 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealms($conn, $sort){
 	if(isset($_SESSION['userData']['user_id'])){
 		$offense_id = getRealmID($conn);
-		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, theme_id, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, realms.active AS active 
-			    FROM realms INNER JOIN users ON users.id = realms.user_id WHERE realms.active = '1' ORDER BY rand()";
+		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, theme_id, project_id, projects.name AS project_name, currency, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, realms.active AS active 
+			    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id WHERE realms.active = '1' ORDER BY rand()";
 				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.offense_id != '".$offense_id."' AND raids.outcome != '0'"; */
 		$result = $conn->query($sql);
 	
@@ -4684,6 +4684,14 @@ function getRealms($conn, $sort){
 					}
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='50%'>".$row["username"]."</td>";
+				$output[$key] .= "</tr>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right' width='50%'>";
+					if($row["currency"] != ""){
+						$output[$key] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='/icons/".$row["currency"].".png' class='icon'/>";
+					}
+				$output[$key] .= "</td>";
+				$output[$key] .= "<td width='50%'>".$row["project_name"]."</td>";
 				$output[$key] .= "</tr>";
 				$output[$key] .= "</tr>";
 				$output[$key] .= "<tr>";
