@@ -4663,7 +4663,7 @@ function getRealms($conn, $sort){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
 				$output[$key] = "";
-				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
+				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Locations</th><th>Top Points Balances</th>";
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
