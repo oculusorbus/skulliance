@@ -4336,6 +4336,23 @@ function getRealmFaction($conn, $realm_id){
 	}
 }
 
+function verifyRealmFaction($conn, $faction){
+	$sql = "SELECT DISTINCT collections.project_id AS project_id, nfts.user_id AS user_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id 
+		    WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";
+	$result = $conn->query($sql);
+	
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			if($row["project_id"] == $faction){
+				return true;
+			}
+		}
+	} else {
+		return false;
+	}
+	return false;
+}
+
 function verifyRealmTheme($conn, $theme_id){
 	$sql = "SELECT DISTINCT collections.project_id AS project_id, nfts.user_id AS user_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id 
 		    WHERE nfts.user_id='".$_SESSION['userData']['user_id']."'";

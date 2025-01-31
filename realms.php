@@ -253,7 +253,13 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			</form><br>';
 		}
 		if(isset($_POST['faction'])){
-			updateRealmFaction($conn, $realm_id, $_POST['faction']);
+			if(verifyRealmFaction($conn, $_POST['faction'])){
+				updateRealmFaction($conn, $realm_id, $_POST['faction']);
+			}else{
+				$project_info = getProjectInfo($conn, $_POST['faction']);
+				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to join this Faction. Purchase an NFT and refresh your wallet(s) to try again.");
+			}
+			
 		}
 		?>
 		<form id="factionsForm" action="realms.php#realm-image" method="post">
