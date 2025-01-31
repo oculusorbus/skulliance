@@ -4392,6 +4392,26 @@ function updateRealmName($conn, $realm_id, $name){
 	}
 }
 
+function getRealmInfo($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT * FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+		
+		$realm = array();
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				$realm["id"] = $row["id"];
+				$realm["name"] = $row["name"];
+				$realm["project_id"] = $row["project_id"];
+				$realm["theme_id"] = $row["theme_id"];
+				return $realm;
+			}
+		} else {
+
+		}
+	}
+}
+
 function getRealmID($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
@@ -4647,7 +4667,9 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 
 function getRealms($conn, $sort){
 	if(isset($_SESSION['userData']['user_id'])){
-		$offense_id = getRealmID($conn);
+		$realm = getRealmInfo($conn);
+		$offense_id = $realm["id"];
+		$offense_faction = $realm["project_id"];
 		$sql = "SELECT DISTINCT realms.id AS realm_id, realms.name AS realm_name, theme_id, project_id, projects.name AS project_name, currency, users.id AS user_id, users.username AS username, users.avatar AS avatar, users.discord_id AS discord_id, realms.active AS active 
 			    FROM realms INNER JOIN users ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id WHERE realms.active = '1' ORDER BY rand()";
 				/* WHERE users.id != '".$_SESSION['userData']['user_id']."' AND raids.offense_id != '".$offense_id."' AND raids.outcome != '0'"; */
@@ -4734,7 +4756,7 @@ function getRealms($conn, $sort){
 				if(checkMaxRaids($conn, $offense_id)){
 					if(checkRealmRaidStatus($conn, $row["realm_id"])){
 						$value = "START RAID";
-						if($offense_id == $row["realm_id"]){
+						if($offense_id == $row["realm_id"] && $offense_faction == $row["project_id"]){
 							$value = "FRIENDLY FIRE";
 						}
 						// Prevents established realms from rading new realms, but allows for new realms to raid each other.
