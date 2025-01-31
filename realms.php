@@ -238,7 +238,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			<form id="filterNFTsForm" action="realms.php#realm-image" method="post">
 			  <input type="hidden" id="filterby" name="filterby" value="">
 			  <input type="submit" value="Submit" style="display:none;">
-			</form><br><br>';
+			</form><br>';
 		}
 		?>
 		<form id="factionsForm" action="realms.php" method="post">
