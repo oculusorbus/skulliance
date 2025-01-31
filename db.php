@@ -4109,7 +4109,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Project</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
-			echo "<th>Projected Rewards</th>";
+			echo "<th>Projected Rewards For Each Faction Member</th>";
 		}
 		$fireworks = false;
 		$leaderboardCounter = 0;
