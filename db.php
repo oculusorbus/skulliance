@@ -5725,7 +5725,8 @@ function getTotalFactionRaids($conn){
 		WHERE 
 		realms.project_id = '3' 
 		GROUP BY realms.project_id 
-		ORDER BY total DESC;"
+		ORDER BY total DESC;";
+		
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
