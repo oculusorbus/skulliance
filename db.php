@@ -4117,11 +4117,13 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$leaderboardCounter++;
 			$counter++;
 			$trophy = "";
+			$realm = getRealmInfo($conn);
+			$project_id = $realm["project_id"];
 			if($leaderboardCounter == 1){
 				//$width = 50;
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
-				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["project_id"]){
+				if(isset($project_id)){
+					if($project_id == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4133,8 +4135,8 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
 					$leaderboardCounter--;
 				}
-				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["project_id"]){
+				if(isset($project_id)){
+					if($project_id == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4147,16 +4149,16 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
 					$leaderboardCounter--;
 				}
-				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["project_id"]){
+				if(isset($project_id)){
+					if($project_id == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
 			}else if($leaderboardCounter > 3 && $third_total == $row["score"]){
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
 				$leaderboardCounter--;
-				if(isset($_SESSION['userData']['user_id'])){
-					if($_SESSION['userData']['user_id'] == $row["project_id"]){
+				if(isset($project_id)){
+					if($project_id == $row["project_id"]){
 						$fireworks = true;
 					}
 				}
@@ -4164,8 +4166,8 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 				$leaderboardCounter--;
 			}
 			$highlight = "";
-			if(isset($_SESSION['userData']['user_id'])){
-				if($row["project_id"] == $_SESSION['userData']['user_id']){
+			if(isset($project_id)){
+				if($row["project_id"] == $project_id){
 					$highlight = "highlight";
 				}
 			}
