@@ -142,6 +142,17 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 				<form action="realms.php" method="post">
 					<label for="realm">Realm Name</label><br>
 					<input type="text" id="realm" name="realm" size="30" required><br><br>
+					<label for="faction"><strong>Faction:</strong></label>
+					<select name="faction" id="faction">
+					<?php
+					$core_projects = getProjects($conn, "core");
+					$partner_projects = getProjects($conn, "partner");
+					$all_projects = $core_projects+$partner_projects;
+					foreach($all_projects AS $id => $project){
+						echo '<option value="'.$id.'">'.$project["name"].'</option>';
+					}
+					}?>
+					</select>	
 					<input class="button" type="submit" value="Create Realm"><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
 					<p id="disclaimer">
