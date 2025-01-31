@@ -5592,7 +5592,7 @@ function getTotalFactionRaids($conn){
 	        	  COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id 
 		    	  FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";*/
 				  
-    /*$month_sql = "SELECT 
+    $month_sql = "SELECT 
     realms.project_id AS project_id, 
     projects.name AS project_name, 
     projects.currency AS currency, 
@@ -5609,7 +5609,7 @@ function getTotalFactionRaids($conn){
 	WHERE 
 	DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01' 
 	AND 
-	realms.project_id = ".$project_id." GROUP BY realms.project_id ORDER BY total DESC;";*/
+	realms.project_id = 3 GROUP BY realms.project_id ORDER BY total DESC;";
 	
 	$month_result = $conn->query($month_sql);
 	
