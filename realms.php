@@ -148,10 +148,19 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					$core_projects = getProjects($conn, "core");
 					$core_projects = array_reverse($core_projects, true);
 					$partner_projects = getProjects($conn, "partner");
-					$all_projects = $core_projects+$partner_projects;
-					foreach($all_projects AS $id => $project){
+					?>
+					<optgroup label="Core Factions">';
+					<?php
+					$projects = array_reverse($projects, true);
+					foreach($projects AS $id => $project){
 						echo '<option value="'.$id.'">'.$project["name"].'</option>';
 					}
+					echo '</optgroup><optgroup label="Partner Factions">';
+					$partner_projects = getProjects($conn, "partner");
+					foreach($partner_projects AS $id => $project){
+						echo '<option value="'.$id.'">'.$project["name"].'</option>';
+					}
+					echo '</optgroup>';
 					?>
 					</select><br><br>
 					<input class="button" type="submit" value="Create Realm"><br><br>
