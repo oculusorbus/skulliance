@@ -248,6 +248,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		<label for="faction"><strong>Faction:</strong></label>
 		<select onchange="document.getElementById('factionsForm').submit();" class="dropdown" name="faction" id="faction">
 		<?php
+		$selected = "";
 		$project_id = getRealmFaction($conn, $realm_id);
 		$core_projects = getProjects($conn, "core");
 		$core_projects = array_reverse($core_projects, true);
@@ -257,12 +258,22 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		<?php
 		$projects = array_reverse($projects, true);
 		foreach($projects AS $id => $project){
-			echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			if($project_id == $id){
+				$selected = "selected";
+			}else{
+				$selected = "";
+			}
+			echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
 		}
 		echo '</optgroup><optgroup label="Partner Factions">';
 		$partner_projects = getProjects($conn, "partner");
 		foreach($partner_projects AS $id => $project){
-			echo '<option value="'.$id.'">'.$project["name"].'</option>';
+			if($project_id == $id){
+				$selected = "selected";
+			}else{
+				$selected = "";
+			}
+			echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
 		}
 		echo '</optgroup>';
 		?>
