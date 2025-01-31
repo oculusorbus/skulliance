@@ -5607,9 +5607,11 @@ function getTotalFactionRaids($conn){
     INNER JOIN projects ON projects.id = realms.project_id 
     INNER JOIN raids ON raids.offense_id = realms.id 
 	WHERE 
-	DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01' 
+	DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')  
 	AND 
-	realms.project_id = 3 GROUP BY realms.project_id ORDER BY total DESC;";
+	realms.project_id = '3' 
+	GROUP BY realms.project_id 
+	ORDER BY total DESC;";
 	
 	$month_result = $conn->query($month_sql);
 	
