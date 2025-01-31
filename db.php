@@ -5609,8 +5609,8 @@ function getTotalFactionRaids($conn){
 	WHERE 
 	DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01' 
 	AND 
-	realms.project_id = '".$project_id."' 
-    GROUP BY 
+	realms.project_id = '".$project_id."' ".
+    "GROUP BY 
     realms.project_id
 	ORDER BY 
     total DESC;";
@@ -5725,8 +5725,8 @@ function getTotalFactionRaids($conn){
 	    INNER JOIN projects ON projects.id = realms.project_id 
 	    INNER JOIN raids ON raids.offense_id = realms.id 
 		WHERE 
-		realms.project_id = '".$project_id."' 
-	    GROUP BY 
+		realms.project_id = '".$project_id."' ".
+	    "GROUP BY 
 	    realms.project_id
 		ORDER BY 
 	    total DESC;"
