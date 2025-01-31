@@ -5581,6 +5581,7 @@ $sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER
 }
 
 function getTotalFactionRaids($conn){
+	$realm_id = getRealmID($conn);
 	$project_id = getRealmFaction($conn, $realm_id);
 	/*$month_sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER JOIN realms AS success_realms ON success_realms.id = success_raids.offense_id INNER JOIN users AS success_users ON success_users.id = success_realms.user_id 
 				  WHERE success_raids.outcome = '1' AND success_users.id = users.id AND DATE(success_raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS success, 
