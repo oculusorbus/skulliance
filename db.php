@@ -4758,7 +4758,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td align='right' width='50%'>".number_format(array_sum($balances))."</td>";
 				$output[$key] .= "<td width='50%'>TOTAL POINTS</td>";
 				$output[$key] .= "</tr>";
-				$balances = array_slice($balances, 0, 6, true);
+				$balances = array_slice($balances, 0, 8, true);
 				foreach($balances AS $currency => $balance){
 					$output[$key] .= "<tr>";
 					$output[$key] .= "<td align='right' width='50%'>".number_format($balance)."</td>";
