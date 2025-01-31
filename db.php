@@ -4165,7 +4165,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			}
 			$highlight = "";
 			if(isset($_SESSION['userData']['user_id'])){
-				if($row["user_id"] == $_SESSION['userData']['project_id']){
+				if($row["project_id"] == $_SESSION['userData']['user_id']){
 					$highlight = "highlight";
 				}
 			}
