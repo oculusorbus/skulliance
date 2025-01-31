@@ -4743,6 +4743,10 @@ function getRealms($conn, $sort){
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
+				$output[$key] .= "<tr>";
+				$output[$key] .= "<td align='right' width='50%'>Level</td>";
+				$output[$key] .= "<td width='50%'>Location</td>";
+				$output[$key] .= "</tr>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					$output[$key] .= "<tr>";
