@@ -213,6 +213,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		}?>
 		<img src="images/themes/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
 		<?php if(isset($image)){
+		$selected = "";
+		$theme_id = getRealmThemeID($conn, $realm_id);
 		echo '
 		<div id="filter-nfts" style="top:25px">
 			<label for="filterNFTs"><strong>Theme:</strong></label>
@@ -220,12 +222,22 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<optgroup label="Core Projects">';
 				$projects = array_reverse($projects, true);
 				foreach($projects AS $id => $project){
-					echo '<option value="'.$id.'">'.$project["name"].'</option>';
+					if($theme_id == $id){
+						$selected = "selected";
+					}else{
+						$selected = "";
+					}
+					echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
 				}
 				echo '</optgroup><optgroup label="Partner Projects">';
 				$partner_projects = getProjects($conn, "partner");
 				foreach($partner_projects AS $id => $project){
-					echo '<option value="'.$id.'">'.$project["name"].'</option>';
+					if($theme_id == $id){
+						$selected = "selected";
+					}else{
+						$selected = "";
+					}
+					echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
 				}
 				echo '</optgroup>';
 				if($_SESSION['userData']['discord_id'] == '772831523899965440'){
