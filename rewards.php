@@ -28,4 +28,7 @@ if(isset($_GET['streaks'])){
 if(isset($_GET['raids'])){
 	checkRaidsLeaderboard($conn, false, true);
 }
+if(isset($_GET['factions'])){
+	checkFactionsLeaderboard($conn, false, true)
+}
 ?>

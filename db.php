@@ -4216,8 +4216,11 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</tr>";
 			$last_total = $row["score"];
 			if($rewards){
-				updateBalance($conn, $row["user_id"], 15, round($points/$leaderboardCounter));
-				logCredit($conn, $row["user_id"], round($points/$leaderboardCounter), 15);
+				$user_ids = getFactionUserIDs($conn, $row["project_id"]);
+				foreach($user_ids AS $id => $user_id){
+					updateBalance($conn, $user_id, $row["project_id"], round($points/$leaderboardCounter));
+					logCredit($conn, $user_id, round($points/$leaderboardCounter), $row["project_id"]);
+				}
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
@@ -4239,7 +4242,6 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 		}
 	}
 }
-
 
 
 
@@ -4590,6 +4592,21 @@ function getRealmInfo($conn){
 
 		}
 	}
+}
+
+function getFactionUserIDs($conn, $faction){
+	$sql = "SELECT user_id FROM realms WHERE project_id = '".$faction."' AND active = '1'";
+	$result = $conn->query($sql);
+	
+	$user_ids = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$user_ids[$row["user_id"]] = $row["user_id"];
+		}
+	} else {
+
+	}
+	return $user_ids;
 }
 
 function getRealmID($conn){
