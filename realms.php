@@ -143,7 +143,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<label for="realm">Realm Name</label><br>
 					<input type="text" id="realm" name="realm" size="30" required><br><br>
 					<label for="faction"><strong>Faction:</strong></label>
-					<select name="faction" id="faction">
+					<select required class="dropdown" name="faction" id="faction">
 					<?php
 					$core_projects = getProjects($conn, "core");
 					$partner_projects = getProjects($conn, "partner");
