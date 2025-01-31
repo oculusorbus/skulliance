@@ -305,7 +305,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<div id="raids">
 		<?php 
 		if(checkRealm($conn)){
-			getTotalFactionRaids($conn);
+			//getTotalFactionRaids($conn);
 			getTotalRaids($conn);
 			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 			if(isset($outgoing_raids)){
