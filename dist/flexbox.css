@@ -243,19 +243,6 @@ a{
 	font-family: Courier;
 }
 
-.dropdown{
-    width: 300px;
-    border-radius: 0;
-    height: 30px;
-    font-weight: bold;
-    background-color: #2F3136;
-    color: #D6DDDE;
-    text-align: left;
-    font-size: 20px;
-    border: 1px solid #43464D;
-	font-family: Courier;
-}
-
 #filterNFTs {
     width: 190px;
     border-radius: 0;
@@ -284,6 +271,19 @@ a{
 
 #filterLeaderboard {
     width: 190px;
+    border-radius: 0;
+    height: 30px;
+    font-weight: bold;
+    background-color: #2F3136;
+    color: #D6DDDE;
+    text-align: left;
+    font-size: 20px;
+    border: 1px solid #43464D;
+	font-family: Courier;
+}
+
+.dropdown{
+    width: 300px;
     border-radius: 0;
     height: 30px;
     font-weight: bold;
