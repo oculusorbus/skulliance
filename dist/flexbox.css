@@ -283,7 +283,7 @@ a{
 }
 
 .dropdown{
-    width: 300px;
+    width: 300px !important;
     border-radius: 0;
     height: 30px;
     font-weight: bold;
