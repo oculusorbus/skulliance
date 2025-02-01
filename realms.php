@@ -217,7 +217,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		echo '
 		<div id="filter-nfts" style="top:25px">
 			<label for="filterNFTs"><strong>Theme:</strong></label>
-			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
+			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs" class="dropdown">
 				<optgroup label="Core Projects">';
 				$projects = array_reverse($projects, true);
 				foreach($projects AS $id => $project){
