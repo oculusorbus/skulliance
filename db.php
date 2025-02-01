@@ -5428,9 +5428,8 @@ function getTotalRaids($conn){
   	echo '<a name="total-missions" id="total-missions"></a>';
     echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 	echo "<table id='transactions' cellspacing='0'>";
-	
+	echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Raids</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 	if ($month_result->num_rows > 0) {
-		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Raids</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
 			echo "<tr class='month-row'>";
 			echo "<td align='center'>";
@@ -5634,8 +5633,8 @@ function getTotalFactionRaids($conn){
     echo '<div class="content missions" id="total-factions-container" style="display:'.$display.'">';
 	echo "<h3>".$project["name"]."</h3>";
 	echo "<table id='transactions' cellspacing='0'>";
+	echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Raids</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 	if ($month_result->num_rows > 0) {
-		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Raids</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
 		while($month_row = $month_result->fetch_assoc()) {
 			echo "<tr class='month-row'>";
 			echo "<td align='center'>";
