@@ -5575,9 +5575,9 @@ $sql = "SELECT (SELECT COUNT(success_raids.id) FROM raids AS success_raids INNER
 				echo "</td>";
 				echo "</tr>";
 			}
+			echo "</table><br>";
+			echo "</div>";
 		}
-		echo "</table><br>";
-		echo "</div>";
 }
 
 function getTotalFactionRaids($conn){
@@ -5800,9 +5800,9 @@ function getTotalFactionRaids($conn){
 				echo "</td>";
 				echo "</tr>";
 			}
+			echo "</table><br>";
+			echo "</div>";
 		}
-		echo "</table><br>";
-		echo "</div>";
 }
 
 function getRaidRealmID($conn, $raid_id, $faction){
