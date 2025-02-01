@@ -4899,7 +4899,7 @@ function getRealms($conn, $sort){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
 				$output[$key] = "";
-				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Locations</th><th>Top Points Balances</th>";
+				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
@@ -4979,10 +4979,6 @@ function getRealms($conn, $sort){
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'><strong>Level</strong></td>";
-				$output[$key] .= "<td width='50%'><strong>Location</strong></td>";
-				$output[$key] .= "</tr>";
 				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
 				foreach($levels AS $location_name => $level){
 					$output[$key] .= "<tr>";
