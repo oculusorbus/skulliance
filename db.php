@@ -1500,7 +1500,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	}
 	echo "<form style='display:".$display."' id='startFreeMissionsForm' action='missions.php' method='post'>
 	<input type='hidden' id='start_all' name='start_all' value='true'>	
-	<input type='submit' value='Start Missions' class='button'>
+	<input type='submit' value='Start All Free' class='button'>
 	</form><br>";
 	return $projects;
 }
