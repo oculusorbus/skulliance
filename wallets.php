@@ -23,6 +23,7 @@ if(isset($_POST['wallet_id'])){
 							$wallet_counter = 1;
 							foreach($wallets AS $id => $wallet){ 
 								?>
+								<li class="role">You can connect as many wallets as you want and set your primary address for staking store claims.</li>
 								<li class="role">
 									<?php
 									echo $wallet_counter.".&nbsp;";
