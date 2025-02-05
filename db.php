@@ -3908,13 +3908,13 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 				   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.offense_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id 
 				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
 	        
-			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, discord_id, username, avatar, discord_id, visibility 
-		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY users.id ORDER BY total DESC";
+			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, discord_id, project_id, currency, username, avatar, discord_id, visibility 
+		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th>Faction</th><th align='left'>Username</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
@@ -4006,6 +4006,10 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<td align='center'>";
 			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
+			echo "</td>";
+			echo "<td align='center'>";
+			$faction = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
+			echo $faction;
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
