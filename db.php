@@ -3914,7 +3914,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th>Faction</th><th align='left'>Username</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Faction</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
@@ -4005,10 +4005,6 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$faction = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
-			echo $faction;
-			echo "</td>";
-			echo "<td align='center'>";
 			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
@@ -4020,6 +4016,10 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 				$username = $row["username"];
 			}
 			echo "<strong style='font-size:20px'>".$username."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			$faction = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
+			echo $faction;
 			echo "</td>";
 			echo "<td align='center'>";
 			echo number_format($row["score"]);
