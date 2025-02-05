@@ -3908,7 +3908,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 				   (SELECT COUNT(progress_raids.id) FROM raids AS progress_raids INNER JOIN realms AS progress_realms ON progress_realms.id = progress_raids.offense_id INNER JOIN users AS progress_users ON progress_users.id = progress_realms.user_id 
 				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
 	        
-			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, discord_id, project_id, currency, username, avatar, discord_id, visibility 
+			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, users.discord_id AS discord_id, project_id, currency, username, avatar, visibility 
 		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
