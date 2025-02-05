@@ -3939,6 +3939,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			$raids[$index]["success"] = $row["success"];
 			$raids[$index]["failure"] = $row["failure"];
 			$raids[$index]["progress"] = $row["progress"];
+			$raids[$index]["currency"] = $row["currency"];
 			$raids[$index]["score"] = calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]);
 			$index++;
 		}
