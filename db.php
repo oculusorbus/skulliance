@@ -4103,7 +4103,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Faction</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
-			echo "<th>Rewards For Each Member</th>";
+			echo "<th>Rewards Split Between Faction Members</th>";
 		}
 		$fireworks = false;
 		$leaderboardCounter = 0;
@@ -4222,16 +4222,17 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$last_total = $row["score"];
 			if($rewards){
 				$user_ids = getFactionUserIDs($conn, $row["project_id"]);
+				$total_users = count($user_ids);
 				foreach($user_ids AS $id => $user_id){
-					updateBalance($conn, $user_id, $row["project_id"], round($points/$leaderboardCounter));
-					logCredit($conn, $user_id, round($points/$leaderboardCounter), $row["project_id"]);
+					updateBalance($conn, $user_id, $row["project_id"], round(($points/$leaderboardCounter)/$total_users));
+					logCredit($conn, $user_id, round(($points/$leaderboardCounter)/$total_users), $row["project_id"]);
 				}
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."".$row["project_name"]." - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
 					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
-					$description .= "        ".number_format(round($points/$leaderboardCounter))." ".$row["currency"]." rewarded to each member of this faction.\r\n";
+					$description .= "        ".number_format(round($points/$leaderboardCounter))." ".$row["currency"]." split between faction members.\r\n";
 				}
 			}
 		}
