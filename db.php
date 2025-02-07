@@ -4232,7 +4232,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 				if($counter <= 45){
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."".$row["project_name"]." - Score: ".$row["score"].", Total: ".$row["total"]."\r\n";
 					//$description .= "        "."Success: ".$row["success"].", Failure: ".$row["failure"].", In Progress: ".$row["progress"]."\r\n";
-					$description .= "        ".number_format(round($points/$leaderboardCounter))." ".$row["currency"]." split between ".$total_users." faction members.\r\n";
+					$description .= "        ".number_format(round($points/$leaderboardCounter))." ".$row["currency"]." split between ".$total_users." faction member(s).\r\n";
 				}
 			}
 		}
