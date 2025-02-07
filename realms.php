@@ -163,7 +163,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					?>
 					</select><br><br>
 					<input class="button" type="submit" value="Create Realm"><br><br>
-					<label for="disclaimer">Disclaimer</label><br>
+					<label for="disclaimer">Information</label><br>
 					<p id="disclaimer">
 Skulliance Realms is a unique and rewarding multiplayer experience for stakers that allows for competition between players.
 <br><br>
