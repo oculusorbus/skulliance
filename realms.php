@@ -302,11 +302,13 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 </div>
 <div class="row" id="row1">	
 	<div class="main">
-	<div id="raids">
 		<?php 
 		if(checkRealm($conn)){
+			echo '<div id="stats">';
 			getTotalFactionRaids($conn);
 			getTotalRaids($conn);
+			echo '</div>';
+			echo '<div id="raids">';
 			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 			if(isset($outgoing_raids)){
 				echo '<div class="content raids">';
@@ -331,9 +333,9 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				echo $incoming_completed;
 				echo '</div>';
 			}	
+			echo '</div>';
 		}
 		?>
-	</div>
 	</div>
 </div>
 <div class="row" id="row2">	
@@ -423,6 +425,8 @@ if($filterByRealms != ""){
 	if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
+		document.getElementById('stats').style.position = "relative";
+		document.getElementById('stats').style.top = '-55px';
 		document.getElementById('raids').style.position = "relative";
 		document.getElementById('raids').style.top = '-55px';
 		document.getElementById('realms').style.position = "relative";
@@ -471,6 +475,8 @@ if($filterByRealms != ""){
 			document.getElementById('locations-icon').classList.remove("selected");
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
