@@ -165,7 +165,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<input class="button" type="submit" value="Create Realm"><br><br>
 					<label for="disclaimer">Disclaimer</label><br>
 					<p id="disclaimer">
-Skulliance Realms is offering a unique multiplayer experience to holders that allows for competition between players. Realms is currently in beta development and relying heavily on player feedback to optimize and balance gameplay dynamics.
+Skulliance Realms is a unique and rewarding multiplayer experience for stakers that allows for competition between players.
 <br><br>
 <a href="https://skulliance.gitbook.io/skulliance/realms" target="_blank">Read about Realms & Raids in the Skull Paper</a>
 <br><br>
