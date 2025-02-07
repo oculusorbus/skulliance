@@ -4955,28 +4955,28 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td align='right'>&nbsp;";
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td>";
-				if(checkMaxRaids($conn, $offense_id)){
-					if(checkRealmRaidStatus($conn, $row["realm_id"])){
-						$value = "START RAID";
-						if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
-							$value = "FRIENDLY FIRE";
-						}
-						// Prevents established realms from rading new realms, but allows for new realms to raid each other.
-						if($raw_defense == 0 && $raw_offense != 0){
-							$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
-						}else if(($offense-$defense) > 3){
-							$level_range = (($offense-$defense)-3);
-							$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
-						}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
+				if(checkRealmRaidStatus($conn, $row["realm_id"])){
+					$value = "START RAID";
+					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
+						$value = "FRIENDLY FIRE";
+					}
+					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
+					if($raw_defense == 0 && $raw_offense != 0){
+						$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
+					}else if(($offense-$defense) > 3){
+						$level_range = (($offense-$defense)-3);
+						$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
+					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
+						if(checkMaxRaids($conn, $offense_id)){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
-							$output[$key] .= "<strong>Recovering from Raid</strong><br><br>";
+							$output[$key] .= "<strong>Max Raids Reached</strong><br><br>";
 						}
 					}else{
-						$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
+						$output[$key] .= "<strong>Recovering from Raid</strong><br><br>";
 					}
 				}else{
-					$output[$key] .= "<strong>Max Raids Reached</strong><br><br>";
+					$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
 				}
 				$output[$key] .= "</td>";
 				$output[$key] .= "</tr>";
