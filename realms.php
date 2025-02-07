@@ -440,6 +440,8 @@ if($filterByRealms != ""){
 			document.getElementById('locations-icon').classList.remove("selected");
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 		}else if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
@@ -448,6 +450,8 @@ if($filterByRealms != ""){
 			document.getElementById('locations').style.display = "none";
 			document.getElementById('locations-icon').classList.remove("selected");
 			document.getElementById('realm-icon').classList.add("selected");
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
@@ -457,6 +461,8 @@ if($filterByRealms != ""){
 			document.getElementById('locations-icon').classList.add("selected");
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
+			document.getElementById('stats').style.display = "none";
+			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
