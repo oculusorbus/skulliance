@@ -167,7 +167,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<p id="disclaimer">
 Skulliance Realms is a unique and rewarding multiplayer experience for stakers that allows for competition between players.
 <br><br>
-<a href="https://skulliance.gitbook.io/skulliance/realms" target="_blank">Read about Realms & Raids in the Skull Paper</a>
+<a href="https://skulliance.gitbook.io/skulliance/realms" target="_blank">Read about Realms, Locations, Raids, and Factions in the Skull Paper</a>
 <br><br>
 Skulliance is offering a promotional incentive to participate in realms. Stakers establishing new realms will receive the following starter pack of core project points:
 <ul>
