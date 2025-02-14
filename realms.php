@@ -493,7 +493,7 @@ if($filterByRealms != ""){
 				document.getElementById(selection).style.display = "block";
 				document.getElementById(selection+"-icon").classList.add("selected");
 				if($(window).width() > 700){
-					if(selection == 'location'){
+					if(selection == 'locations'){
 						document.getElementById('realm').style.display = "block";
 					}
 				}
