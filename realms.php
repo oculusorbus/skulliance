@@ -475,7 +475,7 @@ if($filterByRealms != ""){
 	}*/
 	
 	function toggleSections(selection){
-		if($(window).width() <= 700){
+		//if($(window).width() <= 700){
 			window.scrollTo(0, 0);
 			document.getElementById('locations').style.display = "none";
 			document.getElementById('locations-icon').classList.remove("selected");
@@ -493,7 +493,7 @@ if($filterByRealms != ""){
 			}else{
 
 			}
-		}
+			//}
 	}
 </script>
 </html>
