@@ -1378,6 +1378,7 @@ section.active {
     bottom: 0;
     padding: 5px;
 	padding-top: 10px;
+	left: 0px;
 }
 
 #quick-menu img {
