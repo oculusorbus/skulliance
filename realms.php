@@ -422,7 +422,7 @@ if($filterByRealms != ""){
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type='text/javascript'>
-	if($(window).width() <= 700){
+	//if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
 		document.getElementById('stats').style.position = "relative";
@@ -468,11 +468,11 @@ if($filterByRealms != ""){
 			document.getElementById('realms').style.display = "none";
 			document.getElementById('realms-icon').classList.remove("selected");
 		}
-	}else{
+	/*}else{
 		document.getElementById('quick-menu').style.display = "none";
 		//document.getElementById('row1').style.position = "relative";
 		//document.getElementById('row1').style.top = '-65px';
-	}
+	}*/
 	
 	function toggleSections(selection){
 		if($(window).width() <= 700){
