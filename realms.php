@@ -396,11 +396,11 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 } 
 ?>
 <div id="quick-menu">
-	<img id="locations-icon" src="icons/locations.png" onclick="toggleSections('locations');">
-	<img id="realm-icon" src="icons/realm.png" onclick="toggleSections('realm');">
-	<img id="stats-icon" src="icons/stats.png" onclick="toggleSections('stats');">
-	<img id="raids-icon" src="icons/raids.png" onclick="toggleSections('raids');">
-	<img id="realms-icon" src="icons/quests.png" onclick="toggleSections('realms');">
+	<img id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
+	<img id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
+	<img id="stats-icon" title="Stats" src="icons/stats.png" onclick="toggleSections('stats');">
+	<img id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
+	<img id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
 	<!-- Footer -->
 	<div class="footer">
