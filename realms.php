@@ -492,6 +492,11 @@ if($filterByRealms != ""){
 			if ($('#'+selection).length > 0) {
 				document.getElementById(selection).style.display = "block";
 				document.getElementById(selection+"-icon").classList.add("selected");
+				if($(window).width() > 700){
+					if(selection == 'location'){
+						document.getElementById('realm').style.display = "block";
+					}
+				}
 			}else{
 
 			}
