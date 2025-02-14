@@ -422,7 +422,7 @@ if($filterByRealms != ""){
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type='text/javascript'>
-	//if($(window).width() <= 700){
+	if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
 		document.getElementById('stats').style.position = "relative";
@@ -433,6 +433,7 @@ if($filterByRealms != ""){
 		document.getElementById('realms').style.top = '-105px';
 		document.getElementById('realm').style.position = "relative";
 		document.getElementById('realm').style.top = '-25px';
+	}
 		if(window.location.hash == "#realms"){
 			document.getElementById('realms').style.display = "block";
 			document.getElementById('realms-icon').classList.add("selected");
@@ -459,8 +460,10 @@ if($filterByRealms != ""){
 		}else{
 			document.getElementById('locations').style.display = "block";
 			document.getElementById('locations-icon').classList.add("selected");
-			document.getElementById('realm').style.display = "none";
-			document.getElementById('realm-icon').classList.remove("selected");
+			if($(window).width() <= 700){
+				document.getElementById('realm').style.display = "none";
+				document.getElementById('realm-icon').classList.remove("selected");
+			}
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
