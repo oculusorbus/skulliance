@@ -422,9 +422,9 @@ if($filterByRealms != ""){
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type='text/javascript'>
-	if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
+	if($(window).width() <= 700){
 		document.getElementById('stats').style.position = "relative";
 		document.getElementById('stats').style.top = '-55px';
 		document.getElementById('raids').style.position = "relative";
