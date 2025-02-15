@@ -1387,6 +1387,10 @@ section.active {
 	width: 18%;
 }
 
+#quick-menu img:hover {
+  cursor: pointer;
+}
+
 .selected{
 	border: 1px solid gray;
     border-radius: 10px;
