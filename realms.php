@@ -364,10 +364,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 							echo '<option value="wealth">Wealth</option>';
 						echo '
 						</select>
-						<form id="filterRealmsForm" action="realms.php#realms" method="post">
-						  <input type="hidden" id="filterByRealms" name="filterByRealms" value="">
-						  <input type="submit" value="Submit" style="display:none;">
-						</form>
 					</div>';?>
 					<?php
 					$sort = $filterByRealms;
@@ -414,12 +410,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <?php
 // Close DB Connection
 $conn->close();
-if($filterby != ""){
-	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
-}
-if($filterByRealms != ""){
-	echo "<script type='text/javascript'>document.getElementById('filterRealms').value = '".$filterByRealms."';</script>";
-}
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
