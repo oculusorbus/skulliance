@@ -284,6 +284,7 @@ function filterRealms(criteria){
 	//document.getElementById('filterByRealms').value = criteria;
 	//document.getElementById("filterRealmsForm").submit();
 	var xhttp = new XMLHttpRequest();
+	alert(criteria.parentElement.label);
 	group = criteria.parentElement.label;
 	criteria = criteria.value;
 	
