@@ -281,8 +281,27 @@ function filterNFTs(criteria){
 }
 
 function filterRealms(criteria){
-	document.getElementById('filterByRealms').value = criteria;
-	document.getElementById("filterRealmsForm").submit();
+	//document.getElementById('filterByRealms').value = criteria;
+	//document.getElementById("filterRealmsForm").submit();
+	var xhttp = new XMLHttpRequest();
+	
+	xhttp.open('GET', 'ajax/select-realms-filter.php?criteria='+criteria, true);
+	
+	xhttp.send();
+
+	xhttp.onreadystatechange = function() {
+	  if (xhttp.readyState == XMLHttpRequest.DONE) {
+	    // Check the status of the response
+	    if (xhttp.status == 200) {
+			// Access the data returned by the server
+			var data = xhttp.responseText;
+			document.getElementById('realms-list').innerHTML = data;
+	    } else {
+	      // Handle error
+			alert("AJAX Error");
+	    }
+	  }
+	};
 }
 
 function filterDiamondSkulls(criteria){

@@ -371,7 +371,9 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					</div>';?>
 					<?php
 					$sort = $filterByRealms;
+					echo "<div id='realms-list'>";
 					getRealms($conn, $sort);
+					echo "</div>";
 				}
 			}
 			?>
