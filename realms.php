@@ -438,18 +438,7 @@ if($filterByRealms != ""){
 		if($(window).width() > 700){
 			document.getElementById('realm-icon').style.display = "none";
 		}
-		if(window.location.hash == "#realms"){
-			document.getElementById('realms').style.display = "block";
-			document.getElementById('realms-icon').classList.add("selected");
-			document.getElementById('realm').style.display = "none";
-			document.getElementById('realm-icon').classList.remove("selected");
-			document.getElementById('locations').style.display = "none";
-			document.getElementById('locations-icon').classList.remove("selected");
-			document.getElementById('stats').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
-			document.getElementById('raids').style.display = "none";
-			document.getElementById('raids-icon').classList.remove("selected");
-		}else if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
+		if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
 			if($(window).width() > 700){
 				document.getElementById('locations').style.display = "block";
 				document.getElementById('locations-icon').classList.add("selected");
