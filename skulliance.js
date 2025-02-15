@@ -287,7 +287,7 @@ function filterRealms(criteria){
 	group = criteria.parent().attr('label');
 	criteria = criteria.value;
 	
-	xhttp.open('GET', 'ajax/select-realms-filter.php?criteria='+criteria+'group='+group, true);
+	xhttp.open('GET', 'ajax/select-realms-filter.php?criteria='+criteria+'&group='+group, true);
 	
 	xhttp.send();
 
