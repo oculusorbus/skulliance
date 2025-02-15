@@ -284,8 +284,10 @@ function filterRealms(criteria){
 	//document.getElementById('filterByRealms').value = criteria;
 	//document.getElementById("filterRealmsForm").submit();
 	var xhttp = new XMLHttpRequest();
+	group = criteria.parent().attr('label');
+	criteria = criteria.value;
 	
-	xhttp.open('GET', 'ajax/select-realms-filter.php?criteria='+criteria, true);
+	xhttp.open('GET', 'ajax/select-realms-filter.php?criteria='+criteria+'group='+group, true);
 	
 	xhttp.send();
 

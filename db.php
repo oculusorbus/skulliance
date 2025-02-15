@@ -4867,7 +4867,7 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 	}
 }
 
-function getRealms($conn, $sort){
+function getRealms($conn, $sort, $group){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm = getRealmInfo($conn);
 		$offense_id = $realm["id"];
@@ -5017,7 +5017,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "</table>";
 				$output[$key] .= "</td>";
 				$output[$key] .= "</tr>";
-				if($unset){
+				if($unset && $group == "Eligible Realms"){
 					unset($output[$key]);
 				}
 			}

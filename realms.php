@@ -351,7 +351,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					<?php echo '
 					<div id="filter-nfts">
 						<label for="filterRealms"><strong>Sort By:</strong></label>
-						<select onchange="javascript:filterRealms(this.options[this.selectedIndex].value);" name="filterRealms" id="filterRealms">';
+						<select onchange="javascript:filterRealms(this.options[this.selectedIndex]);" name="filterRealms" id="filterRealms">';
 							echo '<optgroup label="Eligible Realms">';
 								echo '<option value="weakness">Weakness</option>';
 								echo '<option value="strength">Strength</option>';
