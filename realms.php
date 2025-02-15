@@ -470,12 +470,6 @@ if($filterByRealms != ""){
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
 			document.getElementById('realms-icon').classList.remove("selected");
-			if($(window).width() > 700){
-				document.getElementById('locations').style.display = "block";
-				document.getElementById('locations-icon').classList.add("selected");
-				document.getElementById('realm').style.display = "none";
-				document.getElementById('realm-icon').classList.remove("selected");
-			}
 		}else{
 			document.getElementById('locations').style.display = "block";
 			document.getElementById('locations-icon').classList.add("selected");
