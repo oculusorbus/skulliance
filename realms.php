@@ -433,29 +433,47 @@ if($filterByRealms != ""){
 		document.getElementById('realms').style.top = '-105px';
 		document.getElementById('realm').style.position = "relative";
 		document.getElementById('realm').style.top = '-25px';
+		if($(window).width() > 700){
+			document.getElementById('realm-icon').style.display = "none";
+		}
 		if(window.location.hash == "#realms"){
+			if($(window).width() > 700){
+				document.getElementById('locations').style.display = "block";
+				document.getElementById('locations-icon').classList.add("selected");
+			}else{
+				document.getElementById('realm').style.display = "none";
+				document.getElementById('realm-icon').classList.remove("selected");
+				document.getElementById('locations').style.display = "none";
+				document.getElementById('locations-icon').classList.remove("selected");
+			}
 			document.getElementById('realms').style.display = "block";
 			document.getElementById('realms-icon').classList.add("selected");
-			document.getElementById('locations').style.display = "none";
-			document.getElementById('locations-icon').classList.remove("selected");
-			document.getElementById('realm').style.display = "none";
-			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 		}else if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
-			document.getElementById('realm').style.display = "block";
-			document.getElementById('realm-icon').classList.add("selected");
-			document.getElementById('locations').style.display = "none";
-			document.getElementById('locations-icon').classList.remove("selected");
-			document.getElementById('realm-icon').classList.add("selected");
+			if($(window).width() > 700){
+				document.getElementById('locations').style.display = "block";
+				document.getElementById('locations-icon').classList.add("selected");
+			}else{
+				document.getElementById('realm').style.display = "block";
+				document.getElementById('realm-icon').classList.add("selected");
+				document.getElementById('locations').style.display = "none";
+				document.getElementById('locations-icon').classList.remove("selected");
+			}
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
 			document.getElementById('realms-icon').classList.remove("selected");
+			if($(window).width() > 700){
+				document.getElementById('locations').style.display = "block";
+				document.getElementById('locations-icon').classList.add("selected");
+				document.getElementById('realm').style.display = "none";
+				document.getElementById('realm-icon').classList.remove("selected");
+			}
 		}else{
 			document.getElementById('locations').style.display = "block";
 			document.getElementById('locations-icon').classList.add("selected");
