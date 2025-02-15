@@ -4898,7 +4898,7 @@ function getRealms($conn, $sort){
 				if($sort == "random"){
 					$key = $row['realm_id'];
 				}else if($sort == "weakness" || $sort == "strength"){
-					$key = $raw_defense.$raw_defense_offense.".".$row['realm_id'];
+					$key = $raw_defense.".".$raw_defense_offense.$row['realm_id'];
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
