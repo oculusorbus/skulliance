@@ -4884,6 +4884,7 @@ function getRealms($conn, $sort){
 			while($row = $result->fetch_assoc()) {
 				$raw_offense = calculateRawRaidOffense($conn, $offense_id);
 				$raw_defense = calculateRawRaidDefense($conn, $row['realm_id']);
+				$raw_defense_offense = calculateRawRaidOffense($conn, $row['realm_id']);
 				$offense = calculateRaidOffense($conn, $offense_id);
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$total = $defense + $offense;
@@ -4892,14 +4893,12 @@ function getRealms($conn, $sort){
 				$offense_threshold = $percentage * $offense;
 				$duration = ceil($defense/$offense);
 				$balances = getRealmBalances($conn, $row['user_id']);
-				$raw_offense = calculateRawRaidOffense($conn, $offense_id);
-				$raw_defense = calculateRawRaidDefense($conn, $row['realm_id']);
 				
 				$key = "";
 				if($sort == "random"){
 					$key = $row['realm_id'];
 				}else if($sort == "weakness" || $sort == "strength"){
-					$key = ($raw_defense+$raw_offense).".".$row['realm_id'];
+					$key = ($raw_defense+$raw_defense_offense).".".$row['realm_id'];
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
