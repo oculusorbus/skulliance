@@ -4954,6 +4954,7 @@ function getRealms($conn, $sort){
 				$output[$key] .= "<td align='right'>&nbsp;";
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td>";
+				$unset = false;
 				if(checkRealmRaidStatus($conn, $row["realm_id"])){
 					$value = "START RAID";
 					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
@@ -4962,9 +4963,11 @@ function getRealms($conn, $sort){
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 					if($raw_defense == 0 && $raw_offense != 0){
 						$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
+						$unset = true;
 					}else if(($offense-$defense) > 3){
 						$level_range = (($offense-$defense)-3);
 						$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
+						$unset = true;
 					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
 						if(checkMaxRaids($conn, $offense_id)){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
@@ -4973,9 +4976,11 @@ function getRealms($conn, $sort){
 						}
 					}else{
 						$output[$key] .= "<strong>Recovering from Raid</strong><br><br>";
+						$unset = true;
 					}
 				}else{
 					$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
+					$unset = true;
 				}
 				$output[$key] .= "</td>";
 				$output[$key] .= "</tr>";
@@ -5012,6 +5017,9 @@ function getRealms($conn, $sort){
 				$output[$key] .= "</table>";
 				$output[$key] .= "</td>";
 				$output[$key] .= "</tr>";
+				if($unset){
+					unset($output[$key]);
+				}
 			}
 			
 			if($sort == "random"){
