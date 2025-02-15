@@ -352,13 +352,13 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					<div id="filter-nfts">
 						<label for="filterRealms"><strong>Sort By:</strong></label>
 						<select onchange="javascript:filterRealms(this.options[this.selectedIndex]);" name="filterRealms" id="filterRealms">';
-							echo '<optgroup label="Eligible Realms">';
+							echo '<optgroup label="Eligible">';
 								echo '<option value="weakness">Weakness</option>';
 								echo '<option value="strength">Strength</option>';
 								echo '<option value="wealth">Wealth</option>';
 								echo '<option value="random">Random</option>';
 							echo '</optgroup>';
-							echo '<optgroup label="All Realms">';
+							echo '<optgroup label="All">';
 								echo '<option value="weakness">Weakness</option>';
 								echo '<option value="strength">Strength</option>';
 								echo '<option value="wealth">Wealth</option>';
@@ -370,7 +370,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					<?php
 					$sort = "weakness";
 					echo "<div id='realms-list'>";
-					getRealms($conn, $sort);
+					getRealms($conn, $sort, "Eligible");
 					echo "</div>";
 				}
 			}

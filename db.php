@@ -5017,7 +5017,7 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "</table>";
 				$output[$key] .= "</td>";
 				$output[$key] .= "</tr>";
-				if($unset && $group == "Eligible Realms"){
+				if($unset && $group == "Eligible"){
 					unset($output[$key]);
 				}
 			}
