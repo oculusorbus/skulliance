@@ -5906,7 +5906,7 @@ function endRaid($conn, $raid_id){
 	if($outcome == 1){
 		// Damage random defense location for defense
 		alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
-		// If Defense Offense is above level 10, also damage a random offense location to help maintain gamification balance
+		// If Defense Offense is above level 10, also damage a random offense location to help maintain gamification balance and prevent runaway offenses
 		$defense_offense = calculateRaidOffense($conn, $defense_id);
 		if($defense_offense > 10){
 			alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "offense"), 1, "debit");
