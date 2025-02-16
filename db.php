@@ -5904,12 +5904,13 @@ function endRaid($conn, $raid_id){
 	
 	// Based on pure outcome of raid, determine location leveling and project rewards (if any), update cross reference tables, update balances, and record transactions accordingly
 	if($outcome == 1){
-		// Damage random defense location for defense
-		alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
-		// If Defense Offense is above level 10, also damage a random offense location to help maintain gamification balance and prevent runaway offenses
+		// If Defense Offense is above level 10, damage a random offense location to help maintain gamification balance and prevent runaway offenses
 		$defense_offense = calculateRaidOffense($conn, $defense_id);
 		if($defense_offense > 10){
 			alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "offense"), 1, "debit");
+		}else{
+			// Damage random defense location for defense
+			alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
 		}
 		// Reward random points to offense from defense, credit offense and debit defense the same project points
 		$project = selectRandomProjectID($conn, $defense_id);
