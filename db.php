@@ -5330,8 +5330,24 @@ function getRaids($conn, $type, $status="pending"){
 				if($date > time()){
 					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
 					$status = "In Progress";
-					$offense_results = "Pending";
-					$defense_results = "Pending";
+					
+					// Get raid faction realm ID
+					$defense_id = getRaidRealmID($conn, $row['raid_id'], "defense");
+					$offense_id = getRaidRealmID($conn, $row['raid_id'], "offense");
+	
+					// Calculate faction score based on locations
+					$defense = calculateRaidDefense($conn, $defense_id);
+					$offense = calculateRaidOffense($conn, $offense_id);
+	
+					// Total scores and calculate percentage
+					$total = $defense + $offense;
+					$percentage = (100/$total);
+	
+					// Calculate thresholds for random number generation
+					$defense_threshold = $percentage * $defense;
+					$offense_threshold = $percentage * $offense;
+					$defense_results = $defense_threshold."%";
+					$offense_results = $offense_threshold."%";
 				}else{
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
