@@ -4101,7 +4101,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 
 	if ($result->num_rows > 0) {
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Faction</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Faction</th><th>Members</th><th>Score</th><th>Total Raids</th><th>Success</th><th>Failure</th><th>In Progress</th>";
 		if($monthly){
 			echo "<th>Rewards For Each Member</th>";
 		}
@@ -4197,6 +4197,9 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$project_name = "";
 			$project_name = $row["project_name"];
 			echo "<strong style='font-size:20px'>".$project_name."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			echo count(getFactionUserIDs($conn, $row["project_id"]));
 			echo "</td>";
 			echo "<td align='center'>";
 			echo number_format($row["score"]);
