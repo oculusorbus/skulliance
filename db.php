@@ -5346,8 +5346,8 @@ function getRaids($conn, $type, $status="pending"){
 					// Calculate thresholds for random number generation
 					$defense_threshold = $percentage * $defense;
 					$offense_threshold = $percentage * $offense;
-					$defense_results = $defense_threshold."%";
-					$offense_results = $offense_threshold."%";
+					$defense_results = round($defense_threshold,2)."%";
+					$offense_results = round($offense_threshold,2)."%";
 				}else{
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
