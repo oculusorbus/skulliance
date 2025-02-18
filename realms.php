@@ -6,8 +6,10 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
+$realm_status = checkRealm($conn);
+
 if(isset($_POST['realm']) && isset($_POST['faction'])){
-	if(!checkRealm($conn)){
+	if(!$realm_status){
 		createRealm($conn, $_POST['realm'], $_POST['faction']);
 		$realm_id = getRealmID($conn);
 		$core_projects = getProjects($conn, "core");
@@ -25,7 +27,7 @@ if(isset($_POST['realm']) && isset($_POST['faction'])){
 }
 
 if(isset($_POST['realmText'])){
-	if(checkRealm($conn)){
+	if($realm_status){
 		$realm_id = getRealmID($conn);
 		updateRealmName($conn, $realm_id, $_POST['realmText']);
 	}
@@ -39,7 +41,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
-			if(checkRealm($conn)){
+			if($realm_status){
 				if(checkRealmState($conn) == 1){
 					$status = getRealmLocationsUpgrades($conn);
 					$locations = getLocationInfo($conn);
@@ -261,6 +263,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			
 		}
 		?>
+		<?php if($realm_status){ ?>
 		<form id="factionsForm" action="realms.php#realm-image" method="post">
 		<label for="faction"><strong>Faction:</strong></label>
 		<select onchange="document.getElementById('factionsForm').submit();" class="dropdown" name="faction" id="faction">
@@ -295,6 +298,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		?>
 		</select>
 		</form>
+		<?php } ?>
 		</div>
 	    </div>
 		</div>
@@ -303,7 +307,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <div class="row" id="row1">	
 	<div class="main">
 		<?php 
-		if(checkRealm($conn)){
+		if($realm_status){
 			echo '<div id="stats">';
 			getTotalFactionRaids($conn);
 			getTotalRaids($conn);
@@ -338,6 +342,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		?>
 	</div>
 </div>
+<?php if($realm_status){ ?>
 <div class="row" id="row2">	
 	<div class="main">
 	<div id="realms">
@@ -379,6 +384,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 	</div>
 </div>
+<?php } ?>
 <?php
 }else{
 	echo "<div class='row'>";
@@ -395,6 +401,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	echo "</div>";
 } 
 ?>
+<?php if($realm_status){ ?>
 <div id="quick-menu">
 	<img id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
 	<img id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
@@ -402,6 +409,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<img id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
 	<img id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
+<?php } ?>
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
@@ -415,6 +423,7 @@ $conn->close();
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<?php if($realm_status){ ?>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
@@ -494,4 +503,5 @@ $conn->close();
 			//}
 	}
 </script>
+<?php } ?>
 </html>
