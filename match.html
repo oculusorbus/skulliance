@@ -3,30 +3,54 @@
 <head>
     <title>Match-3 Game with Chained Bomb Animations</title>
     <style>
+        body {
+            background: #0F0F0F;
+            margin: 0; /* Remove default margin */
+            height: 100vh; /* Full viewport height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Center vertically */
+            align-items: center; /* Center horizontally */
+            overflow: hidden; /* Prevent scrolling */
+        }
+        #score {
+            font-size: 24px;
+            margin: 10px 0; /* Space above and below */
+            font-family: Arial;
+            color: #fff;
+            text-align: center;
+        }
         #game-board {
             display: grid;
-            gap: 2px;
+            gap: 0.5vh; /* Scaled gap relative to viewport height */
             background: #333;
-            padding: 10px;
-            width: fit-content;
+            padding: 1vh; /* Scaled padding */
+            width: 90vh; /* Square board, 90% of viewport height */
+            height: 90vh; /* Full height minus score and padding */
+            max-width: 90vw; /* Ensure it fits width-wise if narrower */
+            max-height: 90vh; /* Ensure it fits height-wise */
+            grid-template-columns: repeat(8, 1fr); /* 8 equal columns */
+            box-sizing: border-box;
             user-select: none;
             position: relative;
         }
         .tile {
-            width: 50px;
-            height: 50px;
+            width: 100%; /* Fill grid cell */
+            height: 100%; /* Fill grid cell */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 2vh; /* Scaled font size */
             cursor: pointer;
             transition: transform 0.2s ease;
             position: relative;
             background: #444;
+            box-sizing: border-box;
+            padding: 0.25vh; /* Scaled padding */
         }
         .tile img {
-            width: 40px;
-            height: 40px;
+            width: 80%; /* Relative to tile size */
+            height: 80%; /* Maintain aspect ratio */
             object-fit: contain;
             position: absolute;
             z-index: 1;
@@ -42,10 +66,11 @@
             z-index: 0;
         }
         .selected {
-            transform: scale(1.1);
-            border: 2px solid white;
+            transform: scale(1.05);
+            border: 0.25vh solid white; /* Scaled border */
             z-index: 2;
             pointer-events: none;
+            padding: 0; /* Remove padding when selected */
         }
         .matched {
             animation: matchAnimation 0.3s ease forwards;
@@ -61,12 +86,6 @@
         }
         .diamond-clear {
             animation: diamondShockwave 1s ease forwards;
-        }
-        #score {
-            font-size: 24px;
-            margin: 10px;
-            font-family: Arial;
-            color: #fff;
         }
         @keyframes matchAnimation {
             0% { transform: scale(1); opacity: 1; }
@@ -88,9 +107,6 @@
             50% { transform: scale(1.5); opacity: 0.8; background-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
             75% { transform: scale(1); opacity: 0.5; background-color: #9900cc; box-shadow: 0 0 40px #ff00ff; }
             100% { transform: scale(0); opacity: 0; background-color: #000000; box-shadow: 0 0 60px #ff00ff; }
-        }
-        body {
-            background: #0F0F0F;
         }
     </style>
 </head>
@@ -162,6 +178,10 @@ class Match3Game {
         this.offsetX = 0;
         this.offsetY = 0;
 
+        // Calculate tile size dynamically based on viewport height
+        const boardHeight = window.innerHeight * 0.9; // 90% of viewport height
+        this.tileSizeWithGap = (boardHeight - (1 * this.height)) / this.height; // Adjust for gap and padding
+
         this.initBoard();
         this.renderBoard();
         this.addEventListeners();
@@ -198,6 +218,7 @@ class Match3Game {
             }
         }
         this.renderBoard();
+        this.resolveMatches(); // Ensure no initial matches remain
     }
 
     createRandomTile() {
@@ -210,7 +231,6 @@ class Match3Game {
 
     renderBoard() {
         const boardElement = document.getElementById('game-board');
-        boardElement.style.gridTemplateColumns = `repeat(${this.width}, 50px)`;
         boardElement.innerHTML = '';
 
         for (let y = 0; y < this.height; y++) {
@@ -275,10 +295,8 @@ class Match3Game {
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
         const mouseX = e.touches ? e.touches[0].clientX : e.clientX;
         const mouseY = e.touches ? e.touches[0].clientY : e.clientY;
-        this.offsetX = mouseX - (boardRect.left + this.selectedTile.x * 52);
-        this.offsetY = mouseY - (boardRect.top + this.selectedTile.y * 52);
-
-        console.log(`Selected tile at (${tile.x}, ${tile.y}), offset: (${this.offsetX}, ${this.offsetY})`);
+        this.offsetX = mouseX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap);
+        this.offsetY = mouseY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap);
     }
 
     handleMouseMove(e) {
@@ -289,7 +307,6 @@ class Match3Game {
         const mouseY = e.touches ? e.touches[0].clientY : e.clientY;
 
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
-        const tileSizeWithGap = 52;
         const tileX = mouseX - boardRect.left - this.offsetX;
         const tileY = mouseY - boardRect.top - this.offsetY;
 
@@ -297,8 +314,8 @@ class Match3Game {
         selectedTileElement.style.transition = '';
 
         if (!this.dragDirection) {
-            const dx = Math.abs(mouseX - (boardRect.left + this.selectedTile.x * tileSizeWithGap + this.offsetX));
-            const dy = Math.abs(mouseY - (boardRect.top + this.selectedTile.y * tileSizeWithGap + this.offsetY));
+            const dx = Math.abs(mouseX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap + this.offsetX));
+            const dy = Math.abs(mouseY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap + this.offsetY));
             if (dx > dy && dx > 5) this.dragDirection = 'row';
             else if (dy > dx && dy > 5) this.dragDirection = 'column';
             console.log(`Drag direction set to: ${this.dragDirection}`);
@@ -307,22 +324,20 @@ class Match3Game {
         if (!this.dragDirection) return;
 
         if (this.dragDirection === 'row') {
-            const constrainedX = Math.max(0, Math.min((this.width - 1) * tileSizeWithGap, tileX));
-            selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * tileSizeWithGap}px, 0) scale(1.1)`;
+            const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, tileX));
+            selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
             this.targetTile = {
-                x: Math.round(constrainedX / tileSizeWithGap),
+                x: Math.round(constrainedX / this.tileSizeWithGap),
                 y: this.selectedTile.y
             };
         } else if (this.dragDirection === 'column') {
-            const constrainedY = Math.max(0, Math.min((this.height - 1) * tileSizeWithGap, tileY));
-            selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * tileSizeWithGap}px) scale(1.1)`;
+            const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, tileY));
+            selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
             this.targetTile = {
                 x: this.selectedTile.x,
-                y: Math.round(constrainedY / tileSizeWithGap)
+                y: Math.round(constrainedY / this.tileSizeWithGap)
             };
         }
-
-        console.log(`Dragging to (${this.targetTile.x}, ${this.targetTile.y})`);
     }
 
     handleMouseUp(e) {
@@ -357,72 +372,143 @@ class Match3Game {
     }
 
     slideTiles(startX, startY, endX, endY) {
-        const tileSizeWithGap = 52;
-        let tilesToMove = [];
+        const tileSizeWithGap = this.tileSizeWithGap;
         let direction;
 
+        // Store original state and elements
+        const originalTiles = [];
+        const tileElements = [];
         if (startY === endY) { // Row movement
             direction = startX < endX ? 1 : -1;
-            for (let x = startX; x !== endX; x += direction) {
-                tilesToMove.push({ x, y: startY });
+            const minX = Math.min(startX, endX);
+            const maxX = Math.max(startX, endX);
+            for (let x = minX; x <= maxX; x++) {
+                originalTiles.push({ ...this.board[startY][x] });
+                tileElements.push(this.board[startY][x].element);
             }
         } else if (startX === endX) { // Column movement
             direction = startY < endY ? 1 : -1;
-            for (let y = startY; y !== endY; y += direction) {
-                tilesToMove.push({ x: startX, y });
+            const minY = Math.min(startY, endY);
+            const maxY = Math.max(startY, endY);
+            for (let y = minY; y <= maxY; y++) {
+                originalTiles.push({ ...this.board[y][startX] });
+                tileElements.push(this.board[y][startX].element);
             }
         }
 
-        const selectedTile = this.board[startY][startX];
-        const selectedElement = selectedTile.element;
+        const selectedElement = this.board[startY][startX].element;
         const dx = (endX - startX) * tileSizeWithGap;
         const dy = (endY - startY) * tileSizeWithGap;
 
+        // Animate the slide
         selectedElement.style.transition = 'transform 0.2s ease';
         selectedElement.style.transform = `translate(${dx}px, ${dy}px)`;
 
-        tilesToMove.forEach(({ x, y }) => {
-            const tile = this.board[y][x];
-            const offsetX = direction * (startX === endX ? 0 : -tileSizeWithGap);
-            const offsetY = direction * (startY === endY ? 0 : -tileSizeWithGap);
-            tile.element.style.transition = 'transform 0.2s ease';
-            tile.element.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-        });
+        let i = 0;
+        if (startY === endY) {
+            for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+                if (x === startX) continue;
+                const offsetX = direction * -tileSizeWithGap * (x - startX) / Math.abs(endX - startX);
+                tileElements[i].style.transition = 'transform 0.2s ease';
+                tileElements[i].style.transform = `translate(${offsetX}px, 0)`;
+                i++;
+            }
+        } else {
+            for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+                if (y === startY) continue;
+                const offsetY = direction * -tileSizeWithGap * (y - startY) / Math.abs(endY - startY);
+                tileElements[i].style.transition = 'transform 0.2s ease';
+                tileElements[i].style.transform = `translate(0, ${offsetY}px)`;
+                i++;
+            }
+        }
 
         setTimeout(() => {
+            // Commit the move to the real board
             if (startY === endY) {
                 const row = this.board[startY];
+                const tempRow = [...row];
                 if (startX < endX) {
                     for (let x = startX; x < endX; x++) {
-                        row[x] = row[x + 1];
+                        row[x] = tempRow[x + 1];
                     }
                 } else {
                     for (let x = startX; x > endX; x--) {
-                        row[x] = row[x - 1];
+                        row[x] = tempRow[x - 1];
                     }
                 }
-                row[endX] = selectedTile;
+                row[endX] = tempRow[startX];
             } else {
+                const tempCol = [];
+                for (let y = 0; y < this.height; y++) {
+                    tempCol[y] = { ...this.board[y][startX] };
+                }
                 if (startY < endY) {
                     for (let y = startY; y < endY; y++) {
-                        this.board[y][startX] = this.board[y + 1][startX];
+                        this.board[y][startX] = tempCol[y + 1];
                     }
                 } else {
                     for (let y = startY; y > endY; y--) {
-                        this.board[y][startX] = this.board[y - 1][startX];
+                        this.board[y][startX] = tempCol[y - 1];
                     }
                 }
-                this.board[endY][endX] = selectedTile;
+                this.board[endY][endX] = tempCol[startY];
             }
 
-            this.checkMatches();
+            // Check and resolve matches with the selected tile's position
             this.renderBoard();
+            const hasMatches = this.resolveMatches(endX, endY);
+
+            if (!hasMatches) {
+                // Revert animations and state
+                console.log(`No match, reverting tiles from (${startX}, ${startY}) to (${endX}, ${endY})`);
+                selectedElement.style.transition = 'transform 0.2s ease';
+                selectedElement.style.transform = 'translate(0, 0)';
+                tileElements.forEach(element => {
+                    element.style.transition = 'transform 0.2s ease';
+                    element.style.transform = 'translate(0, 0)';
+                });
+
+                setTimeout(() => {
+                    if (startY === endY) {
+                        const minX = Math.min(startX, endX);
+                        for (let i = 0; i < originalTiles.length; i++) {
+                            this.board[startY][minX + i] = { ...originalTiles[i], element: tileElements[i] };
+                        }
+                    } else {
+                        const minY = Math.min(startY, endY);
+                        for (let i = 0; i < originalTiles.length; i++) {
+                            this.board[minY + i][startX] = { ...originalTiles[i], element: tileElements[i] };
+                        }
+                    }
+                    this.renderBoard();
+                }, 200);
+            }
         }, 200);
     }
 
-    checkMatches() {
+    resolveMatches(selectedX = null, selectedY = null) {
+        const matchResult = this.checkMatches(selectedX, selectedY);
+        if (matchResult.hasMatches) {
+            const { matches, bombType, bombX, bombY } = matchResult;
+            if (matches.size >= 3) {
+                const firstTile = this.board[bombY][bombX];
+                if (firstTile && firstTile.special) {
+                    this.handleBombMatches(matches, firstTile.special, bombX, bombY);
+                } else {
+                    this.handleMatches(matches, bombType, bombX, bombY);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    checkMatches(selectedX = null, selectedY = null) {
         let hasMatches = false;
         const allMatches = new Set();
+        let bombType = null;
+        let bombX, bombY;
 
         // Horizontal matches
         for (let y = 0; y < this.height; y++) {
@@ -472,21 +558,21 @@ class Match3Game {
 
         if (hasMatches) {
             const matchSize = allMatches.size;
-            const lastMatch = Array.from(allMatches).pop();
-            const [bombX, bombY] = lastMatch.split(',').map(Number);
-            console.log(`Total unique matched tiles: ${matchSize}, last position: (${bombX}, ${bombY})`);
-
-            if (allMatches.size >= 3) {
-                const firstTile = this.board[bombY][bombX];
-                if (firstTile && firstTile.special) {
-                    this.handleBombMatches(allMatches, firstTile.special, bombX, bombY);
-                } else {
-                    this.handleMatches(allMatches, matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null, bombX, bombY);
-                }
+            console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
+            
+            // Determine bomb placement
+            if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
+                bombX = selectedX;
+                bombY = selectedY;
+            } else {
+                const lastMatch = Array.from(allMatches).pop();
+                [bombX, bombY] = lastMatch.split(',').map(Number);
             }
+
+            bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
         }
 
-        return hasMatches;
+        return { hasMatches, matches: allMatches, bombType, bombX, bombY };
     }
 
     handleMatches(matches, bombType, bombX, bombY) {
@@ -508,6 +594,7 @@ class Match3Game {
             if (bombType) {
                 this.createSpecialTile(bombX, bombY, bombType);
                 this.board[bombY][bombX].element.classList.add('bomb-creation');
+                console.log(`Bomb placed at (${bombX}, ${bombY})`);
             }
 
             this.score += matches.size * 10;
@@ -533,13 +620,14 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
+            this.score += matches.size * 10; // Score initial match
+
             if (bombType === 'carbon') {
                 this.clearRowAndColumn(bombX, bombY);
             } else if (bombType === 'diamond') {
                 this.clearBoard();
             }
 
-            this.score += matches.size * 10;
             document.getElementById('score').textContent = `Score: ${this.score}`;
             
             // Cascade will be called by clearRowAndColumn or clearBoard
@@ -551,52 +639,54 @@ class Match3Game {
         const affectedTiles = new Set();
         const diamondPositions = [];
 
-        // Collect tiles to animate and check for Diamond bombs
+        // Collect tiles to clear and track additional bombs
         for (let i = 0; i < this.width; i++) {
             if (this.board[y][i].element) {
-                affectedTiles.add(this.board[y][i].element);
+                affectedTiles.add(`${i},${y}`);
                 if (this.board[y][i].special === 'diamond') {
                     diamondPositions.push({ x: i, y: y });
                 }
             }
         }
         for (let j = 0; j < this.height; j++) {
-            if (this.board[j][x].element) {
-                affectedTiles.add(this.board[j][x].element);
+            if (this.board[j][x].element && j !== y) { // Avoid double-counting the bomb position
+                affectedTiles.add(`${x},${j}`);
                 if (this.board[j][x].special === 'diamond') {
                     diamondPositions.push({ x: x, y: j });
                 }
             }
         }
 
-        // Apply Carbon animation
-        affectedTiles.forEach(tileElement => {
-            tileElement.classList.add('carbon-clear');
+        affectedTiles.forEach(pos => {
+            const [tx, ty] = pos.split(',').map(Number);
+            if (this.board[ty][tx].element) {
+                this.board[ty][tx].element.classList.add('carbon-clear');
+            }
         });
 
-        // After Carbon animation, clear and check for Diamond chain
         setTimeout(() => {
-            for (let i = 0; i < this.width; i++) {
-                this.board[y][i].icon = null;
-                this.board[y][i].special = null;
-                this.board[y][i].element = null;
-            }
-            for (let j = 0; j < this.height; j++) {
-                this.board[j][x].icon = null;
-                this.board[j][x].special = null;
-                this.board[j][x].element = null;
-            }
+            affectedTiles.forEach(pos => {
+                const [tx, ty] = pos.split(',').map(Number);
+                this.board[ty][tx].icon = null;
+                this.board[ty][tx].special = null;
+                this.board[ty][tx].element = null;
+            });
+
+            this.score += affectedTiles.size * 10; // Add score for cleared tiles
+            document.getElementById('score').textContent = `Score: ${this.score}`;
+            console.log(`Carbon bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
+
             this.renderBoard();
 
             if (diamondPositions.length > 0) {
                 console.log(`Diamond bomb(s) detected in Carbon explosion at: ${JSON.stringify(diamondPositions)}`);
                 setTimeout(() => {
-                    this.clearBoard(); // Chain Diamond board clear
-                }, 200); // Small delay for visual separation
+                    this.clearBoard();
+                }, 200);
             } else {
-                this.cascadeTiles(); // No Diamond, just cascade
+                this.cascadeTiles();
             }
-        }, 800); // Match carbonSweep duration
+        }, 800);
     }
 
     clearBoard() {
@@ -606,26 +696,33 @@ class Match3Game {
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 if (this.board[y][x].element) {
-                    affectedTiles.add(this.board[y][x].element);
+                    affectedTiles.add(`${x},${y}`);
                 }
             }
         }
 
-        affectedTiles.forEach(tileElement => {
-            tileElement.classList.add('diamond-clear');
+        affectedTiles.forEach(pos => {
+            const [x, y] = pos.split(',').map(Number);
+            if (this.board[y][x].element) {
+                this.board[y][x].element.classList.add('diamond-clear');
+            }
         });
 
         setTimeout(() => {
-            for (let y = 0; y < this.height; y++) {
-                for (let x = 0; x < this.width; x++) {
-                    this.board[y][x].icon = null;
-                    this.board[y][x].special = null;
-                    this.board[y][x].element = null;
-                }
-            }
+            affectedTiles.forEach(pos => {
+                const [x, y] = pos.split(',').map(Number);
+                this.board[y][x].icon = null;
+                this.board[y][x].special = null;
+                this.board[y][x].element = null;
+            });
+
+            this.score += affectedTiles.size * 10; // Add score for cleared tiles
+            document.getElementById('score').textContent = `Score: ${this.score}`;
+            console.log(`Diamond bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
+
             this.renderBoard();
             this.cascadeTiles();
-        }, 1000); // Match diamondShockwave duration
+        }, 1000);
     }
 
     createSpecialTile(x, y, type) {
@@ -654,7 +751,7 @@ class Match3Game {
             }
         }
         this.renderBoard();
-        setTimeout(() => this.checkMatches(), 300);
+        setTimeout(() => this.resolveMatches(), 300); // Resolve matches after cascade
     }
 }
 
