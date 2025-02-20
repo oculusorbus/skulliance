@@ -13,7 +13,7 @@
             align-items: center;
             overflow: hidden;
         }
-        #score {
+        #score, #matches {
             font-size: 24px;
             margin: 10px 0;
             font-family: Arial;
@@ -41,12 +41,15 @@
             justify-content: center;
             font-size: 2vh;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, filter 0.5s ease;
             position: relative;
             background: #444;
             box-sizing: border-box;
             padding: 0.25vh;
             z-index: 1;
+        }
+        .tile.game-over {
+            filter: grayscale(100%);
         }
         .tile img {
             width: 80%;
@@ -87,6 +90,41 @@
         .diamond-clear {
             animation: diamondShockwave 1s ease forwards;
         }
+        #game-over-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 30;
+            display: none;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #game-over {
+            font-size: 48px;
+            font-family: Arial;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px #000;
+            margin: 0;
+            animation: gameOverPulse 1s ease-in-out infinite;
+        }
+        #try-again {
+            font-size: 24px;
+            font-family: Arial;
+            color: #ffffff;
+            background-color: #444;
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        #try-again:hover {
+            background-color: #666;
+            transform: scale(1.05);
+        }
         @keyframes matchAnimation {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.2); opacity: 0.8; }
@@ -108,11 +146,21 @@
             75% { transform: scale(1); opacity: 0.5; background-color: #9900cc; box-shadow: 0 0 40px #ff00ff; }
             100% { transform: scale(0); opacity: 0; background-color: #000000; box-shadow: 0 0 60px #ff00ff; }
         }
+        @keyframes gameOverPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
     </style>
 </head>
 <body>
+    <div id="matches">Matches: 0</div>
     <div id="score">Score: 0</div>
     <div id="game-board"></div>
+    <div id="game-over-container">
+        <div id="game-over">GAME OVER</div>
+        <button id="try-again">TRY AGAIN</button>
+    </div>
 
     <script>
 class Match3Game {
@@ -122,6 +170,9 @@ class Match3Game {
         this.board = [];
         this.selectedTile = null;
         this.score = 0;
+        this.matchCount = 0;
+        this.matchLimit = 50; // Changed to 50
+        this.gameOver = false;
         this.allIcons = [
             'https://www.skulliance.io/staking/icons/dark.png',
             'https://www.skulliance.io/staking/icons/maxi.png',
@@ -193,6 +244,34 @@ class Match3Game {
         this.initBoard();
         this.renderBoard();
         this.addEventListeners();
+        
+        const board = document.getElementById('game-board');
+        board.style.pointerEvents = 'auto';
+
+        // Add event listener for Try Again button with debug log
+        this.tryAgainButton = document.getElementById('try-again');
+        this.tryAgainButton.addEventListener('click', () => {
+            console.log('Try Again button clicked!');
+            this.resetGame();
+        });
+    }
+
+    resetGame() {
+        console.log('Resetting game...');
+        this.score = 0;
+        this.matchCount = 0;
+        this.gameOver = false;
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+        document.getElementById('matches').textContent = `Matches: ${this.matchCount}`;
+        
+        const board = document.getElementById('game-board');
+        const tiles = board.querySelectorAll('.tile');
+        tiles.forEach(tile => tile.classList.remove('game-over'));
+        
+        const gameOverContainer = document.getElementById('game-over-container');
+        gameOverContainer.style.display = 'none';
+        
+        this.initBoard();
     }
 
     selectRandomIcons(count) {
@@ -239,13 +318,16 @@ class Match3Game {
 
     renderBoard() {
         const boardElement = document.getElementById('game-board');
-        boardElement.innerHTML = '';
+        boardElement.innerHTML = ''; // Only clear the tiles
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const tile = this.board[y][x];
                 const tileElement = document.createElement('div');
                 tileElement.className = 'tile';
+                if (this.gameOver) {
+                    tileElement.classList.add('game-over');
+                }
                 
                 if (tile.special) {
                     const img = document.createElement('img');
@@ -269,6 +351,9 @@ class Match3Game {
                 }
             }
         }
+        
+        const gameOverContainer = document.getElementById('game-over-container');
+        gameOverContainer.style.display = this.gameOver ? 'block' : 'none';
     }
 
     addEventListeners() {
@@ -285,15 +370,12 @@ class Match3Game {
         }
     }
 
-    getTileFromEvent(e) {
-        const tileElement = e.target.closest('.tile');
-        if (!tileElement) return null;
-        const x = parseInt(tileElement.dataset.x);
-        const y = parseInt(tileElement.dataset.y);
-        return { x, y, element: tileElement };
+    removeEventListeners() {
+        // No longer removing listeners; using gameOver flag instead
     }
 
     handleMouseDown(e) {
+        if (this.gameOver) return; // Use gameOver flag to disable
         e.preventDefault();
         const tile = this.getTileFromEvent(e);
         if (!tile || !tile.element) return;
@@ -308,7 +390,7 @@ class Match3Game {
     }
 
     handleMouseMove(e) {
-        if (!this.isDragging || !this.selectedTile) return;
+        if (!this.isDragging || !this.selectedTile || this.gameOver) return;
         e.preventDefault();
 
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
@@ -345,7 +427,7 @@ class Match3Game {
     }
 
     handleMouseUp(e) {
-        if (!this.isDragging || !this.selectedTile || !this.targetTile) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver) {
             if (this.selectedTile) {
                 const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                 if (tile.element) tile.element.classList.remove('selected');
@@ -370,6 +452,7 @@ class Match3Game {
     }
 
     handleTouchStart(e) {
+        if (this.gameOver) return; // Use gameOver flag to disable
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
         if (!tile || !tile.element) return;
@@ -384,7 +467,7 @@ class Match3Game {
     }
 
     handleTouchMove(e) {
-        if (!this.isDragging || !this.selectedTile) return;
+        if (!this.isDragging || !this.selectedTile || this.gameOver) return;
         e.preventDefault();
 
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
@@ -422,7 +505,7 @@ class Match3Game {
     }
 
     handleTouchEnd(e) {
-        if (!this.isDragging || !this.selectedTile || !this.targetTile) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver) {
             if (this.selectedTile) {
                 const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                 if (tile.element) tile.element.classList.remove('selected');
@@ -444,6 +527,16 @@ class Match3Game {
         this.selectedTile = null;
         this.targetTile = null;
         this.dragDirection = null;
+    }
+
+    getTileFromEvent(e) {
+        const boardRect = document.getElementById('game-board').getBoundingClientRect();
+        const x = Math.floor((e.clientX - boardRect.left) / this.tileSizeWithGap);
+        const y = Math.floor((e.clientY - boardRect.top) / this.tileSizeWithGap);
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+            return { x, y, element: this.board[y][x].element };
+        }
+        return null;
     }
 
     isInSameRowOrColumn(x1, y1, x2, y2) {
@@ -534,7 +627,15 @@ class Match3Game {
             this.renderBoard();
             const hasMatches = this.resolveMatches(endX, endY);
 
-            if (!hasMatches) {
+            if (hasMatches) {
+                this.matchCount++;
+                document.getElementById('matches').textContent = `Matches: ${this.matchCount}`;
+                
+                if (this.matchCount >= this.matchLimit) {
+                    this.gameOver = true;
+                    this.endGame();
+                }
+            } else {
                 console.log(`No match, reverting tiles from (${startX}, ${startY}) to (${endX}, ${endY})`);
                 selectedElement.style.transition = 'transform 0.2s ease';
                 selectedElement.style.transform = 'translate(0, 0)';
@@ -559,6 +660,19 @@ class Match3Game {
                 }, 200);
             }
         }, 200);
+    }
+
+    endGame() {
+        const board = document.getElementById('game-board');
+        const gameOverContainer = document.getElementById('game-over-container');
+        
+        const tiles = board.querySelectorAll('.tile');
+        tiles.forEach(tile => tile.classList.add('game-over'));
+        
+        gameOverContainer.style.display = 'block';
+        console.log('Game Over - Match limit reached!');
+        
+        this.gameOver = true;
     }
 
     resolveMatches(selectedX = null, selectedY = null) {
