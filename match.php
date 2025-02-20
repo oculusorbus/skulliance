@@ -362,7 +362,7 @@ class Match3Game {
         this.dragDirection = null;
     }
 
-    // Touch Events (Improved Mobile Behavior)
+    // Touch Events
     handleTouchStart(e) {
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
@@ -387,12 +387,11 @@ class Match3Game {
 
         const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
 
-        // Use requestAnimationFrame for smoother updates
         requestAnimationFrame(() => {
             if (!this.dragDirection) {
                 const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
                 const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
-                if (dx > dy && dx > 7) this.dragDirection = 'row'; // Lowered to 7px
+                if (dx > dy && dx > 7) this.dragDirection = 'row';
                 else if (dy > dx && dy > 7) this.dragDirection = 'column';
             }
 
@@ -627,15 +626,20 @@ class Match3Game {
             const matchSize = allMatches.size;
             console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
             
-            if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
+            // For match-4 (carbon bomb), force bomb placement at the moved tile (selectedX, selectedY)
+            if (matchSize === 4 && selectedX !== null && selectedY !== null) {
                 bombX = selectedX;
                 bombY = selectedY;
+                bombType = 'bomb4'; // Carbon bomb
+            } else if (matchSize >= 5 && selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
+                bombX = selectedX;
+                bombY = selectedY;
+                bombType = 'bomb5'; // Diamond bomb
             } else {
                 const lastMatch = Array.from(allMatches).pop();
                 [bombX, bombY] = lastMatch.split(',').map(Number);
+                bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
             }
-
-            bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
         }
 
         return { hasMatches, matches: allMatches, bombType, bombX, bombY };
