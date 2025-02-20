@@ -31,7 +31,7 @@
             box-sizing: border-box;
             user-select: none;
             position: relative;
-            touch-action: none; /* Still helps mobile, doesn’t affect mouse */
+            touch-action: none;
         }
         .tile {
             width: 100%;
@@ -159,13 +159,13 @@ class Match3Game {
             diamond: 'https://www.skulliance.io/staking/icons/diamond.png'
         };
         this.colorPalette = [
-            '#800000', // Crimson Gore (bold red)
-            '#008080', // Toxic Teal (vibrant teal)
-            '#408000', // Poison Green (sickly green)
-            '#4B0082', // Witch Purple (deep purple)
-            '#666633', // Ghoul Gray (murky gray)
-            '#804000', // Flesh Rot (bold orange-brown)
-            '#004080'  // Spectral Blue (ghostly blue)
+            '#800000',
+            '#008080',
+            '#408000',
+            '#4B0082',
+            '#666633',
+            '#804000',
+            '#004080'
         ];
         this.icons = this.selectRandomIcons(7);
         this.iconColorMap = this.createIconColorMap();
@@ -364,7 +364,7 @@ class Match3Game {
         this.dragDirection = null;
     }
 
-    // Touch Events (Mobile-Optimized)
+    // Touch Events (Improved Mobile Behavior)
     handleTouchStart(e) {
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
@@ -393,30 +393,26 @@ class Match3Game {
         if (!this.dragDirection) {
             const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
             const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
-            if (dx > dy && dx > 5) this.dragDirection = 'row';
-            else if (dy > dx && dy > 5) this.dragDirection = 'column';
+            if (dx > dy && dx > 10) this.dragDirection = 'row'; // Increased threshold to 10
+            else if (dy > dx && dy > 10) this.dragDirection = 'column';
+            return; // Wait for clearer intent before moving
         }
 
-        if (!this.dragDirection) return;
-
         if (this.dragDirection === 'row') {
-            const constrainedX = Math.max(-this.tileSizeWithGap, Math.min(this.tileSizeWithGap, touchX - this.selectedTile.x * this.tileSizeWithGap));
-            selectedTileElement.style.transform = `translate(${constrainedX}px, 0) scale(1.05)`;
+            const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, touchX));
+            selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
             this.targetTile = {
-                x: this.selectedTile.x + (constrainedX > 0 ? 1 : constrainedX < 0 ? -1 : 0),
+                x: Math.round(constrainedX / this.tileSizeWithGap),
                 y: this.selectedTile.y
             };
         } else if (this.dragDirection === 'column') {
-            const constrainedY = Math.max(-this.tileSizeWithGap, Math.min(this.tileSizeWithGap, touchY - this.selectedTile.y * this.tileSizeWithGap));
-            selectedTileElement.style.transform = `translate(0, ${constrainedY}px) scale(1.05)`;
+            const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, touchY));
+            selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
             this.targetTile = {
                 x: this.selectedTile.x,
-                y: this.selectedTile.y + (constrainedY > 0 ? 1 : constrainedY < 0 ? -1 : 0)
+                y: Math.round(constrainedY / this.tileSizeWithGap)
             };
         }
-
-        this.targetTile.x = Math.max(0, Math.min(this.width - 1, this.targetTile.x));
-        this.targetTile.y = Math.max(0, Math.min(this.height - 1, this.targetTile.y));
     }
 
     handleTouchEnd(e) {
