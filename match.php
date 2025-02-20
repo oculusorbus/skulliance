@@ -177,11 +177,9 @@ class Match3Game {
         this.offsetX = 0;
         this.offsetY = 0;
 
-        // Calculate tile size dynamically based on the smaller dimension
         const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9);
         this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height;
 
-        // Detect if running on a touch device
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 
         this.initBoard();
@@ -388,31 +386,34 @@ class Match3Game {
         const touchY = e.touches[0].clientY - boardRect.top - this.offsetY;
 
         const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
-        selectedTileElement.style.transition = '';
 
-        if (!this.dragDirection) {
-            const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
-            const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
-            if (dx > dy && dx > 10) this.dragDirection = 'row'; // Increased threshold to 10
-            else if (dy > dx && dy > 10) this.dragDirection = 'column';
-            return; // Wait for clearer intent before moving
-        }
+        // Use requestAnimationFrame for smoother updates
+        requestAnimationFrame(() => {
+            if (!this.dragDirection) {
+                const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
+                const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
+                if (dx > dy && dx > 7) this.dragDirection = 'row'; // Lowered to 7px
+                else if (dy > dx && dy > 7) this.dragDirection = 'column';
+            }
 
-        if (this.dragDirection === 'row') {
-            const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, touchX));
-            selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
-            this.targetTile = {
-                x: Math.round(constrainedX / this.tileSizeWithGap),
-                y: this.selectedTile.y
-            };
-        } else if (this.dragDirection === 'column') {
-            const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, touchY));
-            selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
-            this.targetTile = {
-                x: this.selectedTile.x,
-                y: Math.round(constrainedY / this.tileSizeWithGap)
-            };
-        }
+            selectedTileElement.style.transition = '';
+
+            if (this.dragDirection === 'row') {
+                const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, touchX));
+                selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
+                this.targetTile = {
+                    x: Math.round(constrainedX / this.tileSizeWithGap),
+                    y: this.selectedTile.y
+                };
+            } else if (this.dragDirection === 'column') {
+                const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, touchY));
+                selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
+                this.targetTile = {
+                    x: this.selectedTile.x,
+                    y: Math.round(constrainedY / this.tileSizeWithGap)
+                };
+            }
+        });
     }
 
     handleTouchEnd(e) {
