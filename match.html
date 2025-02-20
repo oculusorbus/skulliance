@@ -25,10 +25,8 @@
             gap: 0.5vh; /* Scaled gap relative to viewport height */
             background: #333;
             padding: 1vh; /* Scaled padding */
-            width: 90vh; /* Square board, 90% of viewport height */
-            height: 90vh; /* Full height minus score and padding */
-            max-width: 90vw; /* Ensure it fits width-wise if narrower */
-            max-height: 90vh; /* Ensure it fits height-wise */
+            width: min(90vh, 90vw); /* Square board, 90% of smaller dimension */
+            height: min(90vh, 90vw); /* Match width for square shape */
             grid-template-columns: repeat(8, 1fr); /* 8 equal columns */
             box-sizing: border-box;
             user-select: none;
@@ -178,9 +176,9 @@ class Match3Game {
         this.offsetX = 0;
         this.offsetY = 0;
 
-        // Calculate tile size dynamically based on viewport height
-        const boardHeight = window.innerHeight * 0.9; // 90% of viewport height
-        this.tileSizeWithGap = (boardHeight - (1 * this.height)) / this.height; // Adjust for gap and padding
+        // Calculate tile size dynamically based on the smaller dimension
+        const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9); // 90% of smaller dimension
+        this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height; // Adjust for gap
 
         this.initBoard();
         this.renderBoard();
