@@ -125,15 +125,19 @@ class Match3Game {
             'https://www.skulliance.io/staking/icons/dark.png',
             'https://www.skulliance.io/staking/icons/maxi.png',
             'https://www.skulliance.io/staking/icons/dank.png',
+            'https://www.skulliance.io/staking/icons/mipa.png',
             'https://www.skulliance.io/staking/icons/ustra.png',
+            'https://www.skulliance.io/staking/icons/nat.png',
             'https://www.skulliance.io/staking/icons/fire.png',
             'https://www.skulliance.io/staking/icons/eye.png',
             'https://www.skulliance.io/staking/icons/sharon.png',
             'https://www.skulliance.io/staking/icons/lens.png',
             'https://www.skulliance.io/staking/icons/kala.png',
+            'https://www.skulliance.io/staking/icons/ass.png',
             'https://www.skulliance.io/staking/icons/moon.png',
             'https://www.skulliance.io/staking/icons/ritual.png',
             'https://www.skulliance.io/staking/icons/wave.png',
+            'https://www.skulliance.io/staking/icons/soul.png',
             'https://www.skulliance.io/staking/icons/stag.png',
             'https://www.skulliance.io/staking/icons/skowl.png',
             'https://www.skulliance.io/staking/icons/loot.png',
@@ -141,9 +145,11 @@ class Match3Game {
             'https://www.skulliance.io/staking/icons/axion.png',
             'https://www.skulliance.io/staking/icons/void.png',
             'https://www.skulliance.io/staking/icons/muse.png',
+            'https://www.skulliance.io/staking/icons/dn.png',
             'https://www.skulliance.io/staking/icons/tribe.png',
             'https://www.skulliance.io/staking/icons/star.png',
             'https://www.skulliance.io/staking/icons/dread.png',
+            'https://www.skulliance.io/staking/icons/hype.png',
             'https://www.skulliance.io/staking/icons/sinder.png',
             'https://www.skulliance.io/staking/icons/cyber.png',
             'https://www.skulliance.io/staking/icons/crypt.png'
@@ -356,7 +362,7 @@ class Match3Game {
         this.dragDirection = null;
     }
 
-    // Touch Events
+    // Touch Events (Improved Mobile Behavior)
     handleTouchStart(e) {
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
@@ -381,11 +387,12 @@ class Match3Game {
 
         const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
 
+        // Use requestAnimationFrame for smoother updates
         requestAnimationFrame(() => {
             if (!this.dragDirection) {
                 const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
                 const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
-                if (dx > dy && dx > 7) this.dragDirection = 'row';
+                if (dx > dy && dx > 7) this.dragDirection = 'row'; // Lowered to 7px
                 else if (dy > dx && dy > 7) this.dragDirection = 'column';
             }
 
@@ -620,20 +627,15 @@ class Match3Game {
             const matchSize = allMatches.size;
             console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
             
-            // For match-4 (carbon bomb), force bomb placement at the moved tile (selectedX, selectedY)
-            if (matchSize === 4 && selectedX !== null && selectedY !== null) {
+            if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
                 bombX = selectedX;
                 bombY = selectedY;
-                bombType = 'bomb4'; // Carbon bomb
-            } else if (matchSize >= 5 && selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
-                bombX = selectedX;
-                bombY = selectedY;
-                bombType = 'bomb5'; // Diamond bomb
             } else {
                 const lastMatch = Array.from(allMatches).pop();
                 [bombX, bombY] = lastMatch.split(',').map(Number);
-                bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
             }
+
+            bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
         }
 
         return { hasMatches, matches: allMatches, bombType, bombX, bombY };
