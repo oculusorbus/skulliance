@@ -171,7 +171,7 @@ class Match3Game {
         this.selectedTile = null;
         this.score = 0;
         this.matchCount = 0;
-        this.matchLimit = 50; // Changed to 50
+        this.matchLimit = 25; // Changed from 20 to 25
         this.gameOver = false;
         this.allIcons = [
             'https://www.skulliance.io/staking/icons/dark.png',
@@ -248,7 +248,6 @@ class Match3Game {
         const board = document.getElementById('game-board');
         board.style.pointerEvents = 'auto';
 
-        // Add event listener for Try Again button with debug log
         this.tryAgainButton = document.getElementById('try-again');
         this.tryAgainButton.addEventListener('click', () => {
             console.log('Try Again button clicked!');
@@ -318,7 +317,7 @@ class Match3Game {
 
     renderBoard() {
         const boardElement = document.getElementById('game-board');
-        boardElement.innerHTML = ''; // Only clear the tiles
+        boardElement.innerHTML = ''; // Clear the board
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
@@ -370,12 +369,8 @@ class Match3Game {
         }
     }
 
-    removeEventListeners() {
-        // No longer removing listeners; using gameOver flag instead
-    }
-
     handleMouseDown(e) {
-        if (this.gameOver) return; // Use gameOver flag to disable
+        if (this.gameOver) return;
         e.preventDefault();
         const tile = this.getTileFromEvent(e);
         if (!tile || !tile.element) return;
@@ -452,7 +447,7 @@ class Match3Game {
     }
 
     handleTouchStart(e) {
-        if (this.gameOver) return; // Use gameOver flag to disable
+        if (this.gameOver) return;
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
         if (!tile || !tile.element) return;
@@ -537,10 +532,6 @@ class Match3Game {
             return { x, y, element: this.board[y][x].element };
         }
         return null;
-    }
-
-    isInSameRowOrColumn(x1, y1, x2, y2) {
-        return (y1 === y2) || (x1 === x2);
     }
 
     slideTiles(startX, startY, endX, endY) {
@@ -631,8 +622,7 @@ class Match3Game {
                 this.matchCount++;
                 document.getElementById('matches').textContent = `Matches: ${this.matchCount}`;
                 
-                if (this.matchCount >= this.matchLimit) {
-                    this.gameOver = true;
+                if (this.matchCount >= this.matchLimit) { // Changed from 20 to 25
                     this.endGame();
                 }
             } else {
@@ -662,17 +652,259 @@ class Match3Game {
         }, 200);
     }
 
-    endGame() {
+    async endGame() {
+        console.log('Starting endgame sequence...');
         const board = document.getElementById('game-board');
         const gameOverContainer = document.getElementById('game-over-container');
-        
+
+        let bombPositions = this.getAllBombPositions();
+        console.log(`Found ${bombPositions.length} bombs for grand finale`);
+
+        while (bombPositions.length > 0) {
+            const bomb = bombPositions.shift();
+            if (bomb.type === 'carbon') {
+                await this.clearRowAndColumn(bomb.x, bomb.y, true);
+            } else if (bomb.type === 'diamond') {
+                await this.clearBoard(bomb.x, bomb.y, true);
+            }
+            this.showerTiles();
+            this.cascadeTilesWithoutRender();
+            this.renderBoard();
+            await new Promise(resolve => setTimeout(resolve, 250));
+
+            const newBombs = this.getAllBombPositions();
+            bombPositions = [...bombPositions, ...newBombs.filter(nb => 
+                !bombPositions.some(b => b.x === nb.x && b.y === nb.y))];
+            console.log(`Detonated at (${bomb.x}, ${bomb.y}), ${bombPositions.length} bombs remain`);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        let moved = true;
+        let iterations = 0;
+        const maxIterations = 20;
+        while (moved && iterations < maxIterations) {
+            moved = this.cascadeTilesWithoutRender();
+            this.showerTiles();
+            this.renderBoard();
+            await new Promise(resolve => setTimeout(resolve, 300));
+            iterations++;
+
+            let hasMatches = false;
+            for (let y = 0; y < this.height && !hasMatches; y++) {
+                for (let x = 0; x < this.width && !hasMatches; x++) {
+                    if (this.checkMatches(x, y).hasMatches) {
+                        hasMatches = true;
+                    }
+                }
+            }
+            if (!hasMatches) break;
+        }
+
+        console.log('Board is calm, showing game over...');
         const tiles = board.querySelectorAll('.tile');
         tiles.forEach(tile => tile.classList.add('game-over'));
-        
         gameOverContainer.style.display = 'block';
-        console.log('Game Over - Match limit reached!');
-        
         this.gameOver = true;
+        console.log('Game Over - Grand finale completed!');
+    }
+
+    getAllBombPositions() {
+        const bombPositions = [];
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                const tile = this.board[y][x];
+                if (tile.special) {
+                    bombPositions.push({ x, y, type: tile.special });
+                }
+            }
+        }
+        return bombPositions;
+    }
+
+    async clearRowAndColumn(x, y, isEndGame = false) {
+        console.log(`Clearing row ${y} and column ${x} (Carbon Bomb)`);
+        const affectedTiles = new Set();
+        const newBombs = [];
+
+        if (this.board[y][x].element) {
+            this.board[y][x].element.classList.add('carbon-clear');
+        }
+
+        for (let i = 0; i < this.width; i++) {
+            if (i !== x && this.board[y][i].element) {
+                affectedTiles.add(`${i},${y}`);
+            }
+        }
+        for (let j = 0; j < this.height; j++) {
+            if (j !== y && this.board[j][x].element) {
+                affectedTiles.add(`${x},${j}`);
+            }
+        }
+
+        affectedTiles.forEach(pos => {
+            const [tx, ty] = pos.split(',').map(Number);
+            if (this.board[ty][tx].element) {
+                this.board[ty][tx].element.classList.add('carbon-clear');
+            }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 800));
+
+        affectedTiles.forEach(pos => {
+            const [tx, ty] = pos.split(',').map(Number);
+            if (this.board[ty][tx].special && !isEndGame) {
+                newBombs.push({ x: tx, y: ty, type: this.board[ty][tx].special });
+            }
+        });
+
+        affectedTiles.forEach(pos => {
+            const [tx, ty] = pos.split(',').map(Number);
+            this.board[ty][tx].icon = null;
+            this.board[ty][tx].special = null;
+            this.board[ty][tx].element = null;
+        });
+        this.board[y][x].icon = null;
+        this.board[y][x].special = null;
+        this.board[y][x].element = null;
+
+        this.score += (affectedTiles.size + 1) * 10;
+        if (!isEndGame) {
+            this.score += this.bonusScores.carbonCleared;
+        }
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+        console.log(`Carbon bomb cleared ${affectedTiles.size + 1} tiles, added ${(affectedTiles.size + 1) * 10} points`);
+
+        if (!isEndGame) {
+            for (const bomb of newBombs) {
+                await this.handleBombDetonation(bomb.x, bomb.y, bomb.type);
+            }
+        }
+
+        return isEndGame ? [] : newBombs;
+    }
+
+    async clearBoard(x = null, y = null, isEndGame = false) {
+        console.log(`Clearing entire board (Diamond Bomb)${x !== null && y !== null ? ` at (${x}, ${y})` : ''}`);
+        const affectedTiles = new Set();
+        const newBombs = [];
+
+        if (x !== null && y !== null && this.board[y][x].element) {
+            this.board[y][x].element.classList.add('diamond-clear');
+        }
+
+        for (let ty = 0; ty < this.height; ty++) {
+            for (let tx = 0; tx < this.width; tx++) {
+                if ((tx !== x || ty !== y) && this.board[ty][tx].element) {
+                    affectedTiles.add(`${tx},${ty}`);
+                    this.board[ty][tx].element.classList.add('diamond-clear');
+                }
+            }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 1000));
+
+        affectedTiles.forEach(pos => {
+            const [tx, ty] = pos.split(',').map(Number);
+            if (this.board[ty][tx].special && !isEndGame) {
+                newBombs.push({ x: tx, y: ty, type: this.board[ty][tx].special });
+            }
+        });
+
+        affectedTiles.forEach(pos => {
+            const [tx, ty] = pos.split(',').map(Number);
+            this.board[ty][tx].icon = null;
+            this.board[ty][tx].special = null;
+            this.board[ty][tx].element = null;
+        });
+        if (x !== null && y !== null) {
+            this.board[y][x].icon = null;
+            this.board[y][x].special = null;
+            this.board[y][x].element = null;
+        }
+
+        this.score += affectedTiles.size * 10 + (x !== null ? 10 : 0);
+        if (!isEndGame) {
+            this.score += this.bonusScores.diamondCleared;
+        }
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+        console.log(`Diamond bomb cleared ${affectedTiles.size + (x !== null ? 1 : 0)} tiles, added ${(affectedTiles.size + (x !== null ? 1 : 0)) * 10} points`);
+
+        if (!isEndGame) {
+            for (const bomb of newBombs) {
+                await this.handleBombDetonation(bomb.x, bomb.y, bomb.type);
+            }
+        }
+
+        return isEndGame ? [] : newBombs;
+    }
+
+    async handleBombDetonation(x, y, bombType) {
+        console.log(`Detonating ${bombType} bomb at (${x}, ${y}) triggered by another bomb`);
+        if (bombType === 'carbon') {
+            this.score += this.bonusScores.carbonDetonation;
+            console.log(`Carbon bomb chain-detonated at (${x}, ${y}), +${this.bonusScores.carbonDetonation} bonus`);
+            await this.clearRowAndColumn(x, y);
+        } else if (bombType === 'diamond') {
+            this.score += this.bonusScores.diamondDetonation;
+            console.log(`Diamond bomb chain-detonated at (${x}, ${y}), +${this.bonusScores.diamondDetonation} bonus`);
+            await this.clearBoard(x, y);
+        }
+        this.showerTiles();
+        this.renderBoard();
+        await new Promise(resolve => setTimeout(resolve, 200));
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+    }
+
+    showerTiles() {
+        console.log('Showering tiles...');
+        for (let x = 0; x < this.width; x++) {
+            let topEmpty = -1;
+            for (let y = 0; y < this.height; y++) {
+                if (!this.board[y][x].icon && !this.board[y][x].special) {
+                    topEmpty = y;
+                    break;
+                }
+            }
+            if (topEmpty >= 0) {
+                this.board[topEmpty][x] = this.createRandomTile();
+            }
+        }
+    }
+
+    cascadeTilesWithoutRender() {
+        let moved = false;
+        for (let x = 0; x < this.width; x++) {
+            let emptySpaces = 0;
+            for (let y = this.height - 1; y >= 0; y--) {
+                if (!this.board[y][x].icon && !this.board[y][x].special) {
+                    emptySpaces++;
+                } else if (emptySpaces > 0) {
+                    this.board[y + emptySpaces][x] = this.board[y][x];
+                    this.board[y][x] = { icon: null, special: null, element: null };
+                    moved = true;
+                }
+            }
+            for (let i = 0; i < emptySpaces; i++) {
+                this.board[i][x] = this.createRandomTile();
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    cascadeTiles() {
+        console.log('Cascading tiles...');
+        let moved = this.cascadeTilesWithoutRender();
+        this.renderBoard();
+        if (moved || this.matchCheckCount < 2) {
+            this.matchCheckCount++;
+            setTimeout(() => {
+                const hasMatches = this.resolveMatches();
+                if (!hasMatches) this.matchCheckCount = 0;
+            }, 300);
+        } else {
+            this.matchCheckCount = 0;
+        }
     }
 
     resolveMatches(selectedX = null, selectedY = null) {
@@ -789,7 +1021,7 @@ class Match3Game {
         }, 300);
     }
 
-    handleBombMatches(matches, bombType, bombX, bombY) {
+    async handleBombMatches(matches, bombType, bombX, bombY) {
         matches.forEach(match => {
             const [x, y] = match.split(',').map(Number);
             if (this.board[y][x].element) {
@@ -797,149 +1029,30 @@ class Match3Game {
             }
         });
 
-        setTimeout(() => {
-            matches.forEach(match => {
-                const [x, y] = match.split(',').map(Number);
-                this.board[y][x].icon = null;
-                this.board[y][x].special = null;
-                this.board[y][x].element = null;
-            });
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-            this.score += matches.size * 10;
-
-            if (bombType === 'carbon') {
-                this.score += this.bonusScores.carbonDetonation;
-                console.log(`Carbon bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.carbonDetonation} bonus`);
-                this.clearRowAndColumn(bombX, bombY);
-            } else if (bombType === 'diamond') {
-                this.score += this.bonusScores.diamondDetonation;
-                console.log(`Diamond bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.diamondDetonation} bonus`);
-                this.clearBoard();
-            }
-
-            document.getElementById('score').textContent = `Score: ${this.score}`;
-        }, 300);
-    }
-
-    clearRowAndColumn(x, y) {
-        console.log(`Clearing row ${y} and column ${x} (Carbon Bomb)`);
-        const affectedTiles = new Set();
-        const diamondPositions = [];
-        let carbonBonus = 0;
-        let diamondBonus = 0;
-
-        for (let i = 0; i < this.width; i++) {
-            if (this.board[y][i].element) {
-                affectedTiles.add(`${i},${y}`);
-                if (this.board[y][i].special === 'diamond') {
-                    diamondPositions.push({ x: i, y: y });
-                    diamondBonus += this.bonusScores.diamondCleared;
-                } else if (this.board[y][i].special === 'carbon' && i !== x) {
-                    carbonBonus += this.bonusScores.carbonCleared;
-                }
-            }
-        }
-        for (let j = 0; j < this.height; j++) {
-            if (this.board[j][x].element && j !== y) {
-                affectedTiles.add(`${x},${j}`);
-                if (this.board[j][x].special === 'diamond') {
-                    diamondPositions.push({ x: x, y: j });
-                    diamondBonus += this.bonusScores.diamondCleared;
-                } else if (this.board[j][x].special === 'carbon') {
-                    carbonBonus += this.bonusScores.carbonCleared;
-                }
-            }
-        }
-
-        affectedTiles.forEach(pos => {
-            const [tx, ty] = pos.split(',').map(Number);
-            if (this.board[ty][tx].element) {
-                this.board[ty][tx].element.classList.add('carbon-clear');
-            }
+        matches.forEach(match => {
+            const [x, y] = match.split(',').map(Number);
+            this.board[y][x].icon = null;
+            this.board[y][x].special = null;
+            this.board[y][x].element = null;
         });
 
-        setTimeout(() => {
-            affectedTiles.forEach(pos => {
-                const [tx, ty] = pos.split(',').map(Number);
-                this.board[ty][tx].icon = null;
-                this.board[ty][tx].special = null;
-                this.board[ty][tx].element = null;
-            });
+        this.score += matches.size * 10;
 
-            this.score += affectedTiles.size * 10;
-            if (carbonBonus > 0) {
-                this.score += carbonBonus;
-                console.log(`Cleared ${carbonBonus / this.bonusScores.carbonCleared} carbon bomb(s), +${carbonBonus} bonus`);
-            }
-            if (diamondBonus > 0) {
-                this.score += diamondBonus;
-                console.log(`Cleared ${diamondBonus / this.bonusScores.diamondCleared} diamond bomb(s), +${diamondBonus} bonus`);
-            }
-            document.getElementById('score').textContent = `Score: ${this.score}`;
-            console.log(`Carbon bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
-
-            this.renderBoard();
-
-            if (diamondPositions.length > 0) {
-                console.log(`Diamond bomb(s) detected in Carbon explosion at: ${JSON.stringify(diamondPositions)}`);
-                setTimeout(() => {
-                    this.clearBoard();
-                }, 200);
-            } else {
-                this.cascadeTiles();
-            }
-        }, 800);
-    }
-
-    clearBoard() {
-        console.log('Clearing entire board (Diamond Bomb)');
-        const affectedTiles = new Set();
-        let carbonBonus = 0;
-        let diamondBonus = 0;
-
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                if (this.board[y][x].element) {
-                    affectedTiles.add(`${x},${y}`);
-                    if (this.board[y][x].special === 'carbon') {
-                        carbonBonus += this.bonusScores.carbonCleared;
-                    } else if (this.board[y][x].special === 'diamond') {
-                        diamondBonus += this.bonusScores.diamondCleared;
-                    }
-                }
-            }
+        if (bombType === 'carbon') {
+            this.score += this.bonusScores.carbonDetonation;
+            console.log(`Carbon bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.carbonDetonation} bonus`);
+            await this.clearRowAndColumn(bombX, bombY);
+        } else if (bombType === 'diamond') {
+            this.score += this.bonusScores.diamondDetonation;
+            console.log(`Diamond bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.diamondDetonation} bonus`);
+            await this.clearBoard(bombX, bombY);
         }
 
-        affectedTiles.forEach(pos => {
-            const [x, y] = pos.split(',').map(Number);
-            if (this.board[y][x].element) {
-                this.board[y][x].element.classList.add('diamond-clear');
-            }
-        });
-
-        setTimeout(() => {
-            affectedTiles.forEach(pos => {
-                const [x, y] = pos.split(',').map(Number);
-                this.board[y][x].icon = null;
-                this.board[y][x].special = null;
-                this.board[y][x].element = null;
-            });
-
-            this.score += affectedTiles.size * 10;
-            if (carbonBonus > 0) {
-                this.score += carbonBonus;
-                console.log(`Cleared ${carbonBonus / this.bonusScores.carbonCleared} carbon bomb(s), +${carbonBonus} bonus`);
-            }
-            if (diamondBonus > 0) {
-                this.score += diamondBonus;
-                console.log(`Cleared ${diamondBonus / this.bonusScores.diamondCleared} diamond bomb(s), +${diamondBonus} bonus`);
-            }
-            document.getElementById('score').textContent = `Score: ${this.score}`;
-            console.log(`Diamond bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
-
-            this.renderBoard();
-            this.cascadeTiles();
-        }, 1000);
+        document.getElementById('score').textContent = `Score: ${this.score}`;
+        
+        this.cascadeTiles();
     }
 
     createSpecialTile(x, y, type) {
@@ -950,25 +1063,6 @@ class Match3Game {
         };
         console.log(`Created ${this.specialTypes[type]} bomb at (${x}, ${y})`);
         this.renderBoard();
-    }
-
-    cascadeTiles() {
-        for (let x = 0; x < this.width; x++) {
-            let emptySpaces = 0;
-            for (let y = this.height - 1; y >= 0; y--) {
-                if (!this.board[y][x].icon && !this.board[y][x].special) {
-                    emptySpaces++;
-                } else if (emptySpaces > 0) {
-                    this.board[y + emptySpaces][x] = this.board[y][x];
-                    this.board[y][x] = { icon: null, special: null, element: null };
-                }
-            }
-            for (let i = 0; i < emptySpaces; i++) {
-                this.board[i][x] = this.createRandomTile();
-            }
-        }
-        this.renderBoard();
-        setTimeout(() => this.resolveMatches(), 300);
     }
 }
 
