@@ -177,6 +177,14 @@ class Match3Game {
         this.offsetX = 0;
         this.offsetY = 0;
 
+        // Bonus scores
+        this.bonusScores = {
+            carbonDetonation: 50,
+            diamondDetonation: 100,
+            carbonCleared: 25,
+            diamondCleared: 50
+        };
+
         const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9);
         this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height;
 
@@ -285,7 +293,6 @@ class Match3Game {
         return { x, y, element: tileElement };
     }
 
-    // Mouse Events (Original Browser Behavior)
     handleMouseDown(e) {
         e.preventDefault();
         const tile = this.getTileFromEvent(e);
@@ -362,7 +369,6 @@ class Match3Game {
         this.dragDirection = null;
     }
 
-    // Touch Events (Improved Mobile Behavior)
     handleTouchStart(e) {
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
@@ -387,12 +393,11 @@ class Match3Game {
 
         const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
 
-        // Use requestAnimationFrame for smoother updates
         requestAnimationFrame(() => {
             if (!this.dragDirection) {
                 const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
                 const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
-                if (dx > dy && dx > 7) this.dragDirection = 'row'; // Lowered to 7px
+                if (dx > dy && dx > 7) this.dragDirection = 'row';
                 else if (dy > dx && dy > 7) this.dragDirection = 'column';
             }
 
@@ -627,15 +632,19 @@ class Match3Game {
             const matchSize = allMatches.size;
             console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
             
-            if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
+            if (matchSize === 4 && selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
                 bombX = selectedX;
                 bombY = selectedY;
+                bombType = 'bomb4';
+            } else if (matchSize >= 5 && selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
+                bombX = selectedX;
+                bombY = selectedY;
+                bombType = 'bomb5';
             } else {
                 const lastMatch = Array.from(allMatches).pop();
                 [bombX, bombY] = lastMatch.split(',').map(Number);
+                bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
             }
-
-            bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
         }
 
         return { hasMatches, matches: allMatches, bombType, bombX, bombY };
@@ -686,11 +695,17 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
+            // Base score for matched tiles
             this.score += matches.size * 10;
 
+            // Add bonus for bomb detonation
             if (bombType === 'carbon') {
+                this.score += this.bonusScores.carbonDetonation;
+                console.log(`Carbon bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.carbonDetonation} bonus`);
                 this.clearRowAndColumn(bombX, bombY);
             } else if (bombType === 'diamond') {
+                this.score += this.bonusScores.diamondDetonation;
+                console.log(`Diamond bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.diamondDetonation} bonus`);
                 this.clearBoard();
             }
 
@@ -702,20 +717,28 @@ class Match3Game {
         console.log(`Clearing row ${y} and column ${x} (Carbon Bomb)`);
         const affectedTiles = new Set();
         const diamondPositions = [];
+        let carbonBonus = 0;
+        let diamondBonus = 0;
 
         for (let i = 0; i < this.width; i++) {
             if (this.board[y][i].element) {
                 affectedTiles.add(`${i},${y}`);
                 if (this.board[y][i].special === 'diamond') {
                     diamondPositions.push({ x: i, y: y });
+                    diamondBonus += this.bonusScores.diamondCleared;
+                } else if (this.board[y][i].special === 'carbon') {
+                    carbonBonus += this.bonusScores.carbonCleared;
                 }
             }
         }
         for (let j = 0; j < this.height; j++) {
-            if (this.board[j][x].element && j !== y) {
+            if (this.board[j][x].element && j !== y) { // Avoid double-counting bomb position
                 affectedTiles.add(`${x},${j}`);
                 if (this.board[j][x].special === 'diamond') {
                     diamondPositions.push({ x: x, y: j });
+                    diamondBonus += this.bonusScores.diamondCleared;
+                } else if (this.board[j][x].special === 'carbon') {
+                    carbonBonus += this.bonusScores.carbonCleared;
                 }
             }
         }
@@ -735,7 +758,15 @@ class Match3Game {
                 this.board[ty][tx].element = null;
             });
 
-            this.score += affectedTiles.size * 10;
+            this.score += affectedTiles.size * 10; // Base score for cleared tiles
+            if (carbonBonus > 0) {
+                this.score += carbonBonus;
+                console.log(`Cleared ${carbonBonus / this.bonusScores.carbonCleared} carbon bomb(s), +${carbonBonus} bonus`);
+            }
+            if (diamondBonus > 0) {
+                this.score += diamondBonus;
+                console.log(`Cleared ${diamondBonus / this.bonusScores.diamondCleared} diamond bomb(s), +${diamondBonus} bonus`);
+            }
             document.getElementById('score').textContent = `Score: ${this.score}`;
             console.log(`Carbon bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
 
@@ -755,11 +786,18 @@ class Match3Game {
     clearBoard() {
         console.log('Clearing entire board (Diamond Bomb)');
         const affectedTiles = new Set();
+        let carbonBonus = 0;
+        let diamondBonus = 0;
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 if (this.board[y][x].element) {
                     affectedTiles.add(`${x},${y}`);
+                    if (this.board[y][x].special === 'carbon') {
+                        carbonBonus += this.bonusScores.carbonCleared;
+                    } else if (this.board[y][x].special === 'diamond') {
+                        diamondBonus += this.bonusScores.diamondCleared;
+                    }
                 }
             }
         }
@@ -779,7 +817,15 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
-            this.score += affectedTiles.size * 10;
+            this.score += affectedTiles.size * 10; // Base score for cleared tiles
+            if (carbonBonus > 0) {
+                this.score += carbonBonus;
+                console.log(`Cleared ${carbonBonus / this.bonusScores.carbonCleared} carbon bomb(s), +${carbonBonus} bonus`);
+            }
+            if (diamondBonus > 0) {
+                this.score += diamondBonus;
+                console.log(`Cleared ${diamondBonus / this.bonusScores.diamondCleared} diamond bomb(s), +${diamondBonus} bonus`);
+            }
             document.getElementById('score').textContent = `Score: ${this.score}`;
             console.log(`Diamond bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
 
