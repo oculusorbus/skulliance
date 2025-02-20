@@ -5,50 +5,51 @@
     <style>
         body {
             background: #0F0F0F;
-            margin: 0; /* Remove default margin */
-            height: 100vh; /* Full viewport height */
+            margin: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Center vertically */
-            align-items: center; /* Center horizontally */
-            overflow: hidden; /* Prevent scrolling */
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
         #score {
             font-size: 24px;
-            margin: 10px 0; /* Space above and below */
+            margin: 10px 0;
             font-family: Arial;
             color: #fff;
             text-align: center;
         }
         #game-board {
             display: grid;
-            gap: 0.5vh; /* Scaled gap relative to viewport height */
+            gap: 0.5vh;
             background: #333;
-            padding: 1vh; /* Scaled padding */
-            width: min(90vh, 90vw); /* Square board, 90% of smaller dimension */
-            height: min(90vh, 90vw); /* Match width for square shape */
-            grid-template-columns: repeat(8, 1fr); /* 8 equal columns */
+            padding: 1vh;
+            width: min(90vh, 90vw);
+            height: min(90vh, 90vw);
+            grid-template-columns: repeat(8, 1fr);
             box-sizing: border-box;
             user-select: none;
             position: relative;
+            touch-action: none; /* Still helps mobile, doesn’t affect mouse */
         }
         .tile {
-            width: 100%; /* Fill grid cell */
-            height: 100%; /* Fill grid cell */
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2vh; /* Scaled font size */
+            font-size: 2vh;
             cursor: pointer;
             transition: transform 0.2s ease;
             position: relative;
             background: #444;
             box-sizing: border-box;
-            padding: 0.25vh; /* Scaled padding */
+            padding: 0.25vh;
         }
         .tile img {
-            width: 80%; /* Relative to tile size */
-            height: 80%; /* Maintain aspect ratio */
+            width: 80%;
+            height: 80%;
             object-fit: contain;
             position: absolute;
             z-index: 1;
@@ -65,10 +66,10 @@
         }
         .selected {
             transform: scale(1.05);
-            border: 0.25vh solid white; /* Scaled border */
+            border: 0.25vh solid white;
             z-index: 2;
             pointer-events: none;
-            padding: 0; /* Remove padding when selected */
+            padding: 0;
         }
         .matched {
             animation: matchAnimation 0.3s ease forwards;
@@ -177,8 +178,11 @@ class Match3Game {
         this.offsetY = 0;
 
         // Calculate tile size dynamically based on the smaller dimension
-        const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9); // 90% of smaller dimension
-        this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height; // Adjust for gap
+        const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9);
+        this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height;
+
+        // Detect if running on a touch device
+        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 
         this.initBoard();
         this.renderBoard();
@@ -195,8 +199,8 @@ class Match3Game {
         this.icons.forEach((icon, index) => {
             map[icon] = this.colorPalette[index % this.colorPalette.length];
         });
-        map[this.specialIcons.carbon] = '#333300'; // Dark olive for Carbon
-        map[this.specialIcons.diamond] = '#000000'; // Black for Diamond
+        map[this.specialIcons.carbon] = '#333300';
+        map[this.specialIcons.diamond] = '#000000';
         return map;
     }
 
@@ -216,7 +220,7 @@ class Match3Game {
             }
         }
         this.renderBoard();
-        this.resolveMatches(); // Ensure no initial matches remain
+        this.resolveMatches();
     }
 
     createRandomTile() {
@@ -264,13 +268,15 @@ class Match3Game {
     addEventListeners() {
         const board = document.getElementById('game-board');
         
-        board.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        board.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        board.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-        
-        board.addEventListener('touchstart', (e) => this.handleMouseDown(e));
-        board.addEventListener('touchmove', (e) => this.handleMouseMove(e));
-        board.addEventListener('touchend', (e) => this.handleMouseUp(e));
+        if (this.isTouchDevice) {
+            board.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+            board.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+            board.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        } else {
+            board.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+            board.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+            board.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        }
     }
 
     getTileFromEvent(e) {
@@ -281,9 +287,10 @@ class Match3Game {
         return { x, y, element: tileElement };
     }
 
+    // Mouse Events (Original Browser Behavior)
     handleMouseDown(e) {
         e.preventDefault();
-        const tile = this.getTileFromEvent(e.touches ? e.touches[0] : e);
+        const tile = this.getTileFromEvent(e);
         if (!tile || !tile.element) return;
 
         this.isDragging = true;
@@ -291,45 +298,39 @@ class Match3Game {
         tile.element.classList.add('selected');
 
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
-        const mouseX = e.touches ? e.touches[0].clientX : e.clientX;
-        const mouseY = e.touches ? e.touches[0].clientY : e.clientY;
-        this.offsetX = mouseX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap);
-        this.offsetY = mouseY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap);
+        this.offsetX = e.clientX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap);
+        this.offsetY = e.clientY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap);
     }
 
     handleMouseMove(e) {
         if (!this.isDragging || !this.selectedTile) return;
         e.preventDefault();
 
-        const mouseX = e.touches ? e.touches[0].clientX : e.clientX;
-        const mouseY = e.touches ? e.touches[0].clientY : e.clientY;
-
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
-        const tileX = mouseX - boardRect.left - this.offsetX;
-        const tileY = mouseY - boardRect.top - this.offsetY;
+        const mouseX = e.clientX - boardRect.left - this.offsetX;
+        const mouseY = e.clientY - boardRect.top - this.offsetY;
 
         const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
         selectedTileElement.style.transition = '';
 
         if (!this.dragDirection) {
-            const dx = Math.abs(mouseX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap + this.offsetX));
-            const dy = Math.abs(mouseY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap + this.offsetY));
+            const dx = Math.abs(mouseX - (this.selectedTile.x * this.tileSizeWithGap));
+            const dy = Math.abs(mouseY - (this.selectedTile.y * this.tileSizeWithGap));
             if (dx > dy && dx > 5) this.dragDirection = 'row';
             else if (dy > dx && dy > 5) this.dragDirection = 'column';
-            console.log(`Drag direction set to: ${this.dragDirection}`);
         }
 
         if (!this.dragDirection) return;
 
         if (this.dragDirection === 'row') {
-            const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, tileX));
+            const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, mouseX));
             selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
             this.targetTile = {
                 x: Math.round(constrainedX / this.tileSizeWithGap),
                 y: this.selectedTile.y
             };
         } else if (this.dragDirection === 'column') {
-            const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, tileY));
+            const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, mouseY));
             selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
             this.targetTile = {
                 x: this.selectedTile.x,
@@ -349,14 +350,92 @@ class Match3Game {
             this.targetTile = null;
             this.dragDirection = null;
             this.renderBoard();
-            console.log('Mouse up, no valid swap');
             return;
         }
 
         const tile = this.board[this.selectedTile.y][this.selectedTile.x];
         if (tile.element) tile.element.classList.remove('selected');
 
-        console.log(`Mouse up, sliding from (${this.selectedTile.x}, ${this.selectedTile.y}) to (${this.targetTile.x}, ${this.targetTile.y})`);
+        this.slideTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
+
+        this.isDragging = false;
+        this.selectedTile = null;
+        this.targetTile = null;
+        this.dragDirection = null;
+    }
+
+    // Touch Events (Mobile-Optimized)
+    handleTouchStart(e) {
+        e.preventDefault();
+        const tile = this.getTileFromEvent(e.touches[0]);
+        if (!tile || !tile.element) return;
+
+        this.isDragging = true;
+        this.selectedTile = { x: tile.x, y: tile.y };
+        tile.element.classList.add('selected');
+
+        const boardRect = document.getElementById('game-board').getBoundingClientRect();
+        this.offsetX = e.touches[0].clientX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap);
+        this.offsetY = e.touches[0].clientY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap);
+    }
+
+    handleTouchMove(e) {
+        if (!this.isDragging || !this.selectedTile) return;
+        e.preventDefault();
+
+        const boardRect = document.getElementById('game-board').getBoundingClientRect();
+        const touchX = e.touches[0].clientX - boardRect.left - this.offsetX;
+        const touchY = e.touches[0].clientY - boardRect.top - this.offsetY;
+
+        const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
+        selectedTileElement.style.transition = '';
+
+        if (!this.dragDirection) {
+            const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
+            const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
+            if (dx > dy && dx > 5) this.dragDirection = 'row';
+            else if (dy > dx && dy > 5) this.dragDirection = 'column';
+        }
+
+        if (!this.dragDirection) return;
+
+        if (this.dragDirection === 'row') {
+            const constrainedX = Math.max(-this.tileSizeWithGap, Math.min(this.tileSizeWithGap, touchX - this.selectedTile.x * this.tileSizeWithGap));
+            selectedTileElement.style.transform = `translate(${constrainedX}px, 0) scale(1.05)`;
+            this.targetTile = {
+                x: this.selectedTile.x + (constrainedX > 0 ? 1 : constrainedX < 0 ? -1 : 0),
+                y: this.selectedTile.y
+            };
+        } else if (this.dragDirection === 'column') {
+            const constrainedY = Math.max(-this.tileSizeWithGap, Math.min(this.tileSizeWithGap, touchY - this.selectedTile.y * this.tileSizeWithGap));
+            selectedTileElement.style.transform = `translate(0, ${constrainedY}px) scale(1.05)`;
+            this.targetTile = {
+                x: this.selectedTile.x,
+                y: this.selectedTile.y + (constrainedY > 0 ? 1 : constrainedY < 0 ? -1 : 0)
+            };
+        }
+
+        this.targetTile.x = Math.max(0, Math.min(this.width - 1, this.targetTile.x));
+        this.targetTile.y = Math.max(0, Math.min(this.height - 1, this.targetTile.y));
+    }
+
+    handleTouchEnd(e) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile) {
+            if (this.selectedTile) {
+                const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+                if (tile.element) tile.element.classList.remove('selected');
+            }
+            this.isDragging = false;
+            this.selectedTile = null;
+            this.targetTile = null;
+            this.dragDirection = null;
+            this.renderBoard();
+            return;
+        }
+
+        const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+        if (tile.element) tile.element.classList.remove('selected');
+
         this.slideTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
 
         this.isDragging = false;
@@ -373,10 +452,9 @@ class Match3Game {
         const tileSizeWithGap = this.tileSizeWithGap;
         let direction;
 
-        // Store original state and elements
         const originalTiles = [];
         const tileElements = [];
-        if (startY === endY) { // Row movement
+        if (startY === endY) {
             direction = startX < endX ? 1 : -1;
             const minX = Math.min(startX, endX);
             const maxX = Math.max(startX, endX);
@@ -384,7 +462,7 @@ class Match3Game {
                 originalTiles.push({ ...this.board[startY][x] });
                 tileElements.push(this.board[startY][x].element);
             }
-        } else if (startX === endX) { // Column movement
+        } else if (startX === endX) {
             direction = startY < endY ? 1 : -1;
             const minY = Math.min(startY, endY);
             const maxY = Math.max(startY, endY);
@@ -398,7 +476,6 @@ class Match3Game {
         const dx = (endX - startX) * tileSizeWithGap;
         const dy = (endY - startY) * tileSizeWithGap;
 
-        // Animate the slide
         selectedElement.style.transition = 'transform 0.2s ease';
         selectedElement.style.transform = `translate(${dx}px, ${dy}px)`;
 
@@ -422,7 +499,6 @@ class Match3Game {
         }
 
         setTimeout(() => {
-            // Commit the move to the real board
             if (startY === endY) {
                 const row = this.board[startY];
                 const tempRow = [...row];
@@ -453,12 +529,10 @@ class Match3Game {
                 this.board[endY][endX] = tempCol[startY];
             }
 
-            // Check and resolve matches with the selected tile's position
             this.renderBoard();
             const hasMatches = this.resolveMatches(endX, endY);
 
             if (!hasMatches) {
-                // Revert animations and state
                 console.log(`No match, reverting tiles from (${startX}, ${startY}) to (${endX}, ${endY})`);
                 selectedElement.style.transition = 'transform 0.2s ease';
                 selectedElement.style.transform = 'translate(0, 0)';
@@ -508,7 +582,6 @@ class Match3Game {
         let bombType = null;
         let bombX, bombY;
 
-        // Horizontal matches
         for (let y = 0; y < this.height; y++) {
             let matchStart = 0;
             let currentIcon = null;
@@ -531,7 +604,6 @@ class Match3Game {
             }
         }
 
-        // Vertical matches
         for (let x = 0; x < this.width; x++) {
             let matchStart = 0;
             let currentIcon = null;
@@ -558,7 +630,6 @@ class Match3Game {
             const matchSize = allMatches.size;
             console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
             
-            // Determine bomb placement
             if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
                 bombX = selectedX;
                 bombY = selectedY;
@@ -618,7 +689,7 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
-            this.score += matches.size * 10; // Score initial match
+            this.score += matches.size * 10;
 
             if (bombType === 'carbon') {
                 this.clearRowAndColumn(bombX, bombY);
@@ -627,8 +698,6 @@ class Match3Game {
             }
 
             document.getElementById('score').textContent = `Score: ${this.score}`;
-            
-            // Cascade will be called by clearRowAndColumn or clearBoard
         }, 300);
     }
 
@@ -637,7 +706,6 @@ class Match3Game {
         const affectedTiles = new Set();
         const diamondPositions = [];
 
-        // Collect tiles to clear and track additional bombs
         for (let i = 0; i < this.width; i++) {
             if (this.board[y][i].element) {
                 affectedTiles.add(`${i},${y}`);
@@ -647,7 +715,7 @@ class Match3Game {
             }
         }
         for (let j = 0; j < this.height; j++) {
-            if (this.board[j][x].element && j !== y) { // Avoid double-counting the bomb position
+            if (this.board[j][x].element && j !== y) {
                 affectedTiles.add(`${x},${j}`);
                 if (this.board[j][x].special === 'diamond') {
                     diamondPositions.push({ x: x, y: j });
@@ -670,7 +738,7 @@ class Match3Game {
                 this.board[ty][tx].element = null;
             });
 
-            this.score += affectedTiles.size * 10; // Add score for cleared tiles
+            this.score += affectedTiles.size * 10;
             document.getElementById('score').textContent = `Score: ${this.score}`;
             console.log(`Carbon bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
 
@@ -714,7 +782,7 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
-            this.score += affectedTiles.size * 10; // Add score for cleared tiles
+            this.score += affectedTiles.size * 10;
             document.getElementById('score').textContent = `Score: ${this.score}`;
             console.log(`Diamond bomb cleared ${affectedTiles.size} tiles, added ${affectedTiles.size * 10} points`);
 
@@ -749,7 +817,7 @@ class Match3Game {
             }
         }
         this.renderBoard();
-        setTimeout(() => this.resolveMatches(), 300); // Resolve matches after cascade
+        setTimeout(() => this.resolveMatches(), 300);
     }
 }
 
