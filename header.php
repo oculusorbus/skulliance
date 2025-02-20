@@ -41,7 +41,7 @@
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
   		  <a href="missions.php">Missions</a>
 		  <a href="realms.php">Realms</a>
-  		  <a href="match.html">Match</a>
+  		  <a href="match.php">Match</a>
 		  <a href="store.php">Store</a>
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="collections.php">Collections</a>
