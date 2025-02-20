@@ -46,6 +46,7 @@
             background: #444;
             box-sizing: border-box;
             padding: 0.25vh;
+            z-index: 1;
         }
         .tile img {
             width: 80%;
@@ -67,7 +68,7 @@
         .selected {
             transform: scale(1.05);
             border: 0.25vh solid white;
-            z-index: 2;
+            z-index: 10;
             pointer-events: none;
             padding: 0;
         }
@@ -177,7 +178,6 @@ class Match3Game {
         this.offsetX = 0;
         this.offsetY = 0;
 
-        // Bonus scores
         this.bonusScores = {
             carbonDetonation: 50,
             diamondDetonation: 100,
@@ -632,19 +632,15 @@ class Match3Game {
             const matchSize = allMatches.size;
             console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
             
-            if (matchSize === 4 && selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
+            if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
                 bombX = selectedX;
                 bombY = selectedY;
-                bombType = 'bomb4';
-            } else if (matchSize >= 5 && selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
-                bombX = selectedX;
-                bombY = selectedY;
-                bombType = 'bomb5';
             } else {
                 const lastMatch = Array.from(allMatches).pop();
                 [bombX, bombY] = lastMatch.split(',').map(Number);
-                bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
             }
+
+            bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
         }
 
         return { hasMatches, matches: allMatches, bombType, bombX, bombY };
@@ -695,10 +691,8 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
-            // Base score for matched tiles
             this.score += matches.size * 10;
 
-            // Add bonus for bomb detonation
             if (bombType === 'carbon') {
                 this.score += this.bonusScores.carbonDetonation;
                 console.log(`Carbon bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.carbonDetonation} bonus`);
@@ -726,13 +720,13 @@ class Match3Game {
                 if (this.board[y][i].special === 'diamond') {
                     diamondPositions.push({ x: i, y: y });
                     diamondBonus += this.bonusScores.diamondCleared;
-                } else if (this.board[y][i].special === 'carbon') {
+                } else if (this.board[y][i].special === 'carbon' && i !== x) {
                     carbonBonus += this.bonusScores.carbonCleared;
                 }
             }
         }
         for (let j = 0; j < this.height; j++) {
-            if (this.board[j][x].element && j !== y) { // Avoid double-counting bomb position
+            if (this.board[j][x].element && j !== y) {
                 affectedTiles.add(`${x},${j}`);
                 if (this.board[j][x].special === 'diamond') {
                     diamondPositions.push({ x: x, y: j });
@@ -758,7 +752,7 @@ class Match3Game {
                 this.board[ty][tx].element = null;
             });
 
-            this.score += affectedTiles.size * 10; // Base score for cleared tiles
+            this.score += affectedTiles.size * 10;
             if (carbonBonus > 0) {
                 this.score += carbonBonus;
                 console.log(`Cleared ${carbonBonus / this.bonusScores.carbonCleared} carbon bomb(s), +${carbonBonus} bonus`);
@@ -817,7 +811,7 @@ class Match3Game {
                 this.board[y][x].element = null;
             });
 
-            this.score += affectedTiles.size * 10; // Base score for cleared tiles
+            this.score += affectedTiles.size * 10;
             if (carbonBonus > 0) {
                 this.score += carbonBonus;
                 console.log(`Cleared ${carbonBonus / this.bonusScores.carbonCleared} carbon bomb(s), +${carbonBonus} bonus`);
