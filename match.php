@@ -158,7 +158,6 @@ class Match3Game {
             carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
             diamond: 'https://www.skulliance.io/staking/icons/diamond.png'
         };
-		/*
         this.colorPalette = [
             '#800000',
             '#008080',
@@ -167,27 +166,7 @@ class Match3Game {
             '#666633',
             '#804000',
             '#004080'
-        ];*/
-		
-		/*
-Dried Blood: #9A1C1C  
-Foggy Depths: #2E4648  
-Phantom Veil: #526B6D  
-Poison Moss: #437A1F  
-Rusted Blade: #9A3A1F  
-Tomb Dust: #6B4F3F  
-Witch’s Glow: #5C347A
-		*/
-        this.colorPalette = [
-            '#9A1C1C',
-            '#2E4648',
-            '#526B6D',
-            '#437A1F',
-            '#9A3A1F',
-            '#6B4F3F',
-            '#5C347A'
         ];
-		
         this.icons = this.selectRandomIcons(7);
         this.iconColorMap = this.createIconColorMap();
         this.specialTypes = { bomb4: 'carbon', bomb5: 'diamond' };
