@@ -33,8 +33,6 @@ include 'skulliance.php';
             gap: 0.5vh;
             background: #333;
             padding: 1vh;
-            width: min(90vh, 90vw);
-            height: min(90vh, 90vw);
             box-sizing: border-box;
             user-select: none;
             position: relative;
@@ -172,17 +170,11 @@ include 'skulliance.php';
     <script>
 class Match3Game {
     constructor() {
-        // Detect if the device is mobile
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-        this.isMobile = this.isTouchDevice || window.innerWidth <= 768; // 768px as a common mobile threshold
+        this.isMobile = this.isTouchDevice || window.innerWidth <= 768;
 
-        // Set grid dimensions based on device type
         this.width = this.isMobile ? 6 : 8;
         this.height = this.isMobile ? 10 : 8;
-
-        // Update CSS grid dynamically
-        const gameBoard = document.getElementById('game-board');
-        gameBoard.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
 
         this.board = [];
         this.selectedTile = null;
@@ -267,14 +259,21 @@ class Match3Game {
             sound.preload = 'auto';
         });
 
-        const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9);
-        this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height;
+        // Adjust board size to maintain square tiles
+        const boardElement = document.getElementById('game-board');
+        const maxWidth = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9 * (this.width / this.height));
+        const maxHeight = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9 * (this.height / this.width));
+        boardElement.style.width = `${maxWidth}px`;
+        boardElement.style.height = `${maxHeight}px`;
+        boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
+
+        this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width; // Use width for square tiles
 
         this.initBoard();
         this.renderBoard();
         this.addEventListeners();
         
-        gameBoard.style.pointerEvents = 'auto';
+        boardElement.style.pointerEvents = 'auto';
 
         this.tryAgainButton = document.getElementById('try-again');
         this.tryAgainButton.addEventListener('click', () => {
