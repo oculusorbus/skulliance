@@ -245,7 +245,7 @@ class Match3Game {
             cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'), // Tiles falling
             badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'), // Invalid swap
             gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'), // Game over sound
-            reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg') // Reset game sound
+            reset: new Audio('https://www.skulliance.io/staking/sounds/voice_welcomeback.ogg') // Reset game sound
         };
         Object.values(this.sounds).forEach(sound => {
             sound.preload = 'auto'; // Preload sounds to minimize delays
