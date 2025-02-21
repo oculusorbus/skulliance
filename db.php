@@ -6081,4 +6081,52 @@ function checkRealmActivation($conn){
 }
 
 /* END REALMS */
+
+/* SKULL SWAP */
+
+saveSwapScore($score){
+	if(isset($_SESSION['userData']['user_id'])){
+		// Check if unrewarded score exists.
+		// If it exists, check if new score is higher than existing score. If it is, update unrewarded score.
+		// If it doesn't exist, create a new score in the database
+		$current_score = getSwapScore();
+		if(isset($current_score)){
+			if($score > $current_score){
+				$sql = "UPDATE scores SET score = '".$score."' WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
+				if ($conn->query($sql) === TRUE) {
+					echo "Your existing score has been updated.";
+				} else {
+					echo "Error: " . $sql . "<br>" . $conn->error;
+				}
+			}
+		}else{
+			// Create new score
+			$sql = "INSERT INTO scores (user_id, score, reward) 
+			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '0')";
+
+			if ($conn->query($sql) === TRUE) {
+				echo "Your score was saved.";
+			} else {
+				echo "Error: " . $sql . "<br>" . $conn->error;
+			}
+		}
+	}else{
+		echo "User not logged in. Score cannot be saved.";
+	}
+}
+
+getSwapScore(){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT score FROM scores WHERE user_id = '".$_SESSION['userData']['user_id']."' AND reward = '0'";
+		$result = $conn->query($sql);
+	
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				return $row['score'];
+			}
+		}
+	}
+}
+
+/* END SKULL SWAP */
 ?>
