@@ -35,7 +35,7 @@ include 'skulliance.php';
             padding: 1vh;
             width: min(90vh, 90vw);
             height: min(90vh, 90vw);
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(8, 1fr);
             box-sizing: border-box;
             user-select: none;
             position: relative;
@@ -1108,7 +1108,7 @@ class Match3Game {
     }
 }
 
-const game = new Match3Game(6, 10);
+const game = new Match3Game(8, 8);
     </script>
 </body>
 </html>
