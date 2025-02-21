@@ -14,19 +14,29 @@ include 'skulliance.php';
         body {
             background: #0F0F0F;
             margin: 0;
-            height: 90vh;
+            height: 92vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            position: relative; /* For absolute positioning of score and matches */
         }
-        #score, #matches {
+        #score {
             font-size: 24px;
-            margin: 10px 0;
             font-family: Arial;
             color: #fff;
-            text-align: center;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        #matches {
+            font-size: 24px;
+            font-family: Arial;
+            color: #fff;
+            position: absolute;
+            top: 10px;
+            right: 10px;
         }
         #game-board {
             display: grid;
@@ -159,8 +169,8 @@ include 'skulliance.php';
     </style>
 </head>
 <body>
-    <div id="matches">Matches: 0</div>
     <div id="score">Score: 0</div>
+    <div id="matches">Matches: 0/25</div>
     <div id="game-board"></div>
     <div id="game-over-container">
         <div id="game-over">GAME OVER</div>
@@ -259,7 +269,6 @@ class Match3Game {
             sound.preload = 'auto';
         });
 
-        // Adjust board size to maintain square tiles
         const boardElement = document.getElementById('game-board');
         const maxWidth = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9 * (this.width / this.height));
         const maxHeight = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9 * (this.height / this.width));
@@ -267,7 +276,7 @@ class Match3Game {
         boardElement.style.height = `${maxHeight}px`;
         boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
 
-        this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width; // Use width for square tiles
+        this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width;
 
         this.initBoard();
         this.renderBoard();
@@ -296,7 +305,7 @@ class Match3Game {
         this.matchCount = 0;
         this.gameOver = false;
         document.getElementById('score').textContent = `Score: ${this.score}`;
-        document.getElementById('matches').textContent = `Matches: ${this.matchCount}`;
+        document.getElementById('matches').textContent = `Matches: ${this.matchCount}/${this.matchLimit}`;
         
         const board = document.getElementById('game-board');
         const tiles = board.querySelectorAll('.tile');
@@ -658,7 +667,7 @@ class Match3Game {
 
             if (hasMatches) {
                 this.matchCount++;
-                document.getElementById('matches').textContent = `Matches: ${this.matchCount}`;
+                document.getElementById('matches').textContent = `Matches: ${this.matchCount}/${this.matchLimit}`;
                 
                 if (this.matchCount >= this.matchLimit) {
                     this.endGame();
