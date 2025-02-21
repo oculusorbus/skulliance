@@ -724,6 +724,10 @@ if(isset($_POST['filterbystreak'])){
 	$filterby = $_POST['filterbystreak'];
 	$_SESSION['userData']['filterby'] = $filterby;
 }
+if(isset($_POST['filterbyswaps'])){
+	$filterby = $_POST['filterbyswaps'];
+	$_SESSION['userData']['filterby'] = $filterby;
+}
 
 $filterbydiamond = "";
 if(isset($_POST['filterbydiamond'])){
@@ -888,6 +892,10 @@ function filterLeaderboard($page){
 			<optgroup label="Missions">
 				<option value="missions">All Missions</option>
 				<option value="monthly">'.date('F').' Missions</option>
+			</optgroup>
+			<optgroup label="Skull Swaps">
+				<option value="swaps">All Skull Swaps</option>
+				<option value="weekly">Weekly Skull Swaps</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>

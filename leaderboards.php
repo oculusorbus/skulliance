@@ -8,7 +8,7 @@ include 'header.php';
 		<div class="row" id="row1">
 			<div class="col1of3">
 			    <?php
-					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions"){
+					if($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" && $filterby != "weekly-swaps"){
 						$project = getProjectInfo($conn, $filterby);
 						$title = $project["name"];
 					}else if($filterby == null || $filterby == 0){
@@ -38,12 +38,18 @@ include 'header.php';
 					}else if($filterby == "monthly-factions"){
 						$title = date("F")." Factions";
 						$filterby = "monthly-factions";
+					}else if($filterby == "swaps"){
+						$title = "All Skull Swaps";
+						$filterby = "swaps";
+					}else if($filterby == "weekly-swaps"){
+						$title = "Weekly Skull Swaps";
+						$filterby = "weekly-Swaps";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
 				    <?php
 						filterLeaderboard("leaderboards");
-						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions"){
+						if($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" && $filterby != "weekly-swaps"){
 							getTotalNFTs($conn, $filterby);
 							checkLeaderboard($conn, false, $filterby);
 						}else if($filterby == "missions"){
@@ -62,6 +68,10 @@ include 'header.php';
 							checkFactionsLeaderboard($conn);
 						}else if($filterby == "monthly-factions"){
 							checkFactionsLeaderboard($conn, true);
+						}else if($filterby == "swaps"){
+							checkSkullSwapsLeaderboard($conn);
+						}else if($filterby == "weekly-swaps"){
+							checkSkullSwapsLeaderboard($conn, true);
 						}
 					?>
 				</div>
