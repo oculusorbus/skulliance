@@ -236,6 +236,21 @@ class Match3Game {
             diamondCleared: 50
         };
 
+        // Sound effects from https://www.skulliance.io/staking/sounds/
+        this.sounds = {
+            match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'), // Single sound for all matches
+            bombAppear: new Audio('https://www.skulliance.io/staking/sounds/hyperspace_gem_land_1.ogg'), // Carbon/Diamond creation
+            carbonExplode: new Audio('https://www.skulliance.io/staking/sounds/bomb_explode.ogg'), // Carbon bomb clear
+            diamondExplode: new Audio('https://www.skulliance.io/staking/sounds/gem_shatters.ogg'), // Diamond bomb clear
+            cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'), // Tiles falling
+            badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'), // Invalid swap
+            gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'), // Game over sound
+            reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg') // Reset game sound
+        };
+        Object.values(this.sounds).forEach(sound => {
+            sound.preload = 'auto'; // Preload sounds to minimize delays
+        });
+
         const boardSize = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9);
         this.tileSizeWithGap = (boardSize - (0.5 * (this.height - 1))) / this.height;
 
@@ -255,6 +270,15 @@ class Match3Game {
         });
     }
 
+    // Helper method to play sounds
+    playSound(soundName) {
+        const sound = this.sounds[soundName];
+        if (sound) {
+            sound.currentTime = 0; // Reset to start
+            sound.play().catch(error => console.log('Sound error:', error));
+        }
+    }
+
     resetGame() {
         console.log('Resetting game...');
         this.score = 0;
@@ -270,6 +294,7 @@ class Match3Game {
         const gameOverContainer = document.getElementById('game-over-container');
         gameOverContainer.style.display = 'none';
         
+        this.playSound('reset'); // Play reset sound
         this.initBoard();
     }
 
@@ -432,6 +457,7 @@ class Match3Game {
             this.targetTile = null;
             this.dragDirection = null;
             this.renderBoard();
+            this.playSound('badMove'); // Invalid move sound
             return;
         }
 
@@ -510,6 +536,7 @@ class Match3Game {
             this.targetTile = null;
             this.dragDirection = null;
             this.renderBoard();
+            this.playSound('badMove'); // Invalid move sound
             return;
         }
 
@@ -705,6 +732,7 @@ class Match3Game {
         tiles.forEach(tile => tile.classList.add('game-over'));
         gameOverContainer.style.display = 'block';
         this.gameOver = true;
+        this.playSound('gameOver'); // Play game over sound
         console.log('Game Over - Grand finale completed!');
     }
 
@@ -723,6 +751,7 @@ class Match3Game {
 
     async clearRowAndColumn(x, y, isEndGame = false) {
         console.log(`Clearing row ${y} and column ${x} (Carbon Bomb)`);
+        this.playSound('carbonExplode'); // Carbon bomb explosion sound
         const affectedTiles = new Set();
         const newBombs = [];
 
@@ -785,6 +814,7 @@ class Match3Game {
 
     async clearBoard(x = null, y = null, isEndGame = false) {
         console.log(`Clearing entire board (Diamond Bomb)${x !== null && y !== null ? ` at (${x}, ${y})` : ''}`);
+        this.playSound('diamondExplode'); // Diamond bomb explosion sound
         const affectedTiles = new Set();
         const newBombs = [];
 
@@ -896,6 +926,7 @@ class Match3Game {
         console.log('Cascading tiles...');
         let moved = this.cascadeTilesWithoutRender();
         this.renderBoard();
+        this.playSound('cascade'); // Tile cascade sound
         if (moved || this.matchCheckCount < 2) {
             this.matchCheckCount++;
             setTimeout(() => {
@@ -993,6 +1024,7 @@ class Match3Game {
     }
 
     handleMatches(matches, bombType, bombX, bombY) {
+        this.playSound('match'); // Single match sound (no escalation)
         matches.forEach(match => {
             const [x, y] = match.split(',').map(Number);
             if (this.board[y][x].element) {
@@ -1011,6 +1043,7 @@ class Match3Game {
             if (bombType) {
                 this.createSpecialTile(bombX, bombY, bombType);
                 this.board[bombY][bombX].element.classList.add('bomb-creation');
+                this.playSound('bombAppear'); // Bomb creation sound
                 console.log(`Bomb placed at (${bombX}, ${bombY})`);
             }
 
@@ -1022,6 +1055,7 @@ class Match3Game {
     }
 
     async handleBombMatches(matches, bombType, bombX, bombY) {
+        this.playSound('match'); // Single match sound for bomb trigger (no escalation)
         matches.forEach(match => {
             const [x, y] = match.split(',').map(Number);
             if (this.board[y][x].element) {
