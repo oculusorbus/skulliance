@@ -16,27 +16,33 @@ include 'skulliance.php';
             margin: 0;
             height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            position: relative; /* For absolute positioning of score and matches */
+        }
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        #hud {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 10px;
         }
         #score {
             font-size: 24px;
             font-family: Arial;
             color: #fff;
-            position: absolute;
-            top: 10px;
-            left: 10px;
+            text-align: left;
         }
         #matches {
             font-size: 24px;
             font-family: Arial;
             color: #fff;
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            text-align: right;
         }
         #game-board {
             display: grid;
@@ -169,12 +175,16 @@ include 'skulliance.php';
     </style>
 </head>
 <body>
-    <div id="score">Score: 0</div>
-    <div id="matches">Matches: 0/25</div>
-    <div id="game-board"></div>
-    <div id="game-over-container">
-        <div id="game-over">GAME OVER</div>
-        <button id="try-again">TRY AGAIN</button>
+    <div id="game-container">
+        <div id="hud">
+            <div id="score">Score: 0</div>
+            <div id="matches">Matches: 0/25</div>
+        </div>
+        <div id="game-board"></div>
+        <div id="game-over-container">
+            <div id="game-over">GAME OVER</div>
+            <button id="try-again">TRY AGAIN</button>
+        </div>
     </div>
 
     <script>
@@ -275,6 +285,10 @@ class Match3Game {
         boardElement.style.width = `${maxWidth}px`;
         boardElement.style.height = `${maxHeight}px`;
         boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
+
+        // Ensure HUD width matches board width
+        const hudElement = document.getElementById('hud');
+        hudElement.style.width = `${maxWidth}px`;
 
         this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width;
 
