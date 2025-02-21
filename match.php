@@ -35,7 +35,7 @@ include 'skulliance.php';
             padding: 1vh;
             width: min(90vh, 90vw);
             height: min(90vh, 90vw);
-            grid-template-columns: repeat(8, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             box-sizing: border-box;
             user-select: none;
             position: relative;
