@@ -765,7 +765,28 @@ class Match3Game {
         this.gameOver = true;
         this.playSound('gameOver');
         console.log('Game Over - Grand finale completed!');
+		// Function to save score to database
+		saveSwapScore(this.score);
     }
+	
+	saveSwapScore(score){
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/save_swap_score.php?score='+score, true);
+		xhttp.send();
+		xhttp.onreadystatechange = function() {
+		  if (xhttp.readyState == XMLHttpRequest.DONE) {
+		    // Check the status of the response
+		    if (xhttp.status == 200) {
+		      // Access the data returned by the server
+		      var data = xhttp.responseText;
+			  console.log(data);
+		      // Do something with the data
+		    } else {
+		      // Handle error
+		    }
+		  }
+		};
+	}
 
     getAllBombPositions() {
         const bombPositions = [];
@@ -1133,3 +1154,4 @@ class Match3Game {
 
 const game = new Match3Game();
     </script>
+<script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
