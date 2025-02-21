@@ -284,7 +284,7 @@ class Match3Game {
         this.score = 0;
         this.matchCount = 0;
         this.gameOver = false;
-        document.getElementById('score').textContent = `Score: ${this.score}/${this.matchLimit}`;
+        document.getElementById('score').textContent = `Score: ${this.score}`;
         document.getElementById('matches').textContent = `Matches: ${this.matchCount}`;
         
         const board = document.getElementById('game-board');
