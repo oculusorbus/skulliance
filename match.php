@@ -1108,7 +1108,7 @@ class Match3Game {
     }
 }
 
-const game = new Match3Game(8, 8);
+const game = new Match3Game(6, 10);
     </script>
 </body>
 </html>
