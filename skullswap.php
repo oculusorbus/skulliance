@@ -770,9 +770,8 @@ class Match3Game {
     }
 	
 	saveSwapScore(score){
-		alert(score);
 		var xhttp = new XMLHttpRequest();
-		xhttp.open('GET', 'ajax/save_swap_score.php?score='+score, true);
+		xhttp.open('GET', 'ajax/save-swap-score.php?score='+score, true);
 		xhttp.send();
 		xhttp.onreadystatechange = function() {
 		  if (xhttp.readyState == XMLHttpRequest.DONE) {
