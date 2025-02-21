@@ -1,3 +1,11 @@
+<?php
+include_once 'db.php';
+include 'message.php';
+// Verify includes Webhooks
+include 'verify.php';
+include 'skulliance.php';
+include 'header.php';
+?>
 <!DOCTYPE html>
 <html>
 <head>
