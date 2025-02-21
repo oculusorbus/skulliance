@@ -7,6 +7,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
     <style>
+		/*
         body {
             background: #0F0F0F;
             margin: 0;
@@ -15,7 +16,7 @@ include 'header.php';
             justify-content: center;
             align-items: center;
             overflow: hidden;
-        }
+        }*/
         #game-container {
             display: flex;
             flex-direction: column;
@@ -169,7 +170,7 @@ include 'header.php';
             100% { transform: scale(1); opacity: 0.8; }
         }
     </style>
-<div class="row" id="row0">	
+<div class="row" id="row0" style="display:block">	
     <div id="game-container">
         <div id="hud">
             <div id="score">Score: 0</div>
