@@ -14,7 +14,7 @@ include 'skulliance.php';
         body {
             background: #0F0F0F;
             margin: 0;
-            height: 100vh;
+            height: 90vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
