@@ -1363,6 +1363,7 @@ section.active {
 
 .show-menu{
   display: flex !important;
+  z-index: 2 !important;
 }
 .hide_menu{
 	  display: none !important;
