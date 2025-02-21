@@ -6114,7 +6114,7 @@ saveSwapScore($score){
 		echo "User not logged in. Score cannot be saved.";
 	}
 }
-
+*/
 getSwapScore(){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "SELECT score FROM scores WHERE user_id = '".$_SESSION['userData']['user_id']."' AND reward = '0'";
@@ -6126,7 +6126,7 @@ getSwapScore(){
 			}
 		}
 	}
-}*/
+}
 
 /* END SKULL SWAP */
 ?>
