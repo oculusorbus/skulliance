@@ -6084,7 +6084,7 @@ function checkRealmActivation($conn){
 
 /* SKULL SWAP */
 
-saveSwapScore($conn, $score){
+function saveSwapScore($conn, $score){
 	if(isset($_SESSION['userData']['user_id'])){
 		// Check if unrewarded score exists.
 		// If it exists, check if new score is higher than existing score. If it is, update unrewarded score.
@@ -6115,7 +6115,7 @@ saveSwapScore($conn, $score){
 	}
 }
 
-getSwapScore($conn){
+function getSwapScore($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "SELECT score FROM scores WHERE user_id = '".$_SESSION['userData']['user_id']."' AND reward = '0'";
 		$result = $conn->query($sql);
