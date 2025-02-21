@@ -895,7 +895,7 @@ function filterLeaderboard($page){
 			</optgroup>
 			<optgroup label="Skull Swaps">
 				<option value="swaps">All Skull Swaps</option>
-				<option value="weekly">Weekly Skull Swaps</option>
+				<option value="weekly-swaps">Weekly Skull Swaps</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>
