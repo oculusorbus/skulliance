@@ -4508,6 +4508,8 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 				updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
 				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 				
+				// Update score to mark that it has been rewarded
+				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Score: ".$row["max_score"]."\r\n";
