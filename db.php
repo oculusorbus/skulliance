@@ -4495,7 +4495,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			echo $row["max_score"];
+			echo number_format($row["max_score"]);
 			echo "</td>";
 			if($weekly){
 				echo "<td align='center'>";
