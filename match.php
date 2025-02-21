@@ -4,12 +4,8 @@ include 'message.php';
 // Verify includes Webhooks
 include 'verify.php';
 include 'skulliance.php';
-//include 'header.php';
+include 'header.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Match-3 Game with Chained Bomb Animations</title>
     <style>
         body {
             background: #0F0F0F;
@@ -173,8 +169,7 @@ include 'skulliance.php';
             100% { transform: scale(1); opacity: 0.8; }
         }
     </style>
-</head>
-<body>
+<div class="row" id="row0">	
     <div id="game-container">
         <div id="hud">
             <div id="score">Score: 0</div>
@@ -186,6 +181,7 @@ include 'skulliance.php';
             <button id="try-again">TRY AGAIN</button>
         </div>
     </div>
+</div>
 
     <script>
 class Match3Game {
@@ -1136,5 +1132,3 @@ class Match3Game {
 
 const game = new Match3Game();
     </script>
-</body>
-</html>
