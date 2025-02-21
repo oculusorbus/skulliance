@@ -43,7 +43,7 @@ include 'header.php';
 						$filterby = "swaps";
 					}else if($filterby == "weekly-swaps"){
 						$title = "Weekly Skull Swaps";
-						$filterby = "weekly-Swaps";
+						$filterby = "weekly-swaps";
 					}
 					echo "<h2>".$title."</h2>";?>
 			    <div class="content" id="filtered-content">
