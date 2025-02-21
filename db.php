@@ -6083,7 +6083,7 @@ function checkRealmActivation($conn){
 /* END REALMS */
 
 /* SKULL SWAP */
-
+/*
 saveSwapScore($score){
 	if(isset($_SESSION['userData']['user_id'])){
 		// Check if unrewarded score exists.
@@ -6126,7 +6126,7 @@ getSwapScore(){
 			}
 		}
 	}
-}
+}*/
 
 /* END SKULL SWAP */
 ?>
