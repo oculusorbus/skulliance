@@ -4400,9 +4400,9 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 	$carbon = 25000;
 	$where = "";
 	if($weekly || $rewards){
-		$where = "reward = '0'";
+		$where = "WHERE reward = '0'";
 	}
-	$sql =" SELECT MAX(score) AS max_score, user_id FROM scores INNER JOIN users ON users.id = scores.user_id WHERE ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
+	$sql =" SELECT MAX(score) AS max_score, user_id FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
 	echo $sql;
 	$result = $conn->query($sql);
 
