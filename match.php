@@ -7,9 +7,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Match-3 Game with Chained Bomb Animations</title>
+
     <style>
         body {
             background: #0F0F0F;
@@ -160,8 +158,7 @@ include 'header.php';
             100% { transform: scale(1); opacity: 0.8; }
         }
     </style>
-</head>
-<body>
+
     <div id="matches">Matches: 0</div>
     <div id="score">Score: 0</div>
     <div id="game-board"></div>
