@@ -197,7 +197,7 @@ class Match3Game {
         this.selectedTile = null;
         this.score = 0;
         this.matchCount = 0;
-        this.matchLimit = 25;
+        this.matchLimit = 5;
         this.gameOver = false;
         this.allIcons = [
             'https://www.skulliance.io/staking/icons/dark.png',
@@ -765,8 +765,8 @@ class Match3Game {
         this.gameOver = true;
         this.playSound('gameOver');
         console.log('Game Over - Grand finale completed!');
-		// Function to save score to database
-		saveSwapScore(this.score);
+		// Save score to database
+		this.saveSwapScore(this.score);
     }
 	
 	saveSwapScore(score){
