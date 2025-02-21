@@ -4403,7 +4403,6 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 		$where = "WHERE reward = '0'";
 	}
 	$sql =" SELECT MAX(score) AS max_score, user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
-	echo $sql;
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
