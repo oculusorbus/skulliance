@@ -197,7 +197,7 @@ class Match3Game {
         this.selectedTile = null;
         this.score = 0;
         this.matchCount = 0;
-        this.matchLimit = 5;
+        this.matchLimit = 25;
         this.gameOver = false;
         this.allIcons = [
             'https://www.skulliance.io/staking/icons/dark.png',
