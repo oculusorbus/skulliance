@@ -6,8 +6,8 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 ?>
-    <style>
-		/*
+<style>
+    /*
         body {
             background: #0F0F0F;
             margin: 0;
@@ -17,160 +17,163 @@ include 'header.php';
             align-items: center;
             overflow: hidden;
         }*/
-        #game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-        #hud {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding-bottom: 10px;
-        }
-        #score {
-            font-size: 24px;
-            font-family: Arial;
-            color: #fff;
-            text-align: left;
-        }
-        #matches {
-            font-size: 24px;
-            font-family: Arial;
-            color: #fff;
-            text-align: right;
-        }
-        #game-board {
-            display: grid;
-            gap: 0.5vh;
-            background: #333;
-            padding: 1vh;
-            box-sizing: border-box;
-            user-select: none;
-            position: relative;
-            touch-action: none;
-        }
-        .tile {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2vh;
-            cursor: pointer;
-            transition: transform 0.2s ease, filter 0.5s ease;
-            position: relative;
-            background: #444;
-            box-sizing: border-box;
-            padding: 0.25vh;
-            z-index: 1;
-        }
-        .tile.game-over {
-            filter: grayscale(100%);
-        }
-        .tile img {
-            width: 80%;
-            height: 80%;
-            object-fit: contain;
-            position: absolute;
-            z-index: 1;
-        }
-        .tile::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.6;
-            z-index: 0;
-        }
-        .selected {
-            transform: scale(1.05);
-            border: 0.25vh solid white;
-            z-index: 10;
-            pointer-events: none;
-            padding: 0;
-        }
-        .matched {
-            animation: matchAnimation 0.3s ease forwards;
-        }
-        .falling {
-            transition: transform 0.3s ease-out;
-        }
-        .bomb-creation {
-            animation: bombPopIn 0.5s ease forwards;
-        }
-        .carbon-clear {
-            animation: carbonSweep 0.8s ease forwards;
-        }
-        .diamond-clear {
-            animation: diamondShockwave 1s ease forwards;
-        }
-        #game-over-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 30;
-            display: none;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-        }
-        #game-over {
-            font-size: 48px;
-            font-family: Arial;
-            color: #ffffff;
-            text-shadow: 2px 2px 4px #000;
-            margin: 0;
-            animation: gameOverPulse 1s ease-in-out infinite;
-        }
-        #try-again {
-            font-size: 24px;
-            font-family: Arial;
-            color: #ffffff;
-            background-color: #444;
-            border: 2px solid #fff;
-            padding: 10px 20px;
-            margin-top: 20px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-        #try-again:hover {
-            background-color: #666;
-            transform: scale(1.05);
-        }
-        @keyframes matchAnimation {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-        @keyframes bombPopIn {
-            0% { transform: scale(0); opacity: 0; }
-            70% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes carbonSweep {
-            0% { transform: scale(1); opacity: 1; background-color: #ff6600; box-shadow: 0 0 10px #ff3300; }
-            50% { transform: scale(1.2); opacity: 0.8; background-color: #ff9900; box-shadow: 0 0 20px #ff6600; }
-            100% { transform: scale(0); opacity: 0; background-color: #ffcc00; box-shadow: 0 0 30px #ff9900; }
-        }
-        @keyframes diamondShockwave {
-            0% { transform: scale(1); opacity: 1; background-color: #ffffff; box-shadow: 0 0 0 #ff00ff; }
-            50% { transform: scale(1.5); opacity: 0.8; background-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
-            75% { transform: scale(1); opacity: 0.5; background-color: #9900cc; box-shadow: 0 0 40px #ff00ff; }
-            100% { transform: scale(0); opacity: 0; background-color: #000000; box-shadow: 0 0 60px #ff00ff; }
-        }
-        @keyframes gameOverPulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-    </style>
-<div class="row" id="row0" style="display:block">	
+    #game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    #hud {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding-bottom: 10px;
+    }
+    #score {
+        font-size: 24px;
+        font-family: Arial;
+        color: #fff;
+        text-align: left;
+    }
+    #matches {
+        font-size: 24px;
+        font-family: Arial;
+        color: #fff;
+        text-align: right;
+    }
+    #game-board {
+        display: grid;
+        gap: 0.5vh;
+        background: #333;
+        padding: 1vh;
+        box-sizing: border-box;
+        user-select: none;
+        position: relative;
+        touch-action: none;
+    }
+    .tile {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2vh;
+        cursor: pointer;
+        transition: transform 0.2s ease, filter 0.5s ease;
+        position: relative;
+        background: #444;
+        box-sizing: border-box;
+        padding: 0.25vh;
+        z-index: 1;
+    }
+    .tile.game-over {
+        filter: grayscale(100%);
+    }
+    .tile img {
+        width: 80%;
+        height: 80%;
+        object-fit: contain;
+        position: absolute;
+        z-index: 1;
+    }
+    .tile::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.6;
+        z-index: 0;
+    }
+    .selected {
+        transform: scale(1.05);
+        border: 0.25vh solid white;
+        z-index: 10;
+        pointer-events: none;
+        padding: 0;
+    }
+    .matched {
+        animation: matchAnimation 0.3s ease forwards;
+    }
+    .falling {
+        transition: transform 0.3s ease-out;
+    }
+    .falling-fast {
+        transition: transform 0.1s ease-out; /* Fast fall during detonations */
+    }
+    .bomb-creation {
+        animation: bombPopIn 0.5s ease forwards;
+    }
+    .carbon-clear {
+        animation: carbonSweep 0.8s ease forwards;
+    }
+    .diamond-clear {
+        animation: diamondShockwave 1s ease forwards;
+    }
+    #game-over-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 30;
+        display: none;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+    }
+    #game-over {
+        font-size: 48px;
+        font-family: Arial;
+        color: #ffffff;
+        text-shadow: 2px 2px 4px #000;
+        margin: 0;
+        animation: gameOverPulse 1s ease-in-out infinite;
+    }
+    #try-again {
+        font-size: 24px;
+        font-family: Arial;
+        color: #ffffff;
+        background-color: #444;
+        border: 2px solid #fff;
+        padding: 10px 20px;
+        margin-top: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    #try-again:hover {
+        background-color: #666;
+        transform: scale(1.05);
+    }
+    @keyframes matchAnimation {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.8; }
+        100% { transform: scale(0); opacity: 0; }
+    }
+    @keyframes bombPopIn {
+        0% { transform: scale(0); opacity: 0; }
+        70% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes carbonSweep {
+        0% { transform: scale(1); opacity: 1; background-color: #ff6600; box-shadow: 0 0 10px #ff3300; }
+        50% { transform: scale(1.2); opacity: 0.8; background-color: #ff9900; box-shadow: 0 0 20px #ff6600; }
+        100% { transform: scale(0); opacity: 0; background-color: #ffcc00; box-shadow: 0 0 30px #ff9900; }
+    }
+    @keyframes diamondShockwave {
+        0% { transform: scale(1); opacity: 1; background-color: #ffffff; box-shadow: 0 0 0 #ff00ff; }
+        50% { transform: scale(1.5); opacity: 0.8; background-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
+        75% { transform: scale(1); opacity: 0.5; background-color: #9900cc; box-shadow: 0 0 40px #ff00ff; }
+        100% { transform: scale(0); opacity: 0; background-color: #000000; box-shadow: 0 0 60px #ff00ff; }
+    }
+    @keyframes gameOverPulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.8; }
+    }
+</style>
+<div class="row" id="row0" style="display:block">    
     <div id="game-container">
         <div id="hud">
             <div id="score">Score: 0</div>
@@ -184,7 +187,7 @@ include 'header.php';
     </div>
 </div>
 
-    <script>
+<script>
 class Match3Game {
     constructor() {
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
@@ -199,6 +202,7 @@ class Match3Game {
         this.matchCount = 0;
         this.matchLimit = 25;
         this.gameOver = false;
+        this.isDetonating = false;
         this.allIcons = [
             'https://www.skulliance.io/staking/icons/dark.png',
             'https://www.skulliance.io/staking/icons/maxi.png',
@@ -283,7 +287,6 @@ class Match3Game {
         boardElement.style.height = `${maxHeight}px`;
         boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
 
-        // Ensure HUD width matches board width
         const hudElement = document.getElementById('hud');
         hudElement.style.width = `${maxWidth}px`;
 
@@ -718,6 +721,7 @@ class Match3Game {
         let bombPositions = this.getAllBombPositions();
         console.log(`Found ${bombPositions.length} bombs for grand finale`);
 
+        this.isDetonating = true;
         while (bombPositions.length > 0) {
             const bomb = bombPositions.shift();
             if (bomb.type === 'carbon') {
@@ -735,6 +739,7 @@ class Match3Game {
                 !bombPositions.some(b => b.x === nb.x && b.y === nb.y))];
             console.log(`Detonated at (${bomb.x}, ${bomb.y}), ${bombPositions.length} bombs remain`);
         }
+        this.isDetonating = false;
 
         await new Promise(resolve => setTimeout(resolve, 1000));
         let moved = true;
@@ -765,28 +770,22 @@ class Match3Game {
         this.gameOver = true;
         this.playSound('gameOver');
         console.log('Game Over - Grand finale completed!');
-		// Save score to database
-		this.saveSwapScore(this.score);
+        this.saveSwapScore(this.score);
     }
-	
-	saveSwapScore(score){
-		var xhttp = new XMLHttpRequest();
-		xhttp.open('GET', 'ajax/save-swap-score.php?score='+score, true);
-		xhttp.send();
-		xhttp.onreadystatechange = function() {
-		  if (xhttp.readyState == XMLHttpRequest.DONE) {
-		    // Check the status of the response
-		    if (xhttp.status == 200) {
-		      // Access the data returned by the server
-		      var data = xhttp.responseText;
-			  console.log(data);
-		      // Do something with the data
-		    } else {
-		      // Handle error
-		    }
-		  }
-		};
-	}
+    
+    saveSwapScore(score) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.open('GET', 'ajax/save-swap-score.php?score='+score, true);
+        xhttp.send();
+        xhttp.onreadystatechange = function() {
+            if (xhttp.readyState == XMLHttpRequest.DONE) {
+                if (xhttp.status == 200) {
+                    var data = xhttp.responseText;
+                    console.log(data);
+                }
+            }
+        };
+    }
 
     getAllBombPositions() {
         const bombPositions = [];
@@ -803,6 +802,7 @@ class Match3Game {
 
     async clearRowAndColumn(x, y, isEndGame = false) {
         console.log(`Clearing row ${y} and column ${x} (Carbon Bomb)`);
+        this.isDetonating = true;
         this.playSound('carbonExplode');
         const affectedTiles = new Set();
         const newBombs = [];
@@ -829,7 +829,7 @@ class Match3Game {
             }
         });
 
-        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 800));
+        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 800)); // Revert to 800ms for gameplay
 
         affectedTiles.forEach(pos => {
             const [tx, ty] = pos.split(',').map(Number);
@@ -856,16 +856,20 @@ class Match3Game {
         console.log(`Carbon bomb cleared ${affectedTiles.size + 1} tiles, added ${(affectedTiles.size + 1) * 10} points`);
 
         if (!isEndGame) {
+            this.showerTiles();
+            this.cascadeTilesWithoutRender();
+            this.renderBoard();
             for (const bomb of newBombs) {
                 await this.handleBombDetonation(bomb.x, bomb.y, bomb.type);
             }
         }
-
+        this.isDetonating = false;
         return isEndGame ? [] : newBombs;
     }
 
     async clearBoard(x = null, y = null, isEndGame = false) {
         console.log(`Clearing entire board (Diamond Bomb)${x !== null && y !== null ? ` at (${x}, ${y})` : ''}`);
+        this.isDetonating = true;
         this.playSound('diamondExplode');
         const affectedTiles = new Set();
         const newBombs = [];
@@ -883,7 +887,7 @@ class Match3Game {
             }
         }
 
-        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 1000));
+        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 1000)); // Revert to 1000ms for gameplay
 
         affectedTiles.forEach(pos => {
             const [tx, ty] = pos.split(',').map(Number);
@@ -912,16 +916,20 @@ class Match3Game {
         console.log(`Diamond bomb cleared ${affectedTiles.size + (x !== null ? 1 : 0)} tiles, added ${(affectedTiles.size + (x !== null ? 1 : 0)) * 10} points`);
 
         if (!isEndGame) {
+            this.showerTiles();
+            this.cascadeTilesWithoutRender();
+            this.renderBoard();
             for (const bomb of newBombs) {
                 await this.handleBombDetonation(bomb.x, bomb.y, bomb.type);
             }
         }
-
+        this.isDetonating = false;
         return isEndGame ? [] : newBombs;
     }
 
     async handleBombDetonation(x, y, bombType) {
         console.log(`Detonating ${bombType} bomb at (${x}, ${y}) triggered by another bomb`);
+        this.isDetonating = true;
         if (bombType === 'carbon') {
             this.score += this.bonusScores.carbonDetonation;
             console.log(`Carbon bomb chain-detonated at (${x}, ${y}), +${this.bonusScores.carbonDetonation} bonus`);
@@ -932,9 +940,11 @@ class Match3Game {
             await this.clearBoard(x, y);
         }
         this.showerTiles();
+        this.cascadeTilesWithoutRender();
         this.renderBoard();
         await new Promise(resolve => setTimeout(resolve, 200));
         document.getElementById('score').textContent = `Score: ${this.score}`;
+        this.isDetonating = false;
     }
 
     showerTiles() {
@@ -976,18 +986,57 @@ class Match3Game {
 
     cascadeTiles() {
         console.log('Cascading tiles...');
-        let moved = this.cascadeTilesWithoutRender();
+        const moved = this.cascadeTilesWithoutRender();
+        const fallTime = this.isDetonating ? 100 : 300; // 100ms during detonations, 300ms otherwise
+        const fallClass = this.isDetonating ? 'falling-fast' : 'falling';
+
+        for (let x = 0; x < this.width; x++) {
+            for (let y = 0; y < this.height; y++) {
+                const tile = this.board[y][x];
+                if (tile.element && tile.element.style.transform === 'translate(0px, 0px)') {
+                    const emptyBelow = this.countEmptyBelow(x, y);
+                    if (emptyBelow > 0) {
+                        tile.element.classList.add(fallClass);
+                        tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
+                    }
+                }
+            }
+        }
+
         this.renderBoard();
         this.playSound('cascade');
+
         if (moved || this.matchCheckCount < 2) {
             this.matchCheckCount++;
             setTimeout(() => {
                 const hasMatches = this.resolveMatches();
                 if (!hasMatches) this.matchCheckCount = 0;
-            }, 300);
+                const tiles = document.querySelectorAll(`.${fallClass}`);
+                tiles.forEach(tile => {
+                    tile.classList.remove(fallClass);
+                    tile.style.transform = 'translate(0, 0)';
+                });
+                if (this.isDetonating) {
+                    this.showerTiles();
+                    this.cascadeTilesWithoutRender();
+                    this.renderBoard();
+                }
+            }, fallTime);
         } else {
             this.matchCheckCount = 0;
         }
+    }
+
+    countEmptyBelow(x, y) {
+        let count = 0;
+        for (let i = y + 1; i < this.height; i++) {
+            if (!this.board[i][x].icon && !this.board[i][x].special) {
+                count++;
+            } else {
+                break;
+            }
+        }
+        return count;
     }
 
     resolveMatches(selectedX = null, selectedY = null) {
@@ -1153,5 +1202,5 @@ class Match3Game {
 }
 
 const game = new Match3Game();
-    </script>
+</script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
