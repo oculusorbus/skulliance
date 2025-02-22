@@ -4507,8 +4507,6 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 				updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
 				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
 				
-				// Update score to mark that it has been rewarded
-				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Score: ".$row["max_score"]."\r\n";
@@ -4517,6 +4515,9 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 			}
 		}
 		if($rewards){
+			// Mark all current scores as rewarded
+			resetSwapScores($conn);
+				
 			$title = "Weekly Skull Swap Leaderboard Results";
 			$imageurl = "";
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
@@ -6262,6 +6263,15 @@ function getSwapScore($conn){
 				return $row['score'];
 			}
 		}
+	}
+}
+
+function resetSwapScores($conn){
+	$sql = "UPDATE scores SET reward = '1' WHERE reward = '0'";
+	if ($conn->query($sql) === TRUE) {
+		//echo "All scores marked as rewarded.";
+	} else {
+		echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 }
 
