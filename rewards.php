@@ -31,4 +31,7 @@ if(isset($_GET['raids'])){
 if(isset($_GET['factions'])){
 	checkFactionsLeaderboard($conn, false, true);
 }
+if(isset($_GET['swaps'])){
+	checkSkullSwapsLeaderboard($conn, false, true);
+}
 ?>
