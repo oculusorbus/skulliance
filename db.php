@@ -4399,10 +4399,10 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 	$carbon = 25000;
 	$where = "";
-	$attempts = "attempts";
+	$attempts = "SUM(attempts) AS attempts";
 	if($weekly || $rewards){
 		$where = "WHERE reward = '0'";
-		$attempts = "COUNT(attempts) AS attempts";
+		$attempts = "attempts";
 	}
 	$sql =" SELECT MAX(score) AS max_score, ".$attempts.", user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
 	$result = $conn->query($sql);
