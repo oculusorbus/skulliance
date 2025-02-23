@@ -4399,10 +4399,12 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 	$carbon = 25000;
 	$where = "";
+	$attempts = "attempts";
 	if($weekly || $rewards){
 		$where = "WHERE reward = '0'";
+		$attempts = "COUNT(attempts) AS attempts";
 	}
-	$sql =" SELECT MAX(score) AS max_score, user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
+	$sql =" SELECT MAX(score) AS max_score, ".$attempts.", user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -4415,7 +4417,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 		$description = "";
 		$counter = 0;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th><th>Attempts</th>";
 		if($weekly){
 			echo "<th>Projected Rewards</th>";
 		}
@@ -4496,6 +4498,9 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "<td align='center'>";
 			echo number_format($row["max_score"]);
 			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["attempts"]);
+			echo "</td>";
 			if($weekly){
 				echo "<td align='center'>";
 				echo number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND";
@@ -4509,7 +4514,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
-					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Score: ".$row["max_score"]."\r\n";
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Score: ".$row["max_score"].", Attempts: ".$row["attempts"]."\r\n";
 					$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
 				}
 			}
@@ -6230,17 +6235,24 @@ function saveSwapScore($conn, $score){
 		$current_score = getSwapScore($conn);
 		if(isset($current_score)){
 			if($score > $current_score){
-				$sql = "UPDATE scores SET score = '".$score."' WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
+				$sql = "UPDATE scores SET score = '".$score."', attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
 				if ($conn->query($sql) === TRUE) {
 					echo "Your existing score has been updated.";
+				} else {
+					echo "Error: " . $sql . "<br>" . $conn->error;
+				}
+			}else{
+				$sql = "UPDATE scores SET attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
+				if ($conn->query($sql) === TRUE) {
+					echo "Your attempt has been logged.";
 				} else {
 					echo "Error: " . $sql . "<br>" . $conn->error;
 				}
 			}
 		}else{
 			// Create new score
-			$sql = "INSERT INTO scores (user_id, score, reward) 
-			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '0')";
+			$sql = "INSERT INTO scores (user_id, score, attempts, reward) 
+			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '1', '0')";
 
 			if ($conn->query($sql) === TRUE) {
 				echo "Your score was saved.";
