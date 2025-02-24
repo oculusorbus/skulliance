@@ -5180,12 +5180,16 @@ function getRealms($conn, $sort, $group){
 				$output = array_reverse($output);
 			}
 			echo "<table width='100%' id='transactions'>";
-			foreach($output AS $key => $val){
-				echo $val;
+			if(!empty($output)){
+				foreach($output AS $key => $val){
+					echo $val;
+				}
+			}else{
+				echo "<tr><td>There are no Realms currently available for you to Raid. Check back later.</td></tr>";
 			}
 			echo "</table>";
 		}else{
-			echo "<p>There are no Realms currently available for you to Raid. Check back later.</p>";
+			
 		}
 	}
 }
