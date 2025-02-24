@@ -5187,7 +5187,7 @@ function getRealms($conn, $sort, $group){
 				}
 				echo "</table>";
 			}else{
-				echo "<p>There are no realms currently available for you to raid.<br><br>Please check back later as your location levels and those of your potential opponents can change as raids are completed.<br><img src='/staking/images/disappointed.gif'/></p>";
+				echo "<p>There are no realms currently available for you to raid.<br><br>Please check back later as your location levels and those of your potential opponents can change as raids are completed.<br><br><img src='/staking/images/disappointed.gif'/></p>";
 			}
 			
 		}else{
