@@ -5185,7 +5185,7 @@ function getRealms($conn, $sort, $group){
 			}
 			echo "</table>";
 		}else{
-		
+			echo "<p>There are no Realms currently available for you to Raid. Check back later.</p>";
 		}
 	}
 }
