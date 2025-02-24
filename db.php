@@ -5179,15 +5179,17 @@ function getRealms($conn, $sort, $group){
 				ksort($output);
 				$output = array_reverse($output);
 			}
-			echo "<table width='100%' id='transactions'>";
+			
 			if(!empty($output)){
+				echo "<table width='100%' id='transactions'>";
 				foreach($output AS $key => $val){
 					echo $val;
 				}
+				echo "</table>";
 			}else{
-				echo "<tr><td>There are no realms currently available for you to raid.<br><br>Please check back later as your location levels and those of your potential opponents can change as raids are completed.</td></tr>";
+				echo "<p>There are no realms currently available for you to raid.<br><br>Please check back later as your location levels and those of your potential opponents can change as raids are completed.</p>";
 			}
-			echo "</table>";
+			
 		}else{
 			
 		}
