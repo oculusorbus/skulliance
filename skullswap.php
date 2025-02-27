@@ -89,7 +89,7 @@ include 'header.php';
     .selected {
         transform: scale(1.05);
         border: 0.25vh solid white;
-        z-index: 1000; /* Even higher z-index to ensure priority */
+        z-index: 10;
         pointer-events: none;
         padding: 0;
     }
@@ -100,7 +100,7 @@ include 'header.php';
         transition: transform 0.3s ease-out;
     }
     .falling-fast {
-        transition: transform 0.1s ease-out;
+        transition: transform 0.1s ease-out; /* Fast fall during detonations */
     }
     .bomb-creation {
         animation: bombPopIn 0.5s ease forwards;
@@ -203,7 +203,6 @@ class Match3Game {
         this.matchLimit = 25;
         this.gameOver = false;
         this.isDetonating = false;
-        this.isGrandFinale = false;
         this.allIcons = [
             'https://www.skulliance.io/staking/icons/dark.png',
             'https://www.skulliance.io/staking/icons/maxi.png',
@@ -230,7 +229,7 @@ class Match3Game {
             'https://www.skulliance.io/staking/icons/muse.png',
             'https://www.skulliance.io/staking/icons/dn.png',
             'https://www.skulliance.io/staking/icons/tribe.png',
-            'https://www.skulliance.io/staking/icons/bung.png',
+			'https://www.skulliance.io/staking/icons/bung.png',
             'https://www.skulliance.io/staking/icons/star.png',
             'https://www.skulliance.io/staking/icons/dread.png',
             'https://www.skulliance.io/staking/icons/hype.png',
@@ -320,14 +319,12 @@ class Match3Game {
         this.score = 0;
         this.matchCount = 0;
         this.gameOver = false;
-        this.isGrandFinale = false;
         document.getElementById('score').textContent = `Score: ${this.score}`;
         document.getElementById('matches').textContent = `Matches: ${this.matchCount}/${this.matchLimit}`;
         
         const board = document.getElementById('game-board');
         const tiles = board.querySelectorAll('.tile');
         tiles.forEach(tile => tile.classList.remove('game-over'));
-        board.style.pointerEvents = 'auto';
         
         const gameOverContainer = document.getElementById('game-over-container');
         gameOverContainer.style.display = 'none';
@@ -408,17 +405,7 @@ class Match3Game {
                 boardElement.appendChild(tileElement);
                 tile.element = tileElement;
 
-                // Preserve selected tile state during render
-                if (this.isDragging && this.selectedTile && this.selectedTile.x === x && this.selectedTile.y === y) {
-                    tileElement.classList.add('selected');
-                    if (this.dragDirection === 'row' && this.targetTile) {
-                        const dx = (this.targetTile.x - x) * this.tileSizeWithGap;
-                        tileElement.style.transform = `translate(${dx}px, 0) scale(1.05)`;
-                    } else if (this.dragDirection === 'column' && this.targetTile) {
-                        const dy = (this.targetTile.y - y) * this.tileSizeWithGap;
-                        tileElement.style.transform = `translate(0, ${dy}px) scale(1.05)`;
-                    }
-                } else if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
+                if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
                     tileElement.style.transform = 'translate(0, 0)';
                 }
             }
@@ -443,7 +430,7 @@ class Match3Game {
     }
 
     handleMouseDown(e) {
-        if (this.gameOver || this.isGrandFinale) return;
+        if (this.gameOver) return;
         e.preventDefault();
         const tile = this.getTileFromEvent(e);
         if (!tile || !tile.element) return;
@@ -458,7 +445,7 @@ class Match3Game {
     }
 
     handleMouseMove(e) {
-        if (!this.isDragging || !this.selectedTile || this.gameOver || this.isGrandFinale) return;
+        if (!this.isDragging || !this.selectedTile || this.gameOver) return;
         e.preventDefault();
 
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
@@ -467,7 +454,6 @@ class Match3Game {
 
         const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
         selectedTileElement.style.transition = '';
-        selectedTileElement.style.zIndex = '1000'; // Force high z-index during drag
 
         if (!this.dragDirection) {
             const dx = Math.abs(mouseX - (this.selectedTile.x * this.tileSizeWithGap));
@@ -493,12 +479,10 @@ class Match3Game {
                 y: Math.round(constrainedY / this.tileSizeWithGap)
             };
         }
-
-        this.renderBoard(); // Re-render to ensure selected tile stays on top
     }
 
     handleMouseUp(e) {
-        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver) {
             if (this.selectedTile) {
                 const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                 if (tile.element) tile.element.classList.remove('selected');
@@ -524,7 +508,7 @@ class Match3Game {
     }
 
     handleTouchStart(e) {
-        if (this.gameOver || this.isGrandFinale) return;
+        if (this.gameOver) return;
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
         if (!tile || !tile.element) return;
@@ -539,7 +523,7 @@ class Match3Game {
     }
 
     handleTouchMove(e) {
-        if (!this.isDragging || !this.selectedTile || this.gameOver || this.isGrandFinale) return;
+        if (!this.isDragging || !this.selectedTile || this.gameOver) return;
         e.preventDefault();
 
         const boardRect = document.getElementById('game-board').getBoundingClientRect();
@@ -557,7 +541,6 @@ class Match3Game {
             }
 
             selectedTileElement.style.transition = '';
-            selectedTileElement.style.zIndex = '1000'; // Force high z-index during drag
 
             if (this.dragDirection === 'row') {
                 const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, touchX));
@@ -574,13 +557,11 @@ class Match3Game {
                     y: Math.round(constrainedY / this.tileSizeWithGap)
                 };
             }
-
-            this.renderBoard(); // Re-render to ensure selected tile stays on top
         });
     }
 
     handleTouchEnd(e) {
-        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver) {
             if (this.selectedTile) {
                 const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                 if (tile.element) tile.element.classList.remove('selected');
@@ -738,9 +719,6 @@ class Match3Game {
         const board = document.getElementById('game-board');
         const gameOverContainer = document.getElementById('game-over-container');
 
-        this.isGrandFinale = true;
-        board.style.pointerEvents = 'none';
-
         let bombPositions = this.getAllBombPositions();
         console.log(`Found ${bombPositions.length} bombs for grand finale`);
 
@@ -757,7 +735,9 @@ class Match3Game {
             this.renderBoard();
             await new Promise(resolve => setTimeout(resolve, 250));
 
-            bombPositions = this.getAllBombPositions();
+            const newBombs = this.getAllBombPositions();
+            bombPositions = [...bombPositions, ...newBombs.filter(nb => 
+                !bombPositions.some(b => b.x === nb.x && b.y === nb.y))];
             console.log(`Detonated at (${bomb.x}, ${bomb.y}), ${bombPositions.length} bombs remain`);
         }
         this.isDetonating = false;
@@ -772,6 +752,16 @@ class Match3Game {
             this.renderBoard();
             await new Promise(resolve => setTimeout(resolve, 300));
             iterations++;
+
+            let hasMatches = false;
+            for (let y = 0; y < this.height && !hasMatches; y++) {
+                for (let x = 0; x < this.width && !hasMatches; x++) {
+                    if (this.checkMatches(x, y).hasMatches) {
+                        hasMatches = true;
+                    }
+                }
+            }
+            if (!hasMatches) break;
         }
 
         console.log('Board is calm, showing game over...');
@@ -781,9 +771,7 @@ class Match3Game {
         this.gameOver = true;
         this.playSound('gameOver');
         console.log('Game Over - Grand finale completed!');
-        
         this.saveSwapScore(this.score);
-        this.isGrandFinale = false;
     }
     
     saveSwapScore(score) {
@@ -842,7 +830,7 @@ class Match3Game {
             }
         });
 
-        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 800));
+        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 800)); // Revert to 800ms for gameplay
 
         affectedTiles.forEach(pos => {
             const [tx, ty] = pos.split(',').map(Number);
@@ -900,7 +888,7 @@ class Match3Game {
             }
         }
 
-        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 1000));
+        await new Promise(resolve => setTimeout(resolve, isEndGame ? 250 : 1000)); // Revert to 1000ms for gameplay
 
         affectedTiles.forEach(pos => {
             const [tx, ty] = pos.split(',').map(Number);
@@ -1000,7 +988,7 @@ class Match3Game {
     cascadeTiles() {
         console.log('Cascading tiles...');
         const moved = this.cascadeTilesWithoutRender();
-        const fallTime = this.isDetonating ? 100 : 300;
+        const fallTime = this.isDetonating ? 100 : 300; // 100ms during detonations, 300ms otherwise
         const fallClass = this.isDetonating ? 'falling-fast' : 'falling';
 
         for (let x = 0; x < this.width; x++) {
@@ -1022,7 +1010,7 @@ class Match3Game {
         if (moved || this.matchCheckCount < 2) {
             this.matchCheckCount++;
             setTimeout(() => {
-                const hasMatches = this.isGrandFinale ? false : this.resolveMatches();
+                const hasMatches = this.resolveMatches();
                 if (!hasMatches) this.matchCheckCount = 0;
                 const tiles = document.querySelectorAll(`.${fallClass}`);
                 tiles.forEach(tile => {
@@ -1053,7 +1041,6 @@ class Match3Game {
     }
 
     resolveMatches(selectedX = null, selectedY = null) {
-        if (this.isGrandFinale) return false;
         const matchResult = this.checkMatches(selectedX, selectedY);
         if (matchResult.hasMatches) {
             const { matches, bombType, bombX, bombY } = matchResult;
