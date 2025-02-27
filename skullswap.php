@@ -785,13 +785,15 @@ include 'header.php';
 	         if (xhttp.readyState == XMLHttpRequest.DONE) {
 	             if (xhttp.status == 200) {
 	                 var data = xhttp.responseText;
-	                 if (data == "new") {
-	                     this.playSound('newScore');
-	                 } else if (data == "high") {
-	                     this.playSound('highScore');
-	                 } else if (data == "low") {
-	                     this.playSound('lowScore');
-	                 }
+	                 setTimeout(() => { // Delay the additional sounds
+	                     if (data == "new") {
+	                         this.playSound('newScore');
+	                     } else if (data == "high") {
+	                         this.playSound('highScore');
+	                     } else if (data == "low") {
+	                         this.playSound('lowScore');
+	                     }
+	                 }, 1000); // 1000ms (1 second) delay; adjust as needed
 	                 console.log(data);
 	             }
 	         }
