@@ -6247,14 +6247,14 @@ function saveSwapScore($conn, $score){
 			if($score > $current_score){
 				$sql = "UPDATE scores SET score = '".$score."', attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
 				if ($conn->query($sql) === TRUE) {
-					echo "Your existing score has been updated.";
+					echo "high";
 				} else {
 					echo "Error: " . $sql . "<br>" . $conn->error;
 				}
 			}else{
 				$sql = "UPDATE scores SET attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
 				if ($conn->query($sql) === TRUE) {
-					echo "Your attempt has been logged.";
+					echo "low";
 				} else {
 					echo "Error: " . $sql . "<br>" . $conn->error;
 				}
@@ -6265,7 +6265,7 @@ function saveSwapScore($conn, $score){
 			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '1', '0')";
 
 			if ($conn->query($sql) === TRUE) {
-				echo "Your score was saved.";
+				echo "new";
 			} else {
 				echo "Error: " . $sql . "<br>" . $conn->error;
 			}

@@ -286,7 +286,10 @@ include 'header.php';
              cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
              badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
              gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
-             reset: new Audio('https://www.skulliance.io/staking/sounds/voice_welcomeback.ogg')
+             reset: new Audio('https://www.skulliance.io/staking/sounds/voice_welcomeback.ogg'),
+			 highScore: new Audio('https://www.skulliance.io/staking/sounds/voice_challengecomplete.ogg'),
+			 lowScore: new Audio('https://www.skulliance.io/staking/sounds/voice_good.ogg'),
+			 newScore: new Audio('https://www.skulliance.io/staking/sounds/voice_excellent.ogg')
          };
          Object.values(this.sounds).forEach(sound => sound.preload = 'auto');
 
@@ -782,6 +785,13 @@ include 'header.php';
              if (xhttp.readyState == XMLHttpRequest.DONE) {
                  if (xhttp.status == 200) {
                      var data = xhttp.responseText;
+					 if(data == "new"){
+					 	this.playSound('newScore');
+					 }else if(data == "high"){
+					 	this.playSound('highScore');
+					 }else if(data == "low"){
+					 	this.playSound('lowScore');
+					 }
                      console.log(data);
                  }
              }
