@@ -793,7 +793,7 @@ include 'header.php';
 	                     } else if (data == "low") {
 	                         this.playSound('lowScore');
 	                     }
-	                 }, 1000); // 1000ms (1 second) delay; adjust as needed
+	                 }, 2000); // 2000ms (2 seconds) delay; adjust as needed
 	                 console.log(data);
 	             }
 	         }
