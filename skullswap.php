@@ -6,7 +6,7 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 ?>
-   <style>
+ <style>
          body {
              background: #0F0F0F;
              margin: 0;
@@ -193,7 +193,8 @@ include 'header.php';
              <div id="game-over">GAME OVER</div>
              <div id="game-over-buttons">
                  <button id="try-again">TRY AGAIN</button>
-                 <form id="leaderboard-form" action="leaderboard.php" method="GET">
+                 <form id="leaderboard-form" action="leaderboards.php" method="POST">
+                     <input type="hidden" name="filterby" value="weekly-swaps">
                      <button id="leaderboard" type="submit">LEADERBOARD</button>
                  </form>
              </div>
@@ -334,7 +335,7 @@ include 'header.php';
          const board = document.getElementById('game-board');
          const tiles = board.querySelectorAll('.tile');
          tiles.forEach(tile => tile.classList.remove('game-over'));
-         board.style.pointerEvents = 'auto'; // Feature 2: Re-enable board
+         board.style.pointerEvents = 'auto';
         
          const gameOverContainer = document.getElementById('game-over-container');
          gameOverContainer.style.display = 'none';
@@ -437,7 +438,7 @@ include 'header.php';
      }
 
      handleMouseDown(e) {
-         if (this.gameOver || this.isGrandFinale) return; // Feature 2: Prevent interaction during grand finale
+         if (this.gameOver || this.isGrandFinale) return;
          e.preventDefault();
          const tile = this.getTileFromEvent(e);
          if (!tile || !tile.element) return;
@@ -452,7 +453,7 @@ include 'header.php';
      }
 
      handleMouseMove(e) {
-         if (!this.isDragging || !this.selectedTile || this.gameOver || this.isGrandFinale) return; // Feature 2
+         if (!this.isDragging || !this.selectedTile || this.gameOver || this.isGrandFinale) return;
          e.preventDefault();
 
          const boardRect = document.getElementById('game-board').getBoundingClientRect();
@@ -489,7 +490,7 @@ include 'header.php';
      }
 
      handleMouseUp(e) {
-         if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) { // Feature 2
+         if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
              if (this.selectedTile) {
                  const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                  if (tile.element) tile.element.classList.remove('selected');
@@ -515,7 +516,7 @@ include 'header.php';
      }
 
      handleTouchStart(e) {
-         if (this.gameOver || this.isGrandFinale) return; // Feature 2
+         if (this.gameOver || this.isGrandFinale) return;
          e.preventDefault();
          const tile = this.getTileFromEvent(e.touches[0]);
          if (!tile || !tile.element) return;
@@ -530,7 +531,7 @@ include 'header.php';
      }
 
      handleTouchMove(e) {
-         if (!this.isDragging || !this.selectedTile || this.gameOver || this.isGrandFinale) return; // Feature 2
+         if (!this.isDragging || !this.selectedTile || this.gameOver || this.isGrandFinale) return;
          e.preventDefault();
 
          const boardRect = document.getElementById('game-board').getBoundingClientRect();
@@ -568,7 +569,7 @@ include 'header.php';
      }
 
      handleTouchEnd(e) {
-         if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) { // Feature 2
+         if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
              if (this.selectedTile) {
                  const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                  if (tile.element) tile.element.classList.remove('selected');
@@ -713,7 +714,7 @@ include 'header.php';
          console.log('Starting endgame sequence...');
          this.isGrandFinale = true;
          const board = document.getElementById('game-board');
-         board.style.pointerEvents = 'none'; // Feature 2: Deactivate board during grand finale
+         board.style.pointerEvents = 'none';
          const gameOverContainer = document.getElementById('game-over-container');
 
          let bombPositions = this.getAllBombPositions();
@@ -739,7 +740,6 @@ include 'header.php';
          }
          this.isDetonating = false;
 
-         // Feature 1: Clear all matches after bomb detonations
          let moved = true;
          let iterations = 0;
          const maxIterations = 20;
@@ -757,11 +757,11 @@ include 'header.php';
                      if (matchResult.hasMatches && matchResult.matches.size >= 3) {
                          hasMatches = true;
                          console.log(`Grand finale match found at (${x}, ${y}) with size ${matchResult.matches.size}`);
-                         await this.handleMatches(matchResult.matches, null, matchResult.bombX, matchResult.bombY); // Clear matches without creating new bombs
+                         await this.handleMatches(matchResult.matches, null, matchResult.bombX, matchResult.bombY);
                      }
                  }
              }
-             if (!hasMatches) break; // Exit if no matches remain
+             if (!hasMatches) break;
          }
 
          console.log('Board is calm, showing game over...');
@@ -1037,7 +1037,7 @@ include 'header.php';
      }
 
      resolveMatches(selectedX = null, selectedY = null) {
-         if (this.isGrandFinale) return false; // Already prevents manual matches; retained for consistency
+         if (this.isGrandFinale) return false;
          const matchResult = this.checkMatches(selectedX, selectedY);
          if (matchResult.hasMatches) {
              const { matches, bombType, bombX, bombY } = matchResult;
@@ -1139,7 +1139,7 @@ include 'header.php';
                  this.board[y][x].element = null;
              });
 
-             if (bombType && !this.isGrandFinale) { // Feature 1: No new bombs during grand finale
+             if (bombType && !this.isGrandFinale) {
                  this.createSpecialTile(bombX, bombY, bombType);
                  this.board[bombY][bombX].element.classList.add('bomb-creation');
                  this.playSound(bombType === 'bomb4' ? 'carbonBombAppear' : 'diamondBombAppear');
