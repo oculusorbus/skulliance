@@ -7,6 +7,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
  <style>
+	 /*
          body {
              background: #0F0F0F;
              margin: 0;
@@ -15,7 +16,7 @@ include 'header.php';
              justify-content: center;
              align-items: center;
              overflow: hidden;
-         }
+         }*/
          #game-container {
              display: flex;
              flex-direction: column;
