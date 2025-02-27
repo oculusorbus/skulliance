@@ -777,26 +777,26 @@ include 'header.php';
          this.saveSwapScore(this.score);
      }
 
-     saveSwapScore(score) {
-         var xhttp = new XMLHttpRequest();
-         xhttp.open('GET', 'ajax/save-swap-score.php?score='+score, true);
-         xhttp.send();
-         xhttp.onreadystatechange = function() {
-             if (xhttp.readyState == XMLHttpRequest.DONE) {
-                 if (xhttp.status == 200) {
-                     var data = xhttp.responseText;
-					 if(data == "new"){
-					 	this.playSound('newScore');
-					 }else if(data == "high"){
-					 	this.playSound('highScore');
-					 }else if(data == "low"){
-					 	this.playSound('lowScore');
-					 }
-                     console.log(data);
-                 }
-             }
-         };
-     }
+	 saveSwapScore(score) {
+	     var xhttp = new XMLHttpRequest();
+	     xhttp.open('GET', 'ajax/save-swap-score.php?score=' + score, true);
+	     xhttp.send();
+	     xhttp.onreadystatechange = function() {
+	         if (xhttp.readyState == XMLHttpRequest.DONE) {
+	             if (xhttp.status == 200) {
+	                 var data = xhttp.responseText;
+	                 if (data == "new") {
+	                     this.playSound('newScore');
+	                 } else if (data == "high") {
+	                     this.playSound('highScore');
+	                 } else if (data == "low") {
+	                     this.playSound('lowScore');
+	                 }
+	                 console.log(data);
+	             }
+	         }
+	     }.bind(this); // Bind the Match3Game instance to the function
+	 }
 
      getAllBombPositions() {
          const bombPositions = [];
