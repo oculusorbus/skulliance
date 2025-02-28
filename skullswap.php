@@ -140,6 +140,7 @@ include 'header.php';
          #try-again, #leaderboard {
              font-size: 24px;
              font-family: Arial;
+			 font-weight: bold;
              color: #ffffff;
              background-color: #444;
              border: 2px solid #fff;
