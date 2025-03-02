@@ -109,6 +109,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$asset_list["_asset_list"] = array();
 					// Temporary counter, remove after testing
 					foreach($response AS $index => $list){
+						$havoc_worlds_assets = array();
 						$process = false;
 						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 							if(isset($list->inline_datum->value->bytes)){
@@ -138,9 +139,12 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 									$asset_list["_asset_list"][$counter] = array();
 									$asset_list["_asset_list"][$counter][0] = $token->policy_id;
 									$asset_list["_asset_list"][$counter][1] = $token->asset_name;
-									echo $token->asset_name;
-									exit;
 									$counter++;
+									
+									// Havoc Worlds
+									if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+										$havoc_worlds_assets[$token->asset_name] = $stakeAddress;
+									}
 					
 								} // End if
 							} // End foreach
@@ -183,6 +187,14 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								// Prevent double creation or update of the same NFT for a specific user
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
 								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
+									
+									// Havoc Worlds stuff
+									if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+										echo $havoc_worlds_assets[$tokenresponsedata->fingerprint];
+										exit;
+									}
+									
+									
 									// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
 									if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
 										// Check to see if there is an NFT with no owner in the database
