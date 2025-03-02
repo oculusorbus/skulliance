@@ -112,23 +112,24 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					foreach($response AS $index => $list){
 						$process = false;
 						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+							if(isset($list->inline_datum->value->bytes)){
+								// Your input hex string (28-byte stake key hash)
+								$hex = $list->inline_datum->value->bytes;
+
+								// Prepend header (0xe1 for mainnet stake address)
+								$fullHex = "e1" . $hex;
+
+								// Convert hex to 5-bit array
+								$byteArray = Bech32::hexToByteArray($fullHex);
+
+								// Encode as Bech32 with "stake" prefix (mainnet)
+								$stakeAddress = Bech32::encode("stake", $byteArray);
 							
-							// Your input hex string (28-byte stake key hash)
-							$hex = $list->inline_datum->value->bytes;
-
-							// Prepend header (0xe1 for mainnet stake address)
-							$fullHex = "e1" . $hex;
-
-							// Convert hex to 5-bit array
-							$byteArray = Bech32::hexToByteArray($fullHex);
-
-							// Encode as Bech32 with "stake" prefix (mainnet)
-							$stakeAddress = Bech32::encode("stake", $byteArray);
-							
-							if(in_array($stakeAddress, $addresses)){
-								$process = true;
-								echo $stakeAddress;
-								exit;
+								if(in_array($stakeAddress, $addresses)){
+									$process = true;
+									echo $stakeAddress;
+									exit;
+								}
 							}
 						}else{
 							$process = true;
