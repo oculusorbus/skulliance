@@ -14,10 +14,10 @@ if(isset($_GET['verify'])){
 	set_time_limit(0);
 	$addresses = array();
 	
-	// Temporarily altered this function, revert after testing is completed for Havoc Worlds
+	// Havoc Worlds - Temporarily altered this function, revert after testing is completed for Havoc Worlds
 	$addresses = getAllAddresses($conn);
 	
-	// Add Havoc Worlds smart contract stake address
+	// Havoc Worlds - Add smart contract stake address
 	$addresses[] = 'stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34';
 	
 	$policies = array();
@@ -144,7 +144,6 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 									// Havoc Worlds - align asset names with actual stake addresses of staker
 									if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 										$havoc_worlds_assets[$token->asset_name] = $stakeAddress;
-										echo $token->asset_name."<br>";
 									}
 					
 								} // End if
