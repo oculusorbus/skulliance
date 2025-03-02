@@ -110,6 +110,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$asset_list["_asset_list"] = array();
 					// Temporary counter, remove after testing
 					foreach($response AS $index => $list){
+						$process = false;
 						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 							
 							// Your input hex string (28-byte stake key hash)
@@ -123,20 +124,27 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 
 							// Encode as Bech32 with "stake" prefix (mainnet)
 							$stakeAddress = Bech32::encode("stake", $byteArray);
-
-							echo $stakeAddress;
-							exit;
+							
+							if(in_array($stakeAddress, $addresses)){
+								$process = true;
+								echo $stakeAddress;
+								exit;
+							}
+						}else{
+							$process = true;
 						}
 						
-						foreach($list->asset_list AS $index => $token){
-							if(in_array($token->policy_id, $policies)){
-								$asset_list["_asset_list"][$counter] = array();
-								$asset_list["_asset_list"][$counter][0] = $token->policy_id;
-								$asset_list["_asset_list"][$counter][1] = $token->asset_name;
-								$counter++;
+						if($process == true){
+							foreach($list->asset_list AS $index => $token){
+								if(in_array($token->policy_id, $policies)){
+									$asset_list["_asset_list"][$counter] = array();
+									$asset_list["_asset_list"][$counter][0] = $token->policy_id;
+									$asset_list["_asset_list"][$counter][1] = $token->asset_name;
+									$counter++;
 					
-							} // End if
-						} // End foreach
+								} // End if
+							} // End foreach
+						}
 					}
 			
 					// Batch asset list into arrays of 35 items or less to allow for successful queries, had to reduce from 50 to 35 to remain under the free Koios plan limits.
