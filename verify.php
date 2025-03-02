@@ -13,13 +13,7 @@ if(isset($argv)){
 if(isset($_GET['verify'])){
 	set_time_limit(0);
 	$addresses = array();
-	
-	// Havoc Worlds - Temporarily altered this function, revert after testing is completed for Havoc Worlds
 	$addresses = getAllAddresses($conn);
-	
-	// Havoc Worlds - Add smart contract stake address
-	$addresses[] = 'stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34';
-	
 	$policies = array();
 	$policies = getPolicies($conn);
 	// Remove all user ids from NFTs before running cron job verification
@@ -42,6 +36,9 @@ if(isset($_GET['verify'])){
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(), $attempts=0){
 	global $blockfrost_project_id;
+	
+	// Havoc Worlds - Add smart contract stake address manually
+	$addresses[] = 'stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34';
 	
 	$collections = getCollectionIDs($conn);
 	$failed_addresses = array();
