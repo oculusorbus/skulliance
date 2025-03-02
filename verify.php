@@ -111,6 +111,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$havoc_worlds_assets = array();
 					foreach($response AS $index => $list){
 						$process = false;
+						
+						// Havoc Worlds - Decode inline datum bytes to extract stake address of Havoc World assets in smart contract
 						if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 							if(isset($list->inline_datum->value->bytes)){
 								// Your input hex string (28-byte stake key hash)
@@ -124,7 +126,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 
 								// Encode as Bech32 with "stake" prefix (mainnet)
 								$stakeAddress = Bech32::encode("stake", $byteArray);
-							
+								
+								// Check if decoded stake address in UTXO exists within stake address in the database
 								if(in_array($stakeAddress, $addresses)){
 									$process = true;
 								}
@@ -188,10 +191,13 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
 								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
 									
+									// Havoc Worlds - Set address to another variable for NFT processing so that $address is not overriden with Havoc Worlds stakers
 									$nft_address = $address;
 									// Havoc Worlds - Check if address is smart contract wallet and lookup address of staker before saving NFT data
 									if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+										// Override nft_address with Havoc Worlds staker address
 										$nft_address = $havoc_worlds_assets[$tokenresponsedata->asset_name];
+										// Lookup user for Havoc Worlds staker address since no user exists for Havoc Worlds smart contract wallet
 										$user_id = getUserId($conn, $nft_address);
 									}
 									
