@@ -126,8 +126,6 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 							
 								if(in_array($stakeAddress, $addresses)){
 									$process = true;
-									echo $stakeAddress;
-									exit;
 								}
 							}
 						}else{
@@ -140,6 +138,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 									$asset_list["_asset_list"][$counter] = array();
 									$asset_list["_asset_list"][$counter][0] = $token->policy_id;
 									$asset_list["_asset_list"][$counter][1] = $token->asset_name;
+									echo $token->asset_name;
+									exit;
 									$counter++;
 					
 								} // End if
