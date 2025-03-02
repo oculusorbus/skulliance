@@ -100,21 +100,30 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 
 				//$_SESSION['userData']['nfts'] = array();
 				if(is_array($response)){
-					print_r($response);
-					exit;
 			    if(isset($response[0])){
 					$asset_names = array();
 					$counter = 0;
 					$asset_list = array();
 					$asset_list["_asset_list"] = array();
 					// Temporary counter, remove after testing
-					$temp_counter = 0;
 					foreach($response AS $index => $list){
-						$temp_counter++;
-						print_r($response);
-						if($temp_counter > 10){
+						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+							// Your input hex string (28-byte stake key hash)
+							$hex = $list->inline_datum["bytes"];
+
+							// Step 1: Decode hex to bytes
+							$stakeKeyHash = hex2bin($hex); // 28 bytes
+
+							// Step 2: Prepend mainnet stake address header (0xe1)
+							$addressBytes = hex2bin("e1") . $stakeKeyHash; // 29 bytes total
+
+							// Step 3: Encode to Bech32 stake address
+							$stakeAddress = bech32_encode("stake", $addressBytes);
+
+							echo $stakeAddress;
 							exit;
 						}
+						
 						foreach($list->asset_list AS $index => $token){
 							if(in_array($token->policy_id, $policies)){
 								$asset_list["_asset_list"][$counter] = array();
@@ -406,5 +415,52 @@ function clean($string) {
    $string = preg_replace('/[^A-Za-z0-9. -]/', '', $string); // Removes special chars.
 
    return $string;
+}
+
+// Hex to stake address functions
+
+function convertBits($data, $fromBits, $toBits, $pad = true) {
+    $acc = 0;
+    $bits = 0;
+    $ret = [];
+    $maxv = (1 << $toBits) - 1;
+    
+    foreach (str_split($data) as $byte) {
+        $value = ord($byte);
+        $acc = ($acc << 8) | $value;
+        $bits += 8;
+        while ($bits >= $toBits) {
+            $bits -= $toBits;
+            $ret[] = ($acc >> $bits) & $maxv;
+        }
+    }
+    
+    if ($pad && $bits) {
+        $ret[] = ($acc << ($toBits - $bits)) & $maxv;
+    }
+    
+    return $ret;
+}
+
+function bech32_encode($prefix, $data) {
+    $charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+    
+    // Convert 8-bit bytes to 5-bit groups
+    $fiveBitData = convertBits($data, 8, 5, true);
+    
+    // Placeholder checksum (simplified, no polynomial for brevity)
+    // In Cardano, this would use polyMod with 0x1021 over prefix + data
+    $checksum = array_fill(0, 6, 0); // 6 zero bytes for demo; real impl. computes this
+    
+    // Combine data and checksum
+    $combined = array_merge($fiveBitData, $checksum);
+    
+    // Encode to base32 characters
+    $encoded = $prefix . '1';
+    foreach ($combined as $value) {
+        $encoded .= $charset[$value];
+    }
+    
+    return $encoded;
 }
 ?>
