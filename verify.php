@@ -107,6 +107,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					// Temporary counter, remove after testing
 					$temp_counter = 0;
 					foreach($response AS $index => $list){
+						$temp_counter++;
 						print_r($response);
 						if($temp_counter > 10){
 							exit;
@@ -138,7 +139,6 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					}
 
 					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
-						$temp_counter++;
 						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
 						curl_setopt( $tokench, CURLOPT_POST, 1);
