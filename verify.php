@@ -111,7 +111,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$havoc_worlds_assets = array();
 					foreach($response AS $index => $list){
 						$process = false;
-						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+						if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 							if(isset($list->inline_datum->value->bytes)){
 								// Your input hex string (28-byte stake key hash)
 								$hex = $list->inline_datum->value->bytes;
@@ -142,7 +142,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 									$counter++;
 									
 									// Havoc Worlds - align asset names with actual stake addresses of staker
-									if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
+									if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 										$havoc_worlds_assets[$token->asset_name] = $stakeAddress;
 									}
 					
