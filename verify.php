@@ -15,10 +15,9 @@ if(isset($_GET['verify'])){
 	$addresses = array();
 	
 	// Temporarily altered this function, revert after testing is completed for Havoc Worlds
-	//$addresses = getAllAddresses($conn);
+	$addresses = getAllAddresses($conn);
 	
 	// Add Havoc Worlds smart contract stake address
-	$addresses = array();
 	$addresses[] = 'stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34';
 	
 	$policies = array();
