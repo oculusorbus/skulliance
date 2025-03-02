@@ -115,12 +115,17 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 							// Your input hex string (28-byte stake key hash)
 							$hex = $list->inline_datum->value->bytes;
 
-							// Convert our hex-encoded payload to a 5-bit "byte" array
-							$bitdata = Bech32::hexToByteArray($hex);
+							// Prepend header (0xe1 for mainnet stake address)
+							$fullHex = "e1" . $hex;
 
-							// Bech32 encode the HRP + 5-bit data payload
-							$encoded = Bech32::encode($hrp, $bitdata);
-							echo 'Encoded: ' . $encoded . "\n";
+							// Convert hex to 5-bit array
+							$byteArray = Bech32::hexToByteArray($fullHex);
+
+							// Encode as Bech32 with "stake" prefix (mainnet)
+							$stakeAddress = Bech32::encode("stake", $byteArray);
+
+							echo $stakeAddress;
+							exit;
 						}
 						
 						foreach($list->asset_list AS $index => $token){
