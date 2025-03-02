@@ -100,6 +100,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 
 				//$_SESSION['userData']['nfts'] = array();
 				if(is_array($response)){
+					print_r($response);
+					exit;
 			    if(isset($response[0])){
 					$asset_names = array();
 					$counter = 0;
