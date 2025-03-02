@@ -4,7 +4,7 @@ include_once 'message.php';
 include 'webhooks.php';
 require_once 'Bech32.php';
 
-use PhpCardano\Bech32\Bech32;
+use CardanoPhp\Bech32\Bech32;
 
 if(isset($argv)){
 	parse_str(implode('&', array_slice($argv, 1)), $_GET);
