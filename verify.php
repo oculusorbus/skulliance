@@ -109,7 +109,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					foreach($response AS $index => $list){
 						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 							// Your input hex string (28-byte stake key hash)
-							$hex = $list->inline_datum->bytes;
+							$hex = $list->inline_datum->value->bytes;
 
 							// Step 1: Decode hex to bytes
 							$stakeKeyHash = hex2bin($hex); // 28 bytes
