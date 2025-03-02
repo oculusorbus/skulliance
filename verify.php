@@ -149,11 +149,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						curl_close( $tokench );
 			
 						if(is_array($tokenresponse)){
+							print_r($tokenresponse);
+							if($temp_counter > 10){
+								exit;
+							}
 							foreach($tokenresponse AS $index => $tokenresponsedata){
-								print_r($tokenresponsedata);
-								if($temp_counter > 10){
-									exit;
-								}
 								
 								// Prevent double creation or update of the same NFT for a specific user
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
