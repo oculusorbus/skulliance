@@ -4,6 +4,8 @@ include_once 'message.php';
 include 'webhooks.php';
 require_once 'Bech32.php';
 
+use PhpCardano\Bech32\Bech32;
+
 if(isset($argv)){
 	parse_str(implode('&', array_slice($argv, 1)), $_GET);
 }
@@ -109,7 +111,6 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					// Temporary counter, remove after testing
 					foreach($response AS $index => $list){
 						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
-							use PhpCardano\Bech32\Bech32;
 							
 							// Your input hex string (28-byte stake key hash)
 							$hex = $list->inline_datum->value->bytes;
