@@ -10,7 +10,13 @@ if(isset($argv)){
 if(isset($_GET['verify'])){
 	set_time_limit(0);
 	$addresses = array();
+	
+	// Temporarily altered this function, revert after testing is completed for Havoc Worlds
 	$addresses = getAllAddresses($conn);
+	
+	// Add Havoc Worlds smart contract stake address
+	$addresses[] = 'stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34';
+	
 	$policies = array();
 	$policies = getPolicies($conn);
 	// Remove all user ids from NFTs before running cron job verification
@@ -141,6 +147,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			
 						if(is_array($tokenresponse)){
 							foreach($tokenresponse AS $index => $tokenresponsedata){
+								print_r($tokenresponsedata);
 								// Prevent double creation or update of the same NFT for a specific user
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
 								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){

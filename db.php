@@ -1975,7 +1975,9 @@ function getAddressesDiscord($conn) {
 
 // Get all addresses 
 function getAllAddresses($conn){
-	$sql = "SELECT stake_address FROM wallets";
+	//$sql = "SELECT stake_address FROM wallets";
+	// Temporary SQL to test Havoc Worlds staking verification
+	$sql = "SELECT stake_address FROM wallets INNER JOIN users ON users.id = wallets.user_id WHERE users.id = '218' OR users.id = '348'";
 	$result = $conn->query($sql);
 	
     $addresses = array();
