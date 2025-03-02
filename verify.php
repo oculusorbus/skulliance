@@ -188,9 +188,11 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
 								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
 									
+									$nft_address = $address;
 									// Havoc Worlds - Check if address is smart contract wallet and lookup address of staker before saving NFT data
 									if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
-										$address = $havoc_worlds_assets[$tokenresponsedata->asset_name];
+										$nft_address = $havoc_worlds_assets[$tokenresponsedata->asset_name];
+										$user_id = getUserId($conn, $nft_address);
 									}
 									
 									// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
@@ -202,12 +204,12 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 											$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
 										// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
 										}else{
-											$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
+											$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
 											$asset_ids = $payload["asset_ids"];
 											$nft_owners = $payload["nft_owners"];
 										}
 									}else{
-										$payload = processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections);
+										$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
 										$asset_ids = $payload["asset_ids"];
 										$nft_owners = $payload["nft_owners"];
 									} // End if
