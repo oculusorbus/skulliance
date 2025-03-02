@@ -190,7 +190,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 									
 									// Havoc Worlds stuff
 									if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
-										echo $havoc_worlds_assets[$tokenresponsedata->fingerprint];
+										echo $havoc_worlds_assets[$tokenresponsedata->name];
 										exit;
 									}
 									
