@@ -151,7 +151,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						if(is_array($tokenresponse)){
 							foreach($tokenresponse AS $index => $tokenresponsedata){
 								print_r($tokenresponsedata);
-								if($temp_counter > 100){
+								if($temp_counter > 10){
 									exit;
 								}
 								
