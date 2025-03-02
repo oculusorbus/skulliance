@@ -130,7 +130,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 							$final_asset_lists[$index]["_asset_list"] = $batch_asset_list;
 						}
 					}
+					// Temporary counter, remove after testing
+					$temp_counter = 0;
 					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
+						$temp_counter++;
 						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
 						curl_setopt( $tokench, CURLOPT_POST, 1);
@@ -148,6 +151,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						if(is_array($tokenresponse)){
 							foreach($tokenresponse AS $index => $tokenresponsedata){
 								print_r($tokenresponsedata);
+								if($temp_counter > 100){
+									exit;
+								}
+								
 								// Prevent double creation or update of the same NFT for a specific user
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
 								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
