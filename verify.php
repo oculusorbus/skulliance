@@ -65,7 +65,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			}
 			// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
 			if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
-				$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?asset_list=not.is.null".$offset);
+				$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list,inline_datum&asset_list=not.is.null".$offset);
 				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
 				curl_setopt( $ch, CURLOPT_POST, 1);
 				curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
@@ -141,7 +141,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 									$asset_list["_asset_list"][$counter][1] = $token->asset_name;
 									$counter++;
 									
-									// Havoc Worlds
+									// Havoc Worlds - align asset names with actual stake addresses of staker
 									if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 										$havoc_worlds_assets[$token->asset_name] = $stakeAddress;
 										echo $token->asset_name."<br>";
@@ -189,12 +189,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								//if(!checkNFTOwner($conn, $tokenresponsedata->fingerprint, $user_id)){
 								if(!in_array($user_id."-".$tokenresponsedata->fingerprint, $nft_owners)){
 									
-									// Havoc Worlds stuff
+									// Havoc Worlds - Check if address is smart contract wallet and lookup address of staker before saving NFT data
 									if($address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
-										echo $havoc_worlds_assets[$tokenresponsedata->asset_name];
-										exit;
+										$address = $havoc_worlds_assets[$tokenresponsedata->asset_name];
 									}
-									
 									
 									// Check whether NFT already exists in the db. If so, just update it and don't fuck with cycling through NFT metadata that tends to randomly fail
 									if(in_array($tokenresponsedata->fingerprint, $asset_ids)){
