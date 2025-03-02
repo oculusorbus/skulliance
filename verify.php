@@ -108,8 +108,8 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$asset_list = array();
 					$asset_list["_asset_list"] = array();
 					// Temporary counter, remove after testing
+					$havoc_worlds_assets = array();
 					foreach($response AS $index => $list){
-						$havoc_worlds_assets = array();
 						$process = false;
 						if($list->stake_address == "stake1uxg4ucl2m0j4d6ycuychm0dzl2ed4rr33h2q5w8u4yhwtwg3jdp34"){
 							if(isset($list->inline_datum->value->bytes)){
