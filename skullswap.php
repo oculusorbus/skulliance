@@ -222,6 +222,12 @@ include 'header.php';
          this.isGrandFinale = false;
 
          this.allIcons = [
+             'https://www.skulliance.io/staking/icons/star.png',
+             'https://www.skulliance.io/staking/icons/dread.png',
+             'https://www.skulliance.io/staking/icons/hype.png',
+             'https://www.skulliance.io/staking/icons/sinder.png',
+             'https://www.skulliance.io/staking/icons/cyber.png',
+             'https://www.skulliance.io/staking/icons/crypt.png',
              'https://www.skulliance.io/staking/icons/dark.png',
              'https://www.skulliance.io/staking/icons/maxi.png',
              'https://www.skulliance.io/staking/icons/dank.png',
@@ -248,13 +254,7 @@ include 'header.php';
              'https://www.skulliance.io/staking/icons/dn.png',
              'https://www.skulliance.io/staking/icons/tribe.png',
              'https://www.skulliance.io/staking/icons/bung.png',
-			 'https://www.skulliance.io/staking/icons/havoc.png',
-             'https://www.skulliance.io/staking/icons/star.png',
-             'https://www.skulliance.io/staking/icons/dread.png',
-             'https://www.skulliance.io/staking/icons/hype.png',
-             'https://www.skulliance.io/staking/icons/sinder.png',
-             'https://www.skulliance.io/staking/icons/cyber.png',
-             'https://www.skulliance.io/staking/icons/crypt.png'
+			 'https://www.skulliance.io/staking/icons/havoc.png'
          ];
          this.specialIcons = {
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
