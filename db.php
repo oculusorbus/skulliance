@@ -5110,7 +5110,7 @@ function getRealms($conn, $sort, $group){
 					if(!in_array(getRealmID($conn), getRecentRealmsRaiding($conn, $row["realm_id"]))){
 						$raiding = true;
 						$value = "GET REVENGE";
-						print_r(getRecentRealmsRaiding($conn, $row["realm_id"]));
+						echo getRealmID($conn);
 					}
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 					if(($raw_defense == 0 && $raw_offense != 0) && !$raiding){
