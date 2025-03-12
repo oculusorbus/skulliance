@@ -5111,6 +5111,7 @@ function getRealms($conn, $sort, $group){
 						$raiding = true;
 						$value = "GET REVENGE";
 					}
+					echo $raiding;
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 					if(($raw_defense == 0 && $raw_offense != 0) && $raiding == false){
 						$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
