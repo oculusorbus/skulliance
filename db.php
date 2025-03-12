@@ -5242,7 +5242,6 @@ function getRecentRaidedRealms($conn){
 
 // Get recent realms raiding or raided limited by current portal level
 function getRecentRealmsRaiding($conn, $realm_id){
-	$offense_id = getRealmID($conn);
 	$portal_level = getRealmLocationLevel($conn, $realm_id, 1);
 	if($portal_level == 0){
 		$portal_level = 1;
