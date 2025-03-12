@@ -5106,15 +5106,20 @@ function getRealms($conn, $sort, $group){
 					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
 						$value = "FRIENDLY FIRE";
 					}
+					$raiding = false;
+					if(!in_array(getRealmID($conn), getRecentRealmsRaiding($conn, $row["realm_id"])){
+						$raiding = true;
+						$value = "GET REVENGE";
+					}
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
-					if($raw_defense == 0 && $raw_offense != 0){
+					if(($raw_defense == 0 && $raw_offense != 0) && $raiding == false){
 						$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
 						$unset = true;
-					}else if(($offense-$defense) > 3){
+					}else if((($offense-$defense) > 3) && $raiding == false){
 						$level_range = (($offense-$defense)-3);
 						$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
 						$unset = true;
-					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
+					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn)) || $raiding == true){
 						if(checkMaxRaids($conn, $offense_id)){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
@@ -5233,6 +5238,25 @@ function getRecentRaidedRealms($conn){
 		}
 		return $recent_realms;
 	}
+}
+
+// Get recent realms raiding or raided limited by current portal level
+function getRecentRealmsRaiding($conn, $realm_id){
+	$offense_id = getRealmID($conn);
+	$portal_level = getRealmLocationLevel($conn, $realm_id, 1);
+	if($portal_level == 0){
+		$portal_level = 1;
+	}
+	$sql = "SELECT defense_id FROM raids WHERE offense_id = '".$realm_id."' ORDER BY id DESC LIMIT ".$portal_level;
+	$result = $conn->query($sql);
+	
+	$recent_realms = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$recent_realms[$row['defense_id']] = $row['defense_id'];
+		}
+	}
+	return $recent_realms;
 }
 
 // Calculate Raw Raid Defense to better sort Realm results for strength and weakness
