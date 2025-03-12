@@ -5117,7 +5117,7 @@ function getRealms($conn, $sort, $group){
 							}
 						}else{
 							if($offense_id == $row["realm_id"]){
-								$value = "TOTAL ANNIHILATION";
+								$value = "SELF ANNIHILATE";
 							}else{
 								$value = "PUNISH TRAITOR";
 							}
