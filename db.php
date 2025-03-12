@@ -5103,13 +5103,17 @@ function getRealms($conn, $sort, $group){
 				$unset = false;
 				if(checkRealmRaidStatus($conn, $row["realm_id"])){
 					$value = "START RAID";
-					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
-						$value = "FRIENDLY FIRE";
-					}
 					$raiding = false;
 					if(in_array(getRealmID($conn), getRecentRealmsRaiding($conn, $row["realm_id"]))){
 						$raiding = true;
-						$value = "GET REVENGE";
+						$value = "ENACT REVENGE";
+					}
+					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
+						if(!$raiding){
+							$value = "FRIENDLY FIRE";
+						}else{
+							$value = "PUNISH TRAITOR";
+						}
 					}
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 					if(($raw_defense == 0 && $raw_offense != 0) && !$raiding){
