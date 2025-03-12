@@ -5107,7 +5107,7 @@ function getRealms($conn, $sort, $group){
 						$value = "FRIENDLY FIRE";
 					}
 					$raiding = false;
-					if(!in_array(getRealmID($conn), getRecentRealmsRaiding($conn, $row["realm_id"])){
+					if(!in_array(getRealmID($conn), getRecentRealmsRaiding($conn, $row["realm_id"]))){
 						$raiding = true;
 						$value = "GET REVENGE";
 					}
