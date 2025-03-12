@@ -5110,9 +5110,17 @@ function getRealms($conn, $sort, $group){
 					}
 					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
 						if(!$raiding){
-							$value = "FRIENDLY FIRE";
+							if($offense_id == $row["realm_id"]){
+								$value = "SELF DESTRUCT";
+							}else{
+								$value = "FRIENDLY FIRE";
+							}
 						}else{
-							$value = "PUNISH TRAITOR";
+							if($offense_id == $row["realm_id"]){
+								$value = "TOTAL ANNIHILATION";
+							}else{
+								$value = "PUNISH TRAITOR";
+							}
 						}
 					}
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
