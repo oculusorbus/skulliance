@@ -5110,16 +5110,17 @@ function getRealms($conn, $sort, $group){
 					if(!in_array(getRealmID($conn), getRecentRealmsRaiding($conn, $row["realm_id"]))){
 						$raiding = true;
 						$value = "GET REVENGE";
+						print_r(getRecentRealmsRaiding($conn, $row["realm_id"]));
 					}
 					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
-					if(($raw_defense == 0 && $raw_offense != 0)){
+					if(($raw_defense == 0 && $raw_offense != 0) && !$raiding){
 						$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
 						$unset = true;
-					}else if((($offense-$defense) > 3)){
+					}else if((($offense-$defense) > 3) && !$raiding){
 						$level_range = (($offense-$defense)-3);
 						$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
 						$unset = true;
-					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn))){
+					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn)) || $raiding){
 						if(checkMaxRaids($conn, $offense_id)){
 							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
