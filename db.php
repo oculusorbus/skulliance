@@ -726,33 +726,13 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);hideIneligibleMissions();toggleSections(\"quests\");'>Eligible</div>";*/
 	if($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			if($row["id"] <= 7){
-				if(isset($projects[$row["id"]])){
-					$eligible = " eligible";
-				}else{
-					$eligible = "";
-				}
-				//echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
-				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img title='".$row["name"]."' src='icons/".strtolower($row["currency"]).".png'/></div>";
+			if(isset($projects[$row["id"]])){
+				$eligible = " eligible";
+			}else{
+				$eligible = "";
 			}
-		}
-	}
-	echo "</div>";
-	echo "<div class='missions-filters'>";
-	
-	$result = $conn->query($sql);
-	
-	if($result->num_rows > 0) {
-		while($row = $result->fetch_assoc()) {
-			if($row["id"] >= 8){
-				if(isset($projects[$row["id"]])){
-					$eligible = " eligible";
-				}else{
-					$eligible = "";
-				}
-				//echo "<div class='missions-filter ".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
-				echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img title='".$row["name"]."' src='icons/".strtolower($row["currency"]).".png'/></div>";
-			}
+			//echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
+			echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img title='".$row["name"]."' src='icons/".strtolower($row["currency"]).".png'/></div>";
 		}
 	}
 	echo "</div>";
