@@ -854,7 +854,8 @@ li form {
 }
 
 .missions-filter img{
-	width: 40px;
+	width: auto;
+	height: 40px;
 }
 
 .missions-filter.eligible {
