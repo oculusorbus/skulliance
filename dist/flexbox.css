@@ -853,6 +853,10 @@ li form {
 	font-size: 1rem;
 }
 
+.missions-filter img{
+	width: 40px;
+}
+
 .missions-filter.eligible {
     border-color: #014579;
 }
