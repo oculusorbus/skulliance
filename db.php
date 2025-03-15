@@ -4049,7 +4049,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 }
 
 function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
-	$points = 5000;
+	$points = 10000;
 	$where = "";
 	if($monthly){
 		$where = "WHERE DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";
