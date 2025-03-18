@@ -6337,6 +6337,30 @@ function getFactionsRealmsMapData($conn){
 	            echo "\n"; // Only add newline if not the last row
 	        }
 	    }
+		
+	    while ($row = $result->fetch_assoc()) {
+	        $current_row++;
+	        echo '"'.$row['user_name'].'",';
+	        echo '"'.$row['user_image'].'",';
+	        echo '"'.$row['realm_name'].'",';
+	        echo '"'.$row['realm_image'].'",';
+	        echo '"'.$row['faction_name'].'"';
+	        if ($current_row < $row_count) {
+	            echo "\n"; // Only add newline if not the last row
+	        }
+	    }
+		
+	    while ($row = $result->fetch_assoc()) {
+	        $current_row++;
+	        echo '"'.$row['user_name'].'",';
+	        echo '"'.$row['user_image'].'",';
+	        echo '"'.$row['realm_name'].'",';
+	        echo '"'.$row['realm_image'].'",';
+	        echo '"'.$row['faction_name'].'"';
+	        if ($current_row < $row_count) {
+	            echo "\n"; // Only add newline if not the last row
+	        }
+	    }
     
 	    echo "`;";
 	    echo "</script>";
