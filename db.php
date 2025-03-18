@@ -6328,6 +6328,7 @@ function getFactionsRealmsMapData($conn){
 			echo '"'.$row['realm_image'].'"';
 		}
 		echo "`;";
+		echo "window.csvData = csvData;"
 		echo "</script>";
 	}
 }
