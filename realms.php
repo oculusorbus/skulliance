@@ -521,6 +521,9 @@ $conn->close();
 					if(selection == 'locations'){
 						document.getElementById('realm').style.display = "block";
 					}
+					if(selection == 'map'){
+						document.style.backgroundImage = "url('../images/darkwater.gif')";
+					}
 				}
 			}else{
 
