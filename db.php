@@ -6313,7 +6313,7 @@ function resetSwapScores($conn){
 }
 
 function getFactionsRealmsMapData($conn){
-	$sql = 'SELECT users.username AS user_name, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
+	$sql = 'SELECT users.username AS user_name, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id ORDER BY faction_name';
 	
 	$result = $conn->query($sql);
 
