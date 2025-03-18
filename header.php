@@ -9,6 +9,10 @@
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/circular-progress-bar.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+  <?php
+  if(basename($_SERVER['REQUEST_URI']) == "realms.php"){?>  
+	  <link href="dist/map.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+  <?php}?>
   <script type="text/javascript">
 	  // Toggle burger menu
 	  function toggleMenu(){
