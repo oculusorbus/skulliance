@@ -29,24 +29,22 @@ const earthyColors = {
     '#D3D3D3': { light: '#E8E8E8', dark: '#A9A9A9' }
 };*/
 
-/*
-#00ffff - Cyan
-#fa00ff - Magenta
-#b500ff - Purple
-#0066ff - Bright Blue
-#ff66ff - Cool Pink
-#00ffcc - Bright Teal-Green
-#6600ff - Deep Violet-Blue
-*/
-
 const earthyColors = {
-    '#00ffff': { light: '#00ffff', dark: '#00ffff' },
-    '#fa00ff': { light: '#fa00ff', dark: '#fa00ff' },
-    '#b500ff': { light: '#b500ff', dark: '#b500ff' },
-    '#0066ff': { light: '#0066ff', dark: '#0066ff' },
-    '#ff66ff': { light: '#ff66ff', dark: '#ff66ff' },
-    '#00ffcc': { light: '#00ffcc', dark: '#00ffcc' },
-    '#6600ff': { light: '#6600ff', dark: '#6600ff' }
+    '#00ffff': { light: '#00ffff', dark: '#00ffff' }, // Cyan
+    '#fa00ff': { light: '#fa00ff', dark: '#fa00ff' }, // Magenta
+    '#b500ff': { light: '#b500ff', dark: '#b500ff' }, // Purple
+    '#0066ff': { light: '#0066ff', dark: '#0066ff' }, // Bright Blue
+    '#ff66ff': { light: '#ff66ff', dark: '#ff66ff' }, // Cool Pink
+    '#00ffcc': { light: '#00ffcc', dark: '#00ffcc' }, // Bright Teal-Green
+    '#6600ff': { light: '#6600ff', dark: '#6600ff' }, // Deep Violet-Blue
+    '#0099ff': { light: '#0099ff', dark: '#0099ff' }, // Sky Blue
+    '#9900ff': { light: '#9900ff', dark: '#9900ff' }, // Vivid Purple
+    '#cc99ff': { light: '#cc99ff', dark: '#cc99ff' }, // Lavender
+    '#00ccff': { light: '#00ccff', dark: '#00ccff' }, // Aqua Blue
+    '#ff99ff': { light: '#ff99ff', dark: '#ff99ff' }, // Light Magenta
+    '#3366ff': { light: '#3366ff', dark: '#3366ff' }, // Medium Blue
+    '#9933ff': { light: '#9933ff', dark: '#9933ff' }, // Electric Purple
+    '#00ff99': { light: '#00ff99', dark: '#00ff99' }  // Mint Green
 };
 
 const popupOverlay = document.getElementById('popup-overlay');
