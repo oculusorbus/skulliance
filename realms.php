@@ -36,8 +36,8 @@ if(isset($_POST['realmText'])){
 if(isset($_SESSION['userData']['user_id'])){ ?>
 <!-- The flexible grid (content) -->
 
-<div class="row" id="row0">	
-	  <div class="side" id="locations">
+<div class="row" id="locations">	
+	  <div class="side">
 		<div class="content realm">
 			<?php
 			$projects = getProjects($conn, "core");
