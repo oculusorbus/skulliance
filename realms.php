@@ -304,11 +304,10 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	  </div>
 </div>
-<div class="row" id="row1">	
+<?php if($realm_status){ ?>
+<div class="row" id="stats">	
 	<div class="main">
-		<?php 
-		if($realm_status){
-			echo '<div id="stats">';
+		<?php
 			getTotalFactionRaids($conn);
 			getTotalRaids($conn);
 			echo '</div>';
@@ -337,11 +336,10 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				echo $incoming_completed;
 				echo '</div>';
 			}	
-			echo '</div>';
-		}
 		?>
 	</div>
 </div>
+<?php } ?>
 <?php if($realm_status){ ?>
 <div class="row" id="map" style="display:none">	
 	<div class="main">
@@ -357,9 +355,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	    </div>
 	</div>
 </div>
-<div class="row" id="row2">	
+<div class="row" id="realms">	
 	<div class="main">
-	<div id="realms">
 		<a name="realms" id="realms"></a>	
 		<h2>Realms</h2>	
 		<div class="content realms" id="filtered-content">
@@ -395,7 +392,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			}
 			?>
 		</div>
-	</div>
 	</div>
 </div>
 <?php } ?>
