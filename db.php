@@ -6327,15 +6327,16 @@ function getFactionsRealmsMapData($conn){
 	    $current_row = 0;
     
 	    while ($row = $result->fetch_assoc()) {
+
 	        echo '"'.$row['user_name'].'",';
 	        echo '"'.$row['user_image'].'",';
 	        echo '"'.$row['realm_name'].'",';
 	        echo '"'.$row['realm_image'].'",';
 	        echo '"'.$row['faction_name'].'"';
-
 	    }
 		
 	    while ($row = $result->fetch_assoc()) {
+
 	        echo '"'.$row['user_name'].'",';
 	        echo '"'.$row['user_image'].'",';
 	        echo '"'.$row['realm_name'].'",';
