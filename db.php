@@ -6327,7 +6327,6 @@ function getFactionsRealmsMapData($conn){
 	    $current_row = 0;
     
 	    while ($row = $result->fetch_assoc()) {
-	        $current_row++;
 	        echo '"'.$row['user_name'].'",';
 	        echo '"'.$row['user_image'].'",';
 	        echo '"'.$row['realm_name'].'",';
@@ -6337,7 +6336,6 @@ function getFactionsRealmsMapData($conn){
 	    }
 		
 	    while ($row = $result->fetch_assoc()) {
-	        $current_row++;
 	        echo '"'.$row['user_name'].'",';
 	        echo '"'.$row['user_image'].'",';
 	        echo '"'.$row['realm_name'].'",';
