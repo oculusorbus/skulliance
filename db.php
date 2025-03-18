@@ -6312,5 +6312,25 @@ function resetSwapScores($conn){
 	}
 }
 
+function getFactionsRealmsMapData($conn){
+	$sql = 'SELECT users.username AS user_name, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, concat("https://skulliance.io/staking/images/themes/",projects.id,".jpg") AS faction_image FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
+	
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		echo "<script type=text/javascript'>";
+		echo "const csvData = `";
+		echo '"user_name","user_image","realm_name","realm_image","faction_name"';
+		while($row = $result->fetch_assoc()) {
+			echo '"'.$row['user_name'].',"';
+			echo '"'.$row['user_image'].',"';
+			echo '"'.$row['realm_name'].',"';
+			echo '"'.$row['realm_image'].'"';
+		}
+		echo "`;";
+		echo "</script>"
+	}
+}
+
 /* END SKULL SWAP */
 ?>

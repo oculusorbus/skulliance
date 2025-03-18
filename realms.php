@@ -384,6 +384,20 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 	</div>
 </div>
+<div class="row" id="row3">	
+	<div class="main">
+    <div id="container-wrapper">
+        <div id="container"></div>
+    </div>
+    <div class="popup-overlay" id="popup-overlay">
+        <div class="popup-content">
+            <button class="popup-close" id="popup-close">X</button>
+            <img class="popup-image" id="popup-image" src="" alt="Realm Image">
+            <p class="popup-name" id="popup-name"></p>
+        </div>
+    </div>
+	</div>
+</div>
 <?php } ?>
 <?php
 }else{
@@ -423,6 +437,10 @@ $conn->close();
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
+<?php
+	getFactionsRealmsMapData($conn);
+?>
 <?php if($realm_status){ ?>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
