@@ -526,6 +526,10 @@ $conn->close();
 					}else{
 						document.body.style.backgroundImage = "none";
 					}
+				}else{
+					if(selection == 'locations'){
+						document.getElementById('map').style.display = "block";
+					}
 				}
 			}else{
 
