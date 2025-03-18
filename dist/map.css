@@ -27,7 +27,7 @@ html, body {
     display: grid;
     gap: 5px;
     border: 20px solid black;
-    /*border-image: linear-gradient(to bottom, var(--border-color-light), var(--border-color-dark)) 1;*/
+    border-image: linear-gradient(to bottom, var(--border-color-light), var(--border-color-dark)) 1;
     padding: 0;
     background-color: #2F2F2F;
     position: absolute;
@@ -42,7 +42,7 @@ html, body {
     color: #FFFFFF;
     font-size: 14px;
     text-align: center;
-    /*background-color: rgba(47, 47, 47, 0.7);*/
+    background-color: rgba(47, 47, 47, 0.7);
     padding: 2px;
     z-index: 1;
 }

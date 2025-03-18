@@ -18,6 +18,7 @@ const gap = 5;
 const borderWidth = 20;
 const minSpacing = 5;
 
+/*
 const earthyColors = {
     '#8B4513': { light: '#A0522D', dark: '#5C4033' },
     '#D2B48C': { light: '#DEB887', dark: '#A1887F' },
@@ -26,6 +27,26 @@ const earthyColors = {
     '#006400': { light: '#228B22', dark: '#004D00' },
     '#B0C4DE': { light: '#D3DCE6', dark: '#87AFC7' },
     '#D3D3D3': { light: '#E8E8E8', dark: '#A9A9A9' }
+};*/
+
+/*
+#00ffff - Cyan
+#fa00ff - Magenta
+#b500ff - Purple
+#0066ff - Bright Blue
+#ff66ff - Cool Pink
+#00ffcc - Bright Teal-Green
+#6600ff - Deep Violet-Blue
+*/
+
+const earthyColors = {
+    '#00ffff': { light: '#00ffff', dark: '#00ffff' },
+    '#fa00ff': { light: '#fa00ff', dark: '#fa00ff' },
+    '#b500ff': { light: '#b500ff', dark: '#b500ff' },
+    '#0066ff': { light: '#0066ff', dark: '#0066ff' },
+    '#ff66ff': { light: '#ff66ff', dark: '#ff66ff' },
+    '#00ffcc': { light: '#00ffcc', dark: '#00ffcc' },
+    '#6600ff': { light: '#6600ff', dark: '#6600ff' }
 };
 
 const popupOverlay = document.getElementById('popup-overlay');
