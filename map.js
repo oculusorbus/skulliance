@@ -19,21 +19,21 @@ const borderWidth = 20;
 const minSpacing = 5;
 
 const earthyColors = {
-    '#00ffff': { light: '#66ffff', dark: '#00cccc' }, // Cyan
-    '#fa00ff': { light: '#ff66ff', dark: '#c700cc' }, // Magenta
-    '#b500ff': { light: '#cc66ff', dark: '#8c00cc' }, // Purple
-    '#0077ff': { light: '#66aaff', dark: '#0059cc' }, // Deep Blue
-    '#00ccdd': { light: '#66e6ee', dark: '#0099aa' }, // Teal
-    '#9933cc': { light: '#b366e6', dark: '#732699' }, // Deep Violet
-    '#ff66cc': { light: '#ff99e6', dark: '#cc3399' }, // Hot Pink
-    '#00b3b3': { light: '#66cccc', dark: '#008080' }, // Dark Cyan
-    '#4d4dff': { light: '#8080ff', dark: '#3333cc' }, // Indigo
-    '#cc99ff': { light: '#e6ccff', dark: '#9966cc' }, // Light Violet
-    '#009999': { light: '#66b3b3', dark: '#006666' }, // Cool Green
-    '#ff80ff': { light: '#ffb3ff', dark: '#cc66cc' }, // Light Magenta
-    '#3366cc': { light: '#6699ff', dark: '#264c99' }, // Medium Blue
-    '#8000ff': { light: '#b366ff', dark: '#6600cc' }, // Bright Violet
-    '#00e6b3': { light: '#66ffcc', dark: '#00b38c' }  // Aqua Green
+    '#1A1A2E': { light: '#3A3A5E', dark: '#0F0F1A' }, // Deep navy blue
+    '#2E2E48': { light: '#4E4E78', dark: '#1A1A2A' }, // Dark slate blue
+    '#4A4063': { light: '#6A6093', dark: '#2E263F' }, // Muted purple
+    '#6D5D8D': { light: '#8D7DAD', dark: '#4D3D6D' }, // Soft lilac
+    '#8A7CA3': { light: '#AA9CC3', dark: '#6A5C83' }, // Light lavender
+    '#A68DAD': { light: '#C6ADB3', dark: '#866D93' }, // Pale purple
+    '#B5A3C7': { light: '#D5C3E7', dark: '#9583A7' }, // Light purple-gray
+    '#D9B8C4': { light: '#F9D8E4', dark: '#B998A4' }, // Warm pinkish-purple
+    '#E8D4D4': { light: '#FFF4F4', dark: '#C8B4B4' }, // Very light pink
+    '#F2A365': { light: '#FFC395', dark: '#D28345' }, // Warm orange
+    '#F28C38': { light: '#FFAC68', dark: '#D26C18' }, // Bright orange
+    '#F27036': { light: '#FF9066', dark: '#D25016' }, // Intense orange-red
+    '#D95D39': { light: '#F97D59', dark: '#B93D19' }, // Deep orange-red
+    '#4A4063': { light: '#6A6093', dark: '#2E263F' }, // Muted purple (repeated to fill 15 slots)
+    '#6D5D8D': { light: '#8D7DAD', dark: '#4D3D6D' }  // Soft lilac (repeated to fill 15 slots)
 };
 
 // Track available colors globally
