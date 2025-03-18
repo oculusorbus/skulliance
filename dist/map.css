@@ -21,6 +21,7 @@ html, body {
     );*/
 	background-image: url('../images/darkwater.gif');
 	background-size: cover;
+	border: 20px solid black;
 }
 #container {
     position: relative;
