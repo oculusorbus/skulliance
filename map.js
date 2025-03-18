@@ -22,18 +22,18 @@ const earthyColors = {
     '#00ffff': { light: '#00ffff', dark: '#00ffff' }, // Cyan
     '#fa00ff': { light: '#fa00ff', dark: '#fa00ff' }, // Magenta
     '#b500ff': { light: '#b500ff', dark: '#b500ff' }, // Purple
-    '#0066ff': { light: '#0066ff', dark: '#0066ff' }, // Bright Blue
-    '#ff66ff': { light: '#ff66ff', dark: '#ff66ff' }, // Cool Pink
-    '#00ffcc': { light: '#00ffcc', dark: '#00ffcc' }, // Bright Teal-Green
-    '#6600ff': { light: '#6600ff', dark: '#6600ff' }, // Deep Violet-Blue
-    '#0099ff': { light: '#0099ff', dark: '#0099ff' }, // Sky Blue
-    '#9900ff': { light: '#9900ff', dark: '#9900ff' }, // Vivid Purple
-    '#cc99ff': { light: '#cc99ff', dark: '#cc99ff' }, // Lavender
-    '#00ccff': { light: '#00ccff', dark: '#00ccff' }, // Aqua Blue
-    '#ff99ff': { light: '#ff99ff', dark: '#ff99ff' }, // Light Magenta
-    '#3366ff': { light: '#3366ff', dark: '#3366ff' }, // Medium Blue
-    '#9933ff': { light: '#9933ff', dark: '#9933ff' }, // Electric Purple
-    '#00ff99': { light: '#00ff99', dark: '#00ff99' }  // Mint Green
+    '#0077ff': { light: '#0077ff', dark: '#0077ff' }, // Deep Blue
+    '#00ccdd': { light: '#00ccdd', dark: '#00ccdd' }, // Teal
+    '#9933cc': { light: '#9933cc', dark: '#9933cc' }, // Deep Violet
+    '#ff66cc': { light: '#ff66cc', dark: '#ff66cc' }, // Hot Pink
+    '#00b3b3': { light: '#00b3b3', dark: '#00b3b3' }, // Dark Cyan
+    '#4d4dff': { light: '#4d4dff', dark: '#4d4dff' }, // Indigo
+    '#cc99ff': { light: '#cc99ff', dark: '#cc99ff' }, // Light Violet
+    '#009999': { light: '#009999', dark: '#009999' }, // Cool Green
+    '#ff80ff': { light: '#ff80ff', dark: '#ff80ff' }, // Light Magenta
+    '#3366cc': { light: '#3366cc', dark: '#3366cc' }, // Medium Blue
+    '#8000ff': { light: '#8000ff', dark: '#8000ff' }, // Bright Violet
+    '#00e6b3': { light: '#00e6b3', dark: '#00e6b3' }  // Aqua Green
 };
 
 // Track available colors globally
