@@ -29,7 +29,7 @@ html, body {
     display: grid;
     gap: 5px;
     border: 20px solid black;
-    border-image: linear-gradient(to bottom, var(--border-color-light), var(--border-color-dark)) 1;
+    border-image: radial-gradient(circle, var(--border-color-light), var(--border-color-dark)) 1;
     padding: 0;
     background-color: #000;
     position: absolute;
