@@ -60,8 +60,7 @@ html, body {
     position: relative;
     overflow: hidden;
     transition: background-image 0.3s ease;
-    background-repeat: no-repeat;
-	background-size: cover;
+    background-repeat: repeat;
     cursor: pointer;
 }
 .tile.empty {
