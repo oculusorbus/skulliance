@@ -18,17 +18,6 @@ const gap = 5;
 const borderWidth = 20;
 const minSpacing = 5;
 
-/*
-const earthyColors = {
-    '#8B4513': { light: '#A0522D', dark: '#5C4033' },
-    '#D2B48C': { light: '#DEB887', dark: '#A1887F' },
-    '#696969': { light: '#808080', dark: '#4F4F4F' },
-    '#228B22': { light: '#32CD32', dark: '#006400' },
-    '#006400': { light: '#228B22', dark: '#004D00' },
-    '#B0C4DE': { light: '#D3DCE6', dark: '#87AFC7' },
-    '#D3D3D3': { light: '#E8E8E8', dark: '#A9A9A9' }
-};*/
-
 const earthyColors = {
     '#00ffff': { light: '#00ffff', dark: '#00ffff' }, // Cyan
     '#fa00ff': { light: '#fa00ff', dark: '#fa00ff' }, // Magenta
@@ -46,6 +35,20 @@ const earthyColors = {
     '#9933ff': { light: '#9933ff', dark: '#9933ff' }, // Electric Purple
     '#00ff99': { light: '#00ff99', dark: '#00ff99' }  // Mint Green
 };
+
+// Track available colors globally
+let availableColors = Object.keys(earthyColors);
+
+// Function to get a unique color
+function getUniqueColor() {
+    if (availableColors.length === 0) {
+        availableColors = Object.keys(earthyColors); // Reset when all colors are used
+    }
+    const randomIndex = Math.floor(Math.random() * availableColors.length);
+    const selectedColor = availableColors[randomIndex];
+    availableColors.splice(randomIndex, 1); // Remove used color
+    return selectedColor;
+}
 
 const popupOverlay = document.getElementById('popup-overlay');
 const popupImage = document.getElementById('popup-image');
@@ -94,7 +97,8 @@ const factionGrids = factions.map(faction => {
     }
 
     const totalTilesFinal = width * height;
-    const baseColor = Object.keys(earthyColors)[Math.floor(Math.random() * Object.keys(earthyColors).length)];
+    // Replace random selection with getUniqueColor()
+    const baseColor = getUniqueColor();
     const { light, dark } = earthyColors[baseColor];
 
     const factionGrid = document.createElement('div');
@@ -293,10 +297,16 @@ function packGrids() {
     console.log("Packed grids:", placedGrids.length, "out of", factionGrids.length);
 }
 
-packGrids();
+// Reset availableColors before packing grids to ensure fresh start on each pack
+function resetColorsAndPack() {
+    availableColors = Object.keys(earthyColors); // Reset color pool
+    packGrids();
+}
+
+resetColorsAndPack(); // Initial pack
 
 let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(packGrids, 200);
+    resizeTimeout = setTimeout(resetColorsAndPack, 200); // Reset colors on resize
 });
