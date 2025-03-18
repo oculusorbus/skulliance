@@ -418,6 +418,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <?php if($realm_status){ ?>
 <div id="quick-menu">
 	<img id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
+	<img id="map-icon" title="Map" src="icons/map.png" onclick="toggleSections('map');">
 	<img id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
 	<img id="stats-icon" title="Stats" src="icons/stats.png" onclick="toggleSections('stats');">
 	<img id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
@@ -497,6 +498,8 @@ $conn->close();
 			window.scrollTo(0, 0);
 			document.getElementById('locations').style.display = "none";
 			document.getElementById('locations-icon').classList.remove("selected");
+			document.getElementById('map').style.display = "none";
+			document.getElementById('map-icon').classList.remove("selected");
 			document.getElementById('realm').style.display = "none";
 			document.getElementById('realm-icon').classList.remove("selected");
 			document.getElementById('stats').style.display = "none";
