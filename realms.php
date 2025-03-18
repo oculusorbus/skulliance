@@ -522,7 +522,9 @@ $conn->close();
 						document.getElementById('realm').style.display = "block";
 					}
 					if(selection == 'map'){
-						document.style.backgroundImage = "url('../images/darkwater.gif')";
+						document.body.style.backgroundImage = "url('../images/darkwater.gif')";
+					}else{
+						document.body.style.backgroundImage = "none";
 					}
 				}
 			}else{
