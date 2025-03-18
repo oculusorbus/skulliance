@@ -19,21 +19,21 @@ const borderWidth = 20;
 const minSpacing = 5;
 
 const earthyColors = {
-    '#00ffff': { light: '#00ffff', dark: '#00ffff' }, // Cyan
-    '#fa00ff': { light: '#fa00ff', dark: '#fa00ff' }, // Magenta
-    '#b500ff': { light: '#b500ff', dark: '#b500ff' }, // Purple
-    '#0077ff': { light: '#0077ff', dark: '#0077ff' }, // Deep Blue
-    '#00ccdd': { light: '#00ccdd', dark: '#00ccdd' }, // Teal
-    '#9933cc': { light: '#9933cc', dark: '#9933cc' }, // Deep Violet
-    '#ff66cc': { light: '#ff66cc', dark: '#ff66cc' }, // Hot Pink
-    '#00b3b3': { light: '#00b3b3', dark: '#00b3b3' }, // Dark Cyan
-    '#4d4dff': { light: '#4d4dff', dark: '#4d4dff' }, // Indigo
-    '#cc99ff': { light: '#cc99ff', dark: '#cc99ff' }, // Light Violet
-    '#009999': { light: '#009999', dark: '#009999' }, // Cool Green
-    '#ff80ff': { light: '#ff80ff', dark: '#ff80ff' }, // Light Magenta
-    '#3366cc': { light: '#3366cc', dark: '#3366cc' }, // Medium Blue
-    '#8000ff': { light: '#8000ff', dark: '#8000ff' }, // Bright Violet
-    '#00e6b3': { light: '#00e6b3', dark: '#00e6b3' }  // Aqua Green
+    '#00ffff': { light: '#66ffff', dark: '#00cccc' }, // Cyan
+    '#fa00ff': { light: '#ff66ff', dark: '#c700cc' }, // Magenta
+    '#b500ff': { light: '#cc66ff', dark: '#8c00cc' }, // Purple
+    '#0077ff': { light: '#66aaff', dark: '#0059cc' }, // Deep Blue
+    '#00ccdd': { light: '#66e6ee', dark: '#0099aa' }, // Teal
+    '#9933cc': { light: '#b366e6', dark: '#732699' }, // Deep Violet
+    '#ff66cc': { light: '#ff99e6', dark: '#cc3399' }, // Hot Pink
+    '#00b3b3': { light: '#66cccc', dark: '#008080' }, // Dark Cyan
+    '#4d4dff': { light: '#8080ff', dark: '#3333cc' }, // Indigo
+    '#cc99ff': { light: '#e6ccff', dark: '#9966cc' }, // Light Violet
+    '#009999': { light: '#66b3b3', dark: '#006666' }, // Cool Green
+    '#ff80ff': { light: '#ffb3ff', dark: '#cc66cc' }, // Light Magenta
+    '#3366cc': { light: '#6699ff', dark: '#264c99' }, // Medium Blue
+    '#8000ff': { light: '#b366ff', dark: '#6600cc' }, // Bright Violet
+    '#00e6b3': { light: '#66ffcc', dark: '#00b38c' }  // Aqua Green
 };
 
 // Track available colors globally
