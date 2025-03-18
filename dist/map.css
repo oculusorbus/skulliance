@@ -20,8 +20,8 @@ html, body {
         rgba(0, 105, 148, 0.9),
         rgba(0, 51, 102, 1)
     );*/
-	background-image: url('../images/darkworld.jpg');
-	background-size: contain;
+	background-image: url('../images/darkworld.png');
+	background-size: cover;
 	outline: 20px solid black;
 }
 #container {
