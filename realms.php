@@ -450,7 +450,7 @@ $conn->close();
 		document.getElementById('raids').style.position = "relative";
 		document.getElementById('raids').style.top = '-55px';
 		document.getElementById('realms').style.position = "relative";
-		document.getElementById('realms').style.top = '-110px';
+		document.getElementById('realms').style.top = '-80px';
 		document.getElementById('realm').style.position = "relative";
 		document.getElementById('realm').style.top = '-25px';
 		if($(window).width() > 700){
