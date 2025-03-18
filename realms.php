@@ -441,6 +441,8 @@ $conn->close();
 	//if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
+		document.getElementById('map').style.position = "relative";
+		document.getElementById('map').style.top = '-55px';
 		document.getElementById('stats').style.position = "relative";
 		document.getElementById('stats').style.top = '-55px';
 		document.getElementById('raids').style.position = "relative";
@@ -463,6 +465,8 @@ $conn->close();
 				document.getElementById('locations').style.display = "none";
 				document.getElementById('locations-icon').classList.remove("selected");
 			}
+			document.getElementById('map').style.display = "none";
+			document.getElementById('map-icon').classList.remove("selected");
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
@@ -476,6 +480,8 @@ $conn->close();
 				document.getElementById('realm').style.display = "none";
 				document.getElementById('realm-icon').classList.remove("selected");
 			}
+			document.getElementById('map').style.display = "none";
+			document.getElementById('map-icon').classList.remove("selected");
 			document.getElementById('stats').style.display = "none";
 			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
