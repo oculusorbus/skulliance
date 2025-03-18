@@ -11,7 +11,7 @@ html, body {
     justify-content: center;
     align-items: center;
     min-height: 82vh;
-    overflow: auto;
+    /*overflow: auto;*/
 	/*
     background: radial-gradient(circle at center, 
         rgba(173, 216, 230, 0.8),
