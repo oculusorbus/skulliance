@@ -456,7 +456,7 @@ $conn->close();
 		if($(window).width() > 700){
 			document.getElementById('realm-icon').style.display = "none";
 		}else{
-			document.getElementById('realm-icon').style.display = "none";
+			document.getElementById('map-icon').style.display = "none";
 		}
 		if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
 			if($(window).width() > 700){
