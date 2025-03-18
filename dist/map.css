@@ -12,80 +12,17 @@ html, body {
     justify-content: center;
     align-items: center;
     min-height: 79vh;
-    position: relative;
-    overflow: hidden; /* Prevent overflow from animations */
-    background-image: url('../images/darkworld.png');
-    background-size: cover;
-    background-position: center;
-    outline: 20px solid black;
-}
-
-/* Parallax Effect with Pseudo-Element */
-#container-wrapper::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: inherit; /* Inherit the darkworld.png */
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed; /* Creates a subtle parallax */
-    z-index: -1;
-    transform: translateY(10%); /* Initial offset for parallax */
-    transition: transform 0.1s ease-out; /* Smooth transition for scroll effect */
-}
-
-/* Pulsing Glow Overlay */
-#container-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 50% 50%, 
-        rgba(255, 140, 51, 0.1), /* Vibrant orange from palette */
-        rgba(173, 216, 230, 0),  /* Light blue fade */
-        rgba(0, 105, 148, 0.05), /* Darker blue */
-        rgba(0, 51, 102, 0)      /* Deep blue */
-    );
-    z-index: -1;
-    animation: pulse 10s infinite alternate; /* Slow pulsing effect */
-}
-
-/* Particle Animation */
-#container-wrapper .particles {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Prevents interference with content */
-    z-index: -1;
-}
-
-.particle {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: rgba(255, 215, 0, 0.8); /* Glowing yellow from palette */
-    border-radius: 50%;
-    animation: float 15s infinite linear;
-}
-
-@keyframes float {
-    0% { transform: translateY(100vh) translateX(-50vw); opacity: 0.8; }
-    20% { opacity: 0.4; }
-    100% { transform: translateY(-10vh) translateX(50vw); opacity: 0; }
-}
-
-/* Pulsing Animation */
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(1.1); opacity: 0.5; }
-    100% { transform: scale(1); opacity: 0.3; }
+    /*overflow: auto;*/
+	/*
+    background: radial-gradient(circle at center, 
+        rgba(173, 216, 230, 0.8),
+        rgba(64, 164, 223, 0.7),
+        rgba(0, 105, 148, 0.9),
+        rgba(0, 51, 102, 1)
+    );*/
+	background-image: url('../images/darkworld.png');
+	background-size: cover;
+	outline: 20px solid black;
 }
 #container {
     position: relative;

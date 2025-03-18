@@ -50,18 +50,6 @@ function getUniqueColor() {
     return selectedColor;
 }
 
-function createParticles(count) {
-    const container = document.querySelector('#container-wrapper');
-    for (let i = 0; i < count; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + 'vw';
-        particle.style.animationDelay = Math.random() * 15 + 's';
-        container.appendChild(particle);
-    }
-}
-createParticles(20); // Adjust number of particles as needed
-
 const popupOverlay = document.getElementById('popup-overlay');
 const popupImage = document.getElementById('popup-image');
 const popupName = document.getElementById('popup-name');
