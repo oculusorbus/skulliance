@@ -6318,21 +6318,28 @@ function getFactionsRealmsMapData($conn){
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
-		echo "<script type=text/javascript'>";
-		echo "const csvData = `";
-		echo '"user_name","user_image","realm_name","realm_image","faction_name"';
-		echo "\n";
-		while($row = $result->fetch_assoc()) {
-			echo '"'.$row['user_name'].'",';
-			echo '"'.$row['user_image'].'",';
-			echo '"'.$row['realm_name'].'",';
-			echo '"'.$row['realm_image'].'",';
-			echo '"'.$row['faction_name'].'"';
-			echo "\n";
-		}
-		echo "`;";
-		echo "window.csvData = csvData;";
-		echo "</script>";
+	    echo "<script type='text/javascript'>";
+	    echo "window.csvData = `";
+	    echo '"user_name","user_image","realm_name","realm_image","faction_name"';
+	    echo "\n";
+    
+	    $row_count = $result->num_rows;
+	    $current_row = 0;
+    
+	    while ($row = $result->fetch_assoc()) {
+	        $current_row++;
+	        echo '"'.$row['user_name'].'",';
+	        echo '"'.$row['user_image'].'",';
+	        echo '"'.$row['realm_name'].'",';
+	        echo '"'.$row['realm_image'].'",';
+	        echo '"'.$row['faction_name'].'"';
+	        if ($current_row < $row_count) {
+	            echo "\n"; // Only add newline if not the last row
+	        }
+	    }
+    
+	    echo "`;";
+	    echo "</script>";
 	}
 }
 
