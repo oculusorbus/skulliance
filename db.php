@@ -4384,7 +4384,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 		$where = "WHERE reward = '0'";
 		$attempts = "attempts";
 	}
-	$sql =" SELECT MAX(score) AS max_score, ".$attempts.", user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
+	$sql =" SELECT ".($weekly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY MAX(score) DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -4397,7 +4397,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 		$description = "";
 		$counter = 0;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Score</th><th>Attempts</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "Score" : "Average Score")."</th><th>Attempts</th>";
 		if($weekly){
 			echo "<th>Projected Rewards</th>";
 		}
