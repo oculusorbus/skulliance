@@ -343,7 +343,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 </div>
 <?php if($realm_status){ ?>
-<div class="row" id="map">	
+<div class="row" id="map" style="display:none">	
 	<div class="main">
 	    <div id="container-wrapper">
 	        <div id="container"></div>
