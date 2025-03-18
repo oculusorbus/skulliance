@@ -1368,7 +1368,7 @@ section.active {
 
 .show-menu{
   display: flex !important;
-  z-index: 2 !important;
+  z-index: 3 !important;
 }
 .hide_menu{
 	  display: none !important;
@@ -1385,6 +1385,7 @@ section.active {
     padding: 5px;
 	padding-top: 10px;
 	left: 0px;
+	z-index: 2;
 }
 
 #quick-menu img {
