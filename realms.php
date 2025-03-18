@@ -343,6 +343,20 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 </div>
 <?php if($realm_status){ ?>
+<div class="row" id="map">	
+	<div class="main">
+	    <div id="container-wrapper">
+	        <div id="container"></div>
+	    </div>
+	    <div class="popup-overlay" id="popup-overlay">
+	        <div class="popup-content">
+	            <button class="popup-close" id="popup-close">X</button>
+	            <img class="popup-image" id="popup-image" src="" alt="Realm Image">
+	            <p class="popup-name" id="popup-name"></p>
+	        </div>
+	    </div>
+	</div>
+</div>
 <div class="row" id="row2">	
 	<div class="main">
 	<div id="realms">
@@ -382,20 +396,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			?>
 		</div>
 	</div>
-	</div>
-</div>
-<div class="row" id="map">	
-	<div class="main">
-	    <div id="container-wrapper">
-	        <div id="container"></div>
-	    </div>
-	    <div class="popup-overlay" id="popup-overlay">
-	        <div class="popup-content">
-	            <button class="popup-close" id="popup-close">X</button>
-	            <img class="popup-image" id="popup-image" src="" alt="Realm Image">
-	            <p class="popup-name" id="popup-name"></p>
-	        </div>
-	    </div>
 	</div>
 </div>
 <?php } ?>
