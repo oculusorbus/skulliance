@@ -6322,9 +6322,9 @@ function getFactionsRealmsMapData($conn){
 		echo "const csvData = `";
 		echo '"user_name","user_image","realm_name","realm_image","faction_name"';
 		while($row = $result->fetch_assoc()) {
-			echo '"'.$row['user_name'].',"';
-			echo '"'.$row['user_image'].',"';
-			echo '"'.$row['realm_name'].',"';
+			echo '"'.$row['user_name'].'",';
+			echo '"'.$row['user_image'].'",';
+			echo '"'.$row['realm_name'].'",';
 			echo '"'.$row['realm_image'].'"';
 		}
 		echo "`;";
