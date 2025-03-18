@@ -6340,7 +6340,7 @@ function getFactionsRealmsMapData($conn){
 		
 	    while ($row = $result->fetch_assoc()) {
 	        $current_row++;
-	        echo '"'.$row['user_name'].'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['user_image'].'",';
 	        echo '"'.$row['realm_name'].'",';
 	        echo '"'.$row['realm_image'].'",';
@@ -6352,7 +6352,7 @@ function getFactionsRealmsMapData($conn){
 		
 	    while ($row = $result->fetch_assoc()) {
 	        $current_row++;
-	        echo '"'.$row['user_name'].'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['user_image'].'",';
 	        echo '"'.$row['realm_name'].'",';
 	        echo '"'.$row['realm_image'].'",';
