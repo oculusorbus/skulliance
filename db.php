@@ -6341,9 +6341,9 @@ function getFactionsRealmsMapData($conn){
 	    while ($row = $result->fetch_assoc()) {
 	        $current_row++;
 	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
-	        echo '"'.$row['user_image'].'",';
 	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
-	        echo '"'.$row['realm_image'].'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['faction_name'].'"';
 	        if ($current_row < $row_count) {
 	            echo "\n"; // Only add newline if not the last row
@@ -6353,9 +6353,9 @@ function getFactionsRealmsMapData($conn){
 	    while ($row = $result->fetch_assoc()) {
 	        $current_row++;
 	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
-	        echo '"'.$row['user_image'].'",';
 	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
-	        echo '"'.$row['realm_image'].'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['faction_name'].'"';
 	        if ($current_row < $row_count) {
 	            echo "\n"; // Only add newline if not the last row
