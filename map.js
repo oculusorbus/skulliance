@@ -1,4 +1,4 @@
-const rows = csvData.split('\n').slice(1);
+const rows = window.csvData.split('\n').slice(1);
 const data = rows.map(row => {
     const [user_name, user_image, realm_name, realm_image, faction_name] = row.split('","').map(val => val.replace(/^"|"$/g, ''));
     return { user_name, user_image, realm_name, realm_image, faction_name };
