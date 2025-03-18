@@ -6326,7 +6326,9 @@ function getFactionsRealmsMapData($conn){
 			echo '"'.$row['user_name'].'",';
 			echo '"'.$row['user_image'].'",';
 			echo '"'.$row['realm_name'].'",';
-			echo '"'.$row['realm_image'].'"';
+			echo '"'.$row['realm_image'].'",';
+			echo '"'.$row['faction_name'].'",';
+			echo '"'.$row['faction_image'].'"';
 			echo "\n";
 		}
 		echo "`;";
