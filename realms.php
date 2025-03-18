@@ -527,7 +527,7 @@ $conn->close();
 						document.body.style.backgroundImage = "none";
 					}
 				}else{
-					if(selection == 'locations'){
+					if(selection == 'realm'){
 						document.getElementById('map').style.display = "block";
 					}
 				}
