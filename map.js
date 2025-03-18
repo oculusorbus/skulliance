@@ -19,21 +19,24 @@ const borderWidth = 20;
 const minSpacing = 5;
 
 const earthyColors = {
-    '#2B1E5A': { light: '#4B3E8A', dark: '#1B0E3A' }, // Deep cosmic purple
-    '#4A3A8D': { light: '#6A5ABD', dark: '#2A1A5D' }, // Muted violet
-    '#6E5ABF': { light: '#8E7AEF', dark: '#4E3A8F' }, // Bright purple
-    '#A28FE6': { light: '#C2AFFF', dark: '#826FC6' }, // Light lavender
-    '#D9C7FF': { light: '#F9E7FF', dark: '#B9A7DF' }, // Very light purple
-    '#FF4D8C': { light: '#FF7DAC', dark: '#DF2D6C' }, // Neon pink
-    '#FF80B3': { light: '#FFA0D3', dark: '#DF6093' }, // Soft pink
-    '#FF3366': { light: '#FF6386', dark: '#DF1346' }, // Bright magenta
-    '#00E6B3': { light: '#33FFD3', dark: '#00C693' }, // Aqua green
-    '#00B3E6': { light: '#33D3FF', dark: '#0093C6' }, // Bright cyan
-    '#66E6FF': { light: '#96FFFF', dark: '#46C6DF' }, // Light cyan
-    '#FF8C33': { light: '#FFAC63', dark: '#DF6C13' }, // Vibrant orange
-    '#FFBF66': { light: '#FFDF96', dark: '#DF9F46' }, // Light orange
-    '#33CC99': { light: '#63ECB9', dark: '#13AC79' }, // Teal green
-    '#8C33FF': { light: '#AC63FF', dark: '#6C13DF' }  // Electric purple
+    '#FF4D8C': { light: '#FF7DAC', dark: '#DF2D6C' }, // Neon Pink (from NFT grid)
+    '#FF80B3': { light: '#FFA0D3', dark: '#DF6093' }, // Soft Pink (from NFT grid)
+    '#FF3366': { light: '#FF6386', dark: '#DF1346' }, // Bright Magenta (from NFT grid)
+    '#00E6B3': { light: '#33FFD3', dark: '#00C693' }, // Aqua Green (from NFT grid)
+    '#00B3E6': { light: '#33D3FF', dark: '#0093C6' }, // Bright Cyan (from NFT grid)
+    '#66E6FF': { light: '#96FFFF', dark: '#46C6DF' }, // Light Cyan (from NFT grid)
+    '#FF8C33': { light: '#FFAC63', dark: '#DF6C13' }, // Vibrant Orange (from NFT grid)
+    '#FFBF66': { light: '#FFDF96', dark: '#DF9F46' }, // Light Orange (from NFT grid)
+    '#33CC99': { light: '#63ECB9', dark: '#13AC79' }, // Teal Green (from NFT grid)
+    '#8C33FF': { light: '#AC63FF', dark: '#6C13DF' }, // Electric Purple (from NFT grid)
+    '#00FFFF': { light: '#66FFFF', dark: '#00CCCC' }, // Cyan (from original)
+    '#FA00FF': { light: '#FF66FF', dark: '#C700CC' }, // Magenta (from original)
+    '#FF66CC': { light: '#FF99E6', dark: '#CC3399' }, // Hot Pink (from original)
+    '#0077FF': { light: '#66AAFF', dark: '#0059CC' }, // Deep Blue (from original)
+    '#00CCDD': { light: '#66E6EE', dark: '#0099AA' }, // Teal (from original)
+    '#FF80FF': { light: '#FFB3FF', dark: '#CC66CC' }, // Light Magenta (from original)
+    '#3366CC': { light: '#6699FF', dark: '#264C99' }, // Medium Blue (from original)
+    '#00E6B3': { light: '#66FFCC', dark: '#00B38C' }  // Aqua Green (repeated for extra vibrancy)
 };
 
 // Track available colors globally
