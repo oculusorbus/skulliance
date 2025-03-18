@@ -59,7 +59,7 @@ html, body {
     background-position: top;
     position: relative;
     overflow: hidden;
-    transition: background-image 0.3s ease;
+    transition: background-image 0s ease;
     background-repeat: no-repeat;
     cursor: pointer;
 }
