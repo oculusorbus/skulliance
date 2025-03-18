@@ -6342,7 +6342,7 @@ function getFactionsRealmsMapData($conn){
 	        $current_row++;
 	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['user_image'].'",';
-	        echo '"'.$row['realm_name'].'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['realm_image'].'",';
 	        echo '"'.$row['faction_name'].'"';
 	        if ($current_row < $row_count) {
@@ -6354,7 +6354,7 @@ function getFactionsRealmsMapData($conn){
 	        $current_row++;
 	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['user_image'].'",';
-	        echo '"'.$row['realm_name'].'",';
+	        echo '"'.substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 8).'",';
 	        echo '"'.$row['realm_image'].'",';
 	        echo '"'.$row['faction_name'].'"';
 	        if ($current_row < $row_count) {
