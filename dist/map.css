@@ -19,6 +19,8 @@ html, body {
         rgba(0, 105, 148, 0.9),
         rgba(0, 51, 102, 1)
     );*/
+	background-image: url('../images/darkwater.gif');
+	background-size: cover;
 }
 #container {
     position: relative;
