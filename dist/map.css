@@ -10,7 +10,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 82vh;
+    min-height: 79vh;
     /*overflow: auto;*/
 	/*
     background: radial-gradient(circle at center, 
