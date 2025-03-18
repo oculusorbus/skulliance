@@ -432,15 +432,13 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 </div>
 </body>
 <?php
+getFactionsRealmsMapData($conn);
 // Close DB Connection
 $conn->close();
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
-<?php
-	getFactionsRealmsMapData($conn);
-?>
 <?php if($realm_status){ ?>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
