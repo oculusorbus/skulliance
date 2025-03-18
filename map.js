@@ -19,21 +19,21 @@ const borderWidth = 20;
 const minSpacing = 5;
 
 const earthyColors = {
-    '#00ffff': { light: '#66ffff', dark: '#00cccc' }, // Cyan
-    '#fa00ff': { light: '#ff66ff', dark: '#c700cc' }, // Magenta
-    '#b500ff': { light: '#cc66ff', dark: '#8c00cc' }, // Purple
-    '#0077ff': { light: '#66aaff', dark: '#0059cc' }, // Deep Blue
-    '#00ccdd': { light: '#66e6ee', dark: '#0099aa' }, // Teal
-    '#9933cc': { light: '#b366e6', dark: '#732699' }, // Deep Violet
-    '#ff66cc': { light: '#ff99e6', dark: '#cc3399' }, // Hot Pink
-    '#00b3b3': { light: '#66cccc', dark: '#008080' }, // Dark Cyan
-    '#4d4dff': { light: '#8080ff', dark: '#3333cc' }, // Indigo
-    '#cc99ff': { light: '#e6ccff', dark: '#9966cc' }, // Light Violet
-    '#009999': { light: '#66b3b3', dark: '#006666' }, // Cool Green
-    '#ff80ff': { light: '#ffb3ff', dark: '#cc66cc' }, // Light Magenta
-    '#3366cc': { light: '#6699ff', dark: '#264c99' }, // Medium Blue
-    '#8000ff': { light: '#b366ff', dark: '#6600cc' }, // Bright Violet
-    '#00e6b3': { light: '#66ffcc', dark: '#00b38c' }  // Aqua Green
+    '#2B1E5A': { light: '#4B3E8A', dark: '#1B0E3A' }, // Deep cosmic purple
+    '#4A3A8D': { light: '#6A5ABD', dark: '#2A1A5D' }, // Muted violet
+    '#6E5ABF': { light: '#8E7AEF', dark: '#4E3A8F' }, // Bright purple
+    '#A28FE6': { light: '#C2AFFF', dark: '#826FC6' }, // Light lavender
+    '#D9C7FF': { light: '#F9E7FF', dark: '#B9A7DF' }, // Very light purple
+    '#FF4D8C': { light: '#FF7DAC', dark: '#DF2D6C' }, // Neon pink
+    '#FF80B3': { light: '#FFA0D3', dark: '#DF6093' }, // Soft pink
+    '#FF3366': { light: '#FF6386', dark: '#DF1346' }, // Bright magenta
+    '#00E6B3': { light: '#33FFD3', dark: '#00C693' }, // Aqua green
+    '#00B3E6': { light: '#33D3FF', dark: '#0093C6' }, // Bright cyan
+    '#66E6FF': { light: '#96FFFF', dark: '#46C6DF' }, // Light cyan
+    '#FF8C33': { light: '#FFAC63', dark: '#DF6C13' }, // Vibrant orange
+    '#FFBF66': { light: '#FFDF96', dark: '#DF9F46' }, // Light orange
+    '#33CC99': { light: '#63ECB9', dark: '#13AC79' }, // Teal green
+    '#8C33FF': { light: '#AC63FF', dark: '#6C13DF' }  // Electric purple
 };
 
 // Track available colors globally
