@@ -4397,7 +4397,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 		$description = "";
 		$counter = 0;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "Highest Score" : "Average Highest Score")."</th><th>Attempts</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "High Score" : "Average High Score")."</th><th>Attempts</th>";
 		if($weekly){
 			echo "<th>Projected Rewards</th>";
 		}
