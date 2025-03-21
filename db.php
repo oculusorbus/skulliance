@@ -6313,7 +6313,7 @@ function resetSwapScores($conn){
 }
 
 function getFactionsRealmsMapData($conn){
-	$sql = 'SELECT users.username AS user_name, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
+	$sql = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
 	
 	$result = $conn->query($sql);
 
@@ -6327,15 +6327,18 @@ function getFactionsRealmsMapData($conn){
 	    $current_row = 0;
     
 	    while ($row = $result->fetch_assoc()) {
-	        $current_row++;
-	        echo '"'.$row['user_name'].'",';
-	        echo '"'.$row['user_image'].'",';
-	        echo '"'.$row['realm_name'].'",';
-	        echo '"'.$row['realm_image'].'",';
-	        echo '"'.$row['faction_name'].'"';
-	        if ($current_row < $row_count) {
-	            echo "\n"; // Only add newline if not the last row
-	        }
+			$level = array_sum(getRealmLocationNamesLevels($conn, $row['realm_id']));
+			if($level != 0){
+		        $current_row++;
+		        echo '"'.$row['user_name'].'",';
+		        echo '"'.$row['user_image'].'",';
+		        echo '"'.$row['realm_name'].'",';
+		        echo '"'.$row['realm_image'].'",';
+		        echo '"'.$row['faction_name'].'"';
+		        if ($current_row < $row_count) {
+		            echo "\n"; // Only add newline if not the last row
+		        }
+			}
 	    }
     
 	    echo "`;";
