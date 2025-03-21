@@ -6327,9 +6327,9 @@ function getFactionsRealmsMapData($conn){
 	    $current_row = 0;
     
 	    while ($row = $result->fetch_assoc()) {
+	        $current_row++;
 			$level = array_sum(getRealmLocationNamesLevels($conn, $row['realm_id']));
 			if($level != 0){
-		        $current_row++;
 		        echo '"'.$row['user_name'].'",';
 		        echo '"'.$row['user_image'].'",';
 		        echo '"'.$row['realm_name'].'",';
