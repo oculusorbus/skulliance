@@ -6325,21 +6325,34 @@ function getFactionsRealmsMapData($conn){
     
 	    $row_count = $result->num_rows;
 	    $current_row = 0;
-    
+    	
+		$realms = array();
 	    while ($row = $result->fetch_assoc()) {
 	        $current_row++;
 			$level = array_sum(getRealmLocationNamesLevels($conn, $row['realm_id']));
 			if($level != 0){
-		        echo '"'.$row['user_name'].'",';
-		        echo '"'.$row['user_image'].'",';
-		        echo '"'.$row['realm_name'].'",';
-		        echo '"'.$row['realm_image'].'",';
-		        echo '"'.$row['faction_name'].'"';
-		        if ($current_row < $row_count) {
-		            echo "\n"; // Only add newline if not the last row
-		        }
+				$realms[$row['realm_id']] = array();
+				$realms[$row['realm_id']]["user_name"] = $row['user_name'];
+				$realms[$row['realm_id']]["user_image"] = $row['user_image'];
+				$realms[$row['realm_id']]["realm_name"] = $row['realm_name'];
+				$realms[$row['realm_id']]["realm_image"] = $row['realm_image'];
+				$realms[$row['realm_id']]["faction_name"] = $row['faction_name'];
 			}
 	    }
+		
+		$realm_total = count($realms);
+		$realm_count = 0;
+		foreach($realms AS $realm_id => $realm){
+			$realm_count++;
+	        echo '"'.$realm['user_name'].'",';
+	        echo '"'.$realm['user_image'].'",';
+	        echo '"'.$realm['realm_name'].'",';
+	        echo '"'.$realm['realm_image'].'",';
+	        echo '"'.$realm['faction_name'].'"';
+			if ($realm_count < $realm_total) {
+				echo "\n"; // Only add newline if not the last realm
+			}
+		}
     
 	    echo "`;";
 	    echo "</script>";
