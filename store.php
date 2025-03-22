@@ -3,6 +3,7 @@ include 'db.php';
 include 'message.php';
 // Verify includes Webhooks
 include 'verify.php';
+include 'credentials/hw_credentials.php';
 include 'skulliance.php';
 include 'header.php';
 ?>

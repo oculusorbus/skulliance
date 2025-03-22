@@ -235,10 +235,21 @@ if(isset($_POST['item_id'])) {
 				}
 				$balance = getBalance($conn, $_POST['project_id']);
 				if($balance >= $price){
+					$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
+					$havoc_worlds = false;
+					if($item["name"] == "S2 Havoc Worlds"){
+						$havoc_worlds = true;
+					}
+					if($havoc_worlds){
+						$response = "";
+						$response = havocWorlds($havoc_key, getAddress($conn));
+						if($response == "error"){
+							exit;
+						}
+					}
 					updateBalance($conn, $user_id, $_POST['project_id'], -$price);
 					updateQuantity($conn, $_POST['item_id']);
 					logDebit($conn, $user_id, $_POST['item_id'], $price, $_POST['project_id']);
-					$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 					$title = $item["name"]." Purchased";
 					$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by "."<@".getDiscordID($conn).">";
 					$imageurl = $item["image_url"];
@@ -248,14 +259,23 @@ if(isset($_POST['item_id'])) {
 					}else{
 						$discord_id = "772831523899965440";
 					}
+					if($havoc_worlds){
+						$discord_id = getDiscordID($conn);
+						$content = "Here is the link to mint a S2 Havoc Worlds NFT: ".$response."\r\n You must use this wallet to mint: ".getAddress($conn);
+					}else{
+						$content = $item["name"]." purchased for ".$price." ".$item["currency"]." by "."<@".getDiscordID($conn).">". "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
+					}
 					# Open the DM first
 					$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
 					# Check if DM is created, if yes, let's send a message to this channel.
 					if(isset($newDM["id"])) {
-						$content = $item["name"]." purchased for ".$price." ".$item["currency"]." by "."<@".getDiscordID($conn).">". "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 					    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $content));
 					}
-					alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
+					if($havoc_worlds){
+						alert("Congratulations! You have successfully purchased this item. You have received a DM from Skull Bot with instructions to mint your S2 Havoc NFT.");
+					}else{
+						alert("Congratulations! You have successfully purchased this item. The creator has received your wallet address and will send the item at their earliest convenience. Please be patient.");
+					}
 				}else{
 					alert("You do not have enough currency to purchase this item.");
 				}
@@ -269,6 +289,55 @@ if(isset($_POST['item_id'])) {
 		// Redirect non-members to the splash page for membership information
 		header("Location: info.php");
 	}	
+}
+
+function havocWorlds($havoc_key, $address){
+	// URL to send the request to
+	// Preprod
+	$url = "https://api-testnet.havocworlds.io/havoc/staking/skulliance-claim";
+	// Mainnet
+	//$url = "https://api.havocworlds.io/havoc/staking/skulliance-claim";
+
+	// Data to send (single variable)
+	$data = array(
+	    'claimer_address' => $address
+	);
+
+	// Set headers array
+	$headers = array(
+	    "Authorization: Bearer " . $havoc_key,    // Common format for API keys
+	    "Content-Type: application/x-www-form-urlencoded"  // Common content type for POST
+	);
+
+	// Initialize CURL
+	$ch = curl_init($url);
+
+	// Set CURL options
+	curl_setopt($ch, CURLOPT_POST, true);                    // Set as POST request
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $data);            // Add the POST data
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);         // Return response as string
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);        // Disable SSL verification (use carefully)
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+	// Execute the request
+	$response = curl_exec($ch);
+
+	// Check for errors
+	if (curl_errno($ch)) {
+	    echo 'Error:' . curl_error($ch);
+		return "error";
+	} else {
+	    // Output the response
+	    //echo $response;
+		// Preprod
+		$mint_url = "https://testnet.havocworlds.io/mint/?rid=".$response;
+		// Mainnet
+		//$mint_url = "https://havocworlds.io/mint/?rid=".$response;
+		return $mint_url;
+	}
+
+	// Close CURL session
+	curl_close($ch);
 }
 
 // Item submission to store
