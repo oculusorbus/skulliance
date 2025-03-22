@@ -308,7 +308,7 @@ function havocWorlds($havoc_key, $address){
 
 	// Set headers array
 	$headers = array(
-	    "Authorization: Bearer " . $havoc_key,    // If your API requires this
+	    "Havoc-Key: " . $havoc_key,       // Correct header as per instructions
 	    "Content-Type: application/json",      // Explicitly set to JSON
 	    "Accept: application/json"             // Ensure server returns JSON (optional)
 	);
