@@ -308,8 +308,9 @@ function havocWorlds($havoc_key, $address){
 
 	// Set headers array
 	$headers = array(
-	    "Authorization: Bearer " . $havoc_key,    // Common format for API keys
-	    "Content-Type: application/x-www-form-urlencoded"  // Common content type for POST
+	    "Authorization: Bearer " . $havoc_key,    // If your API requires this
+	    "Content-Type: application/json",      // Explicitly set to JSON
+	    "Accept: application/json"             // Ensure server returns JSON (optional)
 	);
 
 	// Initialize CURL
@@ -317,10 +318,11 @@ function havocWorlds($havoc_key, $address){
 
 	// Set CURL options
 	curl_setopt($ch, CURLOPT_POST, true);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);  // Send JSON data
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);  // Send raw JSON data
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);   // Apply headers
+	curl_setopt($ch, CURLOPT_VERBOSE, true);          // Enable verbose output for debugging
 
 	// Execute the request
 	$response = curl_exec($ch);
