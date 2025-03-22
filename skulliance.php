@@ -241,8 +241,6 @@ if(isset($_POST['item_id'])) {
 						$havoc_worlds = true;
 					}
 					if($havoc_worlds){
-						echo $havoc_key;
-						exit;
 						$response = "";
 						$response = havocWorlds($havoc_key, getAddress($conn));
 						if($response == "error"){
@@ -337,8 +335,7 @@ function havocWorlds($havoc_key, $address){
 	    // Output the response
 	    //echo $response;
 		// Preprod
-		alert($havoc_key);
-		alert($address);
+		echo $havoc_key;
 		exit;
 		$mint_url = "https://testnet.havocworlds.io/mint/?rid=".$response;
 		// Mainnet
