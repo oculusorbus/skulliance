@@ -335,12 +335,10 @@ function havocWorlds($havoc_key, $address){
 	    // Output the response
 	    //echo $response;
 		// Preprod
-		$mint_url = "https://testnet.havocworlds.io/mint/?rid=".$response;
-		echo $mint_url;
-		exit;
+		$mint_url = "https://testnet.havocworlds.io/mint/?rid=";
 		// Mainnet
-		//$mint_url = "https://havocworlds.io/mint/?rid=".$response;
-		return $mint_url;
+		//$mint_url = "https://havocworlds.io/mint/?rid=";
+		return $mint_url.$response;
 	}
 
 	// Close CURL session
