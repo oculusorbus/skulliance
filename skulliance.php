@@ -302,6 +302,9 @@ function havocWorlds($havoc_key, $address){
 	$data = array(
 	    'claimer_address' => $address
 	);
+	
+	// Convert data to JSON
+	$jsonData = json_encode($data);
 
 	// Set headers array
 	$headers = array(
@@ -313,11 +316,11 @@ function havocWorlds($havoc_key, $address){
 	$ch = curl_init($url);
 
 	// Set CURL options
-	curl_setopt($ch, CURLOPT_POST, true);                    // Set as POST request
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $data);            // Add the POST data
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);         // Return response as string
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);        // Disable SSL verification (use carefully)
-	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+	curl_setopt($ch, CURLOPT_POST, true);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);  // Send JSON data
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);   // Apply headers
 
 	// Execute the request
 	$response = curl_exec($ch);
