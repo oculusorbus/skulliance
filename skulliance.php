@@ -241,6 +241,8 @@ if(isset($_POST['item_id'])) {
 						$havoc_worlds = true;
 					}
 					if($havoc_worlds){
+						echo $havoc_key;
+						exit;
 						$response = "";
 						$response = havocWorlds($havoc_key, getAddress($conn));
 						if($response == "error"){
