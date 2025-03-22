@@ -261,7 +261,7 @@ if(isset($_POST['item_id'])) {
 					}
 					if($havoc_worlds){
 						$discord_id = getDiscordID($conn);
-						$content = "Here is the link to mint a S2 Havoc Worlds NFT: ".$response."\r\n You must use this wallet to mint: ".getAddress($conn);
+						$content = "You must use this whitelisted wallet to mint: ".getAddress($conn)."\r\n\r\nHere is the link to mint a S2 Havoc Worlds NFT: ".$response;
 					}else{
 						$content = $item["name"]." purchased for ".$price." ".$item["currency"]." by "."<@".getDiscordID($conn).">". "\r\n ".$imageurl." \r\n Please send NFT to ".getAddress($conn);
 					}
