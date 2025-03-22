@@ -300,7 +300,7 @@ function havocWorlds($havoc_key, $address){
 
 	// Data to send (single variable)
 	$data = array(
-	    'claimer_address' => 'addr_test1qpspjm8huu3svyh286wcrfs8hvv2pa0rlewk5zsj308wwduf9vr444v7z8xktt4l5z20f6dv2yujs9z6gc3hxzqjunqsqfj6lm'
+	    'claimer_address' => 'addr_test1qqkk9ue0wmnky9mh453ln84tf472036wqmhj46a45m6a8xqpqyck03v2n0nhz94r39gymw6q9xa0d8pg6daf3rsz7y3qwj6mf5'
 	);
 	
 	// Convert data to JSON
