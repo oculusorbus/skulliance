@@ -335,6 +335,8 @@ function havocWorlds($havoc_key, $address){
 	    // Output the response
 	    //echo $response;
 		// Preprod
+		alert($havoc_key);
+		alert($address);
 		$mint_url = "https://testnet.havocworlds.io/mint/?rid=".$response;
 		// Mainnet
 		//$mint_url = "https://havocworlds.io/mint/?rid=".$response;
