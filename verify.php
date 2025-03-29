@@ -93,14 +93,14 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 				
 				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
 				if ($response === false) {
-				    echo "cURL Error: " . curl_error($ch) . "\n";
-				    echo "cURL Error Number: " . curl_errno($ch) . "\n";
+				    $message .= "cURL Error: " . curl_error($ch) . "\n";
+				    $message .= "cURL Error Number: " . curl_errno($ch) . "\n";
 				} else {
 				    // Optionally check HTTP status code
 				    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 				    if ($http_code >= 400) {
-				        echo "HTTP Error: Status code " . $http_code . "\n";
-				        echo "Response: " . $response . "\n";
+				        $message .= "HTTP Error: Status code " . $http_code . "\n";
+				        $message .= "Response: " . $response . "\n";
 				    }
 				}
 				$response = json_decode($response);
@@ -191,14 +191,14 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						$tokenresponse = curl_exec( $tokench );
 						// Check for errors and echo them
 						if ($tokenresponse === false) {
-						    echo "cURL Error: " . curl_error($tokench) . "\n";
-						    echo "cURL Error Number: " . curl_errno($tokench) . "\n";
+						    $message .= "cURL Error: " . curl_error($tokench) . "\n";
+						    $message .= "cURL Error Number: " . curl_errno($tokench) . "\n";
 						} else {
 						    // Optionally check HTTP status code
 						    $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
 						    if ($http_code >= 400) {
-						        echo "HTTP Error: Status code " . $http_code . "\n";
-						        echo "Response: " . $tokenresponse . "\n";
+						        $message .= "HTTP Error: Status code " . $http_code . "\n";
+						        $message .= "Response: " . $tokenresponse . "\n";
 						    }
 						}
 						$tokenresponse = json_decode($tokenresponse);
@@ -242,7 +242,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								}
 							} // End foreach
 						}else{
-							$message = "Bulk asset info could not be retrieved for stake address: ".$address." \r\n";
+							$message .= "Bulk asset info could not be retrieved for stake address: https://www.pool.pm/".$address." \r\n";
 							$failed_addresses[] = $address;
 							echo $message;
 							print_r($tokenresponse);
@@ -252,7 +252,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					} // End foreach
 					//updateNFTs($conn, implode("', '", $asset_names));
 				}else{
-					$message = "There was no response data for stake address: ".$address." \r\n";
+					$message .= "There was no response data for stake address: https://www.pool.pm/".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
@@ -260,7 +260,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					exit();
 				}
 				}else{
-					$message = "There was no response for stake address: ".$address." \r\n";
+					$message .= "There was no response for stake address: https://www.pool.pm/".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
