@@ -242,7 +242,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								}
 							} // End foreach
 						}else{
-							$message .= "Bulk asset info could not be retrieved for stake address: https://www.pool.pm/".$address." \r\n";
+							$message .= "Bulk asset info could not be retrieved for stake address: https://pool.pm/".$address." \r\n";
 							$failed_addresses[] = $address;
 							echo $message;
 							print_r($tokenresponse);
@@ -252,7 +252,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					} // End foreach
 					//updateNFTs($conn, implode("', '", $asset_names));
 				}else{
-					$message .= "There was no response data for stake address: https://www.pool.pm/".$address." \r\n";
+					$message .= "There was no response data for stake address: https://pool.pm/".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
@@ -260,7 +260,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					exit();
 				}
 				}else{
-					$message .= "There was no response for stake address: https://www.pool.pm/".$address." \r\n";
+					$message .= "There was no response for stake address: https://pool.pm/".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
