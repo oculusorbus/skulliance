@@ -92,6 +92,17 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 				     "<pre>", htmlspecialchars($verboseLog), "</pre>\n";*/
 				
 				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
+				if ($response === false) {
+				    echo "cURL Error: " . curl_error($ch) . "\n";
+				    echo "cURL Error Number: " . curl_errno($ch) . "\n";
+				} else {
+				    // Optionally check HTTP status code
+				    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+				    if ($http_code >= 400) {
+				        echo "HTTP Error: Status code " . $http_code . "\n";
+				        echo "Response: " . $response . "\n";
+				    }
+				}
 				$response = json_decode($response);
 				//print_r($response[0]->asset_list);
 				//exit;
@@ -178,6 +189,18 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
 						//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
 						$tokenresponse = curl_exec( $tokench );
+						// Check for errors and echo them
+						if ($tokenresponse === false) {
+						    echo "cURL Error: " . curl_error($tokench) . "\n";
+						    echo "cURL Error Number: " . curl_errno($tokench) . "\n";
+						} else {
+						    // Optionally check HTTP status code
+						    $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
+						    if ($http_code >= 400) {
+						        echo "HTTP Error: Status code " . $http_code . "\n";
+						        echo "Response: " . $tokenresponse . "\n";
+						    }
+						}
 						$tokenresponse = json_decode($tokenresponse);
 						curl_close( $tokench );
 			
