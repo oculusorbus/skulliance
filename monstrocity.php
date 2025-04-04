@@ -76,6 +76,11 @@
       height: auto;
       margin-bottom: 10px;
       border-radius: 5px;
+      transition: filter 0.5s ease; /* Smooth transition for filter changes */
+    }
+    
+    .grayscale {
+      filter: grayscale(100%); /* Fully grays out the image */
     }
 
     .health-bar {
@@ -416,28 +421,32 @@
       }
 
       initGame() {
-        this.sounds.reset.play(); // Play reset sound on game start/restart
+        this.sounds.reset.play(); // Play reset sound
         log("Starting game initialization...");
 
-        // Initialize players with image URLs
+        // Initialize players with new characters
         this.player1 = this.generateCharacter();
         this.player2 = this.generateCharacter();
         this.currentTurn = this.player1.strength >= this.player2.strength ? this.player1 : this.player2;
         this.gameState = "initializing";
         this.gameOver = false;
 
-        // Update UI
+        // Remove grayscale from both images
+        p1Image.classList.remove('grayscale');
+        p2Image.classList.remove('grayscale');
+
+        // Update UI with new character details
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
         p1Powerup.textContent = this.player1.powerup;
-        p1Image.src = this.player1.imageUrl; // Set Player 1 image
+        p1Image.src = this.player1.imageUrl; // Set new Player 1 image
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
         p2Powerup.textContent = this.player2.powerup;
-        p2Image.src = this.player2.imageUrl; // Set Player 2 image
+        p2Image.src = this.player2.imageUrl; // Set new Player 2 image
 
-        // Update health bars and text using updateHealth method
+        // Update health bars
         this.updateHealth(this.player1);
         this.updateHealth(this.player2);
 
@@ -1123,13 +1132,15 @@
           gameOver.textContent = `${this.player2.name} Wins!`;
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           document.getElementById("game-over-container").style.display = "block";
-          this.sounds.gameOver.play(); // Play game over sound
+          this.sounds.gameOver.play();
+          p1Image.classList.add('grayscale'); // Gray out Player 1 (loser)
         } else if (this.player2.health <= 0) {
           this.gameState = "gameOver";
           gameOver.textContent = `${this.player1.name} Wins!`;
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           document.getElementById("game-over-container").style.display = "block";
-          this.sounds.gameOver.play(); // Play game over sound
+          this.sounds.gameOver.play();
+          p2Image.classList.add('grayscale'); // Gray out Player 2 (loser)
         }
       }
     }
