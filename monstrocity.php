@@ -1170,7 +1170,7 @@ tileElement.appendChild(img);
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
-		  this.sounds.loss.play();
+		  setTimeout(this.sounds.loss.play(), 1000);
           p1Image.classList.add('grayscale'); // Gray out Player 1 (loser)
         } else if (this.player2.health <= 0) {
           this.gameState = "gameOver";
@@ -1178,7 +1178,7 @@ tileElement.appendChild(img);
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
-		  this.sounds.win.play();
+		  setTimeout(this.sounds.win.play(), 1000);
           p2Image.classList.add('grayscale'); // Gray out Player 2 (loser)
         }
       }
