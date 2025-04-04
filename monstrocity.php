@@ -311,7 +311,8 @@
 	  }
 	  
 	  .character img {
-		display: none;
+		width: 100px;
+		float: left;
 	  }
 
       .battlefield {
