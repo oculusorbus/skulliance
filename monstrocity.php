@@ -14,6 +14,8 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
+      background-image: url(https://www.skulliance.io/staking/images/monstrocity/biolab.png);
+      background-size: cover;
     }
     
     h2 {
@@ -22,6 +24,7 @@
 
     .game-container {
       margin-top: 20px;
+	  margin-bottom: 20px;
       text-align: center;
       padding: 20px;
       background-color: #1e1e1e; /* Slightly lighter gray */
