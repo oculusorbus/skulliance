@@ -346,7 +346,7 @@
 
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
         <p>Health: <span id="p1-hp"></span></p>
-        <p>Powerup: <span id="p1-powerup"></span></p>
+        <p>Power-Up: <span id="p1-powerup"></span></p>
                 <p>Type: <span id="p1-type"></span></p>
       </div>
       <div id="game-board"></div>
@@ -357,7 +357,7 @@
 
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
         <p>Health: <span id="p2-hp"></span></p>
-        <p>Powerup: <span id="p2-powerup"></span></p>
+        <p>Power-Up: <span id="p2-powerup"></span></p>
         <p>Type: <span id="p2-type"></span></p>
       </div>
     </div>
