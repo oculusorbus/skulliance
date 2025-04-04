@@ -429,17 +429,17 @@
         // Update UI
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
-        p1Hp.textContent = `${this.player1.health}/${this.player1.maxHealth}`;
-        p1Health.style.width = "100%";
         p1Powerup.textContent = this.player1.powerup;
         p1Image.src = this.player1.imageUrl; // Set Player 1 image
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
-        p2Hp.textContent = `${this.player2.health}/${this.player2.maxHealth}`;
-        p2Health.style.width = "100%";
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl; // Set Player 2 image
+
+        // Update health bars and text using updateHealth method
+        this.updateHealth(this.player1);
+        this.updateHealth(this.player2);
 
         battleLog.innerHTML = "";
         gameOver.textContent = "";
