@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #121212; /* Darker gray */
+      background-color: #121212;
       color: #fff;
       display: flex;
       justify-content: center;
@@ -16,7 +16,7 @@
       margin: 0;
       background-image: url(https://www.skulliance.io/staking/images/monstrocity/biolab.png);
       background-size: cover;
-	  background-position: center;
+      background-position: center;
     }
     
     h2 {
@@ -25,23 +25,23 @@
 
     .game-container {
       margin-top: 20px;
-	  margin-bottom: 20px;
+      margin-bottom: 20px;
       text-align: center;
       padding: 20px;
-      background-color: #1e1e1e; /* Slightly lighter gray */
+      background-color: #1e1e1e;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       width: 900px;
       min-width: 900px;
       max-width: 900px;
       box-sizing: border-box;
-	  max-height: 1070px;
+      max-height: 1070px;
     }
 
     .game-logo {
       max-width: 300px;
       height: auto;
-      margin: 0 auto 10px; /* Reduced margin to tighten design */
+      margin: 0 auto 10px;
       display: block;
     }
 
@@ -64,7 +64,7 @@
     .character {
       width: 230px;
       padding: 15px;
-      background-color: #2a2a2a; /* Lighter gray for characters */
+      background-color: #2a2a2a;
       border-radius: 5px;
       text-align: center;
       flex-shrink: 0;
@@ -78,11 +78,11 @@
       height: auto;
       margin-bottom: 10px;
       border-radius: 5px;
-      transition: filter 0.5s ease; /* Smooth transition for filter changes */
+      transition: filter 0.5s ease;
     }
     
     .grayscale {
-      filter: grayscale(100%); /* Fully grays out the image */
+      filter: grayscale(100%);
     }
 
     .health-bar {
@@ -147,11 +147,11 @@
       filter: grayscale(100%);
     }
 
-    .tile.first-attack { background-color: #4CAF50; } /* Green */
-    .tile.second-attack { background-color: #2196F3; } /* Blue */
-    .tile.special-attack { background-color: #FFC107; } /* Yellow */
-    .tile.power-up { background-color: #9C27B0; } /* Purple */
-    .tile.last-stand { background-color: #F44336; } /* Red */
+    .tile.first-attack { background-color: #4CAF50; }
+    .tile.second-attack { background-color: #2196F3; }
+    .tile.special-attack { background-color: #FFC107; }
+    .tile.power-up { background-color: #9C27B0; }
+    .tile.last-stand { background-color: #F44336; }
 
     .selected {
       transform: scale(1.05);
@@ -227,7 +227,7 @@
     .log {
       margin-top: 20px;
       text-align: left;
-      background-color: #2a2a2a; /* Match character background */
+      background-color: #2a2a2a;
       padding: 10px;
       border-radius: 5px;
       max-height: 150px;
@@ -257,7 +257,7 @@
     .legend {
       margin-top: 20px;
       text-align: left;
-      background-color: #2a2a2a; /* Match character background */
+      background-color: #2a2a2a;
       padding: 10px;
       border-radius: 5px;
       position: relative;
@@ -303,25 +303,25 @@
         min-width: 320px;
         max-width: 100%;
         padding: 10px;
-		max-height: none;
+        max-height: none;
       }
-	  
-	  .character {
-   	    min-height: 100px;
-		text-align: right;
-	  }
-	  
-	  .character h2{
-		  text-align: center;
-	  }
-	  
-	  .character img {
-		width: 80px;
-		float: left;
-		position: absolute;
-		left: 10px;
-		top: 100px;
-	  }
+      
+      .character {
+        min-height: 100px;
+        text-align: right;
+      }
+      
+      .character h2 {
+        text-align: center;
+      }
+      
+      .character img {
+        width: 80px;
+        float: left;
+        position: absolute;
+        left: 10px;
+        top: 100px;
+      }
 
       .battlefield {
         flex-direction: column;
@@ -336,7 +336,7 @@
       #game-board {
         width: 250px;
         height: 250px;
-		position: relative;
+        position: relative;
         top: -230px;
       }
 
@@ -355,26 +355,22 @@
   <div class="game-container">
     <!-- Logo Image -->
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
-            <button id="restart">Restart Game</button>
+    <button id="restart">Restart Game</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
       <div class="character" id="player1">
-                <h2><span id="p1-name"></span></h2>
-
+        <h2><span id="p1-name"></span></h2>
         <img id="p1-image" src="" alt="Player 1 Image">
-
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
         <p>Health: <span id="p1-hp"></span></p>
         <p>Power-Up: <span id="p1-powerup"></span></p>
-                <p>Type: <span id="p1-type"></span></p>
+        <p>Type: <span id="p1-type"></span></p>
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
-                <h2><span id="p2-name"></span></h2>
-        
+        <h2><span id="p2-name"></span></h2>
         <img id="p2-image" src="" alt="Player 2 Image">
-
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
         <p>Health: <span id="p2-hp"></span></p>
         <p>Power-Up: <span id="p2-powerup"></span></p>
@@ -410,7 +406,6 @@
     </div>
   </div>
 
-
   <script>
     // Character default facing directions
     const characterDirections = {
@@ -441,7 +436,7 @@
         this.currentTurn = null;
         this.player1 = null;
         this.player2 = null;
-        this.gameState = "initializing"; // "initializing", "playerTurn", "aiTurn", "animating", "gameOver"
+        this.gameState = "initializing";
         this.isDragging = false;
         this.targetTile = null;
         this.dragDirection = null;
@@ -449,17 +444,17 @@
         this.offsetY = 0;
 
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
-        this.updateTileSizeWithGap(); // Calculate initially
+        this.updateTileSizeWithGap();
 
-        // Sound effects
+        // Sound effects (optional, can be removed if not needed)
         this.sounds = {
           match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
           cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
           badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
           gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
           reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
-		  win: new Audio('https://www.skulliance.io/staking/sounds/skullcoinwin.ogg'),
-		  loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
+          win: new Audio('https://www.skulliance.io/staking/sounds/skullcoinwin.ogg'),
+          loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
         };
 
         this.initGame();
@@ -468,11 +463,11 @@
 
       updateTileSizeWithGap() {
         const boardElement = document.getElementById("game-board");
-        const boardWidth = boardElement.offsetWidth || 300; // Fallback to 300px if not rendered yet
+        const boardWidth = boardElement.offsetWidth || 300;
         this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
       }
 
-     initGame() {
+      initGame() {
         this.sounds.reset.play(); // Play reset sound
         log("Starting game initialization...");
 
@@ -491,12 +486,12 @@
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
         p1Powerup.textContent = this.player1.powerup;
-        p1Image.src = this.player1.imageUrl; // Set new Player 1 image
+        p1Image.src = this.player1.imageUrl;
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
         p2Powerup.textContent = this.player2.powerup;
-        p2Image.src = this.player2.imageUrl; // Set new Player 2 image
+        p2Image.src = this.player2.imageUrl;
 
         // Flip images based on default directions
         if (characterDirections[this.player1.name] === "Left") {
@@ -575,20 +570,21 @@
 
       renderBoard() {
         console.log("Rendering board...");
-        this.updateTileSizeWithGap(); // Recalculate tile size based on current board width
+        this.updateTileSizeWithGap();
         const boardElement = document.getElementById("game-board");
         boardElement.innerHTML = "";
 
         for (let y = 0; y < this.height; y++) {
           for (let x = 0; x < this.width; x++) {
             const tile = this.board[y][x];
+            if (tile.type === null) continue; // Skip rendering null tiles to prevent broken images
             const tileElement = document.createElement("div");
             tileElement.className = `tile ${tile.type}`;
             if (this.gameOver) tileElement.classList.add("game-over");
             const img = document.createElement('img');
-img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`;
-img.alt = tile.type;
-tileElement.appendChild(img);
+            img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`;
+            img.alt = tile.type;
+            tileElement.appendChild(img);
             tileElement.dataset.x = x;
             tileElement.dataset.y = y;
             boardElement.appendChild(tileElement);
@@ -869,7 +865,7 @@ tileElement.appendChild(img);
             this.gameState = "animating";
           } else {
             log("No match, reverting tiles...");
-            this.sounds.badMove.play(); // Play bad move sound
+            this.sounds.badMove.play();
             selectedElement.style.transition = "transform 0.2s ease";
             selectedElement.style.transform = "translate(0, 0)";
             tileElements.forEach(element => {
@@ -914,7 +910,6 @@ tileElement.appendChild(img);
         const allMatches = new Set();
         let type = null;
 
-        // Horizontal matches
         for (let y = 0; y < this.height; y++) {
           let matchStart = 0;
           let currentType = null;
@@ -937,7 +932,6 @@ tileElement.appendChild(img);
           }
         }
 
-        // Vertical matches
         for (let x = 0; x < this.width; x++) {
           let matchStart = 0;
           let currentType = null;
@@ -975,6 +969,8 @@ tileElement.appendChild(img);
         });
 
         setTimeout(() => {
+          if (this.gameOver) return;
+
           matches.forEach(match => {
             const [x, y] = match.split(",").map(Number);
             this.board[y][x].type = null;
@@ -987,7 +983,7 @@ tileElement.appendChild(img);
           else if (type === "power-up") this.usePowerup(attacker);
           else if (type === "last-stand") this.lastStand(attacker, defender, matches.size);
 
-          this.sounds.match.play(); // Play match sound
+          this.sounds.match.play();
           this.cascadeTiles(() => {
             this.endTurn();
           });
@@ -995,6 +991,8 @@ tileElement.appendChild(img);
       }
 
       cascadeTiles(callback) {
+        if (this.gameOver) return;
+
         const moved = this.cascadeTilesWithoutRender();
         const fallClass = "falling";
 
@@ -1015,7 +1013,8 @@ tileElement.appendChild(img);
 
         if (moved) {
           setTimeout(() => {
-            this.sounds.cascade.play(); // Play cascade sound
+            if (this.gameOver) return;
+            this.sounds.cascade.play();
             const hasMatches = this.resolveMatches();
             const tiles = document.querySelectorAll(`.${fallClass}`);
             tiles.forEach(tile => {
@@ -1120,28 +1119,21 @@ tileElement.appendChild(img);
         const healthBar = player === this.player1 ? p1Health : p2Health;
         const hpText = player === this.player1 ? p1Hp : p2Hp;
 
-        // Calculate health percentage
         const percentage = (player.health / player.maxHealth) * 100;
-
-        // Set the width of the health bar
         healthBar.style.width = `${percentage}%`;
 
-        // Determine the color based on health percentage
         let color;
         if (percentage > 75) {
-          color = '#4CAF50'; // Green for 75-100%
+          color = '#4CAF50';
         } else if (percentage > 50) {
-          color = '#FFC105'; // Yellow for 50-75%
+          color = '#FFC105';
         } else if (percentage > 25) {
-          color = '#FFA500'; // Orange for 25-50%
+          color = '#FFA500';
         } else {
-          color = '#F44336'; // Red for 0-25%
+          color = '#F44336';
         }
 
-        // Apply the color to the health bar
         healthBar.style.backgroundColor = color;
-
-        // Update the health text
         hpText.textContent = `${player.health}/${player.maxHealth}`;
       }
 
@@ -1196,19 +1188,25 @@ tileElement.appendChild(img);
 
       checkGameOver() {
         if (this.player1.health <= 0) {
+          this.gameOver = true;
           this.gameState = "gameOver";
-          gameOver.textContent = `${this.player2.name} Wins!`;
+          gameOver.textContent = "You Lose!";
+          turnIndicator.textContent = "Game Over";
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
-          p1Image.classList.add('grayscale'); // Gray out Player 1 (loser)
+          p1Image.classList.add('grayscale');
+          this.renderBoard();
         } else if (this.player2.health <= 0) {
+          this.gameOver = true;
           this.gameState = "gameOver";
-          gameOver.textContent = `${this.player1.name} Wins!`;
+          gameOver.textContent = "You Win!";
+          turnIndicator.textContent = "Game Over";
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
-          p2Image.classList.add('grayscale'); // Gray out Player 2 (loser)
+          p2Image.classList.add('grayscale');
+          this.renderBoard();
         }
       }
     }
