@@ -34,6 +34,7 @@
       min-width: 900px;
       max-width: 900px;
       box-sizing: border-box;
+	  max-height: 1070px;
     }
 
     .game-logo {
@@ -301,6 +302,7 @@
         min-width: 320px;
         max-width: 100%;
         padding: 10px;
+		max-height: none;
       }
 
       .battlefield {
