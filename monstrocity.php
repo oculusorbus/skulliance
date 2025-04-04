@@ -128,6 +128,18 @@
       box-sizing: border-box;
       z-index: 1;
     }
+    
+    .tile img {
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+    }
+    
+    .legend-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
 
     .tile.game-over {
       filter: grayscale(100%);
@@ -357,11 +369,11 @@
     <div class="legend">
       <h3>Legend</h3>
       <ul>
-        <li><span class="legend-tile first-attack"></span>First Attack (Slash): Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile second-attack"></span>Second Attack (Bite): Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile special-attack"></span>Special Attack (Shadow Strike): Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile power-up"></span>Power-Up: Activates a random powerup (see below)</li>
-        <li><span class="legend-tile last-stand"></span>Last Stand: Deals damage and mitigates 5 damage on the next attack received</li>
+        <li><span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span>First Attack (Slash): Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span>Second Attack (Bite): Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span>Special Attack (Shadow Strike): Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span>Power-Up: Activates a random powerup (see below)</li>
+        <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span>Last Stand: Deals damage and mitigates 5 damage on the next attack received</li>
       </ul>
       <h3>Powerup Effects</h3>
       <ul>
@@ -520,7 +532,10 @@
             const tileElement = document.createElement("div");
             tileElement.className = `tile ${tile.type}`;
             if (this.gameOver) tileElement.classList.add("game-over");
-            tileElement.textContent = tile.type.split("-").map(word => word.charAt(0).toUpperCase()).join("");
+            const img = document.createElement('img');
+img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`;
+img.alt = tile.type;
+tileElement.appendChild(img);
             tileElement.dataset.x = x;
             tileElement.dataset.y = y;
             boardElement.appendChild(tileElement);
