@@ -237,7 +237,7 @@
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
     <div class="battlefield">
       <div class="character" id="player1">
-        <h2>Player 1: <span id="p1-name"></span></h2>
+        <h2>Player 1:<br><span id="p1-name"></span></h2>
         <p>Type: <span id="p1-type"></span></p>
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
         <p>Health: <span id="p1-hp"></span></p>
@@ -245,7 +245,7 @@
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
-        <h2>Player 2: <span id="p2-name"></span></h2>
+        <h2>Player 2:<br><span id="p2-name"></span></h2>
         <p>Type: <span id="p2-type"></span></p>
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
         <p>Health: <span id="p2-hp"></span></p>
