@@ -284,8 +284,6 @@
         min-width: 320px;
         max-width: 100%;
         padding: 10px;
-		position: relative;
-        top: -230px;
       }
 
       .battlefield {
@@ -301,6 +299,8 @@
       #game-board {
         width: 250px;
         height: 250px;
+		position: relative;
+        top: -230px;
       }
 
       .legend {
