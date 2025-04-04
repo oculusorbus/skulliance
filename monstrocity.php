@@ -62,7 +62,7 @@
       text-align: center;
       flex-shrink: 0;
       position: relative;
-      top: -170px;
+      top: -225px;
       min-height: 510px;
     }
 
@@ -101,6 +101,7 @@
       height: 300px;
       grid-template-columns: repeat(5, 1fr);
       flex-shrink: 0;
+      margin-top: 15px;
     }
 
     .tile {
@@ -208,7 +209,7 @@
       max-height: 150px;
       overflow-y: auto;
       position: relative;
-      top: -170px;
+      top: -225px;
     }
 
     #battle-log { list-style: none; padding: 0; }
@@ -222,9 +223,7 @@
       border-radius: 5px;
       cursor: pointer;
       font-weight: bold;
-      margin-top: 20px;
-      position: relative;
-      top: -170px;
+      margin-bottom: 20px;
     }
 
     button:hover { background-color: #e6b800; }
@@ -237,7 +236,7 @@
       padding: 10px;
       border-radius: 5px;
       position: relative;
-      top: -170px;
+      top: -225px;
     }
 
     .legend h3 {
@@ -311,7 +310,9 @@
   <div class="game-container">
     <!-- Logo Image -->
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
+            <button id="restart">Restart Game</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
+
     <div class="battlefield">
       <div class="character" id="player1">
                 <h2><span id="p1-name"></span></h2>
@@ -356,7 +357,6 @@
         <li>Minor Regen: Restores 5 HP</li>
       </ul>
     </div>
-    <button id="restart">Restart Game</button>
     <div id="game-over-container">
       <div id="game-over"></div>
       <div id="game-over-buttons">
@@ -449,13 +449,13 @@
       generateCharacter() {
         const type = randomChoice(["Fighter", "Trickster", "Brute"]);
         const strength = Math.floor(Math.random() * 3) + 3; // 3-5
-        const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger"]);
+        const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger", "Billander and Ted", "Craig", "Dankle", "Drake", "Katastrophy", "Ouchie"]);
         const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${name.toLowerCase().replace(/ /g, '-')}.png`;
         return {
           name,
           type,
           strength,
-          powerup: randomChoice(["Heal", "Boost (Next Attack +10)", "Minor Regen"]),
+          powerup: randomChoice(["Heal", "Boost (Next Attack)", "Minor Regen"]),
           health: type === "Brute" ? 100 : 75,
           maxHealth: type === "Brute" ? 100 : 75,
           boostActive: false,
