@@ -284,6 +284,8 @@
         min-width: 320px;
         max-width: 100%;
         padding: 10px;
+		position: relative;
+        top: -230px;
       }
 
       .battlefield {
