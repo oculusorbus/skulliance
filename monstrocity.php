@@ -305,6 +305,14 @@
         padding: 10px;
 		max-height: none;
       }
+	  
+	  .character {
+   	    min-height: 100px;
+	  }
+	  
+	  .character img {
+		display: none;
+	  }
 
       .battlefield {
         flex-direction: column;
