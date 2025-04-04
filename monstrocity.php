@@ -440,6 +440,8 @@
           badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
           gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
           reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
+		  win: new Audio('https://www.skulliance.io/staking/sounds/skullcoinwin.ogg'),
+		  loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
         };
 
         this.initGame();
@@ -1168,6 +1170,7 @@ tileElement.appendChild(img);
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
+		  this.sounds.loss.play();
           p1Image.classList.add('grayscale'); // Gray out Player 1 (loser)
         } else if (this.player2.health <= 0) {
           this.gameState = "gameOver";
@@ -1175,6 +1178,7 @@ tileElement.appendChild(img);
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
+		  this.sounds.win.play();
           p2Image.classList.add('grayscale'); // Gray out Player 2 (loser)
         }
       }
