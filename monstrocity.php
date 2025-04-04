@@ -44,6 +44,8 @@
       font-size: 1.2em;
       margin-bottom: 20px;
       color: #ffcc00;
+      position: relative;
+      top: 10px;
     }
 
     .battlefield {
