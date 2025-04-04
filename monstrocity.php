@@ -412,6 +412,24 @@
 
 
   <script>
+    // Character default facing directions
+    const characterDirections = {
+      "Billander and Ted": "Left",
+      "Craig": "Left",
+      "Dankle": "Left",
+      "Drake": "Right",
+      "Goblin Ganger": "Left",
+      "Jarhead": "Right",
+      "Katastrophy": "Right",
+      "Koipon": "Left",
+      "Mandiblus": "Left",
+      "Merdock": "Left",
+      "Ouchie": "Left",
+      "Slime Mind": "Right",
+      "Spydrax": "Right",
+      "Texby": "Left"
+    };
+    
     class MonstrocityMatch3 {
       constructor() {
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
@@ -454,7 +472,7 @@
         this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
       }
 
-      initGame() {
+     initGame() {
         this.sounds.reset.play(); // Play reset sound
         log("Starting game initialization...");
 
@@ -479,6 +497,19 @@
         p2Type.textContent = this.player2.type;
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl; // Set new Player 2 image
+
+        // Flip images based on default directions
+        if (characterDirections[this.player1.name] === "Left") {
+          p1Image.style.transform = "scaleX(-1)";
+        } else {
+          p1Image.style.transform = "none";
+        }
+
+        if (characterDirections[this.player2.name] === "Right") {
+          p2Image.style.transform = "scaleX(-1)";
+        } else {
+          p2Image.style.transform = "none";
+        }
 
         // Update health bars
         this.updateHealth(this.player1);
