@@ -207,6 +207,7 @@
       padding: 10px;
       border-radius: 5px;
       max-height: 150px;
+      min-height: 150px;
       overflow-y: auto;
       position: relative;
       top: -225px;
