@@ -439,7 +439,7 @@
           cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
           badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
           gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
-          reset: new Audio('https://www.skulliance.io/staking/sounds/voice_welcomeback.ogg'),
+          reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
         };
 
         this.initGame();
