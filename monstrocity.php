@@ -89,7 +89,7 @@
 
     .health {
       height: 100%;
-      background-color: #ff4444;
+      background-color: #4CAF50;
       transition: width 0.3s ease;
     }
 
@@ -1042,7 +1042,29 @@
       updateHealth(player) {
         const healthBar = player === this.player1 ? p1Health : p2Health;
         const hpText = player === this.player1 ? p1Hp : p2Hp;
-        healthBar.style.width = `${(player.health / player.maxHealth) * 100}%`;
+
+        // Calculate health percentage
+        const percentage = (player.health / player.maxHealth) * 100;
+
+        // Set the width of the health bar
+        healthBar.style.width = `${percentage}%`;
+
+        // Determine the color based on health percentage
+        let color;
+        if (percentage > 75) {
+          color = '#4CAF50'; // Green for 75-100%
+        } else if (percentage > 50) {
+          color = '#FFC105'; // Yellow for 50-75%
+        } else if (percentage > 25) {
+          color = '#FFA500'; // Orange for 25-50%
+        } else {
+          color = '#F44336'; // Red for 0-25%
+        }
+
+        // Apply the color to the health bar
+        healthBar.style.backgroundColor = color;
+
+        // Update the health text
         hpText.textContent = `${player.health}/${player.maxHealth}`;
       }
 
