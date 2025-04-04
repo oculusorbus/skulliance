@@ -452,7 +452,7 @@
       generateCharacter() {
         const type = randomChoice(["Fighter", "Trickster", "Brute"]);
         const strength = Math.floor(Math.random() * 3) + 3; // 3-5
-        const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger", "Billander and Ted", "Craig", "Dankle", "Drake", "Katastrophy", "Ouchie"]);
+        const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger", "Billander and Ted", "Craig", "Dankle", "Drake", "Katastrophy", "Ouchie", "Merdock"]);
         const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${name.toLowerCase().replace(/ /g, '-')}.png`;
         return {
           name,
