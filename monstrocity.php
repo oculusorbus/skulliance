@@ -110,8 +110,8 @@
 
     .selected {
       transform: scale(1.05);
-      outline: 0.25vh solid white; /* Changed from border to outline to prevent layout shift */
-      outline-offset: -0.25vh; /* Pulls the outline inside the tile to match the border's appearance */
+      outline: 0.25vh solid white;
+      outline-offset: -0.25vh;
       z-index: 10;
       pointer-events: none;
     }
@@ -233,7 +233,7 @@
 </head>
 <body>
   <div class="game-container">
-    <h1>Monstrocity Match-3</h1>
+    <h1>Match-3 Battle</h1>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
     <div class="battlefield">
       <div class="character" id="player1">
@@ -399,7 +399,6 @@
         }
 
         document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
-        console.log("Board rendered.");
       }
 
       addEventListeners() {
@@ -779,11 +778,11 @@
             this.board[y][x].element = null;
           });
 
-          if (type === "first-attack") this.attack(attacker, defender, "first-attack", 3);
-          else if (type === "second-attack") this.attack(attacker, defender, "second-attack", 3);
-          else if (type === "special-attack") this.attack(attacker, defender, "special-attack", 3);
+          if (type === "first-attack") this.attack(attacker, defender, "first-attack", matches.size);
+          else if (type === "second-attack") this.attack(attacker, defender, "second-attack", matches.size);
+          else if (type === "special-attack") this.attack(attacker, defender, "special-attack", matches.size);
           else if (type === "power-up") this.usePowerup(attacker);
-          else if (type === "last-stand") this.lastStand(attacker, defender, 3);
+          else if (type === "last-stand") this.lastStand(attacker, defender, matches.size);
 
           this.cascadeTiles(() => {
             this.endTurn();
@@ -861,7 +860,7 @@
       }
 
       attack(attacker, defender, type, tileCount) {
-        let damage = Math.round(attacker.strength * (tileCount === 3 ? 1 : tileCount === 4 ? 1.5 : 2));
+        let damage = Math.round(attacker.strength * (tileCount === 3 ? 2 : tileCount === 4 ? 3 : 4));
         if (type === "special-attack") damage = Math.round(damage * 1.2);
         if (attacker.boostActive) {
           damage += 10;
@@ -881,8 +880,8 @@
 
       usePowerup(player) {
         if (player.powerup === "Heal") {
-          player.health = Math.min(player.maxHealth, player.health + 20);
-          log(`${player.name} uses Heal, restoring 20 HP!`);
+          player.health = Math.min(player.maxHealth, player.health + 10);
+          log(`${player.name} uses Heal, restoring 10 HP!`);
         } else if (player.powerup === "Boost (Next Attack +10)") {
           player.boostActive = true;
           log(`${player.name} uses Power Surge, next attack +10 damage!`);
@@ -894,7 +893,7 @@
       }
 
       lastStand(attacker, defender, tileCount) {
-        let damage = Math.round(attacker.strength * (tileCount === 3 ? 1 : tileCount === 4 ? 1.5 : 2));
+        let damage = Math.round(attacker.strength * (tileCount === 3 ? 2 : tileCount === 4 ? 3 : 4));
         if (attacker.boostActive) {
           damage += 10;
           attacker.boostActive = false;
