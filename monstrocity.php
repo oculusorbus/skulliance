@@ -308,11 +308,19 @@
 	  
 	  .character {
    	    min-height: 100px;
+		text-align: right;
+	  }
+	  
+	  .character h2{
+		  text-align: center;
 	  }
 	  
 	  .character img {
-		width: 100px;
+		width: 80px;
 		float: left;
+		position: absolute;
+		left: 10px;
+		top: 100px;
 	  }
 
       .battlefield {
