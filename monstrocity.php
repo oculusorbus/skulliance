@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #1a1a1a;
+      background-color: #121212; /* Darker gray */
       color: #fff;
       display: flex;
       justify-content: center;
@@ -15,11 +15,16 @@
       min-height: 100vh;
       margin: 0;
     }
+    
+    h2 {
+      margin-top: 0px;
+    }
 
     .game-container {
+      margin-top: 20px;
       text-align: center;
       padding: 20px;
-      background-color: #2a2a2a;
+      background-color: #1e1e1e; /* Slightly lighter gray */
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       width: 900px;
@@ -28,7 +33,12 @@
       box-sizing: border-box;
     }
 
-    h1 { color: #ffcc00; margin: 0 0 20px; }
+    .game-logo {
+      max-width: 300px;
+      height: auto;
+      margin: 0 auto 10px; /* Reduced margin to tighten design */
+      display: block;
+    }
 
     .turn-indicator {
       font-size: 1.2em;
@@ -47,10 +57,20 @@
     .character {
       width: 230px;
       padding: 15px;
-      background-color: #3a3a3a;
+      background-color: #2a2a2a; /* Lighter gray for characters */
       border-radius: 5px;
-      text-align: left;
+      text-align: center;
       flex-shrink: 0;
+      position: relative;
+      top: -170px;
+      min-height: 510px;
+    }
+
+    .character img {
+      width: 100%;
+      height: auto;
+      margin-bottom: 10px;
+      border-radius: 5px;
     }
 
     .health-bar {
@@ -102,11 +122,11 @@
       filter: grayscale(100%);
     }
 
-    .tile.first-attack { background-color: #4CAF50; }
-    .tile.second-attack { background-color: #2196F3; }
-    .tile.special-attack { background-color: #FFC107; }
-    .tile.power-up { background-color: #9C27B0; }
-    .tile.last-stand { background-color: #F44336; }
+    .tile.first-attack { background-color: #4CAF50; } /* Green */
+    .tile.second-attack { background-color: #2196F3; } /* Blue */
+    .tile.special-attack { background-color: #FFC107; } /* Yellow */
+    .tile.power-up { background-color: #9C27B0; } /* Purple */
+    .tile.last-stand { background-color: #F44336; } /* Red */
 
     .selected {
       transform: scale(1.05);
@@ -182,11 +202,13 @@
     .log {
       margin-top: 20px;
       text-align: left;
-      background-color: #333;
+      background-color: #2a2a2a; /* Match character background */
       padding: 10px;
       border-radius: 5px;
       max-height: 150px;
       overflow-y: auto;
+      position: relative;
+      top: -170px;
     }
 
     #battle-log { list-style: none; padding: 0; }
@@ -201,6 +223,8 @@
       cursor: pointer;
       font-weight: bold;
       margin-top: 20px;
+      position: relative;
+      top: -170px;
     }
 
     button:hover { background-color: #e6b800; }
@@ -209,9 +233,11 @@
     .legend {
       margin-top: 20px;
       text-align: left;
-      background-color: #333;
+      background-color: #2a2a2a; /* Match character background */
       padding: 10px;
       border-radius: 5px;
+      position: relative;
+      top: -170px;
     }
 
     .legend h3 {
@@ -283,23 +309,30 @@
 </head>
 <body>
   <div class="game-container">
-    <h1>Monstrocity Match-3</h1>
+    <!-- Logo Image -->
+    <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
     <div class="battlefield">
       <div class="character" id="player1">
-        <h2>Player 1: <span id="p1-name"></span></h2>
-        <p>Type: <span id="p1-type"></span></p>
+                <h2><span id="p1-name"></span></h2>
+
+        <img id="p1-image" src="" alt="Player 1 Image">
+
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
         <p>Health: <span id="p1-hp"></span></p>
         <p>Powerup: <span id="p1-powerup"></span></p>
+                <p>Type: <span id="p1-type"></span></p>
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
-        <h2>Player 2: <span id="p2-name"></span></h2>
-        <p>Type: <span id="p2-type"></span></p>
+                <h2><span id="p2-name"></span></h2>
+        
+        <img id="p2-image" src="" alt="Player 2 Image">
+
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
         <p>Health: <span id="p2-hp"></span></p>
         <p>Powerup: <span id="p2-powerup"></span></p>
+        <p>Type: <span id="p2-type"></span></p>
       </div>
     </div>
     <div class="log">
@@ -332,6 +365,7 @@
     </div>
   </div>
 
+
   <script>
     class MonstrocityMatch3 {
       constructor() {
@@ -354,6 +388,15 @@
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap(); // Calculate initially
 
+        // Sound effects
+        this.sounds = {
+          match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+          cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+          badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
+          gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
+          reset: new Audio('https://www.skulliance.io/staking/sounds/voice_welcomeback.ogg'),
+        };
+
         this.initGame();
         this.addEventListeners();
       }
@@ -365,9 +408,10 @@
       }
 
       initGame() {
+        this.sounds.reset.play(); // Play reset sound on game start/restart
         log("Starting game initialization...");
 
-        // Initialize players
+        // Initialize players with image URLs
         this.player1 = this.generateCharacter();
         this.player2 = this.generateCharacter();
         this.currentTurn = this.player1.strength >= this.player2.strength ? this.player1 : this.player2;
@@ -380,11 +424,14 @@
         p1Hp.textContent = `${this.player1.health}/${this.player1.maxHealth}`;
         p1Health.style.width = "100%";
         p1Powerup.textContent = this.player1.powerup;
+        p1Image.src = this.player1.imageUrl; // Set Player 1 image
+
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
         p2Hp.textContent = `${this.player2.health}/${this.player2.maxHealth}`;
         p2Health.style.width = "100%";
         p2Powerup.textContent = this.player2.powerup;
+        p2Image.src = this.player2.imageUrl; // Set Player 2 image
 
         battleLog.innerHTML = "";
         gameOver.textContent = "";
@@ -402,15 +449,18 @@
       generateCharacter() {
         const type = randomChoice(["Fighter", "Trickster", "Brute"]);
         const strength = Math.floor(Math.random() * 3) + 3; // 3-5
+        const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger"]);
+        const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${name.toLowerCase().replace(/ /g, '-')}.png`;
         return {
-          name: randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger"]),
+          name,
           type,
           strength,
           powerup: randomChoice(["Heal", "Boost (Next Attack +10)", "Minor Regen"]),
           health: type === "Brute" ? 100 : 75,
           maxHealth: type === "Brute" ? 100 : 75,
           boostActive: false,
-          lastStandActive: false
+          lastStandActive: false,
+          imageUrl
         };
       }
 
@@ -734,6 +784,7 @@
             this.gameState = "animating";
           } else {
             log("No match, reverting tiles...");
+            this.sounds.badMove.play(); // Play bad move sound
             selectedElement.style.transition = "transform 0.2s ease";
             selectedElement.style.transform = "translate(0, 0)";
             tileElements.forEach(element => {
@@ -851,6 +902,7 @@
           else if (type === "power-up") this.usePowerup(attacker);
           else if (type === "last-stand") this.lastStand(attacker, defender, matches.size);
 
+          this.sounds.match.play(); // Play match sound
           this.cascadeTiles(() => {
             this.endTurn();
           });
@@ -878,6 +930,7 @@
 
         if (moved) {
           setTimeout(() => {
+            this.sounds.cascade.play(); // Play cascade sound
             const hasMatches = this.resolveMatches();
             const tiles = document.querySelectorAll(`.${fallClass}`);
             tiles.forEach(tile => {
@@ -1040,11 +1093,13 @@
           gameOver.textContent = `${this.player2.name} Wins!`;
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           document.getElementById("game-over-container").style.display = "block";
+          this.sounds.gameOver.play(); // Play game over sound
         } else if (this.player2.health <= 0) {
           this.gameState = "gameOver";
           gameOver.textContent = `${this.player1.name} Wins!`;
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           document.getElementById("game-over-container").style.display = "block";
+          this.sounds.gameOver.play(); // Play game over sound
         }
       }
     }
@@ -1068,11 +1123,13 @@
     const p1Hp = document.getElementById("p1-hp");
     const p1Health = document.getElementById("p1-health");
     const p1Powerup = document.getElementById("p1-powerup");
+    const p1Image = document.getElementById("p1-image");
     const p2Name = document.getElementById("p2-name");
     const p2Type = document.getElementById("p2-type");
     const p2Hp = document.getElementById("p2-hp");
     const p2Health = document.getElementById("p2-health");
     const p2Powerup = document.getElementById("p2-powerup");
+    const p2Image = document.getElementById("p2-image");
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 
