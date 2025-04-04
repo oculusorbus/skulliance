@@ -205,6 +205,47 @@
 
     button:hover { background-color: #e6b800; }
 
+    /* Legend Styles */
+    .legend {
+      margin-top: 20px;
+      text-align: left;
+      background-color: #333;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .legend h3 {
+      margin: 0 0 10px;
+      color: #ffcc00;
+    }
+
+    .legend ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .legend li {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      font-size: 0.9em;
+    }
+
+    .legend-tile {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
+      display: inline-block;
+      border: 1px solid #555;
+    }
+
+    .legend-tile.first-attack { background-color: #4CAF50; }
+    .legend-tile.second-attack { background-color: #2196F3; }
+    .legend-tile.special-attack { background-color: #FFC107; }
+    .legend-tile.power-up { background-color: #9C27B0; }
+    .legend-tile.last-stand { background-color: #F44336; }
+
     /* Responsive adjustments for smaller screens */
     @media (max-width: 950px) {
       .game-container {
@@ -228,16 +269,25 @@
         width: 250px;
         height: 250px;
       }
+
+      .legend {
+        font-size: 0.8em;
+      }
+
+      .legend-tile {
+        width: 15px;
+        height: 15px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="game-container">
-    <h1>Match-3 Battle</h1>
+    <h1>Monstrocity Match-3</h1>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
     <div class="battlefield">
       <div class="character" id="player1">
-        <h2>Player 1:<br><span id="p1-name"></span></h2>
+        <h2>Player 1: <span id="p1-name"></span></h2>
         <p>Type: <span id="p1-type"></span></p>
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
         <p>Health: <span id="p1-hp"></span></p>
@@ -245,7 +295,7 @@
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
-        <h2>Player 2:<br><span id="p2-name"></span></h2>
+        <h2>Player 2: <span id="p2-name"></span></h2>
         <p>Type: <span id="p2-type"></span></p>
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
         <p>Health: <span id="p2-hp"></span></p>
@@ -255,6 +305,23 @@
     <div class="log">
       <h3>Battle Log</h3>
       <ul id="battle-log"></ul>
+    </div>
+    <!-- Legend Section -->
+    <div class="legend">
+      <h3>Legend</h3>
+      <ul>
+        <li><span class="legend-tile first-attack"></span>First Attack (Slash): Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile second-attack"></span>Second Attack (Bite): Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile special-attack"></span>Special Attack (Shadow Strike): Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile power-up"></span>Power-Up: Activates a random powerup (see below)</li>
+        <li><span class="legend-tile last-stand"></span>Last Stand: Deals damage and mitigates 5 damage on the next attack received</li>
+      </ul>
+      <h3>Powerup Effects</h3>
+      <ul>
+        <li>Heal: Restores 10 HP</li>
+        <li>Boost: Adds +10 damage to the next attack</li>
+        <li>Minor Regen: Restores 5 HP</li>
+      </ul>
     </div>
     <button id="restart">Restart Game</button>
     <div id="game-over-container">
