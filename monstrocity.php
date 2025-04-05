@@ -78,7 +78,7 @@
       height: auto;
       margin-bottom: 10px;
       border-radius: 5px;
-      transition: filter 0.5s ease;
+      transition: transform 0.1s linear, filter 0.5s ease; /* Updated to linear easing */
     }
     
     .grayscale {
@@ -253,7 +253,6 @@
 
     button:hover { background-color: #e6b800; }
 
-    /* Legend Styles */
     .legend {
       margin-top: 20px;
       text-align: left;
@@ -296,7 +295,39 @@
     .legend-tile.power-up { background-color: #9C27B0; }
     .legend-tile.last-stand { background-color: #F44336; }
 
-    /* Responsive adjustments for smaller screens */
+    /* Animation Styles */
+    .glow-first-attack {
+      box-shadow: 0 0 10px 5px #4CAF50;
+    }
+    .glow-second-attack {
+      box-shadow: 0 0 10px 5px #2196F3;
+    }
+    .glow-special-attack {
+      box-shadow: 0 0 10px 5px #FFC107;
+    }
+    .glow-last-stand {
+      box-shadow: 0 0 10px 5px #F44336;
+    }
+    .glow-power-up {
+      box-shadow: 0 0 10px 5px #9C27B0;
+    }
+    .glow-recoil {
+      box-shadow: 0 0 10px 5px #FF0000;
+    }
+    .winner {
+      animation: bounce 1.5s infinite, pulseGlow 1.5s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 10px 5px #FFD700; }
+      50% { box-shadow: 0 0 20px 10px #FFD700; }
+      100% { box-shadow: 0 0 10px 5px #FFD700; }
+    }
+
+    /* Responsive adjustments */
     @media (max-width: 950px) {
       .game-container {
         width: 100%;
@@ -353,7 +384,6 @@
 </head>
 <body>
   <div class="game-container">
-    <!-- Logo Image -->
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
     <button id="restart">Restart Game</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
@@ -381,7 +411,6 @@
       <h3>Battle Log</h3>
       <ul id="battle-log"></ul>
     </div>
-    <!-- Legend Section -->
     <div class="legend">
       <h3>Legend</h3>
       <ul>
@@ -407,7 +436,6 @@
   </div>
 
   <script>
-    // Character default facing directions
     const characterDirections = {
       "Billander and Ted": "Left",
       "Craig": "Left",
@@ -446,7 +474,6 @@
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
 
-        // Sound effects (optional, can be removed if not needed)
         this.sounds = {
           match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
           cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
@@ -468,21 +495,18 @@
       }
 
       initGame() {
-        this.sounds.reset.play(); // Play reset sound
+        this.sounds.reset.play();
         log("Starting game initialization...");
 
-        // Initialize players with new characters
         this.player1 = this.generateCharacter();
         this.player2 = this.generateCharacter();
         this.currentTurn = this.player1.strength >= this.player2.strength ? this.player1 : this.player2;
         this.gameState = "initializing";
         this.gameOver = false;
 
-        // Remove grayscale from both images
-        p1Image.classList.remove('grayscale');
-        p2Image.classList.remove('grayscale');
+        p1Image.classList.remove('grayscale', 'winner');
+        p2Image.classList.remove('grayscale', 'winner');
 
-        // Update UI with new character details
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
         p1Powerup.textContent = this.player1.powerup;
@@ -493,7 +517,6 @@
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl;
 
-        // Flip images based on default directions
         if (characterDirections[this.player1.name] === "Left") {
           p1Image.style.transform = "scaleX(-1)";
         } else {
@@ -506,7 +529,6 @@
           p2Image.style.transform = "none";
         }
 
-        // Update health bars
         this.updateHealth(this.player1);
         this.updateHealth(this.player2);
 
@@ -525,7 +547,7 @@
 
       generateCharacter() {
         const type = randomChoice(["Fighter", "Trickster", "Brute"]);
-        const strength = Math.floor(Math.random() * 3) + 3; // 3-5
+        const strength = Math.floor(Math.random() * 3) + 3;
         const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger", "Billander and Ted", "Craig", "Dankle", "Drake", "Katastrophy", "Ouchie", "Merdock"]);
         const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${name.toLowerCase().replace(/ /g, '-')}.png`;
         return {
@@ -577,7 +599,7 @@
         for (let y = 0; y < this.height; y++) {
           for (let x = 0; x < this.width; x++) {
             const tile = this.board[y][x];
-            if (tile.type === null) continue; // Skip rendering null tiles to prevent broken images
+            if (tile.type === null) continue;
             const tileElement = document.createElement("div");
             tileElement.className = `tile ${tile.type}`;
             if (this.gameOver) tileElement.classList.add("game-over");
@@ -894,100 +916,144 @@
 
       resolveMatches(selectedX = null, selectedY = null) {
         if (this.gameOver) return false;
-        const matchResult = this.checkMatches(selectedX, selectedY);
-        if (matchResult.hasMatches) {
-          const { matches, type } = matchResult;
-          if (matches.size >= 3) {
-            this.handleMatches(matches, type);
+        const matches = this.checkMatches();
+        if (matches.length > 0) {
+          const allMatchedTiles = new Set();
+          let totalDamage = 0;
+          const attacker = this.currentTurn;
+          const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+
+          matches.forEach(match => {
+            const damage = this.handleMatch(match);
+            if (damage > 0) totalDamage += damage;
+            match.coordinates.forEach(coord => allMatchedTiles.add(coord));
+          });
+
+          // Trigger recoil after 100ms
+          if (totalDamage > 0 && !this.gameOver) {
+            setTimeout(() => this.animateRecoil(defender, totalDamage), 100);
           }
+
+          // Remove tiles after 200ms
+          setTimeout(() => {
+            allMatchedTiles.forEach(tile => {
+              const [x, y] = tile.split(",").map(Number);
+              if (this.board[y][x].element) {
+                this.board[y][x].element.classList.add("matched");
+              }
+            });
+
+            setTimeout(() => {
+              allMatchedTiles.forEach(tile => {
+                const [x, y] = tile.split(",").map(Number);
+                this.board[y][x].type = null;
+                this.board[y][x].element = null;
+              });
+              this.sounds.match.play();
+              this.cascadeTiles(() => {
+                this.endTurn();
+              });
+            }, 300); // Time for match animation
+          }, 200); // Matches total animation duration
+
           return true;
         }
         return false;
       }
 
-      checkMatches(selectedX = null, selectedY = null) {
-        let hasMatches = false;
-        const allMatches = new Set();
-        let type = null;
+      checkMatches() {
+        const matches = [];
 
+        // Check rows
         for (let y = 0; y < this.height; y++) {
-          let matchStart = 0;
-          let currentType = null;
+          let startX = 0;
           for (let x = 0; x <= this.width; x++) {
-            const tile = x < this.width ? this.board[y][x] : null;
-            const tileType = tile ? tile.type : null;
-
-            if (tileType !== currentType || x === this.width) {
-              const matchLength = x - matchStart;
+            const currentType = x < this.width ? this.board[y][x].type : null;
+            if (currentType !== this.board[y][startX].type || x === this.width) {
+              const matchLength = x - startX;
               if (matchLength >= 3) {
-                for (let i = matchStart; i < x; i++) {
-                  allMatches.add(`${i},${y}`);
+                const matchCoordinates = new Set();
+                for (let i = startX; i < x; i++) {
+                  matchCoordinates.add(`${i},${y}`);
                 }
-                hasMatches = true;
-                type = currentType;
+                matches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates });
               }
-              matchStart = x;
-              currentType = tileType;
+              startX = x;
             }
           }
         }
 
+        // Check columns
         for (let x = 0; x < this.width; x++) {
-          let matchStart = 0;
-          let currentType = null;
+          let startY = 0;
           for (let y = 0; y <= this.height; y++) {
-            const tile = y < this.height ? this.board[y][x] : null;
-            const tileType = tile ? tile.type : null;
-
-            if (tileType !== currentType || y === this.height) {
-              const matchLength = y - matchStart;
+            const currentType = y < this.height ? this.board[y][x].type : null;
+            if (currentType !== this.board[startY][x].type || y === this.height) {
+              const matchLength = y - startY;
               if (matchLength >= 3) {
-                for (let i = matchStart; i < y; i++) {
-                  allMatches.add(`${x},${i}`);
+                const matchCoordinates = new Set();
+                for (let i = startY; i < y; i++) {
+                  matchCoordinates.add(`${x},${i}`);
                 }
-                hasMatches = true;
-                type = currentType;
+                matches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates });
               }
-              matchStart = y;
-              currentType = tileType;
+              startY = y;
             }
           }
         }
 
-        return { hasMatches, matches: allMatches, type };
+        return matches;
       }
 
-      handleMatches(matches, type) {
+      handleMatch(match) {
         const attacker = this.currentTurn;
         const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+        const type = match.type;
+        const size = match.coordinates.size;
+        let damage = 0;
 
-        matches.forEach(match => {
-          const [x, y] = match.split(",").map(Number);
-          if (this.board[y][x].element) {
-            this.board[y][x].element.classList.add("matched");
+        if (type === "first-attack" || type === "second-attack" || type === "special-attack") {
+          damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
+          if (type === "special-attack") damage = Math.round(damage * 1.2);
+          if (attacker.boostActive) {
+            damage += 10;
+            attacker.boostActive = false;
+            log(`${attacker.name}'s Boost fades.`);
           }
-        });
+          if (defender.lastStandActive) {
+            damage = Math.max(0, damage - 5);
+            defender.lastStandActive = false;
+            log(`${defender.name}'s Last Stand mitigates 5 damage!`);
+          }
+          defender.health = Math.max(0, defender.health - damage);
+          log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
+          this.updateHealth(defender);
+          this.checkGameOver();
+          if (!this.gameOver) this.animateAttack(attacker, damage, type);
+        } else if (type === "power-up") {
+          this.usePowerup(attacker);
+          if (!this.gameOver) this.animatePowerup(attacker);
+        } else if (type === "last-stand") {
+          damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
+          if (attacker.boostActive) {
+            damage += 10;
+            attacker.boostActive = false;
+            log(`${attacker.name}'s Boost fades.`);
+          }
+          if (defender.lastStandActive) {
+            damage = Math.max(0, damage - 5);
+            defender.lastStandActive = false;
+            log(`${defender.name}'s Last Stand mitigates 5 damage!`);
+          }
+          defender.health = Math.max(0, defender.health - damage);
+          attacker.lastStandActive = true;
+          log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
+          this.updateHealth(defender);
+          this.checkGameOver();
+          if (!this.gameOver) this.animateAttack(attacker, damage, type);
+        }
 
-        setTimeout(() => {
-          if (this.gameOver) return;
-
-          matches.forEach(match => {
-            const [x, y] = match.split(",").map(Number);
-            this.board[y][x].type = null;
-            this.board[y][x].element = null;
-          });
-
-          if (type === "first-attack") this.attack(attacker, defender, "first-attack", matches.size);
-          else if (type === "second-attack") this.attack(attacker, defender, "second-attack", matches.size);
-          else if (type === "special-attack") this.attack(attacker, defender, "special-attack", matches.size);
-          else if (type === "power-up") this.usePowerup(attacker);
-          else if (type === "last-stand") this.lastStand(attacker, defender, matches.size);
-
-          this.sounds.match.play();
-          this.cascadeTiles(() => {
-            this.endTurn();
-          });
-        }, 300);
+        return damage;
       }
 
       cascadeTiles(callback) {
@@ -1063,30 +1129,11 @@
         return count;
       }
 
-      attack(attacker, defender, type, tileCount) {
-        let damage = Math.round(attacker.strength * (tileCount === 3 ? 2 : tileCount === 4 ? 3 : 4));
-        if (type === "special-attack") damage = Math.round(damage * 1.2);
-        if (attacker.boostActive) {
-          damage += 10;
-          attacker.boostActive = false;
-          log(`${attacker.name}'s Boost fades.`);
-        }
-        if (defender.lastStandActive) {
-          damage = Math.max(0, damage - 5);
-          defender.lastStandActive = false;
-          log(`${defender.name}'s Last Stand mitigates 5 damage!`);
-        }
-        defender.health = Math.max(0, defender.health - damage);
-        log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
-        this.updateHealth(defender);
-        this.checkGameOver();
-      }
-
       usePowerup(player) {
         if (player.powerup === "Heal") {
           player.health = Math.min(player.maxHealth, player.health + 10);
           log(`${player.name} uses Heal, restoring 10 HP!`);
-        } else if (player.powerup === "Boost (Next Attack +10)") {
+        } else if (player.powerup === "Boost (Next Attack)") {
           player.boostActive = true;
           log(`${player.name} uses Power Surge, next attack +10 damage!`);
         } else if (player.powerup === "Minor Regen") {
@@ -1094,25 +1141,6 @@
           log(`${player.name} uses Minor Regen, restoring 5 HP!`);
         }
         this.updateHealth(player);
-      }
-
-      lastStand(attacker, defender, tileCount) {
-        let damage = Math.round(attacker.strength * (tileCount === 3 ? 2 : tileCount === 4 ? 3 : 4));
-        if (attacker.boostActive) {
-          damage += 10;
-          attacker.boostActive = false;
-          log(`${attacker.name}'s Boost fades.`);
-        }
-        if (defender.lastStandActive) {
-          damage = Math.max(0, damage - 5);
-          defender.lastStandActive = false;
-          log(`${defender.name}'s Last Stand mitigates 5 damage!`);
-        }
-        defender.health = Math.max(0, defender.health - damage);
-        attacker.lastStandActive = true;
-        log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
-        this.updateHealth(defender);
-        this.checkGameOver();
       }
 
       updateHealth(player) {
@@ -1180,7 +1208,7 @@
         const temp2 = { ...this.board[y2][x2] };
         this.board[y1][x1] = temp2;
         this.board[y2][x2] = temp1;
-        const matches = this.checkMatches().hasMatches;
+        const matches = this.checkMatches().length > 0;
         this.board[y1][x1] = temp1;
         this.board[y2][x2] = temp2;
         return matches;
@@ -1196,6 +1224,7 @@
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
           p1Image.classList.add('grayscale');
+          p2Image.classList.add('winner');
           this.renderBoard();
         } else if (this.player2.health <= 0) {
           this.gameOver = true;
@@ -1206,12 +1235,48 @@
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
           p2Image.classList.add('grayscale');
+          p1Image.classList.add('winner');
           this.renderBoard();
         }
       }
+
+      applyAnimation(imageElement, shiftX, glowClass, duration) {
+        const originalTransform = imageElement.style.transform || '';
+        const scalePart = originalTransform.includes('scaleX') ? originalTransform.match(/scaleX\([^)]+\)/)[0] : '';
+        imageElement.style.transition = `transform ${duration / 2 / 1000}s linear`; // Changed to linear
+        imageElement.style.transform = `translateX(${shiftX}px) ${scalePart}`;
+        imageElement.classList.add(glowClass);
+        setTimeout(() => {
+          imageElement.style.transform = scalePart;
+          setTimeout(() => {
+            imageElement.classList.remove(glowClass);
+          }, duration / 2);
+        }, duration / 2);
+      }
+
+      animateAttack(attacker, damage, type) {
+        const imageElement = attacker === this.player1 ? p1Image : p2Image;
+        const shiftDirection = attacker === this.player1 ? 1 : -1;
+        const shiftDistance = Math.min(10, 2 + damage * 0.4); // Capped at 10px
+        const shiftX = shiftDirection * shiftDistance;
+        const glowClass = `glow-${type}`;
+        this.applyAnimation(imageElement, shiftX, glowClass, 200); // Reduced duration
+      }
+
+      animatePowerup(attacker) {
+        const imageElement = attacker === this.player1 ? p1Image : p2Image;
+        this.applyAnimation(imageElement, 0, 'glow-power-up', 200); // Reduced duration
+      }
+
+      animateRecoil(defender, totalDamage) {
+        const imageElement = defender === this.player1 ? p1Image : p2Image;
+        const shiftDirection = defender === this.player1 ? -1 : 1;
+        const shiftDistance = Math.min(10, 2 + totalDamage * 0.4); // Capped at 10px
+        const shiftX = shiftDirection * shiftDistance;
+        this.applyAnimation(imageElement, shiftX, 'glow-recoil', 200); // Reduced duration
+      }
     }
 
-    // Utility Functions
     function randomChoice(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
     }
@@ -1223,7 +1288,6 @@
       if (battleLog.children.length > 10) battleLog.removeChild(battleLog.lastChild);
     }
 
-    // DOM Elements
     const turnIndicator = document.getElementById("turn-indicator");
     const p1Name = document.getElementById("p1-name");
     const p1Type = document.getElementById("p1-type");
@@ -1240,7 +1304,6 @@
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 
-    // Start the game
     document.addEventListener("DOMContentLoaded", () => {
       const game = new MonstrocityMatch3();
     });
