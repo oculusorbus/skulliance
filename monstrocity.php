@@ -382,6 +382,7 @@
       
       .character h2 {
         text-align: center;
+		display: none;
       }
       
       .character img {
@@ -389,7 +390,7 @@
         float: left;
         position: absolute;
         left: 15px;
-        top: 95px;
+        top: 50px;
       }
 	  
 	  .character table{
