@@ -92,6 +92,7 @@
 	
 	.character table {
 		width: 100%;
+		text-align: left;
 	}
     
 	.character td{
