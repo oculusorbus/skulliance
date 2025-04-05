@@ -285,7 +285,7 @@
       margin-bottom: 20px;
     }
 
-    button:hover { background-color: #e6b800; }
+    button:hover { background-color: #fff; }
 
     .legend {
       margin-top: 20px;
