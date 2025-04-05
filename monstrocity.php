@@ -277,7 +277,7 @@
 
     button {
       padding: 10px 20px;
-      background-color: #022E3E;
+      background-color: #8FA5B2;
       border: none;
       border-radius: 5px;
       cursor: pointer;
