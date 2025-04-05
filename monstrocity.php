@@ -78,13 +78,9 @@
       height: auto;
       margin-bottom: 10px;
       border-radius: 5px;
-      transition: transform 0.1s linear, filter 0.5s ease; /* Updated to linear easing */
+      transition: transform 0.1s linear, filter 0.5s ease; /* Removed opacity transition */
     }
     
-    .grayscale {
-      filter: grayscale(100%);
-    }
-
     .health-bar {
       width: 100%;
       height: 20px;
@@ -317,6 +313,9 @@
     .winner {
       animation: bounce 1.5s infinite, pulseGlow 1.5s infinite;
     }
+    .loser {
+      animation: pulseRedGlow 1.5s infinite;
+    }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
@@ -325,6 +324,11 @@
       0% { box-shadow: 0 0 10px 5px #FFD700; }
       50% { box-shadow: 0 0 20px 10px #FFD700; }
       100% { box-shadow: 0 0 10px 5px #FFD700; }
+    }
+    @keyframes pulseRedGlow {
+      0% { box-shadow: 0 0 10px 5px #FF0000; }
+      50% { box-shadow: 0 0 20px 10px #FF0000; }
+      100% { box-shadow: 0 0 10px 5px #FF0000; }
     }
 
     /* Responsive adjustments */
@@ -443,7 +447,7 @@
       "Drake": "Right",
       "Goblin Ganger": "Left",
       "Jarhead": "Right",
-      "Katastrophy": "Left",
+      "Katastrophy": "Right",
       "Koipon": "Left",
       "Mandiblus": "Left",
       "Merdock": "Left",
@@ -504,8 +508,10 @@
         this.gameState = "initializing";
         this.gameOver = false;
 
-        p1Image.classList.remove('grayscale', 'winner');
-        p2Image.classList.remove('grayscale', 'winner');
+        p1Image.classList.remove('winner', 'loser');
+        p2Image.classList.remove('winner', 'loser');
+        p1Image.src = this.player1.imageUrl;
+        p2Image.src = this.player2.imageUrl;
 
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
@@ -929,12 +935,10 @@
             match.coordinates.forEach(coord => allMatchedTiles.add(coord));
           });
 
-          // Trigger recoil after 100ms
           if (totalDamage > 0 && !this.gameOver) {
             setTimeout(() => this.animateRecoil(defender, totalDamage), 100);
           }
 
-          // Remove tiles after 200ms
           setTimeout(() => {
             allMatchedTiles.forEach(tile => {
               const [x, y] = tile.split(",").map(Number);
@@ -953,8 +957,8 @@
               this.cascadeTiles(() => {
                 this.endTurn();
               });
-            }, 300); // Time for match animation
-          }, 200); // Matches total animation duration
+            }, 300);
+          }, 200);
 
           return true;
         }
@@ -964,7 +968,6 @@
       checkMatches() {
         const matches = [];
 
-        // Check rows
         for (let y = 0; y < this.height; y++) {
           let startX = 0;
           for (let x = 0; x <= this.width; x++) {
@@ -983,7 +986,6 @@
           }
         }
 
-        // Check columns
         for (let x = 0; x < this.width; x++) {
           let startY = 0;
           for (let y = 0; y <= this.height; y++) {
@@ -1223,8 +1225,10 @@
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
-          p1Image.classList.add('grayscale');
-          p2Image.classList.add('winner');
+          const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player1.name.toLowerCase().replace(/ /g, '-')}.png`;
+          p1Image.src = damagedUrl; // Instantly swap to battle-damaged image
+          p1Image.classList.add('loser'); // Apply red glow effect
+          p2Image.classList.add('winner'); // Apply gold glow and bounce effect
           this.renderBoard();
         } else if (this.player2.health <= 0) {
           this.gameOver = true;
@@ -1234,8 +1238,10 @@
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
-          p2Image.classList.add('grayscale');
-          p1Image.classList.add('winner');
+          const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
+          p2Image.src = damagedUrl; // Instantly swap to battle-damaged image
+          p2Image.classList.add('loser'); // Apply red glow effect
+          p1Image.classList.add('winner'); // Apply gold glow and bounce effect
           this.renderBoard();
         }
       }
@@ -1243,7 +1249,7 @@
       applyAnimation(imageElement, shiftX, glowClass, duration) {
         const originalTransform = imageElement.style.transform || '';
         const scalePart = originalTransform.includes('scaleX') ? originalTransform.match(/scaleX\([^)]+\)/)[0] : '';
-        imageElement.style.transition = `transform ${duration / 2 / 1000}s linear`; // Changed to linear
+        imageElement.style.transition = `transform ${duration / 2 / 1000}s linear`;
         imageElement.style.transform = `translateX(${shiftX}px) ${scalePart}`;
         imageElement.classList.add(glowClass);
         setTimeout(() => {
@@ -1257,23 +1263,23 @@
       animateAttack(attacker, damage, type) {
         const imageElement = attacker === this.player1 ? p1Image : p2Image;
         const shiftDirection = attacker === this.player1 ? 1 : -1;
-        const shiftDistance = Math.min(10, 2 + damage * 0.4); // Capped at 10px
+        const shiftDistance = Math.min(10, 2 + damage * 0.4);
         const shiftX = shiftDirection * shiftDistance;
         const glowClass = `glow-${type}`;
-        this.applyAnimation(imageElement, shiftX, glowClass, 200); // Reduced duration
+        this.applyAnimation(imageElement, shiftX, glowClass, 200);
       }
 
       animatePowerup(attacker) {
         const imageElement = attacker === this.player1 ? p1Image : p2Image;
-        this.applyAnimation(imageElement, 0, 'glow-power-up', 200); // Reduced duration
+        this.applyAnimation(imageElement, 0, 'glow-power-up', 200);
       }
 
       animateRecoil(defender, totalDamage) {
         const imageElement = defender === this.player1 ? p1Image : p2Image;
         const shiftDirection = defender === this.player1 ? -1 : 1;
-        const shiftDistance = Math.min(10, 2 + totalDamage * 0.4); // Capped at 10px
+        const shiftDistance = Math.min(10, 2 + totalDamage * 0.4);
         const shiftX = shiftDirection * shiftDistance;
-        this.applyAnimation(imageElement, shiftX, 'glow-recoil', 200); // Reduced duration
+        this.applyAnimation(imageElement, shiftX, 'glow-recoil', 200);
       }
     }
 
