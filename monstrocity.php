@@ -378,7 +378,7 @@
         min-height: 100px;
         text-align: right;
         width: 100%;
-        max-width: 300px;
+        max-width: 330px;
 		padding: 5px;
       }
       
