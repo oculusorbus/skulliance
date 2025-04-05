@@ -265,6 +265,10 @@
       position: relative;
       top: -225px;
     }
+	
+	.log {
+		margin: 0 0 10px;
+	}
 
     #battle-log { list-style: none; padding: 0; }
     #battle-log li { margin: 5px 0; opacity: 0; animation: fadeIn 0.5s forwards; }
