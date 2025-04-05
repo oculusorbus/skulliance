@@ -35,7 +35,7 @@
       min-width: 900px;
       max-width: 900px;
       box-sizing: border-box;
-      max-height: 1070px;
+      max-height: 1090px;
     }
 
     .game-logo {
@@ -428,7 +428,8 @@
       <h3>Powerup Effects</h3>
       <ul>
         <li>Heal: Restores 10 HP</li>
-        <li>Boost: Adds +10 damage to the next attack</li>
+        <li>Boost Attack: Adds +10 damage to the next attack</li>
+        <li>Regenerate: Restores 7 HP</li>
         <li>Minor Regen: Restores 5 HP</li>
       </ul>
     </div>
@@ -561,7 +562,7 @@
           name,
           type,
           strength,
-          powerup: randomChoice(["Heal", "Boost (Next Attack)", "Minor Regen"]),
+          powerup: randomChoice(["Heal", "Boost Attack", "Regenerate", "Minor Regen"]),
           health: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
           maxHealth: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
           boostActive: false,
@@ -1136,10 +1137,13 @@
         if (player.powerup === "Heal") {
           player.health = Math.min(player.maxHealth, player.health + 10);
           log(`${player.name} uses Heal, restoring 10 HP!`);
-        } else if (player.powerup === "Boost (Next Attack)") {
+        } else if (player.powerup === "Boost Attack") {
           player.boostActive = true;
           log(`${player.name} uses Power Surge, next attack +10 damage!`);
-        } else if (player.powerup === "Minor Regen") {
+        } else if (player.powerup === "Regenerate") {
+          player.health = Math.min(player.maxHealth, player.health + 5);
+          log(`${player.name} uses Regen, restoring 7 HP!`);
+        }else if (player.powerup === "Minor Regen") {
           player.health = Math.min(player.maxHealth, player.health + 5);
           log(`${player.name} uses Minor Regen, restoring 5 HP!`);
         }
