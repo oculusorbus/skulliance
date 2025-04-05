@@ -391,7 +391,7 @@
         float: left;
         position: absolute;
         left: 15px;
-        top: 50px;
+        top: 51px;
       }
 	  
 	  .character table{
