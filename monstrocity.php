@@ -170,7 +170,8 @@
 	  position: relative;
 	  top: -887px;
 	  left: 50%;
-	  width: 300px;
+	  width: 250px;
+	  max-width: 250px;
       /*position: absolute;
       top: 50%;
       left: 50%;*/
