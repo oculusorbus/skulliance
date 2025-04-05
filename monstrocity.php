@@ -380,6 +380,8 @@
         width: 100%;
         max-width: 330px;
 		padding: 5px;
+		padding-left: 10px;
+		padding-right: 10px;
       }
       
       .character h2 {
