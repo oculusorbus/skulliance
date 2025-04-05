@@ -266,7 +266,7 @@
       top: -225px;
     }
 	
-	.log {
+	.log h3 {
 		margin: 0 0 10px;
 	}
 
