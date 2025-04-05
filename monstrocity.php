@@ -99,6 +99,10 @@
 		padding: 5px;
 	}
 	
+	.character .attribute-label {
+		font-weight: bold;
+	}
+	
     .health-bar {
       width: 100%;
       height: 20px;
@@ -427,16 +431,16 @@
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
 		<table>
 		<tr>
-        <td>Health:</td><td><span id="p1-hp"></span></td>
+        <td class="attribute-label">Health:</td><td><span id="p1-hp"></span></td>
 		</tr>
 		<tr>
-        <td>Strength:</td><td><span id="p1-strength"></span></td>
+        <td class="attribute-label">Strength:</td><td><span id="p1-strength"></span></td>
 		</tr>
         <tr>
-		<td>Power-Up:</td><td><span id="p1-powerup"></span></td>
+		<td class="attribute-label">Power-Up:</td><td><span id="p1-powerup"></span></td>
 		</tr>
 		<tr>
-		<td>Type:</td><td><span id="p1-type"></span></td>
+		<td class="attribute-label">Type:</td><td><span id="p1-type"></span></td>
 		</tr>
 		</table>
       </div>
@@ -445,10 +449,20 @@
         <h2><span id="p2-name"></span></h2>
         <img id="p2-image" src="" alt="Player 2 Image">
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
-        <p>Health: <span id="p2-hp"></span></p>
-        <p>Strength: <span id="p2-strength"></span></p>
-        <p>Power-Up: <span id="p2-powerup"></span></p>
-		<p>Type: <span id="p2-type"></span></p>
+		<table>
+		<tr>
+        <td class="attribute-label">Health:</td><td><span id="p2-hp"></span></td>
+		</tr>
+		<tr>
+        <td class="attribute-label">Strength:</td><td><span id="p2-strength"></span></td>
+		</tr>
+        <tr>
+		<td class="attribute-label">Power-Up:</td><td><span id="p2-powerup"></span></td>
+		</tr>
+		<tr>
+		<td class="attribute-label">Type:</td><td><span id="p2-type"></span></td>
+		</tr>
+		</table>
       </div>
     </div>
     <div class="log">
