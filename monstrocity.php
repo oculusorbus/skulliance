@@ -404,7 +404,7 @@
       }
 	  
 	  .turn-indicator {
-		display: none;
+		opacity: 0;
 	  }
 
       #game-board {
