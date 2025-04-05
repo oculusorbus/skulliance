@@ -21,6 +21,7 @@
     
     h2 {
       margin-top: 0px;
+	  font-weight: bold;
     }
 
     .game-container {
