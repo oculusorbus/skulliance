@@ -90,8 +90,14 @@
 		font-weight: normal;
 	}
 	
-	
+	.character table {
+		width: 100%;
+	}
     
+	.character td{
+		padding: 5px;
+	}
+	
     .health-bar {
       width: 100%;
       height: 20px;
@@ -420,16 +426,16 @@
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
 		<table>
 		<tr>
-        <td><p>Health:</p></td><td><span id="p1-hp"></span></td>
+        <td>Health:</td><td><span id="p1-hp"></span></td>
 		</tr>
 		<tr>
-        <td><p>Strength:</p></td><td><span id="p1-strength"></span></td>
+        <td>Strength:</td><td><span id="p1-strength"></span></td>
 		</tr>
         <tr>
-		<td><p>Power-Up:</p></td><td><span id="p1-powerup"></span></td>
+		<td>Power-Up:</td><td><span id="p1-powerup"></span></td>
 		</tr>
 		<tr>
-		<td><p>Type:</p></td><td><span id="p1-type"></span></td>
+		<td>Type:</td><td><span id="p1-type"></span></td>
 		</tr>
 		</table>
       </div>
