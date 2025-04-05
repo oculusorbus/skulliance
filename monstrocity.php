@@ -428,7 +428,7 @@
         position: relative;
         top: -225px;
 		margin-top: 0px;
-		background-color: none;
+		background: none;
       }
 
       .legend {
