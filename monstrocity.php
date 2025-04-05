@@ -81,6 +81,14 @@
       border-radius: 5px;
       transition: transform 0.1s linear, filter 0.5s ease; /* Removed opacity transition */
     }
+	
+	.character p{
+		font-weight: bold;
+	}
+	
+	.character span{
+		font-weight: normal;
+	}
     
     .health-bar {
       width: 100%;
