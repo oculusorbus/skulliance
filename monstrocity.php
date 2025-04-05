@@ -416,8 +416,9 @@
         <img id="p1-image" src="" alt="Player 1 Image">
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
         <p>Health: <span id="p1-hp"></span></p>
+        <p>Strength: <span id="p1-strength"></span></p>
         <p>Power-Up: <span id="p1-powerup"></span></p>
-        <p>Type: <span id="p1-type"></span></p>
+		<p>Type: <span id="p1-type"></span></p>
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
@@ -425,8 +426,9 @@
         <img id="p2-image" src="" alt="Player 2 Image">
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
         <p>Health: <span id="p2-hp"></span></p>
+        <p>Strength: <span id="p2-strength"></span></p>
         <p>Power-Up: <span id="p2-powerup"></span></p>
-        <p>Type: <span id="p2-type"></span></p>
+		<p>Type: <span id="p2-type"></span></p>
       </div>
     </div>
     <div class="log">
@@ -535,11 +537,13 @@
 
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
+		p1Strength.textContent = this.player1.strength;
         p1Powerup.textContent = this.player1.powerup;
         p1Image.src = this.player1.imageUrl;
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
+		p2Strength.textContent = this.player2.strength;
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl;
 
@@ -1320,12 +1324,14 @@
     const turnIndicator = document.getElementById("turn-indicator");
     const p1Name = document.getElementById("p1-name");
     const p1Type = document.getElementById("p1-type");
+    const p1Strenth = document.getElementById("p1-strength");
     const p1Hp = document.getElementById("p1-hp");
     const p1Health = document.getElementById("p1-health");
     const p1Powerup = document.getElementById("p1-powerup");
     const p1Image = document.getElementById("p1-image");
     const p2Name = document.getElementById("p2-name");
     const p2Type = document.getElementById("p2-type");
+    const p2Strenth = document.getElementById("p2-strength");
     const p2Hp = document.getElementById("p2-hp");
     const p2Health = document.getElementById("p2-health");
     const p2Powerup = document.getElementById("p2-powerup");
