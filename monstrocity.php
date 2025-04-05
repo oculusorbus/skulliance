@@ -388,11 +388,11 @@
       }
       
       .character img {
-        width: 72px;
+        width: 68px;
         float: left;
         position: absolute;
         left: 15px;
-        top: 41px;
+        top: 37px;
       }
 	  
 	  .character table{
