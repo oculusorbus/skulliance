@@ -371,6 +371,7 @@
         max-width: 100%;
         padding: 10px;
         max-height: none;
+		margin-top: 0px;
       }
 	  
       .character {
