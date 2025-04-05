@@ -118,7 +118,8 @@
       height: 300px;
       grid-template-columns: repeat(5, 1fr);
       flex-shrink: 0;
-      margin-top: 15px;
+	  margin-top: 32px;
+	  border-radius: 5px;
     }
 
     .tile {
