@@ -21,7 +21,7 @@
     
     h2 {
       margin-top: 0px;
-	  font-weight: bold !important;
+	  font-weight: bold;
     }
 
     .game-container {
@@ -87,10 +87,6 @@
 		font-weight: bold;
 	}
 	
-	.character span{
-		font-weight: normal;
-	}
-	
 	.character table {
 		width: 100%;
 		text-align: left;
@@ -106,6 +102,10 @@
 		font-weight: bold;
 		width: 42%;
 		text-align: left;
+	}
+	
+	.character .attribute {
+		font-weight: normal;
 	}
 	
     .health-bar {
@@ -462,16 +462,16 @@
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
 		<table>
 		<tr>
-        <td class="attribute-label">Health:</td><td><span id="p1-hp"></span></td>
+        <td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td>
 		</tr>
 		<tr>
-        <td class="attribute-label">Strength:</td><td><span id="p1-strength"></span></td>
+        <td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td>
 		</tr>
         <tr>
-		<td class="attribute-label">Power-Up:</td><td><span id="p1-powerup"></span></td>
+		<td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td>
 		</tr>
 		<tr>
-		<td class="attribute-label">Type:</td><td><span id="p1-type"></span></td>
+		<td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td>
 		</tr>
 		</table>
       </div>
@@ -482,16 +482,16 @@
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
 		<table>
 		<tr>
-        <td class="attribute-label">Health:</td><td><span id="p2-hp"></span></td>
+        <td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td>
 		</tr>
 		<tr>
-        <td class="attribute-label">Strength:</td><td><span id="p2-strength"></span></td>
+        <td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td>
 		</tr>
         <tr>
-		<td class="attribute-label">Power-Up:</td><td><span id="p2-powerup"></span></td>
+		<td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td>
 		</tr>
 		<tr>
-		<td class="attribute-label">Type:</td><td><span id="p2-type"></span></td>
+		<td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td>
 		</tr>
 		</table>
       </div>
