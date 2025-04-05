@@ -388,18 +388,19 @@
         width: 80px;
         float: left;
         position: absolute;
-        left: 10px;
-        top: 100px;
+        left: 15px;
+        top: 95px;
       }
 	  
 	  .character table{
-		  width: 74%;
+		  width: 70%;
 		  float: right;
 	  }
 
       .battlefield {
         flex-direction: column;
         align-items: center;
+		gap: 0px;
       }
 
       #game-board {
