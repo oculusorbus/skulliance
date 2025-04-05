@@ -583,7 +583,7 @@
         return {
           name,
           type,
-          strength,
+          strength: strength,
           powerup: randomChoice(["Heal", "Boost Attack", "Regenerate", "Minor Regen"]),
           health: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
           maxHealth: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
