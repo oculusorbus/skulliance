@@ -389,6 +389,11 @@
         left: 10px;
         top: 100px;
       }
+	  
+	  .character table{
+		  width: 74%;
+		  float: right;
+	  }
 
       .battlefield {
         flex-direction: column;
