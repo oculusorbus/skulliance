@@ -446,7 +446,7 @@
         <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand:&nbsp;</strong> Deals damage and mitigates 5 damage on the next attack received</li>
       </ul>
 	  <br>
-      <h3>Powerup Effects</h3>
+      <h3>Power-Up Effects</h3>
       <ul>
         <li><strong>Heal:&nbsp;</strong> Restores 10 HP</li>
         <li><strong>Boost Attack:&nbsp;</strong> Adds +10 damage to the next attack</li>
