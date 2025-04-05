@@ -96,7 +96,7 @@
 	}
     
 	.character td{
-		padding: 5px;
+		padding-top: 5px;
 		width: 58%;
 		text-align: right;
 	}
@@ -372,10 +372,12 @@
         padding: 10px;
         max-height: none;
       }
-      
+	  
       .character {
         min-height: 100px;
         text-align: right;
+        width: 100%;
+        max-width: 300px;
       }
       
       .character h2 {
@@ -398,11 +400,6 @@
       .battlefield {
         flex-direction: column;
         align-items: center;
-      }
-
-      .character {
-        width: 100%;
-        max-width: 300px;
       }
 
       #game-board {
