@@ -48,7 +48,7 @@
     .turn-indicator {
       font-size: 1.2em;
       margin-bottom: 20px;
-      color: #ffcc00;
+      color: #fff;
       position: relative;
       top: 10px;
       font-weight: bold;
@@ -271,7 +271,7 @@
 
     button {
       padding: 10px 20px;
-      background-color: #ffcc00;
+      background-color: #007C9E;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -293,7 +293,7 @@
 
     .legend h3 {
       margin: 0 0 10px;
-      color: #ffcc00;
+      color: #fff;
     }
 
     .legend ul {
