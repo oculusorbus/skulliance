@@ -89,6 +89,8 @@
 	.character span{
 		font-weight: normal;
 	}
+	
+	
     
     .health-bar {
       width: 100%;
@@ -418,16 +420,16 @@
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
 		<table>
 		<tr>
-        <td>Health:</td><td><span id="p1-hp"></span></td>
+        <td><p>Health:</p></td><td><span id="p1-hp"></span></td>
 		</tr>
 		<tr>
-        <td>Strength:</td><td><span id="p1-strength"></span></td>
+        <td><p>Strength:</p></td><td><span id="p1-strength"></span></td>
 		</tr>
         <tr>
-		<td>Power-Up:</td><td><span id="p1-powerup"></span></td>
+		<td><p>Power-Up:</p></td><td><span id="p1-powerup"></span></td>
 		</tr>
 		<tr>
-		<td>Type:</td><td><span id="p1-type"></span></td>
+		<td><p>Type:</p></td><td><span id="p1-type"></span></td>
 		</tr>
 		</table>
       </div>
