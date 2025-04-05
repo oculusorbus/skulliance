@@ -170,9 +170,13 @@
     }
 
     #game-over-container {
-      position: absolute;
+	  position: relative;
+	  top: -887px;
+	  left: 50%;
+	  width: 300px;
+      /*position: absolute;
       top: 50%;
-      left: 50%;
+      left: 50%;*/
       transform: translate(-50%, -50%);
       text-align: center;
       z-index: 30;
@@ -348,6 +352,10 @@
         width: 15px;
         height: 15px;
       }
+	  
+      #game-over-container {
+		top: -1055px;
+	  }
     }
   </style>
 </head>
