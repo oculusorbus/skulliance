@@ -443,7 +443,7 @@
       }
 	  
       #game-over-container {
-		top: -1000px;
+		top: -1025px;
 	  }
     }
   </style>
