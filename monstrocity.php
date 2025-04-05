@@ -1324,14 +1324,14 @@
     const turnIndicator = document.getElementById("turn-indicator");
     const p1Name = document.getElementById("p1-name");
     const p1Type = document.getElementById("p1-type");
-    const p1Strenth = document.getElementById("p1-strength");
+    const p1Strength = document.getElementById("p1-strength");
     const p1Hp = document.getElementById("p1-hp");
     const p1Health = document.getElementById("p1-health");
     const p1Powerup = document.getElementById("p1-powerup");
     const p1Image = document.getElementById("p1-image");
     const p2Name = document.getElementById("p2-name");
     const p2Type = document.getElementById("p2-type");
-    const p2Strenth = document.getElementById("p2-strength");
+    const p2Strength = document.getElementById("p2-strength");
     const p2Hp = document.getElementById("p2-hp");
     const p2Health = document.getElementById("p2-health");
     const p2Powerup = document.getElementById("p2-powerup");
