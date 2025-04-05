@@ -511,10 +511,10 @@
 	  <br>
       <h3>Power-Up Effects</h3>
       <ul>
-        <li><strong>Heal:&nbsp;</strong> Restores 10 HP</li>
-        <li><strong>Boost Attack:&nbsp;</strong> Adds +10 damage to the next attack</li>
-        <li><strong>Regenerate:&nbsp;</strong> Restores 7 HP</li>
-        <li><strong>Minor Regen:&nbsp;</strong> Restores 5 HP</li>
+        <li><strong>Heal (Bloody):&nbsp;</strong> Restores 10 HP</li>
+        <li><strong>Boost Attack (Cardano):&nbsp;</strong> Adds +10 damage to the next attack</li>
+        <li><strong>Regenerate (ADA):&nbsp;</strong> Restores 7 HP</li>
+        <li><strong>Minor Regen (None):&nbsp;</strong> Restores 5 HP</li>
       </ul>
     </div>
     <div id="game-over-container">
