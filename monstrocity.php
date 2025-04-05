@@ -436,18 +436,18 @@
     <div class="legend">
       <h3>Legend</h3>
       <ul>
-        <li><span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span><strong>First Attack (Slash):</strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span><strong>Second Attack (Bite):</strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span><strong>Special Attack (Shadow Strike):</strong> Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span><strong>Power-Up:</strong> Activates a random powerup (see below)</li>
-        <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand:</strong> Deals damage and mitigates 5 damage on the next attack received</li>
+        <li><span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span><strong>First Attack (Slash): </strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span><strong>Second Attack (Bite): </strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span><strong>Special Attack (Shadow Strike): </strong> Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span><strong>Power-Up: </strong> Activates a random powerup (see below)</li>
+        <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand: </strong> Deals damage and mitigates 5 damage on the next attack received</li>
       </ul>
       <h3>Powerup Effects</h3>
       <ul>
-        <li><strong>Heal:</strong> Restores 10 HP</li>
-        <li><strong>Boost Attack:</strong> Adds +10 damage to the next attack</li>
-        <li><strong>Regenerate:</strong> Restores 7 HP</li>
-        <li><strong>Minor Regen:</strong> Restores 5 HP</li>
+        <li><strong>Heal: </strong> Restores 10 HP</li>
+        <li><strong>Boost Attack: </strong> Adds +10 damage to the next attack</li>
+        <li><strong>Regenerate: </strong> Restores 7 HP</li>
+        <li><strong>Minor Regen: </strong> Restores 5 HP</li>
       </ul>
     </div>
     <div id="game-over-container">
