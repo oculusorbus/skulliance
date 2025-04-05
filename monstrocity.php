@@ -97,11 +97,12 @@
     
 	.character td{
 		padding: 5px;
-		width: 50%;
+		width: 70%;
 	}
 	
 	.character .attribute-label {
 		font-weight: bold;
+		width: 30%;
 	}
 	
     .health-bar {
