@@ -110,7 +110,7 @@
     .health-bar {
       width: 100%;
       height: 20px;
-      background-color: #555;
+      background-color: #525F65;
       border-radius: 5px;
       overflow: hidden;
       margin: 5px 0;
