@@ -443,7 +443,7 @@
       "Drake": "Right",
       "Goblin Ganger": "Left",
       "Jarhead": "Right",
-      "Katastrophy": "Right",
+      "Katastrophy": "Left",
       "Koipon": "Left",
       "Mandiblus": "Left",
       "Merdock": "Left",
