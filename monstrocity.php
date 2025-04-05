@@ -51,6 +51,7 @@
       color: #ffcc00;
       position: relative;
       top: 10px;
+      font-weight: bold;
     }
 
     .battlefield {
