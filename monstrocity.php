@@ -369,7 +369,7 @@
         width: 100%;
         min-width: 320px;
         max-width: 100%;
-        padding: 2px;
+        padding: 10px;
         max-height: none;
 		margin-top: 0px;
       }
