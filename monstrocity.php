@@ -387,16 +387,20 @@
       }
       
       .character img {
-        width: 80px;
+        width: 72px;
         float: left;
         position: absolute;
         left: 15px;
-        top: 51px;
+        top: 47px;
       }
 	  
 	  .character table{
 		  width: 70%;
 		  float: right;
+	  }
+	  
+	  .character td {
+		  padding-top: 0px;
 	  }
 
       .battlefield {
