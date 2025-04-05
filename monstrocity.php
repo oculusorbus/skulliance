@@ -379,6 +379,7 @@
         text-align: right;
         width: 100%;
         max-width: 300px;
+		padding: 5px;
       }
       
       .character h2 {
@@ -391,7 +392,7 @@
         float: left;
         position: absolute;
         left: 15px;
-        top: 47px;
+        top: 41px;
       }
 	  
 	  .character table{
