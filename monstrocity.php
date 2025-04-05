@@ -442,6 +442,7 @@
         <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span><strong>Power-Up:&nbsp;</strong> Activates a random powerup (see below)</li>
         <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand:&nbsp;</strong> Deals damage and mitigates 5 damage on the next attack received</li>
       </ul>
+	  <br><br>
       <h3>Powerup Effects</h3>
       <ul>
         <li><strong>Heal:&nbsp;</strong> Restores 10 HP</li>
