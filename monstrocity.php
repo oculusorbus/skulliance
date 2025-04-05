@@ -416,10 +416,20 @@
         <h2><span id="p1-name"></span></h2>
         <img id="p1-image" src="" alt="Player 1 Image">
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
-        <p>Health: <span id="p1-hp"></span></p>
-        <p>Strength: <span id="p1-strength"></span></p>
-        <p>Power-Up: <span id="p1-powerup"></span></p>
-		<p>Type: <span id="p1-type"></span></p>
+		<table>
+		<tr>
+        <td>Health:</td><td><span id="p1-hp"></span></td>
+		</tr>
+		<tr>
+        <td>Strength:</td><td><span id="p1-strength"></span></td>
+		</tr>
+        <tr>
+		<td>Power-Up:</td><td><span id="p1-powerup"></span></td>
+		</tr>
+		<tr>
+		<td>Type:</td><td><span id="p1-type"></span></td>
+		</tr>
+		</table>
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
