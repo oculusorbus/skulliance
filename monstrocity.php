@@ -97,6 +97,7 @@
     
 	.character td{
 		padding: 5px;
+		width: 50%;
 	}
 	
 	.character .attribute-label {
