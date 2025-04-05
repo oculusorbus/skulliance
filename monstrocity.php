@@ -402,6 +402,10 @@
         align-items: center;
 		gap: 0px;
       }
+	  
+	  .turn-indicator {
+		display: none;
+	  }
 
       #game-board {
         width: 250px;
