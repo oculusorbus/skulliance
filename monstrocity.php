@@ -21,6 +21,7 @@
     
     h2 {
       margin-top: 0px;
+	  margin-bottom: 10px;
 	  font-weight: bold;
     }
 
