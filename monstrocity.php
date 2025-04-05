@@ -28,7 +28,7 @@
       margin-bottom: 20px;
       text-align: center;
       padding: 20px;
-      background-color: #1e1e1e;
+      background-color: #002430;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       width: 900px;
@@ -65,7 +65,7 @@
     .character {
       width: 230px;
       padding: 15px;
-      background-color: #2a2a2a;
+      background-color: #003A45;
       border-radius: 5px;
       text-align: center;
       flex-shrink: 0;
@@ -125,7 +125,7 @@
     #game-board {
       display: grid;
       gap: 0.5vh;
-      background: #333;
+      background: #003A45;
       padding: 1vh;
       box-sizing: border-box;
       user-select: none;
@@ -255,7 +255,7 @@
     .log {
       margin-top: 20px;
       text-align: left;
-      background-color: #2a2a2a;
+      background-color: #003A45;
       padding: 10px;
       border-radius: 5px;
       max-height: 150px;
@@ -284,7 +284,7 @@
     .legend {
       margin-top: 20px;
       text-align: left;
-      background-color: #2a2a2a;
+      background-color: #003A45;
       padding: 10px;
       border-radius: 5px;
       position: relative;
