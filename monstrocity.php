@@ -33,11 +33,12 @@
       background-color: #002430;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-      width: 900px;
-      min-width: 900px;
-      max-width: 900px;
+      width: 910px;
+      min-width: 910px;
+      max-width: 910px;
       box-sizing: border-box;
       max-height: 1120px;
+	  border: 3px solid black;
     }
 
     .game-logo {
