@@ -404,6 +404,14 @@
 		  padding-top: 0px;
 	  }
 	  
+	  .game-logo {
+		  opacity: 0;
+	  }
+	  
+	  #restart {
+		  opacity: 0;
+	  }
+
       .battlefield {
         flex-direction: column;
         align-items: center;
@@ -420,7 +428,6 @@
         position: relative;
         top: -225px;
 		margin-top: 0px;
-		background-color: none;
       }
 
       .legend {
