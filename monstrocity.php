@@ -413,7 +413,8 @@
         width: 250px;
         height: 250px;
         position: relative;
-        top: -241px;
+        top: -225px;
+		margin-top: 0px;
       }
 
       .legend {
