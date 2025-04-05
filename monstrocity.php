@@ -404,14 +404,6 @@
 		  padding-top: 0px;
 	  }
 	  
-	  .game-logo {
-		  opacity: 0;
-	  }
-	  
-	  #restart {
-		  opacity: 0;
-	  }
-
       .battlefield {
         flex-direction: column;
         align-items: center;
