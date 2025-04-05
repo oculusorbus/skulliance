@@ -35,7 +35,7 @@
       min-width: 900px;
       max-width: 900px;
       box-sizing: border-box;
-      max-height: 1105px;
+      max-height: 1120px;
     }
 
     .game-logo {
