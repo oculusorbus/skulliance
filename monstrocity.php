@@ -678,7 +678,7 @@
     };
 
     class MonstrocityMatch3 {
-      constructor() {
+      constructor(playerCharactersConfig) {
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
         this.width = 5;
         this.height = 5;
@@ -1765,7 +1765,7 @@
 	getAssets(function(data) {
 	    const playerCharactersConfig = data;
 	    console.log(playerCharactersConfig);
-	    const game = new MonstrocityMatch3();
+	    const game = new MonstrocityMatch3(playerCharactersConfig);
 	});
   </script>
 </body>
