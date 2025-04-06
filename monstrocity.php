@@ -614,7 +614,7 @@
       { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" }
     ];
 	
-	 funtion getAssets() {
+	 function getAssets() {
 	     var xhttp = new XMLHttpRequest();
 	     xhttp.open('GET', 'ajax/get-monstrocity-assets.php', true);
 	     xhttp.send();
