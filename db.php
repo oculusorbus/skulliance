@@ -6361,7 +6361,7 @@ function resetSwapScores($conn){
 
 function getMonstrocityAssets($conn){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT id, asset_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND collections.name = 'Monstrocity'";
+		$sql = "SELECT nfts.id AS id, asset_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = '".$_SESSION['userData']['user_id']."' AND collections.name = 'Monstrocity'";
 		$result = $conn->query($sql);
 		
 		$asset_list = array();
