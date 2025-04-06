@@ -21,8 +21,8 @@
     
     h2 {
       margin-top: 0px;
-	  margin-bottom: 10px;
-	  font-weight: bold;
+      margin-bottom: 10px;
+      font-weight: bold;
     }
 
     .game-container {
@@ -38,7 +38,7 @@
       max-width: 910px;
       box-sizing: border-box;
       max-height: 1120px;
-	  border: 3px solid black;
+      border: 3px solid black;
     }
 
     .game-logo {
@@ -75,7 +75,7 @@
       position: relative;
       top: -225px;
       min-height: 510px;
-	  border: 1px solid black;
+      border: 1px solid black;
     }
 
     .character img {
@@ -83,34 +83,34 @@
       height: auto;
       margin-bottom: 10px;
       border-radius: 5px;
-      transition: transform 0.1s linear, filter 0.5s ease; /* Removed opacity transition */
+      transition: transform 0.1s linear, filter 0.5s ease;
     }
-	
-	.character p{
-		font-weight: bold;
-	}
-	
-	.character table {
-		width: 100%;
-		text-align: left;
-	}
     
-	.character td{
-		padding-top: 5px;
-		width: 58%;
-		text-align: right;
-	}
-	
-	.character .attribute-label {
-		font-weight: bold;
-		width: 42%;
-		text-align: left;
-	}
-	
-	.character .attribute {
-		font-weight: normal;
-	}
-	
+    .character p{
+      font-weight: bold;
+    }
+    
+    .character table {
+      width: 100%;
+      text-align: left;
+    }
+    
+    .character td{
+      padding-top: 5px;
+      width: 58%;
+      text-align: right;
+    }
+    
+    .character .attribute-label {
+      font-weight: bold;
+      width: 42%;
+      text-align: left;
+    }
+    
+    .character .attribute {
+      font-weight: normal;
+    }
+    
     .health-bar {
       width: 100%;
       height: 20px;
@@ -139,9 +139,9 @@
       height: 300px;
       grid-template-columns: repeat(5, 1fr);
       flex-shrink: 0;
-	  margin-top: 17px;
-	  border-radius: 5px;
- 	  border: 1px solid black;
+      margin-top: 17px;
+      border-radius: 5px;
+      border: 1px solid black;
     }
 
     .tile {
@@ -157,8 +157,8 @@
       background: #444;
       box-sizing: border-box;
       z-index: 1;
-	  border: 1px solid black;
-	  box-shadow: 0px 2px 5px black;
+      border: 1px solid black;
+      box-shadow: 0px 2px 5px black;
     }
     
     .tile img {
@@ -200,14 +200,11 @@
     }
 
     #game-over-container {
-	  position: relative;
-	  top: -905px;
-	  left: 50%;
-	  width: 260px;
-	  max-width: 260px;
-      /*position: absolute;
-      top: 50%;
-      left: 50%;*/
+      position: relative;
+      top: -905px;
+      left: 50%;
+      width: 260px;
+      max-width: 260px;
       transform: translate(-50%, -50%);
       text-align: center;
       z-index: 30;
@@ -270,12 +267,12 @@
       overflow-y: auto;
       position: relative;
       top: -225px;
-  	  border: 1px solid black;
+      border: 1px solid black;
     }
-	
-	.log h3 {
-		margin: 0 0 10px;
-	}
+    
+    .log h3 {
+      margin: 0 0 10px;
+    }
 
     #battle-log { list-style: none; padding: 0; }
     #battle-log li { margin: 5px 0; opacity: 0; animation: fadeIn 0.5s forwards; }
@@ -301,7 +298,7 @@
       border-radius: 5px;
       position: relative;
       top: -225px;
-  	  border: 1px solid black;
+      border: 1px solid black;
     }
 
     .legend h3 {
@@ -336,31 +333,14 @@
     .legend-tile.power-up { background-color: #9C27B0; }
     .legend-tile.last-stand { background-color: #F44336; }
 
-    /* Animation Styles */
-    .glow-first-attack {
-      box-shadow: 0 0 10px 5px #4CAF50;
-    }
-    .glow-second-attack {
-      box-shadow: 0 0 10px 5px #2196F3;
-    }
-    .glow-special-attack {
-      box-shadow: 0 0 10px 5px #FFC107;
-    }
-    .glow-last-stand {
-      box-shadow: 0 0 10px 5px #F44336;
-    }
-    .glow-power-up {
-      box-shadow: 0 0 10px 5px #9C27B0;
-    }
-    .glow-recoil {
-      box-shadow: 0 0 10px 5px #FF0000;
-    }
-    .winner {
-      animation: bounce 1.5s infinite, pulseGlow 1.5s infinite;
-    }
-    .loser {
-      animation: pulseRedGlow 1.5s infinite;
-    }
+    .glow-first-attack { box-shadow: 0 0 10px 5px #4CAF50; }
+    .glow-second-attack { box-shadow: 0 0 10px 5px #2196F3; }
+    .glow-special-attack { box-shadow: 0 0 10px 5px #FFC107; }
+    .glow-last-stand { box-shadow: 0 0 10px 5px #F44336; }
+    .glow-power-up { box-shadow: 0 0 10px 5px #9C27B0; }
+    .glow-recoil { box-shadow: 0 0 10px 5px #FF0000; }
+    .winner { animation: bounce 1.5s infinite, pulseGlow 1.5s infinite; }
+    .loser { animation: pulseRedGlow 1.5s infinite; }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
@@ -376,7 +356,6 @@
       100% { box-shadow: 0 0 10px 5px #FF0000; }
     }
 
-    /* Responsive adjustments */
     @media (max-width: 950px) {
       .game-container {
         width: 100%;
@@ -384,22 +363,22 @@
         max-width: 100%;
         padding: 10px;
         max-height: none;
-		margin-top: 0px;
+        margin-top: 0px;
       }
-	  
+      
       .character {
         min-height: 100px;
         text-align: right;
         width: 100%;
         max-width: 330px;
-		padding: 5px;
-		padding-left: 10px;
-		padding-right: 10px;
+        padding: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
       }
       
       .character h2 {
         text-align: center;
-		display: none;
+        display: none;
       }
       
       .character img {
@@ -409,42 +388,42 @@
         left: 15px;
         top: 37px;
       }
-	  
-	  .character table{
-		  width: 70%;
-		  float: right;
-	  }
-	  
-	  .character td {
-		  padding-top: 0px;
-	  }
-	  
-	  .game-logo {
-		  opacity: 0;
-	  }
-	  
-	  #restart {
-		  opacity: 0;
-	  }
+      
+      .character table{
+        width: 70%;
+        float: right;
+      }
+      
+      .character td {
+        padding-top: 0px;
+      }
+      
+      .game-logo {
+        opacity: 0;
+      }
+      
+      #restart {
+        opacity: 0;
+      }
 
       .battlefield {
         flex-direction: column;
         align-items: center;
-		gap: 0px;
+        gap: 0px;
       }
-	  
-	  .turn-indicator {
-		opacity: 0;
-	  }
+      
+      .turn-indicator {
+        opacity: 0;
+      }
 
       #game-board {
         width: 250px;
         height: 250px;
         position: relative;
         top: -225px;
-		margin-top: 0px;
-		background: none;
-	    border: none;
+        margin-top: 0px;
+        background: none;
+        border: none;
       }
 
       .legend {
@@ -455,10 +434,10 @@
         width: 15px;
         height: 15px;
       }
-	  
+      
       #game-over-container {
-		top: -1025px;
-	  }
+        top: -1025px;
+      }
     }
   </style>
 </head>
@@ -473,40 +452,24 @@
         <h2><span id="p1-name"></span></h2>
         <img id="p1-image" src="" alt="Player 1 Image">
         <div class="health-bar"><div class="health" id="p1-health"></div></div>
-		<table>
-		<tr>
-        <td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td>
-		</tr>
-		<tr>
-        <td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td>
-		</tr>
-        <tr>
-		<td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td>
-		</tr>
-		<tr>
-		<td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td>
-		</tr>
-		</table>
+        <table>
+          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
+          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
+          <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td></tr>
+          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td></tr>
+        </table>
       </div>
       <div id="game-board"></div>
       <div class="character" id="player2">
         <h2><span id="p2-name"></span></h2>
         <img id="p2-image" src="" alt="Player 2 Image">
         <div class="health-bar"><div class="health" id="p2-health"></div></div>
-		<table>
-		<tr>
-        <td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td>
-		</tr>
-		<tr>
-        <td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td>
-		</tr>
-        <tr>
-		<td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td>
-		</tr>
-		<tr>
-		<td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td>
-		</tr>
-		</table>
+        <table>
+          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
+          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
+          <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td></tr>
+          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td></tr>
+        </table>
       </div>
     </div>
     <div class="log">
@@ -516,30 +479,68 @@
     <div class="legend">
       <h3>Legend</h3>
       <ul>
-        <li><span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span><strong>First Attack (Slash):&nbsp;</strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span><strong>Second Attack (Bite):&nbsp;</strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span><strong>Special Attack (Shadow Strike):&nbsp;</strong> Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-        <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span><strong>Power-Up:&nbsp;</strong> Activates a random powerup (see below)</li>
-        <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand:&nbsp;</strong> Deals damage and mitigates 5 damage on the next attack received</li>
+        <li><span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span><strong>First Attack (Slash): </strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span><strong>Second Attack (Bite): </strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span><strong>Special Attack (Shadow Strike): </strong> Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
+        <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span><strong>Power-Up: </strong> Activates a random powerup (see below)</li>
+        <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand: </strong> Deals damage and mitigates 5 damage on the next attack received</li>
       </ul>
-	  <br>
+      <br>
       <h3>Power-Up Effects</h3>
       <ul>
-        <li><strong>Heal (Bloody):&nbsp;</strong> Restores 10 HP</li>
-        <li><strong>Boost Attack (Cardano):&nbsp;</strong> Adds +10 damage to the next attack</li>
-        <li><strong>Regenerate (ADA):&nbsp;</strong> Restores 7 HP</li>
-        <li><strong>Minor Regen (None):&nbsp;</strong> Restores 5 HP</li>
+        <li><strong>Heal (Bloody): </strong> Restores 10 HP</li>
+        <li><strong>Boost Attack (Cardano): </strong> Adds +10 damage to the next attack</li>
+        <li><strong>Regenerate (ADA): </strong> Restores 7 HP</li>
+        <li><strong>Minor Regen (None): </strong> Restores 5 HP</li>
       </ul>
     </div>
     <div id="game-over-container">
       <div id="game-over"></div>
       <div id="game-over-buttons">
-        <button id="try-again">TRY AGAIN</button>
+        <button id="try-again"></button>
       </div>
     </div>
   </div>
 
   <script>
+    const opponentsConfig = [
+      { name: "Craig", strength: 1, type: "Base", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, type: "Base", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, type: "Base", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, type: "Base", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, type: "Base", powerup: "Regenerate" },
+      { name: "Koipon", strength: 3, type: "Base", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, type: "Base", powerup: "Regenerate" },
+      { name: "Billandar and Ted", strength: 4, type: "Base", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, type: "Base", powerup: "Boost Attack" },
+      { name: "Jarhead", strength: 5, type: "?postypeBase", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, type: "Base", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, type: "Base", powerup: "Heal" },
+      { name: "Ouchie", strength: 7, type: "Base", powerup: "Heal" },
+      { name: "Drake", strength: 8, type: "Base", powerup: "Heal" },
+      { name: "Craig", strength: 1, type: "Leader", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, type: "Leader", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, type: "Leader", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, type: "Leader", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, type: "Leader", powerup: "Regenerate" },
+      { name: "Koipon", strength: 3, type: "Leader", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, type: "Leader", powerup: "Regenerate" },
+      { name: "Billandar and Ted", strength: 4, type: "Leader", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, type: "Leader", powerup: "Boost Attack" },
+      { name: "Jarhead", strength: 5, type: "Leader", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, type: "Leader", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, type: "Leader", powerup: "Heal" },
+      { name: "Ouchie", strength: 7, type: "Leader", powerup: "Heal" },
+      { name: "Drake", strength: 8, type: "Leader", powerup: "Heal" }
+    ];
+
+    const defaultPlayerConfig = {
+      name: "Craig",
+      strength: 4,
+      type: "Base",
+      powerup: "Minor Regen"
+    };
+
     const characterDirections = {
       "Billandar and Ted": "Left",
       "Craig": "Left",
@@ -556,7 +557,7 @@
       "Spydrax": "Right",
       "Texby": "Left"
     };
-    
+
     class MonstrocityMatch3 {
       constructor() {
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
@@ -574,6 +575,7 @@
         this.dragDirection = null;
         this.offsetX = 0;
         this.offsetY = 0;
+        this.currentLevel = 0;
 
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
@@ -598,12 +600,28 @@
         this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
       }
 
+      createCharacter(config) {
+        const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
+        return {
+          name: config.name,
+          type: config.type,
+          strength: config.strength,
+          powerup: config.powerup,
+          health: config.type === "Leader" ? 100 : 85,
+          maxHealth: config.type === "Leader" ? 100 : 85,
+          boostActive: false,
+          lastStandActive: false,
+          imageUrl
+        };
+      }
+
       initGame() {
         this.sounds.reset.play();
-        log("Starting game initialization...");
+        log(`Starting Level ${this.currentLevel + 1}...`);
 
-        this.player1 = this.generateCharacter();
-        this.player2 = this.generateCharacter();
+        this.player1 = this.createCharacter(defaultPlayerConfig);
+        this.player2 = this.createCharacter(opponentsConfig[this.currentLevel]);
+        
         this.currentTurn = this.player1.strength >= this.player2.strength ? this.player1 : this.player2;
         this.gameState = "initializing";
         this.gameOver = false;
@@ -615,13 +633,13 @@
 
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
-		p1Strength.textContent = this.player1.strength;
+        p1Strength.textContent = this.player1.strength;
         p1Powerup.textContent = this.player1.powerup;
         p1Image.src = this.player1.imageUrl;
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
-		p2Strength.textContent = this.player2.strength;
+        p2Strength.textContent = this.player2.strength;
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl;
 
@@ -646,33 +664,14 @@
 
         this.initBoard();
         this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-        turnIndicator.textContent = `${this.currentTurn === this.player1 ? "Player 1" : "Player 2"}'s Turn`;
+        turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
 
         if (this.currentTurn === this.player2) {
           setTimeout(() => this.aiTurn(), 1000);
         }
       }
 
-      generateCharacter() {
-        const type = randomChoice(["Battle Damaged", "Base", "Leader"]);
-        const strength = Math.floor(Math.random() * 3) + 3;
-        const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger", "Billandar and Ted", "Craig", "Dankle", "Drake", "Katastrophy", "Ouchie", "Merdock"]);
-        const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${name.toLowerCase().replace(/ /g, '-')}.png`;
-        return {
-          name,
-          type,
-          strength: strength,
-          powerup: randomChoice(["Heal", "Boost Attack", "Regenerate", "Minor Regen"]),
-          health: type === "Leader" ? 100 : (type === "Base" ? 85 : 70),
-          maxHealth: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
-          boostActive: false,
-          lastStandActive: false,
-          imageUrl
-        };
-      }
-
       initBoard() {
-        console.log("Initializing board...");
         this.board = [];
         for (let y = 0; y < this.height; y++) {
           this.board[y] = [];
@@ -687,7 +686,6 @@
             this.board[y][x] = tile;
           }
         }
-        console.log("Board initialized:", this.board);
         this.renderBoard();
       }
 
@@ -699,7 +697,6 @@
       }
 
       renderBoard() {
-        console.log("Rendering board...");
         this.updateTileSizeWithGap();
         const boardElement = document.getElementById("game-board");
         boardElement.innerHTML = "";
@@ -742,15 +739,27 @@
           board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
         }
 
-        document.getElementById("try-again").addEventListener("click", () => this.initGame());
-        document.getElementById("restart").addEventListener("click", () => this.initGame());
+        document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
+        document.getElementById("restart").addEventListener("click", () => {
+          this.currentLevel = 0;
+          this.initGame();
+        });
+      }
+
+      handleGameOverButton() {
+        if (this.player2.health <= 0) { // Player won
+          this.currentLevel++;
+          if (this.currentLevel >= opponentsConfig.length) {
+            this.currentLevel = 0;
+          }
+          this.initGame();
+        } else { // Player lost, retry same level
+          this.initGame();
+        }
       }
 
       handleMouseDown(e) {
-        if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) {
-          log("Cannot drag: Not Player 1's turn or game over");
-          return;
-        }
+        if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
         e.preventDefault();
         const tile = this.getTileFromEvent(e);
         if (!tile || !tile.element) return;
@@ -827,10 +836,7 @@
       }
 
       handleTouchStart(e) {
-        if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) {
-          log("Cannot drag: Not Player 1's turn or game over");
-          return;
-        }
+        if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
         e.preventDefault();
         const tile = this.getTileFromEvent(e.touches[0]);
         if (!tile || !tile.element) return;
@@ -1241,9 +1247,9 @@
           player.boostActive = true;
           log(`${player.name} uses Power Surge, next attack +10 damage!`);
         } else if (player.powerup === "Regenerate") {
-          player.health = Math.min(player.maxHealth, player.health + 5);
+          player.health = Math.min(player.maxHealth, player.health + 7);
           log(`${player.name} uses Regen, restoring 7 HP!`);
-        }else if (player.powerup === "Minor Regen") {
+        } else if (player.powerup === "Minor Regen") {
           player.health = Math.min(player.maxHealth, player.health + 5);
           log(`${player.name} uses Minor Regen, restoring 5 HP!`);
         }
@@ -1276,8 +1282,8 @@
         if (this.gameState === "gameOver") return;
         this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
         this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-        turnIndicator.textContent = `${this.currentTurn === this.player1 ? "Player 1" : "Player 2"}'s Turn`;
-        log(`Turn switched to ${this.currentTurn === this.player1 ? "Player 1" : "Player 2"}`);
+        turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+        log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : "Opponent"}`);
 
         if (this.currentTurn === this.player2) {
           setTimeout(() => this.aiTurn(), 1000);
@@ -1285,10 +1291,7 @@
       }
 
       aiTurn() {
-        if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) {
-          log("AI turn skipped: Wrong state or turn");
-          return;
-        }
+        if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) return;
         this.gameState = "animating";
         const move = this.findAIMove();
         if (move) {
@@ -1322,18 +1325,20 @@
       }
 
       checkGameOver() {
+        const tryAgainButton = document.getElementById("try-again");
         if (this.player1.health <= 0) {
           this.gameOver = true;
           this.gameState = "gameOver";
           gameOver.textContent = "You Lose!";
           turnIndicator.textContent = "Game Over";
           log(`${this.player2.name} defeats ${this.player1.name}!`);
+          tryAgainButton.textContent = "TRY AGAIN";
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player1.name.toLowerCase().replace(/ /g, '-')}.png`;
-          p1Image.src = damagedUrl; // Instantly swap to battle-damaged image
-          p1Image.classList.add('loser'); // Apply red glow effect
-          p2Image.classList.add('winner'); // Apply gold glow and bounce effect
+          p1Image.src = damagedUrl;
+          p1Image.classList.add('loser');
+          p2Image.classList.add('winner');
           this.renderBoard();
         } else if (this.player2.health <= 0) {
           this.gameOver = true;
@@ -1341,12 +1346,13 @@
           gameOver.textContent = "You Win!";
           turnIndicator.textContent = "Game Over";
           log(`${this.player1.name} defeats ${this.player2.name}!`);
+          tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
           document.getElementById("game-over-container").style.display = "block";
           this.sounds.gameOver.play();
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
-          p2Image.src = damagedUrl; // Instantly swap to battle-damaged image
-          p2Image.classList.add('loser'); // Apply red glow effect
-          p1Image.classList.add('winner'); // Apply gold glow and bounce effect
+          p2Image.src = damagedUrl;
+          p2Image.classList.add('loser');
+          p1Image.classList.add('winner');
           this.renderBoard();
         }
       }
