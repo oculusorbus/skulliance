@@ -642,6 +642,7 @@
         { name: "Ouchie", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
         { name: "Drake", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
         { name: "Craig", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Merdock", strength: 5, speed: 5, tactics: 5, size: "Large", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Goblin Ganger", strength: 5, speed: 5, tactics: 5, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Texby", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Mandiblus", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
@@ -651,7 +652,8 @@
         { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Spydrax", strength: 5, speed: 5, tactics: 5, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
-
+        { name: "Katastrophy", strength: 5, speed: 5, tactics: 5, size: "Large", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Ouchie", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Drake", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" }
     ];
 
