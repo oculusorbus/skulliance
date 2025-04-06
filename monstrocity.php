@@ -495,7 +495,7 @@
       }
       
       #game-over-container {
-        top: -1225px;
+        top: -1125px;
       }
 
       #character-select-container {
