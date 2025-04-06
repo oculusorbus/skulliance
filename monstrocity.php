@@ -435,11 +435,11 @@
       }
       
       .character img {
-        width: 68px;
-        float: left;
-        position: absolute;
-        left: 15px;
-        top: 37px;
+		  width: 85px;
+          float: left;
+          position: absolute;
+          left: 15px;
+          top: 55px;
       }
       
       .character table{
@@ -489,7 +489,7 @@
       }
       
       #game-over-container {
-        top: -1025px;
+        top: -1225px;
       }
 
       #character-select-container {
