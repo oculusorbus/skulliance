@@ -444,7 +444,7 @@
 <body>
   <div class="game-container">
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
-    <button id="restart">Restart Game</button>
+    <button id="restart">Restart Level</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
@@ -455,6 +455,7 @@
         <table>
           <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
           <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
+          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p1-speed"></span></td></tr>
           <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td></tr>
           <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td></tr>
         </table>
@@ -467,6 +468,7 @@
         <table>
           <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
           <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
+          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p2-speed"></span></td></tr>
           <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td></tr>
           <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td></tr>
         </table>
@@ -504,39 +506,40 @@
 
   <script>
     const opponentsConfig = [
-      { name: "Craig", strength: 1, type: "Base", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, type: "Base", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, type: "Base", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, type: "Base", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, type: "Base", powerup: "Regenerate" },
-      { name: "Koipon", strength: 3, type: "Base", powerup: "Regenerate" },
-      { name: "Slime Mind", strength: 4, type: "Base", powerup: "Regenerate" },
-      { name: "Billandar and Ted", strength: 4, type: "Base", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, type: "Base", powerup: "Boost Attack" },
-      { name: "Jarhead", strength: 5, type: "?postypeBase", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, type: "Base", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, type: "Base", powerup: "Heal" },
-      { name: "Ouchie", strength: 7, type: "Base", powerup: "Heal" },
-      { name: "Drake", strength: 8, type: "Base", powerup: "Heal" },
-      { name: "Craig", strength: 1, type: "Leader", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, type: "Leader", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, type: "Leader", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, type: "Leader", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, type: "Leader", powerup: "Regenerate" },
-      { name: "Koipon", strength: 3, type: "Leader", powerup: "Regenerate" },
-      { name: "Slime Mind", strength: 4, type: "Leader", powerup: "Regenerate" },
-      { name: "Billandar and Ted", strength: 4, type: "Leader", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, type: "Leader", powerup: "Boost Attack" },
-      { name: "Jarhead", strength: 5, type: "Leader", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, type: "Leader", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, type: "Leader", powerup: "Heal" },
-      { name: "Ouchie", strength: 7, type: "Leader", powerup: "Heal" },
-      { name: "Drake", strength: 8, type: "Leader", powerup: "Heal" }
+      { name: "Craig", strength: 1, speed: 1, type: "Base", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, speed: 1, type: "Base", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, speed: 2, type: "Base", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, speed: 2, type: "Base", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, speed: 3, type: "Base", powerup: "Regenerate" },
+      { name: "Koipon", strength: 3, speed: 3, type: "Base", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, speed: 4, type: "Base", powerup: "Regenerate" },
+      { name: "Billandar and Ted", strength: 4, speed: 4, type: "Base", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, speed: 5, type: "Base", powerup: "Boost Attack" },
+      { name: "Jarhead", strength: 5, speed: 5, type: "Base", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, speed: 6, type: "Base", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, speed: 7, type: "Base", powerup: "Heal" },
+      { name: "Ouchie", strength: 7, speed: 7, type: "Base", powerup: "Heal" },
+      { name: "Drake", strength: 8, speed: 7, type: "Base", powerup: "Heal" },
+      { name: "Craig", strength: 1, speed: 1, type: "Leader", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, speed: 1, type: "Leader", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, speed: 2, type: "Leader", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, speed: 2, type: "Leader", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, speed: 3, type: "Leader", powerup: "Regenerate" },
+      { name: "Koipon", strength: 3, speed: 3, type: "Leader", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, speed: 4, type: "Leader", powerup: "Regenerate" },
+      { name: "Billandar and Ted", strength: 4, speed: 4, type: "Leader", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, speed: 5, type: "Leader", powerup: "Boost Attack" },
+      { name: "Jarhead", strength: 5, speed: 5, type: "Leader", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, speed: 6, type: "Leader", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, speed: 7, type: "Leader", powerup: "Heal" },
+      { name: "Ouchie", strength: 7, speed: 7, type: "Leader", powerup: "Heal" },
+      { name: "Drake", strength: 8, speed: 7, type: "Leader", powerup: "Heal" }
     ];
 
     const defaultPlayerConfig = {
       name: "Craig",
       strength: 4,
+      speed: 4, // Updated speed to 4
       type: "Base",
       powerup: "Regenerate"
     };
@@ -586,8 +589,9 @@
           badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
           gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
           reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
-          win: new Audio('https://www.skulliance.io/staking/sounds/skullcoinwin.ogg'),
           loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
+          win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
+          finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg')
         };
 
         this.initGame();
@@ -601,11 +605,13 @@
       }
 
       createCharacter(config) {
-        const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
+        const typeFolder = config.type.toLowerCase(); // "base" or "leader"
+        const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/${typeFolder}/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
         return {
           name: config.name,
           type: config.type,
           strength: config.strength,
+          speed: config.speed, // Include speed
           powerup: config.powerup,
           health: config.type === "Leader" ? 100 : 85,
           maxHealth: config.type === "Leader" ? 100 : 85,
@@ -622,7 +628,14 @@
         this.player1 = this.createCharacter(defaultPlayerConfig);
         this.player2 = this.createCharacter(opponentsConfig[this.currentLevel]);
         
-        this.currentTurn = this.player1.strength >= this.player2.strength ? this.player1 : this.player2;
+        // Determine first turn: highest speed wins, strength as tiebreaker
+        this.currentTurn = this.player1.speed > this.player2.speed 
+          ? this.player1 
+          : this.player2.speed > this.player1.speed 
+            ? this.player2 
+            : this.player1.strength >= this.player2.strength 
+              ? this.player1 
+              : this.player2;
         this.gameState = "initializing";
         this.gameOver = false;
 
@@ -634,12 +647,14 @@
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
         p1Strength.textContent = this.player1.strength;
+        p1Speed.textContent = this.player1.speed; // Display speed
         p1Powerup.textContent = this.player1.powerup;
         p1Image.src = this.player1.imageUrl;
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
         p2Strength.textContent = this.player2.strength;
+        p2Speed.textContent = this.player2.speed; // Display speed
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl;
 
@@ -741,8 +756,7 @@
 
         document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
         document.getElementById("restart").addEventListener("click", () => {
-          this.currentLevel = 0;
-          this.initGame();
+          this.initGame(); // Just restart the current level
         });
       }
 
@@ -1334,7 +1348,7 @@
           log(`${this.player2.name} defeats ${this.player1.name}!`);
           tryAgainButton.textContent = "TRY AGAIN";
           document.getElementById("game-over-container").style.display = "block";
-          this.sounds.gameOver.play();
+          this.sounds.loss.play();
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player1.name.toLowerCase().replace(/ /g, '-')}.png`;
           p1Image.src = damagedUrl;
           p1Image.classList.add('loser');
@@ -1348,7 +1362,11 @@
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
           document.getElementById("game-over-container").style.display = "block";
-          this.sounds.gameOver.play();
+          if (this.currentLevel === opponentsConfig.length - 1) {
+            this.sounds.finalWin.play();
+          } else {
+            this.sounds.win.play();
+          }
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
           p2Image.src = damagedUrl;
           p2Image.classList.add('loser');
@@ -1409,6 +1427,7 @@
     const p1Name = document.getElementById("p1-name");
     const p1Type = document.getElementById("p1-type");
     const p1Strength = document.getElementById("p1-strength");
+    const p1Speed = document.getElementById("p1-speed"); // Added for speed display
     const p1Hp = document.getElementById("p1-hp");
     const p1Health = document.getElementById("p1-health");
     const p1Powerup = document.getElementById("p1-powerup");
@@ -1416,6 +1435,7 @@
     const p2Name = document.getElementById("p2-name");
     const p2Type = document.getElementById("p2-type");
     const p2Strength = document.getElementById("p2-strength");
+    const p2Speed = document.getElementById("p2-speed"); // Added for speed display
     const p2Hp = document.getElementById("p2-hp");
     const p2Health = document.getElementById("p2-health");
     const p2Powerup = document.getElementById("p2-powerup");
