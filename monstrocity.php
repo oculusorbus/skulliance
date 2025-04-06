@@ -139,7 +139,7 @@
       height: 300px;
       grid-template-columns: repeat(5, 1fr);
       flex-shrink: 0;
-	  margin-top: 15px;
+	  margin-top: 17px;
 	  border-radius: 5px;
  	  border: 1px solid black;
     }
