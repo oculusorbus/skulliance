@@ -99,8 +99,7 @@ if(isset($_SESSION['userData']['user_id'])){
 				}
 
 				// Output as JavaScript code
-				//echo json_encode($final_array, JSON_PRETTY_PRINT);
-				echo "false";
+				echo json_encode($final_array, JSON_PRETTY_PRINT);
 			}else{
 				//echo "Bulk asset info could not be retrieved.";
 				echo "false";
