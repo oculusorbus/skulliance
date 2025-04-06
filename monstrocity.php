@@ -582,9 +582,9 @@
 
   <script>
     const opponentsConfig = [
-      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Leader", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Leader", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Leader", powerup: "Minor Regen" },
+      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Base", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Base", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Base", powerup: "Minor Regen" },
       { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Base", powerup: "Minor Regen" },
       { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Base", powerup: "Regenerate" },
       { name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Base", powerup: "Regenerate" },
