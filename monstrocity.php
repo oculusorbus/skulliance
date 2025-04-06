@@ -885,28 +885,28 @@
       }
 
 	  updatePlayerDisplay() {
-	      p1Name.textContent = this.player1.name;
-	      p1Type.textContent = this.player1.type;
-	      p1Strength.textContent = this.player1.strength;
-	      p1Speed.textContent = this.player1.speed;
-	      p1Tactics.textContent = this.player1.tactics;
-	      p1Size.textContent = this.player1.size;
-	      p1Powerup.textContent = this.player1.powerup;
-	      p1Image.src = this.player1.imageUrl;
-	      p1Image.onload = () => p1Image.style.display = "block"; // Show when loaded
-	    }
+        p1Name.textContent = this.player1.name;
+        p1Type.textContent = this.player1.type;
+        p1Strength.textContent = this.player1.strength;
+        p1Speed.textContent = this.player1.speed;
+        p1Tactics.textContent = this.player1.tactics;
+        p1Size.textContent = this.player1.size;
+        p1Powerup.textContent = this.player1.powerup;
+        p1Image.src = this.player1.imageUrl;
+        p1Image.onload = () => p1Image.style.display = "block"; // Show when loaded
+      }
 
-	    updateOpponentDisplay() {
-	      p2Name.textContent = this.player2.name;
-	      p2Type.textContent = this.player2.type;
-	      p2Strength.textContent = this.player2.strength;
-	      p2Speed.textContent = this.player2.speed;
-	      p2Tactics.textContent = this.player2.tactics;
-	      p2Size.textContent = this.player2.size;
-	      p2Powerup.textContent = this.player2.powerup;
-	      p2Image.src = this.player2.imageUrl;
-	      p2Image.onload = () => p2Image.style.display = "block"; // Show when loaded
-	    }
+      updateOpponentDisplay() {
+        p2Name.textContent = this.player2.name;
+        p2Type.textContent = this.player2.type;
+        p2Strength.textContent = this.player2.strength;
+        p2Speed.textContent = this.player2.speed;
+        p2Tactics.textContent = this.player2.tactics;
+        p2Size.textContent = this.player2.size;
+        p2Powerup.textContent = this.player2.powerup;
+        p2Image.src = this.player2.imageUrl;
+        p2Image.onload = () => p2Image.style.display = "block"; // Show when loaded
+      }
 
       initBoard() {
         this.board = [];
