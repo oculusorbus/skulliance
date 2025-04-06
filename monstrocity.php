@@ -613,6 +613,25 @@
       { name: "Ouchie", strength: 7, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" },
       { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" }
     ];
+	
+	 funtion getAssets() {
+	     var xhttp = new XMLHttpRequest();
+	     xhttp.open('GET', 'ajax/get-monstrocity-assets.php', true);
+	     xhttp.send();
+	     xhttp.onreadystatechange = function() {
+	         if (xhttp.readyState == XMLHttpRequest.DONE) {
+	             if (xhttp.status == 200) {
+	                 var data = xhttp.responseText;
+	                 setTimeout(() => { // Delay the additional sounds
+	                     alert(data);
+	                 }, 2000); // 2000ms (2 seconds) delay; adjust as needed
+	                 console.log(data);
+	             }
+	         }
+	     }.bind(this); // Bind the Match3Game instance to the function
+	 }
+	 
+	 getAssets();
 
     const playerCharactersConfig = [
         { name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
