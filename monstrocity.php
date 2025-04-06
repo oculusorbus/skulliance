@@ -614,28 +614,53 @@
       { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" }
     ];
 	
-	 function getAssets() {
-	     var xhttp = new XMLHttpRequest();
-	     xhttp.open('GET', 'ajax/get-monstrocity-assets.php', true);
-	     xhttp.send();
-	     xhttp.onreadystatechange = function() {
-	         if (xhttp.readyState == XMLHttpRequest.DONE) {
-	             if (xhttp.status == 200) {
-	                 var data = xhttp.responseText;
-	                 setTimeout(() => { // Delay the additional sounds
-						 if(data != 'false'){
-							 return data;
-					 	 }else{
-							 return '{ name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" }';
-					 	 }
-	                 }, 2000); // 2000ms (2 seconds) delay; adjust as needed
-	                 console.log(data);
-	             }
-	         }
-	     }.bind(this); // Bind the Match3Game instance to the function
-	 }
-	 
-	 const playerCharactersConfig = [getAssets()];
+	function getAssets(callback) {
+	    // Declare result with default "Craig" data upfront
+	    let result = [{
+	        name: "Craig",
+	        strength: 4,
+	        speed: 4,
+	        tactics: 4,
+	        size: "Medium",
+	        type: "Base",
+	        powerup: "Regenerate"
+	    }];
+
+	    var xhttp = new XMLHttpRequest();
+	    xhttp.open('GET', 'ajax/get-monstrocity-assets.php', true);
+	    xhttp.send();
+	    xhttp.onreadystatechange = function() {
+	        if (xhttp.readyState == XMLHttpRequest.DONE) {
+	            if (xhttp.status == 200) {
+	                var data = xhttp.responseText;
+	                if (data !== 'false') {
+	                    try {
+	                        result = JSON.parse(data); // Update result with server data
+	                        // If the server returns a single object, wrap it in an array
+	                        if (!Array.isArray(result)) {
+	                            result = [result];
+	                        }
+	                    } catch (e) {
+	                        console.error('Failed to parse JSON:', e);
+	                        // Keep the default result (already set)
+	                    }
+	                } else {
+	                    // Server returned 'false', keep the default result
+	                }
+	                callback(result);
+	            } else {
+	                console.error('Request failed with status:', xhttp.status);
+	                callback(result); // Use the default result
+	            }
+	        }
+	    };
+	}
+
+	// Example Usage
+	getAssets(function(data) {
+	    const playerCharactersConfig = data;
+	    console.log(playerCharactersConfig);
+	});
 	 /*
     const playerCharactersConfig = [
         { name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
