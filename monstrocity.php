@@ -624,9 +624,9 @@
 	                 var data = xhttp.responseText;
 	                 setTimeout(() => { // Delay the additional sounds
 						 if(data != 'false'){
-	                     	document.write(data);
+							 return data;
 					 	 }else{
-							 document.write('const playerCharactersConfig = [{ name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" }];');
+							 return '[{ name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" }]';
 					 	 }
 	                 }, 2000); // 2000ms (2 seconds) delay; adjust as needed
 	                 console.log(data);
@@ -635,7 +635,7 @@
 	     }.bind(this); // Bind the Match3Game instance to the function
 	 }
 	 
-	 getAssets();
+	 const playerCharactersConfig = getAssets();
 	 /*
     const playerCharactersConfig = [
         { name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
