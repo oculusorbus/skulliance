@@ -986,6 +986,9 @@
         document.getElementById("change-character").addEventListener("click", () => {
           this.showCharacterSelect(false);
         });
+        document.getElementById("p1-image").addEventListener("click", () => {
+          this.showCharacterSelect(false);
+        });
       }
 
       handleGameOverButton() {
