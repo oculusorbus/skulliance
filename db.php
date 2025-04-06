@@ -6369,7 +6369,7 @@ function getMonstrocityAssets($conn){
 		if ($result->num_rows > 0) {
 			$index = 0;
 			while($row = $result->fetch_assoc()) {
-				$asset_list["_asset_list"][$index] = $row["policy"].bin2hex($row["asset_name"]);
+				$asset_list["_asset_list"][$row["policy"]] = bin2hex($row["asset_name"]);
 				$index++;
 			}
 			return $asset_list;
