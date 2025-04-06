@@ -51,9 +51,40 @@ if(isset($_SESSION['userData']['user_id'])){
 			curl_close( $tokench );
 
 			if(is_array($tokenresponse)){
-				foreach($tokenresponse AS $index => $tokenresponsedata){
-					print_r($tokenresponsedata);
-				} // End foreach
+				foreach ($tokenresponse as $index => $tokenresponsedata) {
+				    // Extract the policy ID and ASCII asset name from the current NFT data
+				    $policy_id = $tokenresponsedata->policy_id;
+				    $asset_name_ascii = $tokenresponsedata->asset_name_ascii;
+
+				    // Check if the metadata exists for this specific NFT
+				    if (isset($tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$asset_name_ascii})) {
+				        // Access the NFT's metadata
+				        $nft_metadata = $tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$asset_name_ascii};
+
+				        // Verify that the required fields (character alias and attributes) are present
+				        if (isset($nft_metadata->character->alias) && isset($nft_metadata->attributes)) {
+				            $alias = $nft_metadata->character->alias;
+				            $attributes = $nft_metadata->attributes;
+
+				            // Add the extracted data to the final array
+				            $final_array[] = [
+				                'alias' => $alias,
+				                'attributes' => [
+				                    'size' => $attributes->size,
+				                    'type' => $attributes->type,
+				                    'speed' => $attributes->speed,
+				                    'powerup' => $attributes->powerup,
+				                    'tactics' => $attributes->tactics,
+				                    'strength' => $attributes->strength,
+				                ],
+				            ];
+				        }
+				    }
+				}
+
+				// Optional: Print the final array to see the result
+				print_r($final_array);
+				
 			}else{
 				echo "Bulk asset info could not be retrieved.";
 			}
