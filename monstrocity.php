@@ -361,19 +361,20 @@
     }
 
     #character-select-container {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 36, 48, 0.95);
-      padding: 20px;
-      border-radius: 10px;
-      z-index: 100;
-      width: 80%;
-      max-width: 800px;
-      max-height: 80vh;
-      overflow-y: auto;
-      display: none;
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background: rgba(0, 36, 48, 1);
+		padding: 20px;
+		border-radius: 10px;
+		z-index: 100;
+		width: 80%;
+		max-width: 875px;
+		max-height: 94vh;
+		overflow-y: auto;
+		display: none;
+		border: 3px solid black;
     }
 
     #character-select-container h2 {
