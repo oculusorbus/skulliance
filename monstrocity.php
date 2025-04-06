@@ -356,6 +356,54 @@
       100% { box-shadow: 0 0 10px 5px #FF0000; }
     }
 
+    #character-select-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 36, 48, 0.95);
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 100;
+      width: 80%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #character-select-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .character-option {
+      display: inline-block;
+      width: 200px;
+      margin: 10px;
+      padding: 10px;
+      background: #003A45;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .character-option:hover {
+      transform: scale(1.05);
+      background: #004D5A;
+    }
+
+    .character-option img {
+      width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+
+    .character-option p {
+      margin: 5px 0;
+      font-size: 0.9em;
+    }
+
     @media (max-width: 950px) {
       .game-container {
         width: 100%;
@@ -402,7 +450,7 @@
         opacity: 0;
       }
       
-      #restart {
+      #restart, #change-character {
         opacity: 0;
       }
 
@@ -438,6 +486,16 @@
       #game-over-container {
         top: -1025px;
       }
+
+      #character-select-container {
+        width: 90%;
+        padding: 10px;
+      }
+
+      .character-option {
+        width: 140px;
+        margin: 5px;
+      }
     }
   </style>
 </head>
@@ -445,6 +503,7 @@
   <div class="game-container">
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
     <button id="restart">Restart Level</button>
+    <button id="change-character" style="display: none;">Change Character</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
@@ -506,6 +565,10 @@
         <button id="try-again"></button>
       </div>
     </div>
+    <div id="character-select-container">
+      <h2>Select Your Character</h2>
+      <div id="character-options"></div>
+    </div>
   </div>
 
   <script>
@@ -540,15 +603,18 @@
       { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" }
     ];
 
-    const defaultPlayerConfig = {
-      name: "Craig",
-      strength: 4,
-      speed: 4,
-      tactics: 4,
-      size: "Medium", // Added size for player Craig
-      type: "Base",
-      powerup: "Regenerate"
-    };
+    const playerCharactersConfig = [
+      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Base", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Leader", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Battle Damaged", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Base", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Base", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, speed: 6, tactics: 6, size: "Small", type: "Leader", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, speed: 7, tactics: 7, size: "Large", type: "Battle Damaged", powerup: "Heal" },
+      { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Base", powerup: "Heal" }
+    ];
 
     const characterDirections = {
       "Billandar and Ted": "Left",
@@ -585,6 +651,7 @@
         this.offsetX = 0;
         this.offsetY = 0;
         this.currentLevel = 0;
+        this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
 
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
@@ -600,7 +667,7 @@
           finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg')
         };
 
-        this.initGame();
+        this.showCharacterSelect(true);
         this.addEventListeners();
       }
 
@@ -611,26 +678,48 @@
       }
 
       createCharacter(config) {
-        const typeFolder = config.type.toLowerCase();
+        let typeFolder;
+        switch (config.type) {
+          case "Base":
+            typeFolder = "base";
+            break;
+          case "Leader":
+            typeFolder = "leader";
+            break;
+          case "Battle Damaged":
+            typeFolder = "battle-damaged";
+            break;
+          default:
+            typeFolder = "base";
+        }
         const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/${typeFolder}/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
         
-        // Base health based on type
-        let baseHealth = config.type === "Leader" ? 100 : 85;
+        let baseHealth;
+        switch (config.type) {
+          case "Leader":
+            baseHealth = 100;
+            break;
+          case "Battle Damaged":
+            baseHealth = 70;
+            break;
+          case "Base":
+          default:
+            baseHealth = 85;
+        }
         
-        // Adjust health and tactics based on size
         let healthModifier = 1;
         let tacticsAdjust = 0;
         switch (config.size) {
           case "Large":
-            healthModifier = 1.2; // +20% health
-            tacticsAdjust = config.tactics > 1 ? -2 : 0; // -2 tactics, min 1
+            healthModifier = 1.2;
+            tacticsAdjust = config.tactics > 1 ? -2 : 0;
             break;
           case "Small":
-            healthModifier = 0.8; // -20% health
-            tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics; // +2 tactics, max 7
+            healthModifier = 0.8;
+            tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics;
             break;
           case "Medium":
-            healthModifier = 1; // No change
+            healthModifier = 1;
             tacticsAdjust = 0;
             break;
         }
@@ -643,24 +732,97 @@
           type: config.type,
           strength: config.strength,
           speed: config.speed,
-          tactics: adjustedTactics, // Adjusted tactics
-          size: config.size, // Added size
+          tactics: adjustedTactics,
+          size: config.size,
           powerup: config.powerup,
           health: adjustedHealth,
           maxHealth: adjustedHealth,
           boostActive: false,
-          boostValue: 0, // Default boost value
+          boostValue: 0,
           lastStandActive: false,
           imageUrl
         };
       }
 
+      showCharacterSelect(isInitial = false) {
+        const container = document.getElementById("character-select-container");
+        const optionsDiv = document.getElementById("character-options");
+        optionsDiv.innerHTML = "";
+        container.style.display = "block";
+
+        this.playerCharacters.forEach((character, index) => {
+          const option = document.createElement("div");
+          option.className = "character-option";
+          option.innerHTML = `
+            <img src="${character.imageUrl}" alt="${character.name}">
+            <p><strong>${character.name}</strong></p>
+            <p>Type: ${character.type}</p>
+            <p>Health: ${character.maxHealth}</p>
+            <p>Strength: ${character.strength}</p>
+            <p>Speed: ${character.speed}</p>
+            <p>Tactics: ${character.tactics}</p>
+            <p>Size: ${character.size}</p>
+            <p>Power-Up: ${character.powerup}</p>
+          `;
+          option.addEventListener("click", () => {
+            container.style.display = "none";
+            if (isInitial) {
+              this.player1 = { ...character };
+              this.initGame();
+            } else {
+              this.swapPlayerCharacter(character);
+            }
+          });
+          optionsDiv.appendChild(option);
+        });
+      }
+
+      swapPlayerCharacter(newCharacter) {
+        const oldHealth = this.player1.health;
+        const oldMaxHealth = this.player1.maxHealth;
+        const newInstance = { ...newCharacter }; // Fresh instance with new maxHealth
+        
+        // Scale health proportionally based on remaining health percentage, capped at new maxHealth
+        const healthPercentage = Math.min(1, oldHealth / oldMaxHealth); // Clamp to 100% max
+        newInstance.health = Math.round(newInstance.maxHealth * healthPercentage);
+        
+        // Ensure health is never below 0 or above new maxHealth
+        newInstance.health = Math.max(0, Math.min(newInstance.maxHealth, newInstance.health));
+        
+        // Reset temporary effects
+        newInstance.boostActive = false;
+        newInstance.boostValue = 0;
+        newInstance.lastStandActive = false;
+        
+        this.player1 = newInstance;
+        this.updatePlayerDisplay();
+        this.updateHealth(this.player1); // Refresh health bar with new maxHealth
+        
+        log(`${this.player1.name} steps into the fray with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+        
+        // Adjust turn order based on new character's speed and strength
+        this.currentTurn = this.player1.speed > this.player2.speed 
+          ? this.player1 
+          : this.player2.speed > this.player1.speed 
+            ? this.player2 
+            : this.player1.strength >= this.player2.strength 
+              ? this.player1 
+              : this.player2;
+        turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+        
+        if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
+          setTimeout(() => this.aiTurn(), 1000);
+        }
+      }
+
       initGame() {
         this.sounds.reset.play();
         log(`Starting Level ${this.currentLevel + 1}...`);
-
-        this.player1 = this.createCharacter(defaultPlayerConfig);
+        
         this.player2 = this.createCharacter(opponentsConfig[this.currentLevel]);
+        
+        // Reset player health to maxHealth for a new round
+        this.player1.health = this.player1.maxHealth;
         
         this.currentTurn = this.player1.speed > this.player2.speed 
           ? this.player1 
@@ -674,26 +836,8 @@
 
         p1Image.classList.remove('winner', 'loser');
         p2Image.classList.remove('winner', 'loser');
-        p1Image.src = this.player1.imageUrl;
-        p2Image.src = this.player2.imageUrl;
-
-        p1Name.textContent = this.player1.name;
-        p1Type.textContent = this.player1.type;
-        p1Strength.textContent = this.player1.strength;
-        p1Speed.textContent = this.player1.speed;
-        p1Tactics.textContent = this.player1.tactics;
-        p1Size.textContent = this.player1.size; // Display size
-        p1Powerup.textContent = this.player1.powerup;
-        p1Image.src = this.player1.imageUrl;
-
-        p2Name.textContent = this.player2.name;
-        p2Type.textContent = this.player2.type;
-        p2Strength.textContent = this.player2.strength;
-        p2Speed.textContent = this.player2.speed;
-        p2Tactics.textContent = this.player2.tactics;
-        p2Size.textContent = this.player2.size; // Display size
-        p2Powerup.textContent = this.player2.powerup;
-        p2Image.src = this.player2.imageUrl;
+        this.updatePlayerDisplay();
+        this.updateOpponentDisplay();
 
         if (characterDirections[this.player1.name] === "Left") {
           p1Image.style.transform = "scaleX(-1)";
@@ -713,7 +857,6 @@
         battleLog.innerHTML = "";
         gameOver.textContent = "";
 
-        // Log size effects
         if (this.player1.size !== "Medium") {
           log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
         }
@@ -721,15 +864,42 @@
           log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
         }
 
+        log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
         log(`${this.currentTurn.name} goes first!`);
 
         this.initBoard();
         this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
         turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
 
+        if (this.playerCharacters.length > 1) {
+          document.getElementById("change-character").style.display = "inline-block";
+        }
+
         if (this.currentTurn === this.player2) {
           setTimeout(() => this.aiTurn(), 1000);
         }
+      }
+
+      updatePlayerDisplay() {
+        p1Name.textContent = this.player1.name;
+        p1Type.textContent = this.player1.type;
+        p1Strength.textContent = this.player1.strength;
+        p1Speed.textContent = this.player1.speed;
+        p1Tactics.textContent = this.player1.tactics;
+        p1Size.textContent = this.player1.size;
+        p1Powerup.textContent = this.player1.powerup;
+        p1Image.src = this.player1.imageUrl;
+      }
+
+      updateOpponentDisplay() {
+        p2Name.textContent = this.player2.name;
+        p2Type.textContent = this.player2.type;
+        p2Strength.textContent = this.player2.strength;
+        p2Speed.textContent = this.player2.speed;
+        p2Tactics.textContent = this.player2.tactics;
+        p2Size.textContent = this.player2.size;
+        p2Powerup.textContent = this.player2.powerup;
+        p2Image.src = this.player2.imageUrl;
       }
 
       initBoard() {
@@ -803,6 +973,9 @@
         document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
         document.getElementById("restart").addEventListener("click", () => {
           this.initGame();
+        });
+        document.getElementById("change-character").addEventListener("click", () => {
+          this.showCharacterSelect(false);
         });
       }
 
@@ -1329,13 +1502,13 @@
 
         let color;
         if (percentage > 75) {
-          color = '#4CAF50';
+          color = '#4CAF50'; // Green for >75%
         } else if (percentage > 50) {
-          color = '#FFC105';
+          color = '#FFC105'; // Yellow for >50%
         } else if (percentage > 25) {
-          color = '#FFA500';
+          color = '#FFA500'; // Orange for >25%
         } else {
-          color = '#F44336';
+          color = '#F44336'; // Red for ≤25%
         }
 
         healthBar.style.backgroundColor = color;
@@ -1425,7 +1598,7 @@
         }
       }
 
-      applyAnimation(imageElement, shiftX, glowClass, duration) {
+            applyAnimation(imageElement, shiftX, glowClass, duration) {
         const originalTransform = imageElement.style.transform || '';
         const scalePart = originalTransform.includes('scaleX') ? originalTransform.match(/scaleX\([^)]+\)/)[0] : '';
         imageElement.style.transition = `transform ${duration / 2 / 1000}s linear`;
@@ -1475,31 +1648,29 @@
 
     const turnIndicator = document.getElementById("turn-indicator");
     const p1Name = document.getElementById("p1-name");
-    const p1Type = document.getElementById("p1-type");
+    const p1Image = document.getElementById("p1-image");
+    const p1Health = document.getElementById("p1-health");
+    const p1Hp = document.getElementById("p1-hp");
     const p1Strength = document.getElementById("p1-strength");
     const p1Speed = document.getElementById("p1-speed");
     const p1Tactics = document.getElementById("p1-tactics");
-    const p1Size = document.getElementById("p1-size"); // Added for size display
-    const p1Hp = document.getElementById("p1-hp");
-    const p1Health = document.getElementById("p1-health");
+    const p1Size = document.getElementById("p1-size");
     const p1Powerup = document.getElementById("p1-powerup");
-    const p1Image = document.getElementById("p1-image");
+    const p1Type = document.getElementById("p1-type");
     const p2Name = document.getElementById("p2-name");
-    const p2Type = document.getElementById("p2-type");
+    const p2Image = document.getElementById("p2-image");
+    const p2Health = document.getElementById("p2-health");
+    const p2Hp = document.getElementById("p2-hp");
     const p2Strength = document.getElementById("p2-strength");
     const p2Speed = document.getElementById("p2-speed");
     const p2Tactics = document.getElementById("p2-tactics");
-    const p2Size = document.getElementById("p2-size"); // Added for size display
-    const p2Hp = document.getElementById("p2-hp");
-    const p2Health = document.getElementById("p2-health");
+    const p2Size = document.getElementById("p2-size");
     const p2Powerup = document.getElementById("p2-powerup");
-    const p2Image = document.getElementById("p2-image");
+    const p2Type = document.getElementById("p2-type");
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const game = new MonstrocityMatch3();
-    });
+    const game = new MonstrocityMatch3();
   </script>
 </body>
 </html>
