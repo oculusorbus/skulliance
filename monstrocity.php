@@ -115,7 +115,7 @@
 	  display: none;
 	}
 	
-	#player1 img: hover {
+	#p1-image:hover {
 	  cursor: pointer;
 	}
     
