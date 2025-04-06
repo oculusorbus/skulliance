@@ -42,48 +42,62 @@ if(isset($_SESSION['userData']['user_id'])){
 			    if ($http_code >= 400) {
 			        echo "HTTP Error: Status code " . $http_code . "\n";
 			        echo "Response: " . $tokenresponse . "\n";
-			    }else{
-			        echo "HTTP Error: Status code " . $http_code . "\n";
-			        echo "Response: " . $tokenresponse . "\n";
 			    }
 			}
 			$tokenresponse = json_decode($tokenresponse);
 			curl_close( $tokench );
 
 			if(is_array($tokenresponse)){
-				foreach ($tokenresponse as $index => $tokenresponsedata) {
-				    // Extract the policy ID and ASCII asset name from the current NFT data
+				// Define the powerup mapping
+				$powerup_mapping = [
+				    'bloody' => 'Heal',
+				    'cardano' => 'Boost Attack',
+				    'ada' => 'Regeneration',
+				    'none' => 'Minor Regen',
+				];
+
+				// Initialize an array to store character configurations
+				$final_array = [];
+
+				// Loop through each NFT in the token response
+				foreach ($tokenresponse as $tokenresponsedata) {
+				    // Extract policy ID and asset name
 				    $policy_id = $tokenresponsedata->policy_id;
 				    $asset_name_ascii = $tokenresponsedata->asset_name_ascii;
 
-				    // Check if the metadata exists for this specific NFT
+				    // Check if metadata exists for this NFT
 				    if (isset($tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$asset_name_ascii})) {
-				        // Access the NFT's metadata
 				        $nft_metadata = $tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$asset_name_ascii};
 
-				        // Verify that the required fields (character alias and attributes) are present
+				        // Ensure character alias and attributes are present
 				        if (isset($nft_metadata->character->alias) && isset($nft_metadata->attributes)) {
 				            $alias = $nft_metadata->character->alias;
 				            $attributes = $nft_metadata->attributes;
 
-				            // Add the extracted data to the final array
+				            // Capitalize size and type
+				            $size = ucfirst($attributes->size);
+				            $type = ucfirst($attributes->type);
+
+				            // Map the powerup value
+				            $powerup_raw = $attributes->powerup;
+				            $powerup = $powerup_mapping[$powerup_raw] ?? $powerup_raw; // Fallback to original if not in mapping
+
+				            // Build the character configuration
 				            $final_array[] = [
-				                'alias' => $alias,
-				                'attributes' => [
-				                    'size' => $attributes->size,
-				                    'type' => $attributes->type,
-				                    'speed' => $attributes->speed,
-				                    'powerup' => $attributes->powerup,
-				                    'tactics' => $attributes->tactics,
-				                    'strength' => $attributes->strength,
-				                ],
+				                'name' => $alias,
+				                'strength' => $attributes->strength,
+				                'speed' => $attributes->speed,
+				                'tactics' => $attributes->tactics,
+				                'size' => $size,
+				                'type' => $type,
+				                'powerup' => $powerup,
 				            ];
 				        }
 				    }
 				}
 
-				// Optional: Print the final array to see the result
-				print_r($final_array);
+				// Output as JavaScript code
+				echo "const playerCharactersConfig = " . json_encode($final_array, JSON_PRETTY_PRINT) . ";";
 				
 			}else{
 				echo "Bulk asset info could not be retrieved.";
