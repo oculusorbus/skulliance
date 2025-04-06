@@ -85,10 +85,6 @@
       border-radius: 5px;
       transition: transform 0.1s linear, filter 0.5s ease;
     }
-	
-	.character img: hover {
-		cursor: pointer;
-	}
     
     .character p{
       font-weight: bold;
@@ -117,6 +113,10 @@
 	
 	#player1 img, #player2 img {
 	  display: none;
+	}
+	
+	#player1 img: hover {
+	  cursor: pointer;
 	}
     
     .health-bar {
