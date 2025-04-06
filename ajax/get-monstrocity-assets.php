@@ -27,6 +27,8 @@ if(isset($_SESSION['userData']['user_id'])){
 			curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
 			curl_setopt( $tokench, CURLOPT_HEADER, 0);
 			curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+			
+			echo "here";
 
 			//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
 			//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
@@ -49,8 +51,6 @@ if(isset($_SESSION['userData']['user_id'])){
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
 					print_r($tokenresponsedata);
-					echo "here";
-					exit;
 				} // End foreach
 			}else{
 				echo "Bulk asset info could not be retrieved.";
