@@ -37,7 +37,7 @@
       min-width: 910px;
       max-width: 910px;
       box-sizing: border-box;
-      max-height: 1120px;
+      max-height: 1160px;
       border: 3px solid black;
     }
 
