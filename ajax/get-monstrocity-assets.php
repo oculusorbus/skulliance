@@ -49,6 +49,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			if(is_array($tokenresponse)){
 				foreach($tokenresponse AS $index => $tokenresponsedata){
 					print_r($tokenresponsedata);
+					echo "here";
 					exit;
 				} // End foreach
 			}else{
