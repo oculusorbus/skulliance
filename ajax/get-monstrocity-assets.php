@@ -43,7 +43,8 @@ if(isset($_SESSION['userData']['user_id'])){
 			        echo "HTTP Error: Status code " . $http_code . "\n";
 			        echo "Response: " . $tokenresponse . "\n";
 			    }else{
-			    	echo "code is less than 400";
+			        echo "HTTP Error: Status code " . $http_code . "\n";
+			        echo "Response: " . $tokenresponse . "\n";
 			    }
 			}
 			$tokenresponse = json_decode($tokenresponse);
