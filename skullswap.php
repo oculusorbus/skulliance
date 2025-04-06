@@ -65,7 +65,6 @@ include 'header.php';
              box-sizing: border-box;
              padding: 0.25vh;
              z-index: 1;
-	 	     border: 1px solid black;
 			 box-shadow: 0px 1px 5px black;
          }
          .tile.game-over {
