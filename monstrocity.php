@@ -85,6 +85,10 @@
       border-radius: 5px;
       transition: transform 0.1s linear, filter 0.5s ease;
     }
+	
+	.character img: hover {
+		cursor: pointer;
+	}
     
     .character p{
       font-weight: bold;
