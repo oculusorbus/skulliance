@@ -1740,8 +1740,7 @@
 	                var data = xhttp.responseText;
 	                if (data !== 'false') {
 	                    try {
-							result = [result];
-	                        //result = JSON.parse(data); // Update result with server data
+	                        result = JSON.parse(data); // Update result with server data
 	                        // If the server returns a single object, wrap it in an array
 	                        if (!Array.isArray(result)) {
 	                            result = [result];
