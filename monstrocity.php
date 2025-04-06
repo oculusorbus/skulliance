@@ -287,13 +287,15 @@
     @keyframes fadeIn { to { opacity: 1; } }
 
     button {
-      padding: 10px 20px;
-      background-color: #8FA5B2;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-bottom: 20px;
+	    padding: 10px 20px;
+	    background-color: #8FA5B2;
+	    border: none;
+	    border-radius: 5px;
+	    cursor: pointer;
+	    font-weight: bold;
+	    margin-bottom: 20px;
+	    min-width: 125px;
+	    font-size: 13px;
     }
 
     button:hover { background-color: #95AFC0; }
@@ -512,7 +514,7 @@
   <div class="game-container">
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
     <button id="restart">Restart Level</button>
-    <button id="change-character" style="display: none;">Change Character</button>
+    <button id="change-character" style="display: none;">Switch Monster</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
