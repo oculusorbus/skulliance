@@ -294,7 +294,7 @@
 	    cursor: pointer;
 	    font-weight: bold;
 	    margin-bottom: 20px;
-	    min-width: 125px;
+	    min-width: 137px;
 	    font-size: 13px;
     }
 
