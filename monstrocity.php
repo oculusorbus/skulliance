@@ -538,7 +538,7 @@
       name: "Craig",
       strength: 4,
       type: "Base",
-      powerup: "Minor Regen"
+      powerup: "Regenerate"
     };
 
     const characterDirections = {
