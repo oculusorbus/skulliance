@@ -33,14 +33,14 @@ if(isset($_SESSION['userData']['user_id'])){
 			$tokenresponse = curl_exec( $tokench );
 			// Check for errors and echo them
 			if ($tokenresponse === false) {
-			    $message .= "cURL Error: " . curl_error($tokench) . "\n";
-			    $message .= "cURL Error Number: " . curl_errno($tokench) . "\n";
+			    echo "cURL Error: " . curl_error($tokench) . "\n";
+			    echo "cURL Error Number: " . curl_errno($tokench) . "\n";
 			} else {
 			    // Optionally check HTTP status code
 			    $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
 			    if ($http_code >= 400) {
-			        $message .= "HTTP Error: Status code " . $http_code . "\n";
-			        $message .= "Response: " . $tokenresponse . "\n";
+			        echo "HTTP Error: Status code " . $http_code . "\n";
+			        echo "Response: " . $tokenresponse . "\n";
 			    }
 			}
 			$tokenresponse = json_decode($tokenresponse);
@@ -52,12 +52,7 @@ if(isset($_SESSION['userData']['user_id'])){
 					exit;
 				} // End foreach
 			}else{
-				$message .= "Bulk asset info could not be retrieved for stake address: https://pool.pm/".$address." \r\n";
-				$failed_addresses[] = $address;
-				echo $message;
-				print_r($tokenresponse);
-				sendDM("772831523899965440", $message);
-				exit();
+				echo "Bulk asset info could not be retrieved.";
 			}
 		} // End foreach
 	}else{
