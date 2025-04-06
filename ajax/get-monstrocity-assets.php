@@ -34,14 +34,16 @@ if(isset($_SESSION['userData']['user_id'])){
 			$tokenresponse = curl_exec( $tokench );
 			// Check for errors and echo them
 			if ($tokenresponse === false) {
-			    echo "cURL Error: " . curl_error($tokench) . "\n";
-			    echo "cURL Error Number: " . curl_errno($tokench) . "\n";
+			    //echo "cURL Error: " . curl_error($tokench) . "\n";
+			    //echo "cURL Error Number: " . curl_errno($tokench) . "\n";
+				echo "false";
 			} else {
 			    // Optionally check HTTP status code
 			    $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
 			    if ($http_code >= 400) {
-			        echo "HTTP Error: Status code " . $http_code . "\n";
-			        echo "Response: " . $tokenresponse . "\n";
+			        //echo "HTTP Error: Status code " . $http_code . "\n";
+			        //echo "Response: " . $tokenresponse . "\n";
+					echo "false";
 			    }
 			}
 			$tokenresponse = json_decode($tokenresponse);
@@ -98,16 +100,18 @@ if(isset($_SESSION['userData']['user_id'])){
 
 				// Output as JavaScript code
 				echo "const playerCharactersConfig = " . json_encode($final_array, JSON_PRETTY_PRINT) . ";";
-				
 			}else{
-				echo "Bulk asset info could not be retrieved.";
+				//echo "Bulk asset info could not be retrieved.";
+				echo "false";
 			}
 		} // End foreach
 	}else{
-		echo "You do not have any Monstrocity NFTs";
+		//echo "You do not have any Monstrocity NFTs";
+		echo "false";
 	}
 }else{
-	echo "You are not logged in to discord.";
+	//echo "You are not logged in to discord.";
+	echo "false";
 }
 
 //echo json_encode($project);

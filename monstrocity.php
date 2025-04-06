@@ -623,7 +623,11 @@
 	             if (xhttp.status == 200) {
 	                 var data = xhttp.responseText;
 	                 setTimeout(() => { // Delay the additional sounds
-	                     alert(data);
+						 if(data != 'false'){
+	                     	document.write(data);
+					 	 }else{
+							 document.write('const playerCharactersConfig = [{ name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" }];');
+					 	 }
 	                 }, 2000); // 2000ms (2 seconds) delay; adjust as needed
 	                 console.log(data);
 	             }
@@ -632,7 +636,7 @@
 	 }
 	 
 	 getAssets();
-
+	 /*
     const playerCharactersConfig = [
         { name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
         { name: "Merdock", strength: 4, speed: 4, tactics: 4, size: "Large", type: "Base", powerup: "Regenerate" },
@@ -676,7 +680,7 @@
         { name: "Katastrophy", strength: 5, speed: 5, tactics: 5, size: "Large", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Ouchie", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
         { name: "Drake", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" }
-    ];
+    ];*/
 
     const characterDirections = {
       "Billandar and Ted": "Left",
