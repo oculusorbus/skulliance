@@ -608,18 +608,7 @@
     ];
 
     const playerCharactersConfig = [
-      { name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
-      { name: "Merdock", strength: 5, speed: 3, tactics: 6, size: "Large", type: "Leader", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 6, speed: 2, tactics: 4, size: "Small", type: "Base", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Battle Damaged", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Heal" },
-      { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Leader", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, speed: 6, tactics: 6, size: "Small", type: "Leader", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, speed: 7, tactics: 7, size: "Large", type: "Leader", powerup: "Heal" },
-      { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" },
-      { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Leader", powerup: "Boost Attack" },
-		{ name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" }
+		{ name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" }
     ];
 
     const characterDirections = {
