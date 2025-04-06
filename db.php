@@ -6356,4 +6356,26 @@ function resetSwapScores($conn){
 }
 
 /* END SKULL SWAP */
+
+/* MONSTROCITY */
+
+function getMonstrocityAssets($conn){
+	if(isset($_SESSION['userData']['user_id'])){
+		$sql = "SELECT id, asset_id FROM nfts WHERE user_id = '".$_SESSION['userData']['user_id']."'";
+		$result = $conn->query($sql);
+		
+		$asset_list = array();
+		$asset_list["_asset_list"] = array();
+		if ($result->num_rows > 0) {
+			while($row = $result->fetch_assoc()) {
+				$asset_list["_asset_list"][$row["id"]] = $row["asset_id"];
+			}
+			return $asset_list;
+		}else{
+			return false;
+		}
+	}
+}
+
+/* END MONSTROCITY */
 ?>
