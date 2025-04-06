@@ -456,6 +456,8 @@
           <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
           <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
           <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p1-speed"></span></td></tr>
+          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p1-tactics"></span></td></tr>
+          <tr><td class="attribute-label">Size:</td><td class="attribute"><span id="p1-size"></span></td></tr>
           <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td></tr>
           <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td></tr>
         </table>
@@ -469,6 +471,8 @@
           <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
           <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
           <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p2-speed"></span></td></tr>
+          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p2-tactics"></span></td></tr>
+          <tr><td class="attribute-label">Size:</td><td class="attribute"><span id="p2-size"></span></td></tr>
           <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td></tr>
           <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td></tr>
         </table>
@@ -490,10 +494,10 @@
       <br>
       <h3>Power-Up Effects</h3>
       <ul>
-        <li><strong>Heal (Bloody): </strong> Restores 10 HP</li>
-        <li><strong>Boost Attack (Cardano): </strong> Adds +10 damage to the next attack</li>
-        <li><strong>Regenerate (ADA): </strong> Restores 7 HP</li>
-        <li><strong>Minor Regen (None): </strong> Restores 5 HP</li>
+        <li><strong>Heal (Bloody): </strong> Restores 10 HP (reduced by enemy tactics)</li>
+        <li><strong>Boost Attack (Cardano): </strong> Adds +10 damage to the next attack (reduced by enemy tactics)</li>
+        <li><strong>Regenerate (ADA): </strong> Restores 7 HP (reduced by enemy tactics)</li>
+        <li><strong>Minor Regen (None): </strong> Restores 5 HP (reduced by enemy tactics)</li>
       </ul>
     </div>
     <div id="game-over-container">
@@ -506,40 +510,42 @@
 
   <script>
     const opponentsConfig = [
-      { name: "Craig", strength: 1, speed: 1, type: "Base", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, speed: 1, type: "Base", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, speed: 2, type: "Base", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, speed: 2, type: "Base", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, speed: 3, type: "Base", powerup: "Regenerate" },
-      { name: "Koipon", strength: 3, speed: 3, type: "Base", powerup: "Regenerate" },
-      { name: "Slime Mind", strength: 4, speed: 4, type: "Base", powerup: "Regenerate" },
-      { name: "Billandar and Ted", strength: 4, speed: 4, type: "Base", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, speed: 5, type: "Base", powerup: "Boost Attack" },
-      { name: "Jarhead", strength: 5, speed: 5, type: "Base", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, speed: 6, type: "Base", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, speed: 7, type: "Base", powerup: "Heal" },
-      { name: "Ouchie", strength: 7, speed: 7, type: "Base", powerup: "Heal" },
-      { name: "Drake", strength: 8, speed: 7, type: "Base", powerup: "Heal" },
-      { name: "Craig", strength: 1, speed: 1, type: "Leader", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, speed: 1, type: "Leader", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, speed: 2, type: "Leader", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, speed: 2, type: "Leader", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, speed: 3, type: "Leader", powerup: "Regenerate" },
-      { name: "Koipon", strength: 3, speed: 3, type: "Leader", powerup: "Regenerate" },
-      { name: "Slime Mind", strength: 4, speed: 4, type: "Leader", powerup: "Regenerate" },
-      { name: "Billandar and Ted", strength: 4, speed: 4, type: "Leader", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, speed: 5, type: "Leader", powerup: "Boost Attack" },
-      { name: "Jarhead", strength: 5, speed: 5, type: "Leader", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, speed: 6, type: "Leader", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, speed: 7, type: "Leader", powerup: "Heal" },
-      { name: "Ouchie", strength: 7, speed: 7, type: "Leader", powerup: "Heal" },
-      { name: "Drake", strength: 8, speed: 7, type: "Leader", powerup: "Heal" }
+      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Base", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Base", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Base", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Base", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Base", powerup: "Regenerate" },
+      { name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Base", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Base", powerup: "Regenerate" },
+      { name: "Billandar and Ted", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Base", powerup: "Boost Attack" },
+      { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Base", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, speed: 6, tactics: 6, size: "Small", type: "Base", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, speed: 7, tactics: 7, size: "Large", type: "Base", powerup: "Heal" },
+      { name: "Ouchie", strength: 7, speed: 7, tactics: 7, size: "Medium", type: "Base", powerup: "Heal" },
+      { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Base", powerup: "Heal" },
+      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Leader", powerup: "Minor Regen" },
+      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Leader", powerup: "Minor Regen" },
+      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Leader", powerup: "Minor Regen" },
+      { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Leader", powerup: "Minor Regen" },
+      { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+      { name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+      { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Leader", powerup: "Regenerate" },
+      { name: "Billandar and Ted", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Leader", powerup: "Regenerate" },
+      { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Leader", powerup: "Boost Attack" },
+      { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Leader", powerup: "Boost Attack" },
+      { name: "Spydrax", strength: 6, speed: 6, tactics: 6, size: "Small", type: "Leader", powerup: "Heal" },
+      { name: "Katastrophy", strength: 7, speed: 7, tactics: 7, size: "Large", type: "Leader", powerup: "Heal" },
+      { name: "Ouchie", strength: 7, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" },
+      { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" }
     ];
 
     const defaultPlayerConfig = {
       name: "Craig",
       strength: 4,
-      speed: 4, // Updated speed to 4
+      speed: 4,
+      tactics: 4,
+      size: "Medium", // Added size for player Craig
       type: "Base",
       powerup: "Regenerate"
     };
@@ -605,17 +611,45 @@
       }
 
       createCharacter(config) {
-        const typeFolder = config.type.toLowerCase(); // "base" or "leader"
+        const typeFolder = config.type.toLowerCase();
         const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/${typeFolder}/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
+        
+        // Base health based on type
+        let baseHealth = config.type === "Leader" ? 100 : 85;
+        
+        // Adjust health and tactics based on size
+        let healthModifier = 1;
+        let tacticsAdjust = 0;
+        switch (config.size) {
+          case "Large":
+            healthModifier = 1.2; // +20% health
+            tacticsAdjust = config.tactics > 1 ? -2 : 0; // -2 tactics, min 1
+            break;
+          case "Small":
+            healthModifier = 0.8; // -20% health
+            tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics; // +2 tactics, max 7
+            break;
+          case "Medium":
+            healthModifier = 1; // No change
+            tacticsAdjust = 0;
+            break;
+        }
+        
+        const adjustedHealth = Math.round(baseHealth * healthModifier);
+        const adjustedTactics = Math.max(1, Math.min(7, config.tactics + tacticsAdjust));
+
         return {
           name: config.name,
           type: config.type,
           strength: config.strength,
-          speed: config.speed, // Include speed
+          speed: config.speed,
+          tactics: adjustedTactics, // Adjusted tactics
+          size: config.size, // Added size
           powerup: config.powerup,
-          health: config.type === "Leader" ? 100 : 85,
-          maxHealth: config.type === "Leader" ? 100 : 85,
+          health: adjustedHealth,
+          maxHealth: adjustedHealth,
           boostActive: false,
+          boostValue: 0, // Default boost value
           lastStandActive: false,
           imageUrl
         };
@@ -628,7 +662,6 @@
         this.player1 = this.createCharacter(defaultPlayerConfig);
         this.player2 = this.createCharacter(opponentsConfig[this.currentLevel]);
         
-        // Determine first turn: highest speed wins, strength as tiebreaker
         this.currentTurn = this.player1.speed > this.player2.speed 
           ? this.player1 
           : this.player2.speed > this.player1.speed 
@@ -647,14 +680,18 @@
         p1Name.textContent = this.player1.name;
         p1Type.textContent = this.player1.type;
         p1Strength.textContent = this.player1.strength;
-        p1Speed.textContent = this.player1.speed; // Display speed
+        p1Speed.textContent = this.player1.speed;
+        p1Tactics.textContent = this.player1.tactics;
+        p1Size.textContent = this.player1.size; // Display size
         p1Powerup.textContent = this.player1.powerup;
         p1Image.src = this.player1.imageUrl;
 
         p2Name.textContent = this.player2.name;
         p2Type.textContent = this.player2.type;
         p2Strength.textContent = this.player2.strength;
-        p2Speed.textContent = this.player2.speed; // Display speed
+        p2Speed.textContent = this.player2.speed;
+        p2Tactics.textContent = this.player2.tactics;
+        p2Size.textContent = this.player2.size; // Display size
         p2Powerup.textContent = this.player2.powerup;
         p2Image.src = this.player2.imageUrl;
 
@@ -675,6 +712,15 @@
 
         battleLog.innerHTML = "";
         gameOver.textContent = "";
+
+        // Log size effects
+        if (this.player1.size !== "Medium") {
+          log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
+        }
+        if (this.player2.size !== "Medium") {
+          log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
+        }
+
         log(`${this.currentTurn.name} goes first!`);
 
         this.initBoard();
@@ -756,18 +802,18 @@
 
         document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
         document.getElementById("restart").addEventListener("click", () => {
-          this.initGame(); // Just restart the current level
+          this.initGame();
         });
       }
 
       handleGameOverButton() {
-        if (this.player2.health <= 0) { // Player won
+        if (this.player2.health <= 0) {
           this.currentLevel++;
           if (this.currentLevel >= opponentsConfig.length) {
             this.currentLevel = 0;
           }
           this.initGame();
-        } else { // Player lost, retry same level
+        } else {
           this.initGame();
         }
       }
@@ -1136,45 +1182,41 @@
         const size = match.coordinates.size;
         let damage = 0;
 
-        if (type === "first-attack" || type === "second-attack" || type === "special-attack") {
+        if (type === "first-attack" || type === "second-attack" || type === "special-attack" || type === "last-stand") {
           damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
           if (type === "special-attack") damage = Math.round(damage * 1.2);
           if (attacker.boostActive) {
-            damage += 10;
+            damage += attacker.boostValue || 10;
             attacker.boostActive = false;
             log(`${attacker.name}'s Boost fades.`);
           }
+
+          const tacticsChance = defender.tactics * 10;
+          if (Math.random() * 100 < tacticsChance) {
+            damage = Math.floor(damage / 2);
+            log(`${defender.name}'s tactics halve the blow, taking only ${damage} damage!`);
+          }
+
           if (defender.lastStandActive) {
             damage = Math.max(0, damage - 5);
             defender.lastStandActive = false;
             log(`${defender.name}'s Last Stand mitigates 5 damage!`);
           }
+
+          if (type === "last-stand") {
+            attacker.lastStandActive = true;
+            log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
+          } else {
+            log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
+          }
+
           defender.health = Math.max(0, defender.health - damage);
-          log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
           this.updateHealth(defender);
           this.checkGameOver();
           if (!this.gameOver) this.animateAttack(attacker, damage, type);
         } else if (type === "power-up") {
-          this.usePowerup(attacker);
+          this.usePowerup(attacker, defender);
           if (!this.gameOver) this.animatePowerup(attacker);
-        } else if (type === "last-stand") {
-          damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
-          if (attacker.boostActive) {
-            damage += 10;
-            attacker.boostActive = false;
-            log(`${attacker.name}'s Boost fades.`);
-          }
-          if (defender.lastStandActive) {
-            damage = Math.max(0, damage - 5);
-            defender.lastStandActive = false;
-            log(`${defender.name}'s Last Stand mitigates 5 damage!`);
-          }
-          defender.health = Math.max(0, defender.health - damage);
-          attacker.lastStandActive = true;
-          log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
-          this.updateHealth(defender);
-          this.checkGameOver();
-          if (!this.gameOver) this.animateAttack(attacker, damage, type);
         }
 
         return damage;
@@ -1253,19 +1295,27 @@
         return count;
       }
 
-      usePowerup(player) {
+      usePowerup(player, defender) {
+        const reductionFactor = 1 - (defender.tactics * 0.05);
+        let effectValue;
+
         if (player.powerup === "Heal") {
-          player.health = Math.min(player.maxHealth, player.health + 10);
-          log(`${player.name} uses Heal, restoring 10 HP!`);
+          effectValue = Math.floor(10 * reductionFactor);
+          player.health = Math.min(player.maxHealth, player.health + effectValue);
+          log(`${player.name} uses Heal, restoring ${effectValue} HP${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
         } else if (player.powerup === "Boost Attack") {
+          effectValue = Math.floor(10 * reductionFactor);
           player.boostActive = true;
-          log(`${player.name} uses Power Surge, next attack +10 damage!`);
+          player.boostValue = effectValue;
+          log(`${player.name} uses Power Surge, next attack +${effectValue} damage${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
         } else if (player.powerup === "Regenerate") {
-          player.health = Math.min(player.maxHealth, player.health + 7);
-          log(`${player.name} uses Regen, restoring 7 HP!`);
+          effectValue = Math.floor(7 * reductionFactor);
+          player.health = Math.min(player.maxHealth, player.health + effectValue);
+          log(`${player.name} uses Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
         } else if (player.powerup === "Minor Regen") {
-          player.health = Math.min(player.maxHealth, player.health + 5);
-          log(`${player.name} uses Minor Regen, restoring 5 HP!`);
+          effectValue = Math.floor(5 * reductionFactor);
+          player.health = Math.min(player.maxHealth, player.health + effectValue);
+          log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
         }
         this.updateHealth(player);
       }
@@ -1427,7 +1477,9 @@
     const p1Name = document.getElementById("p1-name");
     const p1Type = document.getElementById("p1-type");
     const p1Strength = document.getElementById("p1-strength");
-    const p1Speed = document.getElementById("p1-speed"); // Added for speed display
+    const p1Speed = document.getElementById("p1-speed");
+    const p1Tactics = document.getElementById("p1-tactics");
+    const p1Size = document.getElementById("p1-size"); // Added for size display
     const p1Hp = document.getElementById("p1-hp");
     const p1Health = document.getElementById("p1-health");
     const p1Powerup = document.getElementById("p1-powerup");
@@ -1435,7 +1487,9 @@
     const p2Name = document.getElementById("p2-name");
     const p2Type = document.getElementById("p2-type");
     const p2Strength = document.getElementById("p2-strength");
-    const p2Speed = document.getElementById("p2-speed"); // Added for speed display
+    const p2Speed = document.getElementById("p2-speed");
+    const p2Tactics = document.getElementById("p2-tactics");
+    const p2Size = document.getElementById("p2-size"); // Added for size display
     const p2Hp = document.getElementById("p2-hp");
     const p2Health = document.getElementById("p2-health");
     const p2Powerup = document.getElementById("p2-powerup");
