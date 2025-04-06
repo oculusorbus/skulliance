@@ -4,6 +4,8 @@ include '../skulliance.php';
 
 if(isset($_SESSION['userData']['user_id'])){
 	$asset_list = getMonstrocityAssets($conn);
+	print_r($asset_list);
+	exit;
 	if(is_array($asset_list)){
 		// Batch asset list into arrays of 35 items or less to allow for successful queries, had to reduce from 50 to 35 to remain under the free Koios plan limits.
 		$batch_asset_lists = array();
@@ -23,8 +25,7 @@ if(isset($_SESSION['userData']['user_id'])){
 			$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
 			curl_setopt( $tokench, CURLOPT_POST, 1);
-			curl_setopt($tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list["_asset_list"])); // Changed this line
-			curl_setopt($tokench, CURLOPT_FOLLOWLOCATION, 1);
+			curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
 			curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
 			curl_setopt( $tokench, CURLOPT_HEADER, 0);
 			curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
