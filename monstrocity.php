@@ -654,7 +654,7 @@
       }
 
       generateCharacter() {
-        const type = randomChoice(["Base", "Leader", "Battle Damaged"]);
+        const type = randomChoice(["Battle Damaged", "Base", "Leader"]);
         const strength = Math.floor(Math.random() * 3) + 3;
         const name = randomChoice(["Koipon", "Jarhead", "Slime Mind", "Mandiblus", "Texby", "Spydrax", "Goblin Ganger", "Billandar and Ted", "Craig", "Dankle", "Drake", "Katastrophy", "Ouchie", "Merdock"]);
         const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/base/${name.toLowerCase().replace(/ /g, '-')}.png`;
@@ -663,7 +663,7 @@
           type,
           strength: strength,
           powerup: randomChoice(["Heal", "Boost Attack", "Regenerate", "Minor Regen"]),
-          health: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
+          health: type === "Leader" ? 100 : (type === "Base" ? 85 : 70),
           maxHealth: type === "Battle Damaged" ? 100 : (type === "Leader" ? 85 : 70),
           boostActive: false,
           lastStandActive: false,
