@@ -75,6 +75,7 @@
       position: relative;
       top: -225px;
       min-height: 510px;
+	  border: 1px solid black;
     }
 
     .character img {
@@ -140,6 +141,7 @@
       flex-shrink: 0;
 	  margin-top: 15px;
 	  border-radius: 5px;
+ 	  border: 1px solid black;
     }
 
     .tile {
@@ -266,6 +268,7 @@
       overflow-y: auto;
       position: relative;
       top: -225px;
+  	  border: 1px solid black;
     }
 	
 	.log h3 {
@@ -296,6 +299,7 @@
       border-radius: 5px;
       position: relative;
       top: -225px;
+  	  border: 1px solid black;
     }
 
     .legend h3 {
@@ -438,6 +442,7 @@
         top: -225px;
 		margin-top: 0px;
 		background: none;
+	    border: none;
       }
 
       .legend {
