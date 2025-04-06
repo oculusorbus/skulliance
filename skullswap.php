@@ -65,6 +65,7 @@ include 'header.php';
              box-sizing: border-box;
              padding: 0.25vh;
              z-index: 1;
+	 	     border: 1px solid black;
          }
          .tile.game-over {
              filter: grayscale(100%);

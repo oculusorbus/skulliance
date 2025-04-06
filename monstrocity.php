@@ -157,6 +157,7 @@
       background: #444;
       box-sizing: border-box;
       z-index: 1;
+	  border: 1px solid black;
     }
     
     .tile img {
