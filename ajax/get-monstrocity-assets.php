@@ -4,6 +4,8 @@ include '../skulliance.php';
 
 if(isset($_SESSION['userData']['user_id'])){
 	$asset_list = getMonstrocityAssets($conn);
+	print_r($asset_list);
+	exit;
 	if(is_array($asset_list)){
 		// Batch asset list into arrays of 35 items or less to allow for successful queries, had to reduce from 50 to 35 to remain under the free Koios plan limits.
 		$batch_asset_lists = array();
