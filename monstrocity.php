@@ -14,7 +14,7 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background-image: url(https://www.skulliance.io/staking/images/monstrocity/monstoricty.png);
+      background-image: url(https://www.skulliance.io/staking/images/monstrocity/monstrocity.png);
       background-size: cover;
       background-position: center;
     }
