@@ -768,6 +768,8 @@
 	      grandTotalScore: this.grandTotalScore
 	    };
 
+	    console.log("Sending saveProgress request with data:", data);
+
 	    try {
 	      const response = await fetch('ajax/save-monstrocity-progress.php', {
 	        method: 'POST',
@@ -775,11 +777,15 @@
 	        body: JSON.stringify(data)
 	      });
 
+	      console.log("Response status:", response.status);
+
 	      if (!response.ok) {
 	        throw new Error(`HTTP error! Status: ${response.status}`);
 	      }
 
 	      const result = await response.json();
+	      console.log("Response from server:", result);
+
 	      if (result.status === 'success') {
 	        log('Progress saved: Level ' + (this.currentLevel + 1));
 	      } else {
