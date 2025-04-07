@@ -4520,7 +4520,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 
 // Check Monstrocity Leaderboard
 function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
-	$claw = 10000;
+	$claw = 30000;
 	$where = "WHERE project_id = '36'";
 	$attempts = "SUM(attempts) AS completions";
 	if($monthly || $rewards){
