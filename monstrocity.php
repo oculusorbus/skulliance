@@ -590,6 +590,7 @@
       <div id="game-over"></div>
       <div id="game-over-buttons">
         <button id="try-again"></button>
+		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input type="submit" value="Leaderboard"></form>
       </div>
     </div>
     <div id="character-select-container">
