@@ -408,6 +408,7 @@
       border-radius: 5px;
       cursor: pointer;
       transition: transform 0.2s ease, background 0.2s ease;
+	  border: 1px solid black;
     }
 
     .character-option:hover {
