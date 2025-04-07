@@ -753,7 +753,8 @@
           reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
           loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
           win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
-          finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg')
+          finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
+		  powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg')
         };
 
         this.showCharacterSelect(true);
@@ -1536,6 +1537,12 @@
         const type = match.type;
         const size = match.coordinates.size;
         let damage = 0;
+		
+	    // Play sound for matches of 5 or more tiles
+	    if (size >= 5) {
+	      this.sounds.powerGem.play();
+	      log(`${attacker.name} created a match of ${size} tiles!`);
+	    }
 
         if (type === "first-attack" || type === "second-attack" || type === "special-attack" || type === "last-stand") {
           damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
