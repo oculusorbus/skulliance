@@ -174,6 +174,10 @@
       border: 1px solid black;
       box-shadow: 0px 2px 5px black;
     }
+	
+	.tile:hover {
+		border: 1px solid white;
+	}
     
     .tile img {
       width: 80%;
