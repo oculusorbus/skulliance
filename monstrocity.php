@@ -288,7 +288,7 @@
 
     button {
 	    padding: 10px 20px;
-	    background-color: #8FA5B2;
+	    background-color: #49BBE3;
 	    border: none;
 	    border-radius: 5px;
 	    cursor: pointer;
@@ -298,7 +298,7 @@
 	    font-size: 13px;
     }
 
-    button:hover { background-color: #95AFC0; }
+    button:hover { background-color: #54d4ff; }
 
     .legend {
       margin-top: 20px;
