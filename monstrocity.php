@@ -1734,65 +1734,69 @@
         return matches;
       }
 
-      async checkGameOver() {
-		  const tryAgainButton = document.getElementById("try-again");
-		  if (this.player1.health <= 0) {
-		    this.gameOver = true;
-		    this.gameState = "gameOver";
-		    gameOver.textContent = "Game Over!";
-		    turnIndicator.textContent = "Game Over";
-		    log(`${this.player2.name} defeats ${this.player1.name}!`);
-		    tryAgainButton.textContent = "TRY AGAIN";
-		    document.getElementById("game-over-container").style.display = "block";
-		    this.sounds.lose.play();
-		    await this.clearProgress();
-		  } else if (this.player2.health <= 0) {
-		    this.gameOver = true;
-		    this.gameState = "gameOver";
-		    gameOver.textContent = "You Win!";
-		    turnIndicator.textContent = "Game Over";
-		    log(`${this.player1.name} defeats ${this.player2.name}!`);
-		    tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
-		    document.getElementById("game-over-container").style.display = "block";
+	  async checkGameOver() {
+	    const tryAgainButton = document.getElementById("try-again");
+	    if (this.player1.health <= 0) {
+	      this.gameOver = true;
+	      this.gameState = "gameOver";
+	      gameOver.textContent = "Game Over!";
+	      turnIndicator.textContent = "Game Over";
+	      log(`${this.player2.name} defeats ${this.player1.name}!`);
+	      tryAgainButton.textContent = "TRY AGAIN";
+	      document.getElementById("game-over-container").style.display = "block";
+	      this.sounds.lose.play();
+	      await this.clearProgress();
+	    } else if (this.player2.health <= 0) {
+	      this.gameOver = true;
+	      this.gameState = "gameOver";
+	      gameOver.textContent = "You Win!";
+	      turnIndicator.textContent = "Game Over";
+	      log(`${this.player1.name} defeats ${this.player2.name}!`);
+	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
+	      document.getElementById("game-over-container").style.display = "block";
 
-		    if (this.currentTurn === this.player1) {
-		      const currentRound = this.roundStats[this.roundStats.length - 1];
-		      if (currentRound && !currentRound.completed) {
-		        currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
-		        currentRound.completed = true;
+	      if (this.currentTurn === this.player1) {
+	        const currentRound = this.roundStats[this.roundStats.length - 1];
+	        if (currentRound && !currentRound.completed) {
+	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	          currentRound.completed = true;
 
-		        const roundScore = currentRound.matches > 0 
-		          ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
-		          : 0;
+	          const roundScore = currentRound.matches > 0 
+	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
+	            : 0;
         
-		        log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-		        log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + (${this.currentLevel + 1}) / 56) = ${roundScore.toFixed(2)}`);
+	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + (${this.currentLevel + 1}) / 56) = ${roundScore.toFixed(2)}`);
 
-		        this.grandTotalScore += roundScore;
+	          this.grandTotalScore += roundScore;
 
-		        log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-		        log(`Round Score: ${roundScore.toFixed(2)}, Grand Total Score: ${this.grandTotalScore.toFixed(2)}`);
-		      }
-		    }
+	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	          log(`Round Score: ${roundScore.toFixed(2)}, Grand Total Score: ${this.grandTotalScore.toFixed(2)}`);
+	        }
+	      }
 
-		    // Increment currentLevel before saving progress (unless it's the final level)
-		    if (this.currentLevel < opponentsConfig.length - 1) {
-		      this.currentLevel += 1; // Move to the next level
-		      log(`Advancing to Level ${this.currentLevel + 1}`);
-		    }
+	      // Capture the level just completed for the score
+	      const completedLevel = this.currentLevel + 1; // Level just beaten (e.g., 1 for currentLevel: 0)
 
-		    await this.saveProgress();
+	      // Increment currentLevel for progress (next level)
+	      if (this.currentLevel < opponentsConfig.length - 1) {
+	        this.currentLevel += 1; // Move to the next level
+	        log(`Advancing to Level ${this.currentLevel + 1}`);
+	      }
 
-		    if (this.currentLevel === opponentsConfig.length - 1) {
-		      this.sounds.finalWin.play();
-		      this.grandTotalScore = 0;
-		      await this.clearProgress();
-		      log("Game completed! Grand total score reset.");
-		    } else {
-		      this.sounds.win.play();
-		    }
+	      await this.saveProgress();
 
-		    await this.saveScoreToDatabase();
+	      if (this.currentLevel === opponentsConfig.length - 1) {
+	        this.sounds.finalWin.play();
+	        this.grandTotalScore = 0;
+	        await this.clearProgress();
+	        log("Game completed! Grand total score reset.");
+	      } else {
+	        this.sounds.win.play();
+	      }
+
+	      // Pass the completed level to saveScoreToDatabase
+	      await this.saveScoreToDatabase(completedLevel);
 		  
 		  
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
@@ -1803,9 +1807,9 @@
         }
       }
 	  
-	  async saveScoreToDatabase() {
+	  async saveScoreToDatabase(completedLevel) {
 	    const data = {
-	      level: this.currentLevel + 1,
+	      level: completedLevel, // Use the level just completed
 	      score: this.grandTotalScore
 	    };
 
