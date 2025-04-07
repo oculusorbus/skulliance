@@ -6380,53 +6380,46 @@ function getMonstrocityAssets($conn){
 }
 
 function saveMonstrocityScore($conn, $user_id, $score, $level) {
-  $score = intval($score); // Truncate to integer
+  $score = intval($score);
   $level = intval($level);
   $project_id = 36;
 
   try {
-    if (!$conn) {
-      throw new Exception("Database connection is null");
-    }
+    if (!$conn) throw new Exception("Database connection is null");
 
-    // Prepare and execute SELECT
+    // Check existing score
     $stmt = $conn->prepare("SELECT score, level, attempts FROM scores WHERE user_id = ? AND project_id = ? AND reward = 0");
     $stmt->bind_param("ii", $user_id, $project_id);
     $stmt->execute();
-
-    // Bind result variables
     $stmt->bind_result($stored_score, $stored_level, $stored_attempts);
-    $has_result = $stmt->fetch(); // Fetch into bound variables
-
-    // Set defaults if no result
-    if ($has_result) {
-      // Values are already in $stored_score, $stored_level, $stored_attempts
-    } else {
+    $has_result = $stmt->fetch();
+    if (!$has_result) {
       $stored_score = 0;
       $stored_level = 0;
       $stored_attempts = 0;
     }
-    $stmt->close(); // Close the statement
+    $stmt->close();
 
-    // Decide if we should save
-    $should_save = ($level > $stored_level) || 
-                   ($level == $stored_level && $score > $stored_score);
+    $should_save = ($level > $stored_level) || ($level == $stored_level && $score > $stored_score);
 
     if ($should_save) {
       $new_attempts = $stored_attempts;
-      if ($level == 28) {
-        $new_attempts += 1;
-      }
+      if ($level == 28) $new_attempts += 1;
 
-      $stmt = $conn->prepare("REPLACE INTO scores (user_id, project_id, score, level, attempts, reward) VALUES (?, ?, ?, ?, ?, 0)");
-      $stmt->bind_param("iiiii", $user_id, $project_id, $score, $level, $new_attempts);
+      // Update if exists, insert if not
+      if ($has_result) {
+        $stmt = $conn->prepare("UPDATE scores SET score = ?, level = ?, attempts = ? WHERE user_id = ? AND project_id = ? AND reward = 0");
+        $stmt->bind_param("iiiii", $score, $level, $new_attempts, $user_id, $project_id);
+      } else {
+        $stmt = $conn->prepare("INSERT INTO scores (user_id, project_id, score, level, attempts, reward, date_created) VALUES (?, ?, ?, ?, ?, 0, NOW())");
+        $stmt->bind_param("iiiii", $user_id, $project_id, $score, $level, $new_attempts);
+      }
       $stmt->execute();
       $stmt->close();
 
       return ['status' => 'success', 'message' => 'Score saved', 'attempts' => $new_attempts];
-    } else {
-      return ['status' => 'skipped', 'message' => 'No improvement in level or score'];
     }
+    return ['status' => 'skipped', 'message' => 'No improvement in level or score'];
   } catch (Exception $e) {
     return ['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()];
   }
