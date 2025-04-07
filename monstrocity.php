@@ -371,7 +371,7 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		background: rgba(0, 36, 48, 1);
+		background: #002f44;
 		padding: 20px;
 		border-radius: 10px;
 		z-index: 100;
@@ -393,7 +393,7 @@
       width: 200px;
       margin: 10px;
       padding: 10px;
-      background: #003A45;
+      background: #165777;
       border-radius: 5px;
       cursor: pointer;
       transition: transform 0.2s ease, background 0.2s ease;
@@ -401,7 +401,7 @@
 
     .character-option:hover {
       transform: scale(1.05);
-      background: #004D5A;
+      background: #2080ad;
     }
 
     .character-option img {
