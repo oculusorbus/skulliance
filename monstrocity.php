@@ -84,6 +84,8 @@
       margin-bottom: 10px;
       border-radius: 5px;
       transition: transform 0.1s linear, filter 0.5s ease;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+      filter: drop-shadow(2px 5px 10px #000);
     }
     
     .character p{
@@ -408,6 +410,8 @@
       width: 100%;
       height: auto;
       border-radius: 5px;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+      filter: drop-shadow(2px 5px 10px #000);
     }
 
     .character-option p {
