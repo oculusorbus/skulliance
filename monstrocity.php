@@ -33,9 +33,9 @@
       background-color: #002f44;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-      width: 910px;
+      width: 100%;
       min-width: 910px;
-      max-width: 910px;
+      max-width: 1024px;
       box-sizing: border-box;
       max-height: 1160px;
       border: 3px solid black;
