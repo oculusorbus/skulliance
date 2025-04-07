@@ -54,7 +54,7 @@ if(isset($_SESSION['userData']['user_id'])){
 				$powerup_mapping = [
 				    'bloody' => 'Heal',
 				    'cardano' => 'Boost Attack',
-				    'ada' => 'Regeneration',
+				    'ada' => 'Regenerate',
 				    'none' => 'Minor Regen',
 				];
 
