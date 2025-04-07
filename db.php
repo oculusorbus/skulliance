@@ -4623,7 +4623,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 			echo $row["max_level"];
 			echo "</td>";
 			echo "<td align='center'>";
-			echo number_format($row["max_score"]);
+			echo $row["max_score"];
 			echo "</td>";
 			echo "<td align='center'>";
 			echo number_format($row["completions"]);
