@@ -14,7 +14,7 @@ if (isset($_SESSION['userData']['user_id'])) {
 
   if (isset($data['currentLevel']) && isset($data['grandTotalScore'])) {
     try {
-      $stmt = $conn->prepare("INSERT INTO monstrocity_progress (user_id, project_id, level, score) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE level = ?, score = ?");
+      $stmt = $conn->prepare("INSERT INTO progress (user_id, project_id, level, score) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE level = ?, score = ?");
       $stmt->bind_param("iiiiii", $user_id, $project_id, $data['currentLevel'], $data['grandTotalScore'], $data['currentLevel'], $data['grandTotalScore']);
       $stmt->execute();
       $stmt->close();

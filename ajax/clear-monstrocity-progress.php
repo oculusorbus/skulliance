@@ -12,7 +12,7 @@ if (isset($_SESSION['userData']['user_id'])) {
   $project_id = 36;
 
   try {
-    $stmt = $conn->prepare("DELETE FROM monstrocity_progress WHERE user_id = ? AND project_id = ?");
+    $stmt = $conn->prepare("DELETE FROM progress WHERE user_id = ? AND project_id = ?");
     $stmt->bind_param("ii", $user_id, $project_id);
     $stmt->execute();
     $stmt->close();
