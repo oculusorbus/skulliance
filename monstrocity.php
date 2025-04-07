@@ -700,14 +700,9 @@
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
 		
-	    // New tracking properties
-	    this.roundStats = []; // Array to store stats per round
-	    this.grandTotals = {
-	      points: 0,
-	      matches: 0,
-	      healthPercentage: 0,
-	      wins: 0 // To calculate average health percentage
-	    };
+		// New tracking properties
+	    this.roundStats = []; // Per-round stats (points, matches, healthPercentage)
+	    this.grandTotalScore = 0; // Cumulative score across all winning rounds
 
         this.sounds = {
           match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
@@ -1660,34 +1655,36 @@
           tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
           document.getElementById("game-over-container").style.display = "block";
 		  
-	 	  // Record health percentage for the winning round
+		  // Calculate and record score for the winning round
 	      if (this.currentTurn === this.player1) {
 	        const currentRound = this.roundStats[this.roundStats.length - 1];
 	        if (currentRound && !currentRound.completed) {
 	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
 	          currentRound.completed = true;
+
+	          // Calculate round score: (points / matches) * (healthPercentage / 100)
+	          const roundScore = currentRound.matches > 0 
+	            ? (currentRound.points / currentRound.matches) * (currentRound.healthPercentage / 100) 
+	            : 0;
           
-	          // Update grand totals
-	          this.grandTotals.points += currentRound.points;
-	          this.grandTotals.matches += currentRound.matches;
-	          this.grandTotals.healthPercentage += currentRound.healthPercentage;
-	          this.grandTotals.wins += 1;
-          
+	          // Update grand total score
+	          this.grandTotalScore += roundScore;
+
 	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	          log(`Grand Totals - Points: ${this.grandTotals.points}, Matches: ${this.grandTotals.matches}, Avg Health: ${(this.grandTotals.healthPercentage / this.grandTotals.wins).toFixed(2)}%`);
+	          log(`Round Score: ${roundScore.toFixed(2)}, Grand Total Score: ${this.grandTotalScore.toFixed(2)}`);
 	        }
 	      }
 
 	      if (this.currentLevel === opponentsConfig.length - 1) {
 	        this.sounds.finalWin.play();
-	        this.resetGrandTotals(); // Reset after beating level 28
+	        this.grandTotalScore = 0; // Reset grand total score after beating level 28
 	        log("Game completed! Grand totals reset.");
 	      } else {
 	        this.sounds.win.play();
 	      }
       
-	      // Save grand totals to database after each level
-	      this.saveGrandTotals();
+		  // Save to database after level completion
+	      this.saveScoreToDatabase();
 		  
 		  
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
@@ -1698,27 +1695,15 @@
         }
       }
 	  
-	  resetGrandTotals() {
-	    this.grandTotals = {
-	      points: 0,
-	      matches: 0,
-	      healthPercentage: 0,
-	      wins: 0
-	    };
-	  }
-	  
-	  // Template save function for grand totals
-	  saveGrandTotals() {
+	  async saveScoreToDatabase() {
 	    const data = {
-	      level: this.currentLevel + 1, // Level just completed
-	      totalPoints: this.grandTotals.points,
-	      totalMatches: this.grandTotals.matches,
-	      averageHealthPercentage: this.grandTotals.wins > 0 ? (this.grandTotals.healthPercentage / this.grandTotals.wins) : 0
+	      level: this.currentLevel + 1, // Level just completed (1-based)
+	      score: this.grandTotalScore
 	    };
 
 	    // Placeholder for your database save logic
 	    // Replace this with your actual implementation (e.g., AJAX call, fetch, etc.)
-	    console.log("Saving grand totals to database:", data);
+	    console.log("Saving grand total score to database:", data);
     
 	    /* Example AJAX implementation (uncomment and customize):
 	    fetch('your-database-endpoint.php', {
