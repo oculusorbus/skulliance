@@ -699,6 +699,15 @@
 
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
+		
+	    // New tracking properties
+	    this.roundStats = []; // Array to store stats per round
+	    this.grandTotals = {
+	      points: 0,
+	      matches: 0,
+	      healthPercentage: 0,
+	      wins: 0 // To calculate average health percentage
+	    };
 
         this.sounds = {
           match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
@@ -877,6 +886,9 @@
               : this.player2;
         this.gameState = "initializing";
         this.gameOver = false;
+		
+		// Reset round stats for the new level
+	    this.roundStats = [];
 
         p1Image.classList.remove('winner', 'loser');
         p2Image.classList.remove('winner', 'loser');
@@ -1440,6 +1452,19 @@
           this.usePowerup(attacker, defender);
           if (!this.gameOver) this.animatePowerup(attacker);
         }
+		
+		// Record match stats (points and matches) for the current round
+	    if (!this.roundStats[this.roundStats.length - 1] || this.roundStats[this.roundStats.length - 1].completed) {
+	      this.roundStats.push({
+	        points: 0,
+	        matches: 0,
+	        healthPercentage: 0,
+	        completed: false
+	      });
+	    }
+	    const currentRound = this.roundStats[this.roundStats.length - 1];
+	    currentRound.points += damage; // Points based on damage dealt
+	    currentRound.matches += 1; // Increment matches
 
         return damage;
       }
@@ -1634,11 +1659,37 @@
           log(`${this.player1.name} defeats ${this.player2.name}!`);
           tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
           document.getElementById("game-over-container").style.display = "block";
-          if (this.currentLevel === opponentsConfig.length - 1) {
-            this.sounds.finalWin.play();
-          } else {
-            this.sounds.win.play();
-          }
+		  
+	 	  // Record health percentage for the winning round
+	      if (this.currentTurn === this.player1) {
+	        const currentRound = this.roundStats[this.roundStats.length - 1];
+	        if (currentRound && !currentRound.completed) {
+	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	          currentRound.completed = true;
+          
+	          // Update grand totals
+	          this.grandTotals.points += currentRound.points;
+	          this.grandTotals.matches += currentRound.matches;
+	          this.grandTotals.healthPercentage += currentRound.healthPercentage;
+	          this.grandTotals.wins += 1;
+          
+	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	          log(`Grand Totals - Points: ${this.grandTotals.points}, Matches: ${this.grandTotals.matches}, Avg Health: ${(this.grandTotals.healthPercentage / this.grandTotals.wins).toFixed(2)}%`);
+	        }
+	      }
+
+	      if (this.currentLevel === opponentsConfig.length - 1) {
+	        this.sounds.finalWin.play();
+	        this.resetGrandTotals(); // Reset after beating level 28
+	        log("Game completed! Grand totals reset.");
+	      } else {
+	        this.sounds.win.play();
+	      }
+      
+	      // Save grand totals to database after each level
+	      this.saveGrandTotals();
+		  
+		  
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
           p2Image.src = damagedUrl;
           p2Image.classList.add('loser');
@@ -1646,6 +1697,46 @@
           this.renderBoard();
         }
       }
+	  
+	  resetGrandTotals() {
+	    this.grandTotals = {
+	      points: 0,
+	      matches: 0,
+	      healthPercentage: 0,
+	      wins: 0
+	    };
+	  }
+	  
+	  // Template save function for grand totals
+	  saveGrandTotals() {
+	    const data = {
+	      level: this.currentLevel + 1, // Level just completed
+	      totalPoints: this.grandTotals.points,
+	      totalMatches: this.grandTotals.matches,
+	      averageHealthPercentage: this.grandTotals.wins > 0 ? (this.grandTotals.healthPercentage / this.grandTotals.wins) : 0
+	    };
+
+	    // Placeholder for your database save logic
+	    // Replace this with your actual implementation (e.g., AJAX call, fetch, etc.)
+	    console.log("Saving grand totals to database:", data);
+    
+	    /* Example AJAX implementation (uncomment and customize):
+	    fetch('your-database-endpoint.php', {
+	      method: 'POST',
+	      headers: {
+	        'Content-Type': 'application/json'
+	      },
+	      body: JSON.stringify(data)
+	    })
+	    .then(response => response.json())
+	    .then(result => {
+	      console.log('Save successful:', result);
+	    })
+	    .catch(error => {
+	      console.error('Save failed:', error);
+	    });
+	    */
+	  }
 
             applyAnimation(imageElement, shiftX, glowClass, duration) {
         const originalTransform = imageElement.style.transform || '';
