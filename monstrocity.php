@@ -779,12 +779,16 @@
 
 	      console.log("Response status:", response.status);
 
+	      // Log the raw response text before parsing as JSON
+	      const responseText = await response.text();
+	      console.log("Raw response text:", responseText);
+
 	      if (!response.ok) {
 	        throw new Error(`HTTP error! Status: ${response.status}`);
 	      }
 
-	      const result = await response.json();
-	      console.log("Response from server:", result);
+	      const result = JSON.parse(responseText); // Manually parse to avoid fetch's automatic parsing
+	      console.log("Parsed response:", result);
 
 	      if (result.status === 'success') {
 	        log('Progress saved: Level ' + (this.currentLevel + 1));
