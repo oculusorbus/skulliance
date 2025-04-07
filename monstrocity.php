@@ -1735,62 +1735,58 @@
       }
 
       async checkGameOver() {
-        const tryAgainButton = document.getElementById("try-again");
-        if (this.player1.health <= 0) {
-          this.gameOver = true;
-          this.gameState = "gameOver";
-          gameOver.textContent = "You Lose!";
-          turnIndicator.textContent = "Game Over";
-          log(`${this.player2.name} defeats ${this.player1.name}!`);
-          tryAgainButton.textContent = "TRY AGAIN";
-          document.getElementById("game-over-container").style.display = "block";
-          this.sounds.loss.play();
-          const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player1.name.toLowerCase().replace(/ /g, '-')}.png`;
-          p1Image.src = damagedUrl;
-          p1Image.classList.add('loser');
-          p2Image.classList.add('winner');
-          this.renderBoard();
-		  await this.clearProgress(); // Clear progress on loss
-        } else if (this.player2.health <= 0) {
-          this.gameOver = true;
-          this.gameState = "gameOver";
-          gameOver.textContent = "You Win!";
-          turnIndicator.textContent = "Game Over";
-          log(`${this.player1.name} defeats ${this.player2.name}!`);
-          tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
-          document.getElementById("game-over-container").style.display = "block";
-		  
-	// Save score and progress
-	      if (this.currentTurn === this.player1) {
-	        const currentRound = this.roundStats[this.roundStats.length - 1];
-	        if (currentRound && !currentRound.completed) {
-	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
-	          currentRound.completed = true;
+		  const tryAgainButton = document.getElementById("try-again");
+		    if (this.player1.health <= 0) {
+		      this.gameOver = true;
+		      this.gameState = "gameOver";
+		      gameOver.textContent = "Game Over!";
+		      turnIndicator.textContent = "Game Over";
+		      log(`${this.player2.name} defeats ${this.player1.name}!`);
+		      tryAgainButton.textContent = "TRY AGAIN";
+		      document.getElementById("game-over-container").style.display = "block";
+		      this.sounds.lose.play();
+		      await this.clearProgress();
+		    } else if (this.player2.health <= 0) {
+		      this.gameOver = true;
+		      this.gameState = "gameOver";
+		      gameOver.textContent = "You Win!";
+		      turnIndicator.textContent = "Game Over";
+		      log(`${this.player1.name} defeats ${this.player2.name}!`);
+		      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
+		      document.getElementById("game-over-container").style.display = "block";
 
-	          const roundScore = currentRound.matches > 0 
-	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
-	            : 0;
-          
-	          this.grandTotalScore += roundScore;
+		      if (this.currentTurn === this.player1) {
+		        const currentRound = this.roundStats[this.roundStats.length - 1];
+		        if (currentRound && !currentRound.completed) {
+		          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+		          currentRound.completed = true;
 
-	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	          log(`Round Score: ${roundScore.toFixed(2)}, Grand Total Score: ${this.grandTotalScore.toFixed(2)}`);
-	        }
-	      }
+		          const roundScore = currentRound.matches > 0 
+		            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
+		            : 0;
+        
+		          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+		          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + (${this.currentLevel + 1}) / 56) = ${roundScore.toFixed(2)}`);
 
-	      // Save progress after each level
-	      await this.saveProgress();
-		  
-	      if (this.currentLevel === opponentsConfig.length - 1) {
-	        this.sounds.finalWin.play();
-	        this.grandTotalScore = 0; // Reset grand total score after beating level 28
-	        log("Game completed! Grand totals reset.");
-	      } else {
-	        this.sounds.win.play();
-	      }
-      
-		  // Save to database after level completion
-	      this.saveScoreToDatabase();
+		          this.grandTotalScore += roundScore;
+
+		          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+		          log(`Round Score: ${roundScore.toFixed(2)}, Grand Total Score: ${this.grandTotalScore.toFixed(2)}`);
+		        }
+		      }
+
+		      await this.saveProgress();
+
+		      if (this.currentLevel === opponentsConfig.length - 1) {
+		        this.sounds.finalWin.play();
+		        this.grandTotalScore = 0;
+		        await this.clearProgress();
+		        log("Game completed! Grand total score reset.");
+		      } else {
+		        this.sounds.win.play();
+		      }
+
+		      await this.saveScoreToDatabase();
 		  
 		  
           const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
@@ -1820,12 +1816,12 @@
 	        throw new Error(`HTTP error! Status: ${response.status}`);
 	      }
 
-	      const result = await response.json(); // Read body once as JSON
+	      const result = await response.json();
 	      console.log('Save response:', result);
 	      if (result.status === 'success') {
 	        log(`Saved: Level ${data.level}, Score ${data.score.toFixed(2)}`);
 	      } else {
-	        console.error('Save failed:', result.message);
+	        log(`Score not saved: ${result.message}`);
 	      }
 	    } catch (error) {
 	      console.error('Error saving to database:', error);
