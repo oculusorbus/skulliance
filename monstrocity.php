@@ -1697,30 +1697,35 @@
 	  
 	  async saveScoreToDatabase() {
 	    const data = {
-	      level: this.currentLevel + 1, // Level just completed (1-based)
+	      level: this.currentLevel + 1, // 1-28 as displayed
 	      score: this.grandTotalScore
 	    };
 
-	    // Placeholder for your database save logic
-	    // Replace this with your actual implementation (e.g., AJAX call, fetch, etc.)
 	    console.log("Saving grand total score to database:", data);
-    
-	    /* Example AJAX implementation (uncomment and customize):
-	    fetch('your-database-endpoint.php', {
-	      method: 'POST',
-	      headers: {
-	        'Content-Type': 'application/json'
-	      },
-	      body: JSON.stringify(data)
-	    })
-	    .then(response => response.json())
-	    .then(result => {
-	      console.log('Save successful:', result);
-	    })
-	    .catch(error => {
-	      console.error('Save failed:', error);
-	    });
-	    */
+
+	    try {
+	      const response = await fetch('ajax/save-monstrocity-score.php', {
+	        method: 'POST',
+	        headers: {
+	          'Content-Type': 'application/json'
+	        },
+	        body: JSON.stringify(data)
+	      });
+
+	      if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	      }
+
+	      const result = await response.json();
+	      console.log('Save response:', result);
+	      if (result.status === 'success') {
+	        log(`Saved: Level ${data.level}, Score ${data.score.toFixed(2)}`);
+	      } else {
+	        console.error('Save failed:', result.message);
+	      }
+	    } catch (error) {
+	      console.error('Error saving to database:', error);
+	    }
 	  }
 
             applyAnimation(imageElement, shiftX, glowClass, duration) {
