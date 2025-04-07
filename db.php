@@ -4521,13 +4521,13 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 // Check Monstrocity Leaderboard
 function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 	$claw = 10000;
-	$where = "project_id = '36'";
+	$where = "WHERE project_id = '36'";
 	$attempts = "SUM(attempts) AS completions";
 	if($monthly || $rewards){
 		$where = "WHERE reward = '0' AND project_id = '36'";
 		$attempts = "attempts";
 	}
-	$sql =" SELECT ".($monthly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", ".($monthly ? "MAX" : "AVG")."(level) AS max_level,  user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY max_level, max_score DESC";
+	$sql =" SELECT ".($monthly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", ".($monthly ? "MAX" : "AVG")."(level) AS max_level, user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY max_level, max_score DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
