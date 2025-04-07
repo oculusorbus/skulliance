@@ -1662,10 +1662,10 @@
 	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
 	          currentRound.completed = true;
 
-	          // Calculate round score: (points / matches) * (healthPercentage / 100)
-	          const roundScore = currentRound.matches > 0 
-	            ? (currentRound.points / currentRound.matches) * (currentRound.healthPercentage / 100) 
-	            : 0;
+	        // Hybrid score: (((points / matches) / 100) * (healthPercentage + 20)) * (1 + (currentLevel / 54))
+	        const roundScore = currentRound.matches > 0 
+	          ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel / 54))
+	          : 0;
           
 	          // Update grand total score
 	          this.grandTotalScore += roundScore;
