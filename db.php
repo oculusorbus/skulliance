@@ -4540,7 +4540,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		$description = "";
 		$counter = 0;
 		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "Level" : "Average Level")."</th><th>".($weekly ? "High Score" : "Average High Score")."</th><th>Completions</th>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($monthly ? "Level" : "Average Level")."</th><th>".($monthly ? "High Score" : "Average High Score")."</th><th>Completions</th>";
 		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
