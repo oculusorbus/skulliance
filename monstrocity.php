@@ -381,9 +381,10 @@
 		padding: 20px;
 		border-radius: 10px;
 		z-index: 100;
-		width: 80%;
-		max-width: 875px;
-		max-height: 94vh;
+		width: 100%;
+		height: 100%;
+		max-width: 931px;
+		max-height: 1083px;
 		overflow-y: auto;
 		display: none;
 		border: 3px solid black;
