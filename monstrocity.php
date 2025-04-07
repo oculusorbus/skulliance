@@ -128,6 +128,9 @@
       border-radius: 5px;
       overflow: hidden;
       margin: 5px 0;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+      filter: drop-shadow(2px 5px 10px #000);
+	  border: 1px solid black;
     }
 
     .health {
