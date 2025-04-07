@@ -4541,7 +4541,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		$counter = 0;
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "Level" : "Average Level")."</th><th>".($weekly ? "High Score" : "Average High Score")."</th><th>Completions</th>";
-		if($weekly){
+		if($monthly){
 			echo "<th>Projected Rewards</th>";
 		}
 		while($row = $result->fetch_assoc()) {
