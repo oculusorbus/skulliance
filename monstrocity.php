@@ -303,7 +303,7 @@
     .legend {
       margin-top: 20px;
       text-align: left;
-      background-color: #50C1E6;
+      background-color: #165777;
       padding: 10px;
       border-radius: 5px;
       position: relative;
