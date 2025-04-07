@@ -261,6 +261,27 @@
       background-color: #666;
       transform: scale(1.05);
     }
+	
+    #leaderboard {
+      font-size: 24px;
+      font-family: Arial;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #444;
+      border: 2px solid #fff;
+      padding: 10px 20px;
+      margin: 10px 0;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      width: 250px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    #leaderboard:hover {
+      background-color: #666;
+      transform: scale(1.05);
+    }
 
     @keyframes matchAnimation {
       0% { transform: scale(1); opacity: 1; }
@@ -590,7 +611,7 @@
       <div id="game-over"></div>
       <div id="game-over-buttons">
         <button id="try-again"></button>
-		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input type="submit" value="Leaderboard"></form>
+		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
       </div>
     </div>
     <div id="character-select-container">
