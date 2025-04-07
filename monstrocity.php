@@ -1734,7 +1734,7 @@
         return matches;
       }
 
-      checkGameOver() {
+      async checkGameOver() {
         const tryAgainButton = document.getElementById("try-again");
         if (this.player1.health <= 0) {
           this.gameOver = true;
