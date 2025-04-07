@@ -459,6 +459,8 @@
       .character table{
         width: 70%;
         float: right;
+		font-size: 13px;
+		width: 65%;
       }
       
       .character td {
