@@ -1697,7 +1697,7 @@
 	  
 	  async saveScoreToDatabase() {
 	    const data = {
-	      level: this.currentLevel + 1, // 1-28 as displayed
+	      level: this.currentLevel + 1,
 	      score: this.grandTotalScore
 	    };
 
@@ -1706,21 +1706,15 @@
 	    try {
 	      const response = await fetch('ajax/save-monstrocity-score.php', {
 	        method: 'POST',
-	        headers: {
-	          'Content-Type': 'application/json'
-	        },
+	        headers: { 'Content-Type': 'application/json' },
 	        body: JSON.stringify(data)
 	      });
-		  
-	      // Log raw text before parsing
-	      const text = await response.text();
-	      console.log('Raw response:', text);
 
 	      if (!response.ok) {
 	        throw new Error(`HTTP error! Status: ${response.status}`);
 	      }
 
-	      const result = await response.json();
+	      const result = await response.json(); // Read body once as JSON
 	      console.log('Save response:', result);
 	      if (result.status === 'success') {
 	        log(`Saved: Level ${data.level}, Score ${data.score.toFixed(2)}`);
