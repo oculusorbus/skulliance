@@ -6380,38 +6380,48 @@ function getMonstrocityAssets($conn){
 }
 
 function saveMonstrocityScore($conn, $user_id, $score, $level) {
-  // Validate inputs
-  $score = round($score);    // Ensure score is a rounded integer
-  $level = intval($level);   // Ensure level is an integer
-  $project_id = 36;          // Hardcoded for Monstrocity
+  $score = intval($score); // Truncate to integer
+  $level = intval($level);
+  $project_id = 36;
 
   try {
-    // Check existing score for this user and project
+    if (!$conn) {
+      throw new Exception("Database connection is null");
+    }
+
+    // Prepare and execute SELECT
     $stmt = $conn->prepare("SELECT score, level, attempts FROM scores WHERE user_id = ? AND project_id = ? AND reward = 0");
     $stmt->bind_param("ii", $user_id, $project_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $stored = $result->fetch_assoc();
 
-    $stored_score = $stored ? $stored['score'] : 0;
-    $stored_level = $stored ? $stored['level'] : 0;
-    $stored_attempts = $stored ? $stored['attempts'] : 0;
+    // Bind result variables
+    $stmt->bind_result($stored_score, $stored_level, $stored_attempts);
+    $has_result = $stmt->fetch(); // Fetch into bound variables
+
+    // Set defaults if no result
+    if ($has_result) {
+      // Values are already in $stored_score, $stored_level, $stored_attempts
+    } else {
+      $stored_score = 0;
+      $stored_level = 0;
+      $stored_attempts = 0;
+    }
+    $stmt->close(); // Close the statement
 
     // Decide if we should save
     $should_save = ($level > $stored_level) || 
                    ($level == $stored_level && $score > $stored_score);
 
     if ($should_save) {
-      // Increment attempts only if level is 28 (completion)
       $new_attempts = $stored_attempts;
       if ($level == 28) {
         $new_attempts += 1;
       }
 
-      // Update or insert the score
       $stmt = $conn->prepare("REPLACE INTO scores (user_id, project_id, score, level, attempts, reward) VALUES (?, ?, ?, ?, ?, 0)");
       $stmt->bind_param("iiiii", $user_id, $project_id, $score, $level, $new_attempts);
       $stmt->execute();
+      $stmt->close();
 
       return ['status' => 'success', 'message' => 'Score saved', 'attempts' => $new_attempts];
     } else {
