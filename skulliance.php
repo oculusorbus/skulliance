@@ -971,6 +971,10 @@ function filterLeaderboard($page){
 				<option value="swaps">All Skull Swaps</option>
 				<option value="weekly-swaps">Weekly Skull Swaps</option>
 			</optgroup>
+			<optgroup label="Monstrocity">
+				<option value="monstrocity">All Monstrocity</option>
+				<option value="monthly-monstrocity">Monthly Monstrocity</option>
+			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>
 				<option value="monthly-streaks">'.date('F').' Streaks</option>

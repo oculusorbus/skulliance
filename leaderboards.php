@@ -12,7 +12,7 @@ include 'header.php';
 				    case ($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && 
 				           $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && 
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" && 
-				           $filterby != "swaps" && $filterby != "weekly-swaps"):
+				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -60,6 +60,14 @@ include 'header.php';
 				        $title = "Weekly Skull Swaps";
 				        $filterby = "weekly-swaps";
 				        break;
+				    case ($filterby == "monstrocity"):
+				        $title = "All Monstrocity";
+				        $filterby = "swaps";
+				        break;
+				    case ($filterby == "monthly-monstrocity"):
+				        $title = "Monthly Monstrocity";
+				        $filterby = "monthly-monstrocity";
+				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
 				?>
@@ -72,7 +80,7 @@ include 'header.php';
 				        case ($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && 
 				              $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && 
 				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" && 
-				              $filterby != "weekly-swaps"):
+				              $filterby != "weekly-swaps" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -105,6 +113,12 @@ include 'header.php';
 				            break;
 				        case ($filterby == "weekly-swaps"):
 				            checkSkullSwapsLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "monstrocity"):
+				            checkMonstrocityLeaderboard($conn);
+				            break;
+				        case ($filterby == "monthly-monstrocity"):
+				            checkMonstrocityLeaderboard($conn, true);
 				            break;
 				    }
 				    ?>

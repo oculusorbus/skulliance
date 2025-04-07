@@ -1726,7 +1726,7 @@
 	    }
 	  }
 
-            applyAnimation(imageElement, shiftX, glowClass, duration) {
+      applyAnimation(imageElement, shiftX, glowClass, duration) {
         const originalTransform = imageElement.style.transform || '';
         const scalePart = originalTransform.includes('scaleX') ? originalTransform.match(/scaleX\([^)]+\)/)[0] : '';
         imageElement.style.transition = `transform ${duration / 2 / 1000}s linear`;

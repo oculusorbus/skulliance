@@ -4378,10 +4378,10 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 // Check Skull Swaps Leaderboard
 function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 	$carbon = 25000;
-	$where = "";
+	$where = "WHERE project_id = '0'";
 	$attempts = "SUM(attempts) AS attempts";
 	if($weekly || $rewards){
-		$where = "WHERE reward = '0'";
+		$where = "WHERE reward = '0' AND project_id = '0'";
 		$attempts = "attempts";
 	}
 	$sql =" SELECT ".($weekly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY max_score DESC";
@@ -4514,6 +4514,153 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 	}else{
 		echo "<p>No Skull Swaps have been completed yet for the week.</p>";
 		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbyswaps" id="filterbyswaps" value="swaps"><input type="submit" class="small-button" value="View All Swaps Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+// Check Monstrocity Leaderboard
+function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
+	$claw = 10000;
+	$where = "project_id = '36'";
+	$attempts = "SUM(attempts) AS completions";
+	if($weekly || $rewards){
+		$where = "WHERE reward = '0' AND project_id = '36'";
+		$attempts = "attempts";
+	}
+	$sql =" SELECT ".($monthly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", "($monthly ? "MAX" : "AVG")."(level) AS max_level,  user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY max_level, max_score DESC";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		$fireworks = false;
+		$leaderboardCounter = 0;
+		$last_total = 0;
+		$third_total = 0;
+		$width = 40;
+		$score = 0;
+		$description = "";
+		$counter = 0;
+		echo "<table id='transactions' cellspacing='0'>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "Level" : "Average Level")."</th><th>".($weekly ? "High Score" : "Average High Score")."</th><th>Completions</th>";
+		if($weekly){
+			echo "<th>Projected Rewards</th>";
+		}
+		while($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			$trophy = "";
+			$level = $row["max_level"];
+			$score = $row["max_score"];
+			if($leaderboardCounter == 1){
+				//$width = 50;
+				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter == 2){
+				//$width = 45;
+				if($last_total != $score){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+				}else{
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+					$leaderboardCounter--;
+				}
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter == 3){
+				//$width = 40;
+				if($last_total != $score){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+					$third_total = $score;
+				}else{
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+					$leaderboardCounter--;
+				}
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter > 3 && $third_total == $score){
+				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+				$leaderboardCounter--;
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter > 3 && $last_total == $score){
+				$leaderboardCounter--;
+			}
+			$highlight = "";
+			if(isset($_SESSION['userData']['user_id'])){
+				if($row["user_id"] == $_SESSION['userData']['user_id']){
+					$highlight = "highlight";
+				}
+			}
+			echo "<tr class='".$highlight."'>";
+			echo "<td align='center'>";
+			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			echo $avatar;
+			echo "</td>";
+			echo "<td align='left'>";
+			$username = "";
+			if($row["visibility"] == "2"){
+				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
+			}else{
+				$username = $row["username"];
+			}
+			echo "<strong style='font-size:20px'>".$username."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			echo $row["max_level"];
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["max_score"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["attempts"]);
+			echo "</td>";
+			if($monthly){
+				echo "<td align='center'>";
+				echo number_format(round($claw/$leaderboardCounter))." CLAW";
+				echo "</td>";
+			}
+			echo "</tr>";
+			$last_total = $score;
+			if($rewards){
+				updateBalance($conn, $row["user_id"], 36, round($claw/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($claw/$leaderboardCounter), 36);
+				
+				// Limit number of rows added to description to prevent going over Discord notification text length limit
+				if($counter <= 45){
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Level: ".$row["max_level"].", Score: ".$row["max_score"].", Attempts: ".$row["attempts"]."\r\n";
+					$description .= "        ".number_format(round($claw/$leaderboardCounter))." CLAW\r\n";
+				}
+			}
+		}
+		if($rewards){
+			// Mark all current scores as rewarded
+			resetMonstrocityScores($conn);
+				
+			$title = "Monthly Monstrocity Leaderboard Results";
+			$imageurl = "";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+		}
+		echo "</table>";
+		if($fireworks){
+			fireworks();
+		}
+	}else{
+		echo "<p>No Skull Swaps have been completed yet for the week.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbyswaps" id="filterbyswaps" value="monstrocity"><input type="submit" class="small-button" value="View All Monstrocity Leaderboard"></form><br><br>';
 		echo '<img style="width:100%;" src="images/todolist.png"/>';
 	}
 }
@@ -6335,7 +6482,7 @@ function saveSwapScore($conn, $score){
 
 function getSwapScore($conn){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT score FROM scores WHERE user_id = '".$_SESSION['userData']['user_id']."' AND reward = '0'";
+		$sql = "SELECT score FROM scores WHERE user_id = '".$_SESSION['userData']['user_id']."' AND reward = '0' AND project_id = '0'";
 		$result = $conn->query($sql);
 	
 		if ($result->num_rows > 0) {
@@ -6348,6 +6495,15 @@ function getSwapScore($conn){
 
 function resetSwapScores($conn){
 	$sql = "UPDATE scores SET reward = '1' WHERE reward = '0'";
+	if ($conn->query($sql) === TRUE) {
+		//echo "All scores marked as rewarded.";
+	} else {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+function resetMonstrocityScores($conn){
+	$sql = "UPDATE scores SET reward = '1' WHERE reward = '0' AND project_id = '36'";
 	if ($conn->query($sql) === TRUE) {
 		//echo "All scores marked as rewarded.";
 	} else {
