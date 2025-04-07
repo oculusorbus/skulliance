@@ -149,8 +149,8 @@
       user-select: none;
       position: relative;
       touch-action: none;
-      width: 300px;
-      height: 300px;
+      width: 342px;
+      height: 342px;
       grid-template-columns: repeat(5, 1fr);
       flex-shrink: 0;
       margin-top: 17px;
