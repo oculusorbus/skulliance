@@ -754,7 +754,8 @@
           loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
           win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
           finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
-		  powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg')
+		  powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
+		  hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg')
         };
 
         this.showCharacterSelect(true);
@@ -1538,9 +1539,15 @@
         const size = match.coordinates.size;
         let damage = 0;
 		
-	    // Play sound for matches of 5 or more tiles
-	    if (size >= 5) {
+	    // Play sound for matches of 4 tiles
+	    if (size == 4) {
 	      this.sounds.powerGem.play();
+	      log(`${attacker.name} created a match of ${size} tiles!`);
+	    }
+		
+		// Play sound for matches of 5 or more tiles
+	    if (size >= 5) {
+	      this.sounds.hyperCube.play();
 	      log(`${attacker.name} created a match of ${size} tiles!`);
 	    }
 
