@@ -716,6 +716,9 @@
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
 		
+		// Check for saved progress on init
+	    this.loadProgress();
+		
 		// New tracking properties
 	    this.roundStats = []; // Per-round stats (points, matches, healthPercentage)
 	    this.grandTotalScore = 0; // Cumulative score across all winning rounds
@@ -734,6 +737,91 @@
         this.showCharacterSelect(true);
         this.addEventListeners();
       }
+	  
+	  async saveProgress() {
+	    const data = {
+	      currentLevel: this.currentLevel,
+	      grandTotalScore: this.grandTotalScore
+	    };
+
+	    try {
+	      const response = await fetch('ajax/save-monstrocity-progress.php', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify(data)
+	      });
+
+	      if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	      }
+
+	      const result = await response.json();
+	      if (result.status === 'success') {
+	        log('Progress saved: Level ' + (this.currentLevel + 1));
+	      } else {
+	        console.error('Failed to save progress:', result.message);
+	      }
+	    } catch (error) {
+	      console.error('Error saving progress:', error);
+	    }
+	  }
+
+	  async loadProgress() {
+	    try {
+	      const response = await fetch('ajax/load-monstrocity-progress.php', {
+	        method: 'GET',
+	        headers: { 'Content-Type': 'application/json' }
+	      });
+
+	      if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	      }
+
+	      const result = await response.json();
+	      if (result.status === 'success' && result.progress) {
+	        const progress = result.progress;
+	        // Prompt player to resume
+	        if (confirm(`Resume from Level ${progress.currentLevel + 1} with score ${progress.grandTotalScore}?`)) {
+	          this.currentLevel = progress.currentLevel;
+	          this.grandTotalScore = progress.grandTotalScore;
+	          log(`Resumed at Level ${this.currentLevel + 1}, Score ${this.grandTotalScore}`);
+	          this.initGame(); // Start at the saved level, fresh
+	        } else {
+	          // Start fresh
+	          this.currentLevel = 0;
+	          this.grandTotalScore = 0;
+	          await this.clearProgress();
+	          this.initGame();
+	        }
+	      } else {
+	        // No progress, start fresh
+	        this.initGame();
+	      }
+	    } catch (error) {
+	      console.error('Error loading progress:', error);
+	      this.initGame(); // Fallback to fresh start
+	    }
+	  }
+
+	  async clearProgress() {
+	    try {
+	      const response = await fetch('ajax/clear-monstrocity-progress.php', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' }
+	      });
+
+	      if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	      }
+
+	      const result = await response.json();
+	      if (result.status === 'success') {
+	        log('Progress cleared');
+	      }
+	    } catch (error) {
+	      console.error('Error clearing progress:', error);
+	    }
+	  }
 
       updateTileSizeWithGap() {
         const boardElement = document.getElementById("game-board");
@@ -1662,6 +1750,7 @@
           p1Image.classList.add('loser');
           p2Image.classList.add('winner');
           this.renderBoard();
+		  await this.clearProgress(); // Clear progress on loss
         } else if (this.player2.health <= 0) {
           this.gameOver = true;
           this.gameState = "gameOver";
@@ -1671,19 +1760,17 @@
           tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
           document.getElementById("game-over-container").style.display = "block";
 		  
-		  // Calculate and record score for the winning round
+	// Save score and progress
 	      if (this.currentTurn === this.player1) {
 	        const currentRound = this.roundStats[this.roundStats.length - 1];
 	        if (currentRound && !currentRound.completed) {
 	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
 	          currentRound.completed = true;
 
-	        // Hybrid score: (((points / matches) / 100) * (healthPercentage + 20)) * (1 + (currentLevel / 54))
-	        const roundScore = currentRound.matches > 0 
-	          ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel / 54))
-	          : 0;
+	          const roundScore = currentRound.matches > 0 
+	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
+	            : 0;
           
-	          // Update grand total score
 	          this.grandTotalScore += roundScore;
 
 	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
@@ -1691,6 +1778,9 @@
 	        }
 	      }
 
+	      // Save progress after each level
+	      await this.saveProgress();
+		  
 	      if (this.currentLevel === opponentsConfig.length - 1) {
 	        this.sounds.finalWin.play();
 	        this.grandTotalScore = 0; // Reset grand total score after beating level 28
