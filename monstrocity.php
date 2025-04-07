@@ -95,6 +95,7 @@
     .character table {
       width: 100%;
       text-align: left;
+	  margin-top: 10px;
     }
     
     .character td{
