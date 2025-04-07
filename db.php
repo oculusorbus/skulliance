@@ -4649,6 +4649,9 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		if($rewards){
 			// Mark all current scores as rewarded
 			resetMonstrocityScores($conn);
+			
+			// Delete all Monstrocity progress
+			deleteMonstrocityProgress($conn);
 				
 			$title = "Monthly Monstrocity Leaderboard Results";
 			$imageurl = "";
@@ -4663,6 +4666,13 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbyswaps" id="filterbyswaps" value="monstrocity"><input type="submit" class="small-button" value="View All Monstrocity Leaderboard"></form><br><br>';
 		echo '<img style="width:100%;" src="images/todolist.png"/>';
 	}
+}
+
+function deleteMonstrocityProgress($conn){
+	// Clear saved progress for all users
+	$stmt = $conn->prepare("DELETE FROM progress WHERE project_id = 36");
+	$stmt->execute();
+	$stmt->close();
 }
 
 // Multidimensional array sorting
