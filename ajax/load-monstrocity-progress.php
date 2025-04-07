@@ -15,18 +15,20 @@ if (isset($_SESSION['userData']['user_id'])) {
     $stmt = $conn->prepare("SELECT level, score FROM progress WHERE user_id = ? AND project_id = ?");
     $stmt->bind_param("ii", $user_id, $project_id);
     $stmt->execute();
-    $stmt->bind_result($current_level, $grand_total_score);
-    $has_result = $stmt->fetch();
+
+    // Use bind_result and fetch instead of get_result
+    $stmt->bind_result($level, $score);
+    $progress = null;
+    if ($stmt->fetch()) {
+      $progress = ['level' => $level, 'score' => $score];
+    }
     $stmt->close();
 
-    if ($has_result) {
-      echo json_encode([
-        'status' => 'success',
-        'progress' => [
-          'currentLevel' => $current_level,
-          'grandTotalScore' => $grand_total_score
-        ]
-      ]);
+    if ($progress) {
+      echo json_encode(['status' => 'success', 'progress' => [
+        'currentLevel' => $progress['level'],
+        'grandTotalScore' => $progress['score']
+      ]]);
     } else {
       echo json_encode(['status' => 'success', 'progress' => null]);
     }

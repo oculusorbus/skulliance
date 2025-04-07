@@ -34,8 +34,13 @@ if (isset($_SESSION['userData']['user_id'])) {
       $stmt = $conn->prepare("SELECT id FROM progress WHERE user_id = ? AND project_id = ?");
       $stmt->bind_param("ii", $user_id, $project_id);
       $stmt->execute();
-      $result = $stmt->get_result();
-      $existing_records = $result->fetch_all(MYSQLI_ASSOC);
+
+      // Use bind_result and fetch instead of get_result
+      $stmt->bind_result($id);
+      $existing_records = [];
+      while ($stmt->fetch()) {
+        $existing_records[] = ['id' => $id];
+      }
       $stmt->close();
       log_message("Existing records: " . count($existing_records));
 
