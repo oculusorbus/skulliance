@@ -1711,6 +1711,10 @@
 	        },
 	        body: JSON.stringify(data)
 	      });
+		  
+	      // Log raw text before parsing
+	      const text = await response.text();
+	      console.log('Raw response:', text);
 
 	      if (!response.ok) {
 	        throw new Error(`HTTP error! Status: ${response.status}`);
