@@ -62,7 +62,7 @@ include 'header.php';
 				        break;
 				    case ($filterby == "monstrocity"):
 				        $title = "All Monstrocity";
-				        $filterby = "swaps";
+				        $filterby = "monstrocity";
 				        break;
 				    case ($filterby == "monthly-monstrocity"):
 				        $title = "Monthly Monstrocity";
