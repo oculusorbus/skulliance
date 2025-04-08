@@ -756,7 +756,6 @@
 		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		    };
 
-		    // Add event listeners synchronously
 		    this.addEventListeners();
 		  }
 
@@ -765,7 +764,8 @@
 		    await this.loadProgress();
 		    console.log(`After loadProgress: this.currentLevel=${this.currentLevel}`);
 		    this.showCharacterSelect(true);
-		    console.log("Async initialization completed");
+		    console.log("Async initialization completed - waiting for character selection");
+		    // Do NOT call initGame here; it will be called after character selection
 		  }
 	  
 		async saveProgress() {
@@ -806,51 +806,56 @@
 		}
 
 		async loadProgress() {
-		  try {
-		    console.log("Fetching progress from ajax/load-monstrocity-progress.php");
-		    const response = await fetch('ajax/load-monstrocity-progress.php', {
-		      method: 'GET',
-		      headers: { 'Content-Type': 'application/json' }
-		    });
+		    try {
+		      console.log("Fetching progress from ajax/load-monstrocity-progress.php");
+		      const response = await fetch('ajax/load-monstrocity-progress.php', {
+		        method: 'GET',
+		        headers: { 'Content-Type': 'application/json' }
+		      });
 
-		    console.log("Response status:", response.status);
-		    if (!response.ok) {
-		      throw new Error(`HTTP error! Status: ${response.status}`);
-		    }
+		      console.log("Response status:", response.status);
+		      if (!response.ok) {
+		        throw new Error(`HTTP error! Status: ${response.status}`);
+		      }
 
-		    const result = await response.json();
-		    console.log("Parsed response:", result);
-		    if (result.status === 'success' && result.progress) {
-		      const progress = result.progress;
-		      const loadedLevel = progress.currentLevel || 1;
-		      const loadedScore = progress.grandTotalScore || 0;
-		      if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore}?`)) { // Remove toFixed(2)
-		        this.currentLevel = loadedLevel;
-		        this.grandTotalScore = loadedScore;
-		        log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`); // Adjust log as well
-		        this.initGame();
+		      const result = await response.json();
+		      console.log("Parsed response:", result);
+		      if (result.status === 'success' && result.progress) {
+		        const progress = result.progress;
+		        const loadedLevel = progress.currentLevel || 1;
+		        const loadedScore = progress.grandTotalScore || 0;
+		        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
+		        if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore}?`)) {
+		          this.currentLevel = loadedLevel;
+		          this.grandTotalScore = loadedScore;
+		          console.log(`After setting: this.currentLevel=${this.currentLevel}, this.grandTotalScore=${this.grandTotalScore}`);
+		          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
+		          // Do NOT call initGame here; wait for character selection
+		        } else {
+		          this.currentLevel = 1;
+		          this.grandTotalScore = 0;
+		          console.log(`User declined, reset: this.currentLevel=${this.currentLevel}`);
+		          await this.clearProgress();
+		          log(`Starting fresh at Level 1`);
+		          // Do NOT call initGame here; wait for character selection
+		        }
 		      } else {
+		        console.log("No progress found or status not success:", result);
 		        this.currentLevel = 1;
 		        this.grandTotalScore = 0;
-		        await this.clearProgress();
-		        log(`Starting fresh at Level 1`);
-		        this.initGame();
+		        console.log(`No progress, reset: this.currentLevel=${this.currentLevel}`);
+		        log(`No saved progress found, starting at Level 1`);
+		        // Do NOT call initGame here; wait for character selection
 		      }
-		    } else {
-		      console.log("No progress found or status not success:", result);
+		    } catch (error) {
+		      console.error('Error loading progress:', error);
 		      this.currentLevel = 1;
 		      this.grandTotalScore = 0;
-		      log(`No saved progress found, starting at Level 1`);
-		      this.initGame();
+		      console.log(`Error occurred, reset: this.currentLevel=${this.currentLevel}`);
+		      log(`Error loading progress, starting at Level 1`);
+		      // Do NOT call initGame here; wait for character selection
 		    }
-		  } catch (error) {
-		    console.error('Error loading progress:', error);
-		    this.currentLevel = 1;
-		    this.grandTotalScore = 0;
-		    log(`Error loading progress, starting at Level 1`);
-		    this.initGame();
 		  }
-		}
 
 	  async clearProgress() {
 	    try {
@@ -947,38 +952,40 @@
         };
       }
 
-      showCharacterSelect(isInitial = false) {
-        const container = document.getElementById("character-select-container");
-        const optionsDiv = document.getElementById("character-options");
-        optionsDiv.innerHTML = "";
-        container.style.display = "block";
+	  showCharacterSelect(isInitial = false) {
+	    const container = document.getElementById("character-select-container");
+	    const optionsDiv = document.getElementById("character-options");
+	    optionsDiv.innerHTML = "";
+	    container.style.display = "block";
 
-        this.playerCharacters.forEach((character, index) => {
-          const option = document.createElement("div");
-          option.className = "character-option";
-          option.innerHTML = `
-            <img src="${character.imageUrl}" alt="${character.name}">
-            <p><strong>${character.name}</strong></p>
-            <p>Type: ${character.type}</p>
-            <p>Health: ${character.maxHealth}</p>
-            <p>Strength: ${character.strength}</p>
-            <p>Speed: ${character.speed}</p>
-            <p>Tactics: ${character.tactics}</p>
-            <p>Size: ${character.size}</p>
-            <p>Power-Up: ${character.powerup}</p>
-          `;
-          option.addEventListener("click", () => {
-            container.style.display = "none";
-            if (isInitial) {
-              this.player1 = { ...character };
-              this.initGame();
-            } else {
-              this.swapPlayerCharacter(character);
-            }
-          });
-          optionsDiv.appendChild(option);
-        });
-      }
+	    this.playerCharacters.forEach((character, index) => {
+	      const option = document.createElement("div");
+	      option.className = "character-option";
+	      option.innerHTML = `
+	        <img src="${character.imageUrl}" alt="${character.name}">
+	        <p><strong>${character.name}</strong></p>
+	        <p>Type: ${character.type}</p>
+	        <p>Health: ${character.maxHealth}</p>
+	        <p>Strength: ${character.strength}</p>
+	        <p>Speed: ${character.speed}</p>
+	        <p>Tactics: ${character.tactics}</p>
+	        <p>Size: ${character.size}</p>
+	        <p>Power-Up: ${character.powerup}</p>
+	      `;
+	      option.addEventListener("click", () => {
+	        console.log(`Character selected: ${character.name}`);
+	        container.style.display = "none";
+	        if (isInitial) {
+	          this.player1 = { ...character };
+	          console.log(`this.player1 set: ${this.player1.name}`);
+	          this.initGame(); // Call initGame after character selection
+	        } else {
+	          this.swapPlayerCharacter(character);
+	        }
+	      });
+	      optionsDiv.appendChild(option);
+	    });
+	  }
 
 	  swapPlayerCharacter(newCharacter) {
 	    const oldHealth = this.player1.health;
