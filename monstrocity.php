@@ -681,16 +681,16 @@
       <h2>Select Your Character</h2>
       <div id="character-options"></div>
     </div>
-	<div id="progress-modal" class="modal" style="display: none;">
-	  <div class="modal-content">
-	    <p id="progress-message"></p>
-	    <div class="modal-buttons">
-	      <button id="progress-resume">Resume</button>
-	      <button id="progress-start-fresh">Restart</button>
-	    </div>
-	  </div>
-	</div>
   </div>
+<div id="progress-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <p id="progress-message"></p>
+    <div class="modal-buttons">
+      <button id="progress-resume">Resume</button>
+      <button id="progress-start-fresh">Restart</button>
+    </div>
+  </div>
+</div>
 
   <script>
     const opponentsConfig = [
