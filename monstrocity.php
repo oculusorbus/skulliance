@@ -641,7 +641,7 @@
   <div class="game-container">
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
     <button id="restart">Restart Level</button>
-    <button id="change-character" style="display: none;">Switch Monster</button>
+    <button id="change-character" style="display: none;">Switch Character</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
