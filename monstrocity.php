@@ -754,7 +754,8 @@
 		    win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
 		    finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
 		    powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
-		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg')
+		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
+			multiMatch: new Audio('https://www.skulliance.io/staking/sounds/small_explode.ogg') // New sound for multiple matches
 		  };
 
 		  this.showCharacterSelect(true);
@@ -1468,6 +1469,18 @@
 
 	    const matches = this.checkMatches();
 	    console.log(`Found ${matches.length} matches:`, matches);
+
+	    // Calculate total tiles matched, but only play multiMatch sound for player's initial move
+	    const isPlayerMove = selectedX !== null && selectedY !== null;
+	    if (isPlayerMove && matches.length > 1) { // Only check if multiple matches and from player's move
+	      const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
+	      console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
+	      if (totalTilesMatched === 6 || totalTilesMatched === 9) {
+	        console.log(`Playing multiMatch sound for ${totalTilesMatched} tiles matched`);
+	        this.sounds.multiMatch.play();
+	      }
+	    }
+
 	    if (matches.length > 0) {
 	      const allMatchedTiles = new Set();
 	      let totalDamage = 0;
@@ -1478,7 +1491,6 @@
 	        matches.forEach(match => {
 	          console.log("Processing match:", match);
 	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
-	          // Pass totalTiles to handleMatch to determine sound and damage
 	          const damage = this.handleMatch(match);
 	          console.log(`Damage from match: ${damage}`);
 	          if (this.gameOver) {
