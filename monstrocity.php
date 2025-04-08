@@ -416,6 +416,7 @@
 	  overflow-y: auto;
 	  display: block; /* Initially visible */
 	  border: 3px solid black;
+	  text-align: center;
 	}
 
     #character-select-container h2 {
