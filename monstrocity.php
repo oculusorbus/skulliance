@@ -686,12 +686,12 @@
 		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
       </div>
     </div>
+
+  </div>
     <div id="character-select-container">
       <h2>Select Your Character</h2>
       <div id="character-options"></div>
     </div>
-  </div>
-
   <script>
     const opponentsConfig = [
       { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Base", powerup: "Minor Regen" },
