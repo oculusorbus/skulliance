@@ -716,50 +716,57 @@
     };
 
     class MonstrocityMatch3 {
-		async constructor(playerCharactersConfig) {
-		  this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-		  this.width = 5;
-		  this.height = 5;
-		  this.board = [];
-		  this.selectedTile = null;
-		  this.gameOver = false;
-		  this.currentTurn = null;
-		  this.player1 = null;
-		  this.player2 = null;
-		  this.gameState = "initializing";
-		  this.isDragging = false;
-		  this.targetTile = null;
-		  this.dragDirection = null;
-		  this.offsetX = 0;
-		  this.offsetY = 0;
-		  this.currentLevel = 1;
-		  this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
-		  this.isCheckingGameOver = false;
+		constructor(playerCharactersConfig) {
+		    this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+		    this.width = 5;
+		    this.height = 5;
+		    this.board = [];
+		    this.selectedTile = null;
+		    this.gameOver = false;
+		    this.currentTurn = null;
+		    this.player1 = null;
+		    this.player2 = null;
+		    this.gameState = "initializing";
+		    this.isDragging = false;
+		    this.targetTile = null;
+		    this.dragDirection = null;
+		    this.offsetX = 0;
+		    this.offsetY = 0;
+		    this.currentLevel = 1;
+		    this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
+		    this.isCheckingGameOver = false;
 
-		  this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
-		  this.updateTileSizeWithGap();
+		    this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
+		    this.updateTileSizeWithGap();
 
-		  this.roundStats = [];
-		  this.grandTotalScore = 0;
+		    this.roundStats = [];
+		    this.grandTotalScore = 0;
 
-		  this.sounds = {
-		    match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
-		    cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
-		    badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
-		    gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
-		    reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
-		    loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
-		    win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
-		    finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
-		    powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
-		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
-		    multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
-		  };
+		    this.sounds = {
+		      match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+		      cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+		      badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
+		      gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
+		      reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
+		      loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
+		      win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
+		      finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
+		      powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
+		      hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
+		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
+		    };
 
-		  await this.loadProgress(); // Wait for loadProgress to complete
-		  this.showCharacterSelect(true);
-		  this.addEventListeners();
-		}
+		    // Add event listeners synchronously
+		    this.addEventListeners();
+		  }
+
+		  async init() {
+		    console.log("Starting async initialization");
+		    await this.loadProgress();
+		    console.log(`After loadProgress: this.currentLevel=${this.currentLevel}`);
+		    this.showCharacterSelect(true);
+		    console.log("Async initialization completed");
+		  }
 	  
 		async saveProgress() {
 		  const data = {
