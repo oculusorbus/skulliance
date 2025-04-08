@@ -141,6 +141,7 @@
     }
 
     #game-board {
+      box-sizing: border-box;		
       display: grid;
       gap: 0.5vh;
       background: #165777;
@@ -159,6 +160,7 @@
     }
 
     .tile {
+      box-sizing: border-box;
       width: 100%;
       height: 100%;
       display: flex;
@@ -450,7 +452,8 @@
       font-size: 0.9em;
     }
 	
-	.modal {
+	/* Use more specific class names to avoid conflicts */
+	.progress-modal {
 	  position: fixed;
 	  top: 0;
 	  left: 0;
@@ -461,9 +464,12 @@
 	  justify-content: center;
 	  align-items: center;
 	  z-index: 1000;
+	  margin: 0;
+	  padding: 0;
+	  box-sizing: border-box;
 	}
 
-	.modal-content {
+	.progress-modal-content {
 	  background-color: #1a1a1a;
 	  padding: 20px;
 	  border-radius: 10px;
@@ -473,20 +479,22 @@
 	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
 	  max-width: 400px;
 	  width: 90%;
+	  margin: 0;
+	  box-sizing: border-box;
 	}
 
-	.modal-content p {
+	.progress-modal-content p {
 	  margin: 0 0 20px 0;
 	  font-size: 18px;
 	}
 
-	.modal-buttons {
+	.progress-modal-buttons {
 	  display: flex;
 	  justify-content: center;
 	  gap: 10px;
 	}
 
-	.modal-buttons button {
+	.progress-modal-buttons button {
 	  padding: 10px 20px;
 	  font-size: 16px;
 	  cursor: pointer;
@@ -682,15 +690,6 @@
       <div id="character-options"></div>
     </div>
   </div>
-<div id="progress-modal" class="modal" style="display: none;">
-  <div class="modal-content">
-    <p id="progress-message"></p>
-    <div class="modal-buttons">
-      <button id="progress-resume">Resume</button>
-      <button id="progress-start-fresh">Restart</button>
-    </div>
-  </div>
-</div>
 
   <script>
     const opponentsConfig = [
@@ -809,7 +808,6 @@
 		    this.isCheckingGameOver = false;
 
 		    this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
-		    this.updateTileSizeWithGap();
 
 		    this.roundStats = [];
 		    this.grandTotalScore = 0;
@@ -828,12 +826,12 @@
 		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		    };
 
-		    // Hide the game board initially to prevent flashing
 		    const gameBoard = document.getElementById("game-board");
 		    if (gameBoard) {
-		      gameBoard.style.display = "none";
+		      gameBoard.style.visibility = "hidden"; // Use visibility: hidden instead of display: none
 		    }
 
+		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
 		  }
 
@@ -1104,13 +1102,35 @@
 	  
 	  showProgressPopup(loadedLevel, loadedScore) {
 	      return new Promise((resolve) => {
-	        const modal = document.getElementById("progress-modal");
-	        const message = document.getElementById("progress-message");
-	        const resumeButton = document.getElementById("progress-resume");
-	        const startFreshButton = document.getElementById("progress-start-fresh");
+	        // Create the modal dynamically
+	        const modal = document.createElement("div");
+	        modal.id = "progress-modal";
+	        modal.className = "progress-modal"; // Use a more specific class name
 
-	        // Set the message
+	        const modalContent = document.createElement("div");
+	        modalContent.className = "progress-modal-content";
+
+	        const message = document.createElement("p");
+	        message.id = "progress-message";
 	        message.textContent = `Resume from Level ${loadedLevel} with score ${loadedScore}?`;
+	        modalContent.appendChild(message);
+
+	        const modalButtons = document.createElement("div");
+	        modalButtons.className = "progress-modal-buttons";
+
+	        const resumeButton = document.createElement("button");
+	        resumeButton.id = "progress-resume";
+	        resumeButton.textContent = "Resume";
+	        modalButtons.appendChild(resumeButton);
+
+	        const startFreshButton = document.createElement("button");
+	        startFreshButton.id = "progress-start-fresh";
+	        startFreshButton.textContent = "Start Fresh";
+	        modalButtons.appendChild(startFreshButton);
+
+	        modalContent.appendChild(modalButtons);
+	        modal.appendChild(modalContent);
+	        document.body.appendChild(modal);
 
 	        // Show the modal
 	        modal.style.display = "flex";
@@ -1118,6 +1138,7 @@
 	        // Event listeners for the buttons
 	        const onResume = () => {
 	          modal.style.display = "none";
+	          document.body.removeChild(modal); // Clean up the modal
 	          resumeButton.removeEventListener("click", onResume);
 	          startFreshButton.removeEventListener("click", onStartFresh);
 	          resolve(true);
@@ -1125,6 +1146,7 @@
 
 	        const onStartFresh = () => {
 	          modal.style.display = "none";
+	          document.body.removeChild(modal); // Clean up the modal
 	          resumeButton.removeEventListener("click", onResume);
 	          startFreshButton.removeEventListener("click", onStartFresh);
 	          resolve(false);
@@ -1135,79 +1157,78 @@
 	      });
 	    }
 
-	  initGame() {
-	      console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
-	      // Show the game board now that we're ready to start the game
-	      const gameBoard = document.getElementById("game-board");
-	      if (gameBoard) {
-	        gameBoard.style.display = "block";
-	      }
+		initGame() {
+		    console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
+		    const gameBoard = document.getElementById("game-board");
+		    if (gameBoard) {
+		      gameBoard.style.visibility = "visible"; // Show the game board
+		    }
 
-	      this.sounds.reset.play();
-	      log(`Starting Level ${this.currentLevel}...`);
+		    this.sounds.reset.play();
+		    log(`Starting Level ${this.currentLevel}...`);
 
-	      this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
-	      console.log(`Loaded opponent for level ${this.currentLevel}: ${this.player2.name} (opponentsConfig[${this.currentLevel - 1}])`);
+		    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
+		    console.log(`Loaded opponent for level ${this.currentLevel}: ${this.player2.name} (opponentsConfig[${this.currentLevel - 1}])`);
 
-	      this.player1.health = this.player1.maxHealth;
+		    this.player1.health = this.player1.maxHealth;
 
-	      this.currentTurn = this.player1.speed > this.player2.speed 
-	        ? this.player1 
-	        : this.player2.speed > this.player1.speed 
-	          ? this.player2 
-	          : this.player1.strength >= this.player2.strength 
-	            ? this.player1 
-	            : this.player2;
-	      this.gameState = "initializing";
-	      this.gameOver = false;
+		    this.currentTurn = this.player1.speed > this.player2.speed 
+		      ? this.player1 
+		      : this.player2.speed > this.player1.speed 
+		        ? this.player2 
+		        : this.player1.strength >= this.player2.strength 
+		          ? this.player1 
+		          : this.player2;
+		    this.gameState = "initializing";
+		    this.gameOver = false;
 
-	      this.roundStats = [];
+		    this.roundStats = [];
 
-	      p1Image.classList.remove('winner', 'loser');
-	      p2Image.classList.remove('winner', 'loser');
-	      this.updatePlayerDisplay();
-	      this.updateOpponentDisplay();
+		    p1Image.classList.remove('winner', 'loser');
+		    p2Image.classList.remove('winner', 'loser');
+		    this.updatePlayerDisplay();
+		    this.updateOpponentDisplay();
 
-	      if (characterDirections[this.player1.name] === "Left") {
-	        p1Image.style.transform = "scaleX(-1)";
-	      } else {
-	        p1Image.style.transform = "none";
-	      }
+		    if (characterDirections[this.player1.name] === "Left") {
+		      p1Image.style.transform = "scaleX(-1)";
+		    } else {
+		      p1Image.style.transform = "none";
+		    }
 
-	      if (characterDirections[this.player2.name] === "Right") {
-	        p2Image.style.transform = "scaleX(-1)";
-	      } else {
-	        p2Image.style.transform = "none";
-	      }
+		    if (characterDirections[this.player2.name] === "Right") {
+		      p2Image.style.transform = "scaleX(-1)";
+		    } else {
+		      p2Image.style.transform = "none";
+		    }
 
-	      this.updateHealth(this.player1);
-	      this.updateHealth(this.player2);
+		    this.updateHealth(this.player1);
+		    this.updateHealth(this.player2);
 
-	      battleLog.innerHTML = "";
-	      gameOver.textContent = "";
+		    battleLog.innerHTML = "";
+		    gameOver.textContent = "";
 
-	      if (this.player1.size !== "Medium") {
-	        log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
-	      }
-	      if (this.player2.size !== "Medium") {
-	        log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
-	      }
+		    if (this.player1.size !== "Medium") {
+		      log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
+		    }
+		    if (this.player2.size !== "Medium") {
+		      log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
+		    }
 
-	      log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
-	      log(`${this.currentTurn.name} goes first!`);
+		    log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+		    log(`${this.currentTurn.name} goes first!`);
 
-	      this.initBoard();
-	      this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	      turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+		    this.initBoard();
+		    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+		    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
 
-	      if (this.playerCharacters.length > 1) {
-	        document.getElementById("change-character").style.display = "inline-block";
-	      }
+		    if (this.playerCharacters.length > 1) {
+		      document.getElementById("change-character").style.display = "inline-block";
+		    }
 
-	      if (this.currentTurn === this.player2) {
-	        setTimeout(() => this.aiTurn(), 1000);
-	      }
-	    }
+		    if (this.currentTurn === this.player2) {
+		      setTimeout(() => this.aiTurn(), 1000);
+		    }
+		  }
 
 	  updatePlayerDisplay() {
         p1Name.textContent = this.player1.name;
