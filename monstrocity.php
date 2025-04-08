@@ -761,11 +761,9 @@
 
 		  async init() {
 		    console.log("Starting async initialization");
-		    await this.loadProgress();
-		    console.log(`After loadProgress: this.currentLevel=${this.currentLevel}`);
+		    // Show character selection first, which will handle progress loading and prompting
 		    this.showCharacterSelect(true);
 		    console.log("Async initialization completed - waiting for character selection");
-		    // Do NOT call initGame here; it will be called after character selection
 		  }
 	  
 		async saveProgress() {
@@ -806,6 +804,7 @@
 		}
 
 		async loadProgress() {
+		    // This method now only fetches progress data and returns it, without prompting
 		    try {
 		      console.log("Fetching progress from ajax/load-monstrocity-progress.php");
 		      const response = await fetch('ajax/load-monstrocity-progress.php', {
@@ -822,38 +821,18 @@
 		      console.log("Parsed response:", result);
 		      if (result.status === 'success' && result.progress) {
 		        const progress = result.progress;
-		        const loadedLevel = progress.currentLevel || 1;
-		        const loadedScore = progress.grandTotalScore || 0;
-		        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
-		        if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore}?`)) {
-		          this.currentLevel = loadedLevel;
-		          this.grandTotalScore = loadedScore;
-		          console.log(`After setting: this.currentLevel=${this.currentLevel}, this.grandTotalScore=${this.grandTotalScore}`);
-		          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
-		          // Do NOT call initGame here; wait for character selection
-		        } else {
-		          this.currentLevel = 1;
-		          this.grandTotalScore = 0;
-		          console.log(`User declined, reset: this.currentLevel=${this.currentLevel}`);
-		          await this.clearProgress();
-		          log(`Starting fresh at Level 1`);
-		          // Do NOT call initGame here; wait for character selection
-		        }
+		        return {
+		          loadedLevel: progress.currentLevel || 1,
+		          loadedScore: progress.grandTotalScore || 0,
+		          hasProgress: true
+		        };
 		      } else {
 		        console.log("No progress found or status not success:", result);
-		        this.currentLevel = 1;
-		        this.grandTotalScore = 0;
-		        console.log(`No progress, reset: this.currentLevel=${this.currentLevel}`);
-		        log(`No saved progress found, starting at Level 1`);
-		        // Do NOT call initGame here; wait for character selection
+		        return { loadedLevel: 1, loadedScore: 0, hasProgress: false };
 		      }
 		    } catch (error) {
 		      console.error('Error loading progress:', error);
-		      this.currentLevel = 1;
-		      this.grandTotalScore = 0;
-		      console.log(`Error occurred, reset: this.currentLevel=${this.currentLevel}`);
-		      log(`Error loading progress, starting at Level 1`);
-		      // Do NOT call initGame here; wait for character selection
+		      return { loadedLevel: 1, loadedScore: 0, hasProgress: false };
 		    }
 		  }
 
@@ -952,40 +931,67 @@
         };
       }
 
-	  showCharacterSelect(isInitial = false) {
-	    const container = document.getElementById("character-select-container");
-	    const optionsDiv = document.getElementById("character-options");
-	    optionsDiv.innerHTML = "";
-	    container.style.display = "block";
+	  async showCharacterSelect(isInitial = false) {
+	      const container = document.getElementById("character-select-container");
+	      const optionsDiv = document.getElementById("character-options");
+	      optionsDiv.innerHTML = "";
+	      container.style.display = "block";
 
-	    this.playerCharacters.forEach((character, index) => {
-	      const option = document.createElement("div");
-	      option.className = "character-option";
-	      option.innerHTML = `
-	        <img src="${character.imageUrl}" alt="${character.name}">
-	        <p><strong>${character.name}</strong></p>
-	        <p>Type: ${character.type}</p>
-	        <p>Health: ${character.maxHealth}</p>
-	        <p>Strength: ${character.strength}</p>
-	        <p>Speed: ${character.speed}</p>
-	        <p>Tactics: ${character.tactics}</p>
-	        <p>Size: ${character.size}</p>
-	        <p>Power-Up: ${character.powerup}</p>
-	      `;
-	      option.addEventListener("click", () => {
-	        console.log(`Character selected: ${character.name}`);
-	        container.style.display = "none";
-	        if (isInitial) {
-	          this.player1 = { ...character };
-	          console.log(`this.player1 set: ${this.player1.name}`);
-	          this.initGame(); // Call initGame after character selection
+	      // Fetch progress data
+	      const progressData = await this.loadProgress();
+	      const { loadedLevel, loadedScore, hasProgress } = progressData;
+
+	      // Show progress prompt if there is progress
+	      if (hasProgress) {
+	        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
+	        if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore}?`)) {
+	          this.currentLevel = loadedLevel;
+	          this.grandTotalScore = loadedScore;
+	          console.log(`After setting: this.currentLevel=${this.currentLevel}, this.grandTotalScore=${this.grandTotalScore}`);
+	          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
 	        } else {
-	          this.swapPlayerCharacter(character);
+	          this.currentLevel = 1;
+	          this.grandTotalScore = 0;
+	          console.log(`User declined, reset: this.currentLevel=${this.currentLevel}`);
+	          await this.clearProgress();
+	          log(`Starting fresh at Level 1`);
 	        }
+	      } else {
+	        this.currentLevel = 1;
+	        this.grandTotalScore = 0;
+	        console.log(`No progress, reset: this.currentLevel=${this.currentLevel}`);
+	        log(`No saved progress found, starting at Level 1`);
+	      }
+
+	      // Now render the character selection options
+	      this.playerCharacters.forEach((character, index) => {
+	        const option = document.createElement("div");
+	        option.className = "character-option";
+	        option.innerHTML = `
+	          <img src="${character.imageUrl}" alt="${character.name}">
+	          <p><strong>${character.name}</strong></p>
+	          <p>Type: ${character.type}</p>
+	          <p>Health: ${character.maxHealth}</p>
+	          <p>Strength: ${character.strength}</p>
+	          <p>Speed: ${character.speed}</p>
+	          <p>Tactics: ${character.tactics}</p>
+	          <p>Size: ${character.size}</p>
+	          <p>Power-Up: ${character.powerup}</p>
+	        `;
+	        option.addEventListener("click", () => {
+	          console.log(`Character selected: ${character.name}`);
+	          container.style.display = "none";
+	          if (isInitial) {
+	            this.player1 = { ...character };
+	            console.log(`this.player1 set: ${this.player1.name}`);
+	            this.initGame();
+	          } else {
+	            this.swapPlayerCharacter(character);
+	          }
+	        });
+	        optionsDiv.appendChild(option);
 	      });
-	      optionsDiv.appendChild(option);
-	    });
-	  }
+	    }
 
 	  swapPlayerCharacter(newCharacter) {
 	    const oldHealth = this.player1.health;
