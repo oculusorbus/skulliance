@@ -1477,14 +1477,15 @@
 	      try {
 	        matches.forEach(match => {
 	          console.log("Processing match:", match);
+	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
+	          // Pass totalTiles to handleMatch to determine sound and damage
 	          const damage = this.handleMatch(match);
 	          console.log(`Damage from match: ${damage}`);
 	          if (this.gameOver) {
 	            console.log("Game over detected during match processing, stopping further processing");
-	            return; // Stop processing matches if game is over
+	            return;
 	          }
 	          if (damage > 0) totalDamage += damage;
-	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
 	        });
 
 	        if (this.gameOver) {
@@ -1492,7 +1493,7 @@
 	          return true;
 	        }
 
-	        console.log(`Total damage dealt: ${totalDamage}`);
+	        console.log(`Total damage dealt: ${totalDamage}, tiles to clear:`, [...allMatchedTiles]);
 	        if (totalDamage > 0 && !this.gameOver) {
 	          setTimeout(() => {
 	            if (this.gameOver) {
@@ -1514,6 +1515,8 @@
 	            const [x, y] = tile.split(",").map(Number);
 	            if (this.board[y][x]?.element) {
 	              this.board[y][x].element.classList.add("matched");
+	            } else {
+	              console.warn(`Tile at (${x},${y}) has no element to animate`);
 	            }
 	          });
 
@@ -1522,11 +1525,13 @@
 	              console.log("Game over, skipping tile clearing and cascading");
 	              return;
 	            }
-	            console.log("Clearing matched tiles");
+	            console.log("Clearing matched tiles:", [...allMatchedTiles]);
 	            allMatchedTiles.forEach(tile => {
 	              const [x, y] = tile.split(",").map(Number);
-	              this.board[y][x].type = null;
-	              this.board[y][x].element = null;
+	              if (this.board[y][x]) {
+	                this.board[y][x].type = null;
+	                this.board[y][x].element = null;
+	              }
 	            });
 	            this.sounds.match.play();
 	            console.log("Cascading tiles");
@@ -1557,7 +1562,10 @@
 	    const matches = [];
 
 	    try {
+	      // Step 1: Detect straight-line matches
 	      const straightMatches = [];
+
+	      // Horizontal matches
 	      for (let y = 0; y < this.height; y++) {
 	        let startX = 0;
 	        for (let x = 0; x <= this.width; x++) {
@@ -1569,13 +1577,15 @@
 	              for (let i = startX; i < x; i++) {
 	                matchCoordinates.add(`${i},${y}`);
 	              }
-	              straightMatches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates, isSpecial: false });
+	              straightMatches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates });
+	              console.log(`Horizontal match found at row ${y}, cols ${startX}-${x-1}:`, [...matchCoordinates]);
 	            }
 	            startX = x;
 	          }
 	        }
 	      }
 
+	      // Vertical matches
 	      for (let x = 0; x < this.width; x++) {
 	        let startY = 0;
 	        for (let y = 0; y <= this.height; y++) {
@@ -1587,142 +1597,32 @@
 	              for (let i = startY; i < y; i++) {
 	                matchCoordinates.add(`${x},${i}`);
 	              }
-	              straightMatches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates, isSpecial: false });
+	              straightMatches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates });
+	              console.log(`Vertical match found at col ${x}, rows ${startY}-${y-1}:`, [...matchCoordinates]);
 	            }
 	            startY = y;
 	          }
 	        }
 	      }
 
-	      const areAdjacent = (coord1, coord2) => {
-	        const [x1, y1] = coord1.split(',').map(Number);
-	        const [x2, y2] = coord2.split(',').map(Number);
-	        if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) {
-	          console.error("Invalid coordinates in areAdjacent:", coord1, coord2);
-	          return false;
+	      // Step 2: Group matches by tile type and calculate total unique tiles
+	      const matchesByType = {};
+	      straightMatches.forEach(match => {
+	        if (!matchesByType[match.type]) {
+	          matchesByType[match.type] = [];
 	        }
-	        return (Math.abs(x1 - x2) === 1 && y1 === y2) || (Math.abs(y1 - y2) === 1 && x1 === x2);
-	      };
+	        matchesByType[match.type].push(match.coordinates);
+	      });
 
-	      const isConnected = (coords) => {
-	        const coordsArray = [...coords];
-	        if (coordsArray.length === 0) return false;
-
-	        console.log("isConnected checking coords:", coordsArray);
-
-	        const visited = new Set();
-	        const stack = [coordsArray[0]];
-
-	        while (stack.length > 0) {
-	          const current = stack.pop();
-	          if (visited.has(current)) continue;
-	          visited.add(current);
-
-	          coordsArray.forEach(coord => {
-	            if (!visited.has(coord) && areAdjacent(current, coord)) {
-	              stack.push(coord);
-	            }
-	          });
-	        }
-
-	        console.log(`isConnected result: ${visited.size === coordsArray.length}, visited:`, [...visited]);
-	        return visited.size === coordsArray.length;
-	      };
-
-	      const specialMatches = [];
-
-	      for (let y = 0; y <= this.height - 3; y++) {
-	        for (let x = 0; x <= this.width - 3; x++) {
-	          const type = this.board[y][x]?.type;
-	          if (!type) continue;
-
-	          const subgrid = [
-	            [this.board[y][x]?.type, this.board[y][x+1]?.type, this.board[y][x+2]?.type],
-	            [this.board[y+1][x]?.type, this.board[y+1][x+1]?.type, this.board[y+1][x+2]?.type],
-	            [this.board[y+2][x]?.type, this.board[y+2][x+1]?.type, this.board[y+2][x+2]?.type]
-	          ];
-
-	          const matchesType = (i, j) => subgrid[i][j] === type;
-
-	          const lPatterns = [
-	            { name: "Top-left L", coords: [[0,0], [1,0], [2,0], [2,1], [2,2]] },
-	            { name: "Top-right L", coords: [[0,2], [1,2], [2,0], [2,1], [2,2]] },
-	            { name: "Bottom-left L", coords: [[0,0], [0,1], [0,2], [1,0], [2,0]] },
-	            { name: "Bottom-right L", coords: [[0,0], [0,1], [0,2], [1,2], [2,2]] }
-	          ];
-
-	          const tPatterns = [
-	            { name: "Top T", coords: [[0,0], [0,1], [0,2], [1,1], [2,1]] },
-	            { name: "Bottom T", coords: [[0,1], [1,1], [2,0], [2,1], [2,2]] },
-	            { name: "Left T", coords: [[0,0], [1,0], [1,1], [1,2], [2,0]] },
-	            { name: "Right T", coords: [[0,2], [1,0], [1,1], [1,2], [2,2]] }
-	          ];
-
-	          for (const pattern of lPatterns) {
-	            if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
-	              const matchCoordinates = new Set();
-	              pattern.coords.forEach(([i, j]) => {
-	                const coord = `${x+j},${y+i}`;
-	                matchCoordinates.add(coord);
-	              });
-	              if (matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
-	                specialMatches.push({ type, coordinates: matchCoordinates, isSpecial: true, pattern: pattern.name });
-	                console.log(`L Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
-	              } else if (!isConnected(matchCoordinates)) {
-	                console.log(`L Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
-	              }
-	            }
-	          }
-
-	          for (const pattern of tPatterns) {
-	            if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
-	              const matchCoordinates = new Set();
-	              pattern.coords.forEach(([i, j]) => {
-	                const coord = `${x+j},${y+i}`;
-	                matchCoordinates.add(coord);
-	              });
-	              if (matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
-	                specialMatches.push({ type, coordinates: matchCoordinates, isSpecial: true, pattern: pattern.name });
-	                console.log(`T Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
-	              } else if (!isConnected(matchCoordinates)) {
-	                console.log(`T Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
-	              }
-	            }
-	          }
-	        }
-	      }
-
-	      const allMatches = [...specialMatches, ...straightMatches];
-	      const matchedTiles = new Set();
-
-	      for (const match of allMatches) {
-	        if (!match.isSpecial) continue;
-	        let canAdd = true;
-	        for (const coord of match.coordinates) {
-	          if (matchedTiles.has(coord)) {
-	            canAdd = false;
-	            break;
-	          }
-	        }
-	        if (canAdd) {
-	          matches.push({ type: match.type, coordinates: match.coordinates });
-	          match.coordinates.forEach(coord => matchedTiles.add(coord));
-	        }
-	      }
-
-	      for (const match of allMatches) {
-	        if (match.isSpecial) continue;
-	        let canAdd = true;
-	        for (const coord of match.coordinates) {
-	          if (matchedTiles.has(coord)) {
-	            canAdd = false;
-	            break;
-	          }
-	        }
-	        if (canAdd) {
-	          matches.push({ type: match.type, coordinates: match.coordinates });
-	          match.coordinates.forEach(coord => matchedTiles.add(coord));
-	        }
+	      // Step 3: For each tile type, calculate the total unique tiles matched
+	      for (const tileType in matchesByType) {
+	        const matchSets = matchesByType[tileType];
+	        const allTiles = new Set();
+	        matchSets.forEach(matchCoordinates => {
+	          matchCoordinates.forEach(coord => allTiles.add(coord));
+	        });
+	        console.log(`Total unique tiles matched for type ${tileType}:`, [...allTiles], `count: ${allTiles.size}`);
+	        matches.push({ type: tileType, coordinates: allTiles, totalTiles: allTiles.size });
 	      }
 
 	      console.log("checkMatches completed, returning matches:", matches);
@@ -1738,7 +1638,7 @@
 	    const attacker = this.currentTurn;
 	    const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
 	    const type = match.type;
-	    const size = match.coordinates.size;
+	    const size = match.totalTiles; // Use totalTiles instead of coordinates.size
 	    let damage = 0;
 
 	    console.log(`${defender.name} health before match: ${defender.health}`);
