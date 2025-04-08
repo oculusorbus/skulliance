@@ -24,6 +24,11 @@
       margin-bottom: 10px;
       font-weight: bold;
     }
+	
+	a {
+		color: white;
+		text-decoration: underline;
+	}
 
 	.game-container {
 	  margin-top: 20px;
