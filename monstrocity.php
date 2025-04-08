@@ -799,39 +799,52 @@
 		  }
 		}
 
-	  async loadProgress() {
-	    try {
-	      const response = await fetch('ajax/load-monstrocity-progress.php', {
-	        method: 'GET',
-	        headers: { 'Content-Type': 'application/json' }
-	      });
+		async loadProgress() {
+		  try {
+		    console.log("Fetching progress from ajax/load-monstrocity-progress.php");
+		    const response = await fetch('ajax/load-monstrocity-progress.php', {
+		      method: 'GET',
+		      headers: { 'Content-Type': 'application/json' }
+		    });
 
-	      if (!response.ok) {
-	        throw new Error(`HTTP error! Status: ${response.status}`);
-	      }
+		    console.log("Response status:", response.status);
+		    if (!response.ok) {
+		      throw new Error(`HTTP error! Status: ${response.status}`);
+		    }
 
-	      const result = await response.json();
-	      if (result.status === 'success' && result.progress) {
-	        const progress = result.progress;
-	        // Migrate existing progress: if currentLevel is 0-27, increment by 1 to 1-28
-	        const loadedLevel = progress.currentLevel || 0;
-	        this.currentLevel = loadedLevel >= 1 ? loadedLevel : loadedLevel + 1;
-	        this.grandTotalScore = progress.grandTotalScore || 0;
-	        log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
-	        this.initGame(); // Start at the saved level, fresh
-	      } else {
-	        // No progress, start fresh
-	        this.currentLevel = 1; // Default to level 1 (was 0)
-	        this.grandTotalScore = 0;
-	        this.initGame();
-	      }
-	    } catch (error) {
-	      console.error('Error loading progress:', error);
-	      this.currentLevel = 1; // Default to level 1 (was 0)
-	      this.grandTotalScore = 0;
-	      this.initGame(); // Fallback to fresh start
-	    }
-	  }
+		    const result = await response.json();
+		    console.log("Parsed response:", result);
+		    if (result.status === 'success' && result.progress) {
+		      const progress = result.progress;
+		      const loadedLevel = progress.currentLevel || 1;
+		      const loadedScore = progress.grandTotalScore || 0;
+		      if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore.toFixed(2)}?`)) {
+		        this.currentLevel = loadedLevel;
+		        this.grandTotalScore = loadedScore;
+		        log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore.toFixed(2)}`);
+		        this.initGame();
+		      } else {
+		        this.currentLevel = 1;
+		        this.grandTotalScore = 0;
+		        await this.clearProgress();
+		        log(`Starting fresh at Level 1`);
+		        this.initGame();
+		      }
+		    } else {
+		      console.log("No progress found or status not success:", result);
+		      this.currentLevel = 1;
+		      this.grandTotalScore = 0;
+		      log(`No saved progress found, starting at Level 1`);
+		      this.initGame();
+		    }
+		  } catch (error) {
+		    console.error('Error loading progress:', error);
+		    this.currentLevel = 1;
+		    this.grandTotalScore = 0;
+		    log(`Error loading progress, starting at Level 1`);
+		    this.initGame();
+		  }
+		}
 
 	  async clearProgress() {
 	    try {
