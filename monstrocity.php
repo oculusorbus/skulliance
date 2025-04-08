@@ -1125,7 +1125,7 @@
 
 	        const startFreshButton = document.createElement("button");
 	        startFreshButton.id = "progress-start-fresh";
-	        startFreshButton.textContent = "Start Fresh";
+	        startFreshButton.textContent = "Restart";
 	        modalButtons.appendChild(startFreshButton);
 
 	        modalContent.appendChild(modalButtons);
