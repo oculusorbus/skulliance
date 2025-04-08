@@ -1836,21 +1836,22 @@
 	      }
 
 	      const completedLevel = this.currentLevel + 1;
-	      // Removed increment here
-
 	      await this.saveProgress();
 	      console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 
+	      // Save score before any reset
+	      await this.saveScoreToDatabase(completedLevel);
+
+	      // Reset only after saving score
 	      if (this.currentLevel === opponentsConfig.length - 1) {
 	        this.sounds.finalWin.play();
+	        log(`Final level completed! Final score: ${this.grandTotalScore.toFixed(2)}`);
 	        this.grandTotalScore = 0;
 	        await this.clearProgress();
 	        log("Game completed! Grand total score reset.");
 	      } else {
 	        this.sounds.win.play();
 	      }
-
-	      await this.saveScoreToDatabase(completedLevel);
 
 	      const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
 	      p2Image.src = damagedUrl;
@@ -1865,11 +1866,11 @@
 	  
 	  async saveScoreToDatabase(completedLevel) {
 	    const data = {
-	      level: completedLevel, // Use the level just completed
+	      level: completedLevel,
 	      score: this.grandTotalScore
 	    };
 
-	    console.log("Saving grand total score to database:", data);
+	    console.log(`Saving grand total score to database: level=${data.level}, score=${data.score}`);
 
 	    try {
 	      const response = await fetch('ajax/save-monstrocity-score.php', {
