@@ -833,7 +833,8 @@
 		    this.offsetX = 0;
 		    this.offsetY = 0;
 		    this.currentLevel = 1;
-		    this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
+		    this.playerCharactersConfig = playerCharactersConfig; // Store config, not mapped array
+		    this.playerCharacters = []; // Initialize empty, fill in init
 		    this.isCheckingGameOver = false;
 
 		    this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
@@ -841,9 +842,9 @@
 		    this.grandTotalScore = 0;
 
 		    // Theme management
-		    this.theme = localStorage.getItem('gameTheme') || 'monstrocity'; // Default to monstrocity
+		    this.theme = localStorage.getItem('gameTheme') || 'monstrocity';
 		    this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
-		    this.setBackground(); // Set initial background
+		    this.setBackground();
 
 		    this.sounds = {
 		      match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
@@ -865,9 +866,10 @@
 		  
 		  async init() {
 		      console.log("init: Starting async initialization");
+		      // Initialize playerCharacters here after theme is set
+		      this.playerCharacters = this.playerCharactersConfig.map(config => this.createCharacter(config));
 		      await this.showCharacterSelect(true);
 
-		      // Progress check should only run here, once
 		      const progressData = await this.loadProgress();
 		      const { loadedLevel, loadedScore, hasProgress } = progressData;
 
@@ -894,33 +896,39 @@
 		    }
 			
 	  	// Set background based on current theme
-	    setBackground() {
-	      document.body.style.backgroundImage = `url(${this.baseImagePath}monstrocity.png)`;
-	    }
+		setBackground() {
+		    document.body.style.backgroundImage = `url(${this.baseImagePath}monstrocity.png)`;
+		  }
 
 	    // Update theme and refresh visuals
-	    updateTheme(newTheme) {
-	      this.theme = newTheme;
-	      this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
-	      localStorage.setItem('gameTheme', this.theme);
-	      this.setBackground();
-	      // Refresh character images if players are set
-	      if (this.player1) {
-	        this.player1.imageUrl = this.getCharacterImageUrl(this.player1);
-	        this.updatePlayerDisplay();
-	      }
-	      if (this.player2) {
-	        this.player2.imageUrl = this.getCharacterImageUrl(this.player2);
-	        this.updateOpponentDisplay();
-	      }
-	      // Update logo
-	      document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
-	      // Re-render character select if open
-	      const container = document.getElementById("character-select-container");
-	      if (container.style.display === "block") {
-	        this.showCharacterSelect(this.player1 === null);
-	      }
-	    }
+		  updateTheme(newTheme) {
+		      this.theme = newTheme;
+		      this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
+		      localStorage.setItem('gameTheme', this.theme);
+		      this.setBackground();
+
+		      // Refresh playerCharacters with new theme URLs
+		      this.playerCharacters = this.playerCharactersConfig.map(config => this.createCharacter(config));
+
+		      // Refresh current players if set
+		      if (this.player1) {
+		        this.player1.imageUrl = this.getCharacterImageUrl(this.player1);
+		        this.updatePlayerDisplay();
+		      }
+		      if (this.player2) {
+		        this.player2.imageUrl = this.getCharacterImageUrl(this.player2);
+		        this.updateOpponentDisplay();
+		      }
+
+		      // Update logo
+		      document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
+
+		      // Re-render character select if open
+		      const container = document.getElementById("character-select-container");
+		      if (container.style.display === "block") {
+		        this.showCharacterSelect(this.player1 === null);
+		      }
+		    }
 	  
 		async saveProgress() {
 		  const data = {
@@ -1075,61 +1083,58 @@
 	    }
 		
 	  // Helper to get character image URL based on current theme
-	    getCharacterImageUrl(character) {
-	      let typeFolder;
-	      switch (character.type) {
-	        case "Base": typeFolder = "base"; break;
-	        case "Leader": typeFolder = "leader"; break;
-	        case "Battle Damaged": typeFolder = "battle-damaged"; break;
-	        default: typeFolder = "base";
-	      }
-	      return `${this.baseImagePath}${typeFolder}/${character.name.toLowerCase().replace(/ /g, '-')}.png`;
-	    }
-
-		async showCharacterSelect(isInitial = false) {
-		    console.log(`showCharacterSelect: Called with isInitial=${isInitial}`);
-		    const container = document.getElementById("character-select-container");
-		    const optionsDiv = document.getElementById("character-options");
-		    const themeSelect = document.getElementById("theme-select");
-		    optionsDiv.innerHTML = "";
-		    container.style.display = "block";
-
-		    // Set current theme in dropdown
-		    themeSelect.value = this.theme;
-
-		    // Update theme on change
-		    themeSelect.onchange = () => {
-		      this.updateTheme(themeSelect.value);
-		    };
-
-		    this.playerCharacters.forEach((character, index) => {
-		      const option = document.createElement("div");
-		      option.className = "character-option";
-		      option.innerHTML = `
-		        <img src="${character.imageUrl}" alt="${character.name}">
-		        <p><strong>${character.name}</strong></p>
-		        <p>Type: ${character.type}</p>
-		        <p>Health: ${character.maxHealth}</p>
-		        <p>Strength: ${character.strength}</p>
-		        <p>Speed: ${character.speed}</p>
-		        <p>Tactics: ${character.tactics}</p>
-		        <p>Size: ${character.size}</p>
-		        <p>Power-Up: ${character.powerup}</p>
-		      `;
-		      option.addEventListener("click", () => {
-		        console.log(`showCharacterSelect: Character selected: ${character.name}`);
-		        container.style.display = "none";
-		        if (isInitial) {
-		          this.player1 = { ...character };
-		          console.log(`showCharacterSelect: this.player1 set: ${this.player1.name}`);
-		          this.initGame();
-		        } else {
-		          this.swapPlayerCharacter(character);
-		        }
-		      });
-		      optionsDiv.appendChild(option);
-		    });
+		getCharacterImageUrl(character) {
+		    let typeFolder;
+		    switch (character.type) {
+		      case "Base": typeFolder = "base"; break;
+		      case "Leader": typeFolder = "leader"; break;
+		      case "Battle Damaged": typeFolder = "battle-damaged"; break;
+		      default: typeFolder = "base";
+		    }
+		    return `${this.baseImagePath}${typeFolder}/${character.name.toLowerCase().replace(/ /g, '-')}.png`;
 		  }
+
+		  async showCharacterSelect(isInitial = false) {
+		      console.log(`showCharacterSelect: Called with isInitial=${isInitial}`);
+		      const container = document.getElementById("character-select-container");
+		      const optionsDiv = document.getElementById("character-options");
+		      const themeSelect = document.getElementById("theme-select");
+		      optionsDiv.innerHTML = "";
+		      container.style.display = "block";
+
+		      themeSelect.value = this.theme;
+		      themeSelect.onchange = () => {
+		        this.updateTheme(themeSelect.value);
+		      };
+
+		      this.playerCharacters.forEach((character, index) => {
+		        const option = document.createElement("div");
+		        option.className = "character-option";
+		        option.innerHTML = `
+		          <img src="${character.imageUrl}" alt="${character.name}">
+		          <p><strong>${character.name}</strong></p>
+		          <p>Type: ${character.type}</p>
+		          <p>Health: ${character.maxHealth}</p>
+		          <p>Strength: ${character.strength}</p>
+		          <p>Speed: ${character.speed}</p>
+		          <p>Tactics: ${character.tactics}</p>
+		          <p>Size: ${character.size}</p>
+		          <p>Power-Up: ${character.powerup}</p>
+		        `;
+		        option.addEventListener("click", () => {
+		          console.log(`showCharacterSelect: Character selected: ${character.name}`);
+		          container.style.display = "none";
+		          if (isInitial) {
+		            this.player1 = { ...character };
+		            console.log(`showCharacterSelect: this.player1 set: ${this.player1.name}`);
+		            this.initGame();
+		          } else {
+		            this.swapPlayerCharacter(character);
+		          }
+		        });
+		        optionsDiv.appendChild(option);
+		      });
+		    }
 
 	  swapPlayerCharacter(newCharacter) {
 	    const oldHealth = this.player1.health;
@@ -1227,13 +1232,11 @@
 		    const gameBoard = document.getElementById("game-board");
 		    gameContainer.style.display = "block";
 		    gameBoard.style.visibility = "visible";
-			
-			// Update logo with current theme
+
 		    document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
 
 		    this.sounds.reset.play();
 		    log(`Starting Level ${this.currentLevel}...`);
-
 		    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
 		    console.log(`Loaded opponent for level ${this.currentLevel}: ${this.player2.name} (opponentsConfig[${this.currentLevel - 1}])`);
 
