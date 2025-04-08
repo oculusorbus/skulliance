@@ -732,7 +732,7 @@
 		  this.dragDirection = null;
 		  this.offsetX = 0;
 		  this.offsetY = 0;
-		  this.currentLevel = 0;
+		  this.currentLevel = 1;
 		  this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
 		  this.isCheckingGameOver = false;
 
@@ -762,43 +762,42 @@
 		  this.addEventListeners();
 		}
 	  
-	  async saveProgress() {
-	    const data = {
-	      currentLevel: this.currentLevel,
-	      grandTotalScore: this.grandTotalScore
-	    };
+		async saveProgress() {
+		  const data = {
+		    currentLevel: this.currentLevel, // Now 1-28
+		    grandTotalScore: this.grandTotalScore
+		  };
 
-	    console.log("Sending saveProgress request with data:", data);
+		  console.log("Sending saveProgress request with data:", data);
 
-	    try {
-	      const response = await fetch('ajax/save-monstrocity-progress.php', {
-	        method: 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body: JSON.stringify(data)
-	      });
+		  try {
+		    const response = await fetch('ajax/save-monstrocity-progress.php', {
+		      method: 'POST',
+		      headers: { 'Content-Type': 'application/json' },
+		      body: JSON.stringify(data)
+		    });
 
-	      console.log("Response status:", response.status);
+		    console.log("Response status:", response.status);
 
-	      // Log the raw response text before parsing as JSON
-	      const responseText = await response.text();
-	      console.log("Raw response text:", responseText);
+		    const responseText = await response.text();
+		    console.log("Raw response text:", responseText);
 
-	      if (!response.ok) {
-	        throw new Error(`HTTP error! Status: ${response.status}`);
-	      }
+		    if (!response.ok) {
+		      throw new Error(`HTTP error! Status: ${response.status}`);
+		    }
 
-	      const result = JSON.parse(responseText); // Manually parse to avoid fetch's automatic parsing
-	      console.log("Parsed response:", result);
+		    const result = JSON.parse(responseText);
+		    console.log("Parsed response:", result);
 
-	      if (result.status === 'success') {
-	        log('Progress saved: Level ' + (this.currentLevel + 1));
-	      } else {
-	        console.error('Failed to save progress:', result.message);
-	      }
-	    } catch (error) {
-	      console.error('Error saving progress:', error);
-	    }
-	  }
+		    if (result.status === 'success') {
+		      log('Progress saved: Level ' + this.currentLevel); // No +1 needed
+		    } else {
+		      console.error('Failed to save progress:', result.message);
+		    }
+		  } catch (error) {
+		    console.error('Error saving progress:', error);
+		  }
+		}
 
 	  async loadProgress() {
 	    try {
@@ -814,25 +813,22 @@
 	      const result = await response.json();
 	      if (result.status === 'success' && result.progress) {
 	        const progress = result.progress;
-	        // Prompt player to resume
-	        if (confirm(`Resume from Level ${progress.currentLevel + 1} with score ${progress.grandTotalScore}?`)) {
-	          this.currentLevel = progress.currentLevel;
-	          this.grandTotalScore = progress.grandTotalScore;
-	          log(`Resumed at Level ${this.currentLevel + 1}, Score ${this.grandTotalScore}`);
-	          this.initGame(); // Start at the saved level, fresh
-	        } else {
-	          // Start fresh
-	          this.currentLevel = 0;
-	          this.grandTotalScore = 0;
-	          await this.clearProgress();
-	          this.initGame();
-	        }
+	        // Migrate existing progress: if currentLevel is 0-27, increment by 1 to 1-28
+	        const loadedLevel = progress.currentLevel || 0;
+	        this.currentLevel = loadedLevel >= 1 ? loadedLevel : loadedLevel + 1;
+	        this.grandTotalScore = progress.grandTotalScore || 0;
+	        log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
+	        this.initGame(); // Start at the saved level, fresh
 	      } else {
 	        // No progress, start fresh
+	        this.currentLevel = 1; // Default to level 1 (was 0)
+	        this.grandTotalScore = 0;
 	        this.initGame();
 	      }
 	    } catch (error) {
 	      console.error('Error loading progress:', error);
+	      this.currentLevel = 1; // Default to level 1 (was 0)
+	      this.grandTotalScore = 0;
 	      this.initGame(); // Fallback to fresh start
 	    }
 	  }
@@ -850,6 +846,8 @@
 
 	      const result = await response.json();
 	      if (result.status === 'success') {
+	        this.currentLevel = 1; // Reset to level 1 (was 0)
+	        this.grandTotalScore = 0;
 	        log('Progress cleared');
 	      }
 	    } catch (error) {
@@ -963,111 +961,106 @@
         });
       }
 
-      swapPlayerCharacter(newCharacter) {
-        const oldHealth = this.player1.health;
-        const oldMaxHealth = this.player1.maxHealth;
-        const newInstance = { ...newCharacter }; // Fresh instance with new maxHealth
-        
-        // Scale health proportionally based on remaining health percentage, capped at new maxHealth
-        const healthPercentage = Math.min(1, oldHealth / oldMaxHealth); // Clamp to 100% max
-        newInstance.health = Math.round(newInstance.maxHealth * healthPercentage);
-        
-        // Ensure health is never below 0 or above new maxHealth
-        newInstance.health = Math.max(0, Math.min(newInstance.maxHealth, newInstance.health));
-        
-        // Reset temporary effects
-        newInstance.boostActive = false;
-        newInstance.boostValue = 0;
-        newInstance.lastStandActive = false;
-        
-        this.player1 = newInstance;
-        this.updatePlayerDisplay();
-        this.updateHealth(this.player1); // Refresh health bar with new maxHealth
-        
-        log(`${this.player1.name} steps into the fray with ${this.player1.health}/${this.player1.maxHealth} HP!`);
-        
-        // Adjust turn order based on new character's speed and strength
-        this.currentTurn = this.player1.speed > this.player2.speed 
-          ? this.player1 
-          : this.player2.speed > this.player1.speed 
-            ? this.player2 
-            : this.player1.strength >= this.player2.strength 
-              ? this.player1 
-              : this.player2;
-        turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
-        
-        if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
-          setTimeout(() => this.aiTurn(), 1000);
-        }
-      }
+	  swapPlayerCharacter(newCharacter) {
+	    const oldHealth = this.player1.health;
+	    const oldMaxHealth = this.player1.maxHealth;
+	    const newInstance = { ...newCharacter };
+  
+	    const healthPercentage = Math.min(1, oldHealth / oldMaxHealth);
+	    newInstance.health = Math.round(newInstance.maxHealth * healthPercentage);
+	    newInstance.health = Math.max(0, Math.min(newInstance.maxHealth, newInstance.health));
+  
+	    newInstance.boostActive = false;
+	    newInstance.boostValue = 0;
+	    newInstance.lastStandActive = false;
+  
+	    this.player1 = newInstance;
+	    this.updatePlayerDisplay();
+	    this.updateHealth(this.player1);
+  
+	    log(`${this.player1.name} steps into the fray with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+  
+	    this.currentTurn = this.player1.speed > this.player2.speed 
+	      ? this.player1 
+	      : this.player2.speed > this.player1.speed 
+	        ? this.player2 
+	        : this.player1.strength >= this.player2.strength 
+	          ? this.player1 
+	          : this.player2;
+	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+  
+	    if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
+	      setTimeout(() => this.aiTurn(), 1000);
+	    }
+	  }
 
-      initGame() {
-        this.sounds.reset.play();
-        log(`Starting Level ${this.currentLevel + 1}...`);
-        
-        this.player2 = this.createCharacter(opponentsConfig[this.currentLevel]);
-        
-        // Reset player health to maxHealth for a new round
-        this.player1.health = this.player1.maxHealth;
-        
-        this.currentTurn = this.player1.speed > this.player2.speed 
-          ? this.player1 
-          : this.player2.speed > this.player1.speed 
-            ? this.player2 
-            : this.player1.strength >= this.player2.strength 
-              ? this.player1 
-              : this.player2;
-        this.gameState = "initializing";
-        this.gameOver = false;
-		
-		// Reset round stats for the new level
+	  initGame() {
+	    this.sounds.reset.play();
+	    log(`Starting Level ${this.currentLevel}...`); // No +1 needed
+
+	    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]); // Adjust for 0-based index
+
+	    // Reset player health to maxHealth for a new round
+	    this.player1.health = this.player1.maxHealth;
+
+	    this.currentTurn = this.player1.speed > this.player2.speed 
+	      ? this.player1 
+	      : this.player2.speed > this.player1.speed 
+	        ? this.player2 
+	        : this.player1.strength >= this.player2.strength 
+	          ? this.player1 
+	          : this.player2;
+	    this.gameState = "initializing";
+	    this.gameOver = false;
+
+	    // Reset round stats for the new level
 	    this.roundStats = [];
 
-        p1Image.classList.remove('winner', 'loser');
-        p2Image.classList.remove('winner', 'loser');
-        this.updatePlayerDisplay();
-        this.updateOpponentDisplay();
+	    p1Image.classList.remove('winner', 'loser');
+	    p2Image.classList.remove('winner', 'loser');
+	    this.updatePlayerDisplay();
+	    this.updateOpponentDisplay();
 
-        if (characterDirections[this.player1.name] === "Left") {
-          p1Image.style.transform = "scaleX(-1)";
-        } else {
-          p1Image.style.transform = "none";
-        }
+	    if (characterDirections[this.player1.name] === "Left") {
+	      p1Image.style.transform = "scaleX(-1)";
+	    } else {
+	      p1Image.style.transform = "none";
+	    }
 
-        if (characterDirections[this.player2.name] === "Right") {
-          p2Image.style.transform = "scaleX(-1)";
-        } else {
-          p2Image.style.transform = "none";
-        }
+	    if (characterDirections[this.player2.name] === "Right") {
+	      p2Image.style.transform = "scaleX(-1)";
+	    } else {
+	      p2Image.style.transform = "none";
+	    }
 
-        this.updateHealth(this.player1);
-        this.updateHealth(this.player2);
+	    this.updateHealth(this.player1);
+	    this.updateHealth(this.player2);
 
-        battleLog.innerHTML = "";
-        gameOver.textContent = "";
+	    battleLog.innerHTML = "";
+	    gameOver.textContent = "";
 
-        if (this.player1.size !== "Medium") {
-          log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
-        }
-        if (this.player2.size !== "Medium") {
-          log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
-        }
+	    if (this.player1.size !== "Medium") {
+	      log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
+	    }
+	    if (this.player2.size !== "Medium") {
+	      log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
+	    }
 
-        log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
-        log(`${this.currentTurn.name} goes first!`);
+	    log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+	    log(`${this.currentTurn.name} goes first!`);
 
-        this.initBoard();
-        this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-        turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+	    this.initBoard();
+	    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
 
-        if (this.playerCharacters.length > 1) {
-          document.getElementById("change-character").style.display = "inline-block";
-        }
+	    if (this.playerCharacters.length > 1) {
+	      document.getElementById("change-character").style.display = "inline-block";
+	    }
 
-        if (this.currentTurn === this.player2) {
-          setTimeout(() => this.aiTurn(), 1000);
-        }
-      }
+	    if (this.currentTurn === this.player2) {
+	      setTimeout(() => this.aiTurn(), 1000);
+	    }
+	  }
 
 	  updatePlayerDisplay() {
         p1Name.textContent = this.player1.name;
@@ -1176,17 +1169,12 @@
 	  handleGameOverButton() {
 	    console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
 	    if (this.player2.health <= 0) {
-	      if (this.currentLevel < opponentsConfig.length - 1) {
-	        this.currentLevel += 1;
-	        console.log(`Level incremented to ${this.currentLevel + 1}`);
-	      } else {
-	        this.currentLevel = 0;
+	      if (this.currentLevel > opponentsConfig.length) { // After final level (e.g., 29 > 28)
+	        this.currentLevel = 1; // Reset to level 1
 	        console.log(`Reset to Level 1: currentLevel=${this.currentLevel}`);
 	      }
-	      this.initGame();
-	    } else {
-	      this.initGame();
 	    }
+	    this.initGame();
 	    console.log(`handleGameOverButton completed: currentLevel=${this.currentLevel}`);
 	  }
 
@@ -1866,7 +1854,7 @@
 	    }
 	    this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
 	    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	    turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
 	    log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : "Opponent"}`);
 
 	    if (this.currentTurn === this.player2) {
@@ -1950,7 +1938,7 @@
 	      gameOver.textContent = "You Win!";
 	      turnIndicator.textContent = "Game Over";
 	      console.log(`Win detected: turnIndicator=${turnIndicator.textContent}, currentLevel=${this.currentLevel}`);
-	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
+	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
 	      document.getElementById("game-over-container").style.display = "block";
 
 	      if (this.currentTurn === this.player1) {
@@ -1960,11 +1948,11 @@
 	          currentRound.completed = true;
 
 	          const roundScore = currentRound.matches > 0 
-	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
+	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56) // No +1 needed
 	            : 0;
 
 	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + (${this.currentLevel + 1}) / 56) = ${roundScore.toFixed(2)}`);
+	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore.toFixed(2)}`);
 
 	          this.grandTotalScore += roundScore;
 
@@ -1973,19 +1961,18 @@
 	        }
 	      }
 
-	      const completedLevel = this.currentLevel + 1;
-	      await this.saveProgress();
-	      console.log(`Progress saved: currentLevel=${this.currentLevel}`);
+	      await this.saveScoreToDatabase(this.currentLevel); // Pass the level just completed (1-28)
 
-	      await this.saveScoreToDatabase(completedLevel);
-
-	      if (this.currentLevel === opponentsConfig.length - 1) {
+	      if (this.currentLevel === opponentsConfig.length) { // 28 === 28
 	        this.sounds.finalWin.play();
 	        log(`Final level completed! Final score: ${this.grandTotalScore.toFixed(2)}`);
 	        this.grandTotalScore = 0;
 	        await this.clearProgress();
 	        log("Game completed! Grand total score reset.");
 	      } else {
+	        this.currentLevel += 1; // Increment to next level (e.g., 1 to 2)
+	        await this.saveProgress();
+	        console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 	        this.sounds.win.play();
 	      }
 
@@ -2002,7 +1989,7 @@
 	  
 	  async saveScoreToDatabase(completedLevel) {
 	    const data = {
-	      level: completedLevel,
+	      level: completedLevel, // Already 1-28
 	      score: this.grandTotalScore
 	    };
 
