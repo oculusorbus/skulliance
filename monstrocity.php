@@ -1922,25 +1922,25 @@
 	      console.log("Player 1 health <= 0, triggering game over (loss)");
 	      this.gameOver = true;
 	      this.gameState = "gameOver";
-	      gameOver.textContent = "You Lose!";
+	      gameOver.textContent = "Game Over!";
 	      turnIndicator.textContent = "Game Over";
 	      log(`${this.player2.name} defeats ${this.player1.name}!`);
 	      tryAgainButton.textContent = "TRY AGAIN";
 	      document.getElementById("game-over-container").style.display = "block";
-	      console.log("Attempting to play lose sound");
+	      console.log("Attempting to play loss sound");
 	      try {
 	        const playPromise = this.sounds.loss.play();
 	        if (playPromise !== undefined) {
 	          playPromise
 	            .then(() => {
-	              console.log("Lose sound played successfully");
+	              console.log("Loss sound played successfully");
 	            })
 	            .catch(err => {
-	              console.error("Failed to play lose sound:", err);
+	              console.error("Failed to play loss sound:", err);
 	            });
 	        }
 	      } catch (err) {
-	        console.error("Error playing lose sound:", err);
+	        console.error("Error playing loss sound:", err);
 	      }
 	      await this.clearProgress();
 	    } else if (this.player2.health <= 0) {
@@ -1973,13 +1973,15 @@
 	        }
 	      }
 
+	      // Increment currentLevel to the next level before saving
 	      const completedLevel = this.currentLevel + 1;
+	      this.currentLevel = completedLevel; // Update currentLevel
 	      await this.saveProgress();
 	      console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 
 	      await this.saveScoreToDatabase(completedLevel);
 
-	      if (this.currentLevel === opponentsConfig.length - 1) {
+	      if (this.currentLevel === opponentsConfig.length) { // Check against total levels (0-based index)
 	        this.sounds.finalWin.play();
 	        log(`Final level completed! Final score: ${this.grandTotalScore.toFixed(2)}`);
 	        this.grandTotalScore = 0;
