@@ -1506,181 +1506,47 @@
         return false;
       }
 
-	  checkMatches() {
-	    const matches = [];
-	    const matchedTiles = new Set(); // Track tiles already in a match to avoid double-counting
+      checkMatches() {
+        const matches = [];
 
-	    // Horizontal matches
-	    for (let y = 0; y < this.height; y++) {
-	      let startX = 0;
-	      for (let x = 0; x <= this.width; x++) {
-	        const currentType = x < this.width ? this.board[y][x].type : null;
-	        if (currentType !== this.board[y][startX].type || x === this.width) {
-	          const matchLength = x - startX;
-	          if (matchLength >= 3) {
-	            const matchCoordinates = new Set();
-	            for (let i = startX; i < x; i++) {
-	              const coord = `${i},${y}`;
-	              if (!matchedTiles.has(coord)) {
-	                matchCoordinates.add(coord);
-	                matchedTiles.add(coord);
-	              }
-	            }
-	            if (matchCoordinates.size >= 3) {
-	              matches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates });
-	            }
-	          }
-	          startX = x;
-	        }
-	      }
-	    }
+        for (let y = 0; y < this.height; y++) {
+          let startX = 0;
+          for (let x = 0; x <= this.width; x++) {
+            const currentType = x < this.width ? this.board[y][x].type : null;
+            if (currentType !== this.board[y][startX].type || x === this.width) {
+              const matchLength = x - startX;
+              if (matchLength >= 3) {
+                const matchCoordinates = new Set();
+                for (let i = startX; i < x; i++) {
+                  matchCoordinates.add(`${i},${y}`);
+                }
+                matches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates });
+              }
+              startX = x;
+            }
+          }
+        }
 
-	    // Vertical matches
-	    for (let x = 0; x < this.width; x++) {
-	      let startY = 0;
-	      for (let y = 0; y <= this.height; y++) {
-	        const currentType = y < this.height ? this.board[y][x].type : null;
-	        if (currentType !== this.board[startY][x].type || y === this.height) {
-	          const matchLength = y - startY;
-	          if (matchLength >= 3) {
-	            const matchCoordinates = new Set();
-	            for (let i = startY; i < y; i++) {
-	              const coord = `${x},${i}`;
-	              if (!matchedTiles.has(coord)) {
-	                matchCoordinates.add(coord);
-	                matchedTiles.add(coord);
-	              }
-	            }
-	            if (matchCoordinates.size >= 3) {
-	              matches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates });
-	            }
-	          }
-	          startY = y;
-	        }
-	      }
-	    }
+        for (let x = 0; x < this.width; x++) {
+          let startY = 0;
+          for (let y = 0; y <= this.height; y++) {
+            const currentType = y < this.height ? this.board[y][x].type : null;
+            if (currentType !== this.board[startY][x].type || y === this.height) {
+              const matchLength = y - startY;
+              if (matchLength >= 3) {
+                const matchCoordinates = new Set();
+                for (let i = startY; i < y; i++) {
+                  matchCoordinates.add(`${x},${i}`);
+                }
+                matches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates });
+              }
+              startY = y;
+            }
+          }
+        }
 
-	    // Helper to check if two coordinates are orthogonally adjacent
-	    const areAdjacent = (coord1, coord2) => {
-	      const [x1, y1] = coord1.split(',').map(Number);
-	      const [x2, y2] = coord2.split(',').map(Number);
-	      return (Math.abs(x1 - x2) === 1 && y1 === y2) || (Math.abs(y1 - y2) === 1 && x1 === x2);
-	    };
-
-	    // Helper to check if a set of coordinates forms a connected shape
-	    const isConnected = (coords) => {
-	      const coordsArray = [...coords];
-	      if (coordsArray.length === 0) return false;
-
-	      // Use a flood-fill approach to check connectivity
-	      const visited = new Set();
-	      const stack = [coordsArray[0]];
-
-	      while (stack.length > 0) {
-	        const current = stack.pop();
-	        if (visited.has(current)) continue;
-	        visited.add(current);
-
-	        // Find neighbors in the coords set
-	        coordsArray.forEach(coord => {
-	          if (!visited.has(coord) && areAdjacent(current, coord)) {
-	            stack.push(coord);
-	          }
-	        });
-	      }
-
-	      // If all coordinates were visited, the shape is connected
-	      return visited.size === coordsArray.length;
-	    };
-
-	    // L and T formations (5 tiles in a 3x3 area)
-	    for (let y = 0; y <= this.height - 3; y++) {
-	      for (let x = 0; x <= this.width - 3; x++) {
-	        const type = this.board[y][x].type;
-	        if (!type) continue; // Skip if the top-left tile is empty
-
-	        // Check each 3x3 subgrid for L and T patterns
-	        const subgrid = [
-	          [this.board[y][x].type, this.board[y][x+1].type, this.board[y][x+2].type],
-	          [this.board[y+1][x].type, this.board[y+1][x+1].type, this.board[y+1][x+2].type],
-	          [this.board[y+2][x].type, this.board[y+2][x+1].type, this.board[y+2][x+2].type]
-	        ];
-
-	        // Helper to check if a position matches the type
-	        const matchesType = (i, j) => subgrid[i][j] === type;
-
-	        // L patterns
-	        const lPatterns = [
-	          // Top-left L: A A AAA (connected)
-	          { name: "Top-left L", coords: [[0,0], [1,0], [2,0], [2,1], [2,2]] },
-	          // Top-right L:   A   A AAA (connected)
-	          { name: "Top-right L", coords: [[0,2], [1,2], [2,0], [2,1], [2,2]] },
-	          // Bottom-left L: AAA A A (connected)
-	          { name: "Bottom-left L", coords: [[0,0], [0,1], [0,2], [1,0], [2,0]] },
-	          // Bottom-right L: AAA   A   A (connected)
-	          { name: "Bottom-right L", coords: [[0,0], [0,1], [0,2], [1,2], [2,2]] }
-	        ];
-
-	        // T patterns
-	        const tPatterns = [
-	          // Top T: AAA  A  A (connected)
-	          { name: "Top T", coords: [[0,0], [0,1], [0,2], [1,1], [2,1]] },
-	          // Bottom T:  A  A AAA (connected)
-	          { name: "Bottom T", coords: [[0,1], [1,1], [2,0], [2,1], [2,2]] },
-	          // Left T: A AAA A (connected)
-	          { name: "Left T", coords: [[0,0], [1,0], [1,1], [1,2], [2,0]] },
-	          // Right T:   A AAA   A (connected)
-	          { name: "Right T", coords: [[0,2], [1,0], [1,1], [1,2], [2,2]] }
-	        ];
-
-	        // Check L patterns
-	        for (const pattern of lPatterns) {
-	          if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
-	            const matchCoordinates = new Set();
-	            let canAdd = true;
-	            pattern.coords.forEach(([i, j]) => {
-	              const coord = `${x+j},${y+i}`;
-	              if (matchedTiles.has(coord)) canAdd = false; // Skip if any tile is already matched
-	              matchCoordinates.add(coord);
-	            });
-	            // Only add if not overlapping and connected
-	            if (canAdd && matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
-	              matches.push({ type, coordinates: matchCoordinates });
-	              matchCoordinates.forEach(coord => matchedTiles.add(coord));
-	              console.log(`L Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
-	              break; // Avoid double-counting overlapping matches
-	            } else if (!isConnected(matchCoordinates)) {
-	              console.log(`L Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
-	            }
-	          }
-	        }
-
-	        // Check T patterns
-	        for (const pattern of tPatterns) {
-	          if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
-	            const matchCoordinates = new Set();
-	            let canAdd = true;
-	            pattern.coords.forEach(([i, j]) => {
-	              const coord = `${x+j},${y+i}`;
-	              if (matchedTiles.has(coord)) canAdd = false; // Skip if any tile is already matched
-	              matchCoordinates.add(coord);
-	            });
-	            // Only add if not overlapping and connected
-	            if (canAdd && matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
-	              matches.push({ type, coordinates: matchCoordinates });
-	              matchCoordinates.forEach(coord => matchedTiles.add(coord));
-	              console.log(`T Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
-	              break; // Avoid double-counting overlapping matches
-	            } else if (!isConnected(matchCoordinates)) {
-	              console.log(`T Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
-	            }
-	          }
-	        }
-	      }
-	    }
-
-	    return matches;
-	  }
+        return matches;
+      }
 
       handleMatch(match) {
         const attacker = this.currentTurn;
