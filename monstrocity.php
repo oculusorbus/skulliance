@@ -92,7 +92,7 @@
       flex-shrink: 0;
       position: relative;
       top: -225px;
-      min-height: 510px;
+      min-height: 552px;
       border: 1px solid black;
     }
 
