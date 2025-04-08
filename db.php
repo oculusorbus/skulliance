@@ -4527,7 +4527,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		$where = "WHERE reward = '0' AND project_id = '36'";
 		$attempts = "attempts AS completions";
 	}
-	$sql =" SELECT ".($monthly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", ".($monthly ? "MAX" : "AVG")."(level) AS max_level, user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY max_level, max_score ASC";
+	$sql =" SELECT ".($monthly ? "MAX" : "AVG")."(score) AS max_score, ".$attempts.", ".($monthly ? "MAX" : "AVG")."(level) AS max_level, user_id, discord_id, avatar, visibility, username FROM scores INNER JOIN users ON users.id = scores.user_id ".$where." GROUP BY user_id ORDER BY max_level, max_score DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
