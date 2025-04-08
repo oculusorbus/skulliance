@@ -716,7 +716,7 @@
     };
 
     class MonstrocityMatch3 {
-		constructor(playerCharactersConfig) {
+		async constructor(playerCharactersConfig) {
 		  this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 		  this.width = 5;
 		  this.height = 5;
@@ -739,8 +739,6 @@
 		  this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
 		  this.updateTileSizeWithGap();
 
-		  this.loadProgress();
-
 		  this.roundStats = [];
 		  this.grandTotalScore = 0;
 
@@ -755,9 +753,10 @@
 		    finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
 		    powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
 		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
-			multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg') // New sound for multiple matches
+		    multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		  };
 
+		  await this.loadProgress(); // Wait for loadProgress to complete
 		  this.showCharacterSelect(true);
 		  this.addEventListeners();
 		}
@@ -2103,54 +2102,51 @@
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 	
-	function getAssets(callback) {
-	    // Declare result with default "Craig" data upfront
+	function getAssets() {
+	  return new Promise((resolve, reject) => {
 	    let result = [{
-	        name: "Craig",
-	        strength: 4,
-	        speed: 4,
-	        tactics: 4,
-	        size: "Medium",
-	        type: "Base",
-	        powerup: "Regenerate"
+	      name: "Craig",
+	      strength: 4,
+	      speed: 4,
+	      tactics: 4,
+	      size: "Medium",
+	      type: "Base",
+	      powerup: "Regenerate"
 	    }];
 
 	    var xhttp = new XMLHttpRequest();
 	    xhttp.open('GET', 'ajax/get-monstrocity-assets.php', true);
 	    xhttp.send();
 	    xhttp.onreadystatechange = function() {
-	        if (xhttp.readyState == XMLHttpRequest.DONE) {
-	            if (xhttp.status == 200) {
-	                var data = xhttp.responseText;
-	                if (data !== 'false') {
-	                    try {
-	                        result = JSON.parse(data); // Update result with server data
-	                        // If the server returns a single object, wrap it in an array
-	                        if (!Array.isArray(result)) {
-	                            result = [result];
-	                        }
-	                    } catch (e) {
-	                        console.error('Failed to parse JSON:', e);
-	                        // Keep the default result (already set)
-	                    }
-	                } else {
-	                    // Server returned 'false', keep the default result
-	                }
-	                callback(result);
-	            } else {
-	                console.error('Request failed with status:', xhttp.status);
-	                callback(result); // Use the default result
+	      if (xhttp.readyState == XMLHttpRequest.DONE) {
+	        if (xhttp.status == 200) {
+	          var data = xhttp.responseText;
+	          if (data !== 'false') {
+	            try {
+	              result = JSON.parse(data);
+	              if (!Array.isArray(result)) {
+	                result = [result];
+	              }
+	            } catch (e) {
+	              console.error('Failed to parse JSON:', e);
 	            }
+	          }
+	          resolve(result);
+	        } else {
+	          console.error('Request failed with status:', xhttp.status);
+	          resolve(result); // Use the default result
 	        }
+	      }
 	    };
+	  });
 	}
 
-	// Example Usage
-	getAssets(function(data) {
-	    const playerCharactersConfig = data;
-	    console.log(playerCharactersConfig);
-	    const game = new MonstrocityMatch3(playerCharactersConfig);
-	});
+	// Usage with async/await
+	(async () => {
+	  const playerCharactersConfig = await getAssets();
+	  console.log(playerCharactersConfig);
+	  const game = await new MonstrocityMatch3(playerCharactersConfig);
+	})();
   </script>
 </body>
 </html>
