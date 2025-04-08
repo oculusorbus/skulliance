@@ -758,10 +758,24 @@
 		  powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
 		  hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg')
         };
+		
+	    this.preloadSounds();
 
         this.showCharacterSelect(true);
         this.addEventListeners();
       }
+	  
+	  preloadSounds() {
+	    Object.values(this.sounds).forEach(sound => {
+	      sound.load();
+	      sound.volume = 0; // Mute initially
+	      sound.play().then(() => {
+	        sound.pause();
+	        sound.currentTime = 0;
+	        sound.volume = 1; // Restore volume
+	      }).catch(err => console.log("Sound preload failed:", err));
+	    });
+	  }
 	  
 	  async saveProgress() {
 	    const data = {
@@ -1461,285 +1475,350 @@
         }, 200);
       }
 
-      resolveMatches(selectedX = null, selectedY = null) {
-        if (this.gameOver) return false;
-        const matches = this.checkMatches();
-        if (matches.length > 0) {
-          const allMatchedTiles = new Set();
-          let totalDamage = 0;
-          const attacker = this.currentTurn;
-          const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
-
-          matches.forEach(match => {
-            const damage = this.handleMatch(match);
-            if (damage > 0) totalDamage += damage;
-            match.coordinates.forEach(coord => allMatchedTiles.add(coord));
-          });
-
-          if (totalDamage > 0 && !this.gameOver) {
-            setTimeout(() => this.animateRecoil(defender, totalDamage), 100);
-          }
-
-          setTimeout(() => {
-            allMatchedTiles.forEach(tile => {
-              const [x, y] = tile.split(",").map(Number);
-              if (this.board[y][x].element) {
-                this.board[y][x].element.classList.add("matched");
-              }
-            });
-
-            setTimeout(() => {
-              allMatchedTiles.forEach(tile => {
-                const [x, y] = tile.split(",").map(Number);
-                this.board[y][x].type = null;
-                this.board[y][x].element = null;
-              });
-              this.sounds.match.play();
-              this.cascadeTiles(() => {
-                this.endTurn();
-              });
-            }, 300);
-          }, 200);
-
-          return true;
-        }
-        return false;
-      }
-
-	  checkMatches() {
-	    const matches = [];
-
-	    // Collect straight-line matches (but don't mark tiles yet)
-	    const straightMatches = [];
-
-	    // Horizontal matches
-	    for (let y = 0; y < this.height; y++) {
-	      let startX = 0;
-	      for (let x = 0; x <= this.width; x++) {
-	        const currentType = x < this.width ? this.board[y][x].type : null;
-	        if (currentType !== this.board[y][startX].type || x === this.width) {
-	          const matchLength = x - startX;
-	          if (matchLength >= 3) {
-	            const matchCoordinates = new Set();
-	            for (let i = startX; i < x; i++) {
-	              matchCoordinates.add(`${i},${y}`);
-	            }
-	            straightMatches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates, isSpecial: false });
-	          }
-	          startX = x;
-	        }
-	      }
+	  resolveMatches(selectedX = null, selectedY = null) {
+	    console.log("resolveMatches started, gameOver:", this.gameOver);
+	    if (this.gameOver) {
+	      console.log("Game over, exiting resolveMatches");
+	      return false;
 	    }
 
-	    // Vertical matches
-	    for (let x = 0; x < this.width; x++) {
-	      let startY = 0;
-	      for (let y = 0; y <= this.height; y++) {
-	        const currentType = y < this.height ? this.board[y][x].type : null;
-	        if (currentType !== this.board[startY][x].type || y === this.height) {
-	          const matchLength = y - startY;
-	          if (matchLength >= 3) {
-	            const matchCoordinates = new Set();
-	            for (let i = startY; i < y; i++) {
-	              matchCoordinates.add(`${x},${i}`);
-	            }
-	            straightMatches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates, isSpecial: false });
+	    const matches = this.checkMatches();
+	    console.log(`Found ${matches.length} matches:`, matches);
+	    if (matches.length > 0) {
+	      const allMatchedTiles = new Set();
+	      let totalDamage = 0;
+	      const attacker = this.currentTurn;
+	      const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+
+	      try {
+	        matches.forEach(match => {
+	          console.log("Processing match:", match);
+	          const damage = this.handleMatch(match);
+	          console.log(`Damage from match: ${damage}`);
+	          if (this.gameOver) {
+	            console.log("Game over detected during match processing, stopping further processing");
+	            return; // Stop processing matches if game is over
 	          }
-	          startY = y;
-	        }
-	      }
-	    }
-
-	    // Helper to check if two coordinates are orthogonally adjacent
-	    const areAdjacent = (coord1, coord2) => {
-	      const [x1, y1] = coord1.split(',').map(Number);
-	      const [x2, y2] = coord2.split(',').map(Number);
-	      return (Math.abs(x1 - x2) === 1 && y1 === y2) || (Math.abs(y1 - y2) === 1 && x1 === x2);
-	    };
-
-	    // Helper to check if a set of coordinates forms a connected shape
-	    const isConnected = (coords) => {
-	      const coordsArray = [...coords];
-	      if (coordsArray.length === 0) return false;
-
-	      const visited = new Set();
-	      const stack = [coordsArray[0]];
-
-	      while (stack.length > 0) {
-	        const current = stack.pop();
-	        if (visited.has(current)) continue;
-	        visited.add(current);
-
-	        coordsArray.forEach(coord => {
-	          if (!visited.has(coord) && areAdjacent(current, coord)) {
-	            stack.push(coord);
-	          }
+	          if (damage > 0) totalDamage += damage;
+	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
 	        });
-	      }
 
-	      return visited.size === coordsArray.length;
-	    };
+	        if (this.gameOver) {
+	          console.log("Game over after processing matches, exiting resolveMatches");
+	          return true;
+	        }
 
-	    // Collect L and T matches
-	    const specialMatches = [];
-
-	    for (let y = 0; y <= this.height - 3; y++) {
-	      for (let x = 0; x <= this.width - 3; x++) {
-	        const type = this.board[y][x].type;
-	        if (!type) continue;
-
-	        const subgrid = [
-	          [this.board[y][x].type, this.board[y][x+1].type, this.board[y][x+2].type],
-	          [this.board[y+1][x].type, this.board[y+1][x+1].type, this.board[y+1][x+2].type],
-	          [this.board[y+2][x].type, this.board[y+2][x+1].type, this.board[y+2][x+2].type]
-	        ];
-
-	        const matchesType = (i, j) => subgrid[i][j] === type;
-
-	        const lPatterns = [
-	          { name: "Top-left L", coords: [[0,0], [1,0], [2,0], [2,1], [2,2]] },
-	          { name: "Top-right L", coords: [[0,2], [1,2], [2,0], [2,1], [2,2]] },
-	          { name: "Bottom-left L", coords: [[0,0], [0,1], [0,2], [1,0], [2,0]] },
-	          { name: "Bottom-right L", coords: [[0,0], [0,1], [0,2], [1,2], [2,2]] }
-	        ];
-
-	        const tPatterns = [
-	          { name: "Top T", coords: [[0,0], [0,1], [0,2], [1,1], [2,1]] },
-	          { name: "Bottom T", coords: [[0,1], [1,1], [2,0], [2,1], [2,2]] },
-	          { name: "Left T", coords: [[0,0], [1,0], [1,1], [1,2], [2,0]] },
-	          { name: "Right T", coords: [[0,2], [1,0], [1,1], [1,2], [2,2]] }
-	        ];
-
-	        // Check L patterns
-	        for (const pattern of lPatterns) {
-	          if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
-	            const matchCoordinates = new Set();
-	            pattern.coords.forEach(([i, j]) => {
-	              matchCoordinates.add(`${x+j},${y+i}`);
-	            });
-	            if (matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
-	              specialMatches.push({ type, coordinates: matchCoordinates, isSpecial: true, pattern: pattern.name });
-	              console.log(`L Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
-	            } else if (!isConnected(matchCoordinates)) {
-	              console.log(`L Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
+	        console.log(`Total damage dealt: ${totalDamage}`);
+	        if (totalDamage > 0 && !this.gameOver) {
+	          setTimeout(() => {
+	            if (this.gameOver) {
+	              console.log("Game over, skipping recoil animation");
+	              return;
 	            }
-	          }
+	            console.log("Animating recoil for defender:", defender.name);
+	            this.animateRecoil(defender, totalDamage);
+	          }, 100);
 	        }
 
-	        // Check T patterns
-	        for (const pattern of tPatterns) {
-	          if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
-	            const matchCoordinates = new Set();
-	            pattern.coords.forEach(([i, j]) => {
-	              matchCoordinates.add(`${x+j},${y+i}`);
-	            });
-	            if (matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
-	              specialMatches.push({ type, coordinates: matchCoordinates, isSpecial: true, pattern: pattern.name });
-	              console.log(`T Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
-	            } else if (!isConnected(matchCoordinates)) {
-	              console.log(`T Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
+	        setTimeout(() => {
+	          if (this.gameOver) {
+	            console.log("Game over, skipping match animation and cascading");
+	            return;
+	          }
+	          console.log("Animating matched tiles, allMatchedTiles:", [...allMatchedTiles]);
+	          allMatchedTiles.forEach(tile => {
+	            const [x, y] = tile.split(",").map(Number);
+	            if (this.board[y][x]?.element) {
+	              this.board[y][x].element.classList.add("matched");
 	            }
-	          }
-	        }
+	          });
+
+	          setTimeout(() => {
+	            if (this.gameOver) {
+	              console.log("Game over, skipping tile clearing and cascading");
+	              return;
+	            }
+	            console.log("Clearing matched tiles");
+	            allMatchedTiles.forEach(tile => {
+	              const [x, y] = tile.split(",").map(Number);
+	              this.board[y][x].type = null;
+	              this.board[y][x].element = null;
+	            });
+	            this.sounds.match.play();
+	            console.log("Cascading tiles");
+	            this.cascadeTiles(() => {
+	              if (this.gameOver) {
+	                console.log("Game over, skipping endTurn");
+	                return;
+	              }
+	              console.log("Cascade complete, ending turn");
+	              this.endTurn();
+	            });
+	          }, 300);
+	        }, 200);
+
+	        return true;
+	      } catch (error) {
+	        console.error("Error in resolveMatches:", error);
+	        this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	        return false;
 	      }
 	    }
-
-	    // Combine matches, prioritizing special matches (L and T)
-	    const allMatches = [...specialMatches, ...straightMatches];
-	    const matchedTiles = new Set();
-
-	    // Process special matches first
-	    for (const match of allMatches) {
-	      if (!match.isSpecial) continue; // Skip straight matches for now
-	      let canAdd = true;
-	      for (const coord of match.coordinates) {
-	        if (matchedTiles.has(coord)) {
-	          canAdd = false;
-	          break;
-	        }
-	      }
-	      if (canAdd) {
-	        matches.push({ type: match.type, coordinates: match.coordinates });
-	        match.coordinates.forEach(coord => matchedTiles.add(coord));
-	      }
-	    }
-
-	    // Process straight matches, skipping any that overlap with special matches
-	    for (const match of allMatches) {
-	      if (match.isSpecial) continue; // Already processed
-	      let canAdd = true;
-	      for (const coord of match.coordinates) {
-	        if (matchedTiles.has(coord)) {
-	          canAdd = false;
-	          break;
-	        }
-	      }
-	      if (canAdd) {
-	        matches.push({ type: match.type, coordinates: match.coordinates });
-	        match.coordinates.forEach(coord => matchedTiles.add(coord));
-	      }
-	    }
-
-	    return matches;
+	    console.log("No matches found, returning false");
+	    return false;
 	  }
 
-      handleMatch(match) {
-        const attacker = this.currentTurn;
-        const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
-        const type = match.type;
-        const size = match.coordinates.size;
-        let damage = 0;
-		
-	    // Play sound for matches of 4 tiles
+	  checkMatches() {
+	    console.log("checkMatches started");
+	    const matches = [];
+
+	    try {
+	      const straightMatches = [];
+	      for (let y = 0; y < this.height; y++) {
+	        let startX = 0;
+	        for (let x = 0; x <= this.width; x++) {
+	          const currentType = x < this.width ? this.board[y][x]?.type : null;
+	          if (currentType !== this.board[y][startX]?.type || x === this.width) {
+	            const matchLength = x - startX;
+	            if (matchLength >= 3) {
+	              const matchCoordinates = new Set();
+	              for (let i = startX; i < x; i++) {
+	                matchCoordinates.add(`${i},${y}`);
+	              }
+	              straightMatches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates, isSpecial: false });
+	            }
+	            startX = x;
+	          }
+	        }
+	      }
+
+	      for (let x = 0; x < this.width; x++) {
+	        let startY = 0;
+	        for (let y = 0; y <= this.height; y++) {
+	          const currentType = y < this.height ? this.board[y][x]?.type : null;
+	          if (currentType !== this.board[startY][x]?.type || y === this.height) {
+	            const matchLength = y - startY;
+	            if (matchLength >= 3) {
+	              const matchCoordinates = new Set();
+	              for (let i = startY; i < y; i++) {
+	                matchCoordinates.add(`${x},${i}`);
+	              }
+	              straightMatches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates, isSpecial: false });
+	            }
+	            startY = y;
+	          }
+	        }
+	      }
+
+	      const areAdjacent = (coord1, coord2) => {
+	        const [x1, y1] = coord1.split(',').map(Number);
+	        const [x2, y2] = coord2.split(',').map(Number);
+	        if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) {
+	          console.error("Invalid coordinates in areAdjacent:", coord1, coord2);
+	          return false;
+	        }
+	        return (Math.abs(x1 - x2) === 1 && y1 === y2) || (Math.abs(y1 - y2) === 1 && x1 === x2);
+	      };
+
+	      const isConnected = (coords) => {
+	        const coordsArray = [...coords];
+	        if (coordsArray.length === 0) return false;
+
+	        console.log("isConnected checking coords:", coordsArray);
+
+	        const visited = new Set();
+	        const stack = [coordsArray[0]];
+
+	        while (stack.length > 0) {
+	          const current = stack.pop();
+	          if (visited.has(current)) continue;
+	          visited.add(current);
+
+	          coordsArray.forEach(coord => {
+	            if (!visited.has(coord) && areAdjacent(current, coord)) {
+	              stack.push(coord);
+	            }
+	          });
+	        }
+
+	        console.log(`isConnected result: ${visited.size === coordsArray.length}, visited:`, [...visited]);
+	        return visited.size === coordsArray.length;
+	      };
+
+	      const specialMatches = [];
+
+	      for (let y = 0; y <= this.height - 3; y++) {
+	        for (let x = 0; x <= this.width - 3; x++) {
+	          const type = this.board[y][x]?.type;
+	          if (!type) continue;
+
+	          const subgrid = [
+	            [this.board[y][x]?.type, this.board[y][x+1]?.type, this.board[y][x+2]?.type],
+	            [this.board[y+1][x]?.type, this.board[y+1][x+1]?.type, this.board[y+1][x+2]?.type],
+	            [this.board[y+2][x]?.type, this.board[y+2][x+1]?.type, this.board[y+2][x+2]?.type]
+	          ];
+
+	          const matchesType = (i, j) => subgrid[i][j] === type;
+
+	          const lPatterns = [
+	            { name: "Top-left L", coords: [[0,0], [1,0], [2,0], [2,1], [2,2]] },
+	            { name: "Top-right L", coords: [[0,2], [1,2], [2,0], [2,1], [2,2]] },
+	            { name: "Bottom-left L", coords: [[0,0], [0,1], [0,2], [1,0], [2,0]] },
+	            { name: "Bottom-right L", coords: [[0,0], [0,1], [0,2], [1,2], [2,2]] }
+	          ];
+
+	          const tPatterns = [
+	            { name: "Top T", coords: [[0,0], [0,1], [0,2], [1,1], [2,1]] },
+	            { name: "Bottom T", coords: [[0,1], [1,1], [2,0], [2,1], [2,2]] },
+	            { name: "Left T", coords: [[0,0], [1,0], [1,1], [1,2], [2,0]] },
+	            { name: "Right T", coords: [[0,2], [1,0], [1,1], [1,2], [2,2]] }
+	          ];
+
+	          for (const pattern of lPatterns) {
+	            if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
+	              const matchCoordinates = new Set();
+	              pattern.coords.forEach(([i, j]) => {
+	                const coord = `${x+j},${y+i}`;
+	                matchCoordinates.add(coord);
+	              });
+	              if (matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
+	                specialMatches.push({ type, coordinates: matchCoordinates, isSpecial: true, pattern: pattern.name });
+	                console.log(`L Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
+	              } else if (!isConnected(matchCoordinates)) {
+	                console.log(`L Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
+	              }
+	            }
+	          }
+
+	          for (const pattern of tPatterns) {
+	            if (pattern.coords.every(([i, j]) => matchesType(i, j))) {
+	              const matchCoordinates = new Set();
+	              pattern.coords.forEach(([i, j]) => {
+	                const coord = `${x+j},${y+i}`;
+	                matchCoordinates.add(coord);
+	              });
+	              if (matchCoordinates.size === 5 && isConnected(matchCoordinates)) {
+	                specialMatches.push({ type, coordinates: matchCoordinates, isSpecial: true, pattern: pattern.name });
+	                console.log(`T Match found at (${x},${y}): ${pattern.name}, coords:`, [...matchCoordinates]);
+	              } else if (!isConnected(matchCoordinates)) {
+	                console.log(`T Match rejected at (${x},${y}): ${pattern.name} - not connected, coords:`, [...matchCoordinates]);
+	              }
+	            }
+	          }
+	        }
+	      }
+
+	      const allMatches = [...specialMatches, ...straightMatches];
+	      const matchedTiles = new Set();
+
+	      for (const match of allMatches) {
+	        if (!match.isSpecial) continue;
+	        let canAdd = true;
+	        for (const coord of match.coordinates) {
+	          if (matchedTiles.has(coord)) {
+	            canAdd = false;
+	            break;
+	          }
+	        }
+	        if (canAdd) {
+	          matches.push({ type: match.type, coordinates: match.coordinates });
+	          match.coordinates.forEach(coord => matchedTiles.add(coord));
+	        }
+	      }
+
+	      for (const match of allMatches) {
+	        if (match.isSpecial) continue;
+	        let canAdd = true;
+	        for (const coord of match.coordinates) {
+	          if (matchedTiles.has(coord)) {
+	            canAdd = false;
+	            break;
+	          }
+	        }
+	        if (canAdd) {
+	          matches.push({ type: match.type, coordinates: match.coordinates });
+	          match.coordinates.forEach(coord => matchedTiles.add(coord));
+	        }
+	      }
+
+	      console.log("checkMatches completed, returning matches:", matches);
+	      return matches;
+	    } catch (error) {
+	      console.error("Error in checkMatches:", error);
+	      return [];
+	    }
+	  }
+	  
+	  handleMatch(match) {
+	    console.log("handleMatch started, match:", match);
+	    const attacker = this.currentTurn;
+	    const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+	    const type = match.type;
+	    const size = match.coordinates.size;
+	    let damage = 0;
+
 	    if (size == 4) {
 	      this.sounds.powerGem.play();
 	      log(`${attacker.name} created a match of ${size} tiles!`);
 	    }
-		
-		// Play sound for matches of 5 or more tiles
+
 	    if (size >= 5) {
 	      this.sounds.hyperCube.play();
 	      log(`${attacker.name} created a match of ${size} tiles!`);
 	    }
 
-        if (type === "first-attack" || type === "second-attack" || type === "special-attack" || type === "last-stand") {
-          damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
-          if (type === "special-attack") damage = Math.round(damage * 1.2);
-          if (attacker.boostActive) {
-            damage += attacker.boostValue || 10;
-            attacker.boostActive = false;
-            log(`${attacker.name}'s Boost fades.`);
-          }
+	    if (type === "first-attack" || type === "second-attack" || type === "special-attack" || type === "last-stand") {
+	      damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
+	      console.log(`Base damage calculated: ${damage}`);
+	      if (type === "special-attack") {
+	        damage = Math.round(damage * 1.2);
+	        console.log(`Special attack multiplier applied, damage: ${damage}`);
+	      }
+	      if (attacker.boostActive) {
+	        damage += attacker.boostValue || 10;
+	        attacker.boostActive = false;
+	        log(`${attacker.name}'s Boost fades.`);
+	        console.log(`Boost applied, damage: ${damage}`);
+	      }
 
-          const tacticsChance = defender.tactics * 10;
-          if (Math.random() * 100 < tacticsChance) {
-            damage = Math.floor(damage / 2);
-            log(`${defender.name}'s tactics halve the blow, taking only ${damage} damage!`);
-          }
+	      const tacticsChance = defender.tactics * 10;
+	      if (Math.random() * 100 < tacticsChance) {
+	        damage = Math.floor(damage / 2);
+	        log(`${defender.name}'s tactics halve the blow, taking only ${damage} damage!`);
+	        console.log(`Tactics applied, damage reduced to: ${damage}`);
+	      }
 
-          if (defender.lastStandActive) {
-            damage = Math.max(0, damage - 5);
-            defender.lastStandActive = false;
-            log(`${defender.name}'s Last Stand mitigates 5 damage!`);
-          }
+	      if (defender.lastStandActive) {
+	        damage = Math.max(0, damage - 5);
+	        defender.lastStandActive = false;
+	        log(`${defender.name}'s Last Stand mitigates 5 damage!`);
+	        console.log(`Last Stand applied, damage: ${damage}`);
+	      }
 
-          if (type === "last-stand") {
-            attacker.lastStandActive = true;
-            log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
-          } else {
-            log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
-          }
+	      if (type === "last-stand") {
+	        attacker.lastStandActive = true;
+	        log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
+	      } else {
+	        log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
+	      }
 
-          defender.health = Math.max(0, defender.health - damage);
-          this.updateHealth(defender);
-          this.checkGameOver();
-          if (!this.gameOver) this.animateAttack(attacker, damage, type);
-        } else if (type === "power-up") {
-          this.usePowerup(attacker, defender);
-          if (!this.gameOver) this.animatePowerup(attacker);
-        }
-		
-		// Record match stats (points and matches) for the current round
+	      defender.health = Math.max(0, defender.health - damage);
+	      console.log(`${defender.name} health after damage: ${defender.health}`);
+	      this.updateHealth(defender);
+	      console.log("Calling checkGameOver from handleMatch");
+	      this.checkGameOver();
+	      if (!this.gameOver) {
+	        console.log("Game not over, animating attack");
+	        this.animateAttack(attacker, damage, type);
+	      }
+	    } else if (type === "power-up") {
+	      this.usePowerup(attacker, defender);
+	      if (!this.gameOver) {
+	        console.log("Animating powerup");
+	        this.animatePowerup(attacker);
+	      }
+	    }
+
 	    if (!this.roundStats[this.roundStats.length - 1] || this.roundStats[this.roundStats.length - 1].completed) {
 	      this.roundStats.push({
 	        points: 0,
@@ -1749,51 +1828,58 @@
 	      });
 	    }
 	    const currentRound = this.roundStats[this.roundStats.length - 1];
-	    currentRound.points += damage; // Points based on damage dealt
-	    currentRound.matches += 1; // Increment matches
+	    currentRound.points += damage;
+	    currentRound.matches += 1;
 
-        return damage;
-      }
+	    console.log(`handleMatch completed, damage dealt: ${damage}`);
+	    return damage;
+	  }
 
-      cascadeTiles(callback) {
-        if (this.gameOver) return;
+	  cascadeTiles(callback) {
+	    if (this.gameOver) {
+	      console.log("Game over, skipping cascadeTiles");
+	      return;
+	    }
 
-        const moved = this.cascadeTilesWithoutRender();
-        const fallClass = "falling";
+	    const moved = this.cascadeTilesWithoutRender();
+	    const fallClass = "falling";
 
-        for (let x = 0; x < this.width; x++) {
-          for (let y = 0; y < this.height; y++) {
-            const tile = this.board[y][x];
-            if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
-              const emptyBelow = this.countEmptyBelow(x, y);
-              if (emptyBelow > 0) {
-                tile.element.classList.add(fallClass);
-                tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
-              }
-            }
-          }
-        }
+	    for (let x = 0; x < this.width; x++) {
+	      for (let y = 0; y < this.height; y++) {
+	        const tile = this.board[y][x];
+	        if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
+	          const emptyBelow = this.countEmptyBelow(x, y);
+	          if (emptyBelow > 0) {
+	            tile.element.classList.add(fallClass);
+	            tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
+	          }
+	        }
+	      }
+	    }
 
-        this.renderBoard();
+	    this.renderBoard();
 
-        if (moved) {
-          setTimeout(() => {
-            if (this.gameOver) return;
-            this.sounds.cascade.play();
-            const hasMatches = this.resolveMatches();
-            const tiles = document.querySelectorAll(`.${fallClass}`);
-            tiles.forEach(tile => {
-              tile.classList.remove(fallClass);
-              tile.style.transform = "translate(0, 0)";
-            });
-            if (!hasMatches) {
-              callback();
-            }
-          }, 300);
-        } else {
-          callback();
-        }
-      }
+	    if (moved) {
+	      setTimeout(() => {
+	        if (this.gameOver) {
+	          console.log("Game over, skipping cascade resolution");
+	          return;
+	        }
+	        this.sounds.cascade.play();
+	        const hasMatches = this.resolveMatches();
+	        const tiles = document.querySelectorAll(`.${fallClass}`);
+	        tiles.forEach(tile => {
+	          tile.classList.remove(fallClass);
+	          tile.style.transform = "translate(0, 0)";
+	        });
+	        if (!hasMatches) {
+	          callback();
+	        }
+	      }, 300);
+	    } else {
+	      callback();
+	    }
+	  }
 
       cascadeTilesWithoutRender() {
         let moved = false;
@@ -1875,17 +1961,20 @@
         hpText.textContent = `${player.health}/${player.maxHealth}`;
       }
 
-      endTurn() {
-        if (this.gameState === "gameOver") return;
-        this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
-        this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-        turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
-        log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : "Opponent"}`);
+	  endTurn() {
+	    if (this.gameState === "gameOver" || this.gameOver) {
+	      console.log("Game over, skipping endTurn");
+	      return;
+	    }
+	    this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
+	    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	    turnIndicator.textContent = `Level ${this.currentLevel + 1} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+	    log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : "Opponent"}`);
 
-        if (this.currentTurn === this.player2) {
-          setTimeout(() => this.aiTurn(), 1000);
-        }
-      }
+	    if (this.currentTurn === this.player2) {
+	      setTimeout(() => this.aiTurn(), 1000);
+	    }
+	  }
 
       aiTurn() {
         if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) return;
@@ -1939,6 +2028,7 @@
 	      log(`${this.player2.name} defeats ${this.player1.name}!`);
 	      tryAgainButton.textContent = "TRY AGAIN";
 	      document.getElementById("game-over-container").style.display = "block";
+	      console.log("Playing lose sound");
 	      this.sounds.lose.play();
 	      await this.clearProgress();
 	    } else if (this.player2.health <= 0) {
@@ -1974,10 +2064,8 @@
 	      await this.saveProgress();
 	      console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 
-	      // Save score before any reset
 	      await this.saveScoreToDatabase(completedLevel);
 
-	      // Reset only after saving score
 	      if (this.currentLevel === opponentsConfig.length - 1) {
 	        this.sounds.finalWin.play();
 	        log(`Final level completed! Final score: ${this.grandTotalScore.toFixed(2)}`);
