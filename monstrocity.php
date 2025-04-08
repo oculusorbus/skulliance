@@ -831,6 +831,12 @@
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
 		  }
+		  
+		  async init() {
+		    console.log("Starting async initialization");
+		    this.showCharacterSelect(true);
+		    console.log("Async initialization completed - waiting for character selection");
+		  }
 	  
 		async saveProgress() {
 		  const data = {
