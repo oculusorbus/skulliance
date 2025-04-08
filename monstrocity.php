@@ -2141,7 +2141,7 @@
 	          resolve(result);
 	        } else {
 	          console.error('Request failed with status:', xhttp.status);
-	          resolve(result); // Use the default result
+	          resolve(result);
 	        }
 	      }
 	    };
@@ -2152,7 +2152,8 @@
 	(async () => {
 	  const playerCharactersConfig = await getAssets();
 	  console.log(playerCharactersConfig);
-	  const game = await new MonstrocityMatch3(playerCharactersConfig);
+	  const game = new MonstrocityMatch3(playerCharactersConfig);
+	  await game.init(); // Call the async init method after instantiation
 	})();
   </script>
 </body>
