@@ -807,7 +807,8 @@
 		    this.offsetY = 0;
 		    this.currentLevel = 1;
 		    this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
-		    this.isCheckingGameOver = false;
+		    this.updateTileSizeWithGap();
+		    this.addEventListeners();
 
 		    this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
 
@@ -834,10 +835,34 @@
 		  }
 		  
 		  async init() {
-		    console.log("Starting async initialization");
-		    this.showCharacterSelect(true);
-		    console.log("Async initialization completed - waiting for character selection");
-		  }
+		      console.log("Starting async initialization");
+		      await this.showCharacterSelect(true); // Show character select first
+
+		      // Move progress check here, only for initial load
+		      const progressData = await this.loadProgress();
+		      const { loadedLevel, loadedScore, hasProgress } = progressData;
+
+		      if (hasProgress) {
+		        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
+		        const userChoice = await this.showProgressPopup(loadedLevel, loadedScore);
+		        if (userChoice) {
+		          this.currentLevel = loadedLevel;
+		          this.grandTotalScore = loadedScore;
+		          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
+		        } else {
+		          this.currentLevel = 1;
+		          this.grandTotalScore = 0;
+		          await this.clearProgress();
+		          log(`Starting fresh at Level 1`);
+		        }
+		      } else {
+		        this.currentLevel = 1;
+		        this.grandTotalScore = 0;
+		        log(`No saved progress found, starting at Level 1`);
+		      }
+
+		      console.log("Async initialization completed");
+		    }
 	  
 		async saveProgress() {
 		  const data = {
@@ -1004,12 +1029,11 @@
       }
 
 	  async showCharacterSelect(isInitial = false) {
-	      const container = document.getElementById("character-select-container");
+		  const container = document.getElementById("character-select-container");
 	      const optionsDiv = document.getElementById("character-options");
 	      optionsDiv.innerHTML = "";
-	      // Remove container.style.display = "block"; since it’s already visible via CSS
+	      container.style.display = "block"; // Show character select
 
-	      // Render character options immediately
 	      this.playerCharacters.forEach((character, index) => {
 	        const option = document.createElement("div");
 	        option.className = "character-option";
@@ -1026,11 +1050,11 @@
 	        `;
 	        option.addEventListener("click", () => {
 	          console.log(`Character selected: ${character.name}`);
-	          container.style.display = "none"; // Hide character select after selection
+	          container.style.display = "none";
 	          if (isInitial) {
 	            this.player1 = { ...character };
 	            console.log(`this.player1 set: ${this.player1.name}`);
-	            this.initGame(); // Show game container here
+	            this.initGame();
 	          } else {
 	            this.swapPlayerCharacter(character);
 	          }
@@ -1156,11 +1180,11 @@
 	    }
 
 		initGame() {
-		    console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
+			console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
 		    const gameContainer = document.querySelector(".game-container");
 		    const gameBoard = document.getElementById("game-board");
-		    gameContainer.style.display = "block"; // Show the game container now
-		    gameBoard.style.visibility = "visible"; // Ensure the board is visible
+		    gameContainer.style.display = "block";
+		    gameBoard.style.visibility = "visible";
 
 		    this.sounds.reset.play();
 		    log(`Starting Level ${this.currentLevel}...`);
@@ -2295,12 +2319,16 @@
 	  });
 	}
 
-	// Usage with async/await
+	// Instantiation
 	(async () => {
-	  const playerCharactersConfig = await getAssets();
-	  console.log(playerCharactersConfig);
-	  const game = new MonstrocityMatch3(playerCharactersConfig);
-	  await game.init(); // Call the async init method after instantiation
+	  try {
+	    const playerCharactersConfig = await getAssets();
+	    console.log("Player characters loaded:", playerCharactersConfig);
+	    const game = new MonstrocityMatch3(playerCharactersConfig);
+	    await game.init();
+	  } catch (error) {
+	    console.error("Error initializing game:", error);
+	  }
 	})();
   </script>
 </body>
