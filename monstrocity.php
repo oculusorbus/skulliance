@@ -691,6 +691,8 @@
   </div>
     <div id="character-select-container">
       <h2>Select Your Character</h2>
+	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
+	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet</p>
       <div id="character-options"></div>
     </div>
   <script>
