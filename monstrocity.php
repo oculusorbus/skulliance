@@ -1173,17 +1173,17 @@
         });
       }
 
-      handleGameOverButton() {
-        if (this.player2.health <= 0) {
-          this.currentLevel++;
-          if (this.currentLevel >= opponentsConfig.length) {
-            this.currentLevel = 0;
-          }
-          this.initGame();
-        } else {
-          this.initGame();
-        }
-      }
+	  handleGameOverButton() {
+	    if (this.player2.health <= 0) {
+	      // Remove this.currentLevel++ since it's already incremented in checkGameOver
+	      if (this.currentLevel >= opponentsConfig.length) {
+	        this.currentLevel = 0;
+	      }
+	      this.initGame();
+	    } else {
+	      this.initGame();
+	    }
+	  }
 
       handleMouseDown(e) {
         if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
