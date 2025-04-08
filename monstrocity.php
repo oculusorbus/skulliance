@@ -27,7 +27,7 @@
 	
 	a {
 		color: white;
-		text-decoration: underline;
+		font-weight: bold;
 	}
 
 	.game-container {
