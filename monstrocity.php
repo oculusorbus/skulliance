@@ -755,7 +755,7 @@
 		    finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
 		    powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
 		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
-			multiMatch: new Audio('https://www.skulliance.io/staking/sounds/small_explode.ogg') // New sound for multiple matches
+			multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg') // New sound for multiple matches
 		  };
 
 		  this.showCharacterSelect(true);
