@@ -25,21 +25,22 @@
       font-weight: bold;
     }
 
-    .game-container {
-      margin-top: 20px;
-      margin-bottom: 20px;
-      text-align: center;
-      padding: 20px;
-      background-color: #002f44;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-      width: 100%;
-      min-width: 910px;
-      max-width: 1024px;
-      box-sizing: border-box;
-      max-height: 1160px;
-      border: 3px solid black;
-    }
+	.game-container {
+	  margin-top: 20px;
+	  margin-bottom: 20px;
+	  text-align: center;
+	  padding: 20px;
+	  background-color: #002f44;
+	  border-radius: 10px;
+	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+	  width: 100%;
+	  min-width: 910px;
+	  max-width: 1024px;
+	  box-sizing: border-box;
+	  max-height: 1160px;
+	  border: 3px solid black;
+	  display: none; /* Initially hidden */
+	}
 
     .game-logo {
       max-width: 300px;
@@ -399,23 +400,23 @@
       100% { box-shadow: 0 0 10px 5px #FF0000; }
     }
 
-    #character-select-container {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		background: #002f44;
-		padding: 20px;
-		border-radius: 10px;
-		z-index: 100;
-		width: 100%;
-		height: 100%;
-		max-width: 931px;
-		max-height: 1083px;
-		overflow-y: auto;
-		display: none;
-		border: 3px solid black;
-    }
+	#character-select-container {
+	  position: fixed;
+	  top: 50%;
+	  left: 50%;
+	  transform: translate(-50%, -50%);
+	  background: #002f44;
+	  padding: 20px;
+	  border-radius: 10px;
+	  z-index: 100;
+	  width: 100%;
+	  height: 100%;
+	  max-width: 931px;
+	  max-height: 1083px;
+	  overflow-y: auto;
+	  display: block; /* Initially visible */
+	  border: 3px solid black;
+	}
 
     #character-select-container h2 {
       text-align: center;
@@ -826,19 +827,9 @@
 		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		    };
 
-		    const gameBoard = document.getElementById("game-board");
-		    if (gameBoard) {
-		      gameBoard.style.visibility = "hidden"; // Use visibility: hidden instead of display: none
-		    }
-
+		    // Removed the initial game-board visibility hiding since the entire container is hidden
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
-		  }
-
-		  async init() {
-		    console.log("Starting async initialization");
-		    this.showCharacterSelect(true);
-		    console.log("Async initialization completed - waiting for character selection");
 		  }
 	  
 		async saveProgress() {
@@ -1009,7 +1000,7 @@
 	      const container = document.getElementById("character-select-container");
 	      const optionsDiv = document.getElementById("character-options");
 	      optionsDiv.innerHTML = "";
-	      container.style.display = "block";
+	      // Remove container.style.display = "block"; since it’s already visible via CSS
 
 	      // Render character options immediately
 	      this.playerCharacters.forEach((character, index) => {
@@ -1028,11 +1019,11 @@
 	        `;
 	        option.addEventListener("click", () => {
 	          console.log(`Character selected: ${character.name}`);
-	          container.style.display = "none";
+	          container.style.display = "none"; // Hide character select after selection
 	          if (isInitial) {
 	            this.player1 = { ...character };
 	            console.log(`this.player1 set: ${this.player1.name}`);
-	            this.initGame();
+	            this.initGame(); // Show game container here
 	          } else {
 	            this.swapPlayerCharacter(character);
 	          }
@@ -1159,10 +1150,10 @@
 
 		initGame() {
 		    console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
+		    const gameContainer = document.querySelector(".game-container");
 		    const gameBoard = document.getElementById("game-board");
-		    if (gameBoard) {
-		      gameBoard.style.visibility = "visible"; // Show the game board
-		    }
+		    gameContainer.style.display = "block"; // Show the game container now
+		    gameBoard.style.visibility = "visible"; // Ensure the board is visible
 
 		    this.sounds.reset.play();
 		    log(`Starting Level ${this.currentLevel}...`);
