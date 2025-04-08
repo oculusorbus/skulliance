@@ -734,6 +734,7 @@
         this.offsetY = 0;
         this.currentLevel = 0;
         this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
+		this.isCheckingGameOver = false;
 
         this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
         this.updateTileSizeWithGap();
@@ -1175,8 +1176,9 @@
 
 	  handleGameOverButton() {
 	    if (this.player2.health <= 0) {
-	      // Remove this.currentLevel++ since it's already incremented in checkGameOver
-	      if (this.currentLevel >= opponentsConfig.length) {
+	      if (this.currentLevel < opponentsConfig.length - 1) {
+	        this.currentLevel += 1;
+	      } else {
 	        this.currentLevel = 0;
 	      }
 	      this.initGame();
@@ -1781,6 +1783,9 @@
       }
 
 	  async checkGameOver() {
+	    // Prevent multiple calls if game is already over
+	    if (this.gameOver) return;
+
 	    const tryAgainButton = document.getElementById("try-again");
 	    if (this.player1.health <= 0) {
 	      this.gameOver = true;
@@ -1810,7 +1815,7 @@
 	          const roundScore = currentRound.matches > 0 
 	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + (this.currentLevel + 1) / 56)
 	            : 0;
-        
+
 	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
 	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + (${this.currentLevel + 1}) / 56) = ${roundScore.toFixed(2)}`);
 
@@ -1843,15 +1848,14 @@
 
 	      // Pass the completed level to saveScoreToDatabase
 	      await this.saveScoreToDatabase(completedLevel);
-		  
-		  
-          const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
-          p2Image.src = damagedUrl;
-          p2Image.classList.add('loser');
-          p1Image.classList.add('winner');
-          this.renderBoard();
-        }
-      }
+
+	      const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
+	      p2Image.src = damagedUrl;
+	      p2Image.classList.add('loser');
+	      p1Image.classList.add('winner');
+	      this.renderBoard();
+	    }
+	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
 	    const data = {
