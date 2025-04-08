@@ -807,11 +807,9 @@
 		    this.offsetY = 0;
 		    this.currentLevel = 1;
 		    this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
-		    this.updateTileSizeWithGap();
-		    this.addEventListeners();
+		    this.isCheckingGameOver = false;
 
 		    this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
-
 		    this.roundStats = [];
 		    this.grandTotalScore = 0;
 
@@ -835,15 +833,15 @@
 		  }
 		  
 		  async init() {
-		      console.log("Starting async initialization");
-		      await this.showCharacterSelect(true); // Show character select first
+		      console.log("init: Starting async initialization");
+		      await this.showCharacterSelect(true);
 
-		      // Move progress check here, only for initial load
+		      // Progress check should only run here, once
 		      const progressData = await this.loadProgress();
 		      const { loadedLevel, loadedScore, hasProgress } = progressData;
 
 		      if (hasProgress) {
-		        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
+		        console.log(`init: Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
 		        const userChoice = await this.showProgressPopup(loadedLevel, loadedScore);
 		        if (userChoice) {
 		          this.currentLevel = loadedLevel;
@@ -861,7 +859,7 @@
 		        log(`No saved progress found, starting at Level 1`);
 		      }
 
-		      console.log("Async initialization completed");
+		      console.log("init: Async initialization completed");
 		    }
 	  
 		async saveProgress() {
@@ -1029,10 +1027,11 @@
       }
 
 	  async showCharacterSelect(isInitial = false) {
-		  const container = document.getElementById("character-select-container");
+	      console.log(`showCharacterSelect: Called with isInitial=${isInitial}`);
+	      const container = document.getElementById("character-select-container");
 	      const optionsDiv = document.getElementById("character-options");
 	      optionsDiv.innerHTML = "";
-	      container.style.display = "block"; // Show character select
+	      container.style.display = "block";
 
 	      this.playerCharacters.forEach((character, index) => {
 	        const option = document.createElement("div");
@@ -1049,11 +1048,11 @@
 	          <p>Power-Up: ${character.powerup}</p>
 	        `;
 	        option.addEventListener("click", () => {
-	          console.log(`Character selected: ${character.name}`);
+	          console.log(`showCharacterSelect: Character selected: ${character.name}`);
 	          container.style.display = "none";
 	          if (isInitial) {
 	            this.player1 = { ...character };
-	            console.log(`this.player1 set: ${this.player1.name}`);
+	            console.log(`showCharacterSelect: this.player1 set: ${this.player1.name}`);
 	            this.initGame();
 	          } else {
 	            this.swapPlayerCharacter(character);
@@ -1061,32 +1060,7 @@
 	        });
 	        optionsDiv.appendChild(option);
 	      });
-
-	      // Fetch progress and show the custom popup
-	      const progressData = await this.loadProgress();
-	      const { loadedLevel, loadedScore, hasProgress } = progressData;
-
-	      if (hasProgress) {
-	        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
-	        const userChoice = await this.showProgressPopup(loadedLevel, loadedScore);
-	        if (userChoice) {
-	          this.currentLevel = loadedLevel;
-	          this.grandTotalScore = loadedScore;
-	          console.log(`After setting: this.currentLevel=${this.currentLevel}, this.grandTotalScore=${this.grandTotalScore}`);
-	          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
-	        } else {
-	          this.currentLevel = 1;
-	          this.grandTotalScore = 0;
-	          console.log(`User declined, reset: this.currentLevel=${this.currentLevel}`);
-	          await this.clearProgress();
-	          log(`Starting fresh at Level 1`);
-	        }
-	      } else {
-	        this.currentLevel = 1;
-	        this.grandTotalScore = 0;
-	        console.log(`No progress, reset: this.currentLevel=${this.currentLevel}`);
-	        log(`No saved progress found, starting at Level 1`);
-	      }
+	      // No progress check here
 	    }
 
 	  swapPlayerCharacter(newCharacter) {
@@ -1123,11 +1097,11 @@
 	  }
 	  
 	  showProgressPopup(loadedLevel, loadedScore) {
+	      console.log(`showProgressPopup: Displaying popup for level=${loadedLevel}, score=${loadedScore}`);
 	      return new Promise((resolve) => {
-	        // Create the modal dynamically
 	        const modal = document.createElement("div");
 	        modal.id = "progress-modal";
-	        modal.className = "progress-modal"; // Use a more specific class name
+	        modal.className = "progress-modal";
 
 	        const modalContent = document.createElement("div");
 	        modalContent.className = "progress-modal-content";
@@ -1154,21 +1128,21 @@
 	        modal.appendChild(modalContent);
 	        document.body.appendChild(modal);
 
-	        // Show the modal
 	        modal.style.display = "flex";
 
-	        // Event listeners for the buttons
 	        const onResume = () => {
+	          console.log("showProgressPopup: User chose Resume");
 	          modal.style.display = "none";
-	          document.body.removeChild(modal); // Clean up the modal
+	          document.body.removeChild(modal);
 	          resumeButton.removeEventListener("click", onResume);
 	          startFreshButton.removeEventListener("click", onStartFresh);
 	          resolve(true);
 	        };
 
 	        const onStartFresh = () => {
+	          console.log("showProgressPopup: User chose Restart");
 	          modal.style.display = "none";
-	          document.body.removeChild(modal); // Clean up the modal
+	          document.body.removeChild(modal);
 	          resumeButton.removeEventListener("click", onResume);
 	          startFreshButton.removeEventListener("click", onStartFresh);
 	          resolve(false);
@@ -1180,7 +1154,7 @@
 	    }
 
 		initGame() {
-			console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
+			console.log(`initGame: Started with this.currentLevel=${this.currentLevel}`);
 		    const gameContainer = document.querySelector(".game-container");
 		    const gameBoard = document.getElementById("game-board");
 		    gameContainer.style.display = "block";
@@ -1332,29 +1306,33 @@
       }
 
 	  addEventListeners() {
-	    const board = document.getElementById("game-board");
+	      const board = document.getElementById("game-board");
+	      if (this.isTouchDevice) {
+	        board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
+	        board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
+	        board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
+	      } else {
+	        board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+	        board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+	        board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+	      }
 
-	    if (this.isTouchDevice) {
-	      board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
-	      board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
-	      board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
-	    } else {
-	      board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
-	      board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
-	      board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+	      document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
+	      document.getElementById("restart").addEventListener("click", () => {
+	        this.initGame();
+	      });
+	      const changeCharacterButton = document.getElementById("change-character");
+	      const p1Image = document.getElementById("p1-image");
+    
+	      changeCharacterButton.addEventListener("click", () => {
+	        console.log("addEventListeners: Switch Monster button clicked");
+	        this.showCharacterSelect(false);
+	      });
+	      p1Image.addEventListener("click", () => {
+	        console.log("addEventListeners: Player 1 image clicked");
+	        this.showCharacterSelect(false);
+	      });
 	    }
-
-	    document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
-	    document.getElementById("restart").addEventListener("click", () => {
-	      this.initGame();
-	    });
-	    document.getElementById("change-character").addEventListener("click", () => {
-	      this.showCharacterSelect(false);
-	    });
-	    document.getElementById("p1-image").addEventListener("click", () => {
-	      this.showCharacterSelect(false);
-	    });
-	  }
 
 	  handleGameOverButton() {
 	    console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
@@ -2323,11 +2301,13 @@
 	(async () => {
 	  try {
 	    const playerCharactersConfig = await getAssets();
-	    console.log("Player characters loaded:", playerCharactersConfig);
+	    console.log("Main: Player characters loaded:", playerCharactersConfig);
 	    const game = new MonstrocityMatch3(playerCharactersConfig);
+	    console.log("Main: Game instance created");
 	    await game.init();
+	    console.log("Main: Game initialized successfully");
 	  } catch (error) {
-	    console.error("Error initializing game:", error);
+	    console.error("Main: Error initializing game:", error);
 	  }
 	})();
   </script>
