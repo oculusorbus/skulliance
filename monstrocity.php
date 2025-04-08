@@ -1175,16 +1175,20 @@
       }
 
 	  handleGameOverButton() {
+	    console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
 	    if (this.player2.health <= 0) {
 	      if (this.currentLevel < opponentsConfig.length - 1) {
 	        this.currentLevel += 1;
+	        console.log(`Level incremented to ${this.currentLevel + 1}`);
 	      } else {
 	        this.currentLevel = 0;
+	        console.log(`Reset to Level 1: currentLevel=${this.currentLevel}`);
 	      }
 	      this.initGame();
 	    } else {
 	      this.initGame();
 	    }
+	    console.log(`handleGameOverButton completed: currentLevel=${this.currentLevel}`);
 	  }
 
       handleMouseDown(e) {
@@ -1783,13 +1787,11 @@
       }
 
 	  async checkGameOver() {
-	    // Prevent re-entry if game is already over or currently processing
 	    if (this.gameOver || this.isCheckingGameOver) {
-	      console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}`);
+	      console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
 	      return;
 	    }
 
-	    // Set processing flag
 	    this.isCheckingGameOver = true;
 	    console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
 
@@ -1809,7 +1811,7 @@
 	      this.gameState = "gameOver";
 	      gameOver.textContent = "You Win!";
 	      turnIndicator.textContent = "Game Over";
-	      log(`${this.player1.name} defeats ${this.player2.name}!`);
+	      console.log(`Win detected: turnIndicator=${turnIndicator.textContent}, currentLevel=${this.currentLevel}`);
 	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length - 1 ? "START OVER" : "NEXT LEVEL";
 	      document.getElementById("game-over-container").style.display = "block";
 
@@ -1833,16 +1835,8 @@
 	        }
 	      }
 
-	      // Capture the level just completed for the score
-	      const completedLevel = this.currentLevel + 1; // Level just beaten (e.g., 1 for currentLevel: 0)
-
-	      // Increment currentLevel for progress (next level)
-	      if (this.currentLevel < opponentsConfig.length - 1) {
-	        this.currentLevel += 1;
-	        console.log(`Level incremented to ${this.currentLevel + 1}`);
-	      } else {
-	        console.log(`Max level reached: ${this.currentLevel + 1}`);
-	      }
+	      const completedLevel = this.currentLevel + 1;
+	      // Removed increment here
 
 	      await this.saveProgress();
 	      console.log(`Progress saved: currentLevel=${this.currentLevel}`);
@@ -1856,7 +1850,6 @@
 	        this.sounds.win.play();
 	      }
 
-	      // Pass the completed level to saveScoreToDatabase
 	      await this.saveScoreToDatabase(completedLevel);
 
 	      const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
@@ -1866,7 +1859,6 @@
 	      this.renderBoard();
 	    }
 
-	    // Reset processing flag
 	    this.isCheckingGameOver = false;
 	    console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
 	  }
