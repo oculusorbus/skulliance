@@ -1334,17 +1334,16 @@
 	      });
 	    }
 
-	  handleGameOverButton() {
-	    console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
-	    if (this.player2.health <= 0) {
-	      if (this.currentLevel > opponentsConfig.length) { // After final level (e.g., 29 > 28)
-	        this.currentLevel = 1; // Reset to level 1
-	        console.log(`Reset to Level 1: currentLevel=${this.currentLevel}`);
-	      }
-	    }
-	    this.initGame();
-	    console.log(`handleGameOverButton completed: currentLevel=${this.currentLevel}`);
-	  }
+		handleGameOverButton() {
+		  console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
+		  if (this.player2.health <= 0 && this.currentLevel > opponentsConfig.length) {
+		    this.currentLevel = 1; // Reset to Level 1 only after final level win
+		    console.log(`Reset to Level 1: currentLevel=${this.currentLevel}`);
+		  }
+		  // No level reset on loss; keep currentLevel intact
+		  this.initGame();
+		  console.log(`handleGameOverButton completed: currentLevel=${this.currentLevel}`);
+		}
 
       handleMouseDown(e) {
         if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
@@ -2081,31 +2080,20 @@
 	      gameOver.textContent = "You Lose!";
 	      turnIndicator.textContent = "Game Over";
 	      log(`${this.player2.name} defeats ${this.player1.name}!`);
-	      tryAgainButton.textContent = "TRY AGAIN";
+	      tryAgainButton.textContent = "TRY AGAIN"; // Keep "Try Again" to restart same level
 	      document.getElementById("game-over-container").style.display = "block";
-	      console.log("Attempting to play lose sound");
 	      try {
-	        const playPromise = this.sounds.loss.play();
-	        if (playPromise !== undefined) {
-	          playPromise
-	            .then(() => {
-	              console.log("Lose sound played successfully");
-	            })
-	            .catch(err => {
-	              console.error("Failed to play lose sound:", err);
-	            });
-	        }
+	        this.sounds.loss.play();
 	      } catch (err) {
 	        console.error("Error playing lose sound:", err);
 	      }
-	      await this.clearProgress();
+	      // Removed await this.clearProgress(); - No progress reset on loss
 	    } else if (this.player2.health <= 0) {
 	      console.log("Player 2 health <= 0, triggering game over (win)");
 	      this.gameOver = true;
 	      this.gameState = "gameOver";
 	      gameOver.textContent = "You Win!";
 	      turnIndicator.textContent = "Game Over";
-	      console.log(`Win detected: turnIndicator=${turnIndicator.textContent}, currentLevel=${this.currentLevel}`);
 	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
 	      document.getElementById("game-over-container").style.display = "block";
 
@@ -2122,10 +2110,10 @@
 	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
 	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
 
-	          this.grandTotalScore += roundScore;
+	          this.grandTotalScore += roundScore; // Only update grand total on win
 
 	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	          log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`); // Remove toFixed(2)
+	          log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
 	        }
 	      }
 
@@ -2133,12 +2121,12 @@
 
 	      if (this.currentLevel === opponentsConfig.length) {
 	        this.sounds.finalWin.play();
-	        log(`Final level completed! Final score: ${this.grandTotalScore}`); // Remove toFixed(2)
-	        this.grandTotalScore = 0;
+	        log(`Final level completed! Final score: ${this.grandTotalScore}`);
+	        this.grandTotalScore = 0; // Reset only after final level win
 	        await this.clearProgress();
 	        log("Game completed! Grand total score reset.");
 	      } else {
-	        this.currentLevel += 1;
+	        this.currentLevel += 1; // Advance level on win
 	        await this.saveProgress();
 	        console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 	        this.sounds.win.play();
