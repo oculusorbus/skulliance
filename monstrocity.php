@@ -818,10 +818,10 @@
 		      const progress = result.progress;
 		      const loadedLevel = progress.currentLevel || 1;
 		      const loadedScore = progress.grandTotalScore || 0;
-		      if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore.toFixed(2)}?`)) {
+		      if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore}?`)) { // Remove toFixed(2)
 		        this.currentLevel = loadedLevel;
 		        this.grandTotalScore = loadedScore;
-		        log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore.toFixed(2)}`);
+		        log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`); // Adjust log as well
 		        this.initGame();
 		      } else {
 		        this.currentLevel = 1;
@@ -1961,29 +1961,29 @@
 	          currentRound.completed = true;
 
 	          const roundScore = currentRound.matches > 0 
-	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56) // No +1 needed
+	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
 	            : 0;
 
 	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore.toFixed(2)}`);
+	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
 
 	          this.grandTotalScore += roundScore;
 
 	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	          log(`Round Score: ${roundScore.toFixed(2)}, Grand Total Score: ${this.grandTotalScore.toFixed(2)}`);
+	          log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`); // Remove toFixed(2)
 	        }
 	      }
 
-	      await this.saveScoreToDatabase(this.currentLevel); // Pass the level just completed (1-28)
+	      await this.saveScoreToDatabase(this.currentLevel);
 
-	      if (this.currentLevel === opponentsConfig.length) { // 28 === 28
+	      if (this.currentLevel === opponentsConfig.length) {
 	        this.sounds.finalWin.play();
-	        log(`Final level completed! Final score: ${this.grandTotalScore.toFixed(2)}`);
+	        log(`Final level completed! Final score: ${this.grandTotalScore}`); // Remove toFixed(2)
 	        this.grandTotalScore = 0;
 	        await this.clearProgress();
 	        log("Game completed! Grand total score reset.");
 	      } else {
-	        this.currentLevel += 1; // Increment to next level (e.g., 1 to 2)
+	        this.currentLevel += 1;
 	        await this.saveProgress();
 	        console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 	        this.sounds.win.play();
@@ -2002,7 +2002,7 @@
 	  
 	  async saveScoreToDatabase(completedLevel) {
 	    const data = {
-	      level: completedLevel, // Already 1-28
+	      level: completedLevel,
 	      score: this.grandTotalScore
 	    };
 
@@ -2022,7 +2022,7 @@
 	      const result = await response.json();
 	      console.log('Save response:', result);
 	      if (result.status === 'success') {
-	        log(`Saved: Level ${data.level}, Score ${data.score.toFixed(2)}`);
+	        log(`Saved: Level ${data.level}, Score ${data.score}`); // Remove toFixed(2)
 	      } else {
 	        log(`Score not saved: ${result.message}`);
 	      }
