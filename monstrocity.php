@@ -1112,7 +1112,7 @@
 
 	        const message = document.createElement("p");
 	        message.id = "progress-message";
-	        message.textContent = `Resume from Level ${loadedLevel} with score ${loadedScore}?`;
+	        message.textContent = `Resume from Level ${loadedLevel} with Score ${loadedScore}?`;
 	        modalContent.appendChild(message);
 
 	        const modalButtons = document.createElement("div");
