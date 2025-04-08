@@ -14,10 +14,21 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background-image: url(https://www.skulliance.io/staking/images/monstrocity/monstrocity.png);
+	  /*
+      background-image: url(https://www.skulliance.io/staking/images/monstrocity/monstrocity.png);*/
       background-size: cover;
       background-position: center;
     }
+	
+	#theme-select {
+	  padding: 5px;
+	  margin: 10px 0;
+	  background-color: #165777;
+	  color: #fff;
+	  border: 1px solid black;
+	  border-radius: 5px;
+	  font-size: 16px;
+	}
     
     h2 {
       margin-top: 0px;
@@ -697,6 +708,13 @@
   </div>
     <div id="character-select-container">
       <h2>Select Your Character</h2>
+	  <div>
+	    <label for="theme-select">Theme: </label>
+	    <select id="theme-select">
+	      <option value="monstrocity">Monstrocity</option>
+	      <option value="darkula">Darkula</option>
+	    </select>
+	  </div>
 	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
 	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s)</p>
 	  <p>Rewards, Leaderboards, and Game Saves Available to Skulliance Stakers</p>
@@ -822,6 +840,11 @@
 		    this.roundStats = [];
 		    this.grandTotalScore = 0;
 
+		    // Theme management
+		    this.theme = localStorage.getItem('gameTheme') || 'monstrocity'; // Default to monstrocity
+		    this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
+		    this.setBackground(); // Set initial background
+
 		    this.sounds = {
 		      match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
 		      cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
@@ -836,7 +859,6 @@
 		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		    };
 
-		    // Removed the initial game-board visibility hiding since the entire container is hidden
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
 		  }
@@ -870,6 +892,35 @@
 
 		      console.log("init: Async initialization completed");
 		    }
+			
+	  	// Set background based on current theme
+	    setBackground() {
+	      document.body.style.backgroundImage = `url(${this.baseImagePath}monstrocity.png)`;
+	    }
+
+	    // Update theme and refresh visuals
+	    updateTheme(newTheme) {
+	      this.theme = newTheme;
+	      this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
+	      localStorage.setItem('gameTheme', this.theme);
+	      this.setBackground();
+	      // Refresh character images if players are set
+	      if (this.player1) {
+	        this.player1.imageUrl = this.getCharacterImageUrl(this.player1);
+	        this.updatePlayerDisplay();
+	      }
+	      if (this.player2) {
+	        this.player2.imageUrl = this.getCharacterImageUrl(this.player2);
+	        this.updateOpponentDisplay();
+	      }
+	      // Update logo
+	      document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
+	      // Re-render character select if open
+	      const container = document.getElementById("character-select-container");
+	      if (container.style.display === "block") {
+	        this.showCharacterSelect(this.player1 === null);
+	      }
+	    }
 	  
 		async saveProgress() {
 		  const data = {
@@ -968,109 +1019,117 @@
         this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
       }
 
-      createCharacter(config) {
-        let typeFolder;
-        switch (config.type) {
-          case "Base":
-            typeFolder = "base";
-            break;
-          case "Leader":
-            typeFolder = "leader";
-            break;
-          case "Battle Damaged":
-            typeFolder = "battle-damaged";
-            break;
-          default:
-            typeFolder = "base";
-        }
-        const imageUrl = `https://www.skulliance.io/staking/images/monstrocity/${typeFolder}/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
-        
-        let baseHealth;
-        switch (config.type) {
-          case "Leader":
-            baseHealth = 100;
-            break;
-          case "Battle Damaged":
-            baseHealth = 70;
-            break;
-          case "Base":
-          default:
-            baseHealth = 85;
-        }
-        
-        let healthModifier = 1;
-        let tacticsAdjust = 0;
-        switch (config.size) {
-          case "Large":
-            healthModifier = 1.2;
-            tacticsAdjust = config.tactics > 1 ? -2 : 0;
-            break;
-          case "Small":
-            healthModifier = 0.8;
-            tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics;
-            break;
-          case "Medium":
-            healthModifier = 1;
-            tacticsAdjust = 0;
-            break;
-        }
-        
-        const adjustedHealth = Math.round(baseHealth * healthModifier);
-        const adjustedTactics = Math.max(1, Math.min(7, config.tactics + tacticsAdjust));
+	  createCharacter(config) {
+	      let typeFolder;
+	      switch (config.type) {
+	        case "Base": typeFolder = "base"; break;
+	        case "Leader": typeFolder = "leader"; break;
+	        case "Battle Damaged": typeFolder = "battle-damaged"; break;
+	        default: typeFolder = "base";
+	      }
+	      const imageUrl = `${this.baseImagePath}${typeFolder}/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
 
-        return {
-          name: config.name,
-          type: config.type,
-          strength: config.strength,
-          speed: config.speed,
-          tactics: adjustedTactics,
-          size: config.size,
-          powerup: config.powerup,
-          health: adjustedHealth,
-          maxHealth: adjustedHealth,
-          boostActive: false,
-          boostValue: 0,
-          lastStandActive: false,
-          imageUrl
-        };
-      }
+	      let baseHealth;
+	      switch (config.type) {
+	        case "Leader": baseHealth = 100; break;
+	        case "Battle Damaged": baseHealth = 70; break;
+	        case "Base":
+	        default: baseHealth = 85;
+	      }
 
-	  async showCharacterSelect(isInitial = false) {
-	      console.log(`showCharacterSelect: Called with isInitial=${isInitial}`);
-	      const container = document.getElementById("character-select-container");
-	      const optionsDiv = document.getElementById("character-options");
-	      optionsDiv.innerHTML = "";
-	      container.style.display = "block";
+	      let healthModifier = 1;
+	      let tacticsAdjust = 0;
+	      switch (config.size) {
+	        case "Large":
+	          healthModifier = 1.2;
+	          tacticsAdjust = config.tactics > 1 ? -2 : 0;
+	          break;
+	        case "Small":
+	          healthModifier = 0.8;
+	          tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics;
+	          break;
+	        case "Medium":
+	          healthModifier = 1;
+	          tacticsAdjust = 0;
+	          break;
+	      }
 
-	      this.playerCharacters.forEach((character, index) => {
-	        const option = document.createElement("div");
-	        option.className = "character-option";
-	        option.innerHTML = `
-	          <img src="${character.imageUrl}" alt="${character.name}">
-	          <p><strong>${character.name}</strong></p>
-	          <p>Type: ${character.type}</p>
-	          <p>Health: ${character.maxHealth}</p>
-	          <p>Strength: ${character.strength}</p>
-	          <p>Speed: ${character.speed}</p>
-	          <p>Tactics: ${character.tactics}</p>
-	          <p>Size: ${character.size}</p>
-	          <p>Power-Up: ${character.powerup}</p>
-	        `;
-	        option.addEventListener("click", () => {
-	          console.log(`showCharacterSelect: Character selected: ${character.name}`);
-	          container.style.display = "none";
-	          if (isInitial) {
-	            this.player1 = { ...character };
-	            console.log(`showCharacterSelect: this.player1 set: ${this.player1.name}`);
-	            this.initGame();
-	          } else {
-	            this.swapPlayerCharacter(character);
-	          }
-	        });
-	        optionsDiv.appendChild(option);
-	      });
-	      // No progress check here
+	      const adjustedHealth = Math.round(baseHealth * healthModifier);
+	      const adjustedTactics = Math.max(1, Math.min(7, config.tactics + tacticsAdjust));
+
+	      return {
+	        name: config.name,
+	        type: config.type,
+	        strength: config.strength,
+	        speed: config.speed,
+	        tactics: adjustedTactics,
+	        size: config.size,
+	        powerup: config.powerup,
+	        health: adjustedHealth,
+	        maxHealth: adjustedHealth,
+	        boostActive: false,
+	        boostValue: 0,
+	        lastStandActive: false,
+	        imageUrl
+	      };
 	    }
+		
+	  // Helper to get character image URL based on current theme
+	    getCharacterImageUrl(character) {
+	      let typeFolder;
+	      switch (character.type) {
+	        case "Base": typeFolder = "base"; break;
+	        case "Leader": typeFolder = "leader"; break;
+	        case "Battle Damaged": typeFolder = "battle-damaged"; break;
+	        default: typeFolder = "base";
+	      }
+	      return `${this.baseImagePath}${typeFolder}/${character.name.toLowerCase().replace(/ /g, '-')}.png`;
+	    }
+
+		async showCharacterSelect(isInitial = false) {
+		    console.log(`showCharacterSelect: Called with isInitial=${isInitial}`);
+		    const container = document.getElementById("character-select-container");
+		    const optionsDiv = document.getElementById("character-options");
+		    const themeSelect = document.getElementById("theme-select");
+		    optionsDiv.innerHTML = "";
+		    container.style.display = "block";
+
+		    // Set current theme in dropdown
+		    themeSelect.value = this.theme;
+
+		    // Update theme on change
+		    themeSelect.onchange = () => {
+		      this.updateTheme(themeSelect.value);
+		    };
+
+		    this.playerCharacters.forEach((character, index) => {
+		      const option = document.createElement("div");
+		      option.className = "character-option";
+		      option.innerHTML = `
+		        <img src="${character.imageUrl}" alt="${character.name}">
+		        <p><strong>${character.name}</strong></p>
+		        <p>Type: ${character.type}</p>
+		        <p>Health: ${character.maxHealth}</p>
+		        <p>Strength: ${character.strength}</p>
+		        <p>Speed: ${character.speed}</p>
+		        <p>Tactics: ${character.tactics}</p>
+		        <p>Size: ${character.size}</p>
+		        <p>Power-Up: ${character.powerup}</p>
+		      `;
+		      option.addEventListener("click", () => {
+		        console.log(`showCharacterSelect: Character selected: ${character.name}`);
+		        container.style.display = "none";
+		        if (isInitial) {
+		          this.player1 = { ...character };
+		          console.log(`showCharacterSelect: this.player1 set: ${this.player1.name}`);
+		          this.initGame();
+		        } else {
+		          this.swapPlayerCharacter(character);
+		        }
+		      });
+		      optionsDiv.appendChild(option);
+		    });
+		  }
 
 	  swapPlayerCharacter(newCharacter) {
 	    const oldHealth = this.player1.health;
@@ -1168,6 +1227,9 @@
 		    const gameBoard = document.getElementById("game-board");
 		    gameContainer.style.display = "block";
 		    gameBoard.style.visibility = "visible";
+			
+			// Update logo with current theme
+		    document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
 
 		    this.sounds.reset.play();
 		    log(`Starting Level ${this.currentLevel}...`);
@@ -1284,35 +1346,35 @@
         };
       }
 
-      renderBoard() {
-        this.updateTileSizeWithGap();
-        const boardElement = document.getElementById("game-board");
-        boardElement.innerHTML = "";
+	  renderBoard() {
+	      this.updateTileSizeWithGap();
+	      const boardElement = document.getElementById("game-board");
+	      boardElement.innerHTML = "";
 
-        for (let y = 0; y < this.height; y++) {
-          for (let x = 0; x < this.width; x++) {
-            const tile = this.board[y][x];
-            if (tile.type === null) continue;
-            const tileElement = document.createElement("div");
-            tileElement.className = `tile ${tile.type}`;
-            if (this.gameOver) tileElement.classList.add("game-over");
-            const img = document.createElement('img');
-            img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`;
-            img.alt = tile.type;
-            tileElement.appendChild(img);
-            tileElement.dataset.x = x;
-            tileElement.dataset.y = y;
-            boardElement.appendChild(tileElement);
-            tile.element = tileElement;
+	      for (let y = 0; y < this.height; y++) {
+	        for (let x = 0; x < this.width; x++) {
+	          const tile = this.board[y][x];
+	          if (tile.type === null) continue;
+	          const tileElement = document.createElement("div");
+	          tileElement.className = `tile ${tile.type}`;
+	          if (this.gameOver) tileElement.classList.add("game-over");
+	          const img = document.createElement('img');
+	          img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`; // Icons remain unchanged
+	          img.alt = tile.type;
+	          tileElement.appendChild(img);
+	          tileElement.dataset.x = x;
+	          tileElement.dataset.y = y;
+	          boardElement.appendChild(tileElement);
+	          tile.element = tileElement;
 
-            if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
-              tileElement.style.transform = "translate(0, 0)";
-            }
-          }
-        }
+	          if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
+	            tileElement.style.transform = "translate(0, 0)";
+	          }
+	        }
+	      }
 
-        document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
-      }
+	      document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
+	    }
 
 	  addEventListeners() {
 	      const board = document.getElementById("game-board");
@@ -2141,11 +2203,11 @@
 	        this.sounds.win.play();
 	      }
 
-	      const damagedUrl = `https://skulliance.io/staking/images/monstrocity/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
-	      p2Image.src = damagedUrl;
-	      p2Image.classList.add('loser');
-	      p1Image.classList.add('winner');
-	      this.renderBoard();
+		  const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
+          p2Image.src = damagedUrl;
+          p2Image.classList.add('loser');
+          p1Image.classList.add('winner');
+          this.renderBoard();
 	    }
 
 	    this.isCheckingGameOver = false;
