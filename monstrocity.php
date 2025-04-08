@@ -754,8 +754,7 @@
 		    win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
 		    finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
 		    powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
-		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
-			multiMatch: new Audio('https://www.skulliance.io/staking/sounds/small_explode.ogg') // New sound for multiple matches
+		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg')
 		  };
 
 		  this.showCharacterSelect(true);
@@ -1242,35 +1241,30 @@
         }
       }
 
-	  handleMouseUp(e) {
-	    if (!this.isDragging || this.gameState !== "playerTurn" || this.gameOver) return;
-	    this.isDragging = false;
+      handleMouseUp(e) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.gameState !== "playerTurn") {
+          if (this.selectedTile) {
+            const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+            if (tile.element) tile.element.classList.remove("selected");
+          }
+          this.isDragging = false;
+          this.selectedTile = null;
+          this.targetTile = null;
+          this.dragDirection = null;
+          this.renderBoard();
+          return;
+        }
 
-	    const rect = document.getElementById("game-board").getBoundingClientRect();
-	    const x = Math.floor((e.clientX - rect.left - this.offsetX) / this.tileSizeWithGap);
-	    const y = Math.floor((e.clientY - rect.top - this.offsetY) / this.tileSizeWithGap);
+        const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+        if (tile.element) tile.element.classList.remove("selected");
 
-	    if (this.selectedTile && (x !== this.selectedTile.x || y !== this.selectedTile.y)) {
-	      this.targetTile = { x, y };
-	      this.dragDirection = this.getDragDirection(this.selectedTile.x, this.selectedTile.y, x, y);
-	      if (this.isValidSwap(this.selectedTile.x, this.selectedTile.y, this.dragDirection)) {
-	        this.swapTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
-	        if (!this.resolveMatches(this.selectedTile.x, this.selectedTile.y, true)) { // Pass fromPlayerMove: true
-	          this.sounds.badMove.play();
-	          this.swapTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
-	          this.gameState = "playerTurn";
-	        }
-	      } else {
-	        this.sounds.badMove.play();
-	        this.gameState = "playerTurn";
-	      }
-	    }
+        this.slideTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
 
-	    this.selectedTile = null;
-	    this.targetTile = null;
-	    this.dragDirection = null;
-	    this.renderBoard();
-	  }
+        this.isDragging = false;
+        this.selectedTile = null;
+        this.targetTile = null;
+        this.dragDirection = null;
+      }
 
       handleTouchStart(e) {
         if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
@@ -1325,36 +1319,30 @@
         });
       }
 
-	  handleTouchEnd(e) {
-	    if (!this.isDragging || this.gameState !== "playerTurn" || this.gameOver) return;
-	    this.isDragging = false;
+      handleTouchEnd(e) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.gameState !== "playerTurn") {
+          if (this.selectedTile) {
+            const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+            if (tile.element) tile.element.classList.remove("selected");
+          }
+          this.isDragging = false;
+          this.selectedTile = null;
+          this.targetTile = null;
+          this.dragDirection = null;
+          this.renderBoard();
+          return;
+        }
 
-	    const rect = document.getElementById("game-board").getBoundingClientRect();
-	    const touch = e.changedTouches[0];
-	    const x = Math.floor((touch.clientX - rect.left - this.offsetX) / this.tileSizeWithGap);
-	    const y = Math.floor((touch.clientY - rect.top - this.offsetY) / this.tileSizeWithGap);
+        const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+        if (tile.element) tile.element.classList.remove("selected");
 
-	    if (this.selectedTile && (x !== this.selectedTile.x || y !== this.selectedTile.y)) {
-	      this.targetTile = { x, y };
-	      this.dragDirection = this.getDragDirection(this.selectedTile.x, this.selectedTile.y, x, y);
-	      if (this.isValidSwap(this.selectedTile.x, this.selectedTile.y, this.dragDirection)) {
-	        this.swapTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
-	        if (!this.resolveMatches(this.selectedTile.x, this.selectedTile.y, true)) { // Pass fromPlayerMove: true
-	          this.sounds.badMove.play();
-	          this.swapTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
-	          this.gameState = "playerTurn";
-	        }
-	      } else {
-	        this.sounds.badMove.play();
-	        this.gameState = "playerTurn";
-	      }
-	    }
+        this.slideTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
 
-	    this.selectedTile = null;
-	    this.targetTile = null;
-	    this.dragDirection = null;
-	    this.renderBoard();
-	  }
+        this.isDragging = false;
+        this.selectedTile = null;
+        this.targetTile = null;
+        this.dragDirection = null;
+      }
 
       getTileFromEvent(e) {
         const boardRect = document.getElementById("game-board").getBoundingClientRect();
@@ -1471,22 +1459,15 @@
         }, 200);
       }
 
-	  resolveMatches(selectedX = null, selectedY = null, fromPlayerMove = false) {
-	    console.log("resolveMatches started, gameOver:", this.gameOver, "fromPlayerMove:", fromPlayerMove);
+	  resolveMatches(selectedX = null, selectedY = null) {
+	    console.log("resolveMatches started, gameOver:", this.gameOver);
 	    if (this.gameOver) {
 	      console.log("Game over, exiting resolveMatches");
 	      return false;
 	    }
 
-	    const matches = this.checkMatches(fromPlayerMove);
+	    const matches = this.checkMatches();
 	    console.log(`Found ${matches.length} matches:`, matches);
-
-	    // Play multiMatch sound if from player move and total tiles matched is 6 or 9
-	    if (fromPlayerMove && matches.totalTilesMatched && (matches.totalTilesMatched === 6 || matches.totalTilesMatched === 9)) {
-	      console.log(`Playing multiMatch sound for ${matches.totalTilesMatched} tiles matched`);
-	      this.sounds.multiMatch.play();
-	    }
-
 	    if (matches.length > 0) {
 	      const allMatchedTiles = new Set();
 	      let totalDamage = 0;
@@ -1497,6 +1478,7 @@
 	        matches.forEach(match => {
 	          console.log("Processing match:", match);
 	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
+	          // Pass totalTiles to handleMatch to determine sound and damage
 	          const damage = this.handleMatch(match);
 	          console.log(`Damage from match: ${damage}`);
 	          if (this.gameOver) {
@@ -1574,9 +1556,9 @@
 	    console.log("No matches found, returning false");
 	    return false;
 	  }
-	  
-	  checkMatches(fromPlayerMove = false) {
-	    console.log("checkMatches started, fromPlayerMove:", fromPlayerMove);
+
+	  checkMatches() {
+	    console.log("checkMatches started");
 	    const matches = [];
 
 	    try {
@@ -1623,7 +1605,7 @@
 	        }
 	      }
 
-	      // Step 2: Group matches by tile type and cluster overlapping matches
+	      // Step 2: Group matches by tile type and calculate total unique tiles
 	      const matchesByType = {};
 	      straightMatches.forEach(match => {
 	        if (!matchesByType[match.type]) {
@@ -1632,49 +1614,15 @@
 	        matchesByType[match.type].push(match.coordinates);
 	      });
 
-	      const areConnected = (set1, set2) => {
-	        for (const coord1 of set1) {
-	          for (const coord2 of set2) {
-	            if (coord1 === coord2) return true;
-	          }
-	        }
-	        return false;
-	      };
-
+	      // Step 3: For each tile type, calculate the total unique tiles matched
 	      for (const tileType in matchesByType) {
-	        let matchSets = matchesByType[tileType];
-	        const clusters = [];
-
-	        while (matchSets.length > 0) {
-	          const currentSet = matchSets.shift();
-	          const cluster = [currentSet];
-	          let i = 0;
-	          while (i < matchSets.length) {
-	            if (areConnected(currentSet, matchSets[i])) {
-	              cluster.push(matchSets[i]);
-	              matchSets.splice(i, 1);
-	            } else {
-	              i++;
-	            }
-	          }
-	          clusters.push(cluster);
-	        }
-
-	        clusters.forEach(cluster => {
-	          const allTiles = new Set();
-	          cluster.forEach(matchCoordinates => {
-	            matchCoordinates.forEach(coord => allTiles.add(coord));
-	          });
-	          console.log(`Cluster for type ${tileType}:`, [...allTiles], `count: ${allTiles.size}`);
-	          matches.push({ type: tileType, coordinates: allTiles, totalTiles: allTiles.size, fromPlayerMove });
+	        const matchSets = matchesByType[tileType];
+	        const allTiles = new Set();
+	        matchSets.forEach(matchCoordinates => {
+	          matchCoordinates.forEach(coord => allTiles.add(coord));
 	        });
-	      }
-
-	      // Step 3: Calculate total tiles matched across all types (for multi-match sound)
-	      if (fromPlayerMove) {
-	        const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
-	        console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
-	        matches.totalTilesMatched = totalTilesMatched; // Attach to matches array for use in resolveMatches
+	        console.log(`Total unique tiles matched for type ${tileType}:`, [...allTiles], `count: ${allTiles.size}`);
+	        matches.push({ type: tileType, coordinates: allTiles, totalTiles: allTiles.size });
 	      }
 
 	      console.log("checkMatches completed, returning matches:", matches);
@@ -1774,26 +1722,24 @@
 	  }
 
 	  cascadeTiles(callback) {
-	    console.log("cascadeTiles started");
-	    let moved = false;
+	    if (this.gameOver) {
+	      console.log("Game over, skipping cascadeTiles");
+	      return;
+	    }
+
+	    const moved = this.cascadeTilesWithoutRender();
+	    const fallClass = "falling";
 
 	    for (let x = 0; x < this.width; x++) {
-	      let emptyRow = this.height - 1;
-	      for (let y = this.height - 1; y >= 0; y--) {
-	        if (this.board[y][x]?.type) {
-	          if (y !== emptyRow) {
-	            this.board[emptyRow][x] = { ...this.board[y][x] };
-	            this.board[y][x] = { type: null, element: null };
-	            moved = true;
+	      for (let y = 0; y < this.height; y++) {
+	        const tile = this.board[y][x];
+	        if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
+	          const emptyBelow = this.countEmptyBelow(x, y);
+	          if (emptyBelow > 0) {
+	            tile.element.classList.add(fallClass);
+	            tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
 	          }
-	          emptyRow--;
 	        }
-	      }
-
-	      for (let y = emptyRow; y >= 0; y--) {
-	        const newType = this.tileTypes[Math.floor(Math.random() * this.tileTypes.length)];
-	        this.board[y][x] = { type: newType, element: null };
-	        moved = true;
 	      }
 	    }
 
@@ -1801,10 +1747,18 @@
 
 	    if (moved) {
 	      setTimeout(() => {
-	        if (this.resolveMatches(null, null, false)) { // Pass fromPlayerMove: false
-	          this.cascadeTiles(callback);
-	        } else {
-	          this.sounds.cascade.play();
+	        if (this.gameOver) {
+	          console.log("Game over, skipping cascade resolution");
+	          return;
+	        }
+	        this.sounds.cascade.play();
+	        const hasMatches = this.resolveMatches();
+	        const tiles = document.querySelectorAll(`.${fallClass}`);
+	        tiles.forEach(tile => {
+	          tile.classList.remove(fallClass);
+	          tile.style.transform = "translate(0, 0)";
+	        });
+	        if (!hasMatches) {
 	          callback();
 	        }
 	      }, 300);
@@ -1812,7 +1766,7 @@
 	      callback();
 	    }
 	  }
-	  
+
       cascadeTilesWithoutRender() {
         let moved = false;
         for (let x = 0; x < this.width; x++) {
@@ -1908,25 +1862,18 @@
 	    }
 	  }
 
-	  aiTurn() {
-	    console.log("aiTurn started");
-	    this.gameState = "aiTurn";
-	    turnIndicator.textContent = "AI Turn";
-
-	    setTimeout(() => {
-	      const bestMove = this.findBestMove();
-	      if (bestMove) {
-	        const { x1, y1, x2, y2 } = bestMove;
-	        this.swapTiles(x1, y1, x2, y2);
-	        if (!this.resolveMatches(x1, y1, false)) { // Pass fromPlayerMove: false
-	          this.swapTiles(x1, y1, x2, y2);
-	          this.endTurn();
-	        }
-	      } else {
-	        this.endTurn();
-	      }
-	    }, 1000);
-	  }
+      aiTurn() {
+        if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) return;
+        this.gameState = "animating";
+        const move = this.findAIMove();
+        if (move) {
+          log(`${this.player2.name} swaps tiles at (${move.x1}, ${move.y1}) to (${move.x2}, ${move.y2})`);
+          this.slideTiles(move.x1, move.y1, move.x2, move.y2);
+        } else {
+          log(`${this.player2.name} passes...`);
+          this.endTurn();
+        }
+      }
 
       findAIMove() {
         for (let y = 0; y < this.height; y++) {
