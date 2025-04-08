@@ -449,6 +449,69 @@
       margin: 5px 0;
       font-size: 0.9em;
     }
+	
+	.modal {
+	  position: fixed;
+	  top: 0;
+	  left: 0;
+	  width: 100%;
+	  height: 100%;
+	  background-color: rgba(0, 0, 0, 0.5);
+	  display: flex;
+	  justify-content: center;
+	  align-items: center;
+	  z-index: 1000;
+	}
+
+	.modal-content {
+	  background-color: #1a1a1a;
+	  padding: 20px;
+	  border-radius: 10px;
+	  text-align: center;
+	  color: #fff;
+	  font-family: Arial, sans-serif;
+	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+	  max-width: 400px;
+	  width: 90%;
+	}
+
+	.modal-content p {
+	  margin: 0 0 20px 0;
+	  font-size: 18px;
+	}
+
+	.modal-buttons {
+	  display: flex;
+	  justify-content: center;
+	  gap: 10px;
+	}
+
+	.modal-buttons button {
+	  padding: 10px 20px;
+	  font-size: 16px;
+	  cursor: pointer;
+	  border: none;
+	  border-radius: 5px;
+	  transition: background-color 0.3s;
+	}
+
+	#progress-resume {
+	  background-color: #4CAF50;
+	  color: white;
+	}
+
+	#progress-resume:hover {
+	  background-color: #45a049;
+	}
+
+	#progress-start-fresh {
+	  background-color: #f44336;
+	  color: white;
+	}
+
+	#progress-start-fresh:hover {
+	  background-color: #da190b;
+	}
 
     @media (max-width: 950px) {
       .game-container {
@@ -618,6 +681,15 @@
       <h2>Select Your Character</h2>
       <div id="character-options"></div>
     </div>
+	<div id="progress-modal" class="modal" style="display: none;">
+	  <div class="modal-content">
+	    <p id="progress-message"></p>
+	    <div class="modal-buttons">
+	      <button id="progress-resume">Resume</button>
+	      <button id="progress-start-fresh">Start Fresh</button>
+	    </div>
+	  </div>
+	</div>
   </div>
 
   <script>
@@ -756,12 +828,17 @@
 		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		    };
 
+		    // Hide the game board initially to prevent flashing
+		    const gameBoard = document.getElementById("game-board");
+		    if (gameBoard) {
+		      gameBoard.style.display = "none";
+		    }
+
 		    this.addEventListeners();
 		  }
 
 		  async init() {
 		    console.log("Starting async initialization");
-		    // Show character selection first, which will handle progress loading and prompting
 		    this.showCharacterSelect(true);
 		    console.log("Async initialization completed - waiting for character selection");
 		  }
@@ -804,7 +881,6 @@
 		}
 
 		async loadProgress() {
-		    // This method now only fetches progress data and returns it, without prompting
 		    try {
 		      console.log("Fetching progress from ajax/load-monstrocity-progress.php");
 		      const response = await fetch('ajax/load-monstrocity-progress.php', {
@@ -937,33 +1013,7 @@
 	      optionsDiv.innerHTML = "";
 	      container.style.display = "block";
 
-	      // Fetch progress data
-	      const progressData = await this.loadProgress();
-	      const { loadedLevel, loadedScore, hasProgress } = progressData;
-
-	      // Show progress prompt if there is progress
-	      if (hasProgress) {
-	        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
-	        if (confirm(`Resume from Level ${loadedLevel} with score ${loadedScore}?`)) {
-	          this.currentLevel = loadedLevel;
-	          this.grandTotalScore = loadedScore;
-	          console.log(`After setting: this.currentLevel=${this.currentLevel}, this.grandTotalScore=${this.grandTotalScore}`);
-	          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
-	        } else {
-	          this.currentLevel = 1;
-	          this.grandTotalScore = 0;
-	          console.log(`User declined, reset: this.currentLevel=${this.currentLevel}`);
-	          await this.clearProgress();
-	          log(`Starting fresh at Level 1`);
-	        }
-	      } else {
-	        this.currentLevel = 1;
-	        this.grandTotalScore = 0;
-	        console.log(`No progress, reset: this.currentLevel=${this.currentLevel}`);
-	        log(`No saved progress found, starting at Level 1`);
-	      }
-
-	      // Now render the character selection options
+	      // Render character options immediately
 	      this.playerCharacters.forEach((character, index) => {
 	        const option = document.createElement("div");
 	        option.className = "character-option";
@@ -991,6 +1041,32 @@
 	        });
 	        optionsDiv.appendChild(option);
 	      });
+
+	      // Fetch progress and show the custom popup
+	      const progressData = await this.loadProgress();
+	      const { loadedLevel, loadedScore, hasProgress } = progressData;
+
+	      if (hasProgress) {
+	        console.log(`Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
+	        const userChoice = await this.showProgressPopup(loadedLevel, loadedScore);
+	        if (userChoice) {
+	          this.currentLevel = loadedLevel;
+	          this.grandTotalScore = loadedScore;
+	          console.log(`After setting: this.currentLevel=${this.currentLevel}, this.grandTotalScore=${this.grandTotalScore}`);
+	          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
+	        } else {
+	          this.currentLevel = 1;
+	          this.grandTotalScore = 0;
+	          console.log(`User declined, reset: this.currentLevel=${this.currentLevel}`);
+	          await this.clearProgress();
+	          log(`Starting fresh at Level 1`);
+	        }
+	      } else {
+	        this.currentLevel = 1;
+	        this.grandTotalScore = 0;
+	        console.log(`No progress, reset: this.currentLevel=${this.currentLevel}`);
+	        log(`No saved progress found, starting at Level 1`);
+	      }
 	    }
 
 	  swapPlayerCharacter(newCharacter) {
@@ -1025,74 +1101,113 @@
 	      setTimeout(() => this.aiTurn(), 1000);
 	    }
 	  }
+	  
+	  showProgressPopup(loadedLevel, loadedScore) {
+	      return new Promise((resolve) => {
+	        const modal = document.getElementById("progress-modal");
+	        const message = document.getElementById("progress-message");
+	        const resumeButton = document.getElementById("progress-resume");
+	        const startFreshButton = document.getElementById("progress-start-fresh");
+
+	        // Set the message
+	        message.textContent = `Resume from Level ${loadedLevel} with score ${loadedScore}?`;
+
+	        // Show the modal
+	        modal.style.display = "flex";
+
+	        // Event listeners for the buttons
+	        const onResume = () => {
+	          modal.style.display = "none";
+	          resumeButton.removeEventListener("click", onResume);
+	          startFreshButton.removeEventListener("click", onStartFresh);
+	          resolve(true);
+	        };
+
+	        const onStartFresh = () => {
+	          modal.style.display = "none";
+	          resumeButton.removeEventListener("click", onResume);
+	          startFreshButton.removeEventListener("click", onStartFresh);
+	          resolve(false);
+	        };
+
+	        resumeButton.addEventListener("click", onResume);
+	        startFreshButton.addEventListener("click", onStartFresh);
+	      });
+	    }
 
 	  initGame() {
-	    this.sounds.reset.play();
-	    log(`Starting Level ${this.currentLevel}...`); // No +1 needed
+	      console.log(`initGame started with this.currentLevel=${this.currentLevel}`);
+	      // Show the game board now that we're ready to start the game
+	      const gameBoard = document.getElementById("game-board");
+	      if (gameBoard) {
+	        gameBoard.style.display = "block";
+	      }
 
-	    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]); // Adjust for 0-based index
+	      this.sounds.reset.play();
+	      log(`Starting Level ${this.currentLevel}...`);
 
-	    // Reset player health to maxHealth for a new round
-	    this.player1.health = this.player1.maxHealth;
+	      this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
+	      console.log(`Loaded opponent for level ${this.currentLevel}: ${this.player2.name} (opponentsConfig[${this.currentLevel - 1}])`);
 
-	    this.currentTurn = this.player1.speed > this.player2.speed 
-	      ? this.player1 
-	      : this.player2.speed > this.player1.speed 
-	        ? this.player2 
-	        : this.player1.strength >= this.player2.strength 
-	          ? this.player1 
-	          : this.player2;
-	    this.gameState = "initializing";
-	    this.gameOver = false;
+	      this.player1.health = this.player1.maxHealth;
 
-	    // Reset round stats for the new level
-	    this.roundStats = [];
+	      this.currentTurn = this.player1.speed > this.player2.speed 
+	        ? this.player1 
+	        : this.player2.speed > this.player1.speed 
+	          ? this.player2 
+	          : this.player1.strength >= this.player2.strength 
+	            ? this.player1 
+	            : this.player2;
+	      this.gameState = "initializing";
+	      this.gameOver = false;
 
-	    p1Image.classList.remove('winner', 'loser');
-	    p2Image.classList.remove('winner', 'loser');
-	    this.updatePlayerDisplay();
-	    this.updateOpponentDisplay();
+	      this.roundStats = [];
 
-	    if (characterDirections[this.player1.name] === "Left") {
-	      p1Image.style.transform = "scaleX(-1)";
-	    } else {
-	      p1Image.style.transform = "none";
+	      p1Image.classList.remove('winner', 'loser');
+	      p2Image.classList.remove('winner', 'loser');
+	      this.updatePlayerDisplay();
+	      this.updateOpponentDisplay();
+
+	      if (characterDirections[this.player1.name] === "Left") {
+	        p1Image.style.transform = "scaleX(-1)";
+	      } else {
+	        p1Image.style.transform = "none";
+	      }
+
+	      if (characterDirections[this.player2.name] === "Right") {
+	        p2Image.style.transform = "scaleX(-1)";
+	      } else {
+	        p2Image.style.transform = "none";
+	      }
+
+	      this.updateHealth(this.player1);
+	      this.updateHealth(this.player2);
+
+	      battleLog.innerHTML = "";
+	      gameOver.textContent = "";
+
+	      if (this.player1.size !== "Medium") {
+	        log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
+	      }
+	      if (this.player2.size !== "Medium") {
+	        log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
+	      }
+
+	      log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+	      log(`${this.currentTurn.name} goes first!`);
+
+	      this.initBoard();
+	      this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	      turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+
+	      if (this.playerCharacters.length > 1) {
+	        document.getElementById("change-character").style.display = "inline-block";
+	      }
+
+	      if (this.currentTurn === this.player2) {
+	        setTimeout(() => this.aiTurn(), 1000);
+	      }
 	    }
-
-	    if (characterDirections[this.player2.name] === "Right") {
-	      p2Image.style.transform = "scaleX(-1)";
-	    } else {
-	      p2Image.style.transform = "none";
-	    }
-
-	    this.updateHealth(this.player1);
-	    this.updateHealth(this.player2);
-
-	    battleLog.innerHTML = "";
-	    gameOver.textContent = "";
-
-	    if (this.player1.size !== "Medium") {
-	      log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
-	    }
-	    if (this.player2.size !== "Medium") {
-	      log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
-	    }
-
-	    log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
-	    log(`${this.currentTurn.name} goes first!`);
-
-	    this.initBoard();
-	    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
-
-	    if (this.playerCharacters.length > 1) {
-	      document.getElementById("change-character").style.display = "inline-block";
-	    }
-
-	    if (this.currentTurn === this.player2) {
-	      setTimeout(() => this.aiTurn(), 1000);
-	    }
-	  }
 
 	  updatePlayerDisplay() {
         p1Name.textContent = this.player1.name;
