@@ -735,8 +735,6 @@
 		  this.currentLevel = 0;
 		  this.playerCharacters = playerCharactersConfig.map(config => this.createCharacter(config));
 		  this.isCheckingGameOver = false;
-		  this.audioUnlocked = false; // Track if audio is unlocked
-		  this.audioUnlockPromptShown = false; // Track if the prompt has been shown
 
 		  this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
 		  this.updateTileSizeWithGap();
@@ -758,106 +756,10 @@
 		    powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
 		    hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg')
 		  };
-		  
-		  // Override the play method for each sound to handle autoplay restrictions
-		  Object.keys(this.sounds).forEach(key => {
-		    const originalPlay = this.sounds[key].play.bind(this.sounds[key]);
-		    this.sounds[key].play = () => {
-		      console.log(`Attempting to play sound: ${key}, src: ${this.sounds[key].src}`);
-		      if (this.audioUnlocked) {
-		        const playPromise = originalPlay();
-		        if (playPromise !== undefined) {
-		          playPromise
-		            .then(() => {
-		              console.log(`Sound played successfully: ${key}`);
-		            })
-		            .catch(err => {
-		              console.warn(`Failed to play sound ${key}:`, err);
-		            });
-		        }
-		      } else {
-		        console.log(`Audio not unlocked yet, prompting user to enable sound for ${key}`);
-		        this.showAudioUnlockPrompt();
-		      }
-		    };
-		  });
 
 		  this.showCharacterSelect(true);
 		  this.addEventListeners();
 		}
-		
-	  preloadSounds() {
-	    console.log("Preloading sounds...");
-	    Object.values(this.sounds).forEach(sound => {
-	      sound.load();
-	      console.log(`Loading sound: ${sound.src}`);
-	      sound.volume = 0; // Mute initially
-	      const playPromise = sound.play();
-	      if (playPromise !== undefined) {
-	        playPromise
-	          .then(() => {
-	            console.log(`Successfully preloaded sound: ${sound.src}`);
-	            sound.pause();
-	            sound.currentTime = 0;
-	            sound.volume = 1; // Restore volume
-	          })
-	          .catch(err => {
-	            console.warn(`Sound preload failed for ${sound.src}:`, err);
-	            // Reset volume even if preload fails
-	            sound.volume = 1;
-	          });
-	      }
-	    });
-	  }
-	  
-	  // Add these methods to the class
-	  unlockAudio() {
-	    console.log("Unlocking audio...");
-	    Object.values(this.sounds).forEach(sound => {
-	      sound.muted = true;
-	      const playPromise = sound.play();
-	      if (playPromise !== undefined) {
-	        playPromise
-	          .then(() => {
-	            sound.pause();
-	            sound.currentTime = 0;
-	            sound.muted = false;
-	            this.audioUnlocked = true;
-	            console.log("Audio unlocked successfully");
-	          })
-	          .catch(err => {
-	            console.warn("Failed to unlock audio:", err);
-	            sound.muted = false;
-	          });
-	      }
-	    });
-	  }
-
-	  showAudioUnlockPrompt() {
-	    if (this.audioUnlockPromptShown) return;
-	    this.audioUnlockPromptShown = true;
-
-	    const unlockMessage = document.createElement("div");
-	    unlockMessage.style.position = "fixed";
-	    unlockMessage.style.top = "50%";
-	    unlockMessage.style.left = "50%";
-	    unlockMessage.style.transform = "translate(-50%, -50%)";
-	    unlockMessage.style.background = "rgba(0, 0, 0, 0.8)";
-	    unlockMessage.style.color = "#fff";
-	    unlockMessage.style.padding = "20px";
-	    unlockMessage.style.borderRadius = "10px";
-	    unlockMessage.style.zIndex = "1000";
-	    unlockMessage.innerHTML = `
-	      <p>Click to enable sound</p>
-	      <button id="unlock-audio-btn">Enable Sound</button>
-	    `;
-	    document.body.appendChild(unlockMessage);
-
-	    document.getElementById("unlock-audio-btn").addEventListener("click", () => {
-	      this.unlockAudio();
-	      unlockMessage.remove();
-	    });
-	  }
 	  
 	  async saveProgress() {
 	    const data = {
@@ -1248,24 +1150,12 @@
 	  addEventListeners() {
 	    const board = document.getElementById("game-board");
 
-	    const unlockAudioOnInteraction = (e) => {
-	      if (!this.audioUnlocked) {
-	        this.unlockAudio();
-	      }
-	    };
-
 	    if (this.isTouchDevice) {
-	      board.addEventListener("touchstart", (e) => {
-	        unlockAudioOnInteraction(e);
-	        this.handleTouchStart(e);
-	      });
+	      board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
 	      board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
 	      board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
 	    } else {
-	      board.addEventListener("mousedown", (e) => {
-	        unlockAudioOnInteraction(e);
-	        this.handleMouseDown(e);
-	      });
+	      board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
 	      board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
 	      board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
 	    }
@@ -1851,6 +1741,8 @@
 	    const size = match.coordinates.size;
 	    let damage = 0;
 
+	    console.log(`${defender.name} health before match: ${defender.health}`);
+
 	    if (size == 4) {
 	      this.sounds.powerGem.play();
 	      log(`${attacker.name} created a match of ${size} tiles!`);
@@ -2115,6 +2007,7 @@
 
 	    const tryAgainButton = document.getElementById("try-again");
 	    if (this.player1.health <= 0) {
+	      console.log("Player 1 health <= 0, triggering game over (loss)");
 	      this.gameOver = true;
 	      this.gameState = "gameOver";
 	      gameOver.textContent = "Game Over!";
@@ -2122,10 +2015,24 @@
 	      log(`${this.player2.name} defeats ${this.player1.name}!`);
 	      tryAgainButton.textContent = "TRY AGAIN";
 	      document.getElementById("game-over-container").style.display = "block";
-	      console.log("Triggering lose sound");
-	      this.sounds.lose.play();
+	      console.log("Attempting to play lose sound");
+	      try {
+	        const playPromise = this.sounds.lose.play();
+	        if (playPromise !== undefined) {
+	          playPromise
+	            .then(() => {
+	              console.log("Lose sound played successfully");
+	            })
+	            .catch(err => {
+	              console.error("Failed to play lose sound:", err);
+	            });
+	        }
+	      } catch (err) {
+	        console.error("Error playing lose sound:", err);
+	      }
 	      await this.clearProgress();
 	    } else if (this.player2.health <= 0) {
+	      console.log("Player 2 health <= 0, triggering game over (win)");
 	      this.gameOver = true;
 	      this.gameState = "gameOver";
 	      gameOver.textContent = "You Win!";
