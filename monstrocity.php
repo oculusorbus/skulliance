@@ -1783,8 +1783,15 @@
       }
 
 	  async checkGameOver() {
-	    // Prevent multiple calls if game is already over
-	    if (this.gameOver) return;
+	    // Prevent re-entry if game is already over or currently processing
+	    if (this.gameOver || this.isCheckingGameOver) {
+	      console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}`);
+	      return;
+	    }
+
+	    // Set processing flag
+	    this.isCheckingGameOver = true;
+	    console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
 
 	    const tryAgainButton = document.getElementById("try-again");
 	    if (this.player1.health <= 0) {
@@ -1831,11 +1838,14 @@
 
 	      // Increment currentLevel for progress (next level)
 	      if (this.currentLevel < opponentsConfig.length - 1) {
-	        this.currentLevel += 1; // Move to the next level
-	        log(`Advancing to Level ${this.currentLevel + 1}`);
+	        this.currentLevel += 1;
+	        console.log(`Level incremented to ${this.currentLevel + 1}`);
+	      } else {
+	        console.log(`Max level reached: ${this.currentLevel + 1}`);
 	      }
 
 	      await this.saveProgress();
+	      console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 
 	      if (this.currentLevel === opponentsConfig.length - 1) {
 	        this.sounds.finalWin.play();
@@ -1855,6 +1865,10 @@
 	      p1Image.classList.add('winner');
 	      this.renderBoard();
 	    }
+
+	    // Reset processing flag
+	    this.isCheckingGameOver = false;
+	    console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
