@@ -1910,14 +1910,14 @@
 	      console.log("Player 1 health <= 0, triggering game over (loss)");
 	      this.gameOver = true;
 	      this.gameState = "gameOver";
-	      gameOver.textContent = "Game Over!";
+	      gameOver.textContent = "You Lose!";
 	      turnIndicator.textContent = "Game Over";
 	      log(`${this.player2.name} defeats ${this.player1.name}!`);
 	      tryAgainButton.textContent = "TRY AGAIN";
 	      document.getElementById("game-over-container").style.display = "block";
 	      console.log("Attempting to play lose sound");
 	      try {
-	        const playPromise = this.sounds.lose.play();
+	        const playPromise = this.sounds.loss.play();
 	        if (playPromise !== undefined) {
 	          playPromise
 	            .then(() => {
