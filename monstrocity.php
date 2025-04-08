@@ -686,7 +686,7 @@
 	    <p id="progress-message"></p>
 	    <div class="modal-buttons">
 	      <button id="progress-resume">Resume</button>
-	      <button id="progress-start-fresh">Start Fresh</button>
+	      <button id="progress-start-fresh">Restart</button>
 	    </div>
 	  </div>
 	</div>
