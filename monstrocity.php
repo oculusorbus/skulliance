@@ -28,6 +28,7 @@
 	a {
 		color: white;
 		font-weight: bold;
+		text-decoration: none;
 	}
 
 	.game-container {
