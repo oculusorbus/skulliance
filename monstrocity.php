@@ -2097,30 +2097,40 @@
         return count;
       }
 
-      usePowerup(player, defender) {
-        const reductionFactor = 1 - (defender.tactics * 0.05);
-        let effectValue;
+	  usePowerup(player, defender) {
+	    const reductionFactor = 1 - (defender.tactics * 0.05);
+	    let effectValue;
+	    let originalValue;
+	    let reducedBy;
 
-        if (player.powerup === "Heal") {
-          effectValue = Math.floor(10 * reductionFactor);
-          player.health = Math.min(player.maxHealth, player.health + effectValue);
-          log(`${player.name} uses Heal, restoring ${effectValue} HP${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
-        } else if (player.powerup === "Boost Attack") {
-          effectValue = Math.floor(10 * reductionFactor);
-          player.boostActive = true;
-          player.boostValue = effectValue;
-          log(`${player.name} uses Power Surge, next attack +${effectValue} damage${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
-        } else if (player.powerup === "Regenerate") {
-          effectValue = Math.floor(7 * reductionFactor);
-          player.health = Math.min(player.maxHealth, player.health + effectValue);
-          log(`${player.name} uses Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
-        } else if (player.powerup === "Minor Regen") {
-          effectValue = Math.floor(5 * reductionFactor);
-          player.health = Math.min(player.maxHealth, player.health + effectValue);
-          log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (weakened by ${defender.name}'s tactics)` : ""}!`);
-        }
-        this.updateHealth(player);
-      }
+	    if (player.powerup === "Heal") {
+	      originalValue = 10;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.health = Math.min(player.maxHealth, player.health + effectValue);
+	      log(`${player.name} uses Heal, restoring ${effectValue} HP${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    } else if (player.powerup === "Boost Attack") {
+	      originalValue = 10;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.boostActive = true;
+	      player.boostValue = effectValue;
+	      log(`${player.name} uses Power Surge, next attack +${effectValue} damage${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    } else if (player.powerup === "Regenerate") {
+	      originalValue = 7;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.health = Math.min(player.maxHealth, player.health + effectValue);
+	      log(`${player.name} uses Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    } else if (player.powerup === "Minor Regen") {
+	      originalValue = 5;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.health = Math.min(player.maxHealth, player.health + effectValue);
+	      log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    }
+	    this.updateHealth(player);
+	  }
 
       updateHealth(player) {
         const healthBar = player === this.player1 ? p1Health : p2Health;
