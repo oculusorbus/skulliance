@@ -6592,7 +6592,8 @@ function saveMonstrocityScore($conn, $user_id, $score, $level) {
       $stmt->execute();
       $stmt->close();
 
-      return ['status' => 'success', 'message' 'Score saved', 'attempts' => $new_attempts];
+      // Fixed syntax: Added missing => operator
+      return ['status' => 'success', 'message' => 'Score saved', 'attempts' => $new_attempts];
     }
 
     // Log the skip decision
