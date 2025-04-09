@@ -54,7 +54,7 @@
 	  min-width: 910px;
 	  max-width: 1024px;
 	  box-sizing: border-box;
-	  max-height: 1600px;
+	  max-height: 1880px;
 	  border: 3px solid black;
 	  display: none; /* Initially hidden */
 	}
