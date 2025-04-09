@@ -767,6 +767,8 @@
 	      </div>
 	    </li>
 	  </ul>
+	  <span>Note: Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</span>
+	  <br>
 	  <br>
 	  <h3>Combo Bonuses</h3>
 	  <ul>
@@ -2138,12 +2140,12 @@
 	        this.animateAttack(attacker, damage, type);
 	      }
 	    } else if (type === "power-up") {
-	      this.usePowerup(attacker, defender);
-	      if (!this.gameOver) {
-	        console.log("Animating powerup");
-	        this.animatePowerup(attacker);
-	      }
-	    }
+			  this.usePowerup(attacker, defender, size);
+			  if (!this.gameOver) {
+			    console.log("Animating powerup");
+			    this.animatePowerup(attacker);
+			  }
+		}
 
 	    // Add points and increment matches for both initial and cascading matches
 	    if (!this.roundStats[this.roundStats.length - 1] || this.roundStats[this.roundStats.length - 1].completed) {
@@ -2241,37 +2243,48 @@
         return count;
       }
 
-	  usePowerup(player, defender) {
+	  usePowerup(player, defender, size) {
 	    const reductionFactor = 1 - (defender.tactics * 0.05);
 	    let effectValue;
 	    let originalValue;
 	    let reducedBy;
+	    let matchBonus = 1;
+	    let bonusMessage = "";
+
+	    // Apply match bonus for larger matches, same as in handleMatch
+	    if (size === 4) {
+	      matchBonus = 1.5; // 50% bonus for match-4
+	      bonusMessage = " (50% bonus for match-4)";
+	    } else if (size >= 5) {
+	      matchBonus = 2.0; // 100% bonus for match-5+
+	      bonusMessage = " (100% bonus for match-5+)";
+	    }
 
 	    if (player.powerup === "Heal") {
-	      originalValue = 10;
+	      originalValue = 10 * matchBonus;
 	      effectValue = Math.floor(originalValue * reductionFactor);
 	      reducedBy = originalValue - effectValue;
 	      player.health = Math.min(player.maxHealth, player.health + effectValue);
-	      log(`${player.name} uses Heal, restoring ${effectValue} HP${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	      log(`${player.name} uses Heal, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
 	    } else if (player.powerup === "Boost Attack") {
-	      originalValue = 10;
+	      originalValue = 10 * matchBonus;
 	      effectValue = Math.floor(originalValue * reductionFactor);
 	      reducedBy = originalValue - effectValue;
 	      player.boostActive = true;
 	      player.boostValue = effectValue;
-	      log(`${player.name} uses Power Surge, next attack +${effectValue} damage${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	      log(`${player.name} uses Power Surge, next attack +${effectValue} damage${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
 	    } else if (player.powerup === "Regenerate") {
-	      originalValue = 7;
+	      originalValue = 7 * matchBonus;
 	      effectValue = Math.floor(originalValue * reductionFactor);
 	      reducedBy = originalValue - effectValue;
 	      player.health = Math.min(player.maxHealth, player.health + effectValue);
-	      log(`${player.name} uses Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	      log(`${player.name} uses Regen, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
 	    } else if (player.powerup === "Minor Regen") {
-	      originalValue = 5;
+	      originalValue = 5 * matchBonus;
 	      effectValue = Math.floor(originalValue * reductionFactor);
 	      reducedBy = originalValue - effectValue;
 	      player.health = Math.min(player.maxHealth, player.health + effectValue);
-	      log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	      log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
 	    }
 	    this.updateHealth(player);
 	  }
