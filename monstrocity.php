@@ -714,6 +714,7 @@
 	      <option value="monstrocity">Monstrocity</option>
 		  <option value="muses">Muses of the Multiverse</option>
 	      <option value="darkula">Darkula - Island of Uncanny Neighbors</option>
+		  <option value="deadpophell">Dead Pop Hell (NSFW)</option>
 	    </select>
 	  </div>
 	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
