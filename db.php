@@ -6592,16 +6592,33 @@ function saveMonstrocityScore($conn, $user_id, $score, $level) {
       $stmt->execute();
       $stmt->close();
 
-      // Fixed syntax: Added missing => operator
-      return ['status' => 'success', 'message' => 'Score saved', 'attempts' => $new_attempts];
+      return [
+        'status' => 'success',
+        'message' => 'Score saved',
+        'level' => $level,
+        'score' => $score,
+        'attempts' => $new_attempts
+      ];
     }
 
     // Log the skip decision
     error_log("saveMonstrocityScore: should_save=false, no improvement in level or score");
-    return ['status' => 'skipped', 'message' => 'No improvement in level or score'];
+    return [
+      'status' => 'skipped',
+      'message' => 'No improvement in level or score',
+      'level' => $level,
+      'score' => $score,
+      'attempts' => $stored_attempts
+    ];
   } catch (Exception $e) {
     error_log("saveMonstrocityScore: error=" . $e->getMessage());
-    return ['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()];
+    return [
+      'status' => 'error',
+      'message' => 'Database error: ' . $e->getMessage(),
+      'level' => $level,
+      'score' => $score,
+      'attempts' => isset($stored_attempts) ? $stored_attempts : 0
+    ];
   }
 }
 

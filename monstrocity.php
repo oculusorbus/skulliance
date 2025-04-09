@@ -2194,7 +2194,7 @@
 	        }
 	      }
 
-	      await this.saveScoreToDatabase(this.currentLevel);
+	   	  await this.saveScoreToDatabase(this.currentLevel);
 
 	      if (this.currentLevel === opponentsConfig.length) {
 	        this.sounds.finalWin.play();
@@ -2225,9 +2225,7 @@
 	      level: completedLevel,
 	      score: this.grandTotalScore
 	    };
-
-	    console.log(`Saving grand total score to database: level=${data.level}, score=${data.score}`);
-
+	    console.log(`Saving score: level=${data.level}, score=${data.score}`);
 	    try {
 	      const response = await fetch('ajax/save-monstrocity-score.php', {
 	        method: 'POST',
@@ -2241,13 +2239,19 @@
 
 	      const result = await response.json();
 	      console.log('Save response:', result);
+
+	      // Always log the scores returned from PHP
+	      log(`Level ${result.level} Score: ${result.score.toFixed(2)}`);
+
+	      // Log whether the score was saved or not
 	      if (result.status === 'success') {
-	        log(`Saved: Level ${data.level}, Score ${data.score}`); // Remove toFixed(2)
+	        log(`Score Saved: Level ${result.level}, Score ${result.score.toFixed(2)}, Completions: ${result.attempts}`);
 	      } else {
-	        log(`Score not saved: ${result.message}`);
+	        log(`Score Not Saved: ${result.message}`);
 	      }
 	    } catch (error) {
 	      console.error('Error saving to database:', error);
+	      log(`Error saving score: ${error.message}`);
 	    }
 	  }
 
