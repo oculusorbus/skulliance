@@ -772,13 +772,13 @@
 	  <ul>
 	    <li>
 	      <div class="text-content">
-	        <strong>Match 4 Bonus: </strong>
+	        <strong>Match-4 Bonus: </strong>
 	        <span>50% bonus to damage and score for a single match of 4 tiles</span>
 	      </div>
 	    </li>
 	    <li>
 	      <div class="text-content">
-	        <strong>Match 5+ Bonus: </strong>
+	        <strong>Match-5+ Bonus: </strong>
 	        <span>100% bonus to damage and score for a single match of 5 or more tiles</span>
 	      </div>
 	    </li>
@@ -792,6 +792,40 @@
 	      <div class="text-content">
 	        <strong>Mega Multi-Match (9+ tiles): </strong>
 	        <span>200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades)</span>
+	      </div>
+	    </li>
+	  </ul>
+	  <br>
+	  <h3>Character Traits</h3>
+	  <ul>
+	    <li>
+	      <div class="text-content">
+	        <strong>Strength: </strong>
+	        <span>Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles)</span>
+	      </div>
+	    </li>
+	    <li>
+	      <div class="text-content">
+	        <strong>Speed: </strong>
+	        <span>Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength)</span>
+	      </div>
+	    </li>
+	    <li>
+	      <div class="text-content">
+	        <strong>Tactics: </strong>
+	        <span>Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%</span>
+	      </div>
+	    </li>
+	    <li>
+	      <div class="text-content">
+	        <strong>Size: </strong>
+	        <span>Large: +20% health, -2 Tactics (if Tactics > 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7)</span>
+	      </div>
+	    </li>
+	    <li>
+	      <div class="text-content">
+	        <strong>Type: </strong>
+	        <span>Base: 85 health; Leader: 100 health; Battle Damaged: 70 health</span>
 	      </div>
 	    </li>
 	  </ul>
