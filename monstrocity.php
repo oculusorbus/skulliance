@@ -84,7 +84,7 @@
     }
 
     .character {
-      width: 230px;
+      width: 265px;
       padding: 15px;
       background-color: #165777;
       border-radius: 5px;
@@ -540,7 +540,7 @@
 	  background-color: #da190b;
 	}
 
-    @media (max-width: 950px) {
+    @media (max-width: 1025px) {
       .game-container {
         width: 100%;
         min-width: 320px;
