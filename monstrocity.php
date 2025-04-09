@@ -333,20 +333,7 @@
       margin: 0 0 10px;
     }
 
-	#battle-log {
-	  height: 300px; /* Fixed height to ensure it doesn't grow indefinitely */
-	  overflow-y: auto; /* Enable vertical scrolling */
-	  border: 1px solid #ccc; /* Optional: Add a border for visibility */
-	  padding: 10px;
-	  background-color: #f9f9f9; /* Optional: Light background for readability */
-	  font-family: Arial, sans-serif;
-	  font-size: 14px;
-	  line-height: 1.5;
-	}
-
-	#battle-log div {
-	  margin-bottom: 5px; /* Space between log entries */
-	}
+    #battle-log { list-style: none; padding: 0; }
     #battle-log li { margin: 5px 0; opacity: 0; animation: fadeIn 0.5s forwards; }
     @keyframes fadeIn { to { opacity: 1; } }
 
@@ -2362,17 +2349,12 @@
       return arr[Math.floor(Math.random() * arr.length)];
     }
 
-	function log(message) {
-	  const battleLog = document.getElementById("battle-log");
-	  const logEntry = document.createElement("div");
-	  logEntry.textContent = message;
-	  battleLog.insertBefore(logEntry, battleLog.firstChild);
-	  if (battleLog.children.length > 50) { // Increased from 10 to 50
-	    battleLog.removeChild(battleLog.lastChild);
-	  }
-	  // Ensure the log scrolls to the top to show the latest entry
-	  battleLog.scrollTop = 0;
-	}
+    function log(message) {
+      const li = document.createElement("li");
+      li.textContent = message;
+      battleLog.insertBefore(li, battleLog.firstChild);
+      if (battleLog.children.length > 10) battleLog.removeChild(battleLog.lastChild);
+    }
 
     const turnIndicator = document.getElementById("turn-indicator");
     const p1Name = document.getElementById("p1-name");
