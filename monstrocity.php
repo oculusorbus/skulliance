@@ -389,6 +389,7 @@
 	  display: inline-block;
 	  border: 1px solid #555;
 	  padding: 3px;
+	  margin-top: 3px;
 	}
 
 	/* Nested flex container for the text content */
@@ -770,13 +771,13 @@
 	  <ul>
 	    <li>
 	      <div class="text-content">
-	        <strong>Match-4 Bonus: </strong>
+	        <strong>Match 4 Bonus: </strong>
 	        <span>50% bonus to damage and score for a single match of 4 tiles</span>
 	      </div>
 	    </li>
 	    <li>
 	      <div class="text-content">
-	        <strong>Match-5+ Bonus: </strong>
+	        <strong>Match 5+ Bonus: </strong>
 	        <span>100% bonus to damage and score for a single match of 5 or more tiles</span>
 	      </div>
 	    </li>
