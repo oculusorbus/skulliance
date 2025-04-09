@@ -351,42 +351,54 @@
 
     button:hover { background-color: #54d4ff; }
 
-    .legend {
-      margin-top: 20px;
-      text-align: left;
-      background-color: #165777;
-      padding: 10px;
-      border-radius: 5px;
-      position: relative;
-      top: -225px;
-      border: 1px solid black;
-    }
+	.legend {
+	  margin-top: 20px;
+	  text-align: left;
+	  background-color: #165777;
+	  padding: 10px;
+	  border-radius: 5px;
+	  position: relative;
+	  top: -225px;
+	  border: 1px solid black;
+	}
 
-    .legend h3 {
-      margin: 0 0 10px;
-      color: #fff;
-    }
+	.legend h3 {
+	  margin: 0 0 10px;
+	  color: #fff;
+	}
 
-    .legend ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+	.legend ul {
+	  list-style: none;
+	  padding: 0;
+	  margin: 0;
+	}
 
-    .legend li {
-      display: flex;
-      align-items: center;
-      margin: 5px 0;
-      font-size: 0.9em;
-    }
+	.legend li {
+	  display: flex; /* Use flexbox for better alignment */
+	  align-items: flex-start; /* Align items at the top */
+	  margin: 5px 0;
+	  font-size: 0.9em;
+	  line-height: 1.4; /* Improve readability with better line spacing */
+	}
 
-    .legend-tile {
-      width: 20px;
-      height: 20px;
-      margin-right: 10px;
-      display: inline-block;
-      border: 1px solid #555;
-    }
+	.legend-tile {
+	  width: 20px;
+	  height: 20px;
+	  flex-shrink: 0; /* Prevent the tile from shrinking */
+	  margin-right: 10px; /* Space between tile and text */
+	  display: inline-block;
+	  border: 1px solid #555;
+	}
+
+	/* Ensure the text wraps naturally within the remaining space */
+	.legend li strong {
+	  flex-shrink: 0; /* Prevent the bold text from shrinking */
+	  margin-right: 5px; /* Small space after the bold text */
+	}
+
+	.legend li span:not(.legend-tile) {
+	  flex: 1; /* Allow the text to take up the remaining space and wrap naturally */
+	}
 
     .legend-tile.first-attack { background-color: #4CAF50; }
     .legend-tile.second-attack { background-color: #2196F3; }
@@ -612,14 +624,18 @@
         border: none;
       }
 
-      .legend {
-        font-size: 0.8em;
-      }
+	  .legend {
+	    font-size: 0.8em;
+	  }
 
-      .legend-tile {
-        width: 15px;
-        height: 15px;
-      }
+	  .legend-tile {
+	    width: 15px;
+	    height: 15px;
+	  }
+
+	  .legend li {
+	    line-height: 1.3; /* Adjust line spacing for smaller screens */
+	  }
       
       #game-over-container {
         top: -1150px;
@@ -682,27 +698,71 @@
 	<div class="legend">
 	  <h3>Legend</h3>
 	  <ul>
-	    <li><span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span><strong>First Attack (Slash): </strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-	    <li><span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span><strong>Second Attack (Bite): </strong> Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-	    <li><span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span><strong>Special Attack (Shadow Strike): </strong> Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</li>
-	    <li><span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span><strong>Power-Up: </strong> Activates a random powerup (see below)</li>
-	    <li><span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span><strong>Last Stand: </strong> Deals damage and mitigates 5 damage on the next attack received</li>
+	    <li>
+	      <span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span>
+	      <strong>First Attack (Slash): </strong>
+	      <span>Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	    </li>
+	    <li>
+	      <span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span>
+	      <strong>Second Attack (Bite): </strong>
+	      <span>Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	    </li>
+	    <li>
+	      <span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span>
+	      <strong>Special Attack (Shadow Strike): </strong>
+	      <span>Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	    </li>
+	    <li>
+	      <span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span>
+	      <strong>Power-Up: </strong>
+	      <span>Activates a random powerup (see below)</span>
+	    </li>
+	    <li>
+	      <span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span>
+	      <strong>Last Stand: </strong>
+	      <span>Deals damage and mitigates 5 damage on the next attack received</span>
+	    </li>
 	  </ul>
 	  <br>
 	  <h3>Power-Up Effects</h3>
 	  <ul>
-	    <li><strong>Heal (Bloody): </strong> Restores 10 HP (reduced by enemy tactics)</li>
-	    <li><strong>Boost Attack (Cardano): </strong> Adds +10 damage to the next attack (reduced by enemy tactics)</li>
-	    <li><strong>Regenerate (ADA): </strong> Restores 7 HP (reduced by enemy tactics)</li>
-	    <li><strong>Minor Regen (None): </strong> Restores 5 HP (reduced by enemy tactics)</li>
+	    <li>
+	      <strong>Heal (Bloody): </strong>
+	      <span>Restores 10 HP (reduced by enemy tactics)</span>
+	    </li>
+	    <li>
+	      <strong>Boost Attack (Cardano): </strong>
+	      <span>Adds +10 damage to the next attack (reduced by enemy tactics)</span>
+	    </li>
+	    <li>
+	      <strong>Regenerate (ADA): </strong>
+	      <span>Restores 7 HP (reduced by enemy tactics)</span>
+	    </li>
+	    <li>
+	      <strong>Minor Regen (None): </strong>
+	      <span>Restores 5 HP (reduced by enemy tactics)</span>
+	    </li>
 	  </ul>
 	  <br>
 	  <h3>Combo Bonuses</h3>
 	  <ul>
-	    <li><strong>Match-4 Bonus: </strong> 50% bonus to damage and score for a single match of 4 tiles</li>
-	    <li><strong>Match-5+ Bonus: </strong> 100% bonus to damage and score for a single match of 5 or more tiles</li>
-	    <li><strong>Multi-Match (6–8 tiles): </strong> 20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades)</li>
-	    <li><strong>Mega Multi-Match (9+ tiles): </strong> 200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades)</li>
+	    <li>
+	      <strong>Match-4 Bonus: </strong>
+	      <span>50% bonus to damage and score for a single match of 4 tiles</span>
+	    </li>
+	    <li>
+	      <strong>Match-5+ Bonus: </strong>
+	      <span>100% bonus to damage and score for a single match of 5 or more tiles</span>
+	    </li>
+	    <li>
+	      <strong>Multi-Match (6–8 tiles): </strong>
+	      <span>20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades)</span>
+	    </li>
+	    <li>
+	      <strong>Mega Multi-Match (9+ tiles): </strong>
+	      <span>200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades)</span>
+	    </li>
 	  </ul>
 	</div>
     <div id="game-over-container">
