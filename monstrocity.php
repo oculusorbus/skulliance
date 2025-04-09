@@ -387,9 +387,10 @@
 	  flex-shrink: 0; /* Prevent the tile from shrinking */
 	  margin-right: 10px; /* Space between tile and text */
 	  display: inline-block;
-	  border: 1px solid #555;
+	  border: 1px solid black;
 	  padding: 3px;
 	  margin-top: 3px;
+	  box-shadow: 0px 2px 5px black;
 	}
 
 	/* Nested flex container for the text content */
