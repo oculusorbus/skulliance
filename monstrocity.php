@@ -388,6 +388,7 @@
 	  margin-right: 10px; /* Space between tile and text */
 	  display: inline-block;
 	  border: 1px solid #555;
+	  padding: 3px;
 	}
 
 	/* Nested flex container for the text content */
