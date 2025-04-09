@@ -374,7 +374,7 @@
 	}
 
 	.legend li {
-	  display: flex; /* Use flexbox for better alignment */
+	  display: flex; /* Main flex container for the list item */
 	  align-items: flex-start; /* Align items at the top */
 	  margin: 5px 0;
 	  font-size: 0.9em;
@@ -390,14 +390,16 @@
 	  border: 1px solid #555;
 	}
 
-	/* Ensure the text wraps naturally within the remaining space */
-	.legend li strong {
-	  flex-shrink: 0; /* Prevent the bold text from shrinking */
-	  margin-right: 5px; /* Small space after the bold text */
+	/* Nested flex container for the text content */
+	.legend li .text-content {
+	  display: flex;
+	  flex-direction: column; /* Stack the strong and span vertically */
+	  flex: 1; /* Take up the remaining space */
 	}
 
-	.legend li span:not(.legend-tile) {
-	  flex: 1; /* Allow the text to take up the remaining space and wrap naturally */
+	/* Ensure the description text wraps naturally */
+	.legend li .text-content span {
+	  display: inline; /* Allow natural text wrapping */
 	}
 
     .legend-tile.first-attack { background-color: #4CAF50; }
@@ -700,68 +702,94 @@
 	  <ul>
 	    <li>
 	      <span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span>
-	      <strong>First Attack (Slash): </strong>
-	      <span>Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	      <div class="text-content">
+	        <strong>First Attack (Slash): </strong>
+	        <span>Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	      </div>
 	    </li>
 	    <li>
 	      <span class="legend-tile second-attack"><img src="https://www.skulliance.io/staking/icons/second-attack.png" alt="Second Attack"></span>
-	      <strong>Second Attack (Bite): </strong>
-	      <span>Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	      <div class="text-content">
+	        <strong>Second Attack (Bite): </strong>
+	        <span>Deals damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	      </div>
 	    </li>
 	    <li>
 	      <span class="legend-tile special-attack"><img src="https://www.skulliance.io/staking/icons/special-attack.png" alt="Special Attack"></span>
-	      <strong>Special Attack (Shadow Strike): </strong>
-	      <span>Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	      <div class="text-content">
+	        <strong>Special Attack (Shadow Strike): </strong>
+	        <span>Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles)</span>
+	      </div>
 	    </li>
 	    <li>
 	      <span class="legend-tile power-up"><img src="https://www.skulliance.io/staking/icons/power-up.png" alt="Power Up"></span>
-	      <strong>Power-Up: </strong>
-	      <span>Activates a random powerup (see below)</span>
+	      <div class="text-content">
+	        <strong>Power-Up: </strong>
+	        <span>Activates a random powerup (see below)</span>
+	      </div>
 	    </li>
 	    <li>
 	      <span class="legend-tile last-stand"><img src="https://www.skulliance.io/staking/icons/last-stand.png" alt="Last Stand"></span>
-	      <strong>Last Stand: </strong>
-	      <span>Deals damage and mitigates 5 damage on the next attack received</span>
+	      <div class="text-content">
+	        <strong>Last Stand: </strong>
+	        <span>Deals damage and mitigates 5 damage on the next attack received</span>
+	      </div>
 	    </li>
 	  </ul>
 	  <br>
 	  <h3>Power-Up Effects</h3>
 	  <ul>
 	    <li>
-	      <strong>Heal (Bloody): </strong>
-	      <span>Restores 10 HP (reduced by enemy tactics)</span>
+	      <div class="text-content">
+	        <strong>Heal (Bloody): </strong>
+	        <span>Restores 10 HP (reduced by enemy tactics)</span>
+	      </div>
 	    </li>
 	    <li>
-	      <strong>Boost Attack (Cardano): </strong>
-	      <span>Adds +10 damage to the next attack (reduced by enemy tactics)</span>
+	      <div class="text-content">
+	        <strong>Boost Attack (Cardano): </strong>
+	        <span>Adds +10 damage to the next attack (reduced by enemy tactics)</span>
+	      </div>
 	    </li>
 	    <li>
-	      <strong>Regenerate (ADA): </strong>
-	      <span>Restores 7 HP (reduced by enemy tactics)</span>
+	      <div class="text-content">
+	        <strong>Regenerate (ADA): </strong>
+	        <span>Restores 7 HP (reduced by enemy tactics)</span>
+	      </div>
 	    </li>
 	    <li>
-	      <strong>Minor Regen (None): </strong>
-	      <span>Restores 5 HP (reduced by enemy tactics)</span>
+	      <div class="text-content">
+	        <strong>Minor Regen (None): </strong>
+	        <span>Restores 5 HP (reduced by enemy tactics)</span>
+	      </div>
 	    </li>
 	  </ul>
 	  <br>
 	  <h3>Combo Bonuses</h3>
 	  <ul>
 	    <li>
-	      <strong>Match-4 Bonus: </strong>
-	      <span>50% bonus to damage and score for a single match of 4 tiles</span>
+	      <div class="text-content">
+	        <strong>Match-4 Bonus: </strong>
+	        <span>50% bonus to damage and score for a single match of 4 tiles</span>
+	      </div>
 	    </li>
 	    <li>
-	      <strong>Match-5+ Bonus: </strong>
-	      <span>100% bonus to damage and score for a single match of 5 or more tiles</span>
+	      <div class="text-content">
+	        <strong>Match-5+ Bonus: </strong>
+	        <span>100% bonus to damage and score for a single match of 5 or more tiles</span>
+	      </div>
 	    </li>
 	    <li>
-	      <strong>Multi-Match (6–8 tiles): </strong>
-	      <span>20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades)</span>
+	      <div class="text-content">
+	        <strong>Multi-Match (6–8 tiles): </strong>
+	        <span>20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades)</span>
+	      </div>
 	    </li>
 	    <li>
-	      <strong>Mega Multi-Match (9+ tiles): </strong>
-	      <span>200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades)</span>
+	      <div class="text-content">
+	        <strong>Mega Multi-Match (9+ tiles): </strong>
+	        <span>200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades)</span>
+	      </div>
 	    </li>
 	  </ul>
 	</div>
