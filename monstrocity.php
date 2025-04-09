@@ -1699,14 +1699,16 @@
 	      return false;
 	    }
 
+	    const isInitialMove = selectedX !== null && selectedY !== null;
+	    console.log(`Is initial move: ${isInitialMove}`);
+
 	    const matches = this.checkMatches();
 	    console.log(`Found ${matches.length} matches:`, matches);
 
-	    // Calculate total tiles matched for multi-match bonus
-	    const isPlayerMove = selectedX !== null && selectedY !== null;
+	    // Calculate total tiles matched for multi-match bonus (only for initial move)
 	    let comboBonus = 1;
 	    let comboMessage = "";
-	    if (isPlayerMove && matches.length > 1) { // Multi-match requires more than one match
+	    if (isInitialMove && matches.length > 1) { // Multi-match requires more than one match
 	      const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
 	      console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
 	      if (totalTilesMatched >= 6 && totalTilesMatched <= 8) {
@@ -1730,7 +1732,7 @@
 	        matches.forEach(match => {
 	          console.log("Processing match:", match);
 	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
-	          const damage = this.handleMatch(match);
+	          const damage = this.handleMatch(match, isInitialMove);
 	          console.log(`Damage from match: ${damage}`);
 	          if (this.gameOver) {
 	            console.log("Game over detected during match processing, stopping further processing");
@@ -1787,7 +1789,7 @@
 	            this.sounds.match.play();
 	            console.log("Cascading tiles");
 
-	            // Apply combo bonus to round points
+	            // Apply combo bonus to round points (only for initial move)
 	            if (comboBonus > 1 && this.roundStats.length > 0) {
 	              const currentRound = this.roundStats[this.roundStats.length - 1];
 	              const originalPoints = currentRound.points;
@@ -1868,43 +1870,39 @@
 	        }
 	      }
 
-	      // Step 2: Group matches into non-overlapping sets
+	      // Step 2: Merge overlapping matches of the same tile type
 	      const groupedMatches = [];
-	      const usedTiles = new Set();
+	      const processedMatches = new Set();
 
-	      straightMatches.forEach(match => {
-	        // Check if this match overlaps with any already used tiles
-	        const overlaps = [...match.coordinates].some(coord => usedTiles.has(coord));
-	        if (!overlaps) {
-	          // This match doesn't overlap, add it as a new group
-	          groupedMatches.push(match);
-	          match.coordinates.forEach(coord => usedTiles.add(coord));
-	        } else {
-	          // Find the group it overlaps with and merge (prioritize the larger match)
-	          const overlappingGroup = groupedMatches.find(group =>
-	            [...match.coordinates].some(coord => group.coordinates.has(coord))
-	          );
-	          if (overlappingGroup) {
-	            if (match.coordinates.size > overlappingGroup.coordinates.size) {
-	              // Remove the smaller match and add the larger one
-	              groupedMatches.splice(groupedMatches.indexOf(overlappingGroup), 1);
-	              usedTiles.clear();
-	              groupedMatches.forEach(g => g.coordinates.forEach(coord => usedTiles.add(coord)));
-	              groupedMatches.push(match);
-	              match.coordinates.forEach(coord => usedTiles.add(coord));
+	      straightMatches.forEach((match, index) => {
+	        if (processedMatches.has(index)) return;
+
+	        const currentGroup = { type: match.type, coordinates: new Set(match.coordinates) };
+	        processedMatches.add(index);
+
+	        // Look for other matches that overlap and are of the same tile type
+	        for (let i = 0; i < straightMatches.length; i++) {
+	          if (processedMatches.has(i)) continue;
+
+	          const otherMatch = straightMatches[i];
+	          if (otherMatch.type === currentGroup.type) {
+	            const overlaps = [...otherMatch.coordinates].some(coord => currentGroup.coordinates.has(coord));
+	            if (overlaps) {
+	              otherMatch.coordinates.forEach(coord => currentGroup.coordinates.add(coord));
+	              processedMatches.add(i);
 	            }
 	          }
 	        }
-	      });
 
-	      // Step 3: Process each group as a separate match
-	      groupedMatches.forEach(match => {
-	        matches.push({
-	          type: match.type,
-	          coordinates: match.coordinates,
-	          totalTiles: match.coordinates.size
+	        groupedMatches.push({
+	          type: currentGroup.type,
+	          coordinates: currentGroup.coordinates,
+	          totalTiles: currentGroup.coordinates.size
 	        });
 	      });
+
+	      // Step 3: Add grouped matches to the final list
+	      matches.push(...groupedMatches);
 
 	      console.log("checkMatches completed, returning matches:", matches);
 	      return matches;
@@ -1914,12 +1912,12 @@
 	    }
 	  }
 	  
-	  handleMatch(match) {
-	    console.log("handleMatch started, match:", match);
+	  handleMatch(match, isInitialMove = true) {
+	    console.log("handleMatch started, match:", match, "isInitialMove:", isInitialMove);
 	    const attacker = this.currentTurn;
 	    const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
 	    const type = match.type;
-	    const size = match.totalTiles; // Use totalTiles instead of coordinates.size
+	    const size = match.totalTiles;
 	    let damage = 0;
 
 	    console.log(`${defender.name} health before match: ${defender.health}`);
@@ -1978,7 +1976,12 @@
 	        attacker.lastStandActive = true;
 	        log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
 	      } else {
-	        log(`${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`);
+	        const attackMessage = `${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`;
+	        if (isInitialMove) {
+	          log(attackMessage);
+	        } else {
+	          log(`Cascade: ${attackMessage}`);
+	        }
 	      }
 
 	      defender.health = Math.max(0, defender.health - damage);
@@ -1998,6 +2001,7 @@
 	      }
 	    }
 
+	    // Add points and increment matches for both initial and cascading matches
 	    if (!this.roundStats[this.roundStats.length - 1] || this.roundStats[this.roundStats.length - 1].completed) {
 	      this.roundStats.push({
 	        points: 0,
