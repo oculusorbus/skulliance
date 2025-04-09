@@ -705,6 +705,13 @@
 	    <li><strong>Mega Multi-Match (9+ tiles): </strong> 200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades)</li>
 	  </ul>
 	</div>
+    <div id="game-over-container">
+      <div id="game-over"></div>
+      <div id="game-over-buttons">
+        <button id="try-again"></button>
+		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
+      </div>
+    </div>
 
   </div>
     <div id="character-select-container">
