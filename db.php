@@ -6566,11 +6566,20 @@ function saveMonstrocityScore($conn, $user_id, $score, $level) {
     }
     $stmt->close();
 
+    // Log the comparison for debugging
+    error_log("saveMonstrocityScore: user_id=$user_id, level=$level, score=$score, stored_level=$stored_level, stored_score=$stored_score, stored_attempts=$stored_attempts");
+
+    // Save if: (level is higher) OR (level is same AND score is higher)
     $should_save = ($level > $stored_level) || ($level == $stored_level && $score > $stored_score);
 
     if ($should_save) {
-      $new_attempts = $stored_attempts;
+      // Reset attempts if level is less than 28 and was previously higher (indicating a restart)
+      $new_attempts = $stored_level > $level && $level < 28 ? 0 : $stored_attempts;
+      // Increment attempts only on level 28 completion
       if ($level == 28) $new_attempts += 1;
+
+      // Log the decision
+      error_log("saveMonstrocityScore: should_save=true, new_attempts=$new_attempts");
 
       // Update if exists, insert if not
       if ($has_result) {
@@ -6583,10 +6592,14 @@ function saveMonstrocityScore($conn, $user_id, $score, $level) {
       $stmt->execute();
       $stmt->close();
 
-      return ['status' => 'success', 'message' => 'Score saved', 'attempts' => $new_attempts];
+      return ['status' => 'success', 'message' 'Score saved', 'attempts' => $new_attempts];
     }
+
+    // Log the skip decision
+    error_log("saveMonstrocityScore: should_save=false, no improvement in level or score");
     return ['status' => 'skipped', 'message' => 'No improvement in level or score'];
   } catch (Exception $e) {
+    error_log("saveMonstrocityScore: error=" . $e->getMessage());
     return ['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()];
   }
 }
