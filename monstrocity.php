@@ -2052,6 +2052,7 @@
 	    const type = match.type;
 	    const size = match.totalTiles;
 	    let damage = 0;
+	    let originalDamage = 0; // Store the original damage before mitigation
 
 	    console.log(`${defender.name} health before match: ${defender.health}`);
 
@@ -2091,6 +2092,9 @@
 	        console.log(`Boost applied, damage: ${damage}`);
 	      }
 
+	      // Store the original damage before mitigation
+	      originalDamage = damage;
+
 	      const tacticsChance = defender.tactics * 10;
 	      if (Math.random() * 100 < tacticsChance) {
 	        damage = Math.floor(damage / 2);
@@ -2098,23 +2102,30 @@
 	        console.log(`Tactics applied, damage reduced to: ${damage}`);
 	      }
 
+	      // Apply Last Stand mitigation and log detailed message
+	      let mitigatedAmount = 0;
 	      if (defender.lastStandActive) {
-	        damage = Math.max(0, damage - 5);
+	        mitigatedAmount = Math.min(damage, 5); // Mitigate up to 5 damage
+	        damage = Math.max(0, damage - mitigatedAmount);
 	        defender.lastStandActive = false;
-	        log(`${defender.name}'s Last Stand mitigates 5 damage!`);
-	        console.log(`Last Stand applied, damage: ${damage}`);
+	        console.log(`Last Stand applied, mitigated ${mitigatedAmount}, damage: ${damage}`);
 	      }
 
-	      if (type === "last-stand") {
-	        attacker.lastStandActive = true;
-	        log(`${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`);
+	      // Log the attack with mitigation details
+	      const attackType = type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike";
+	      let attackMessage;
+	      if (mitigatedAmount > 0) {
+	        attackMessage = `${attacker.name} uses ${attackType} on ${defender.name} for ${originalDamage} damage, but ${defender.name}'s Last Stand mitigates ${mitigatedAmount} damage, resulting in ${damage} damage!`;
+	      } else if (type === "last-stand") {
+	        attackMessage = `${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`;
 	      } else {
-	        const attackMessage = `${attacker.name} uses ${type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike"} on ${defender.name} for ${damage} damage!`;
-	        if (isInitialMove) {
-	          log(attackMessage);
-	        } else {
-	          log(`Cascade: ${attackMessage}`);
-	        }
+	        attackMessage = `${attacker.name} uses ${attackType} on ${defender.name} for ${damage} damage!`;
+	      }
+
+	      if (isInitialMove) {
+	        log(attackMessage);
+	      } else {
+	        log(`Cascade: ${attackMessage}`);
 	      }
 
 	      defender.health = Math.max(0, defender.health - damage);
