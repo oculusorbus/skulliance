@@ -239,7 +239,7 @@
 
     #game-over-container {
       position: relative;
-      top: -945px;
+      top: -1625px;
       left: 50%;
       width: 260px;
       max-width: 260px;
