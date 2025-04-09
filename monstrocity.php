@@ -1702,13 +1702,20 @@
 	    const matches = this.checkMatches();
 	    console.log(`Found ${matches.length} matches:`, matches);
 
-	    // Calculate total tiles matched, but only play multiMatch sound for player's initial move
+	    // Calculate total tiles matched for multi-match bonus
 	    const isPlayerMove = selectedX !== null && selectedY !== null;
-	    if (isPlayerMove && matches.length > 1) { // Only check if multiple matches and from player's move
+	    let comboBonus = 1;
+	    let comboMessage = "";
+	    if (isPlayerMove && matches.length > 1) { // Multi-match requires more than one match
 	      const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
 	      console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
-	      if (totalTilesMatched === 6 || totalTilesMatched === 9) {
-	        console.log(`Playing multiMatch sound for ${totalTilesMatched} tiles matched`);
+	      if (totalTilesMatched >= 6 && totalTilesMatched <= 8) {
+	        comboBonus = 1.2; // 20% bonus for multi-match 6-8 tiles
+	        comboMessage = `Multi-Match! ${totalTilesMatched} tiles matched for a 20% bonus!`;
+	        this.sounds.multiMatch.play();
+	      } else if (totalTilesMatched >= 9) {
+	        comboBonus = 3.0; // 200% bonus for multi-match 9+ tiles
+	        comboMessage = `Mega Multi-Match! ${totalTilesMatched} tiles matched for a 200% bonus!`;
 	        this.sounds.multiMatch.play();
 	      }
 	    }
@@ -1779,6 +1786,18 @@
 	            });
 	            this.sounds.match.play();
 	            console.log("Cascading tiles");
+
+	            // Apply combo bonus to round points
+	            if (comboBonus > 1 && this.roundStats.length > 0) {
+	              const currentRound = this.roundStats[this.roundStats.length - 1];
+	              const originalPoints = currentRound.points;
+	              currentRound.points = Math.round(currentRound.points * comboBonus);
+	              if (comboMessage) {
+	                log(comboMessage);
+	                log(`Round points increased from ${originalPoints} to ${currentRound.points} after multi-match bonus!`);
+	              }
+	            }
+
 	            this.cascadeTiles(() => {
 	              if (this.gameOver) {
 	                console.log("Game over, skipping endTurn");
@@ -1849,25 +1868,43 @@
 	        }
 	      }
 
-	      // Step 2: Group matches by tile type and calculate total unique tiles
-	      const matchesByType = {};
+	      // Step 2: Group matches into non-overlapping sets
+	      const groupedMatches = [];
+	      const usedTiles = new Set();
+
 	      straightMatches.forEach(match => {
-	        if (!matchesByType[match.type]) {
-	          matchesByType[match.type] = [];
+	        // Check if this match overlaps with any already used tiles
+	        const overlaps = [...match.coordinates].some(coord => usedTiles.has(coord));
+	        if (!overlaps) {
+	          // This match doesn't overlap, add it as a new group
+	          groupedMatches.push(match);
+	          match.coordinates.forEach(coord => usedTiles.add(coord));
+	        } else {
+	          // Find the group it overlaps with and merge (prioritize the larger match)
+	          const overlappingGroup = groupedMatches.find(group =>
+	            [...match.coordinates].some(coord => group.coordinates.has(coord))
+	          );
+	          if (overlappingGroup) {
+	            if (match.coordinates.size > overlappingGroup.coordinates.size) {
+	              // Remove the smaller match and add the larger one
+	              groupedMatches.splice(groupedMatches.indexOf(overlappingGroup), 1);
+	              usedTiles.clear();
+	              groupedMatches.forEach(g => g.coordinates.forEach(coord => usedTiles.add(coord)));
+	              groupedMatches.push(match);
+	              match.coordinates.forEach(coord => usedTiles.add(coord));
+	            }
+	          }
 	        }
-	        matchesByType[match.type].push(match.coordinates);
 	      });
 
-	      // Step 3: For each tile type, calculate the total unique tiles matched
-	      for (const tileType in matchesByType) {
-	        const matchSets = matchesByType[tileType];
-	        const allTiles = new Set();
-	        matchSets.forEach(matchCoordinates => {
-	          matchCoordinates.forEach(coord => allTiles.add(coord));
+	      // Step 3: Process each group as a separate match
+	      groupedMatches.forEach(match => {
+	        matches.push({
+	          type: match.type,
+	          coordinates: match.coordinates,
+	          totalTiles: match.coordinates.size
 	        });
-	        console.log(`Total unique tiles matched for type ${tileType}:`, [...allTiles], `count: ${allTiles.size}`);
-	        matches.push({ type: tileType, coordinates: allTiles, totalTiles: allTiles.size });
-	      }
+	      });
 
 	      console.log("checkMatches completed, returning matches:", matches);
 	      return matches;
@@ -1887,19 +1924,31 @@
 
 	    console.log(`${defender.name} health before match: ${defender.health}`);
 
+	    // Log and play sounds for larger matches
 	    if (size == 4) {
 	      this.sounds.powerGem.play();
 	      log(`${attacker.name} created a match of ${size} tiles!`);
 	    }
-
 	    if (size >= 5) {
 	      this.sounds.hyperCube.play();
 	      log(`${attacker.name} created a match of ${size} tiles!`);
 	    }
 
 	    if (type === "first-attack" || type === "second-attack" || type === "special-attack" || type === "last-stand") {
+	      // Base damage scaling
 	      damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
-	      console.log(`Base damage calculated: ${damage}`);
+
+	      // Apply a scoring bonus multiplier for larger matches
+	      let matchBonus = 1;
+	      if (size === 4) {
+	        matchBonus = 1.5; // 50% bonus for match-4
+	      } else if (size >= 5) {
+	        matchBonus = 2.0; // 100% bonus for match-5+
+	      }
+	      damage = Math.round(damage * matchBonus);
+
+	      console.log(`Base damage: ${attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4)}, Match bonus: ${matchBonus}, Total damage: ${damage}`);
+
 	      if (type === "special-attack") {
 	        damage = Math.round(damage * 1.2);
 	        console.log(`Special attack multiplier applied, damage: ${damage}`);
