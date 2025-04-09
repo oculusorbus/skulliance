@@ -315,19 +315,19 @@
       100% { transform: scale(1); opacity: 0.8; }
     }
 
-    .log {
-      margin-top: 20px;
-      text-align: left;
-      background-color: #165777;
-      padding: 10px;
-      border-radius: 5px;
-      max-height: 150px;
-      min-height: 150px;
-      overflow-y: auto;
-      position: relative;
-      top: -225px;
-      border: 1px solid black;
-    }
+	.log {
+	  margin-top: 20px;
+	  text-align: left;
+	  background-color: #165777;
+	  padding: 10px;
+	  border-radius: 5px;
+	  max-height: 300px; /* Increased from 150px to 300px */
+	  min-height: 150px;
+	  overflow-y: auto;
+	  position: relative;
+	  top: -225px;
+	  border: 1px solid black;
+	}
     
     .log h3 {
       margin: 0 0 10px;
@@ -2349,12 +2349,16 @@
       return arr[Math.floor(Math.random() * arr.length)];
     }
 
-    function log(message) {
-      const li = document.createElement("li");
-      li.textContent = message;
-      battleLog.insertBefore(li, battleLog.firstChild);
-      if (battleLog.children.length > 10) battleLog.removeChild(battleLog.lastChild);
-    }
+	function log(message) {
+	  const battleLog = document.getElementById("battle-log");
+	  const li = document.createElement("li");
+	  li.textContent = message;
+	  battleLog.insertBefore(li, battleLog.firstChild);
+	  if (battleLog.children.length > 50) { // Increased from 10 to 50
+	    battleLog.removeChild(battleLog.lastChild);
+	  }
+	  battleLog.scrollTop = 0; // Scroll to the top to show the latest entry
+	}
 
     const turnIndicator = document.getElementById("turn-indicator");
     const p1Name = document.getElementById("p1-name");
