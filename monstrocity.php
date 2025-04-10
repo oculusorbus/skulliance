@@ -845,14 +845,14 @@
 	  <div>
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
-	      <option value="monstrocity">Monstrocity</option>
-		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
-		  <option value="bungking">Bungking - Yume</option>
-		  <option value="omen">Nemonium - Omen Legends</option>
-  		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
-		  <option value="muses">Muses of the Multiverse</option>
+	      <option value="monstrocity">Monstrocity - Default Game</option>
+  		  <option value="bungking">Bungking - Yume</option>
 	      <option value="darkula">Darkula - Island of Uncanny Neighbors</option>
-		  <option value="deadpophell">Dead Pop Hell</option>
+		  <option value="deadpophell">Dead Pop Hell - NSFW</option>
+  		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
+		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
+		  <option value="muses">Muses of the Multiverse</option>
+		  <option value="omen">Nemonium - Omen Legends</option>
 	    </select>
 	  </div>
 	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
