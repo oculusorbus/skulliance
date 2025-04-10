@@ -6460,14 +6460,14 @@ function saveSwapScore($conn, $score){
 		$current_score = getSwapScore($conn);
 		if(isset($current_score)){
 			if($score > $current_score){
-				$sql = "UPDATE scores SET score = '".$score."', attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
+				$sql = "UPDATE scores SET score = '".$score."', attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0' AND project_id = '0'";
 				if ($conn->query($sql) === TRUE) {
 					echo "high";
 				} else {
 					echo "Error: " . $sql . "<br>" . $conn->error;
 				}
 			}else{
-				$sql = "UPDATE scores SET attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0'";
+				$sql = "UPDATE scores SET attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0' AND project_id = '0'";
 				if ($conn->query($sql) === TRUE) {
 					echo "low";
 				} else {
@@ -6476,8 +6476,8 @@ function saveSwapScore($conn, $score){
 			}
 		}else{
 			// Create new score
-			$sql = "INSERT INTO scores (user_id, score, attempts, reward) 
-			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '1', '0')";
+			$sql = "INSERT INTO scores (user_id, score, attempts, reward, project_id) 
+			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '1', '0', '0')";
 
 			if ($conn->query($sql) === TRUE) {
 				echo "new";
