@@ -223,12 +223,39 @@ include 'header.php';
          this.isGrandFinale = false;
 
          this.allIcons = [
+             'https://www.skulliance.io/staking/icons/star.png',
+             'https://www.skulliance.io/staking/icons/dread.png',
+             'https://www.skulliance.io/staking/icons/hype.png',
+             'https://www.skulliance.io/staking/icons/sinder.png',
+             'https://www.skulliance.io/staking/icons/cyber.png',
+             'https://www.skulliance.io/staking/icons/crypt.png',
              'https://www.skulliance.io/staking/icons/dark.png',
+             'https://www.skulliance.io/staking/icons/maxi.png',
+             'https://www.skulliance.io/staking/icons/dank.png',
+             'https://www.skulliance.io/staking/icons/mipa.png',
+             'https://www.skulliance.io/staking/icons/ustra.png',
+             'https://www.skulliance.io/staking/icons/nat.png',
              'https://www.skulliance.io/staking/icons/fire.png',
+             'https://www.skulliance.io/staking/icons/eye.png',
+             'https://www.skulliance.io/staking/icons/sharon.png',
+             'https://www.skulliance.io/staking/icons/lens.png',
+             'https://www.skulliance.io/staking/icons/kala.png',
+             'https://www.skulliance.io/staking/icons/ass.png',
+             'https://www.skulliance.io/staking/icons/moon.png',
              'https://www.skulliance.io/staking/icons/ritual.png',
+             'https://www.skulliance.io/staking/icons/wave.png',
+             'https://www.skulliance.io/staking/icons/soul.png',
              'https://www.skulliance.io/staking/icons/stag.png',
              'https://www.skulliance.io/staking/icons/skowl.png',
-             'https://www.skulliance.io/staking/icons/void.png'
+             'https://www.skulliance.io/staking/icons/loot.png',
+             'https://www.skulliance.io/staking/icons/venus.png',
+             'https://www.skulliance.io/staking/icons/axion.png',
+             'https://www.skulliance.io/staking/icons/void.png',
+             'https://www.skulliance.io/staking/icons/muse.png',
+             'https://www.skulliance.io/staking/icons/dn.png',
+             'https://www.skulliance.io/staking/icons/tribe.png',
+             'https://www.skulliance.io/staking/icons/bung.png',
+			 'https://www.skulliance.io/staking/icons/havoc.png'
          ];
          this.specialIcons = {
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
