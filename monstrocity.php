@@ -239,7 +239,7 @@
 
     #game-over-container {
       position: relative;
-      top: -1705px;
+      top: -1650px;
       left: 50%;
       width: 260px;
       max-width: 260px;
@@ -643,7 +643,7 @@
 	  }
       
       #game-over-container {
-        top: -1150px;
+        top: -1700px;
       }
 
       #character-select-container {
@@ -847,6 +847,7 @@
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
 	      <option value="monstrocity">Monstrocity</option>
+		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
 		  <option value="muses">Muses of the Multiverse</option>
 		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 	      <option value="darkula">Darkula - Island of Uncanny Neighbors</option>
