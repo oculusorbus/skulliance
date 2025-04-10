@@ -441,12 +441,10 @@
 	  transform: translate(-50%, -50%);
 	  background: #002f44;
 	  padding: 20px;
-	  border-radius: 10px;
 	  z-index: 100;
 	  width: 100%;
 	  height: 100%;
-	  max-width: 931px;
-	  max-height: 1083px;
+	  max-width: 980px;
 	  overflow-y: auto;
 	  display: block; /* Initially visible */
 	  border: 3px solid black;
@@ -456,6 +454,7 @@
     #character-select-container h2 {
       text-align: center;
       margin-bottom: 20px;
+	  margin-top: 20px;
     }
 
     .character-option {
