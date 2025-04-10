@@ -17,7 +17,7 @@
 	  /*
       background-image: url(https://www.skulliance.io/staking/images/monstrocity/monstrocity.png);*/
       background-size: cover;
-      background-position: top;
+      background-position: center;
     }
 	
 	#theme-select {
