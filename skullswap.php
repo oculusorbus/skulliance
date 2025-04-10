@@ -255,7 +255,8 @@ include 'header.php';
              'https://www.skulliance.io/staking/icons/dn.png',
              'https://www.skulliance.io/staking/icons/tribe.png',
              'https://www.skulliance.io/staking/icons/bung.png',
-			 'https://www.skulliance.io/staking/icons/havoc.png'
+			 'https://www.skulliance.io/staking/icons/havoc.png',
+			 'https://www.skulliance.io/staking/icons/claw.png'
          ];
          this.specialIcons = {
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
