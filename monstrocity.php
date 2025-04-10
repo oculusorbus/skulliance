@@ -29,6 +29,10 @@
 	  border-radius: 5px;
 	  font-size: 16px;
 	}
+	
+	#theme-select label {
+		font-weight: bold;
+	}
     
     h2 {
       margin-top: 0px;
