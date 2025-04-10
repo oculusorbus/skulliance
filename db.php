@@ -6504,7 +6504,7 @@ function getSwapScore($conn){
 }
 
 function resetSwapScores($conn){
-	$sql = "UPDATE scores SET reward = '1' WHERE reward = '0'";
+	$sql = "UPDATE scores SET reward = '1' WHERE reward = '0' AND project_id = '0'";
 	if ($conn->query($sql) === TRUE) {
 		//echo "All scores marked as rewarded.";
 	} else {
