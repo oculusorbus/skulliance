@@ -1,0 +1,111 @@
+.music-player {
+    width: 100%;
+    max-width: 300px;
+    background: #1a2a44; /* Matches the dark blue background */
+    border: 1px solid #3b4a6b; /* Border color to match the theme */
+    border-radius: 5px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #ffffff; /* White text to match the theme */
+    margin: 0 auto;
+}
+
+.artist-selector select {
+    width: 100%;
+    padding: 3px;
+    border: 1px solid #3b4a6b;
+    border-radius: 3px;
+    background: #2a3b5a;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.current-track {
+    margin: 5px 0;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #ff5555; /* Red to match the health bars */
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    margin: 5px 0;
+}
+
+.controls button {
+    padding: 3px 8px;
+    border: none;
+    border-radius: 3px;
+    background: #ff5555; /* Red to match the health bars */
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 12px;
+}
+
+.controls button:hover {
+    background: #cc4444; /* Darker red on hover */
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin: 5px 0;
+}
+
+.volume-control button {
+    padding: 3px 6px;
+    border: none;
+    border-radius: 3px;
+    background: #3b4a6b; /* Matches the border color */
+    color: #ffffff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 12px;
+}
+
+.volume-control button:hover {
+    background: #2a3b5a; /* Slightly darker on hover */
+}
+
+.volume-control input {
+    width: 100%;
+    margin: 0;
+    accent-color: #ff5555; /* Red to match the theme */
+}
+
+.track-list {
+    max-height: 100px; /* Reduced height for compactness */
+    overflow-y: auto;
+    margin-top: 5px;
+    border-top: 1px solid #3b4a6b;
+    padding-top: 5px;
+}
+
+.track-item {
+    padding: 3px;
+    cursor: pointer;
+    border-radius: 3px;
+    color: #ffffff;
+}
+
+.track-item:hover {
+    background: #2a3b5a; /* Matches the select background on hover */
+}
+
+/* Scrollbar styling */
+.track-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.track-list::-webkit-scrollbar-thumb {
+    background: #3b4a6b;
+    border-radius: 2px;
+}
