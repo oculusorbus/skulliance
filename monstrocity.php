@@ -846,7 +846,6 @@
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
 	      <option value="monstrocity">Monstrocity - Season 1 (Default)</option>
-	      <option value="darkula">Darkula - Island of Uncanny Neighbors</option>
   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
 		  <option value="muses">Muses of the Multiverse - Season 1</option>
