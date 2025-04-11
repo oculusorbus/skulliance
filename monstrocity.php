@@ -847,14 +847,12 @@
 	    <select id="theme-select">
 	      <option value="monstrocity">Monstrocity - Season 1 (Default)</option>
   		  <option value="bungking">Bungking - Yume</option>
-		  <option value="danketsu">Danketsu - Legends</option>
 	      <option value="darkula">Darkula - Island of Uncanny Neighbors</option>
 		  <option value="deadpophell">Dead Pop Hell - NSFW</option>
   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 		  <option value="havocworlds">Havoc Worlds - Season 1</option>
 		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
 		  <option value="muses">Muses of the Multiverse - Season 1</option>
-		  <option value="omen">Nemonium - Omen Legends</option>
 	    </select>
 	  </div>
 	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
