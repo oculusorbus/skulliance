@@ -847,6 +847,7 @@
 	    <select id="theme-select">
 	      <option value="monstrocity">Monstrocity - Season 1 (Default)</option>
   		  <option value="bungking">Bungking - Yume</option>
+		  <option value="danketsu">Danketsu - Legends</option>
 	      <option value="darkula">Darkula - Island of Uncanny Neighbors</option>
 		  <option value="deadpophell">Dead Pop Hell - NSFW</option>
   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
