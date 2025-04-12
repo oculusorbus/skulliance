@@ -58,6 +58,7 @@ if(isset($_COOKIE['SessionCookie'])){
 	  border: 1px solid black;
 	  border-radius: 5px;
 	  font-size: 16px;
+	  max-width: 265px;
 	}
 
     h2 {
