@@ -887,6 +887,7 @@ if(isset($_COOKIE['SessionCookie'])){
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
 	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
+			  <option value="oculuslounge">Disco Solaris - Oculus Lounge</option>
 		  </optgroup>
 		  <?php
 		  if($innercircle){?>
