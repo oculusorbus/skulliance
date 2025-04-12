@@ -1,3 +1,33 @@
+<?php
+if(isset($_COOKIE['SessionCookie'])){
+	$cookie = $_COOKIE['SessionCookie'];
+	$cookie = json_decode($cookie, true);
+	$_SESSION = $cookie;
+	extract($_SESSION['userData']);
+	// Initiate variables
+	$member = false;
+	$elite = false;
+	$innercircle = false;
+	$roles = $_SESSION['userData']['roles'];
+	if(!empty($roles)){
+		foreach ($roles as $key => $roleData) {
+			switch ($roleData) {
+			  case "949930195584954378":
+				$member = true;
+				break;
+	  		  case "949930360681140274":
+	  			$elite = true;
+	  			break;
+			  case "949930529841635348";
+			    $innercircle = true;
+				break;
+			  default:
+				break;
+			}
+		}
+	}
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -852,6 +882,12 @@
   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
 		  <option value="muses">Muses of the Multiverse - Season 1</option>
+		  <?php
+		  if($role == "innercircle"){?>
+		  <option value="dank">Danketsu - Legends</option>
+		  <option value="omen">Nemonium - Omen Legends</option>
+		  <?php }
+		  ?>
 	    </select>
 	  </div>
 	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
