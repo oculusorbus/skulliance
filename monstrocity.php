@@ -883,7 +883,7 @@ if(isset($_COOKIE['SessionCookie'])){
 		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
 		  <option value="muses">Muses of the Multiverse - Season 1</option>
 		  <?php
-		  if($role == "innercircle"){?>
+		  if($innercircle){?>
 		  <option value="dank">Danketsu - Legends</option>
 		  <option value="omen">Nemonium - Omen Legends</option>
 		  <?php }
