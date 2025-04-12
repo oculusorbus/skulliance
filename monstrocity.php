@@ -876,7 +876,7 @@ if(isset($_COOKIE['SessionCookie'])){
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
 		  <optgroup label="Default Game Theme">
-	      <option value="monstrocity">Monstrocity - Season 1 (Default)</option>
+	      <option value="monstrocity">Monstrocity - Season 1</option>
 	  	  </optgroup>
 		  <optgroup label="Indie Artist Themes">
 			  <option value="bungking">Bungking - Yume</option>
