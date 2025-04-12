@@ -875,19 +875,25 @@ if(isset($_COOKIE['SessionCookie'])){
 	  <div>
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
+		  <optgroup label="Default Game Theme">
 	      <option value="monstrocity">Monstrocity - Season 1 (Default)</option>
-		  <option value="bungking">Bungking - Yume</option>
-		  <option value="darkula">Darkula - Island of the Uncanny Neighbors</option>
-		  <option value="darkula2">Darkula - Island of the Violent Neighbors</option>
-  		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
-		  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
-		  <option value="muses">Muses of the Multiverse - Season 1</option>
+	  	  </optgroup>
+		  <optgroup label="Indie Artist Themes">
+			  <option value="bungking">Bungking - Yume</option>
+			  <option value="darkula">Darkula - Island of the Uncanny Neighbors</option>
+			  <option value="darkula2">Darkula - Island of the Violent Neighbors</option>
+			  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
+			  <option value="muses">Muses of the Multiverse - Season 1</option>
+		  </optgroup>
+  		  <optgroup label="Project Themes">
+	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
+		  </optgroup>
 		  <?php
 		  if($innercircle){?>
 		  <optgroup label="Inner Circle Top Secret Themes">
-		  <option value="danketsu">Danketsu - Legends</option>
-		  <option value="havocworlds">Havoc Worlds - Season 1</option>
-		  <option value="omen">Nemonium - Omen Legends</option>
+			  <option value="danketsu">Danketsu - Legends</option>
+			  <option value="havocworlds">Havoc Worlds - Season 1</option>
+			  <option value="omen">Nemonium - Omen Legends</option>
 	      </optgroup>
 		  <?php }
 		  ?>
