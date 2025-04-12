@@ -884,8 +884,11 @@ if(isset($_COOKIE['SessionCookie'])){
 		  <option value="muses">Muses of the Multiverse - Season 1</option>
 		  <?php
 		  if($innercircle){?>
+		  <optgroup label="Inner Circle Top Secret Themes">
 		  <option value="danketsu">Danketsu - Legends</option>
+		  <option value="havocworlds">Havoc Worlds - Season 1</option>
 		  <option value="omen">Nemonium - Omen Legends</option>
+	      </optgroup>
 		  <?php }
 		  ?>
 	    </select>
