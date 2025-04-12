@@ -878,14 +878,14 @@ if(isset($_COOKIE['SessionCookie'])){
 		  <optgroup label="Default Game Theme">
 	      <option value="monstrocity">Monstrocity - Season 1</option>
 	  	  </optgroup>
-		  <optgroup label="Indie Artist Themes">
+		  <optgroup label="Independent Artist Themes">
 			  <option value="bungking">Bungking - Yume</option>
 			  <option value="darkula">Darkula - Island of the Uncanny Neighbors</option>
 			  <option value="darkula2">Darkula - Island of the Violent Neighbors</option>
 			  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
 			  <option value="muses">Muses of the Multiverse - Season 1</option>
 		  </optgroup>
-  		  <optgroup label="Project Themes">
+  		  <optgroup label="Partner Project Themes">
 	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 		  </optgroup>
 		  <?php
