@@ -673,7 +673,7 @@ if(isset($_COOKIE['SessionCookie'])){
 	  }
       
       #game-over-container {
-        top: -1700px;
+        top: -1753px;
       }
 
       #character-select-container {
