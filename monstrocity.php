@@ -894,6 +894,7 @@ if(isset($_COOKIE['SessionCookie'])){
 			  <option value="danketsu">Danketsu - Legends</option>
 			  <option value="havocworlds">Havoc Worlds - Season 1</option>
 			  <option value="omen">Nemonium - Omen Legends</option>
+			  <option value="deadpophell">Dead Pop Hell - NSFW</option>
 	      </optgroup>
 		  <?php }
 		  ?>
