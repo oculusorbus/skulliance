@@ -883,12 +883,15 @@ if(isset($_COOKIE['SessionCookie'])){
 			  <option value="bungking">Bungking - Yume</option>
 			  <option value="darkula">Darkula - Island of the Uncanny Neighbors</option>
 			  <option value="darkula2">Darkula - Island of the Violent Neighbors</option>
+			  <option value="muses">Josh Howard - Muses of the Multiverse</option>
 			  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
-			  <option value="muses">Muses of the Multiverse - Season 1</option>
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
 	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 			  <option value="oculuslounge">Disco Solaris - Oculus Lounge</option>
+		  </optgroup>
+		  <optgroup label="Rugged Projects">
+			  <option value="adapunks">ADA Punks</option>
 		  </optgroup>
 		  <?php
 		  if($innercircle){?>
