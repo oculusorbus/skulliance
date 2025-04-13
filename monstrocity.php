@@ -1,8 +1,11 @@
 <?php
-if(isset($_COOKIE['SessionCookie'])){
-	$cookie = $_COOKIE['SessionCookie'];
-	$cookie = json_decode($cookie, true);
-	$_SESSION = $cookie;
+session_start();
+if(!isset($_SESSION['logged_in'])){
+	if(isset($_COOKIE['SessionCookie'])){
+		$cookie = $_COOKIE['SessionCookie'];
+		$cookie = json_decode($cookie, true);
+		$_SESSION = $cookie;
+	}
 }
 if(isset($_SESSION)){
 	extract($_SESSION['userData']);
