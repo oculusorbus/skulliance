@@ -890,7 +890,7 @@ if(isset($_COOKIE['SessionCookie'])){
 	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
 			  <option value="oculuslounge">Disco Solaris - Oculus Lounge</option>
 		  </optgroup>
-		  <optgroup label="Rugged Projects">
+		  <optgroup label="Rugged Project Themes">
 			  <option value="adapunks">ADA Punks</option>
 		  </optgroup>
 		  <?php
