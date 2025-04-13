@@ -893,13 +893,14 @@ if(isset($_COOKIE['SessionCookie'])){
 		  <?php
 		  if($innercircle){?>
 		  <optgroup label="Inner Circle Top Secret Themes">
+			  <option value="occultarchives">Billy Martin - Occult Archives</option>
 			  <option value="rubberrebels">Classic Cardtoons - Rubber Rebels</option>
 			  <option value="danketsu">Danketsu - Legends</option>
+			  <option value="deadpophell">Dead Pop Hell - NSFW</option>
 			  <option value="havocworlds">Havoc Worlds - Season 1</option>
 			  <option value="karranka">Karranka - Badass Heroes</option>
 			  <option value="karranka2">Karranka - Japanese Ghosts: Legendary Warriors</option>
 			  <option value="omen">Nemonium - Omen Legends</option>
-			  <option value="deadpophell">Dead Pop Hell - NSFW</option>
 	      </optgroup>
 		  <?php }
 		  ?>
