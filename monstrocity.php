@@ -893,6 +893,7 @@ if(isset($_COOKIE['SessionCookie'])){
 		  <?php
 		  if($innercircle){?>
 		  <optgroup label="Inner Circle Top Secret Themes">
+			  <option value="rubberrebels">Classic Cardtoons - Rubber Rebels</option>
 			  <option value="danketsu">Danketsu - Legends</option>
 			  <option value="havocworlds">Havoc Worlds - Season 1</option>
 			  <option value="karranka">Karranka - Badass Heroes</option>
