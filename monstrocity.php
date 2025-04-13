@@ -886,6 +886,7 @@ if(isset($_COOKIE['SessionCookie'])){
 			  <option value="muses">Josh Howard - Muses of the Multiverse</option>
 			  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
   			  <option value="shortyverse">Ohh Meed - Shorty Verse</option>
+			  <option value="shortyverse2">Ohh Meed - Shorty Verse Engaged</option>
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
 	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
