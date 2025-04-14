@@ -1,5 +1,5 @@
 <?php
-// Enable error reporting for debugging
+// Enable error reporting for debugging (disable in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -55,15 +55,24 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $types = 's' . str_repeat('s', count($policy_ids));
         $params = array_merge([$_SESSION['userData']['user_id']], $policy_ids);
-        $stmt->bind_param($types, ...$params);
+        // Bind parameters dynamically
+        $refs = [];
+        foreach ($params as $key => $value) {
+            $refs[$key] = &$params[$key];
+        }
+        call_user_func_array([$stmt, 'bind_param'], array_merge([$types], $refs));
         $stmt->execute();
-        $result = $stmt->get_result();
+
+        // Bind result variables
+        $policy = '';
+        $asset_name = '';
+        $stmt->bind_result($policy, $asset_name);
 
         $index = 0;
-        while ($row = $result->fetch_assoc()) {
+        while ($stmt->fetch()) {
             $asset_list["_asset_list"][$index] = [
-                "policy_id" => $row["policy"],
-                "asset_name" => bin2hex($row["asset_name"])
+                "policy_id" => $policy,
+                "asset_name" => bin2hex($asset_name)
             ];
             $index++;
         }
