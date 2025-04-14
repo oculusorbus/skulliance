@@ -2,17 +2,32 @@
 include '../db.php';
 include '../skulliance.php';
 
+// Debug output for browser
+header('Content-Type: text/plain');
+
 if (isset($_SESSION['userData']['user_id'])) {
-    if (!isset($_GET['policy_ids']) || empty(trim($_GET['policy_ids']))) {
-        error_log('get-nft-assets: Missing policy_ids');
-        echo "false";
+    // Handle GET for manual testing, POST for game
+    $policy_ids = [];
+    $theme = 'unknown';
+    if (isset($_GET['policyIds']) && !empty(trim($_GET['policyIds']))) {
+        $policy_ids = array_filter(array_map('trim', explode(',', $_GET['policyIds'])));
+        $theme = isset($_GET['theme']) ? trim($_GET['theme']) : 'unknown';
+        echo "GET: policyIds=" . implode(',', $policy_ids) . ", theme=$theme\n";
+    } elseif (isset($_POST['policyIds']) && is_array($_POST['policyIds'])) {
+        $policy_ids = array_filter(array_map('trim', $_POST['policyIds']));
+        $theme = isset($_POST['theme']) ? trim($_POST['theme']) : 'unknown';
+        echo "POST: policyIds=" . implode(',', $policy_ids) . ", theme=$theme\n";
+    } else {
+        error_log('get-nft-assets: Missing policyIds');
+        echo "Error: Missing or empty policyIds\n";
+        echo json_encode(false);
         exit;
     }
 
-    $policy_ids = array_filter(array_map('trim', explode(',', $_GET['policy_ids'])));
     if (empty($policy_ids)) {
-        error_log('get-nft-assets: Empty policy_ids');
-        echo "false";
+        error_log('get-nft-assets: Empty policyIds');
+        echo "Error: Empty policyIds\n";
+        echo json_encode(false);
         exit;
     }
 
@@ -24,10 +39,11 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $asset_list = ["_asset_list" => []];
         $policy_placeholders = implode(',', array_fill(0, count($policy_ids), '?'));
-        $sql = "SELECT nfts.policy, nfts.asset_name FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE nfts.user_id = ? AND nfts.policy IN ($policy_placeholders)";
+        $sql = "SELECT nfts.policy, nfts.asset_name FROM nfts WHERE user_id = ? AND policy IN ($policy_placeholders)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             error_log('get-nft-assets: DB query prepare failed: ' . $conn->error);
+            echo "Error: DB query prepare failed: " . $conn->error . "\n";
             return false;
         }
 
@@ -48,30 +64,30 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $stmt->close();
         error_log('get-nft-assets: DB returned ' . $index . ' assets');
+        echo "DB returned $index assets\n";
         return $asset_list;
     }
 
     $asset_list = getNFTAssets($conn, $policy_ids);
     if (is_array($asset_list) && !empty($asset_list["_asset_list"])) {
         error_log('get-nft-assets: Processing ' . count($asset_list["_asset_list"]) . ' assets');
-        $batch_asset_lists = array();
-        $final_asset_lists = array();
+        echo "Processing " . count($asset_list["_asset_list"]) . " assets\n";
+        $batch_asset_lists = [];
+        $final_asset_lists = [];
         $batch_index = 0;
         if (count($asset_list["_asset_list"]) < 35) {
-            $final_asset_lists[$batch_index] = array();
-            $final_asset_lists[$batch_index]["_asset_list"] = $asset_list["_asset_list"];
+            $final_asset_lists[$batch_index] = ["_asset_list" => $asset_list["_asset_list"]];
         } else {
             $batch_asset_lists = array_chunk($asset_list["_asset_list"], 35);
             foreach ($batch_asset_lists as $index => $batch_asset_list) {
-                $final_asset_lists[$index] = array();
-                $final_asset_lists[$index]["_asset_list"] = $batch_asset_list;
+                $final_asset_lists[$index] = ["_asset_list" => $batch_asset_list];
             }
         }
 
         $final_array = [];
         foreach ($final_asset_lists as $final_asset_index => $final_asset_list) {
             $tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-            curl_setopt($tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
+            curl_setopt($tokench, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI']);
             curl_setopt($tokench, CURLOPT_POST, 1);
             curl_setopt($tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
             curl_setopt($tokench, CURLOPT_FOLLOWLOCATION, 1);
@@ -81,14 +97,16 @@ if (isset($_SESSION['userData']['user_id'])) {
             $tokenresponse = curl_exec($tokench);
             if ($tokenresponse === false) {
                 error_log('get-nft-assets: cURL failed: ' . curl_error($tokench));
-                echo "false";
+                echo "Error: cURL failed: " . curl_error($tokench) . "\n";
+                echo json_encode(false);
                 exit;
             }
 
             $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
             if ($http_code >= 400) {
                 error_log('get-nft-assets: HTTP error: ' . $http_code);
-                echo "false";
+                echo "Error: HTTP error: $http_code\n";
+                echo json_encode(false);
                 exit;
             }
 
@@ -96,10 +114,13 @@ if (isset($_SESSION['userData']['user_id'])) {
             curl_close($tokench);
 
             if (is_array($tokenresponse)) {
+                echo "Koios returned " . count($tokenresponse) . " assets\n";
                 foreach ($tokenresponse as $tokenresponsedata) {
                     $policy_id = $tokenresponsedata->policy_id;
                     $asset_name_ascii = $tokenresponsedata->asset_name_ascii ?: '';
                     $asset_name_hex = $tokenresponsedata->asset_name ?: '';
+
+                    if (empty($asset1876    echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
 
                     if (empty($asset_name_ascii)) {
                         error_log('get-nft-assets: Empty asset_name_ascii for policy_id=' . $policy_id);
@@ -134,6 +155,7 @@ if (isset($_SESSION['userData']['user_id'])) {
 
                         if (empty($ipfs)) {
                             error_log('get-nft-assets: No IPFS for ' . $name . ', policy_id=' . $policy_id);
+                            echo "No IPFS for name=$name, policy_id=$policy_id\n";
                             continue;
                         }
 
@@ -157,48 +179,4 @@ if (isset($_SESSION['userData']['user_id'])) {
                         $size_map = ['Small', 'Medium', 'Large'];
                         $size = $size_map[$length % 3];
                         $type_map = ['Base', 'Leader', 'Battle Damaged'];
-                        $type = $type_map[ord($asset_name_ascii[0]) % 3];
-                        $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
-                        $powerup = $powerup_map[ord($asset_name_ascii[$length - 1]) % 4];
-
-                        $final_array[] = [
-                            'name' => $name,
-                            'ipfs' => $ipfs,
-                            'policyId' => $policy_id,
-                            'strength' => $strength,
-                            'speed' => $speed,
-                            'tactics' => $tactics,
-                            'size' => $size,
-                            'type' => $type,
-                            'powerup' => $powerup,
-                            'theme' => $_GET['theme'] ?? 'unknown'
-                        ];
-                    } else {
-                        error_log('get-nft-assets: No metadata for asset_name_ascii=' . $asset_name_ascii . ', policy_id=' . $policy_id);
-                    }
-                }
-            } else {
-                error_log('get-nft-assets: Invalid Koios response');
-                echo "false";
-                exit;
-            }
-        }
-
-        if (!empty($final_array)) {
-            error_log('get-nft-assets: Returning ' . count($final_array) . ' NFTs');
-            echo json_encode($final_array, JSON_PRETTY_PRINT);
-        } else {
-            error_log('get-nft-assets: No valid NFTs');
-            echo "false";
-        }
-    } else {
-        error_log('get-nft-assets: No assets found in DB');
-        echo "false";
-    }
-} else {
-    error_log('get-nft-assets: User not logged in');
-    echo "false";
-}
-
-$conn->close();
-?>
+                        $type = $type_map[ord($asset_name_ascii[0]) %
