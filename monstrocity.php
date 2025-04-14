@@ -936,6 +936,12 @@ if(isset($_SESSION)){
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Ohh Meed - Shorty Verse Engaged</option>
 				
+			  <option value="bogeyman" 
+			  	data-policy-ids="bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63" 
+				data-orientations="Random" 
+				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+				Ritual - Bogeyman</option>
+			  
 			  <option value="ritual" 
 			  	data-policy-ids="16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5" 
 				data-orientations="Right" 
