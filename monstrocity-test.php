@@ -700,35 +700,37 @@ if(isset($_SESSION)){
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
-      <div class="character" id="player1">
-        <h2><span id="p1-name"></span></h2>
-        <img id="p1-image" src="" alt="Player 1 Image">
-        <div class="health-bar"><div class="health" id="p1-health"></div></div>
-        <table>
-          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
-          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
-          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p1-speed"></span></td></tr>
-          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p1-tactics"></span></td></tr>
-          <tr><td class="attribute-label">Size:</td><td class="attribute"><span id="p1-size"></span></td></tr>
-          <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td></tr>
-          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td></tr>
-        </table>
-      </div>
-      <div id="game-board"></div>
-      <div class="character" id="player2">
-        <h2><span id="p2-name"></span></h2>
-        <img id="p2-image" src="" alt="Player 2 Image">
-        <div class="health-bar"><div class="health" id="p2-health"></div></div>
-        <table>
-          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
-          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
-          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p2-speed"></span></td></tr>
-          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p2-tactics"></span></td></tr>
-          <tr><td class="attribute-label">Size:</td><td class="attribute"><span id="p2-size"></span></td></tr>
-          <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td></tr>
-          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td></tr>
-        </table>
-      </div>
+	  <div class="character" id="player1">
+	      <h2><span id="p1-name"></span></h2>
+	      <img id="p1-image" src="" alt="Player 1 Image">
+	      <button id="flip-p1">Flip Character</button>
+	      <div class="health-bar"><div class="health" id="p1-health"></div></div>
+	      <table>
+	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
+	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
+	          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p1-speed"></span></td></tr>
+	          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p1-tactics"></span></td></tr>
+	          <tr><td class="attribute-label">Size:</td><td class="attribute"><span id="p1-size"></span></td></tr>
+	          <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p1-powerup"></span></td></tr>
+	          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td></tr>
+	      </table>
+	  </div>
+
+	  <div class="character" id="player2">
+	      <h2><span id="p2-name"></span></h2>
+	      <img id="p2-image" src="" alt="Player 2 Image">
+	      <button id="flip-p2">Flip Character</button>
+	      <div class="health-bar"><div class="health" id="p2-health"></div></div>
+	      <table>
+	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
+	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
+	          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p2-speed"></span></td></tr>
+	          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p2-tactics"></span></td></tr>
+	          <tr><td class="attribute-label">Size:</td><td class="attribute"><span id="p2-size"></span></td></tr>
+	          <tr><td class="attribute-label">Power-Up:</td><td class="attribute"><span id="p2-powerup"></span></td></tr>
+	          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p2-type"></span></td></tr>
+	      </table>
+	  </div>
     </div>
     <div class="log">
       <h3>Battle Log</h3>
@@ -1248,7 +1250,12 @@ if(isset($_SESSION)){
 	                  };
 	              }
 	          }
-	          orientation = policyMetadata.orientation;
+	          // Handle "Random" orientation
+	          if (policyMetadata.orientation === 'Random') {
+	              orientation = Math.random() < 0.5 ? 'Left' : 'Right';
+	          } else {
+	              orientation = policyMetadata.orientation;
+	          }
 	          imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
 	      } else {
 	          switch (config.type) {
@@ -1306,6 +1313,17 @@ if(isset($_SESSION)){
 	          orientation: orientation,
 	          isNFT: isNFT
 	      };
+	  }
+	  
+	  flipCharacter(character, imageElement) {
+	      if (character.orientation === 'Left') {
+	          character.orientation = 'Right';
+	          imageElement.style.transform = 'none';
+	      } else {
+	          character.orientation = 'Left';
+	          imageElement.style.transform = 'scaleX(-1)';
+	      }
+	      log(`${character.name}'s orientation flipped to ${character.orientation}!`);
 	  }
 
 		  showCharacterSelect(isInitial) {
@@ -1630,6 +1648,8 @@ if(isset($_SESSION)){
 	        console.log("addEventListeners: Player 1 image clicked");
 	        this.showCharacterSelect(false);
 	      });
+		  document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, p1Image));
+		  document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, p2Image));
 	    }
 
 		handleGameOverButton() {
