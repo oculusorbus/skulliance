@@ -17,30 +17,37 @@ if (isset($_SESSION['userData']['user_id'])) {
     }
 
     function getNFTAssets($conn, $policy_ids) {
+        if (!isset($_SESSION['userData']['user_id'])) {
+            error_log('get-nft-assets: No user_id in session');
+            return false;
+        }
+
         $asset_list = ["_asset_list" => []];
         $policy_placeholders = implode(',', array_fill(0, count($policy_ids), '?'));
-        // Adjust query to your DB schema
-        $query = "SELECT policy_id, asset_name FROM assets WHERE policy_id IN ($policy_placeholders) AND user_id = ?";
-        $stmt = $conn->prepare($query);
+        $sql = "SELECT nfts.policy, nfts.asset_name FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE nfts.user_id = ? AND nfts.policy IN ($policy_placeholders)";
+        $stmt = $conn->prepare($sql);
         if (!$stmt) {
             error_log('get-nft-assets: DB query prepare failed: ' . $conn->error);
-            return ["_asset_list" => []];
+            return false;
         }
-        $types = str_repeat('s', count($policy_ids)) . 's';
-        $params = array_merge($policy_ids, [$_SESSION['userData']['user_id']]);
+
+        $types = 's' . str_repeat('s', count($policy_ids));
+        $params = array_merge([$_SESSION['userData']['user_id']], $policy_ids);
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
 
+        $index = 0;
         while ($row = $result->fetch_assoc()) {
-            $asset_list["_asset_list"][] = [
-                "policy_id" => $row['policy_id'],
-                "asset_name" => bin2hex($row['asset_name']) // Hex format
+            $asset_list["_asset_list"][$index] = [
+                "policy_id" => $row["policy"],
+                "asset_name" => bin2hex($row["asset_name"])
             ];
+            $index++;
         }
 
         $stmt->close();
-        error_log('get-nft-assets: DB returned ' . count($asset_list["_asset_list"]) . ' assets');
+        error_log('get-nft-assets: DB returned ' . $index . ' assets');
         return $asset_list;
     }
 
@@ -64,7 +71,7 @@ if (isset($_SESSION['userData']['user_id'])) {
         $final_array = [];
         foreach ($final_asset_lists as $final_asset_index => $final_asset_list) {
             $tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-            curl_setopt($tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer ***insert-your-token***'));
+            curl_setopt($tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
             curl_setopt($tokench, CURLOPT_POST, 1);
             curl_setopt($tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
             curl_setopt($tokench, CURLOPT_FOLLOWLOCATION, 1);
@@ -103,7 +110,6 @@ if (isset($_SESSION['userData']['user_id'])) {
                     if (isset($tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$metadata_key})) {
                         $nft_metadata = $tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$metadata_key};
 
-                        // Name fallback
                         $name = 'NFT Unknown';
                         if (isset($nft_metadata->name)) {
                             $name = $nft_metadata->name;
@@ -113,7 +119,6 @@ if (isset($_SESSION['userData']['user_id'])) {
                             $name = $asset_name_ascii;
                         }
 
-                        // IPFS
                         $ipfs = '';
                         if (isset($nft_metadata->files) && is_array($nft_metadata->files) && !empty($nft_metadata->files)) {
                             foreach ($nft_metadata->files as $file) {
@@ -132,7 +137,6 @@ if (isset($_SESSION['userData']['user_id'])) {
                             continue;
                         }
 
-                        // Derive attributes
                         $char_sum = 0;
                         $length = strlen($asset_name_ascii);
                         for ($i = 0; $i < $length; $i++) {
