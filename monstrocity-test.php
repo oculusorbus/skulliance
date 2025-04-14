@@ -910,7 +910,7 @@ if(isset($_SESSION)){
 			  <option value="oculuslounge" data-policy-ids="d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779" data-orientations="Left" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Disco Solaris - Oculus Lounge</option>
 		  </optgroup>
 		  <optgroup label="Rugged Project Themes">
-			  <option value="adapunks" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">ADA Punks</option>
+			  <option value="adapunks" data-policy-ids="57f93b225545f3b5db3ec36fab4967266f7b3f2799a1530ff78f1e29" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">ADA Punks</option>
 		  </optgroup>
 		  <?php
 		  if($innercircle){?>
