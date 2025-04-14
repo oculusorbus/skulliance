@@ -70,6 +70,7 @@ if(isset($_SESSION)){
       margin-top: 0px;
       margin-bottom: 10px;
       font-weight: bold;
+	  white-space: nowrap;
     }
 	
 	a {
