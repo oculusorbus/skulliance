@@ -591,6 +591,13 @@ if(isset($_SESSION)){
 	#progress-start-fresh:hover {
 	  background-color: #da190b;
 	}
+	
+    #flip-p1, #flip-p2 {
+		margin-top: 10px;
+		margin-bottom: 0px;
+		-webkit-filter: drop-shadow(2px 5px 10px #000);
+		filter: drop-shadow(2px 5px 10px #000);
+	}
 
     @media (max-width: 1025px) {
       .game-container {
