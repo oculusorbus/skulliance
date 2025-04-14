@@ -274,20 +274,20 @@ if(isset($_SESSION)){
       transition: transform 0.3s ease-out;
     }
 
-    #game-over-container {
-      position: relative;
-      top: 0px;
-      left: 50%;
-      width: 260px;
-      max-width: 260px;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      z-index: 30;
-      display: none;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 20px;
-      border-radius: 10px;
-    }
+	#game-over-container {
+	    position: absolute;
+	    top: 450px;
+	    left: 50%;
+	    width: 260px;
+	    max-width: 260px;
+	    transform: translate(-50%, -50%);
+	    text-align: center;
+	    z-index: 30;
+	    display: none;
+	    background: rgba(0, 0, 0, 0.8);
+	    padding: 20px;
+	    border-radius: 10px;
+	}
 
     #game-over {
       font-size: 48px;
@@ -685,7 +685,7 @@ if(isset($_SESSION)){
 	  }
       
       #game-over-container {
-        top: -1753px;
+        top: 317px;
       }
 
       #character-select-container {
