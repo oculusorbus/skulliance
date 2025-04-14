@@ -892,14 +892,14 @@ if(isset($_SESSION)){
 				Bungking - Yume</option>
 			  <option value="darkula" data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" data-orientations="Left" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Darkula - Island of the Uncanny Neighbors</option>
 			  <option value="darkula2" data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" data-orientations="Left" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Darkula - Island of the Violent Neighbors</option>
-			  <option value="muses" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Josh Howard - Muses of the Multiverse</option>
-			  <option value="maxi" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Maxingo - Digital Hell Citizens 2: Fighters</option>
-  			  <option value="shortyverse" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Ohh Meed - Shorty Verse</option>
-			  <option value="shortyverse2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Ohh Meed - Shorty Verse Engaged</option>
+			  <option value="muses" data-policy-ids="7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Josh Howard - Muses of the Multiverse</option>
+			  <option value="maxi" data-policy-ids="b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Maxingo - Digital Hell Citizens 2: Fighters</option>
+  			  <option value="shortyverse" data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Ohh Meed - Shorty Verse</option>
+			  <option value="shortyverse2" data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Ohh Meed - Shorty Verse Engaged</option>
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
-	   		  <option value="discosolaris" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Disco Solaris - Moebius Pioneers</option>
-			  <option value="oculuslounge" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Disco Solaris - Oculus Lounge</option>
+	   		  <option value="discosolaris" data-policy-ids="9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Disco Solaris - Moebius Pioneers</option>
+			  <option value="oculuslounge" data-policy-ids="d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779" data-orientations="Left" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Disco Solaris - Oculus Lounge</option>
 		  </optgroup>
 		  <optgroup label="Rugged Project Themes">
 			  <option value="adapunks" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">ADA Punks</option>
@@ -910,11 +910,11 @@ if(isset($_SESSION)){
 			  <option value="occultarchives" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Billy Martin - Occult Archives</option>
 			  <option value="rubberrebels" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Classic Cardtoons - Rubber Rebels</option>
 			  <option value="danketsu" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Danketsu - Legends</option>
-			  <option value="deadpophell" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Dead Pop Hell - NSFW</option>
+			  <option value="deadpophell" data-policy-ids="6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Dead Pop Hell - NSFW</option>
 			  <option value="havocworlds" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Havoc Worlds - Season 1</option>
 			  <option value="karranka" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Badass Heroes</option>
 			  <option value="karranka2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Japanese Ghosts: Legendary Warriors</option>
-			  <option value="omen" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Nemonium - Omen Legends</option>
+			  <option value="omen" data-policy-ids="da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Nemonium - Omen Legends</option>
 	      </optgroup>
 		  <?php }
 		  ?>
