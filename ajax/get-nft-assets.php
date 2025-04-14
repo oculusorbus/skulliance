@@ -72,14 +72,13 @@ function getNFTAssets($conn, $user_id, $policy_ids) {
     $types = 's' . str_repeat('s', count($policy_ids));
     $params = array_merge([$user_id], $policy_ids);
     $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    
-    $result = $stmt->get_result();
-    $index = 0;
-    while ($row = $result->fetch_assoc()) {
-        $asset_list["_asset_list"][$index] = [$row['policy'], bin2hex($row['asset_name'])];
-        $index++;
-    }
+	$stmt->execute();
+	$stmt->bind_result($policy, $asset_name); // Bind variables to the two columns
+	$index = 0;
+	while ($stmt->fetch()) { // Fetch each row into the bound variables
+	    $asset_list["_asset_list"][$index] = [$policy, bin2hex($asset_name)];
+	    $index++;
+	}
     $stmt->close();
     
     debug_log("get-nft-assets: DB returned $index assets");
