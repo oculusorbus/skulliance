@@ -1323,13 +1323,13 @@ if(isset($_SESSION)){
 	      };
 	  }
 	  
-	  flipCharacter(character, imageElement) {
+	  flipCharacter(character, imageElement, isOpponent = false) {
 	      if (character.orientation === 'Left') {
 	          character.orientation = 'Right';
-	          imageElement.style.transform = 'none';
+	          imageElement.style.transform = isOpponent ? 'scaleX(-1)' : 'none';
 	      } else {
 	          character.orientation = 'Left';
-	          imageElement.style.transform = 'scaleX(-1)';
+	          imageElement.style.transform = isOpponent ? 'none' : 'scaleX(-1)';
 	      }
 	      log(`${character.name}'s orientation flipped to ${character.orientation}!`);
 	  }
@@ -1514,8 +1514,8 @@ if(isset($_SESSION)){
 		    this.updatePlayerDisplay();
 		    this.updateOpponentDisplay();
 
-		    p1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
-		    p2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+			p1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+			p2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
 
 		    this.updateHealth(this.player1);
 		    this.updateHealth(this.player2);
@@ -1656,8 +1656,8 @@ if(isset($_SESSION)){
 	        console.log("addEventListeners: Player 1 image clicked");
 	        this.showCharacterSelect(false);
 	      });
-		  document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, p1Image));
-		  document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, p2Image));
+		  document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, p1Image, false));
+		  document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, p2Image, true));
 	    }
 
 		handleGameOverButton() {
