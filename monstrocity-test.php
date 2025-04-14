@@ -480,7 +480,6 @@ if(isset($_SESSION)){
 	  z-index: 100;
 	  width: 100%;
 	  height: 100%;
-	  max-width: 980px;
 	  overflow-y: auto;
 	  display: block; /* Initially visible */
 	  border: 3px solid black;
