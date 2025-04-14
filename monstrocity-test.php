@@ -1226,7 +1226,8 @@ if(isset($_SESSION)){
         this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
       }
 
-	  createCharacter(config) {
+	  function createCharacter(config) {
+	      console.log('createCharacter: config=', config);
 	      var typeFolder;
 	      var imageUrl;
 	      var orientation = 'Left';
@@ -2651,6 +2652,7 @@ if(isset($_SESSION)){
 	        }
 
 	        monstrocityAssets = await monstrocityResponse.json();
+	        console.log('getAssets: Monstrocity data=', monstrocityAssets);
 	        if (!Array.isArray(monstrocityAssets)) {
 	            monstrocityAssets = [monstrocityAssets];
 	        }
@@ -2726,11 +2728,13 @@ if(isset($_SESSION)){
 	            body: JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme })
 	        });
 
+	        console.log('getAssets: NFT fetch status=' + nftResponse.status);
 	        if (!nftResponse.ok) {
 	            throw new Error('HTTP error! Status: ' + nftResponse.status);
 	        }
 
 	        nftAssets = await nftResponse.json();
+	        console.log('getAssets: NFT data=', nftAssets);
 	        if (!Array.isArray(nftAssets)) {
 	            nftAssets = [nftAssets];
 	        }
@@ -2753,7 +2757,7 @@ if(isset($_SESSION)){
 
 	    return [...monstrocityAssets, ...nftAssets];
 	}
-
+	
 	// Instantiation
 	(function() {
 	    var initGame = function() {
