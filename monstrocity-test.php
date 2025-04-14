@@ -901,12 +901,12 @@ if(isset($_SESSION)){
 				data-orientations="Right" 
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Bungking - Yume</option>
-			  <option value="darkula" data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" data-orientations="Left" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Darkula - Island of the Uncanny Neighbors</option>
-			  <option value="darkula2" data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" data-orientations="Left" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Darkula - Island of the Violent Neighbors</option>
-			  <option value="muses" data-policy-ids="7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Josh Howard - Muses of the Multiverse</option>
+			  <option value="darkula" data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" data-orientations="Random" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Darkula - Island of the Uncanny Neighbors</option>
+			  <option value="darkula2" data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" data-orientations="Random" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Darkula - Island of the Violent Neighbors</option>
+			  <option value="muses" data-policy-ids="7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55" data-orientations="Random" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Josh Howard - Muses of the Multiverse</option>
 			  <option value="maxi" data-policy-ids="b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Maxingo - Digital Hell Citizens 2: Fighters</option>
-  			  <option value="shortyverse" data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Ohh Meed - Shorty Verse</option>
-			  <option value="shortyverse2" data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Ohh Meed - Shorty Verse Engaged</option>
+  			  <option value="shortyverse" data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" data-orientations="Random" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Ohh Meed - Shorty Verse</option>
+			  <option value="shortyverse2" data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" data-orientations="Random" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Ohh Meed - Shorty Verse Engaged</option>
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
 	   		  <option value="discosolaris" data-policy-ids="9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99" data-orientations="Right" data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">Disco Solaris - Moebius Pioneers</option>
