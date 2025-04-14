@@ -1226,7 +1226,7 @@ if(isset($_SESSION)){
         this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
       }
 
-	  function createCharacter(config) {
+	  createCharacter(config) {
 	      console.log('createCharacter: config=', config);
 	      var typeFolder;
 	      var imageUrl;
