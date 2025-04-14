@@ -276,7 +276,7 @@ if(isset($_SESSION)){
 
     #game-over-container {
       position: relative;
-      top: -1650px;
+      top: 0px;
       left: 50%;
       width: 260px;
       max-width: 260px;
@@ -706,6 +706,13 @@ if(isset($_SESSION)){
 </head>
 <body>
   <div class="game-container">
+    <div id="game-over-container">
+      <div id="game-over"></div>
+      <div id="game-over-buttons">
+        <button id="try-again"></button>
+		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
+      </div>
+    </div>
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
     <button id="restart">Restart Level</button>
     <button id="change-character" style="display: none;">Switch Character</button>
@@ -880,13 +887,6 @@ if(isset($_SESSION)){
 	    </li>
 	  </ul>
 	</div>
-    <div id="game-over-container">
-      <div id="game-over"></div>
-      <div id="game-over-buttons">
-        <button id="try-again"></button>
-		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
-      </div>
-    </div>
 
   </div>
     <div id="character-select-container">
