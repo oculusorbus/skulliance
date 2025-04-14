@@ -1,8 +1,13 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Include dependencies
 include '../db.php';
 include '../skulliance.php';
 
-// Debug output for browser
+// Set plain text for debug output
 header('Content-Type: text/plain');
 
 if (isset($_SESSION['userData']['user_id'])) {
@@ -34,6 +39,7 @@ if (isset($_SESSION['userData']['user_id'])) {
     function getNFTAssets($conn, $policy_ids) {
         if (!isset($_SESSION['userData']['user_id'])) {
             error_log('get-nft-assets: No user_id in session');
+            echo "Error: No user_id in session\n";
             return false;
         }
 
@@ -120,10 +126,11 @@ if (isset($_SESSION['userData']['user_id'])) {
                     $asset_name_ascii = $tokenresponsedata->asset_name_ascii ?: '';
                     $asset_name_hex = $tokenresponsedata->asset_name ?: '';
 
-                    if (empty($asset1876    echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
+                    echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
 
                     if (empty($asset_name_ascii)) {
                         error_log('get-nft-assets: Empty asset_name_ascii for policy_id=' . $policy_id);
+                        echo "No asset_name_ascii for policy_id=$policy_id\n";
                         continue;
                     }
 
@@ -179,4 +186,55 @@ if (isset($_SESSION['userData']['user_id'])) {
                         $size_map = ['Small', 'Medium', 'Large'];
                         $size = $size_map[$length % 3];
                         $type_map = ['Base', 'Leader', 'Battle Damaged'];
-                        $type = $type_map[ord($asset_name_ascii[0]) %
+                        $type = $type_map[ord($asset_name_ascii[0]) % 3];
+                        $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
+                        $powerup = $powerup_map[ord($asset_name_ascii[$length - 1]) % 4];
+
+                        $final_array[] = [
+                            'name' => $name,
+                            'ipfs' => $ipfs,
+                            'policyId' => $policy_id,
+                            'strength' => $strength,
+                            'speed' => $speed,
+                            'tactics' => $tactics,
+                            'size' => $size,
+                            'type' => $type,
+                            'powerup' => $powerup,
+                            'theme' => $_POST['theme'] ?? ($_GET['theme'] ?? 'unknown')
+                        ];
+                        echo "Added NFT: name=$name, policy_id=$policy_id\n";
+                    } else {
+                        error_log('get-nft-assets: No metadata for asset_name_ascii=' . $asset_name_ascii . ', policy_id=' . $policy_id);
+                        echo "No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id\n";
+                    }
+                }
+            } else {
+                error_log('get-nft-assets: Invalid Koios response');
+                echo "Error: Invalid Koios response\n";
+                echo json_encode(false);
+                exit;
+            }
+        }
+
+        if (!empty($final_array)) {
+            error_log('get-nft-assets: Returning ' . count($final_array) . ' NFTs');
+            echo "Returning " . count($final_array) . " NFTs\n";
+            echo json_encode($final_array, JSON_PRETTY_PRINT);
+        } else {
+            error_log('get-nft-assets: No valid NFTs');
+            echo "No valid NFTs\n";
+            echo json_encode(false);
+        }
+    } else {
+        error_log('get-nft-assets: No assets found in DB');
+        echo "No assets found in DB\n";
+        echo json_encode(false);
+    }
+} else {
+    error_log('get-nft-assets: User not logged in');
+    echo "Error: User not logged in\n";
+    echo json_encode(false);
+}
+
+$conn->close();
+?>
