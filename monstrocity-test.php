@@ -87,7 +87,8 @@ if(isset($_SESSION)){
 	  min-width: 910px;
 	  max-width: 1024px;
 	  box-sizing: border-box;
-	  border: 3px solid black;
+	  border-left: 3px solid black;
+	  border-right: 3px solid black;
 	  display: none; /* Initially hidden */
 	}
 
