@@ -708,8 +708,8 @@ if(isset($_SESSION)){
 	  <div class="character" id="player1">
 	      <h2><span id="p1-name"></span></h2>
 	      <img id="p1-image" src="" alt="Player 1 Image">
-	      <button id="flip-p1">Flip Character</button>
 	      <div class="health-bar"><div class="health" id="p1-health"></div></div>
+  	      <button id="flip-p1">Flip Player 1</button>
 	      <table>
 	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
 	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
@@ -724,8 +724,8 @@ if(isset($_SESSION)){
 	  <div class="character" id="player2">
 	      <h2><span id="p2-name"></span></h2>
 	      <img id="p2-image" src="" alt="Player 2 Image">
-	      <button id="flip-p2">Flip Character</button>
 	      <div class="health-bar"><div class="health" id="p2-health"></div></div>
+  	      <button id="flip-p2">Flip Opponent</button>
 	      <table>
 	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
 	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
