@@ -986,7 +986,7 @@ if(isset($_SESSION)){
 			  <option value="moebiuspioneers" 
 			  	data-policy-ids="9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99,d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779" 
 				data-orientations="Right,Left" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/,https://ipfs5.jpgstoreapis.com/ipfs/">
 				Disco Solaris - Legends</option>
 				
 			  <option value="havocworlds" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Havoc Worlds - Season 1</option>
