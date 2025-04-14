@@ -935,6 +935,12 @@ if(isset($_SESSION)){
 				data-orientations="Random" 
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Ohh Meed - Shorty Verse Engaged</option>
+				
+  			  <option value="skowl" 
+  			  	data-policy-ids="d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf" 
+  				data-orientations="Left" 
+  				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+  				Skowl - Derivative Heroes</option>
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
 	   		  <option value="discosolaris" 
