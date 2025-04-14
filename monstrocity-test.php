@@ -1356,7 +1356,7 @@ if(isset($_SESSION)){
 		          var option = document.createElement('div');
 		          option.className = 'character-option';
 		          option.innerHTML =
-		              '<img onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
+		              '<img src="' + character.imageUrl + '" alt="' + character.name + '">' +
 		              '<p><strong>' + character.name + '</strong></p>' +
 		              '<p>Type: ' + character.type + '</p>' +
 		              '<p>Health: ' + character.maxHealth + '</p>' +
