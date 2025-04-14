@@ -982,6 +982,12 @@ if(isset($_SESSION)){
 				data-orientations="Right" 
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Dead Pop Hell - NSFW</option>
+	   		  
+			  <option value="moebiuspioneers" 
+			  	data-policy-ids="9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99" 
+				data-orientations="Right" 
+				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+				Disco Solaris - Legends</option>
 				
 			  <option value="havocworlds" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Havoc Worlds - Season 1</option>
 			  <option value="karranka" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Badass Heroes</option>
