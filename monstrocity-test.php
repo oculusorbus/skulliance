@@ -885,7 +885,11 @@ if(isset($_SESSION)){
 	      <option value="monstrocity" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Monstrocity - Season 1</option>
 	  	  </optgroup>
 		  <optgroup label="Independent Artist Themes">
-			  <option value="bungking" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Bungking - Yume</option>
+			  <option value="bungking" 
+			  	data-policy-ids="f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b" 
+				data-orientations="Right" 
+				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+				Bungking - Yume</option>
 			  <option value="darkula" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Darkula - Island of the Uncanny Neighbors</option>
 			  <option value="darkula2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Darkula - Island of the Violent Neighbors</option>
 			  <option value="muses" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Josh Howard - Muses of the Multiverse</option>
