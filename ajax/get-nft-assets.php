@@ -1,45 +1,53 @@
 <?php
-// Enable error reporting for debugging (disable in production)
-//error_reporting(E_ALL);
-//ini_set('display_errors', 1);
-
 // Include dependencies
 include '../db.php';
 include '../skulliance.php';
 
-// Set plain text for debug output
-header('Content-Type: text/plain');
+// Set JSON output
+header('Content-Type: application/json');
 
 if (isset($_SESSION['userData']['user_id'])) {
-    // Handle GET for manual testing, POST for game
+    // Handle GET for testing, POST for game
     $policy_ids = [];
     $theme = 'unknown';
+    $is_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
     if (isset($_GET['policyIds']) && !empty(trim($_GET['policyIds']))) {
         $policy_ids = array_filter(array_map('trim', explode(',', $_GET['policyIds'])));
         $theme = isset($_GET['theme']) ? trim($_GET['theme']) : 'unknown';
-        echo "GET: policyIds=" . implode(',', $policy_ids) . ", theme=$theme\n";
+        if ($is_debug) {
+            echo "GET: policyIds=" . implode(',', $policy_ids) . ", theme=$theme\n";
+        }
     } elseif (isset($_POST['policyIds']) && is_array($_POST['policyIds'])) {
         $policy_ids = array_filter(array_map('trim', $_POST['policyIds']));
         $theme = isset($_POST['theme']) ? trim($_POST['theme']) : 'unknown';
-        echo "POST: policyIds=" . implode(',', $policy_ids) . ", theme=$theme\n";
+        if ($is_debug) {
+            echo "POST: policyIds=" . implode(',', $policy_ids) . ", theme=$theme\n";
+        }
     } else {
         error_log('get-nft-assets: Missing policyIds');
-        echo "Error: Missing or empty policyIds\n";
+        if ($is_debug) {
+            echo "Error: Missing or empty policyIds\n";
+        }
         echo json_encode(false);
         exit;
     }
 
     if (empty($policy_ids)) {
         error_log('get-nft-assets: Empty policyIds');
-        echo "Error: Empty policyIds\n";
+        if ($is_debug) {
+            echo "Error: Empty policyIds\n";
+        }
         echo json_encode(false);
         exit;
     }
 
     function getNFTAssets($conn, $policy_ids) {
+        global $is_debug;
         if (!isset($_SESSION['userData']['user_id'])) {
             error_log('get-nft-assets: No user_id in session');
-            echo "Error: No user_id in session\n";
+            if ($is_debug) {
+                echo "Error: No user_id in session\n";
+            }
             return false;
         }
 
@@ -49,7 +57,9 @@ if (isset($_SESSION['userData']['user_id'])) {
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             error_log('get-nft-assets: DB query prepare failed: ' . $conn->error);
-            echo "Error: DB query prepare failed: " . $conn->error . "\n";
+            if ($is_debug) {
+                echo "Error: DB query prepare failed: " . $conn->error . "\n";
+            }
             return false;
         }
 
@@ -75,22 +85,26 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $stmt->close();
         error_log('get-nft-assets: DB returned ' . $index . ' assets');
-        echo "DB returned $index assets\n";
+        if ($is_debug) {
+            echo "DB returned $index assets\n";
+        }
         return $asset_list;
     }
 
     $asset_list = getNFTAssets($conn, $policy_ids);
     if (is_array($asset_list) && !empty($asset_list["_asset_list"])) {
         error_log('get-nft-assets: Processing ' . count($asset_list["_asset_list"]) . ' assets');
-        echo "Processing " . count($asset_list["_asset_list"]) . " assets\n";
-
-        // Log the asset list
-        echo "Asset list: " . json_encode($asset_list["_asset_list"], JSON_PRETTY_PRINT) . "\n";
+        if ($is_debug) {
+            echo "Processing " . count($asset_list["_asset_list"]) . " assets\n";
+            echo "Asset list: " . json_encode($asset_list["_asset_list"], JSON_PRETTY_PRINT) . "\n";
+        }
 
         // Prepare Koios payload
         $payload = ["_asset_list" => $asset_list["_asset_list"]];
         $payload_json = json_encode($payload);
-        echo "Koios payload: " . $payload_json . "\n";
+        if ($is_debug) {
+            echo "Koios payload: " . $payload_json . "\n";
+        }
 
         $tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 		curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
@@ -99,17 +113,21 @@ if (isset($_SESSION['userData']['user_id'])) {
         curl_setopt($tokench, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($tokench, CURLOPT_HEADER, 0);
         curl_setopt($tokench, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($tokench, CURLOPT_VERBOSE, 1);
-        $verbose = fopen('php://temp', 'w+');
-        curl_setopt($tokench, CURLOPT_STDERR, $verbose);
+        if ($is_debug) {
+            curl_setopt($tokench, CURLOPT_VERBOSE, 1);
+            $verbose = fopen('php://temp', 'w+');
+            curl_setopt($tokench, CURLOPT_STDERR, $verbose);
+        }
 
         $tokenresponse = curl_exec($tokench);
         if ($tokenresponse === false) {
             error_log('get-nft-assets: cURL failed: ' . curl_error($tokench));
-            echo "Error: cURL failed: " . curl_error($tokench) . "\n";
-            rewind($verbose);
-            echo "cURL verbose: " . stream_get_contents($verbose) . "\n";
-            fclose($verbose);
+            if ($is_debug) {
+                echo "Error: cURL failed: " . curl_error($tokench) . "\n";
+                rewind($verbose);
+                echo "cURL verbose: " . stream_get_contents($verbose) . "\n";
+                fclose($verbose);
+            }
             echo json_encode(false);
             exit;
         }
@@ -117,31 +135,42 @@ if (isset($_SESSION['userData']['user_id'])) {
         $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
         if ($http_code >= 400) {
             error_log('get-nft-assets: HTTP error: ' . $http_code);
-            echo "Error: HTTP error: $http_code\n";
-            echo "Koios response: " . $tokenresponse . "\n";
-            rewind($verbose);
-            echo "cURL verbose: " . stream_get_contents($verbose) . "\n";
-            fclose($verbose);
+            if ($is_debug) {
+                echo "Error: HTTP error: $http_code\n";
+                echo "Koios response: " . $tokenresponse . "\n";
+                rewind($verbose);
+                echo "cURL verbose: " . stream_get_contents($verbose) . "\n";
+                fclose($verbose);
+            }
             echo json_encode(false);
             exit;
         }
 
         $tokenresponse = json_decode($tokenresponse);
         curl_close($tokench);
+        if ($is_debug) {
+            fclose($verbose);
+        }
 
         $final_array = [];
         if (is_array($tokenresponse)) {
-            echo "Koios returned " . count($tokenresponse) . " assets\n";
+            if ($is_debug) {
+                echo "Koios returned " . count($tokenresponse) . " assets\n";
+            }
             foreach ($tokenresponse as $tokenresponsedata) {
                 $policy_id = $tokenresponsedata->policy_id;
                 $asset_name_ascii = $tokenresponsedata->asset_name_ascii ?: '';
                 $asset_name_hex = $tokenresponsedata->asset_name ?: '';
 
-                echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
+                if ($is_debug) {
+                    echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
+                }
 
                 if (empty($asset_name_ascii)) {
                     error_log('get-nft-assets: Empty asset_name_ascii for policy_id=' . $policy_id);
-                    echo "No asset_name_ascii for policy_id=$policy_id\n";
+                    if ($is_debug) {
+                        echo "No asset_name_ascii for policy_id=$policy_id\n";
+                    }
                     continue;
                 }
 
@@ -173,7 +202,9 @@ if (isset($_SESSION['userData']['user_id'])) {
 
                     if (empty($ipfs)) {
                         error_log('get-nft-assets: No IPFS for ' . $name . ', policy_id=' . $policy_id);
-                        echo "No IPFS for name=$name, policy_id=$policy_id\n";
+                        if ($is_debug) {
+                            echo "No IPFS for name=$name, policy_id=$policy_id\n";
+                        }
                         continue;
                     }
 
@@ -213,36 +244,51 @@ if (isset($_SESSION['userData']['user_id'])) {
                         'powerup' => $powerup,
                         'theme' => $_POST['theme'] ?? ($_GET['theme'] ?? 'unknown')
                     ];
-                    echo "Added NFT: name=$name, policy_id=$policy_id\n";
+                    if ($is_debug) {
+                        echo "Added NFT: name=$name, policy_id=$policy_id\n";
+                    }
                 } else {
                     error_log('get-nft-assets: No metadata for asset_name_ascii=' . $asset_name_ascii . ', policy_id=' . $policy_id);
-                    echo "No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id\n";
+                    if ($is_debug) {
+                        echo "No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id\n";
+                    }
                 }
             }
         } else {
             error_log('get-nft-assets: Invalid Koios response');
-            echo "Error: Invalid Koios response\n";
+            if ($is_debug) {
+                echo "Error: Invalid Koios response\n";
+            }
             echo json_encode(false);
             exit;
         }
 
         if (!empty($final_array)) {
             error_log('get-nft-assets: Returning ' . count($final_array) . ' NFTs');
-            echo "Returning " . count($final_array) . " NFTs\n";
-            echo json_encode($final_array, JSON_PRETTY_PRINT);
+            if ($is_debug) {
+                echo "Returning " . count($final_array) . " NFTs\n";
+                echo json_encode($final_array, JSON_PRETTY_PRINT);
+            }
+            echo json_encode($final_array);
         } else {
             error_log('get-nft-assets: No valid NFTs');
-            echo "No valid NFTs\n";
+            if ($is_debug) {
+                echo "No valid NFTs\n";
+            }
             echo json_encode(false);
         }
     } else {
         error_log('get-nft-assets: No assets found in DB');
-        echo "No assets found in DB\n";
+        if ($is_debug) {
+            echo "No assets found in DB\n";
+        }
         echo json_encode(false);
     }
 } else {
     error_log('get-nft-assets: User not logged in');
-    echo "Error: User not logged in\n";
+    if ($is_debug) {
+        echo "Error: User not logged in\n";
+    }
     echo json_encode(false);
 }
 
