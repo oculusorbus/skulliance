@@ -241,7 +241,8 @@ if (isset($_SESSION['userData']['user_id'])) {
                     $size_map = ['Small', 'Medium', 'Large'];
                     $size = $size_map[$length % 3];
                     $type_map = ['Base', 'Leader', 'Battle Damaged'];
-                    $type = $type_map[ord($asset_name_ascii[0]) % 3];
+					$hash = crc32($asset_name_ascii); // or sum of all ord() values
+					$type = $type_map[$hash % 3];
                     $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
                     $powerup = $powerup_map[ord($asset_name_ascii[$length - 1]) % 4];
 
