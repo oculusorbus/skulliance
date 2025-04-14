@@ -2637,52 +2637,121 @@ if(isset($_SESSION)){
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 	
-	async function getAssets(theme) {
-	    var self = this;
-	    var themeOption = document.querySelector('#theme-select option[value="' + theme + '"]');
-	    var policyIds = themeOption && themeOption.dataset.policyIds 
-	        ? themeOption.dataset.policyIds.split(',').filter(function(id) { return id.trim(); }) 
-	        : [];
-
-	    console.log('getAssets: theme=' + theme + ', policyIds=' + policyIds.join(','));
-
-	    if (policyIds.length === 0) {
-	        console.log('getAssets: No policy IDs, fetching Monstrocity assets');
-	        return getMonstrocityAssets(theme);
-	    }
-
-	    console.log('getAssets: Fetching NFT assets for ' + theme);
-	    var response = fetch('ajax/get-nft-assets.php?theme=' + encodeURIComponent(theme) + '&policy_ids=' + encodeURIComponent(policyIds.join(',')))
-	        .then(function(response) {
-	            console.log('getAssets: NFT fetch status=' + response.status + ', ok=' + response.ok);
-	            if (!response.ok) {
-	                throw new Error('HTTP error! Status: ' + response.status);
-	            }
-	            return response.json();
-	        })
-	        .then(function(data) {
-	            console.log('getAssets: NFT data=', data);
-	            if (data === false || !Array.isArray(data) || data.length === 0) {
-	                console.log('getAssets: Invalid or empty NFT data, falling back');
-	                return getMonstrocityAssets(theme);
-	            }
-	            console.log('getAssets: Loaded ' + data.length + ' NFTs');
-	            return data;
-	        })
-	        .catch(function(error) {
-	            console.error('Error fetching NFT assets for theme ' + theme + ':', error);
-	            console.log('getAssets: Falling back to Monstrocity assets');
-	            return getMonstrocityAssets(theme).catch(function(monstrocityError) {
-	                console.error('getAssets: Monstrocity fallback failed:', monstrocityError);
-	                console.log('getAssets: Using default characters');
-	                return [
-	                    { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity', imageUrl: 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/base/craig.png' },
-	                    { name: 'Dankle', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity', imageUrl: 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/base/dankle.png' }
-	                ];
-	            });
+	async function getAssets(selectedTheme) {
+	    let monstrocityAssets = [];
+	    try {
+	        const monstrocityResponse = await fetch('ajax/get-monstrocity-assets.php', {
+	            method: 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ theme: 'monstrocity' })
 	        });
 
-	    return response;
+	        if (!monstrocityResponse.ok) {
+	            throw new Error('HTTP error! Status: ' + monstrocityResponse.status);
+	        }
+
+	        monstrocityAssets = await monstrocityResponse.json();
+	        if (!Array.isArray(monstrocityAssets)) {
+	            monstrocityAssets = [monstrocityAssets];
+	        }
+
+	        monstrocityAssets = monstrocityAssets.map(asset => ({
+	            ...asset,
+	            theme: 'monstrocity',
+	            name: asset.name || 'Unknown',
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate'
+	        }));
+	    } catch (error) {
+	        console.error('Error fetching Monstrocity assets:', error);
+	        monstrocityAssets = [
+	            {
+	                name: 'Craig',
+	                strength: 4,
+	                speed: 4,
+	                tactics: 4,
+	                size: 'Medium',
+	                type: 'Base',
+	                powerup: 'Regenerate',
+	                theme: 'monstrocity'
+	            },
+	            {
+	                name: 'Dankle',
+	                strength: 3,
+	                speed: 5,
+	                tactics: 3,
+	                size: 'Small',
+	                type: 'Base',
+	                powerup: 'Heal',
+	                theme: 'monstrocity'
+	            }
+	        ];
+	    }
+
+	    if (selectedTheme === 'monstrocity') {
+	        return monstrocityAssets;
+	    }
+
+	    const themeOption = document.querySelector('#theme-select option[value="' + selectedTheme + '"]');
+	    if (!themeOption) {
+	        console.warn('Theme option not found: ' + selectedTheme);
+	        return monstrocityAssets;
+	    }
+
+	    const policyIds = themeOption.dataset.policyIds ? themeOption.dataset.policyIds.split(',').filter(id => id.trim()) : [];
+
+	    if (!policyIds.length) {
+	        console.log('No policy IDs for theme ' + selectedTheme + ', using Monstrocity assets');
+	        return monstrocityAssets;
+	    }
+
+	    const orientations = themeOption.dataset.orientations ? themeOption.dataset.orientations.split(',').filter(o => o.trim()) : [];
+	    const ipfsPrefixes = themeOption.dataset.ipfsPrefixes ? themeOption.dataset.ipfsPrefixes.split(',').filter(p => p.trim()) : [];
+
+	    const policies = policyIds.map((policyId, index) => ({
+	        policyId,
+	        orientation: orientations.length === 1 ? orientations[0] : (orientations[index] || 'Right'),
+	        ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[index] || 'https://ipfs.io/ipfs/')
+	    }));
+
+	    let nftAssets = [];
+	    try {
+	        const nftResponse = await fetch('ajax/get-nft-assets.php', {
+	            method: 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme })
+	        });
+
+	        if (!nftResponse.ok) {
+	            throw new Error('HTTP error! Status: ' + nftResponse.status);
+	        }
+
+	        nftAssets = await nftResponse.json();
+	        if (!Array.isArray(nftAssets)) {
+	            nftAssets = [nftAssets];
+	        }
+
+	        nftAssets = nftAssets.map(asset => ({
+	            ...asset,
+	            theme: selectedTheme,
+	            name: asset.name || ('NFT ' + (asset.ipfs ? asset.ipfs.slice(0, 8) : 'Unknown')),
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate',
+	            policyId: asset.policyId || policies[0].policyId
+	        }));
+	    } catch (error) {
+	        console.error('Error fetching NFT assets for theme ' + selectedTheme + ':', error);
+	    }
+
+	    return [...monstrocityAssets, ...nftAssets];
 	}
 
 	// Instantiation
