@@ -70,7 +70,7 @@ if(isset($_SESSION)){
       margin-top: 0px;
       margin-bottom: 10px;
       font-weight: bold;
-	  white-space: nowrap;
+	  white-space: nowrap3;
     }
 	
 	a {
@@ -690,6 +690,10 @@ if(isset($_SESSION)){
         width: 140px;
         margin: 5px;
       }
+	  
+	  #flip-p1, #flip-p2 {
+		  display: none;
+	  }
     }
   </style>
 </head>
