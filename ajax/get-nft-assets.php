@@ -45,7 +45,7 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $asset_list = ["_asset_list" => []];
         $policy_placeholders = implode(',', array_fill(0, count($policy_ids), '?'));
-        $sql = "SELECT nfts.policy, nfts.asset_name FROM nfts WHERE user_id = ? AND policy IN ($policy_placeholders)";
+        $sql = "SELECT nfts.policy, nfts.asset_name FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE user_id = ? AND collections.policy IN ($policy_placeholders)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
             error_log('get-nft-assets: DB query prepare failed: ' . $conn->error);
