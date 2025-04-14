@@ -88,10 +88,10 @@ if(isset($_SESSION)){
 	  border-radius: 10px;
 	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 	  width: 100%;
+	  height: 100%;
 	  min-width: 910px;
 	  max-width: 1024px;
 	  box-sizing: border-box;
-	  max-height: 1880px;
 	  border: 3px solid black;
 	  display: none; /* Initially hidden */
 	}
