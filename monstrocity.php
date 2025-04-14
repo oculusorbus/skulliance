@@ -993,7 +993,7 @@ if(isset($_SESSION)){
 	  </div>
 	  <!--<p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>-->
 	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
-	  <p>Rewards, Leaderboards, and Game Saves Available to Skulliance Stakers</p>
+	  <p>Leaderboards, Game Saves, and Rewards are Available to Skulliance Stakers</p>
       <div id="character-options"></div>
     </div>
   <script>
