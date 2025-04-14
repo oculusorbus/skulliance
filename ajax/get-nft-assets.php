@@ -69,10 +69,7 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $index = 0;
         while ($stmt->fetch()) {
-            $asset_list["_asset_list"][$index] = [
-                "policy_id" => $policy,
-                "asset_name" => bin2hex($asset_name)
-            ];
+            $asset_list["_asset_list"][$index] = array($policy, bin2hex($asset_name));
             $index++;
         }
 
@@ -90,22 +87,29 @@ if (isset($_SESSION['userData']['user_id'])) {
         // Log the asset list
         echo "Asset list: " . json_encode($asset_list["_asset_list"], JSON_PRETTY_PRINT) . "\n";
 
-        // Simplify Koios request (no batching for 3 assets)
+        // Prepare Koios payload
         $payload = ["_asset_list" => $asset_list["_asset_list"]];
-        echo "Koios payload: " . json_encode($payload, JSON_PRETTY_PRINT) . "\n";
+        $payload_json = json_encode($payload);
+        echo "Koios payload: " . $payload_json . "\n";
 
         $tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
 		curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
         curl_setopt($tokench, CURLOPT_POST, 1);
-        curl_setopt($tokench, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($tokench, CURLOPT_POSTFIELDS, $payload_json);
         curl_setopt($tokench, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($tokench, CURLOPT_HEADER, 0);
         curl_setopt($tokench, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($tokench, CURLOPT_VERBOSE, 1);
+        $verbose = fopen('php://temp', 'w+');
+        curl_setopt($tokench, CURLOPT_STDERR, $verbose);
 
         $tokenresponse = curl_exec($tokench);
         if ($tokenresponse === false) {
             error_log('get-nft-assets: cURL failed: ' . curl_error($tokench));
             echo "Error: cURL failed: " . curl_error($tokench) . "\n";
+            rewind($verbose);
+            echo "cURL verbose: " . stream_get_contents($verbose) . "\n";
+            fclose($verbose);
             echo json_encode(false);
             exit;
         }
@@ -114,8 +118,10 @@ if (isset($_SESSION['userData']['user_id'])) {
         if ($http_code >= 400) {
             error_log('get-nft-assets: HTTP error: ' . $http_code);
             echo "Error: HTTP error: $http_code\n";
-            // Log response for debugging
-            echo "Koios response: $tokenresponse\n";
+            echo "Koios response: " . $tokenresponse . "\n";
+            rewind($verbose);
+            echo "cURL verbose: " . stream_get_contents($verbose) . "\n";
+            fclose($verbose);
             echo json_encode(false);
             exit;
         }
