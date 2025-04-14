@@ -715,7 +715,7 @@ if(isset($_SESSION)){
 	          <tr><td class="attribute-label">Type:</td><td class="attribute"><span id="p1-type"></span></td></tr>
 	      </table>
 	  </div>
-
+      <div id="game-board"></div>
 	  <div class="character" id="player2">
 	      <h2><span id="p2-name"></span></h2>
 	      <img id="p2-image" src="" alt="Player 2 Image">
