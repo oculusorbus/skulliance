@@ -2695,19 +2695,20 @@ if(isset($_SESSION)){
 	    }
 
 	    if (selectedTheme === 'monstrocity') {
+	        console.log('getAssets: Selected monstrocity, returning=', monstrocityAssets);
 	        return monstrocityAssets;
 	    }
 
 	    const themeOption = document.querySelector('#theme-select option[value="' + selectedTheme + '"]');
 	    if (!themeOption) {
-	        console.warn('Theme option not found: ' + selectedTheme);
+	        console.warn('getAssets: Theme option not found: ' + selectedTheme);
 	        return monstrocityAssets;
 	    }
 
 	    const policyIds = themeOption.dataset.policyIds ? themeOption.dataset.policyIds.split(',').filter(id => id.trim()) : [];
 
 	    if (!policyIds.length) {
-	        console.log('No policy IDs for theme ' + selectedTheme + ', using Monstrocity assets');
+	        console.log('getAssets: No policy IDs for theme ' + selectedTheme + ', returning monstrocity assets');
 	        return monstrocityAssets;
 	    }
 
@@ -2722,40 +2723,62 @@ if(isset($_SESSION)){
 
 	    let nftAssets = [];
 	    try {
+	        const requestBody = JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme });
+	        console.log('getAssets: Sending NFT POST request=', requestBody);
 	        const nftResponse = await fetch('ajax/get-nft-assets.php', {
 	            method: 'POST',
 	            headers: { 'Content-Type': 'application/json' },
-	            body: JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme })
+	            body: requestBody
 	        });
 
-	        console.log('getAssets: NFT fetch status=' + nftResponse.status);
+	        console.log('getAssets: NFT response status=', nftResponse.status, 'ok=', nftResponse.ok);
+	        const nftText = await nftResponse.text();
+	        console.log('getAssets: NFT raw response=', nftText);
 	        if (!nftResponse.ok) {
 	            throw new Error('HTTP error! Status: ' + nftResponse.status);
 	        }
 
-	        nftAssets = await nftResponse.json();
-	        console.log('getAssets: NFT data=', nftAssets);
-	        if (!Array.isArray(nftAssets)) {
-	            nftAssets = [nftAssets];
+	        let parsedAssets;
+	        try {
+	            parsedAssets = JSON.parse(nftText);
+	        } catch (parseError) {
+	            console.error('getAssets: Failed to parse NFT response:', parseError, 'raw=', nftText);
+	            throw parseError;
+	        }
+	        console.log('getAssets: Parsed NFT data=', parsedAssets);
+
+	        if (parsedAssets === false || parsedAssets === 'false') {
+	            console.log('getAssets: NFT data is false, skipping');
+	            nftAssets = [];
+	        } else {
+	            nftAssets = Array.isArray(parsedAssets) ? parsedAssets : [parsedAssets];
+	            console.log('getAssets: Normalized NFT assets=', nftAssets);
 	        }
 
-	        nftAssets = nftAssets.map(asset => ({
-	            ...asset,
-	            theme: selectedTheme,
-	            name: asset.name || ('NFT ' + (asset.ipfs ? asset.ipfs.slice(0, 8) : 'Unknown')),
-	            strength: asset.strength || 4,
-	            speed: asset.speed || 4,
-	            tactics: asset.tactics || 4,
-	            size: asset.size || 'Medium',
-	            type: asset.type || 'Base',
-	            powerup: asset.powerup || 'Regenerate',
-	            policyId: asset.policyId || policies[0].policyId
-	        }));
+	        nftAssets = nftAssets.map((asset, index) => {
+	            const mappedAsset = {
+	                ...asset,
+	                theme: selectedTheme,
+	                name: asset.name || ('NFT_' + (asset.ipfs ? asset.ipfs.slice(0, 8) : 'Unknown_' + index)),
+	                strength: asset.strength || 4,
+	                speed: asset.speed || 4,
+	                tactics: asset.tactics || 4,
+	                size: asset.size || 'Medium',
+	                type: asset.type || 'Base',
+	                powerup: asset.powerup || 'Regenerate',
+	                policyId: asset.policyId || policies[0].policyId
+	            };
+	            console.log('getAssets: Mapped NFT asset ' + index + '=', mappedAsset);
+	            return mappedAsset;
+	        });
 	    } catch (error) {
-	        console.error('Error fetching NFT assets for theme ' + selectedTheme + ':', error);
+	        console.error('getAssets: Error fetching NFT assets for theme ' + selectedTheme + ':', error);
+	        nftAssets = [];
 	    }
 
-	    return [...monstrocityAssets, ...nftAssets];
+	    const finalAssets = [...monstrocityAssets, ...nftAssets];
+	    console.log('getAssets: Returning final assets=', finalAssets);
+	    return finalAssets;
 	}
 	
 	// Instantiation
