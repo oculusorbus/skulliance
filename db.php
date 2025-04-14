@@ -6545,28 +6545,6 @@ function getMonstrocityAssets($conn){
 	}
 }
 
-function getNFTAssets($conn, $policy_ids) {
-    $asset_list = ["_asset_list" => []];
-    $policy_placeholders = implode(',', array_fill(0, count($policy_ids), '?'));
-    $query = "SELECT policy_id, asset_name FROM assets WHERE policy_id IN ($policy_placeholders) AND user_id = ?";
-    $stmt = $conn->prepare($query);
-    $types = str_repeat('s', count($policy_ids)) . 's';
-    $params = array_merge($policy_ids, [$_SESSION['userData']['user_id']]);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    while ($row = $result->fetch_assoc()) {
-        $asset_list["_asset_list"][] = [
-            "policy_id" => $row['policy_id'],
-            "asset_name" => bin2hex($row["asset_name"]) // Hex format for Koios
-        ];
-    }
-
-    $stmt->close();
-    return $asset_list;
-}
-
 function saveMonstrocityScore($conn, $user_id, $score, $level) {
   $score = intval($score);
   $level = intval($level);
