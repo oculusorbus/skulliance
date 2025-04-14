@@ -1,8 +1,13 @@
 <?php
-if(isset($_COOKIE['SessionCookie'])){
-	$cookie = $_COOKIE['SessionCookie'];
-	$cookie = json_decode($cookie, true);
-	$_SESSION = $cookie;
+session_start();
+if(!isset($_SESSION['logged_in'])){
+	if(isset($_COOKIE['SessionCookie'])){
+		$cookie = $_COOKIE['SessionCookie'];
+		$cookie = json_decode($cookie, true);
+		$_SESSION = $cookie;
+	}
+}
+if(isset($_SESSION)){
 	extract($_SESSION['userData']);
 	// Initiate variables
 	$member = false;
@@ -877,34 +882,35 @@ if(isset($_COOKIE['SessionCookie'])){
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
 		  <optgroup label="Default Game Theme">
-	      <option value="monstrocity">Monstrocity - Season 1</option>
+	      <option value="monstrocity" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Monstrocity - Season 1</option>
 	  	  </optgroup>
 		  <optgroup label="Independent Artist Themes">
-			  <option value="bungking">Bungking - Yume</option>
-			  <option value="darkula">Darkula - Island of the Uncanny Neighbors</option>
-			  <option value="darkula2">Darkula - Island of the Violent Neighbors</option>
-			  <option value="muses">Josh Howard - Muses of the Multiverse</option>
-			  <option value="maxi">Maxingo - Digital Hell Citizens 2: Fighters</option>
-			  <option value="shortyverse">Ohh Meed - Shorty Verse</option>
+			  <option value="bungking" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Bungking - Yume</option>
+			  <option value="darkula" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Darkula - Island of the Uncanny Neighbors</option>
+			  <option value="darkula2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Darkula - Island of the Violent Neighbors</option>
+			  <option value="muses" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Josh Howard - Muses of the Multiverse</option>
+			  <option value="maxi" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Maxingo - Digital Hell Citizens 2: Fighters</option>
+  			  <option value="shortyverse" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Ohh Meed - Shorty Verse</option>
+			  <option value="shortyverse2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Ohh Meed - Shorty Verse Engaged</option>
 		  </optgroup>
   		  <optgroup label="Partner Project Themes">
-	   		  <option value="discosolaris">Disco Solaris - Moebius Pioneers</option>
-			  <option value="oculuslounge">Disco Solaris - Oculus Lounge</option>
+	   		  <option value="discosolaris" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Disco Solaris - Moebius Pioneers</option>
+			  <option value="oculuslounge" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Disco Solaris - Oculus Lounge</option>
 		  </optgroup>
-		  <optgroup label="Rugged Projects">
-			  <option value="adapunks">ADA Punks</option>
+		  <optgroup label="Rugged Project Themes">
+			  <option value="adapunks" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">ADA Punks</option>
 		  </optgroup>
 		  <?php
 		  if($innercircle){?>
 		  <optgroup label="Inner Circle Top Secret Themes">
-			  <option value="occultarchives">Billy Martin - Occult Archives</option>
-			  <option value="rubberrebels">Classic Cardtoons - Rubber Rebels</option>
-			  <option value="danketsu">Danketsu - Legends</option>
-			  <option value="deadpophell">Dead Pop Hell - NSFW</option>
-			  <option value="havocworlds">Havoc Worlds - Season 1</option>
-			  <option value="karranka">Karranka - Badass Heroes</option>
-			  <option value="karranka2">Karranka - Japanese Ghosts: Legendary Warriors</option>
-			  <option value="omen">Nemonium - Omen Legends</option>
+			  <option value="occultarchives" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Billy Martin - Occult Archives</option>
+			  <option value="rubberrebels" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Classic Cardtoons - Rubber Rebels</option>
+			  <option value="danketsu" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Danketsu - Legends</option>
+			  <option value="deadpophell" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Dead Pop Hell - NSFW</option>
+			  <option value="havocworlds" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Havoc Worlds - Season 1</option>
+			  <option value="karranka" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Badass Heroes</option>
+			  <option value="karranka2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Japanese Ghosts: Legendary Warriors</option>
+			  <option value="omen" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Nemonium - Omen Legends</option>
 	      </optgroup>
 		  <?php }
 		  ?>
@@ -916,36 +922,36 @@ if(isset($_COOKIE['SessionCookie'])){
       <div id="character-options"></div>
     </div>
   <script>
-    const opponentsConfig = [
-      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Base", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Base", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Base", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Base", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Base", powerup: "Regenerate" },
-      { name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Base", powerup: "Regenerate" },
-      { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Base", powerup: "Regenerate" },
-      { name: "Billandar and Ted", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Base", powerup: "Boost Attack" },
-      { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Base", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, speed: 6, tactics: 6, size: "Small", type: "Base", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, speed: 7, tactics: 7, size: "Large", type: "Base", powerup: "Heal" },
-      { name: "Ouchie", strength: 7, speed: 7, tactics: 7, size: "Medium", type: "Base", powerup: "Heal" },
-      { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Base", powerup: "Heal" },
-      { name: "Craig", strength: 1, speed: 1, tactics: 1, size: "Medium", type: "Leader", powerup: "Minor Regen" },
-      { name: "Merdock", strength: 1, speed: 1, tactics: 1, size: "Large", type: "Leader", powerup: "Minor Regen" },
-      { name: "Goblin Ganger", strength: 2, speed: 2, tactics: 2, size: "Small", type: "Leader", powerup: "Minor Regen" },
-      { name: "Texby", strength: 2, speed: 2, tactics: 2, size: "Medium", type: "Leader", powerup: "Minor Regen" },
-      { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
-      { name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
-      { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Leader", powerup: "Regenerate" },
-      { name: "Billandar and Ted", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Leader", powerup: "Regenerate" },
-      { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Leader", powerup: "Boost Attack" },
-      { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Leader", powerup: "Boost Attack" },
-      { name: "Spydrax", strength: 6, speed: 6, tactics: 6, size: "Small", type: "Leader", powerup: "Heal" },
-      { name: "Katastrophy", strength: 7, speed: 7, tactics: 7, size: "Large", type: "Leader", powerup: "Heal" },
-      { name: "Ouchie", strength: 7, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" },
-      { name: "Drake", strength: 8, speed: 7, tactics: 7, size: "Medium", type: "Leader", powerup: "Heal" }
-    ];
+	  const opponentsConfig = [
+	      { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Merdock', strength: 1, speed: 1, tactics: 1, size: 'Large', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Goblin Ganger', strength: 2, speed: 2, tactics: 2, size: 'Small', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Texby', strength: 2, speed: 2, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Mandiblus', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Koipon', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Slime Mind', strength: 4, speed: 4, tactics: 4, size: 'Small', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Billandar and Ted', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Dankle', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Jarhead', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Spydrax', strength: 6, speed: 6, tactics: 6, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Katastrophy', strength: 7, speed: 7, tactics: 7, size: 'Large', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Ouchie', strength: 7, speed: 7, tactics: 7, size: 'Medium', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Drake', strength: 8, speed: 7, tactics: 7, size: 'Medium', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Leader', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Merdock', strength: 1, speed: 1, tactics: 1, size: 'Large', type: 'Leader', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Goblin Ganger', strength: 2, speed: 2, tactics: 2, size: 'Small', type: 'Leader', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Texby', strength: 2, speed: 2, tactics: 2, size: 'Medium', type: 'Leader', powerup: 'Minor Régén', theme: 'monstrocity' },
+	      { name: 'Mandiblus', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Koipon', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Slime Mind', strength: 4, speed: 4, tactics: 4, size: 'Small', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Billandar and Ted', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Dankle', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Leader', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Jarhead', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Leader', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Spydrax', strength: 6, speed: 6, tactics: 6, size: 'Small', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Katastrophy', strength: 7, speed: 7, tactics: 7, size: 'Large', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Ouchie', strength: 7, speed: 7, tactics: 7, size: 'Medium', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Drake', strength: 8, speed: 7, tactics: 7, size: 'Medium', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' }
+	  ];
 	
 	 /*
     const playerCharactersConfig = [
@@ -1011,7 +1017,7 @@ if(isset($_COOKIE['SessionCookie'])){
     };
 
     class MonstrocityMatch3 {
-		constructor(playerCharactersConfig) {
+		constructor(playerCharactersConfig, initialTheme) {
 		    this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 		    this.width = 5;
 		    this.height = 5;
@@ -1021,43 +1027,38 @@ if(isset($_COOKIE['SessionCookie'])){
 		    this.currentTurn = null;
 		    this.player1 = null;
 		    this.player2 = null;
-		    this.gameState = "initializing";
+		    this.gameState = 'initializing';
 		    this.isDragging = false;
 		    this.targetTile = null;
 		    this.dragDirection = null;
 		    this.offsetX = 0;
 		    this.offsetY = 0;
 		    this.currentLevel = 1;
-		    this.playerCharactersConfig = playerCharactersConfig; // Store config, not mapped array
-		    this.playerCharacters = []; // Initialize empty, fill in init
+		    this.playerCharactersConfig = playerCharactersConfig;
+		    this.playerCharacters = [];
 		    this.isCheckingGameOver = false;
-
-		    this.tileTypes = ["first-attack", "second-attack", "special-attack", "power-up", "last-stand"];
+		    this.tileTypes = ['first-attack', 'second-attack', 'special-attack', 'power-up', 'last-stand'];
 		    this.roundStats = [];
 		    this.grandTotalScore = 0;
-
-		    // Theme management
-		    this.theme = localStorage.getItem('gameTheme') || 'monstrocity';
-		    this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
-		    this.setBackground();
-
+		    this.theme = localStorage.getItem('gameTheme') || initialTheme || 'monstrocity';
+		    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
 		    this.sounds = {
-		      match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
-		      cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
-		      badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
-		      gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
-		      reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
-		      loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
-		      win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
-		      finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
-		      powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
-		      hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
-		      multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
+		        match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+		        cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+		        badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
+		        gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
+		        reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
+		        loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
+		        win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
+		        finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
+		        powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
+		        hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
+		        multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
 		    };
-
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
-		  }
+		    this.setBackground();
+		}
 		  
 		  async init() {
 		      console.log("init: Starting async initialization");
@@ -1097,33 +1098,32 @@ if(isset($_COOKIE['SessionCookie'])){
 
 	    // Update theme and refresh visuals
 		  updateTheme(newTheme) {
+		      var self = this;
 		      this.theme = newTheme;
-		      this.baseImagePath = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/`;
+		      this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
 		      localStorage.setItem('gameTheme', this.theme);
 		      this.setBackground();
-
-		      // Refresh playerCharacters with new theme URLs
-		      this.playerCharacters = this.playerCharactersConfig.map(config => this.createCharacter(config));
-
-		      // Refresh current players if set
-		      if (this.player1) {
-		        this.player1.imageUrl = this.getCharacterImageUrl(this.player1);
-		        this.updatePlayerDisplay(); // Update display with new theme logic
-		      }
-		      if (this.player2) {
-		        this.player2.imageUrl = this.getCharacterImageUrl(this.player2);
-		        this.updateOpponentDisplay(); // Update display with new theme logic
-		      }
-
-		      // Update logo
-		      document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
-
-		      // Re-render character select if open
-		      const container = document.getElementById("character-select-container");
-		      if (container.style.display === "block") {
-		        this.showCharacterSelect(this.player1 === null);
-		      }
-		    }
+		      getAssets(this.theme).then(function(assets) {
+		          self.playerCharactersConfig = assets;
+		          self.playerCharacters = self.playerCharactersConfig.map(function(config) { return self.createCharacter(config); });
+		          if (self.player1) {
+		              var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
+		              self.player1 = self.createCharacter(newConfig);
+		              self.updatePlayerDisplay();
+		          }
+		          if (self.player2) {
+		              self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
+		              self.updateOpponentDisplay();
+		          }
+		          document.querySelector('.game-logo').src = self.baseImagePath + 'logo.png';
+		          var container = document.getElementById('character-select-container');
+		          if (container.style.display === 'block') {
+		              self.showCharacterSelect(self.player1 === null);
+		          }
+		      }).catch(function(error) {
+		          console.error('Error updating theme assets:', error);
+		      });
+		  }
 	  
 		async saveProgress() {
 		  const data = {
@@ -1223,113 +1223,144 @@ if(isset($_COOKIE['SessionCookie'])){
       }
 
 	  createCharacter(config) {
-	      let typeFolder;
-	      switch (config.type) {
-	        case "Base": typeFolder = "base"; break;
-	        case "Leader": typeFolder = "leader"; break;
-	        case "Battle Damaged": typeFolder = "battle-damaged"; break;
-	        default: typeFolder = "base";
-	      }
-	      const imageUrl = `${this.baseImagePath}${typeFolder}/${config.name.toLowerCase().replace(/ /g, '-')}.png`;
+	      var typeFolder;
+	      var imageUrl;
+	      var orientation = 'Left';
+	      var isNFT = false;
 
-	      let baseHealth;
-	      switch (config.type) {
-	        case "Leader": baseHealth = 100; break;
-	        case "Battle Damaged": baseHealth = 70; break;
-	        case "Base":
-	        default: baseHealth = 85;
+	      if (config.ipfs && config.policyId) {
+	          isNFT = true;
+	          var themeOption = document.querySelector('#theme-select option[value="' + config.theme + '"]');
+	          var policyMetadata = { orientation: 'Right', ipfsPrefix: 'https://ipfs.io/ipfs/' };
+	          if (themeOption) {
+	              var policyIds = themeOption.dataset.policyIds ? themeOption.dataset.policyIds.split(',').filter(function(id) { return id.trim(); }) : [];
+	              var orientations = themeOption.dataset.orientations ? themeOption.dataset.orientations.split(',').filter(function(o) { return o.trim(); }) : [];
+	              var ipfsPrefixes = themeOption.dataset.ipfsPrefixes ? themeOption.dataset.ipfsPrefixes.split(',').filter(function(p) { return p.trim(); }) : [];
+	              var policyIndex = policyIds.indexOf(config.policyId);
+	              if (policyIndex !== -1) {
+	                  policyMetadata = {
+	                      orientation: orientations.length === 1 ? orientations[0] : (orientations[policyIndex] || 'Right'),
+	                      ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[policyIndex] || 'https://ipfs.io/ipfs/')
+	                  };
+	              }
+	          }
+	          orientation = policyMetadata.orientation;
+	          imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
+	      } else {
+	          switch (config.type) {
+	              case 'Base': typeFolder = 'base'; break;
+	              case 'Leader': typeFolder = 'leader'; break;
+	              case 'Battle Damaged': typeFolder = 'battle-damaged'; break;
+	              default: typeFolder = 'base';
+	          }
+	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.png';
+	          orientation = characterDirections[config.name] || 'Left';
 	      }
 
-	      let healthModifier = 1;
-	      let tacticsAdjust = 0;
+	      var baseHealth;
+	      switch (config.type) {
+	          case 'Leader': baseHealth = 100; break;
+	          case 'Battle Damaged': baseHealth = 70; break;
+	          case 'Base':
+	          default: baseHealth = 85;
+	      }
+
+	      var healthModifier = 1;
+	      var tacticsAdjust = 0;
 	      switch (config.size) {
-	        case "Large":
-	          healthModifier = 1.2;
-	          tacticsAdjust = config.tactics > 1 ? -2 : 0;
-	          break;
-	        case "Small":
-	          healthModifier = 0.8;
-	          tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics;
-	          break;
-	        case "Medium":
-	          healthModifier = 1;
-	          tacticsAdjust = 0;
-	          break;
+	          case 'Large':
+	              healthModifier = 1.2;
+	              tacticsAdjust = config.tactics > 1 ? -2 : 0;
+	              break;
+	          case 'Small':
+	              healthModifier = 0.8;
+	              tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics;
+	              break;
+	          case 'Medium':
+	              healthModifier = 1;
+	              tacticsAdjust = 0;
+	              break;
 	      }
 
-	      const adjustedHealth = Math.round(baseHealth * healthModifier);
-	      const adjustedTactics = Math.max(1, Math.min(7, config.tactics + tacticsAdjust));
+	      var adjustedHealth = Math.round(baseHealth * healthModifier);
+	      var adjustedTactics = Math.max(1, Math.min(7, config.tactics + tacticsAdjust));
 
 	      return {
-	        name: config.name,
-	        type: config.type,
-	        strength: config.strength,
-	        speed: config.speed,
-	        tactics: adjustedTactics,
-	        size: config.size,
-	        powerup: config.powerup,
-	        health: adjustedHealth,
-	        maxHealth: adjustedHealth,
-	        boostActive: false,
-	        boostValue: 0,
-	        lastStandActive: false,
-	        imageUrl
+	          name: config.name,
+	          type: config.type,
+	          strength: config.strength,
+	          speed: config.speed,
+	          tactics: adjustedTactics,
+	          size: config.size,
+	          powerup: config.powerup,
+	          health: adjustedHealth,
+	          maxHealth: adjustedHealth,
+	          boostActive: false,
+	          boostValue: 0,
+	          lastStandActive: false,
+	          imageUrl: imageUrl,
+	          orientation: orientation,
+	          isNFT: isNFT
 	      };
-	    }
-		
-	  // Helper to get character image URL based on current theme
-		getCharacterImageUrl(character) {
-		    let typeFolder;
-		    switch (character.type) {
-		      case "Base": typeFolder = "base"; break;
-		      case "Leader": typeFolder = "leader"; break;
-		      case "Battle Damaged": typeFolder = "battle-damaged"; break;
-		      default: typeFolder = "base";
-		    }
-		    return `${this.baseImagePath}${typeFolder}/${character.name.toLowerCase().replace(/ /g, '-')}.png`;
-		  }
+	  }
 
-		  async showCharacterSelect(isInitial = false) {
-		      console.log(`showCharacterSelect: Called with isInitial=${isInitial}`);
-		      const container = document.getElementById("character-select-container");
-		      const optionsDiv = document.getElementById("character-options");
-		      const themeSelect = document.getElementById("theme-select");
-		      optionsDiv.innerHTML = "";
-		      container.style.display = "block";
+		  showCharacterSelect(isInitial) {
+		      var self = this;
+		      console.log('showCharacterSelect: Called with isInitial=' + isInitial);
+		      var container = document.getElementById('character-select-container');
+		      var optionsDiv = document.getElementById('character-options');
+		      var themeSelect = document.getElementById('theme-select');
+		      optionsDiv.innerHTML = '';
+		      container.style.display = 'block';
 
 		      themeSelect.value = this.theme;
-		      themeSelect.onchange = () => {
-		        this.updateTheme(themeSelect.value);
+		      themeSelect.onchange = function() {
+		          self.updateTheme(themeSelect.value);
 		      };
 
-		      this.playerCharacters.forEach((character, index) => {
-		        const option = document.createElement("div");
-		        option.className = "character-option";
-		        option.innerHTML = `
-		          <img src="${character.imageUrl}" alt="${character.name}">
-		          <p><strong>${character.name}</strong></p>
-		          <p>Type: ${character.type}</p>
-		          <p>Health: ${character.maxHealth}</p>
-		          <p>Strength: ${character.strength}</p>
-		          <p>Speed: ${character.speed}</p>
-		          <p>Tactics: ${character.tactics}</p>
-		          <p>Size: ${character.size}</p>
-		          <p>Power-Up: ${character.powerup}</p>
-		        `;
-		        option.addEventListener("click", () => {
-		          console.log(`showCharacterSelect: Character selected: ${character.name}`);
-		          container.style.display = "none";
-		          if (isInitial) {
-		            this.player1 = { ...character };
-		            console.log(`showCharacterSelect: this.player1 set: ${this.player1.name}`);
-		            this.initGame();
-		          } else {
-		            this.swapPlayerCharacter(character);
-		          }
-		        });
-		        optionsDiv.appendChild(option);
+		      this.playerCharacters.forEach(function(character, index) {
+		          var option = document.createElement('div');
+		          option.className = 'character-option';
+		          option.innerHTML =
+		              '<img src="' + character.imageUrl + '" alt="' + character.name + '">' +
+		              '<p><strong>' + character.name + '</strong></p>' +
+		              '<p>Type: ' + character.type + '</p>' +
+		              '<p>Health: ' + character.maxHealth + '</p>' +
+		              '<p>Strength: ' + character.strength + '</p>' +
+		              '<p>Speed: ' + character.speed + '</p>' +
+		              '<p>Tactics: ' + character.tactics + '</p>' +
+		              '<p>Size: ' + character.size + '</p>' +
+		              '<p>Power-Up: ' + character.powerup + '</p>';
+		          option.addEventListener('click', function() {
+		              console.log('showCharacterSelect: Character selected: ' + character.name);
+		              container.style.display = 'none';
+		              if (isInitial) {
+		                  self.player1 = {
+		                      name: character.name,
+		                      type: character.type,
+		                      strength: character.strength,
+		                      speed: character.speed,
+		                      tactics: character.tactics,
+		                      size: character.size,
+		                      powerup: character.powerup,
+		                      health: character.health,
+		                      maxHealth: character.maxHealth,
+		                      boostActive: false,
+		                      boostValue: 0,
+		                      lastStandActive: false,
+		                      imageUrl: character.imageUrl,
+		                      orientation: character.orientation,
+		                      isNFT: character.isNFT
+		                  };
+		                  console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
+		                  self.initGame();
+		              } else {
+		                  self.swapPlayerCharacter(character);
+		              }
+		          });
+		          optionsDiv.appendChild(option);
 		      });
-		    }
+		  }
 
 	  swapPlayerCharacter(newCharacter) {
 	    const oldHealth = this.player1.health;
@@ -1422,101 +1453,95 @@ if(isset($_COOKIE['SessionCookie'])){
 	    }
 
 		initGame() {
-			console.log(`initGame: Started with this.currentLevel=${this.currentLevel}`);
-		    const gameContainer = document.querySelector(".game-container");
-		    const gameBoard = document.getElementById("game-board");
-		    gameContainer.style.display = "block";
-		    gameBoard.style.visibility = "visible";
-
-		    document.querySelector('.game-logo').src = `${this.baseImagePath}logo.png`;
+		    var self = this;
+		    console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
+		    var gameContainer = document.querySelector('.game-container');
+		    var gameBoard = document.getElementById('game-board');
+		    gameContainer.style.display = 'block';
+		    gameBoard.style.visibility = 'visible';
 
 		    this.sounds.reset.play();
-		    log(`Starting Level ${this.currentLevel}...`);
+		    log('Starting Level ' + this.currentLevel + '...');
 		    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
-		    console.log(`Loaded opponent for level ${this.currentLevel}: ${this.player2.name} (opponentsConfig[${this.currentLevel - 1}])`);
+		    console.log('Loaded opponent for level ' + this.currentLevel + ': ' + this.player2.name + ' (opponentsConfig[' + (this.currentLevel - 1) + '])');
 
 		    this.player1.health = this.player1.maxHealth;
 
 		    this.currentTurn = this.player1.speed > this.player2.speed 
-		      ? this.player1 
-		      : this.player2.speed > this.player1.speed 
+		        ? this.player1 
+		        : this.player2.speed > this.player1.speed 
 		        ? this.player2 
 		        : this.player1.strength >= this.player2.strength 
-		          ? this.player1 
-		          : this.player2;
-		    this.gameState = "initializing";
+		        ? this.player1 
+		        : this.player2;
+		    this.gameState = 'initializing';
 		    this.gameOver = false;
 
 		    this.roundStats = [];
 
 		    p1Image.classList.remove('winner', 'loser');
 		    p2Image.classList.remove('winner', 'loser');
-		    this.updatePlayerDisplay(); // Apply theme-based names
-		    this.updateOpponentDisplay(); // Apply theme-based names
+		    this.updatePlayerDisplay();
+		    this.updateOpponentDisplay();
 
-		    if (characterDirections[this.player1.name] === "Left") {
-		      p1Image.style.transform = "scaleX(-1)";
-		    } else {
-		      p1Image.style.transform = "none";
-		    }
-
-		    if (characterDirections[this.player2.name] === "Right") {
-		      p2Image.style.transform = "scaleX(-1)";
-		    } else {
-		      p2Image.style.transform = "none";
-		    }
+		    p1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		    p2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
 
 		    this.updateHealth(this.player1);
 		    this.updateHealth(this.player2);
 
-		    battleLog.innerHTML = "";
-		    gameOver.textContent = "";
+		    battleLog.innerHTML = '';
+		    gameOver.textContent = '';
 
-		    if (this.player1.size !== "Medium") {
-		      log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === "Large" ? "boosts health to " + this.player1.maxHealth + " but dulls tactics to " + this.player1.tactics : "drops health to " + this.player1.maxHealth + " but sharpens tactics to " + this.player1.tactics}!`);
+		    if (this.player1.size !== 'Medium') {
+		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
 		    }
-		    if (this.player2.size !== "Medium") {
-		      log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === "Large" ? "boosts health to " + this.player2.maxHealth + " but dulls tactics to " + this.player2.tactics : "drops health to " + this.player2.maxHealth + " but sharpens tactics to " + this.player2.tactics}!`);
+		    if (this.player2.size !== 'Medium') {
+		        log(this.player2.name + '\'s ' + this.player2.size + ' size ' + (this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics) + '!');
 		    }
 
-		    log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
-		    log(`${this.currentTurn.name} goes first!`);
+		    log(this.player1.name + ' starts at full strength with ' + this.player1.health + '/' + this.player1.maxHealth + ' HP!');
+		    log(this.currentTurn.name + ' goes first!');
 
 		    this.initBoard();
-		    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-		    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
+		    turnIndicator.textContent = 'Level ' + this.currentLevel + ' - ' + (this.currentTurn === this.player1 ? 'Player' : 'Opponent') + '\'s Turn';
 
 		    if (this.playerCharacters.length > 1) {
-		      document.getElementById("change-character").style.display = "inline-block";
+		        document.getElementById('change-character').style.display = 'inline-block';
 		    }
 
 		    if (this.currentTurn === this.player2) {
-		      setTimeout(() => this.aiTurn(), 1000);
+		        setTimeout(function() { self.aiTurn(); }, 1000);
 		    }
+		}
+
+		  updatePlayerDisplay() {
+		      p1Name.textContent = this.player1.isNFT || this.theme === 'monstrocity' ? this.player1.name : 'Player 1';
+		      p1Type.textContent = this.player1.type;
+		      p1Strength.textContent = this.player1.strength;
+		      p1Speed.textContent = this.player1.speed;
+		      p1Tactics.textContent = this.player1.tactics;
+		      p1Size.textContent = this.player1.size;
+		      p1Powerup.textContent = this.player1.powerup;
+		      p1Image.src = this.player1.imageUrl;
+		      p1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		      p1Image.onload = function() { p1Image.style.display = 'block'; };
+		      p1Hp.textContent = this.player1.health + '/' + this.player1.maxHealth;
 		  }
 
-	  updatePlayerDisplay() {
-	      p1Name.textContent = this.theme === 'monstrocity' ? this.player1.name : "Player 1"; // Theme-based name
-	      p1Type.textContent = this.player1.type;
-	      p1Strength.textContent = this.player1.strength;
-	      p1Speed.textContent = this.player1.speed;
-	      p1Tactics.textContent = this.player1.tactics;
-	      p1Size.textContent = this.player1.size;
-	      p1Powerup.textContent = this.player1.powerup;
-	      p1Image.src = this.player1.imageUrl;
-	      p1Image.onload = () => p1Image.style.display = "block"; // Show when loaded
-	    }
-
-		updateOpponentDisplay() {
-		    p2Name.textContent = this.theme === 'monstrocity' ? this.player2.name : "AI Opponent"; // Theme-based name
-		    p2Type.textContent = this.player2.type;
-		    p2Strength.textContent = this.player2.strength;
-		    p2Speed.textContent = this.player2.speed;
-		    p2Tactics.textContent = this.player2.tactics;
-		    p2Size.textContent = this.player2.size;
-		    p2Powerup.textContent = this.player2.powerup;
-		    p2Image.src = this.player2.imageUrl;
-		    p2Image.onload = () => p2Image.style.display = "block"; // Show when loaded
+		  updateOpponentDisplay() {
+		      p2Name.textContent = this.theme === 'monstrocity' ? this.player2.name : 'AI Opponent';
+		      p2Type.textContent = this.player2.type;
+		      p2Strength.textContent = this.player2.strength;
+		      p2Speed.textContent = this.player2.speed;
+		      p2Tactics.textContent = this.player2.tactics;
+		      p2Size.textContent = this.player2.size;
+		      p2Powerup.textContent = this.player2.powerup;
+		      p2Image.src = this.player2.imageUrl;
+		      p2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		      p2Image.onload = function() { p2Image.style.display = 'block'; };
+		      p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
 		  }
 
       initBoard() {
@@ -2608,57 +2633,139 @@ if(isset($_COOKIE['SessionCookie'])){
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 	
-	function getAssets() {
-	  return new Promise((resolve, reject) => {
-	    let result = [{
-	      name: "Craig",
-	      strength: 4,
-	      speed: 4,
-	      tactics: 4,
-	      size: "Medium",
-	      type: "Base",
-	      powerup: "Regenerate"
-	    }];
+	async function getAssets(selectedTheme) {
+	    let monstrocityAssets = [];
+	    try {
+	        const monstrocityResponse = await fetch('ajax/get-monstrocity-assets.php', {
+	            method: 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ theme: 'monstrocity' })
+	        });
 
-	    var xhttp = new XMLHttpRequest();
-	    xhttp.open('GET', 'ajax/get-monstrocity-assets.php', true);
-	    xhttp.send();
-	    xhttp.onreadystatechange = function() {
-	      if (xhttp.readyState == XMLHttpRequest.DONE) {
-	        if (xhttp.status == 200) {
-	          var data = xhttp.responseText;
-	          if (data !== 'false') {
-	            try {
-	              result = JSON.parse(data);
-	              if (!Array.isArray(result)) {
-	                result = [result];
-	              }
-	            } catch (e) {
-	              console.error('Failed to parse JSON:', e);
-	            }
-	          }
-	          resolve(result);
-	        } else {
-	          console.error('Request failed with status:', xhttp.status);
-	          resolve(result);
+	        if (!monstrocityResponse.ok) {
+	            throw new Error('HTTP error! Status: ' + monstrocityResponse.status);
 	        }
-	      }
-	    };
-	  });
+
+	        monstrocityAssets = await monstrocityResponse.json();
+	        if (!Array.isArray(monstrocityAssets)) {
+	            monstrocityAssets = [monstrocityAssets];
+	        }
+
+	        monstrocityAssets = monstrocityAssets.map(asset => ({
+	            ...asset,
+	            theme: 'monstrocity',
+	            name: asset.name || 'Unknown',
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate'
+	        }));
+	    } catch (error) {
+	        console.error('Error fetching Monstrocity assets:', error);
+	        monstrocityAssets = [
+	            {
+	                name: 'Craig',
+	                strength: 4,
+	                speed: 4,
+	                tactics: 4,
+	                size: 'Medium',
+	                type: 'Base',
+	                powerup: 'Regenerate',
+	                theme: 'monstrocity'
+	            },
+	            {
+	                name: 'Dankle',
+	                strength: 3,
+	                speed: 5,
+	                tactics: 3,
+	                size: 'Small',
+	                type: 'Base',
+	                powerup: 'Heal',
+	                theme: 'monstrocity'
+	            }
+	        ];
+	    }
+
+	    if (selectedTheme === 'monstrocity') {
+	        return monstrocityAssets;
+	    }
+
+	    const themeOption = document.querySelector('#theme-select option[value="' + selectedTheme + '"]');
+	    if (!themeOption) {
+	        console.warn('Theme option not found: ' + selectedTheme);
+	        return monstrocityAssets;
+	    }
+
+	    const policyIds = themeOption.dataset.policyIds ? themeOption.dataset.policyIds.split(',').filter(id => id.trim()) : [];
+
+	    if (!policyIds.length) {
+	        console.log('No policy IDs for theme ' + selectedTheme + ', using Monstrocity assets');
+	        return monstrocityAssets;
+	    }
+
+	    const orientations = themeOption.dataset.orientations ? themeOption.dataset.orientations.split(',').filter(o => o.trim()) : [];
+	    const ipfsPrefixes = themeOption.dataset.ipfsPrefixes ? themeOption.dataset.ipfsPrefixes.split(',').filter(p => p.trim()) : [];
+
+	    const policies = policyIds.map((policyId, index) => ({
+	        policyId,
+	        orientation: orientations.length === 1 ? orientations[0] : (orientations[index] || 'Right'),
+	        ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[index] || 'https://ipfs.io/ipfs/')
+	    }));
+
+	    let nftAssets = [];
+	    try {
+	        const nftResponse = await fetch('ajax/get-nft-assets.php', {
+	            method: 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme })
+	        });
+
+	        if (!nftResponse.ok) {
+	            throw new Error('HTTP error! Status: ' + nftResponse.status);
+	        }
+
+	        nftAssets = await nftResponse.json();
+	        if (!Array.isArray(nftAssets)) {
+	            nftAssets = [nftAssets];
+	        }
+
+	        nftAssets = nftAssets.map(asset => ({
+	            ...asset,
+	            theme: selectedTheme,
+	            name: asset.name || ('NFT ' + (asset.ipfs ? asset.ipfs.slice(0, 8) : 'Unknown')),
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate',
+	            policyId: asset.policyId || policies[0].policyId
+	        }));
+	    } catch (error) {
+	        console.error('Error fetching NFT assets for theme ' + selectedTheme + ':', error);
+	    }
+
+	    return [...monstrocityAssets, ...nftAssets];
 	}
 
 	// Instantiation
-	(async () => {
-	  try {
-	    const playerCharactersConfig = await getAssets();
-	    console.log("Main: Player characters loaded:", playerCharactersConfig);
-	    const game = new MonstrocityMatch3(playerCharactersConfig);
-	    console.log("Main: Game instance created");
-	    await game.init();
-	    console.log("Main: Game initialized successfully");
-	  } catch (error) {
-	    console.error("Main: Error initializing game:", error);
-	  }
+	(function() {
+	    var initGame = function() {
+	        var initialTheme = localStorage.getItem('gameTheme') || 'monstrocity';
+	        getAssets(initialTheme).then(function(playerCharactersConfig) {
+	            console.log('Main: Player characters loaded:', playerCharactersConfig);
+	            var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
+	            console.log('Main: Game instance created');
+	            game.init().then(function() {
+	                console.log('Main: Game initialized successfully');
+	            });
+	        }).catch(function(error) {
+	            console.error('Main: Error initializing game:', error);
+	        });
+	    };
+	    initGame();
 	})();
   </script>
 </body>
