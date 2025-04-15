@@ -1538,23 +1538,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  	// Set background based on current theme
 			setBackground() {
 			  console.log('setBackground: Attempting for theme=' + this.theme);
-			  const gameContainer = document.getElementById('game-container');
-			  console.log('setBackground: gameContainer exists=' + !!gameContainer);
-			  if (!gameContainer) {
-			    console.warn('setBackground: #game-container not found in DOM');
-			    return;
-			  }
-			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
-			  console.log('setBackground: themeData=', themeData);
-			  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/monstrocity.png`;
-			  console.log('setBackground: Setting background to ' + backgroundUrl);
-			  if (themeData && themeData.background) {
-			    gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
-			    gameContainer.style.backgroundSize = 'cover';
-			    gameContainer.style.backgroundPosition = 'center';
-			  } else {
-			    gameContainer.style.backgroundImage = 'none';
-			  }
+			  const attemptSetBackground = () => {
+			    const gameContainer = document.getElementById('game-container');
+			    console.log('setBackground: gameContainer exists=' + !!gameContainer);
+			    if (!gameContainer) {
+			      console.warn('setBackground: #game-container not found in DOM, retrying...');
+			      setTimeout(attemptSetBackground, 100); // Retry after 100ms
+			      return;
+			    }
+			    const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+			    console.log('setBackground: themeData=', themeData);
+			    const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/monstrocity.png`;
+			    console.log('setBackground: Setting background to ' + backgroundUrl);
+			    if (themeData && themeData.background) {
+			      gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
+			      gameContainer.style.backgroundSize = 'cover';
+			      gameContainer.style.backgroundPosition = 'center';
+			    } else {
+			      gameContainer.style.backgroundImage = 'none';
+			    }
+			  };
+			  attemptSetBackground();
 			}
 
 	    // Update theme and refresh visuals
@@ -3315,22 +3319,22 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 	
 	// Instantiation
-	(function() {
-	    var initGame = function() {
-	        var initialTheme = localStorage.getItem('gameTheme') || 'monstrocity';
-	        getAssets(initialTheme).then(function(playerCharactersConfig) {
-	            console.log('Main: Player characters loaded:', playerCharactersConfig);
-	            var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
-	            console.log('Main: Game instance created');
-	            game.init().then(function() {
-	                console.log('Main: Game initialized successfully');
-	            });
-	        }).catch(function(error) {
-	            console.error('Main: Error initializing game:', error);
-	        });
-	    };
-	    initGame();
-	})();
+	document.addEventListener('DOMContentLoaded', function() {
+	  var initGame = function() {
+	    var initialTheme = localStorage.getItem('gameTheme') || 'monstrocity';
+	    getAssets(initialTheme).then(function(playerCharactersConfig) {
+	      console.log('Main: Player characters loaded:', playerCharactersConfig);
+	      var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
+	      console.log('Main: Game instance created');
+	      game.init().then(function() {
+	        console.log('Main: Game initialized successfully');
+	      });
+	    }).catch(function(error) {
+	      console.error('Main: Error initializing game:', error);
+	    });
+	  };
+	  initGame();
+	});
   </script>
 </body>
 </html>
