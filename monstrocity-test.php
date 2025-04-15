@@ -1060,15 +1060,43 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  // Theme data extracted from original <select>
 	  const themes = [
 	    {
-	      group: "Default Game Theme",
+	      group: "Partner Project Themes",
 	      items: [
 	        {
 	          value: "monstrocity",
 	          project: "Monstrocity",
-	          title: "Season 1",
+	          title: "Default Game",
 	          policyIds: "",
 	          orientations: "",
-	          ipfsPrefixes: ""
+	          ipfsPrefixes: "",
+			  background: true
+	        },
+	        {
+	          value: "discosolaris",
+	          project: "Disco Solaris",
+	          title: "Moebius Pioneers",
+	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
+	        },
+	        {
+	          value: "oculuslounge",
+	          project: "Disco Solaris",
+	          title: "Oculus Lounge",
+	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
+	        },
+	        {
+	          value: "havocworlds",
+	          project: "Havoc Worlds",
+	          title: "Season 1",
+	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        }
 	      ]
 	    },
@@ -1173,38 +1201,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: false
-	        }
-	      ]
-	    },
-	    {
-	      group: "Partner Project Themes",
-	      items: [
-	        {
-	          value: "discosolaris",
-	          project: "Disco Solaris",
-	          title: "Moebius Pioneers",
-	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
-	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
-	        },
-	        {
-	          value: "oculuslounge",
-	          project: "Disco Solaris",
-	          title: "Oculus Lounge",
-	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
-	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
-	        },
-	        {
-	          value: "havocworlds",
-	          project: "Havoc Worlds",
-	          title: "Season 1",
-	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
-	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
 	        }
 	      ]
 	    },
