@@ -674,8 +674,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  border-top: 1px solid black;
 	  border-bottom: 1px solid black;
 	  margin-bottom: 30px;
-	  position: relative;
-	  left: 20px;
 	}
 
 	.theme-option {
