@@ -1182,7 +1182,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "ritual",
@@ -1191,7 +1191,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "skowl",
