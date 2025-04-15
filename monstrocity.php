@@ -1097,6 +1097,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true
+	        },
+	        {
+	          value: "muses",
+	          project: "Josh Howard",
+	          title: "Muses of the Multiverse",
+	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        }
 	      ]
 	    },
@@ -1135,15 +1144,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          project: "Darkula",
 	          title: "Island of the Violent Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
-	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
-	        },
-	        {
-	          value: "muses",
-	          project: "Josh Howard",
-	          title: "Muses of the Multiverse",
-	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true
