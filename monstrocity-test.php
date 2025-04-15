@@ -850,7 +850,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   </style>
 </head>
 <body>
-  <div class="game-container" id="game-container">
+  <div class="game-container">
     <div id="game-over-container">
       <div id="game-over"></div>
       <div id="game-over-buttons">
@@ -1538,35 +1538,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  	// Set background based on current theme
 			setBackground() {
 			  console.log('setBackground: Attempting for theme=' + this.theme);
-			  let retries = 0;
-			  const maxRetries = 10; // Limit to 10 retries (1 second total)
-
-			  const attemptSetBackground = () => {
-			    const gameContainer = document.getElementById('game-container');
-			    console.log('setBackground: gameContainer exists=' + !!gameContainer);
-			    if (!gameContainer) {
-			      retries++;
-			      if (retries >= maxRetries) {
-			        console.error('setBackground: #game-container not found after ' + maxRetries + ' retries. Aborting.');
-			        return;
-			      }
-			      console.warn('setBackground: #game-container not found in DOM, retrying... (' + retries + '/' + maxRetries + ')');
-			      setTimeout(attemptSetBackground, 100); // Retry after 100ms
-			      return;
-			    }
-			    const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
-			    console.log('setBackground: themeData=', themeData);
-			    const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/monstrocity.png`;
-			    console.log('setBackground: Setting background to ' + backgroundUrl);
-			    if (themeData && themeData.background) {
-			      gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
-			      gameContainer.style.backgroundSize = 'cover';
-			      gameContainer.style.backgroundPosition = 'center';
-			    } else {
-			      gameContainer.style.backgroundImage = 'none';
-			    }
-			  };
-			  attemptSetBackground();
+			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+			  console.log('setBackground: themeData=', themeData);
+			  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/monstrocity.png`;
+			  console.log('setBackground: Setting background to ' + backgroundUrl);
+			  if (themeData && themeData.background) {
+			    document.body.style.backgroundImage = `url(${backgroundUrl})`;
+			    document.body.style.backgroundSize = 'cover';
+			    document.body.style.backgroundPosition = 'center';
+			  } else {
+			    document.body.style.backgroundImage = 'none';
+			  }
 			}
 
 	    // Update theme and refresh visuals
