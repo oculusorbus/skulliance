@@ -1239,7 +1239,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: false	
+			  background: true	
 	        },
 	        {
 	          value: "danketsu",
