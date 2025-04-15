@@ -624,7 +624,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  left: 50%;
 	  transform: translate(-50%, -50%);
 	  background: #002f44;
-	  padding: 20px;
+	  /*padding: 20px;*/
 	  z-index: 101; /* Above character-select-container */
 	  width: 100%;
 	  height: 100%;
