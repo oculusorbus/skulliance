@@ -1517,11 +1517,16 @@ if(isset($_SESSION)){
 	  	// Set background based on current theme
 		setBackground() {
 		  console.log('setBackground: Setting for theme=' + this.theme);
+		  const gameContainer = document.getElementById('game-container');
+		  if (!gameContainer) {
+		    console.warn('setBackground: #game-container not found in DOM');
+		    return;
+		  }
 		  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 		  if (themeData && themeData.background) {
-		    document.getElementById('game-container').style.backgroundImage = 'url(' + this.baseImagePath + 'monstrocity.png)';
+		    gameContainer.style.backgroundImage = 'url(' + this.baseImagePath + 'monstrocity.png)';
 		  } else {
-		    document.getElementById('game-container').style.backgroundImage = 'none'; // Fallback to CSS or no background
+		    gameContainer.style.backgroundImage = 'none';
 		  }
 		}
 
