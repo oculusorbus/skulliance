@@ -1,36 +1,42 @@
 <?php
 session_start();
-if(!isset($_SESSION['logged_in'])){
-	if(isset($_COOKIE['SessionCookie'])){
-		$cookie = $_COOKIE['SessionCookie'];
-		$cookie = json_decode($cookie, true);
-		$_SESSION = $cookie;
-	}
+
+// Initialize default variables
+$member = false;
+$elite = false;
+$innercircle = false;
+
+// Restore session from cookie if logged out
+if (!isset($_SESSION['logged_in'])) {
+    if (isset($_COOKIE['SessionCookie'])) {
+        $cookie = $_COOKIE['SessionCookie'];
+        $cookieData = json_decode($cookie, true);
+        if (is_array($cookieData)) {
+            $_SESSION = $cookieData;
+        }
+    }
 }
-if(isset($_SESSION)){
-	extract($_SESSION['userData']);
-	// Initiate variables
-	$member = false;
-	$elite = false;
-	$innercircle = false;
-	$roles = $_SESSION['userData']['roles'];
-	if(!empty($roles)){
-		foreach ($roles as $key => $roleData) {
-			switch ($roleData) {
-			  case "949930195584954378":
-				$member = true;
-				break;
-	  		  case "949930360681140274":
-	  			$elite = true;
-	  			break;
-			  case "949930529841635348";
-			    $innercircle = true;
-				break;
-			  default:
-				break;
-			}
-		}
-	}
+
+// Process user data only if valid session exists
+if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
+    extract($_SESSION['userData']);
+    if (isset($roles) && is_array($roles) && !empty($roles)) {
+        foreach ($roles as $key => $roleData) {
+            switch ($roleData) {
+                case "949930195584954378":
+                    $member = true;
+                    break;
+                case "949930360681140274":
+                    $elite = true;
+                    break;
+                case "949930529841635348":
+                    $innercircle = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
