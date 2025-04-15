@@ -1325,6 +1325,12 @@ if(isset($_SESSION)){
 	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
+	          // Clear old characters immediately
+	          const characterOptions = document.getElementById('character-options');
+	          if (characterOptions) {
+	            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+	          }
+	          // Hide modal and show character select
 	          container.innerHTML = '';
 	          container.style.display = 'none';
 	          characterContainer.style.display = 'block';
@@ -1337,6 +1343,11 @@ if(isset($_SESSION)){
 	    });
 
 	    document.getElementById('theme-close-button').onclick = () => {
+	      // Clear old characters on close (optional, for consistency)
+	      const characterOptions = document.getElementById('character-options');
+	      if (characterOptions) {
+	        characterOptions.innerHTML = '';
+	      }
 	      container.innerHTML = '';
 	      container.style.display = 'none';
 	      characterContainer.style.display = 'block';
