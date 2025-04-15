@@ -850,7 +850,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   </style>
 </head>
 <body>
-  <div class="game-container">
+  <div class="game-container" id="game-container">
     <div id="game-over-container">
       <div id="game-over"></div>
       <div id="game-over-buttons">
