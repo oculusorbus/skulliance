@@ -1107,46 +1107,6 @@ if(isset($_SESSION)){
 	          policyIds: "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
-	        },
-	        {
-	          value: "shortyverse",
-	          project: "Ohh Meed",
-	          title: "Shorty Verse",
-	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
-	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
-	        },
-	        {
-	          value: "shortyverse2",
-	          project: "Ohh Meed",
-	          title: "Shorty Verse Engaged",
-	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
-	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
-	        },
-	        {
-	          value: "bogeyman",
-	          project: "Ritual",
-	          title: "Bogeyman",
-	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
-	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
-	        },
-	        {
-	          value: "ritual",
-	          project: "Ritual",
-	          title: "John Doe",
-	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
-	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
-	        },
-	        {
-	          value: "skowl",
-	          project: "Skowl",
-	          title: "Derivative Heroes",
-	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
-	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        }
 	      ]
 	    },
@@ -1201,14 +1161,6 @@ if(isset($_SESSION)){
 	          value: "occultarchives",
 	          project: "Billy Martin",
 	          title: "Occult Archives",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: ""
-	        },
-	        {
-	          value: "rubberrebels",
-	          project: "Classic Cardtoons",
-	          title: "Rubber Rebels",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
