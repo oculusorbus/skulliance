@@ -378,7 +378,7 @@ if(isset($_SESSION)){
 	    cursor: pointer;
 	    font-weight: bold;
 	    margin-bottom: 20px;
-	    min-width: 137px;
+	    min-width: 150px;
 	    font-size: 13px;
     }
 
