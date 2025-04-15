@@ -1296,6 +1296,7 @@ if(isset($_SESSION)){
 	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
+	          optionsDiv.innerHTML = ''; // Clear theme options
 	          container.style.display = 'none';
 	          characterContainer.style.display = 'block';
 	          game.updateTheme(theme.value);
@@ -1308,6 +1309,7 @@ if(isset($_SESSION)){
 
 	    // Close button handler
 	    document.getElementById('theme-close-button').onclick = () => {
+	      optionsDiv.innerHTML = ''; // Clear theme options
 	      container.style.display = 'none';
 	      characterContainer.style.display = 'block';
 	    };
@@ -1489,31 +1491,43 @@ if(isset($_SESSION)){
 
 	    // Update theme and refresh visuals
 		  updateTheme(newTheme) {
-		      var self = this;
-		      this.theme = newTheme;
-		      this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
-		      localStorage.setItem('gameTheme', this.theme);
-		      this.setBackground();
-		      getAssets(this.theme).then(function(assets) {
-		          self.playerCharactersConfig = assets;
-		          self.playerCharacters = self.playerCharactersConfig.map(function(config) { return self.createCharacter(config); });
-		          if (self.player1) {
-		              var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
-		              self.player1 = self.createCharacter(newConfig);
-		              self.updatePlayerDisplay();
-		          }
-		          if (self.player2) {
-		              self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
-		              self.updateOpponentDisplay();
-		          }
-		          document.querySelector('.game-logo').src = self.baseImagePath + 'logo.png';
-		          var container = document.getElementById('character-select-container');
-		          if (container.style.display === 'block') {
-		              self.showCharacterSelect(self.player1 === null);
-		          }
-		      }).catch(function(error) {
-		          console.error('Error updating theme assets:', error);
+		    var self = this;
+		    console.time('updateTheme'); // Profile performance
+		    this.theme = newTheme;
+		    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
+		    localStorage.setItem('gameTheme', this.theme);
+		    this.setBackground();
+		    getAssets(this.theme).then(function(assets) {
+		      console.timeEnd('updateTheme');
+		      console.time('updateCharacters');
+		      self.playerCharactersConfig = assets;
+		      self.playerCharacters = self.playerCharactersConfig.map(function(config) { return self.createCharacter(config); });
+    
+		      // Preload character images
+		      self.playerCharacters.forEach(char => {
+		        const img = new Image();
+		        img.src = char.imageUrl;
 		      });
+
+		      if (self.player1) {
+		        var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
+		        self.player1 = self.createCharacter(newConfig);
+		        self.updatePlayerDisplay();
+		      }
+		      if (self.player2) {
+		        self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
+		        self.updateOpponentDisplay();
+		      }
+		      document.querySelector('.game-logo').src = self.baseImagePath + 'logo.png';
+		      var container = document.getElementById('character-select-container');
+		      if (container.style.display === 'block') {
+		        self.showCharacterSelect(self.player1 === null);
+		      }
+		      console.timeEnd('updateCharacters');
+		    }).catch(function(error) {
+		      console.error('Error updating theme assets:', error);
+		      console.timeEnd('updateTheme');
+		    });
 		  }
 	  
 		async saveProgress() {
@@ -1717,7 +1731,7 @@ if(isset($_SESSION)){
 	    console.log('showCharacterSelect: Called with isInitial=' + isInitial);
 	    var container = document.getElementById('character-select-container');
 	    var optionsDiv = document.getElementById('character-options');
-	    optionsDiv.innerHTML = '';
+	    optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Loading characters...</p>'; // Loading indicator
 	    container.style.display = 'block';
 
 	    // Theme button handler
@@ -1725,48 +1739,51 @@ if(isset($_SESSION)){
 	      showThemeSelect(self);
 	    };
 
-	    this.playerCharacters.forEach(function(character, index) {
-	      var option = document.createElement('div');
-	      option.className = 'character-option';
-	      option.innerHTML =
-	        '<img onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
-	        '<p><strong>' + character.name + '</strong></p>' +
-	        '<p>Type: ' + character.type + '</p>' +
-	        '<p>Health: ' + character.maxHealth + '</p>' +
-	        '<p>Strength: ' + character.strength + '</p>' +
-	        '<p>Speed: ' + character.speed + '</p>' +
-	        '<p>Tactics: ' + character.tactics + '</p>' +
-	        '<p>Size: ' + character.size + '</p>' +
-	        '<p>Power-Up: ' + character.powerup + '</p>';
-	      option.addEventListener('click', function() {
-	        console.log('showCharacterSelect: Character selected: ' + character.name);
-	        container.style.display = 'none';
-	        if (isInitial) {
-	          self.player1 = {
-	            name: character.name,
-	            type: character.type,
-	            strength: character.strength,
-	            speed: character.speed,
-	            tactics: character.tactics,
-	            size: character.size,
-	            powerup: character.powerup,
-	            health: character.health,
-	            maxHealth: character.maxHealth,
-	            boostActive: false,
-	            boostValue: 0,
-	            lastStandActive: false,
-	            imageUrl: character.imageUrl,
-	            orientation: character.orientation,
-	            isNFT: character.isNFT
-	          };
-	          console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
-	          self.initGame();
-	        } else {
-	          self.swapPlayerCharacter(character);
-	        }
+	    setTimeout(() => { // Allow loading message to render
+	      optionsDiv.innerHTML = ''; // Clear loading message
+	      this.playerCharacters.forEach(function(character, index) {
+	        var option = document.createElement('div');
+	        option.className = 'character-option';
+	        option.innerHTML =
+	          '<img onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
+	          '<p><strong>' + character.name + '</strong></p>' +
+	          '<p>Type: ' + character.type + '</p>' +
+	          '<p>Health: ' + character.maxHealth + '</p>' +
+	          '<p>Strength: ' + character.strength + '</p>' +
+	          '<p>Speed: ' + character.speed + '</p>' +
+	          '<p>Tactics: ' + character.tactics + '</p>' +
+	          '<p>Size: ' + character.size + '</p>' +
+	          '<p>Power-Up: ' + character.powerup + '</p>';
+	        option.addEventListener('click', function() {
+	          console.log('showCharacterSelect: Character selected: ' + character.name);
+	          container.style.display = 'none';
+	          if (isInitial) {
+	            self.player1 = {
+	              name: character.name,
+	              type: character.type,
+	              strength: character.strength,
+	              speed: character.speed,
+	              tactics: character.tactics,
+	              size: character.size,
+	              powerup: character.powerup,
+	              health: character.health,
+	              maxHealth: character.maxHealth,
+	              boostActive: false,
+	              boostValue: 0,
+	              lastStandActive: false,
+	              imageUrl: character.imageUrl,
+	              orientation: character.orientation,
+	              isNFT: character.isNFT
+	            };
+	            console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
+	            self.initGame();
+	          } else {
+	            self.swapPlayerCharacter(character);
+	          }
+	        });
+	        optionsDiv.appendChild(option);
 	      });
-	      optionsDiv.appendChild(option);
-	    });
+	    }, 0); // Run after rendering
 	  }
 	  
 	  swapPlayerCharacter(newCharacter) {
@@ -3042,7 +3059,13 @@ if(isset($_SESSION)){
     const battleLog = document.getElementById("battle-log");
     const gameOver = document.getElementById("game-over");
 	
+	const assetCache = {};
 	async function getAssets(selectedTheme) {
+	  if (assetCache[selectedTheme]) {
+	    console.log('getAssets: Returning cached assets for ' + selectedTheme);
+	    return assetCache[selectedTheme];
+	  }
+
 	  let monstrocityAssets = [];
 	  try {
 	    console.log('getAssets: Fetching Monstrocity assets');
@@ -3109,11 +3132,11 @@ if(isset($_SESSION)){
 
 	  if (selectedTheme === 'monstrocity') {
 	    console.log('getAssets: Returning only Monstrocity assets=', monstrocityAssets);
+	    assetCache[selectedTheme] = monstrocityAssets;
 	    return monstrocityAssets;
 	  }
 
 	  console.log('getAssets: Processing NFT theme=', selectedTheme);
-	  // Find theme in themes array
 	  let themeData = null;
 	  for (const group of themes) {
 	    themeData = group.items.find(item => item.value === selectedTheme);
@@ -3122,6 +3145,7 @@ if(isset($_SESSION)){
 
 	  if (!themeData) {
 	    console.warn('getAssets: Theme not found: ' + selectedTheme);
+	    assetCache[selectedTheme] = monstrocityAssets;
 	    return monstrocityAssets;
 	  }
 
@@ -3130,6 +3154,7 @@ if(isset($_SESSION)){
 
 	  if (!policyIds.length) {
 	    console.log('getAssets: No policy IDs for theme ' + selectedTheme + ', returning Monstrocity assets');
+	    assetCache[selectedTheme] = monstrocityAssets;
 	    return monstrocityAssets;
 	  }
 
@@ -3202,6 +3227,7 @@ if(isset($_SESSION)){
 	  console.log('getAssets: NFT assets final=', nftAssets);
 	  const finalAssets = [...monstrocityAssets, ...nftAssets];
 	  console.log('getAssets: Returning merged assets=', finalAssets);
+	  assetCache[selectedTheme] = finalAssets;
 	  return finalAssets;
 	}
 	
