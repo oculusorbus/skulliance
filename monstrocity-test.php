@@ -1546,14 +1546,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  }
 			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 			  console.log('setBackground: themeData=', themeData);
-			  if (themeData && themeData.background) {
-			    const backgroundUrl = this.baseImagePath + 'monstrocity.png';
-			    console.log('setBackground: Setting background to ' + backgroundUrl);
-			    gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
-			  } else {
-			    console.log('setBackground: Skipping background for ' + this.theme + ', themeData exists=' + !!themeData);
-			    gameContainer.style.backgroundImage = 'none';
-			  }
+			  const backgroundUrl = this.baseImagePath + 'monstrocity.png';
+			  console.log('setBackground: Attempting to set background to ' + backgroundUrl);
+			  gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
 			}
 
 	    // Update theme and refresh visuals
