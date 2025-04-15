@@ -886,7 +886,7 @@ if(isset($_SESSION)){
 
   </div>
     <div id="character-select-container">
-      <h2>Select Your Character</h2>
+      <h2>Change Theme</h2>
 	  <div>
 	    <label for="theme-select">Theme: </label>
 	    <select id="theme-select">
@@ -1017,6 +1017,7 @@ if(isset($_SESSION)){
 	  <!--<p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>-->
 	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
 	  <p>Leaderboards, Game Saves, and Rewards are Available to Skulliance Stakers</p>
+	  <h2>Select Character</h2>
       <div id="character-options"></div>
     </div>
   <script>
