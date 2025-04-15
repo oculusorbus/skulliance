@@ -378,7 +378,7 @@ if(isset($_SESSION)){
 	    cursor: pointer;
 	    font-weight: bold;
 	    margin-bottom: 20px;
-	    min-width: 137px;
+	    min-width: 150px;
 	    font-size: 13px;
     }
 
@@ -593,6 +593,128 @@ if(isset($_SESSION)){
 		margin-bottom: 0px;
 		-webkit-filter: drop-shadow(2px 5px 10px #000);
 		filter: drop-shadow(2px 5px 10px #000);
+	}
+	
+	#theme-select-button {
+	  padding: 10px 20px;
+	  background-color: #49BBE3;
+	  border: none;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  font-weight: bold;
+	  font-size: 16px;
+	  margin: 10px 0;
+	  min-width: 150px;
+	  color: #fff;
+	}
+
+	#theme-select-button:hover {
+	  background-color: #54d4ff;
+	}
+
+	#theme-select-container {
+	  position: fixed;
+	  top: 50%;
+	  left: 50%;
+	  transform: translate(-50%, -50%);
+	  background: #002f44;
+	  padding: 20px;
+	  z-index: 101; /* Above character-select-container */
+	  width: 100%;
+	  height: 100%;
+	  overflow-y: auto;
+	  border: 3px solid black;
+	  text-align: center;
+	  display: none;
+	}
+
+	#theme-close-button {
+	  position: absolute;
+	  top: 20px;
+	  right: 20px;
+	  padding: 10px 20px;
+	  background-color: #f44336;
+	  border: none;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  font-weight: bold;
+	  font-size: 16px;
+	  color: #fff;
+	}
+
+	#theme-close-button:hover {
+	  background-color: #da190b;
+	}
+
+	.theme-group {
+	  margin: 20px 0;
+	  text-align: left;
+	}
+
+	.theme-group h3 {
+	  color: #fff;
+	  font-size: 1.5em;
+	  margin: 10px 0;
+	  text-align: center;
+	}
+
+	.theme-option {
+	  display: inline-block;
+	  width: 250px;
+	  height: 300px;
+	  margin: 10px;
+	  padding: 10px;
+	  background-size: cover;
+	  background-position: center;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  transition: transform 0.2s ease, background 0.2s ease;
+	  border: 1px solid black;
+	  position: relative;
+	  overflow: hidden;
+	  text-align: center;
+	}
+
+	.theme-option:hover {
+	  transform: scale(1.05);
+	  background-color: rgba(32, 128, 173, 0.2);
+	}
+
+	.theme-option img {
+	  max-width: 80%;
+	  max-height: 120px;
+	  margin: 20px auto;
+	  display: block;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+	  filter: drop-shadow(2px 5px 10px #000);
+	}
+
+	.theme-option p {
+	  margin: 5px 0;
+	  font-size: 0.9em;
+	  color: #fff;
+	  background: rgba(0, 0, 0, 0.7);
+	  padding: 5px;
+	  position: absolute;
+	  bottom: 0;
+	  width: 100%;
+	  box-sizing: border-box;
+	}
+
+	@media (max-width: 1025px) {
+	  .theme-option {
+	    width: 180px;
+	    height: 220px;
+	  }
+
+	  .theme-option img {
+	    max-height: 80px;
+	    margin: 10px auto;
+	  }
+
+	  .theme-option p {
+	    font-size: 0.8em;
+	  }
 	}
 
     @media (max-width: 1025px) {
@@ -886,117 +1008,274 @@ if(isset($_SESSION)){
 
   </div>
     <div id="character-select-container">
-      <h2>Select Your Character</h2>
-	  <div>
-	    <label for="theme-select">Theme: </label>
-	    <select id="theme-select">
-		  <optgroup label="Default Game Theme">
-	      <option value="monstrocity" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Monstrocity - Season 1</option>
-	  	  </optgroup>
-		  <optgroup label="Independent Artist Themes">
-			  <option value="bungking" 
-			  	data-policy-ids="f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b" 
-				data-orientations="Right" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Bungking - Yume</option>
-			
-			  <option value="cardanocamera" 
-			  	data-policy-ids="647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb" 
-				data-orientations="Left" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Cardano Camera - Galaxy of Sons</option>
-				
-			  <option value="darkula" 
-			  	data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" 
-				data-orientations="Random" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Darkula - Island of the Uncanny Neighbors</option>
-				
-			  <option value="darkula2" 
-				  data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" 
-				  data-orientations="Random" 
-				  data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				  Darkula - Island of the Violent Neighbors</option>
-				  
-			  <option value="muses" 
-			  	data-policy-ids="7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55" 
-				data-orientations="Random" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Josh Howard - Muses of the Multiverse</option>
-				
-			  <option value="maxi" 
-			  	data-policy-ids="b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5" 
-				data-orientations="Right" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Maxingo - Digital Hell Citizens 2: Fighters</option>
-				
-  			  <option value="shortyverse" 
-			  	data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" 
-				data-orientations="Random" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Ohh Meed - Shorty Verse</option>
-				
-			  <option value="shortyverse2" 
-			  	data-policy-ids="0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c" 
-				data-orientations="Random" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Ohh Meed - Shorty Verse Engaged</option>
-				
-  			  <option value="skowl" 
-  			  	data-policy-ids="d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf" 
-  				data-orientations="Left" 
-  				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-  				Skowl - Derivative Heroes</option>
-		  </optgroup>
-  		  <optgroup label="Partner Project Themes">
-	   		  <option value="discosolaris" 
-			  	data-policy-ids="9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99" 
-				data-orientations="Right" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Disco Solaris - Moebius Pioneers</option>
-				
-			  <option value="oculuslounge" 
-			  	data-policy-ids="d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779" 
-				data-orientations="Left" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Disco Solaris - Oculus Lounge</option>
-		  </optgroup>
-		  <optgroup label="Rugged Project Themes">
-			  <option value="adapunks" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">ADA Punks</option>
-		  </optgroup>
-		  <?php
-		  if($innercircle){?>
-		  <optgroup label="Inner Circle Top Secret Themes">
-			  <option value="occultarchives" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Billy Martin - Occult Archives</option>
-			  <option value="rubberrebels" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Classic Cardtoons - Rubber Rebels</option>
-			  <option value="danketsu" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Danketsu - Legends</option>
-			  
-			  <option value="deadpophell" 
-			  	data-policy-ids="6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed" 
-				data-orientations="Right" 
-				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				Dead Pop Hell - NSFW</option>
-				
-			  <option value="havocworlds" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Havoc Worlds - Season 1</option>
-			  <option value="karranka" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Badass Heroes</option>
-			  <option value="karranka2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Japanese Ghosts: Legendary Warriors</option>
-			  
-			  <option value="omen" 
-				  data-policy-ids="da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b" 
-				  data-orientations="Right" 
-				  data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
-				  Nemonium - Omen Legends</option>
-	      </optgroup>
-		  <?php }
-		  ?>
-	    </select>
-	  </div>
-	  <p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>
-	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
-	  <p>Rewards, Leaderboards, and Game Saves Available to Skulliance Stakers</p>
+	  <h2>Staking Info</h2>
+  	  <!--<p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>-->
+  	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
+  	  <p>Leaderboards, Game Saves, and Rewards are Available to Skulliance Stakers</p>
+      <button id="theme-select-button">Select Theme</button>
+	  <h2>Select Character</h2>
       <div id="character-options"></div>
     </div>
+	<!-- New Theme Select Modal -->
+	<div id="theme-select-container" style="display: none;">
+	  <h2>Select Theme</h2>
+	  <button id="theme-close-button">Close</button>
+	  <div id="theme-options"></div>
+	</div>
   <script>
+	  // Theme data extracted from original <select>
+	  // Theme data extracted from original <select>
+	  const themes = [
+	    {
+	      group: "Default Game Theme",
+	      items: [
+	        {
+	          value: "monstrocity",
+	          name: "Monstrocity - Season 1",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        }
+	      ]
+	    },
+	    {
+	      group: "Independent Artist Themes",
+	      items: [
+	        {
+	          value: "bungking",
+	          name: "Bungking - Yume",
+	          policyIds: "f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "cardanocamera",
+	          name: "Cardano Camera - Galaxy of Sons",
+	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "darkula",
+	          name: "Darkula - Island of the Uncanny Neighbors",
+	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "darkula2",
+	          name: "Darkula - Island of the Violent Neighbors",
+	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "muses",
+	          name: "Josh Howard - Muses of the Multiverse",
+	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "maxi",
+	          name: "Maxingo - Digital Hell Citizens 2: Fighters",
+	          policyIds: "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "shortyverse",
+	          name: "Ohh Meed - Shorty Verse",
+	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "shortyverse2",
+	          name: "Ohh Meed - Shorty Verse Engaged",
+	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "bogeyman",
+	          name: "Ritual - Bogeyman",
+	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "ritual",
+	          name: "Ritual - John Doe",
+	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "skowl",
+	          name: "Skowl - Derivative Heroes",
+	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        }
+	      ]
+	    },
+	    {
+	      group: "Partner Project Themes",
+	      items: [
+	        {
+	          value: "discosolaris",
+	          name: "Disco Solaris - Moebius Pioneers",
+	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "oculuslounge",
+	          name: "Disco Solaris - Oculus Lounge",
+	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "havocworlds",
+	          name: "Havoc Worlds - Season 1",
+	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        }
+	      ]
+	    },
+	    {
+	      group: "Rugged Project Themes",
+	      items: [
+	        {
+	          value: "adapunks",
+	          name: "ADA Punks",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        }
+	      ]
+	    }
+	    <?php if($innercircle) { ?>
+	    ,
+	    {
+	      group: "Inner Circle Top Secret Themes",
+	      items: [
+	        {
+	          value: "occultarchives",
+	          name: "Billy Martin - Occult Archives",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        },
+	        {
+	          value: "rubberrebels",
+	          name: "Classic Cardtoons - Rubber Rebels",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        },
+	        {
+	          value: "danketsu",
+	          name: "Danketsu - Legends",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        },
+	        {
+	          value: "deadpophell",
+	          name: "Dead Pop Hell - NSFW",
+	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "moebiuspioneers",
+	          name: "Disco Solaris - Legends",
+	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        },
+	        {
+	          value: "karranka",
+	          name: "Karranka - Badass Heroes",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        },
+	        {
+	          value: "karranka2",
+	          name: "Karranka - Japanese Ghosts: Legendary Warriors",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: ""
+	        },
+	        {
+	          value: "omen",
+	          name: "Nemonium - Omen Legends",
+	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	        }
+	      ]
+	    }
+	    <?php } ?>
+	  ];
+	  
+	  // Function to show theme select modal
+	  function showThemeSelect(game) {
+	    const container = document.getElementById('theme-select-container');
+	    const optionsDiv = document.getElementById('theme-options');
+	    const characterContainer = document.getElementById('character-select-container');
+  
+	    optionsDiv.innerHTML = '';
+	    container.style.display = 'block';
+	    characterContainer.style.display = 'none';
+
+	    themes.forEach(group => {
+	      const groupDiv = document.createElement('div');
+	      groupDiv.className = 'theme-group';
+	      const groupTitle = document.createElement('h3');
+	      groupTitle.textContent = group.group;
+	      groupDiv.appendChild(groupTitle);
+
+	      group.items.forEach(theme => {
+	        const option = document.createElement('div');
+	        option.className = 'theme-option';
+	        const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
+	        option.style.backgroundImage = `url(${backgroundUrl})`;
+	        option.innerHTML = `
+	          <img src="${logoUrl}" alt="${theme.name}" onerror="this.src='/staking/icons/skull.png'">
+	          <p>${theme.name}</p>
+	        `;
+	        option.addEventListener('click', () => {
+	          container.style.display = 'none';
+	          characterContainer.style.display = 'block';
+	          game.updateTheme(theme.value);
+	        });
+	        groupDiv.appendChild(option);
+	      });
+
+	      optionsDiv.appendChild(groupDiv);
+	    });
+
+	    // Close button handler
+	    document.getElementById('theme-close-button').onclick = () => {
+	      container.style.display = 'none';
+	      characterContainer.style.display = 'block';
+	    };
+	  }
+
+	    // Close button handler
+	    document.getElementById('theme-close-button').onclick = () => {
+	      container.style.display = 'none';
+	      characterContainer.style.display = 'block';
+	    };
+	  }
+	  
 	  const opponentsConfig = [
 	      { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
 	      { name: 'Merdock', strength: 1, speed: 1, tactics: 1, size: 'Large', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
@@ -1396,64 +1675,63 @@ if(isset($_SESSION)){
 	      log(`${character.name}'s orientation flipped to ${character.orientation}!`);
 	  }
 
-		  showCharacterSelect(isInitial) {
-		      var self = this;
-		      console.log('showCharacterSelect: Called with isInitial=' + isInitial);
-		      var container = document.getElementById('character-select-container');
-		      var optionsDiv = document.getElementById('character-options');
-		      var themeSelect = document.getElementById('theme-select');
-		      optionsDiv.innerHTML = '';
-		      container.style.display = 'block';
+	  showCharacterSelect(isInitial) {
+	    var self = this;
+	    console.log('showCharacterSelect: Called with isInitial=' + isInitial);
+	    var container = document.getElementById('character-select-container');
+	    var optionsDiv = document.getElementById('character-options');
+	    optionsDiv.innerHTML = '';
+	    container.style.display = 'block';
 
-		      themeSelect.value = this.theme;
-		      themeSelect.onchange = function() {
-		          self.updateTheme(themeSelect.value);
-		      };
+	    // Theme button handler
+	    document.getElementById('theme-select-button').onclick = () => {
+	      showThemeSelect(self);
+	    };
 
-		      this.playerCharacters.forEach(function(character, index) {
-		          var option = document.createElement('div');
-		          option.className = 'character-option';
-		          option.innerHTML =
-		              '<img onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
-		              '<p><strong>' + character.name + '</strong></p>' +
-		              '<p>Type: ' + character.type + '</p>' +
-		              '<p>Health: ' + character.maxHealth + '</p>' +
-		              '<p>Strength: ' + character.strength + '</p>' +
-		              '<p>Speed: ' + character.speed + '</p>' +
-		              '<p>Tactics: ' + character.tactics + '</p>' +
-		              '<p>Size: ' + character.size + '</p>' +
-		              '<p>Power-Up: ' + character.powerup + '</p>';
-		          option.addEventListener('click', function() {
-		              console.log('showCharacterSelect: Character selected: ' + character.name);
-		              container.style.display = 'none';
-		              if (isInitial) {
-		                  self.player1 = {
-		                      name: character.name,
-		                      type: character.type,
-		                      strength: character.strength,
-		                      speed: character.speed,
-		                      tactics: character.tactics,
-		                      size: character.size,
-		                      powerup: character.powerup,
-		                      health: character.health,
-		                      maxHealth: character.maxHealth,
-		                      boostActive: false,
-		                      boostValue: 0,
-		                      lastStandActive: false,
-		                      imageUrl: character.imageUrl,
-		                      orientation: character.orientation,
-		                      isNFT: character.isNFT
-		                  };
-		                  console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
-		                  self.initGame();
-		              } else {
-		                  self.swapPlayerCharacter(character);
-		              }
-		          });
-		          optionsDiv.appendChild(option);
-		      });
-		  }
-
+	    this.playerCharacters.forEach(function(character, index) {
+	      var option = document.createElement('div');
+	      option.className = 'character-option';
+	      option.innerHTML =
+	        '<img onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
+	        '<p><strong>' + character.name + '</strong></p>' +
+	        '<p>Type: ' + character.type + '</p>' +
+	        '<p>Health: ' + character.maxHealth + '</p>' +
+	        '<p>Strength: ' + character.strength + '</p>' +
+	        '<p>Speed: ' + character.speed + '</p>' +
+	        '<p>Tactics: ' + character.tactics + '</p>' +
+	        '<p>Size: ' + character.size + '</p>' +
+	        '<p>Power-Up: ' + character.powerup + '</p>';
+	      option.addEventListener('click', function() {
+	        console.log('showCharacterSelect: Character selected: ' + character.name);
+	        container.style.display = 'none';
+	        if (isInitial) {
+	          self.player1 = {
+	            name: character.name,
+	            type: character.type,
+	            strength: character.strength,
+	            speed: character.speed,
+	            tactics: character.tactics,
+	            size: character.size,
+	            powerup: character.powerup,
+	            health: character.health,
+	            maxHealth: character.maxHealth,
+	            boostActive: false,
+	            boostValue: 0,
+	            lastStandActive: false,
+	            imageUrl: character.imageUrl,
+	            orientation: character.orientation,
+	            isNFT: character.isNFT
+	          };
+	          console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
+	          self.initGame();
+	        } else {
+	          self.swapPlayerCharacter(character);
+	        }
+	      });
+	      optionsDiv.appendChild(option);
+	    });
+	  }
+	  
 	  swapPlayerCharacter(newCharacter) {
 	    const oldHealth = this.player1.health;
 	    const oldMaxHealth = this.player1.maxHealth;
