@@ -1044,6 +1044,7 @@ if(isset($_SESSION)){
 	  <div id="theme-options"></div>
 	</div>
   <script>
+	  let updatePending = false;
 	  // Theme data extracted from original <select>
 	  const themes = [
 	    {
@@ -1490,27 +1491,32 @@ if(isset($_SESSION)){
 		  }
 
 	    // Update theme and refresh visuals
-		  let updatePending = false;
 		  updateTheme(newTheme) {
-		    if (updatePending) return;
+		    if (updatePending) {
+		      console.log('updateTheme: Skipped due to pending update');
+		      return;
+		    }
 		    updatePending = true;
+		    console.time('updateTheme_' + newTheme);
 		    var self = this;
-		    console.time('updateTheme'); // Profile performance
 		    this.theme = newTheme;
 		    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
 		    localStorage.setItem('gameTheme', this.theme);
 		    this.setBackground();
 		    getAssets(this.theme).then(function(assets) {
-		      console.timeEnd('updateTheme');
-		      console.time('updateCharacters');
+		      console.time('updateCharacters_' + newTheme);
 		      self.playerCharactersConfig = assets;
 		      self.playerCharacters = self.playerCharactersConfig.map(function(config) { return self.createCharacter(config); });
-    
+
 		      // Preload character images
+		      console.time('preloadImages_' + newTheme);
 		      self.playerCharacters.forEach(char => {
 		        const img = new Image();
 		        img.src = char.imageUrl;
+		        img.onload = () => console.log('Preloaded: ' + char.imageUrl);
+		        img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
 		      });
+		      console.timeEnd('preloadImages_' + newTheme);
 
 		      if (self.player1) {
 		        var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
@@ -1526,12 +1532,13 @@ if(isset($_SESSION)){
 		      if (container.style.display === 'block') {
 		        self.showCharacterSelect(self.player1 === null);
 		      }
-		      console.timeEnd('updateCharacters');
-			  updatePending = false;
+		      console.timeEnd('updateCharacters_' + newTheme);
+		      console.timeEnd('updateTheme_' + newTheme);
+		      updatePending = false;
 		    }).catch(function(error) {
 		      console.error('Error updating theme assets:', error);
-		      console.timeEnd('updateTheme');
-			  updatePending = false;
+		      console.timeEnd('updateTheme_' + newTheme);
+		      updatePending = false;
 		    });
 		  }
 	  
@@ -1734,61 +1741,66 @@ if(isset($_SESSION)){
 	  showCharacterSelect(isInitial) {
 	    var self = this;
 	    console.log('showCharacterSelect: Called with isInitial=' + isInitial);
+	    console.time('showCharacterSelect');
 	    var container = document.getElementById('character-select-container');
 	    var optionsDiv = document.getElementById('character-options');
-	    optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Loading characters...</p>'; // Loading indicator
+	    optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Loading characters...</p>';
 	    container.style.display = 'block';
 
-	    // Theme button handler
 	    document.getElementById('theme-select-button').onclick = () => {
 	      showThemeSelect(self);
 	    };
 
-	    setTimeout(() => { // Allow loading message to render
-	      optionsDiv.innerHTML = ''; // Clear loading message
-	      this.playerCharacters.forEach(function(character, index) {
-	        var option = document.createElement('div');
-	        option.className = 'character-option';
-	        option.innerHTML =
-	          '<img onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
-	          '<p><strong>' + character.name + '</strong></p>' +
-	          '<p>Type: ' + character.type + '</p>' +
-	          '<p>Health: ' + character.maxHealth + '</p>' +
-	          '<p>Strength: ' + character.strength + '</p>' +
-	          '<p>Speed: ' + character.speed + '</p>' +
-	          '<p>Tactics: ' + character.tactics + '</p>' +
-	          '<p>Size: ' + character.size + '</p>' +
-	          '<p>Power-Up: ' + character.powerup + '</p>';
-	        option.addEventListener('click', function() {
-	          console.log('showCharacterSelect: Character selected: ' + character.name);
-	          container.style.display = 'none';
-	          if (isInitial) {
-	            self.player1 = {
-	              name: character.name,
-	              type: character.type,
-	              strength: character.strength,
-	              speed: character.speed,
-	              tactics: character.tactics,
-	              size: character.size,
-	              powerup: character.powerup,
-	              health: character.health,
-	              maxHealth: character.maxHealth,
-	              boostActive: false,
-	              boostValue: 0,
-	              lastStandActive: false,
-	              imageUrl: character.imageUrl,
-	              orientation: character.orientation,
-	              isNFT: character.isNFT
-	            };
-	            console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
-	            self.initGame();
-	          } else {
-	            self.swapPlayerCharacter(character);
-	          }
-	        });
-	        optionsDiv.appendChild(option);
+	    // Batch DOM updates
+	    const fragment = document.createDocumentFragment();
+	    this.playerCharacters.forEach(function(character, index) {
+	      var option = document.createElement('div');
+	      option.className = 'character-option';
+	      option.innerHTML =
+	        '<img loading="eager" onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
+	        '<p><strong>' + character.name + '</strong></p>' +
+	        '<p>Type: ' + character.type + '</p>' +
+	        '<p>Health: ' + character.maxHealth + '</p>' +
+	        '<p>Strength: ' + character.strength + '</p>' +
+	        '<p>Speed: ' + character.speed + '</p>' +
+	        '<p>Tactics: ' + character.tactics + '</p>' +
+	        '<p>Size: ' + character.size + '</p>' +
+	        '<p>Power-Up: ' + character.powerup + '</p>';
+	      option.addEventListener('click', function() {
+	        console.log('showCharacterSelect: Character selected: ' + character.name);
+	        container.style.display = 'none';
+	        if (isInitial) {
+	          self.player1 = {
+	            name: character.name,
+	            type: character.type,
+	            strength: character.strength,
+	            speed: character.speed,
+	            tactics: character.tactics,
+	            size: character.size,
+	            powerup: character.powerup,
+	            health: character.health,
+	            maxHealth: character.maxHealth,
+	            boostActive: false,
+	            boostValue: 0,
+	            lastStandActive: false,
+	            imageUrl: character.imageUrl,
+	            orientation: character.orientation,
+	            isNFT: character.isNFT
+	          };
+	          console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
+	          self.initGame();
+	        } else {
+	          self.swapPlayerCharacter(character);
+	        }
 	      });
-	    }, 0); // Run after rendering
+	      fragment.appendChild(option);
+	    });
+
+	    setTimeout(() => {
+	      optionsDiv.innerHTML = '';
+	      optionsDiv.appendChild(fragment);
+	      console.timeEnd('showCharacterSelect');
+	    }, 0);
 	  }
 	  
 	  swapPlayerCharacter(newCharacter) {
@@ -3067,18 +3079,22 @@ if(isset($_SESSION)){
 	const assetCache = {};
 	async function getAssets(selectedTheme) {
 	  if (assetCache[selectedTheme]) {
-	    console.log('getAssets: Returning cached assets for ' + selectedTheme);
+	    console.log('getAssets: Cache hit for ' + selectedTheme);
 	    return assetCache[selectedTheme];
 	  }
 
+	  console.time('getAssets_' + selectedTheme);
 	  let monstrocityAssets = [];
 	  try {
 	    console.log('getAssets: Fetching Monstrocity assets');
-	    const monstrocityResponse = await fetch('ajax/get-monstrocity-assets.php', {
-	      method: 'POST',
-	      headers: { 'Content-Type': 'application/json' },
-	      body: JSON.stringify({ theme: 'monstrocity' })
-	    });
+	    const monstrocityResponse = await Promise.race([
+	      fetch('ajax/get-monstrocity-assets.php', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ theme: 'monstrocity' })
+	      }),
+	      new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), 1000))
+	    ]);
 
 	    console.log('getAssets: Monstrocity status=', monstrocityResponse.status);
 	    if (!monstrocityResponse.ok) {
@@ -3103,7 +3119,6 @@ if(isset($_SESSION)){
 	        type: asset.type || 'Base',
 	        powerup: asset.powerup || 'Regenerate'
 	      };
-	      console.log('getAssets: Mapped Monstrocity asset ' + index + '=', mapped);
 	      return mapped;
 	    });
 	  } catch (error) {
@@ -3130,18 +3145,16 @@ if(isset($_SESSION)){
 	        theme: 'monstrocity'
 	      }
 	    ];
-	    console.log('getAssets: Using default Monstrocity assets=', monstrocityAssets);
+	    console.log('getAssets: Using default Monstrocity assets');
 	  }
 
-	  console.log('getAssets: Monstrocity assets final=', monstrocityAssets);
-
 	  if (selectedTheme === 'monstrocity') {
-	    console.log('getAssets: Returning only Monstrocity assets=', monstrocityAssets);
+	    console.log('getAssets: Returning Monstrocity assets');
 	    assetCache[selectedTheme] = monstrocityAssets;
+	    console.timeEnd('getAssets_' + selectedTheme);
 	    return monstrocityAssets;
 	  }
 
-	  console.log('getAssets: Processing NFT theme=', selectedTheme);
 	  let themeData = null;
 	  for (const group of themes) {
 	    themeData = group.items.find(item => item.value === selectedTheme);
@@ -3151,15 +3164,15 @@ if(isset($_SESSION)){
 	  if (!themeData) {
 	    console.warn('getAssets: Theme not found: ' + selectedTheme);
 	    assetCache[selectedTheme] = monstrocityAssets;
+	    console.timeEnd('getAssets_' + selectedTheme);
 	    return monstrocityAssets;
 	  }
 
 	  const policyIds = themeData.policyIds ? themeData.policyIds.split(',').filter(id => id.trim()) : [];
-	  console.log('getAssets: Policy IDs=', policyIds);
-
 	  if (!policyIds.length) {
-	    console.log('getAssets: No policy IDs for theme ' + selectedTheme + ', returning Monstrocity assets');
+	    console.log('getAssets: No policy IDs for theme ' + selectedTheme);
 	    assetCache[selectedTheme] = monstrocityAssets;
+	    console.timeEnd('getAssets_' + selectedTheme);
 	    return monstrocityAssets;
 	  }
 
@@ -3171,40 +3184,38 @@ if(isset($_SESSION)){
 	    orientation: orientations.length === 1 ? orientations[0] : (orientations[index] || 'Right'),
 	    ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[index] || 'https://ipfs.io/ipfs/')
 	  }));
-	  console.log('getAssets: Policies=', policies);
 
 	  let nftAssets = [];
 	  try {
 	    const requestBody = JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme });
-	    console.log('getAssets: Sending NFT POST=', requestBody);
-	    const nftResponse = await fetch('ajax/get-nft-assets.php', {
-	      method: 'POST',
-	      headers: { 'Content-Type': 'application/json' },
-	      body: requestBody
-	    });
+	    console.log('getAssets: Sending NFT POST');
+	    const nftResponse = await Promise.race([
+	      fetch('ajax/get-nft-assets.php', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: requestBody
+	      }),
+	      new Promise((_, reject) => setTimeout(() => reject(new Error('NFT timeout')), 1000))
+	    ]);
 
-	    console.log('getAssets: NFT status=', nftResponse.status, 'ok=', nftResponse.ok);
-	    const nftText = await nftResponse.text();
-	    console.log('getAssets: NFT raw response=', nftText);
 	    if (!nftResponse.ok) {
 	      throw new Error('NFT HTTP error! Status: ' + nftResponse.status);
 	    }
 
+	    const nftText = await nftResponse.text();
 	    let parsedAssets;
 	    try {
 	      parsedAssets = JSON.parse(nftText);
 	    } catch (parseError) {
-	      console.error('getAssets: NFT parse error:', parseError, 'raw=', nftText);
+	      console.error('getAssets: NFT parse error:', parseError);
 	      throw parseError;
 	    }
-	    console.log('getAssets: NFT parsed data=', parsedAssets);
 
 	    if (parsedAssets === false || parsedAssets === 'false') {
-	      console.log('getAssets: NFT data is false, skipping');
+	      console.log('getAssets: NFT data is false');
 	      nftAssets = [];
 	    } else {
 	      nftAssets = Array.isArray(parsedAssets) ? parsedAssets : [parsedAssets];
-	      console.log('getAssets: NFT normalized=', nftAssets);
 	    }
 
 	    nftAssets = nftAssets.map((asset, index) => {
@@ -3221,7 +3232,6 @@ if(isset($_SESSION)){
 	        policyId: asset.policyId || policies[0].policyId,
 	        ipfs: asset.ipfs || ''
 	      };
-	      console.log('getAssets: Mapped NFT asset ' + index + '=', mapped);
 	      return mapped;
 	    });
 	  } catch (error) {
@@ -3229,10 +3239,10 @@ if(isset($_SESSION)){
 	    nftAssets = [];
 	  }
 
-	  console.log('getAssets: NFT assets final=', nftAssets);
 	  const finalAssets = [...monstrocityAssets, ...nftAssets];
-	  console.log('getAssets: Returning merged assets=', finalAssets);
+	  console.log('getAssets: Returning merged assets, count=' + finalAssets.length);
 	  assetCache[selectedTheme] = finalAssets;
+	  console.timeEnd('getAssets_' + selectedTheme);
 	  return finalAssets;
 	}
 	
