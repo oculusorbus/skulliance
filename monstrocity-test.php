@@ -1247,10 +1247,10 @@ if(isset($_SESSION)){
 	        const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
 	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
 	        option.style.backgroundImage = `url(${backgroundUrl})`;
-	        option.innerHTML = `
-	          <img src="${logoUrl}" alt="${theme.name}" onerror="this.src='/staking/icons/skull.png'">
+	        option.innerHTML = '
+	          <img src="${logoUrl}" alt="${theme.name}" onerror="this.src=\'/staking/icons/skull.png\'">
 	          <p>${theme.name}</p>
-	        `;
+	        ';
 	        option.addEventListener('click', () => {
 	          container.style.display = 'none';
 	          characterContainer.style.display = 'block';
