@@ -1502,7 +1502,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    };
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
-		    this.setBackground();
 		}
 		  
 		  async init() {
@@ -1543,13 +1542,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  console.log('setBackground: gameContainer exists=' + !!gameContainer);
 			  if (!gameContainer) {
 			    console.warn('setBackground: #game-container not found in DOM');
+			    return;
 			  }
 			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 			  console.log('setBackground: themeData=', themeData);
-			  const backgroundUrl = this.baseImagePath + 'monstrocity.png';
+			  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/monstrocity.png`;
 			  console.log('setBackground: Setting background to ' + backgroundUrl);
-			  if (gameContainer) {
+			  if (themeData && themeData.background) {
 			    gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
+			    gameContainer.style.backgroundSize = 'cover';
+			    gameContainer.style.backgroundPosition = 'center';
+			  } else {
+			    gameContainer.style.backgroundImage = 'none';
 			  }
 			}
 
@@ -1957,12 +1961,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    }
 
 		initGame() {
-		    var self = this;
-		    console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
-		    var gameContainer = document.querySelector('.game-container');
-		    var gameBoard = document.getElementById('game-board');
-		    gameContainer.style.display = 'block';
-		    gameBoard.style.visibility = 'visible';
+		  var self = this;
+		  console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
+		  var gameContainer = document.querySelector('.game-container');
+		  var gameBoard = document.getElementById('game-board');
+		  gameContainer.style.display = 'block';
+		  gameBoard.style.visibility = 'visible';
+		  this.setBackground();
 
 		    this.sounds.reset.play();
 		    log('Starting Level ' + this.currentLevel + '...');
