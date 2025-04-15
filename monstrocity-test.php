@@ -673,6 +673,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  padding: 10px;
 	  border-top: 1px solid black;
 	  border-bottom: 1px solid black;
+	  margin-bottom: 30px;
 	}
 
 	.theme-option {
