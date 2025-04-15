@@ -1540,15 +1540,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			setBackground() {
 			  console.log('setBackground: Attempting for theme=' + this.theme);
 			  const gameContainer = document.getElementById('game-container');
+			  console.log('setBackground: gameContainer exists=' + !!gameContainer);
 			  if (!gameContainer) {
 			    console.warn('setBackground: #game-container not found in DOM');
-			    return;
 			  }
 			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 			  console.log('setBackground: themeData=', themeData);
 			  const backgroundUrl = this.baseImagePath + 'monstrocity.png';
-			  console.log('setBackground: Attempting to set background to ' + backgroundUrl);
-			  gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
+			  console.log('setBackground: Setting background to ' + backgroundUrl);
+			  if (gameContainer) {
+			    gameContainer.style.backgroundImage = `url(${backgroundUrl})`;
+			  }
 			}
 
 	    // Update theme and refresh visuals
