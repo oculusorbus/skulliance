@@ -1490,7 +1490,10 @@ if(isset($_SESSION)){
 		  }
 
 	    // Update theme and refresh visuals
+		  let updatePending = false;
 		  updateTheme(newTheme) {
+		    if (updatePending) return;
+		    updatePending = true;
 		    var self = this;
 		    console.time('updateTheme'); // Profile performance
 		    this.theme = newTheme;
@@ -1524,9 +1527,11 @@ if(isset($_SESSION)){
 		        self.showCharacterSelect(self.player1 === null);
 		      }
 		      console.timeEnd('updateCharacters');
+			  updatePending = false;
 		    }).catch(function(error) {
 		      console.error('Error updating theme assets:', error);
 		      console.timeEnd('updateTheme');
+			  updatePending = false;
 		    });
 		  }
 	  
