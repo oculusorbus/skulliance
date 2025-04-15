@@ -1038,11 +1038,8 @@ if(isset($_SESSION)){
       <div id="character-options"></div>
     </div>
 	<!-- New Theme Select Modal -->
-	<div id="theme-select-container" style="display: none;">
-	  <h2>Select Theme</h2>
-	  <button id="theme-close-button">Close</button>
-	  <div id="theme-options"></div>
-	</div>
+	<!-- Theme Select Template (initially empty, built by JS) -->
+	<div id="theme-select-container" style="display: none;"></div>
   <script>
 	  let updatePending = false;
 	  // Theme data extracted from original <select>
@@ -1269,13 +1266,19 @@ if(isset($_SESSION)){
 	    <?php } ?>
 	  ];
 	  
-	  // Function to show theme select modal
 	  function showThemeSelect(game) {
-	    const container = document.getElementById('theme-select-container');
-	    const optionsDiv = document.getElementById('theme-options');
+	    console.time('showThemeSelect');
+	    let container = document.getElementById('theme-select-container');
 	    const characterContainer = document.getElementById('character-select-container');
-  
-	    optionsDiv.innerHTML = '';
+
+	    // Rebuild container
+	    container.innerHTML = `
+	      <h2>Select Theme</h2>
+	      <button id="theme-close-button">Close</button>
+	      <div id="theme-options"></div>
+	    `;
+	    const optionsDiv = document.getElementById('theme-options');
+
 	    container.style.display = 'block';
 	    characterContainer.style.display = 'none';
 
@@ -1297,7 +1300,7 @@ if(isset($_SESSION)){
 	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
-	          optionsDiv.innerHTML = ''; // Clear theme options
+	          container.innerHTML = ''; // Destroy modal
 	          container.style.display = 'none';
 	          characterContainer.style.display = 'block';
 	          game.updateTheme(theme.value);
@@ -1310,10 +1313,12 @@ if(isset($_SESSION)){
 
 	    // Close button handler
 	    document.getElementById('theme-close-button').onclick = () => {
-	      optionsDiv.innerHTML = ''; // Clear theme options
+	      container.innerHTML = ''; // Destroy modal
 	      container.style.display = 'none';
 	      characterContainer.style.display = 'block';
 	    };
+
+	    console.timeEnd('showThemeSelect');
 	  }
 	  
 	  const opponentsConfig = [
@@ -1503,20 +1508,21 @@ if(isset($_SESSION)){
 		    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
 		    localStorage.setItem('gameTheme', this.theme);
 		    this.setBackground();
+
 		    getAssets(this.theme).then(function(assets) {
 		      console.time('updateCharacters_' + newTheme);
 		      self.playerCharactersConfig = assets;
-		      self.playerCharacters = self.playerCharactersConfig.map(function(config) { return self.createCharacter(config); });
+		      self.playerCharacters = [];
 
-		      // Preload character images
-		      console.time('preloadImages_' + newTheme);
-		      self.playerCharacters.forEach(char => {
+		      // Preload images first
+		      assets.forEach(config => {
+		        const char = self.createCharacter(config);
 		        const img = new Image();
 		        img.src = char.imageUrl;
 		        img.onload = () => console.log('Preloaded: ' + char.imageUrl);
 		        img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+		        self.playerCharacters.push(char);
 		      });
-		      console.timeEnd('preloadImages_' + newTheme);
 
 		      if (self.player1) {
 		        var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
@@ -1528,10 +1534,12 @@ if(isset($_SESSION)){
 		        self.updateOpponentDisplay();
 		      }
 		      document.querySelector('.game-logo').src = self.baseImagePath + 'logo.png';
+
 		      var container = document.getElementById('character-select-container');
 		      if (container.style.display === 'block') {
 		        self.showCharacterSelect(self.player1 === null);
 		      }
+
 		      console.timeEnd('updateCharacters_' + newTheme);
 		      console.timeEnd('updateTheme_' + newTheme);
 		      updatePending = false;
@@ -1740,20 +1748,19 @@ if(isset($_SESSION)){
 
 	  showCharacterSelect(isInitial) {
 	    var self = this;
-	    console.log('showCharacterSelect: Called with isInitial=' + isInitial);
 	    console.time('showCharacterSelect');
 	    var container = document.getElementById('character-select-container');
 	    var optionsDiv = document.getElementById('character-options');
-	    optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Loading characters...</p>';
+	    optionsDiv.innerHTML = ''; // No loading indicator during theme switch
 	    container.style.display = 'block';
 
 	    document.getElementById('theme-select-button').onclick = () => {
 	      showThemeSelect(self);
 	    };
 
-	    // Batch DOM updates
+	    // Pre-build all options in a fragment
 	    const fragment = document.createDocumentFragment();
-	    this.playerCharacters.forEach(function(character, index) {
+	    this.playerCharacters.forEach(function(character) {
 	      var option = document.createElement('div');
 	      option.className = 'character-option';
 	      option.innerHTML =
@@ -1796,11 +1803,9 @@ if(isset($_SESSION)){
 	      fragment.appendChild(option);
 	    });
 
-	    setTimeout(() => {
-	      optionsDiv.innerHTML = '';
-	      optionsDiv.appendChild(fragment);
-	      console.timeEnd('showCharacterSelect');
-	    }, 0);
+	    // Single DOM insertion
+	    optionsDiv.appendChild(fragment);
+	    console.timeEnd('showCharacterSelect');
 	  }
 	  
 	  swapPlayerCharacter(newCharacter) {
