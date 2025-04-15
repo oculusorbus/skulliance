@@ -899,6 +899,12 @@ if(isset($_SESSION)){
 				data-orientations="Right" 
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Bungking - Yume</option>
+			
+			  <option value="cardanocamera" 
+			  	data-policy-ids="647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb" 
+				data-orientations="Left" 
+				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+				Cardano Camera - Galaxy of Sons</option>
 				
 			  <option value="darkula" 
 			  	data-policy-ids="b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0" 
