@@ -3262,7 +3262,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        headers: { 'Content-Type': 'application/json' },
 	        body: requestBody
 	      }),
-	      new Promise((_, reject) => setTimeout(() => reject(new Error('NFT timeout')), 1000))
+	      new Promise((_, reject) => setTimeout(() => reject(new Error('NFT timeout')), 10000))
 	    ]);
 
 	    if (!nftResponse.ok) {
