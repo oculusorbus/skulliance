@@ -1194,6 +1194,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  background: true
 	        },
 	        {
+	          value: "sinderskullz",
+	          project: "Sinder Skullz",
+	          title: "Sinder Skullz",
+	          policyIds: "83732ff37818e7e520592fcd3e5257e429307d40a9f5437240e926de",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
+	        },
+	        {
 	          value: "skowl",
 	          project: "Skowl",
 	          title: "Derivative Heroes",
