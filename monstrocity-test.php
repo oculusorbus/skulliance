@@ -633,6 +633,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  text-align: center;
 	  display: none;
 	}
+	
+	#theme-select-container h2{
+		margin-top: 10px;
+	}
 
 	#theme-close-button {
 	  position: absolute;
@@ -665,6 +669,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  font-size: 1.5em;
 	  margin: 10px 0;
 	  width: 100%; /* Ensure title spans container */
+	  background-color: #165777;
+	  padding: 10px;
+	  border-top: 1px solid black;
+	  border-bottom: 1px solid black;
 	}
 
 	.theme-option {
