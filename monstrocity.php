@@ -1101,7 +1101,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      ]
 	    },
 	    {
-	      group: "Independent Artist Themes",
+	      group: "Partner Artist Themes",
 	      items: [
 	        {
 	          value: "bungking",
