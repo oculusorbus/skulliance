@@ -1538,11 +1538,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  	// Set background based on current theme
 			setBackground() {
 			  console.log('setBackground: Attempting for theme=' + this.theme);
+			  let retries = 0;
+			  const maxRetries = 10; // Limit to 10 retries (1 second total)
+
 			  const attemptSetBackground = () => {
 			    const gameContainer = document.getElementById('game-container');
 			    console.log('setBackground: gameContainer exists=' + !!gameContainer);
 			    if (!gameContainer) {
-			      console.warn('setBackground: #game-container not found in DOM, retrying...');
+			      retries++;
+			      if (retries >= maxRetries) {
+			        console.error('setBackground: #game-container not found after ' + maxRetries + ' retries. Aborting.');
+			        return;
+			      }
+			      console.warn('setBackground: #game-container not found in DOM, retrying... (' + retries + '/' + maxRetries + ')');
 			      setTimeout(attemptSetBackground, 100); // Retry after 100ms
 			      return;
 			    }
