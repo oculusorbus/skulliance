@@ -1164,7 +1164,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "shortyverse2",
@@ -1173,7 +1173,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "bogeyman",
