@@ -1268,13 +1268,6 @@ if(isset($_SESSION)){
 	      characterContainer.style.display = 'block';
 	    };
 	  }
-
-	    // Close button handler
-	    document.getElementById('theme-close-button').onclick = () => {
-	      container.style.display = 'none';
-	      characterContainer.style.display = 'block';
-	    };
-	  }
 	  
 	  const opponentsConfig = [
 	      { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
