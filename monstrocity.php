@@ -972,6 +972,12 @@ if(isset($_SESSION)){
 				data-orientations="Left" 
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Disco Solaris - Oculus Lounge</option>
+			  
+			  <option value="havocworlds" 
+			    data-policy-ids="1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876" 
+			    data-orientations="Random" 
+			    data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
+			    Havoc Worlds - Season 1</option>
 		  </optgroup>
 		  <optgroup label="Rugged Project Themes">
 			  <option value="adapunks" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">ADA Punks</option>
@@ -995,7 +1001,6 @@ if(isset($_SESSION)){
 				data-ipfs-prefixes="https://ipfs5.jpgstoreapis.com/ipfs/">
 				Disco Solaris - Legends</option>
 				
-			  <option value="havocworlds" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Havoc Worlds - Season 1</option>
 			  <option value="karranka" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Badass Heroes</option>
 			  <option value="karranka2" data-policy-ids="" data-orientations="" data-ipfs-prefixes="">Karranka - Japanese Ghosts: Legendary Warriors</option>
 			  
