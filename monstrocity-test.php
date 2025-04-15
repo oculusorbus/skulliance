@@ -1066,7 +1066,8 @@ if(isset($_SESSION)){
 	          title: "Yume",
 	          policyIds: "f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "cardanocamera",
@@ -1074,7 +1075,8 @@ if(isset($_SESSION)){
 	          title: "Galaxy of Sons",
 	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "darkula",
@@ -1082,7 +1084,8 @@ if(isset($_SESSION)){
 	          title: "Island of the Uncanny Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "darkula2",
@@ -1090,7 +1093,8 @@ if(isset($_SESSION)){
 	          title: "Island of the Violent Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "muses",
@@ -1098,7 +1102,8 @@ if(isset($_SESSION)){
 	          title: "Muses of the Multiverse",
 	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "maxi",
@@ -1106,7 +1111,53 @@ if(isset($_SESSION)){
 	          title: "Digital Hell Citizens 2: Fighters",
 	          policyIds: "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
+	        },
+	        {
+	          value: "shortyverse",
+	          project: "Ohh Meed",
+	          title: "Shorty Verse",
+	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: false
+	        },
+	        {
+	          value: "shortyverse2",
+	          project: "Ohh Meed",
+	          title: "Shorty Verse Engaged",
+	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: false
+	        },
+	        {
+	          value: "bogeyman",
+	          project: "Ritual",
+	          title: "Bogeyman",
+	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: false
+	        },
+	        {
+	          value: "ritual",
+	          project: "Ritual",
+	          title: "John Doe",
+	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: false
+	        },
+	        {
+	          value: "skowl",
+	          project: "Skowl",
+	          title: "Derivative Heroes",
+	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: false
 	        }
 	      ]
 	    },
@@ -1119,7 +1170,8 @@ if(isset($_SESSION)){
 	          title: "Moebius Pioneers",
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "oculuslounge",
@@ -1127,7 +1179,8 @@ if(isset($_SESSION)){
 	          title: "Oculus Lounge",
 	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "havocworlds",
@@ -1135,7 +1188,8 @@ if(isset($_SESSION)){
 	          title: "Season 1",
 	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        }
 	      ]
 	    },
@@ -1148,7 +1202,8 @@ if(isset($_SESSION)){
 	          title: "ADA Punks",
 	          policyIds: "",
 	          orientations: "",
-	          ipfsPrefixes: ""
+	          ipfsPrefixes: "",
+			  background: true
 	        }
 	      ]
 	    }
@@ -1163,7 +1218,17 @@ if(isset($_SESSION)){
 	          title: "Occult Archives",
 	          policyIds: "",
 	          orientations: "",
-	          ipfsPrefixes: ""
+	          ipfsPrefixes: "",
+			  background: true
+	        },
+	        {
+	          value: "rubberrebels",
+	          project: "Classic Cardtoons",
+	          title: "Rubber Rebels",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: false	
 	        },
 	        {
 	          value: "danketsu",
@@ -1171,7 +1236,8 @@ if(isset($_SESSION)){
 	          title: "Legends",
 	          policyIds: "",
 	          orientations: "",
-	          ipfsPrefixes: ""
+	          ipfsPrefixes: "",
+			  background: true
 	        },
 	        {
 	          value: "deadpophell",
@@ -1179,7 +1245,8 @@ if(isset($_SESSION)){
 	          title: "NSFW",
 	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "moebiuspioneers",
@@ -1187,7 +1254,8 @@ if(isset($_SESSION)){
 	          title: "Legends",
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "karranka",
@@ -1195,7 +1263,8 @@ if(isset($_SESSION)){
 	          title: "Badass Heroes",
 	          policyIds: "",
 	          orientations: "",
-	          ipfsPrefixes: ""
+	          ipfsPrefixes: "",
+			  background: true
 	        },
 	        {
 	          value: "karranka2",
@@ -1203,7 +1272,8 @@ if(isset($_SESSION)){
 	          title: "Japanese Ghosts: Legendary Warriors",
 	          policyIds: "",
 	          orientations: "",
-	          ipfsPrefixes: ""
+	          ipfsPrefixes: "",
+			  background: true
 	        },
 	        {
 	          value: "omen",
@@ -1211,7 +1281,8 @@ if(isset($_SESSION)){
 	          title: "Omen Legends",
 	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        }
 	      ]
 	    }
@@ -1244,15 +1315,17 @@ if(isset($_SESSION)){
 	      group.items.forEach(theme => {
 	        const option = document.createElement('div');
 	        option.className = 'theme-option';
-	        const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	        if (theme.background) {
+	          const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	          option.style.backgroundImage = `url(${backgroundUrl})`;
+	        }
 	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
-	        option.style.backgroundImage = `url(${backgroundUrl})`;
 	        option.innerHTML = `
 	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
 	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
-	          container.innerHTML = ''; // Destroy modal
+	          container.innerHTML = '';
 	          container.style.display = 'none';
 	          characterContainer.style.display = 'block';
 	          game.updateTheme(theme.value);
@@ -1263,9 +1336,8 @@ if(isset($_SESSION)){
 	      optionsDiv.appendChild(groupDiv);
 	    });
 
-	    // Close button handler
 	    document.getElementById('theme-close-button').onclick = () => {
-	      container.innerHTML = ''; // Destroy modal
+	      container.innerHTML = '';
 	      container.style.display = 'none';
 	      characterContainer.style.display = 'block';
 	    };
@@ -1444,8 +1516,14 @@ if(isset($_SESSION)){
 			
 	  	// Set background based on current theme
 		setBackground() {
-		    document.body.style.backgroundImage = `url(${this.baseImagePath}monstrocity.png)`;
+		  console.log('setBackground: Setting for theme=' + this.theme);
+		  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+		  if (themeData && themeData.background) {
+		    document.getElementById('game-container').style.backgroundImage = 'url(' + this.baseImagePath + 'monstrocity.png)';
+		  } else {
+		    document.getElementById('game-container').style.backgroundImage = 'none'; // Fallback to CSS or no background
 		  }
+		}
 
 	    // Update theme and refresh visuals
 		  updateTheme(newTheme) {
