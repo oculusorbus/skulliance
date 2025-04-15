@@ -648,22 +648,26 @@ if(isset($_SESSION)){
 
 	.theme-group {
 	  margin: 20px 0;
-	  text-align: left;
+	  display: flex;
+	  flex-wrap: wrap;
+	  justify-content: center; /* Center themes horizontally */
+	  text-align: center;
 	}
 
 	.theme-group h3 {
 	  color: #fff;
 	  font-size: 1.5em;
 	  margin: 10px 0;
-	  text-align: center;
+	  width: 100%; /* Ensure title spans container */
 	}
 
 	.theme-option {
 	  display: inline-block;
-	  width: 250px;
-	  height: 300px;
+	  width: 350px;
+	  height: 275px;
 	  margin: 10px;
 	  padding: 10px;
+	  background-color: #165777; /* Fallback color */
 	  background-size: cover;
 	  background-position: center;
 	  border-radius: 5px;
@@ -677,7 +681,7 @@ if(isset($_SESSION)){
 
 	.theme-option:hover {
 	  transform: scale(1.05);
-	  background-color: rgba(32, 128, 173, 0.2);
+	  background-color: rgba(32, 128, 173, 0.2); /* Blend with fallback on hover */
 	}
 
 	.theme-option img {
@@ -689,22 +693,38 @@ if(isset($_SESSION)){
 	  filter: drop-shadow(2px 5px 10px #000);
 	}
 
+	.theme-option img:hover::after {
+	  content: attr(data-project);
+	  position: absolute;
+	  background: rgba(0, 0, 0, 0.8);
+	  color: #fff;
+	  padding: 5px 10px;
+	  border-radius: 5px;
+	  font-size: 0.8em;
+	  bottom: 140px; /* Above title bar */
+	  left: 50%;
+	  transform: translateX(-50%);
+	  z-index: 10;
+	}
+
 	.theme-option p {
-	  margin: 5px 0;
+	  margin: 0;
 	  font-size: 0.9em;
 	  color: #fff;
 	  background: rgba(0, 0, 0, 0.7);
-	  padding: 5px;
+	  padding: 10px;
 	  position: absolute;
 	  bottom: 0;
-	  width: 100%;
+	  left: 0;
+	  right: 0;
+	  text-align: center;
 	  box-sizing: border-box;
 	}
 
 	@media (max-width: 1025px) {
 	  .theme-option {
-	    width: 180px;
-	    height: 220px;
+	    width: 250px;
+	    height: 200px;
 	  }
 
 	  .theme-option img {
@@ -714,6 +734,7 @@ if(isset($_SESSION)){
 
 	  .theme-option p {
 	    font-size: 0.8em;
+	    padding: 8px;
 	  }
 	}
 
@@ -1024,14 +1045,14 @@ if(isset($_SESSION)){
 	</div>
   <script>
 	  // Theme data extracted from original <select>
-	  // Theme data extracted from original <select>
 	  const themes = [
 	    {
 	      group: "Default Game Theme",
 	      items: [
 	        {
 	          value: "monstrocity",
-	          name: "Monstrocity - Season 1",
+	          project: "Monstrocity",
+	          title: "Season 1",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
@@ -1043,77 +1064,88 @@ if(isset($_SESSION)){
 	      items: [
 	        {
 	          value: "bungking",
-	          name: "Bungking - Yume",
+	          project: "Bungking",
+	          title: "Yume",
 	          policyIds: "f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "cardanocamera",
-	          name: "Cardano Camera - Galaxy of Sons",
+	          project: "Cardano Camera",
+	          title: "Galaxy of Sons",
 	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "darkula",
-	          name: "Darkula - Island of the Uncanny Neighbors",
+	          project: "Darkula",
+	          title: "Island of the Uncanny Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "darkula2",
-	          name: "Darkula - Island of the Violent Neighbors",
+	          project: "Darkula",
+	          title: "Island of the Violent Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "muses",
-	          name: "Josh Howard - Muses of the Multiverse",
+	          project: "Josh Howard",
+	          title: "Muses of the Multiverse",
 	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "maxi",
-	          name: "Maxingo - Digital Hell Citizens 2: Fighters",
+	          project: "Maxingo",
+	          title: "Digital Hell Citizens 2: Fighters",
 	          policyIds: "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "shortyverse",
-	          name: "Ohh Meed - Shorty Verse",
+	          project: "Ohh Meed",
+	          title: "Shorty Verse",
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "shortyverse2",
-	          name: "Ohh Meed - Shorty Verse Engaged",
+	          project: "Ohh Meed",
+	          title: "Shorty Verse Engaged",
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "bogeyman",
-	          name: "Ritual - Bogeyman",
+	          project: "Ritual",
+	          title: "Bogeyman",
 	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "ritual",
-	          name: "Ritual - John Doe",
+	          project: "Ritual",
+	          title: "John Doe",
 	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "skowl",
-	          name: "Skowl - Derivative Heroes",
+	          project: "Skowl",
+	          title: "Derivative Heroes",
 	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
@@ -1125,21 +1157,24 @@ if(isset($_SESSION)){
 	      items: [
 	        {
 	          value: "discosolaris",
-	          name: "Disco Solaris - Moebius Pioneers",
+	          project: "Disco Solaris",
+	          title: "Moebius Pioneers",
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "oculuslounge",
-	          name: "Disco Solaris - Oculus Lounge",
+	          project: "Disco Solaris",
+	          title: "Oculus Lounge",
 	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "havocworlds",
-	          name: "Havoc Worlds - Season 1",
+	          project: "Havoc Worlds",
+	          title: "Season 1",
 	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
@@ -1151,7 +1186,8 @@ if(isset($_SESSION)){
 	      items: [
 	        {
 	          value: "adapunks",
-	          name: "ADA Punks",
+	          project: "ADA Punks",
+	          title: "ADA Punks",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
@@ -1165,56 +1201,64 @@ if(isset($_SESSION)){
 	      items: [
 	        {
 	          value: "occultarchives",
-	          name: "Billy Martin - Occult Archives",
+	          project: "Billy Martin",
+	          title: "Occult Archives",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
 	        },
 	        {
 	          value: "rubberrebels",
-	          name: "Classic Cardtoons - Rubber Rebels",
+	          project: "Classic Cardtoons",
+	          title: "Rubber Rebels",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
 	        },
 	        {
 	          value: "danketsu",
-	          name: "Danketsu - Legends",
+	          project: "Danketsu",
+	          title: "Legends",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
 	        },
 	        {
 	          value: "deadpophell",
-	          name: "Dead Pop Hell - NSFW",
+	          project: "Dead Pop Hell",
+	          title: "NSFW",
 	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "moebiuspioneers",
-	          name: "Disco Solaris - Legends",
+	          project: "Disco Solaris",
+	          title: "Legends",
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
 	        },
 	        {
 	          value: "karranka",
-	          name: "Karranka - Badass Heroes",
+	          project: "Karranka",
+	          title: "Badass Heroes",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
 	        },
 	        {
 	          value: "karranka2",
-	          name: "Karranka - Japanese Ghosts: Legendary Warriors",
+	          project: "Karranka",
+	          title: "Japanese Ghosts: Legendary Warriors",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: ""
 	        },
 	        {
 	          value: "omen",
-	          name: "Nemonium - Omen Legends",
+	          project: "Nemonium",
+	          title: "Omen Legends",
 	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/"
@@ -1248,8 +1292,8 @@ if(isset($_SESSION)){
 	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
 	        option.style.backgroundImage = `url(${backgroundUrl})`;
 	        option.innerHTML = `
-	          <img src="${logoUrl}" alt="${theme.name}" onerror="this.src='/staking/icons/skull.png'">
-	          <p>${theme.name}</p>
+	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
+	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
 	          container.style.display = 'none';
@@ -2999,160 +3043,166 @@ if(isset($_SESSION)){
     const gameOver = document.getElementById("game-over");
 	
 	async function getAssets(selectedTheme) {
-	    let monstrocityAssets = [];
+	  let monstrocityAssets = [];
+	  try {
+	    console.log('getAssets: Fetching Monstrocity assets');
+	    const monstrocityResponse = await fetch('ajax/get-monstrocity-assets.php', {
+	      method: 'POST',
+	      headers: { 'Content-Type': 'application/json' },
+	      body: JSON.stringify({ theme: 'monstrocity' })
+	    });
+
+	    console.log('getAssets: Monstrocity status=', monstrocityResponse.status);
+	    if (!monstrocityResponse.ok) {
+	      throw new Error('Monstrocity HTTP error! Status: ' + monstrocityResponse.status);
+	    }
+
+	    monstrocityAssets = await monstrocityResponse.json();
+	    console.log('getAssets: Monstrocity data=', monstrocityAssets);
+	    if (!Array.isArray(monstrocityAssets)) {
+	      monstrocityAssets = [monstrocityAssets];
+	    }
+
+	    monstrocityAssets = monstrocityAssets.map((asset, index) => {
+	      const mapped = {
+	        ...asset,
+	        theme: 'monstrocity',
+	        name: asset.name || ('Monstrocity_Unknown_' + index),
+	        strength: asset.strength || 4,
+	        speed: asset.speed || 4,
+	        tactics: asset.tactics || 4,
+	        size: asset.size || 'Medium',
+	        type: asset.type || 'Base',
+	        powerup: asset.powerup || 'Regenerate'
+	      };
+	      console.log('getAssets: Mapped Monstrocity asset ' + index + '=', mapped);
+	      return mapped;
+	    });
+	  } catch (error) {
+	    console.error('getAssets: Monstrocity fetch error:', error);
+	    monstrocityAssets = [
+	      {
+	        name: 'Craig',
+	        strength: 4,
+	        speed: 4,
+	        tactics: 4,
+	        size: 'Medium',
+	        type: 'Base',
+	        powerup: 'Regenerate',
+	        theme: 'monstrocity'
+	      },
+	      {
+	        name: 'Dankle',
+	        strength: 3,
+	        speed: 5,
+	        tactics: 3,
+	        size: 'Small',
+	        type: 'Base',
+	        powerup: 'Heal',
+	        theme: 'monstrocity'
+	      }
+	    ];
+	    console.log('getAssets: Using default Monstrocity assets=', monstrocityAssets);
+	  }
+
+	  console.log('getAssets: Monstrocity assets final=', monstrocityAssets);
+
+	  if (selectedTheme === 'monstrocity') {
+	    console.log('getAssets: Returning only Monstrocity assets=', monstrocityAssets);
+	    return monstrocityAssets;
+	  }
+
+	  console.log('getAssets: Processing NFT theme=', selectedTheme);
+	  // Find theme in themes array
+	  let themeData = null;
+	  for (const group of themes) {
+	    themeData = group.items.find(item => item.value === selectedTheme);
+	    if (themeData) break;
+	  }
+
+	  if (!themeData) {
+	    console.warn('getAssets: Theme not found: ' + selectedTheme);
+	    return monstrocityAssets;
+	  }
+
+	  const policyIds = themeData.policyIds ? themeData.policyIds.split(',').filter(id => id.trim()) : [];
+	  console.log('getAssets: Policy IDs=', policyIds);
+
+	  if (!policyIds.length) {
+	    console.log('getAssets: No policy IDs for theme ' + selectedTheme + ', returning Monstrocity assets');
+	    return monstrocityAssets;
+	  }
+
+	  const orientations = themeData.orientations ? themeData.orientations.split(',').filter(o => o.trim()) : [];
+	  const ipfsPrefixes = themeData.ipfsPrefixes ? themeData.ipfsPrefixes.split(',').filter(p => p.trim()) : [];
+
+	  const policies = policyIds.map((policyId, index) => ({
+	    policyId,
+	    orientation: orientations.length === 1 ? orientations[0] : (orientations[index] || 'Right'),
+	    ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[index] || 'https://ipfs.io/ipfs/')
+	  }));
+	  console.log('getAssets: Policies=', policies);
+
+	  let nftAssets = [];
+	  try {
+	    const requestBody = JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme });
+	    console.log('getAssets: Sending NFT POST=', requestBody);
+	    const nftResponse = await fetch('ajax/get-nft-assets.php', {
+	      method: 'POST',
+	      headers: { 'Content-Type': 'application/json' },
+	      body: requestBody
+	    });
+
+	    console.log('getAssets: NFT status=', nftResponse.status, 'ok=', nftResponse.ok);
+	    const nftText = await nftResponse.text();
+	    console.log('getAssets: NFT raw response=', nftText);
+	    if (!nftResponse.ok) {
+	      throw new Error('NFT HTTP error! Status: ' + nftResponse.status);
+	    }
+
+	    let parsedAssets;
 	    try {
-	        console.log('getAssets: Fetching Monstrocity assets');
-	        const monstrocityResponse = await fetch('ajax/get-monstrocity-assets.php', {
-	            method: 'POST',
-	            headers: { 'Content-Type': 'application/json' },
-	            body: JSON.stringify({ theme: 'monstrocity' })
-	        });
+	      parsedAssets = JSON.parse(nftText);
+	    } catch (parseError) {
+	      console.error('getAssets: NFT parse error:', parseError, 'raw=', nftText);
+	      throw parseError;
+	    }
+	    console.log('getAssets: NFT parsed data=', parsedAssets);
 
-	        console.log('getAssets: Monstrocity status=', monstrocityResponse.status);
-	        if (!monstrocityResponse.ok) {
-	            throw new Error('Monstrocity HTTP error! Status: ' + monstrocityResponse.status);
-	        }
-
-	        monstrocityAssets = await monstrocityResponse.json();
-	        console.log('getAssets: Monstrocity data=', monstrocityAssets);
-	        if (!Array.isArray(monstrocityAssets)) {
-	            monstrocityAssets = [monstrocityAssets];
-	        }
-
-	        monstrocityAssets = monstrocityAssets.map((asset, index) => {
-	            const mapped = {
-	                ...asset,
-	                theme: 'monstrocity',
-	                name: asset.name || ('Monstrocity_Unknown_' + index),
-	                strength: asset.strength || 4,
-	                speed: asset.speed || 4,
-	                tactics: asset.tactics || 4,
-	                size: asset.size || 'Medium',
-	                type: asset.type || 'Base',
-	                powerup: asset.powerup || 'Regenerate'
-	            };
-	            console.log('getAssets: Mapped Monstrocity asset ' + index + '=', mapped);
-	            return mapped;
-	        });
-	    } catch (error) {
-	        console.error('getAssets: Monstrocity fetch error:', error);
-	        monstrocityAssets = [
-	            {
-	                name: 'Craig',
-	                strength: 4,
-	                speed: 4,
-	                tactics: 4,
-	                size: 'Medium',
-	                type: 'Base',
-	                powerup: 'Regenerate',
-	                theme: 'monstrocity'
-	            },
-	            {
-	                name: 'Dankle',
-	                strength: 3,
-	                speed: 5,
-	                tactics: 3,
-	                size: 'Small',
-	                type: 'Base',
-	                powerup: 'Heal',
-	                theme: 'monstrocity'
-	            }
-	        ];
-	        console.log('getAssets: Using default Monstrocity assets=', monstrocityAssets);
+	    if (parsedAssets === false || parsedAssets === 'false') {
+	      console.log('getAssets: NFT data is false, skipping');
+	      nftAssets = [];
+	    } else {
+	      nftAssets = Array.isArray(parsedAssets) ? parsedAssets : [parsedAssets];
+	      console.log('getAssets: NFT normalized=', nftAssets);
 	    }
 
-	    console.log('getAssets: Monstrocity assets final=', monstrocityAssets);
+	    nftAssets = nftAssets.map((asset, index) => {
+	      const mapped = {
+	        ...asset,
+	        theme: selectedTheme,
+	        name: asset.name || ('NFT_Unknown_' + index),
+	        strength: asset.strength || 4,
+	        speed: asset.speed || 4,
+	        tactics: asset.tactics || 4,
+	        size: asset.size || 'Medium',
+	        type: asset.type || 'Base',
+	        powerup: asset.powerup || 'Regenerate',
+	        policyId: asset.policyId || policies[0].policyId,
+	        ipfs: asset.ipfs || ''
+	      };
+	      console.log('getAssets: Mapped NFT asset ' + index + '=', mapped);
+	      return mapped;
+	    });
+	  } catch (error) {
+	    console.error('getAssets: NFT fetch error for theme ' + selectedTheme + ':', error);
+	    nftAssets = [];
+	  }
 
-	    if (selectedTheme === 'monstrocity') {
-	        console.log('getAssets: Returning only Monstrocity assets=', monstrocityAssets);
-	        return monstrocityAssets;
-	    }
-
-	    console.log('getAssets: Processing NFT theme=', selectedTheme);
-	    const themeOption = document.querySelector('#theme-select option[value="' + selectedTheme + '"]');
-	    if (!themeOption) {
-	        console.warn('getAssets: Theme option not found: ' + selectedTheme);
-	        return monstrocityAssets;
-	    }
-
-	    const policyIds = themeOption.dataset.policyIds ? themeOption.dataset.policyIds.split(',').filter(id => id.trim()) : [];
-	    console.log('getAssets: Policy IDs=', policyIds);
-
-	    if (!policyIds.length) {
-	        console.log('getAssets: No policy IDs for theme ' + selectedTheme + ', returning Monstrocity assets');
-	        return monstrocityAssets;
-	    }
-
-	    const orientations = themeOption.dataset.orientations ? themeOption.dataset.orientations.split(',').filter(o => o.trim()) : [];
-	    const ipfsPrefixes = themeOption.dataset.ipfsPrefixes ? themeOption.dataset.ipfsPrefixes.split(',').filter(p => p.trim()) : [];
-
-	    const policies = policyIds.map((policyId, index) => ({
-	        policyId,
-	        orientation: orientations.length === 1 ? orientations[0] : (orientations[index] || 'Right'),
-	        ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[index] || 'https://ipfs.io/ipfs/')
-	    }));
-	    console.log('getAssets: Policies=', policies);
-
-	    let nftAssets = [];
-	    try {
-	        const requestBody = JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme });
-	        console.log('getAssets: Sending NFT POST=', requestBody);
-	        const nftResponse = await fetch('ajax/get-nft-assets.php', {
-	            method: 'POST',
-	            headers: { 'Content-Type': 'application/json' },
-	            body: requestBody
-	        });
-
-	        console.log('getAssets: NFT status=', nftResponse.status, 'ok=', nftResponse.ok);
-	        const nftText = await nftResponse.text();
-	        console.log('getAssets: NFT raw response=', nftText);
-	        if (!nftResponse.ok) {
-	            throw new Error('NFT HTTP error! Status: ' + nftResponse.status);
-	        }
-
-	        let parsedAssets;
-	        try {
-	            parsedAssets = JSON.parse(nftText);
-	        } catch (parseError) {
-	            console.error('getAssets: NFT parse error:', parseError, 'raw=', nftText);
-	            throw parseError;
-	        }
-	        console.log('getAssets: NFT parsed data=', parsedAssets);
-
-	        if (parsedAssets === false || parsedAssets === 'false') {
-	            console.log('getAssets: NFT data is false, skipping');
-	            nftAssets = [];
-	        } else {
-	            nftAssets = Array.isArray(parsedAssets) ? parsedAssets : [parsedAssets];
-	            console.log('getAssets: NFT normalized=', nftAssets);
-	        }
-
-	        nftAssets = nftAssets.map((asset, index) => {
-	            const mapped = {
-	                ...asset,
-	                theme: selectedTheme,
-	                name: asset.name || ('NFT_Unknown_' + index),
-	                strength: asset.strength || 4,
-	                speed: asset.speed || 4,
-	                tactics: asset.tactics || 4,
-	                size: asset.size || 'Medium',
-	                type: asset.type || 'Base',
-	                powerup: asset.powerup || 'Regenerate',
-	                policyId: asset.policyId || policies[0].policyId,
-	                ipfs: asset.ipfs || ''
-	            };
-	            console.log('getAssets: Mapped NFT asset ' + index + '=', mapped);
-	            return mapped;
-	        });
-	    } catch (error) {
-	        console.error('getAssets: NFT fetch error for theme ' + selectedTheme + ':', error);
-	        nftAssets = [];
-	    }
-
-	    console.log('getAssets: NFT assets final=', nftAssets);
-	    const finalAssets = [...monstrocityAssets, ...nftAssets];
-	    console.log('getAssets: Returning merged assets=', finalAssets);
-	    return finalAssets;
+	  console.log('getAssets: NFT assets final=', nftAssets);
+	  const finalAssets = [...monstrocityAssets, ...nftAssets];
+	  console.log('getAssets: Returning merged assets=', finalAssets);
+	  return finalAssets;
 	}
 	
 	// Instantiation
