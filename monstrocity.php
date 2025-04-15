@@ -682,7 +682,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  height: 275px;
 	  margin: 10px;
 	  padding: 10px;
-	  background-color: #165777; /* Fallback color */
+	  background-color: #121212; /* Fallback color */
 	  background-size: cover;
 	  background-position: center;
 	  border-radius: 5px;
