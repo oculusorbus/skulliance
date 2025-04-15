@@ -1200,7 +1200,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        }
 	      ]
 	    },
