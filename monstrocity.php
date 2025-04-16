@@ -1132,26 +1132,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
-	          value: "cardanians",
-	          project: "Cardanians",
-	          title: "Cardanian Snow Globes (GIF)",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "gif" // Applies only to character images
-	        },
-	        {
-	          value: "cardanians2",
-	          project: "Cardanians",
-	          title: "Cardanian Snow Globes (MOV)",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "mov" // Applies only to character images
-	        },
-	        {
 	          value: "cardanocamera",
 	          project: "Cardano Camera",
 	          title: "Galaxy of Sons",
@@ -1265,6 +1245,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "",
 			  background: true,
 			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "cardanians",
+	          project: "Cardanians",
+	          title: "Cardanian Snow Globes (GIF)",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "gif" // Applies only to character images
+	        },
+	        {
+	          value: "cardanians2",
+	          project: "Cardanians",
+	          title: "Cardanian Snow Globes (MOV)",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "mov" // Applies only to character images
 	        }
 	      ]
 	    }
