@@ -1260,6 +1260,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "cardanians",
+	          project: "Cardanians",
+	          title: "Snow Globes (gif)",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "gif" // Applies only to character images
+	        },
+	        {
+	          value: "cardanians2",
+	          project: "Cardanians",
+	          title: "Snow Globes (mov)",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "mov" // Applies only to character images
+	        },
+	        {
 	          value: "rubberrebels",
 	          project: "Classic Cardtoons",
 	          title: "Rubber Rebels",
