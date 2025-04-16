@@ -1212,7 +1212,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
-	          value: "ritual",
+	          value: "skada",
 	          project: "Ritual",
 	          title: "Skada",
 	          policyIds: "2eacad9ddcb9edd7721af49f682bd356e8e28194bafa4bbc2f559bb7",
