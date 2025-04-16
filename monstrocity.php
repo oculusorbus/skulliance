@@ -1249,7 +1249,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        {
 	          value: "cardanians",
 	          project: "Cardanians",
-	          title: "Cardanian Snow Globes (gif)",
+	          title: "Cardanian Snow Globes (GIF)",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
@@ -1259,7 +1259,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        {
 	          value: "cardanians2",
 	          project: "Cardanians",
-	          title: "Cardanian Snow Globes (mov)",
+	          title: "Cardanian Snow Globes (MOV)",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
