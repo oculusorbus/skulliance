@@ -2097,15 +2097,52 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    p1Tactics.textContent = this.player1.tactics;
 		    p1Size.textContent = this.player1.size;
 		    p1Powerup.textContent = this.player1.powerup;
+
+		    const p1Image = document.getElementById('p1-image');
+		    const parent = p1Image.parentNode;
+
 		    if (this.player1.mediaType === 'video') {
-		        p1Image.outerHTML = '<video id="p1-image" src="' + this.player1.imageUrl + '" autoplay loop muted alt="' + this.player1.name + '"></video>';
+		        // Only replace if current element is not a video
+		        if (p1Image.tagName !== 'VIDEO') {
+		            const newVideo = document.createElement('video');
+		            newVideo.id = 'p1-image';
+		            newVideo.src = this.player1.imageUrl;
+		            newVideo.autoplay = true;
+		            newVideo.loop = true;
+		            newVideo.muted = true;
+		            newVideo.alt = this.player1.name;
+		            parent.replaceChild(newVideo, p1Image);
+		        } else {
+		            p1Image.src = this.player1.imageUrl; // Update source if already a video
+		        }
 		    } else {
-		        p1Image.src = this.player1.imageUrl;
+		        // Only replace if current element is not an image
+		        if (p1Image.tagName !== 'IMG') {
+		            const newImage = document.createElement('img');
+		            newImage.id = 'p1-image';
+		            newImage.src = this.player1.imageUrl;
+		            newImage.alt = this.player1.name;
+		            parent.replaceChild(newImage, p1Image);
+		        } else {
+		            p1Image.src = this.player1.imageUrl; // Update source if already an image
+		        }
 		    }
-		    const p1ImageNew = document.getElementById('p1-image'); // Re-fetch element after possible replacement
+
+		    const p1ImageNew = document.getElementById('p1-image');
 		    p1ImageNew.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
-		    p1ImageNew.onload = function() { p1ImageNew.style.display = 'block'; };
+		    // Handle onload for images, ensure videos are visible immediately
+		    if (p1ImageNew.tagName === 'IMG') {
+		        p1ImageNew.onload = function() { p1ImageNew.style.display = 'block'; };
+		    } else {
+		        p1ImageNew.style.display = 'block';
+		    }
 		    p1Hp.textContent = this.player1.health + '/' + this.player1.maxHealth;
+
+		    // Reattach click event listener
+		    p1ImageNew.onclick = () => {
+		        console.log("Player 1 media clicked");
+		        this.showCharacterSelect(false);
+		    };
 		}
 
 		updateOpponentDisplay() {
@@ -2116,14 +2153,42 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    p2Tactics.textContent = this.player2.tactics;
 		    p2Size.textContent = this.player2.size;
 		    p2Powerup.textContent = this.player2.powerup;
+
+		    const p2Image = document.getElementById('p2-image');
+		    const parent = p2Image.parentNode;
+
 		    if (this.player2.mediaType === 'video') {
-		        p2Image.outerHTML = '<video id="p2-image" src="' + this.player2.imageUrl + '" autoplay loop muted alt="' + this.player2.name + '"></video>';
+		        if (p2Image.tagName !== 'VIDEO') {
+		            const newVideo = document.createElement('video');
+		            newVideo.id = 'p2-image';
+		            newVideo.src = this.player2.imageUrl;
+		            newVideo.autoplay = true;
+		            newVideo.loop = true;
+		            newVideo.muted = true;
+		            newVideo.alt = this.player2.name;
+		            parent.replaceChild(newVideo, p2Image);
+		        } else {
+		            p2Image.src = this.player2.imageUrl;
+		        }
 		    } else {
-		        p2Image.src = this.player2.imageUrl;
+		        if (p2Image.tagName !== 'IMG') {
+		            const newImage = document.createElement('img');
+		            newImage.id = 'p2-image';
+		            newImage.src = this.player2.imageUrl;
+		            newImage.alt = this.player2.name;
+		            parent.replaceChild(newImage, p2Image);
+		        } else {
+		            p2Image.src = this.player2.imageUrl;
+		        }
 		    }
-		    const p2ImageNew = document.getElementById('p2-image'); // Re-fetch element after possible replacement
+
+		    const p2ImageNew = document.getElementById('p2-image');
 		    p2ImageNew.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
-		    p2ImageNew.onload = function() { p2ImageNew.style.display = 'block'; };
+		    if (p2ImageNew.tagName === 'IMG') {
+		        p2ImageNew.onload = function() { p2ImageNew.style.display = 'block'; };
+		    } else {
+		        p2ImageNew.style.display = 'block';
+		    }
 		    p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
 		}
 
@@ -3045,14 +3110,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          gameOver.textContent = "You Lose!";
 	          turnIndicator.textContent = "Game Over";
 	          log(`${this.player2.name} defeats ${this.player1.name}!`);
-	          tryAgainButton.textContent = "TRY AGAIN"; // Keep "Try Again" to restart same level
+	          tryAgainButton.textContent = "TRY AGAIN";
 	          document.getElementById("game-over-container").style.display = "block";
 	          try {
 	              this.sounds.loss.play();
 	          } catch (err) {
 	              console.error("Error playing lose sound:", err);
 	          }
-	          // Removed await this.clearProgress(); - No progress reset on loss
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
 	          this.gameOver = true;
@@ -3075,7 +3139,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
 	                  log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
 
-	                  this.grandTotalScore += roundScore; // Only update grand total on win
+	                  this.grandTotalScore += roundScore;
 
 	                  log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
 	                  log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
@@ -3087,31 +3151,50 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          if (this.currentLevel === opponentsConfig.length) {
 	              this.sounds.finalWin.play();
 	              log(`Final level completed! Final score: ${this.grandTotalScore}`);
-	              this.grandTotalScore = 0; // Reset only after final level win
+	              this.grandTotalScore = 0;
 	              await this.clearProgress();
 	              log("Game completed! Grand total score reset.");
 	          } else {
-	              this.currentLevel += 1; // Advance level on win
+	              this.currentLevel += 1;
 	              await this.saveProgress();
 	              console.log(`Progress saved: currentLevel=${this.currentLevel}`);
 	              this.sounds.win.play();
 	          }
 
-	          // Get the theme's extension for the damaged media
 	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 	          const extension = themeData?.extension || 'png';
 	          const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
 
-	          // Update the opponent's media based on mediaType
+	          const p2Image = document.getElementById('p2-image');
+	          const parent = p2Image.parentNode;
+
 	          if (this.player2.mediaType === 'video') {
-	              p2Image.outerHTML = `<video id="p2-image" src="${damagedUrl}" autoplay loop muted alt="${this.player2.name}"></video>`;
+	              if (p2Image.tagName !== 'VIDEO') {
+	                  const newVideo = document.createElement('video');
+	                  newVideo.id = 'p2-image';
+	                  newVideo.src = damagedUrl;
+	                  newVideo.autoplay = true;
+	                  newVideo.loop = true;
+	                  newVideo.muted = true;
+	                  newVideo.alt = this.player2.name;
+	                  parent.replaceChild(newVideo, p2Image);
+	              } else {
+	                  p2Image.src = damagedUrl;
+	              }
 	          } else {
-	              p2Image.src = damagedUrl;
+	              if (p2Image.tagName !== 'IMG') {
+	                  const newImage = document.createElement('img');
+	                  newImage.id = 'p2-image';
+	                  newImage.src = damagedUrl;
+	                  newImage.alt = this.player2.name;
+	                  parent.replaceChild(newImage, p2Image);
+	              } else {
+	                  p2Image.src = damagedUrl;
+	              }
 	          }
 
-	          // Re-fetch the element and apply styles
 	          const p2ImageNew = document.getElementById("p2-image");
-	          p2ImageNew.style.display = "block"; // Ensure visibility for both images and videos
+	          p2ImageNew.style.display = "block";
 	          p2ImageNew.classList.add("loser");
 	          p1Image.classList.add("winner");
 	          this.renderBoard();
