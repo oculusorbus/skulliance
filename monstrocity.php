@@ -780,12 +780,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         display: none;
       }
       
-      .character img {
+      	.character img, .character video {
 		  width: 85px;
+		  height: auto;
           float: left;
           position: absolute;
           left: 15px;
           top: 55px;
+		  min-height: 40px;
       }
       
       .character table{
