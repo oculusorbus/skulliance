@@ -1614,59 +1614,61 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			}
 
 	    // Update theme and refresh visuals
-		  updateTheme(newTheme) {
-		    if (updatePending) {
-		      console.log('updateTheme: Skipped due to pending update');
-		      return;
-		    }
-		    updatePending = true;
-		    console.time('updateTheme_' + newTheme);
-		    var self = this;
-		    this.theme = newTheme;
-		    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
-		    localStorage.setItem('gameTheme', this.theme);
-		    this.setBackground();
+			updateTheme(newTheme) {
+			    if (updatePending) {
+			        console.log('updateTheme: Skipped due to pending update');
+			        return;
+			    }
+			    updatePending = true;
+			    console.time('updateTheme_' + newTheme);
+			    var self = this;
+			    this.theme = newTheme;
+			    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
+			    localStorage.setItem('gameTheme', this.theme); // Save the theme to local storage
+			    this.setBackground();
 
-		    getAssets(this.theme).then(function(assets) {
-		      console.time('updateCharacters_' + newTheme);
-		      self.playerCharactersConfig = assets;
-		      self.playerCharacters = [];
+			    // Update the logo immediately
+			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
 
-		      // Preload images first
-		      assets.forEach(config => {
-		        const char = self.createCharacter(config);
-		        const img = new Image();
-		        img.src = char.imageUrl;
-		        img.onload = () => console.log('Preloaded: ' + char.imageUrl);
-		        img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
-		        self.playerCharacters.push(char);
-		      });
+			    getAssets(this.theme).then(function(assets) {
+			        console.time('updateCharacters_' + newTheme);
+			        self.playerCharactersConfig = assets;
+			        self.playerCharacters = [];
 
-		      if (self.player1) {
-		        var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
-		        self.player1 = self.createCharacter(newConfig);
-		        self.updatePlayerDisplay();
-		      }
-		      if (self.player2) {
-		        self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
-		        self.updateOpponentDisplay();
-		      }
-		      document.querySelector('.game-logo').src = self.baseImagePath + 'logo.png';
+			        // Preload images first
+			        assets.forEach(config => {
+			            const char = self.createCharacter(config);
+			            const img = new Image();
+			            img.src = char.imageUrl;
+			            img.onload = () => console.log('Preloaded: ' + char.imageUrl);
+			            img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+			            self.playerCharacters.push(char);
+			        });
 
-		      var container = document.getElementById('character-select-container');
-		      if (container.style.display === 'block') {
-		        self.showCharacterSelect(self.player1 === null);
-		      }
+			        if (self.player1) {
+			            var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
+			            self.player1 = self.createCharacter(newConfig);
+			            self.updatePlayerDisplay();
+			        }
+			        if (self.player2) {
+			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
+			            self.updateOpponentDisplay();
+			        }
 
-		      console.timeEnd('updateCharacters_' + newTheme);
-		      console.timeEnd('updateTheme_' + newTheme);
-		      updatePending = false;
-		    }).catch(function(error) {
-		      console.error('Error updating theme assets:', error);
-		      console.timeEnd('updateTheme_' + newTheme);
-		      updatePending = false;
-		    });
-		  }
+			        var container = document.getElementById('character-select-container');
+			        if (container.style.display === 'block') {
+			            self.showCharacterSelect(self.player1 === null);
+			        }
+
+			        console.timeEnd('updateCharacters_' + newTheme);
+			        console.timeEnd('updateTheme_' + newTheme);
+			        updatePending = false;
+			    }).catch(function(error) {
+			        console.error('Error updating theme assets:', error);
+			        console.timeEnd('updateTheme_' + newTheme);
+			        updatePending = false;
+			    });
+			}
 	  
 		async saveProgress() {
 		  const data = {
@@ -2233,29 +2235,36 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      boardElement.innerHTML = "";
 
 	      for (let y = 0; y < this.height; y++) {
-	        for (let x = 0; x < this.width; x++) {
-	          const tile = this.board[y][x];
-	          if (tile.type === null) continue;
-	          const tileElement = document.createElement("div");
-	          tileElement.className = `tile ${tile.type}`;
-	          if (this.gameOver) tileElement.classList.add("game-over");
-	          const img = document.createElement('img');
-	          img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`; // Icons remain unchanged
-	          img.alt = tile.type;
-	          tileElement.appendChild(img);
-	          tileElement.dataset.x = x;
-	          tileElement.dataset.y = y;
-	          boardElement.appendChild(tileElement);
-	          tile.element = tileElement;
+	          for (let x = 0; x < this.width; x++) {
+	              const tile = this.board[y][x];
+	              if (tile.type === null) continue;
+	              const tileElement = document.createElement("div");
+	              tileElement.className = `tile ${tile.type}`;
+	              if (this.gameOver) tileElement.classList.add("game-over");
+	              const img = document.createElement('img');
+	              img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`;
+	              img.alt = tile.type;
+	              tileElement.appendChild(img);
+	              tileElement.dataset.x = x;
+	              tileElement.dataset.y = y;
+	              boardElement.appendChild(tileElement);
+	              tile.element = tileElement;
 
-	          if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
-	            tileElement.style.transform = "translate(0, 0)";
+	              if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
+	                  tileElement.style.transform = "translate(0, 0)";
+	              }
+
+	              // Reattach event listeners to ensure responsiveness
+	              if (this.isTouchDevice) {
+	                  tileElement.addEventListener("touchstart", (e) => this.handleTouchStart(e));
+	              } else {
+	                  tileElement.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+	              }
 	          }
-	        }
 	      }
 
 	      document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
-	    }
+	  }
 
 		addEventListeners() {
 		    const board = document.getElementById("game-board");
@@ -3497,20 +3506,22 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	
 	// Instantiation
 	document.addEventListener('DOMContentLoaded', function() {
-	  var initGame = function() {
-	    var initialTheme = localStorage.getItem('gameTheme') || 'monstrocity';
-	    getAssets(initialTheme).then(function(playerCharactersConfig) {
-	      console.log('Main: Player characters loaded:', playerCharactersConfig);
-	      var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
-	      console.log('Main: Game instance created');
-	      game.init().then(function() {
-	        console.log('Main: Game initialized successfully');
-	      });
-	    }).catch(function(error) {
-	      console.error('Main: Error initializing game:', error);
-	    });
-	  };
-	  initGame();
+	    var initGame = function() {
+	        var initialTheme = localStorage.getItem('gameTheme') || 'monstrocity';
+	        getAssets(initialTheme).then(function(playerCharactersConfig) {
+	            console.log('Main: Player characters loaded:', playerCharactersConfig);
+	            var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
+	            console.log('Main: Game instance created');
+	            game.init().then(function() {
+	                console.log('Main: Game initialized successfully');
+	                // Set the logo based on the initial theme
+	                document.querySelector('.game-logo').src = game.baseImagePath + 'logo.png';
+	            });
+	        }).catch(function(error) {
+	            console.error('Main: Error initializing game:', error);
+	        });
+	    };
+	    initGame();
 	});
   </script>
 </body>
