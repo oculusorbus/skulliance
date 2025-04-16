@@ -635,7 +635,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 	
 	#theme-select-container h2{
-		margin-top: 60px;
+		margin-top: 30px;
 	}
 
 	#theme-close-button {
