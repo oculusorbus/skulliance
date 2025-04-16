@@ -1256,7 +1256,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: false,
+			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
 	        {
@@ -1276,7 +1276,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true,
+			  background: false,
 			  extension: "mov" // Applies only to character images
 	        },
 	        {
