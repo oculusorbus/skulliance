@@ -1260,6 +1260,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  background: true
 	        },
 	        {
+	          value: "danketsu2",
+	          project: "Danketsu",
+	          title: "The Fourth",
+	          policyIds: "a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
+	        },
+	        {
 	          value: "deadpophell",
 	          project: "Dead Pop Hell",
 	          title: "NSFW",
