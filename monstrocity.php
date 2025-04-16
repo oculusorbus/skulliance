@@ -780,7 +780,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         display: none;
       }
       
-      	.character img, .character video {
+      .character img, .character video {
 		  width: 85px;
 		  height: auto;
           float: left;
