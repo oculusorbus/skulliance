@@ -1624,7 +1624,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    var self = this;
 			    this.theme = newTheme;
 			    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
-			    localStorage.setItem('gameTheme', this.theme);
+			    localStorage.setItem('gameTheme', this.theme); // Save the theme to local storage
 			    this.setBackground();
 
 			    // Update the logo immediately
@@ -1655,8 +1655,25 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            self.updateOpponentDisplay();
 			        }
 
-			        // Fix: Re-render the board to keep tiles responsive
+			        // Fix tile lock-ups
+			        // 1. Remove old event listeners from tiles
+			        const tiles = document.querySelectorAll('.tile');
+			        tiles.forEach(tile => {
+			            tile.removeEventListener('mousedown', self.handleMouseDown);
+			            tile.removeEventListener('touchstart', self.handleTouchStart);
+			        });
+
+			        // 2. Re-render the board to recreate tiles and reattach event listeners
 			        self.renderBoard();
+
+			        // 3. Reset interaction flags
+			        self.isDragging = false;
+			        self.selectedTile = null;
+			        self.targetTile = null;
+
+			        // 4. Set the game state correctly based on whose turn it is
+			        self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
+			        console.log("Game state reset to: " + self.gameState);
 
 			        var container = document.getElementById('character-select-container');
 			        if (container.style.display === 'block') {
