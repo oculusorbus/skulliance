@@ -136,13 +136,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
 
 	.character img, .character video {
-	    width: 100%;
+		width: 100%;
 	    height: auto;
 	    margin-bottom: 10px;
 	    border-radius: 5px;
-	    transition: transform 0.1s linear, filter 0.5s ease;
+	    transition: transform 0.1slinear, filter 0.5sease;
 	    -webkit-filter: drop-shadow(2px 5px 10px #000);
 	    filter: drop-shadow(2px 5px 10px #000);
+	    min-height: 265px;
+	    background-color: #003044;
 	}
     
     .character p{
