@@ -1624,7 +1624,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    var self = this;
 			    this.theme = newTheme;
 			    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
-			    localStorage.setItem('gameTheme', this.theme); // Save the theme to local storage
+			    localStorage.setItem('gameTheme', this.theme);
 			    this.setBackground();
 
 			    // Update the logo immediately
@@ -1654,6 +1654,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
 			            self.updateOpponentDisplay();
 			        }
+
+			        // Fix: Re-render the board to keep tiles responsive
+			        self.renderBoard();
 
 			        var container = document.getElementById('character-select-container');
 			        if (container.style.display === 'block') {
