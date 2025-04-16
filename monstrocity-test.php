@@ -3029,83 +3029,96 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
 
 	  async checkGameOver() {
-	    if (this.gameOver || this.isCheckingGameOver) {
-	      console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
-	      return;
-	    }
-
-	    this.isCheckingGameOver = true;
-	    console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
-
-	    const tryAgainButton = document.getElementById("try-again");
-	    if (this.player1.health <= 0) {
-	      console.log("Player 1 health <= 0, triggering game over (loss)");
-	      this.gameOver = true;
-	      this.gameState = "gameOver";
-	      gameOver.textContent = "You Lose!";
-	      turnIndicator.textContent = "Game Over";
-	      log(`${this.player2.name} defeats ${this.player1.name}!`);
-	      tryAgainButton.textContent = "TRY AGAIN"; // Keep "Try Again" to restart same level
-	      document.getElementById("game-over-container").style.display = "block";
-	      try {
-	        this.sounds.loss.play();
-	      } catch (err) {
-	        console.error("Error playing lose sound:", err);
-	      }
-	      // Removed await this.clearProgress(); - No progress reset on loss
-	    } else if (this.player2.health <= 0) {
-	      console.log("Player 2 health <= 0, triggering game over (win)");
-	      this.gameOver = true;
-	      this.gameState = "gameOver";
-	      gameOver.textContent = "You Win!";
-	      turnIndicator.textContent = "Game Over";
-	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
-	      document.getElementById("game-over-container").style.display = "block";
-
-	      if (this.currentTurn === this.player1) {
-	        const currentRound = this.roundStats[this.roundStats.length - 1];
-	        if (currentRound && !currentRound.completed) {
-	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
-	          currentRound.completed = true;
-
-	          const roundScore = currentRound.matches > 0 
-	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
-	            : 0;
-
-	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
-
-	          this.grandTotalScore += roundScore; // Only update grand total on win
-
-	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	          log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
-	        }
+	      if (this.gameOver || this.isCheckingGameOver) {
+	          console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
+	          return;
 	      }
 
-	   	  await this.saveScoreToDatabase(this.currentLevel);
+	      this.isCheckingGameOver = true;
+	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
 
-	      if (this.currentLevel === opponentsConfig.length) {
-	        this.sounds.finalWin.play();
-	        log(`Final level completed! Final score: ${this.grandTotalScore}`);
-	        this.grandTotalScore = 0; // Reset only after final level win
-	        await this.clearProgress();
-	        log("Game completed! Grand total score reset.");
-	      } else {
-	        this.currentLevel += 1; // Advance level on win
-	        await this.saveProgress();
-	        console.log(`Progress saved: currentLevel=${this.currentLevel}`);
-	        this.sounds.win.play();
+	      const tryAgainButton = document.getElementById("try-again");
+	      if (this.player1.health <= 0) {
+	          console.log("Player 1 health <= 0, triggering game over (loss)");
+	          this.gameOver = true;
+	          this.gameState = "gameOver";
+	          gameOver.textContent = "You Lose!";
+	          turnIndicator.textContent = "Game Over";
+	          log(`${this.player2.name} defeats ${this.player1.name}!`);
+	          tryAgainButton.textContent = "TRY AGAIN"; // Keep "Try Again" to restart same level
+	          document.getElementById("game-over-container").style.display = "block";
+	          try {
+	              this.sounds.loss.play();
+	          } catch (err) {
+	              console.error("Error playing lose sound:", err);
+	          }
+	          // Removed await this.clearProgress(); - No progress reset on loss
+	      } else if (this.player2.health <= 0) {
+	          console.log("Player 2 health <= 0, triggering game over (win)");
+	          this.gameOver = true;
+	          this.gameState = "gameOver";
+	          gameOver.textContent = "You Win!";
+	          turnIndicator.textContent = "Game Over";
+	          tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
+	          document.getElementById("game-over-container").style.display = "block";
+
+	          if (this.currentTurn === this.player1) {
+	              const currentRound = this.roundStats[this.roundStats.length - 1];
+	              if (currentRound && !currentRound.completed) {
+	                  currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	                  currentRound.completed = true;
+
+	                  const roundScore = currentRound.matches > 0 
+	                      ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
+	                      : 0;
+
+	                  log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+	                  log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
+
+	                  this.grandTotalScore += roundScore; // Only update grand total on win
+
+	                  log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	                  log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
+	              }
+	          }
+
+	          await this.saveScoreToDatabase(this.currentLevel);
+
+	          if (this.currentLevel === opponentsConfig.length) {
+	              this.sounds.finalWin.play();
+	              log(`Final level completed! Final score: ${this.grandTotalScore}`);
+	              this.grandTotalScore = 0; // Reset only after final level win
+	              await this.clearProgress();
+	              log("Game completed! Grand total score reset.");
+	          } else {
+	              this.currentLevel += 1; // Advance level on win
+	              await this.saveProgress();
+	              console.log(`Progress saved: currentLevel=${this.currentLevel}`);
+	              this.sounds.win.play();
+	          }
+
+	          // Get the theme's extension for the damaged media
+	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+	          const extension = themeData?.extension || 'png';
+	          const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
+
+	          // Update the opponent's media based on mediaType
+	          if (this.player2.mediaType === 'video') {
+	              p2Image.outerHTML = `<video id="p2-image" src="${damagedUrl}" autoplay loop muted alt="${this.player2.name}"></video>`;
+	          } else {
+	              p2Image.src = damagedUrl;
+	          }
+
+	          // Re-fetch the element and apply styles
+	          const p2ImageNew = document.getElementById("p2-image");
+	          p2ImageNew.style.display = "block"; // Ensure visibility for both images and videos
+	          p2ImageNew.classList.add("loser");
+	          p1Image.classList.add("winner");
+	          this.renderBoard();
 	      }
 
-		  const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.png`;
-          p2Image.src = damagedUrl;
-          p2Image.classList.add('loser');
-          p1Image.classList.add('winner');
-          this.renderBoard();
-	    }
-
-	    this.isCheckingGameOver = false;
-	    console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
+	      this.isCheckingGameOver = false;
+	      console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
