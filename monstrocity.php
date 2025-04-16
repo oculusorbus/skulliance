@@ -492,7 +492,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     #character-select-container h2 {
       text-align: center;
       margin-bottom: 20px;
-	  margin-top: 20px;
+	  margin-top: 30px;
     }
 
     .character-option {
