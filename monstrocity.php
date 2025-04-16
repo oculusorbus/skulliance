@@ -1214,7 +1214,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      ]
 	    },
 	    {
-	      group: "Rugged Project Themes",
+	      group: "Bonus Themes",
 	      items: [
 	        {
 	          value: "adapunks",
