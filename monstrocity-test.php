@@ -682,7 +682,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  height: 275px;
 	  margin: 10px;
 	  padding: 10px;
-	  background-color: #165777; /* Fallback color */
+	  background-color: #121212; /* Fallback color */
 	  background-size: cover;
 	  background-position: center;
 	  border-radius: 5px;
@@ -1097,11 +1097,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true
+	        },
+	        {
+	          value: "muses",
+	          project: "Josh Howard",
+	          title: "Muses of the Multiverse",
+	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        }
 	      ]
 	    },
 	    {
-	      group: "Independent Artist Themes",
+	      group: "Partner Artist Themes",
 	      items: [
 	        {
 	          value: "bungking",
@@ -1140,15 +1149,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  background: true
 	        },
 	        {
-	          value: "muses",
-	          project: "Josh Howard",
-	          title: "Muses of the Multiverse",
-	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
-	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
-	        },
-	        {
 	          value: "maxi",
 	          project: "Maxingo",
 	          title: "Digital Hell Citizens 2: Fighters",
@@ -1164,7 +1164,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "shortyverse2",
@@ -1173,7 +1173,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "bogeyman",
@@ -1182,7 +1182,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        },
 	        {
 	          value: "ritual",
@@ -1191,7 +1191,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
+	        },
+	        {
+	          value: "sinderskullz",
+	          project: "Sinder Skullz",
+	          title: "Sinder Skullz",
+	          policyIds: "83732ff37818e7e520592fcd3e5257e429307d40a9f5437240e926de",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true
 	        },
 	        {
 	          value: "skowl",
@@ -1200,7 +1209,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: false
+			  background: true
 	        }
 	      ]
 	    },
@@ -1239,7 +1248,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: false	
+			  background: true	
 	        },
 	        {
 	          value: "danketsu",
@@ -1301,70 +1310,61 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  ];
 	  
 	  function showThemeSelect(game) {
-	    console.time('showThemeSelect');
-	    let container = document.getElementById('theme-select-container');
-	    const characterContainer = document.getElementById('character-select-container');
+	      console.time('showThemeSelect');
+	      let container = document.getElementById('theme-select-container');
+	      const characterContainer = document.getElementById('character-select-container');
 
-	    // Rebuild container
-	    container.innerHTML = `
-	      <h2>Select Theme</h2>
-	      <button id="theme-close-button">Close</button>
-	      <div id="theme-options"></div>
-	    `;
-	    const optionsDiv = document.getElementById('theme-options');
+	      // Rebuild container without the close button
+	      container.innerHTML = `
+	          <h2>Select Theme</h2>
+	          <div id="theme-options"></div>
+	      `;
+	      const optionsDiv = document.getElementById('theme-options');
 
-	    container.style.display = 'block';
-	    characterContainer.style.display = 'none';
+	      // Show theme selection screen, hide character select screen
+	      container.style.display = 'block';
+	      characterContainer.style.display = 'none';
 
-	    themes.forEach(group => {
-	      const groupDiv = document.createElement('div');
-	      groupDiv.className = 'theme-group';
-	      const groupTitle = document.createElement('h3');
-	      groupTitle.textContent = group.group;
-	      groupDiv.appendChild(groupTitle);
+	      // Populate theme options
+	      themes.forEach(group => {
+	          const groupDiv = document.createElement('div');
+	          groupDiv.className = 'theme-group';
+	          const groupTitle = document.createElement('h3');
+	          groupTitle.textContent = group.group;
+	          groupDiv.appendChild(groupTitle);
 
-	      group.items.forEach(theme => {
-	        const option = document.createElement('div');
-	        option.className = 'theme-option';
-	        if (theme.background) {
-	          const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
-	          option.style.backgroundImage = `url(${backgroundUrl})`;
-	        }
-	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
-	        option.innerHTML = `
-	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
-	          <p>${theme.title}</p>
-	        `;
-	        option.addEventListener('click', () => {
-	          // Clear old characters immediately
-	          const characterOptions = document.getElementById('character-options');
-	          if (characterOptions) {
-	            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-	          }
-	          // Hide modal and show character select
-	          container.innerHTML = '';
-	          container.style.display = 'none';
-	          characterContainer.style.display = 'block';
-	          game.updateTheme(theme.value);
-	        });
-	        groupDiv.appendChild(option);
+	          group.items.forEach(theme => {
+	              const option = document.createElement('div');
+	              option.className = 'theme-option';
+	              if (theme.background) {
+	                  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	                  option.style.backgroundImage = `url(${backgroundUrl})`;
+	              }
+	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
+	              option.innerHTML = `
+	                  <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
+	                  <p>${theme.title}</p>
+	              `;
+	              option.addEventListener('click', () => {
+	                  // Clear old characters and show loading message
+	                  const characterOptions = document.getElementById('character-options');
+	                  if (characterOptions) {
+	                      characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+	                  }
+	                  // Hide theme selection and show character select
+	                  container.innerHTML = '';
+	                  container.style.display = 'none';
+	                  characterContainer.style.display = 'block';
+	                  // Update the theme and load characters
+	                  game.updateTheme(theme.value);
+	              });
+	              groupDiv.appendChild(option);
+	          });
+
+	          optionsDiv.appendChild(groupDiv);
 	      });
 
-	      optionsDiv.appendChild(groupDiv);
-	    });
-
-	    document.getElementById('theme-close-button').onclick = () => {
-	      // Clear old characters on close (optional, for consistency)
-	      const characterOptions = document.getElementById('character-options');
-	      if (characterOptions) {
-	        characterOptions.innerHTML = '';
-	      }
-	      container.innerHTML = '';
-	      container.style.display = 'none';
-	      characterContainer.style.display = 'block';
-	    };
-
-	    console.timeEnd('showThemeSelect');
+	      console.timeEnd('showThemeSelect');
 	  }
 	  
 	  const opponentsConfig = [
