@@ -135,15 +135,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       border: 1px solid black;
     }
 
-    .character img {
-      width: 100%;
-      height: auto;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      transition: transform 0.1s linear, filter 0.5s ease;
-	  -webkit-filter: drop-shadow(2px 5px 10px #000);
-      filter: drop-shadow(2px 5px 10px #000);
-    }
+	.character img, .character video {
+	    width: 100%;
+	    height: auto;
+	    margin-bottom: 10px;
+	    border-radius: 5px;
+	    transition: transform 0.1s linear, filter 0.5s ease;
+	    -webkit-filter: drop-shadow(2px 5px 10px #000);
+	    filter: drop-shadow(2px 5px 10px #000);
+	}
     
     .character p{
       font-weight: bold;
@@ -512,13 +512,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background: #2080ad;
     }
 
-    .character-option img {
-      width: 100%;
-      height: auto;
-      border-radius: 5px;
-	  -webkit-filter: drop-shadow(2px 5px 10px #000);
-      filter: drop-shadow(2px 5px 10px #000);
-    }
+	.character-option img, .character-option video {
+	    width: 100%;
+	    height: auto;
+	    border-radius: 5px;
+	    -webkit-filter: drop-shadow(2px 5px 10px #000);
+	    filter: drop-shadow(2px 5px 10px #000);
+	}
 
     .character-option p {
       margin: 5px 0;
@@ -1069,7 +1069,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "discosolaris",
@@ -1078,7 +1079,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "oculuslounge",
@@ -1087,7 +1089,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "havocworlds",
@@ -1096,7 +1099,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "muses",
@@ -1105,7 +1109,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    },
@@ -1119,7 +1124,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "cardanocamera",
@@ -1128,7 +1134,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "darkula",
@@ -1137,7 +1144,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "darkula2",
@@ -1146,7 +1154,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "maxi",
@@ -1155,7 +1164,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "shortyverse",
@@ -1164,7 +1174,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "shortyverse2",
@@ -1173,7 +1184,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "bogeyman",
@@ -1182,7 +1194,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "ritual",
@@ -1191,7 +1204,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "sinderskullz",
@@ -1200,7 +1214,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "83732ff37818e7e520592fcd3e5257e429307d40a9f5437240e926de",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "skowl",
@@ -1209,12 +1224,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    },
 	    {
-	      group: "Rugged Project Themes",
+	      group: "Bonus Themes",
 	      items: [
 	        {
 	          value: "adapunks",
@@ -1223,7 +1239,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    }
@@ -1239,7 +1256,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "rubberrebels",
@@ -1248,7 +1266,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true	
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "danketsu",
@@ -1257,7 +1276,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "danketsu2",
+	          project: "Danketsu",
+	          title: "The Fourth",
+	          policyIds: "a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "deadpophell",
@@ -1266,7 +1296,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "moebiuspioneers",
@@ -1275,7 +1306,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "karranka",
@@ -1284,7 +1316,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "karranka2",
@@ -1293,7 +1326,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "omen",
@@ -1302,7 +1336,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    }
@@ -1714,6 +1749,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      var imageUrl;
 	      var orientation = 'Left';
 	      var isNFT = false;
+	      var mediaType = 'image'; // Default to image
+
+	      // Find the theme data for the current theme
+	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+	      const extension = themeData?.extension || 'png'; // Default to "png" if not specified
+	      const videoExtensions = ['mov', 'mp4']; // Define video extensions
 
 	      if (config.ipfs && config.policyId) {
 	          isNFT = true;
@@ -1731,13 +1772,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  };
 	              }
 	          }
-	          // Handle "Random" orientation
 	          if (policyMetadata.orientation === 'Random') {
 	              orientation = Math.random() < 0.5 ? 'Left' : 'Right';
 	          } else {
 	              orientation = policyMetadata.orientation;
 	          }
 	          imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
+	          // Determine mediaType from IPFS URL extension if present
+	          const urlExtension = imageUrl.split('.').pop().toLowerCase();
+	          if (videoExtensions.includes(urlExtension)) {
+	              mediaType = 'video';
+	          }
 	      } else {
 	          switch (config.type) {
 	              case 'Base': typeFolder = 'base'; break;
@@ -1745,8 +1790,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              case 'Battle Damaged': typeFolder = 'battle-damaged'; break;
 	              default: typeFolder = 'base';
 	          }
-	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.png';
+	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.' + extension;
 	          orientation = characterDirections[config.name] || 'Left';
+	          // Determine mediaType from extension
+	          if (videoExtensions.includes(extension.toLowerCase())) {
+	              mediaType = 'video';
+	          }
 	      }
 
 	      var baseHealth;
@@ -1792,81 +1841,77 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          lastStandActive: false,
 	          imageUrl: imageUrl,
 	          orientation: orientation,
-	          isNFT: isNFT
+	          isNFT: isNFT,
+	          mediaType: mediaType // Add mediaType to character object
 	      };
 	  }
 	  
-	  flipCharacter(character, imageElement, isOpponent = false) {
+	  flipCharacter(character, mediaElement, isOpponent = false) {
 	      if (character.orientation === 'Left') {
 	          character.orientation = 'Right';
-	          imageElement.style.transform = isOpponent ? 'scaleX(-1)' : 'none';
+	          mediaElement.style.transform = isOpponent ? 'scaleX(-1)' : 'none';
 	      } else {
 	          character.orientation = 'Left';
-	          imageElement.style.transform = isOpponent ? 'none' : 'scaleX(-1)';
+	          mediaElement.style.transform = isOpponent ? 'none' : 'scaleX(-1)';
 	      }
 	      log(`${character.name}'s orientation flipped to ${character.orientation}!`);
 	  }
 
 	  showCharacterSelect(isInitial) {
-	    var self = this;
-	    console.time('showCharacterSelect');
-	    var container = document.getElementById('character-select-container');
-	    var optionsDiv = document.getElementById('character-options');
-	    optionsDiv.innerHTML = ''; // No loading indicator during theme switch
-	    container.style.display = 'block';
+	      var self = this;
+	      console.time('showCharacterSelect');
+	      var container = document.getElementById('character-select-container');
+	      var optionsDiv = document.getElementById('character-options');
+	      optionsDiv.innerHTML = ''; // No loading indicator during theme switch
+	      container.style.display = 'block';
 
-	    document.getElementById('theme-select-button').onclick = () => {
-	      showThemeSelect(self);
-	    };
+	      document.getElementById('theme-select-button').onclick = () => {
+	          showThemeSelect(self);
+	      };
 
-	    // Pre-build all options in a fragment
-	    const fragment = document.createDocumentFragment();
-	    this.playerCharacters.forEach(function(character) {
-	      var option = document.createElement('div');
-	      option.className = 'character-option';
-	      option.innerHTML =
-	        '<img loading="eager" onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
-	        '<p><strong>' + character.name + '</strong></p>' +
-	        '<p>Type: ' + character.type + '</p>' +
-	        '<p>Health: ' + character.maxHealth + '</p>' +
-	        '<p>Strength: ' + character.strength + '</p>' +
-	        '<p>Speed: ' + character.speed + '</p>' +
-	        '<p>Tactics: ' + character.tactics + '</p>' +
-	        '<p>Size: ' + character.size + '</p>' +
-	        '<p>Power-Up: ' + character.powerup + '</p>';
-	      option.addEventListener('click', function() {
-	        console.log('showCharacterSelect: Character selected: ' + character.name);
-	        container.style.display = 'none';
-	        if (isInitial) {
-	          self.player1 = {
-	            name: character.name,
-	            type: character.type,
-	            strength: character.strength,
-	            speed: character.speed,
-	            tactics: character.tactics,
-	            size: character.size,
-	            powerup: character.powerup,
-	            health: character.health,
-	            maxHealth: character.maxHealth,
-	            boostActive: false,
-	            boostValue: 0,
-	            lastStandActive: false,
-	            imageUrl: character.imageUrl,
-	            orientation: character.orientation,
-	            isNFT: character.isNFT
-	          };
-	          console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
-	          self.initGame();
-	        } else {
-	          self.swapPlayerCharacter(character);
-	        }
+	      const fragment = document.createDocumentFragment();
+	      this.playerCharacters.forEach(function(character) {
+	          var option = document.createElement('div');
+	          option.className = 'character-option';
+	          if (character.mediaType === 'video') {
+	              option.innerHTML =
+	                  '<video src="' + character.imageUrl + '" autoplay loop muted alt="' + character.name + '"></video>' +
+	                  '<p><strong>' + character.name + '</strong></p>' +
+	                  '<p>Type: ' + character.type + '</p>' +
+	                  '<p>Health: ' + character.maxHealth + '</p>' +
+	                  '<p>Strength: ' + character.strength + '</p>' +
+	                  '<p>Speed: ' + character.speed + '</p>' +
+	                  '<p>Tactics: ' + character.tactics + '</p>' +
+	                  '<p>Size: ' + character.size + '</p>' +
+	                  '<p>Power-Up: ' + character.powerup + '</p>';
+	          } else {
+	              option.innerHTML =
+	                  '<img loading="eager" onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
+	                  '<p><strong>' + character.name + '</strong></p>' +
+	                  '<p>Type: ' + character.type + '</p>' +
+	                  '<p>Health: ' + character.maxHealth + '</p>' +
+	                  '<p>Strength: ' + character.strength + '</p>' +
+	                  '<p>Speed: ' + character.speed + '</p>' +
+	                  '<p>Tactics: ' + character.tactics + '</p>' +
+	                  '<p>Size: ' + character.size + '</p>' +
+	                  '<p>Power-Up: ' + character.powerup + '</p>';
+	          }
+	          option.addEventListener('click', function() {
+	              console.log('showCharacterSelect: Character selected: ' + character.name);
+	              container.style.display = 'none';
+	              if (isInitial) {
+	                  self.player1 = { ...character };
+	                  console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
+	                  self.initGame();
+	              } else {
+	                  self.swapPlayerCharacter(character);
+	              }
+	          });
+	          fragment.appendChild(option);
 	      });
-	      fragment.appendChild(option);
-	    });
 
-	    // Single DOM insertion
-	    optionsDiv.appendChild(fragment);
-	    console.timeEnd('showCharacterSelect');
+	      optionsDiv.appendChild(fragment);
+	      console.timeEnd('showCharacterSelect');
 	  }
 	  
 	  swapPlayerCharacter(newCharacter) {
@@ -2024,33 +2069,43 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    }
 		}
 
-		  updatePlayerDisplay() {
-		      p1Name.textContent = this.player1.isNFT || this.theme === 'monstrocity' ? this.player1.name : 'Player 1';
-		      p1Type.textContent = this.player1.type;
-		      p1Strength.textContent = this.player1.strength;
-		      p1Speed.textContent = this.player1.speed;
-		      p1Tactics.textContent = this.player1.tactics;
-		      p1Size.textContent = this.player1.size;
-		      p1Powerup.textContent = this.player1.powerup;
-		      p1Image.src = this.player1.imageUrl;
-		      p1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
-		      p1Image.onload = function() { p1Image.style.display = 'block'; };
-		      p1Hp.textContent = this.player1.health + '/' + this.player1.maxHealth;
-		  }
+		updatePlayerDisplay() {
+		    p1Name.textContent = this.player1.isNFT || this.theme === 'monstrocity' ? this.player1.name : 'Player 1';
+		    p1Type.textContent = this.player1.type;
+		    p1Strength.textContent = this.player1.strength;
+		    p1Speed.textContent = this.player1.speed;
+		    p1Tactics.textContent = this.player1.tactics;
+		    p1Size.textContent = this.player1.size;
+		    p1Powerup.textContent = this.player1.powerup;
+		    if (this.player1.mediaType === 'video') {
+		        p1Image.outerHTML = '<video id="p1-image" src="' + this.player1.imageUrl + '" autoplay loop muted alt="' + this.player1.name + '"></video>';
+		    } else {
+		        p1Image.src = this.player1.imageUrl;
+		    }
+		    const p1ImageNew = document.getElementById('p1-image'); // Re-fetch element after possible replacement
+		    p1ImageNew.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		    p1ImageNew.onload = function() { p1ImageNew.style.display = 'block'; };
+		    p1Hp.textContent = this.player1.health + '/' + this.player1.maxHealth;
+		}
 
-		  updateOpponentDisplay() {
-		      p2Name.textContent = this.theme === 'monstrocity' ? this.player2.name : 'AI Opponent';
-		      p2Type.textContent = this.player2.type;
-		      p2Strength.textContent = this.player2.strength;
-		      p2Speed.textContent = this.player2.speed;
-		      p2Tactics.textContent = this.player2.tactics;
-		      p2Size.textContent = this.player2.size;
-		      p2Powerup.textContent = this.player2.powerup;
-		      p2Image.src = this.player2.imageUrl;
-		      p2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
-		      p2Image.onload = function() { p2Image.style.display = 'block'; };
-		      p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
-		  }
+		updateOpponentDisplay() {
+		    p2Name.textContent = this.theme === 'monstrocity' ? this.player2.name : 'AI Opponent';
+		    p2Type.textContent = this.player2.type;
+		    p2Strength.textContent = this.player2.strength;
+		    p2Speed.textContent = this.player2.speed;
+		    p2Tactics.textContent = this.player2.tactics;
+		    p2Size.textContent = this.player2.size;
+		    p2Powerup.textContent = this.player2.powerup;
+		    if (this.player2.mediaType === 'video') {
+		        p2Image.outerHTML = '<video id="p2-image" src="' + this.player2.imageUrl + '" autoplay loop muted alt="' + this.player2.name + '"></video>';
+		    } else {
+		        p2Image.src = this.player2.imageUrl;
+		    }
+		    const p2ImageNew = document.getElementById('p2-image'); // Re-fetch element after possible replacement
+		    p2ImageNew.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		    p2ImageNew.onload = function() { p2ImageNew.style.display = 'block'; };
+		    p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
+		}
 
       initBoard() {
         this.board = [];
@@ -2107,36 +2162,37 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
 	    }
 
-	  addEventListeners() {
-	      const board = document.getElementById("game-board");
-	      if (this.isTouchDevice) {
-	        board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
-	        board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
-	        board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
-	      } else {
-	        board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
-	        board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
-	        board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
-	      }
+		addEventListeners() {
+		    const board = document.getElementById("game-board");
+		    if (this.isTouchDevice) {
+		        board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
+		        board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
+		        board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
+		    } else {
+		        board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+		        board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+		        board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+		    }
 
-	      document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
-	      document.getElementById("restart").addEventListener("click", () => {
-	        this.initGame();
-	      });
-	      const changeCharacterButton = document.getElementById("change-character");
-	      const p1Image = document.getElementById("p1-image");
-    
-	      changeCharacterButton.addEventListener("click", () => {
-	        console.log("addEventListeners: Switch Monster button clicked");
-	        this.showCharacterSelect(false);
-	      });
-	      p1Image.addEventListener("click", () => {
-	        console.log("addEventListeners: Player 1 image clicked");
-	        this.showCharacterSelect(false);
-	      });
-		  document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, p1Image, false));
-		  document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, p2Image, true));
-	    }
+		    document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
+		    document.getElementById("restart").addEventListener("click", () => {
+		        this.initGame();
+		    });
+		    const changeCharacterButton = document.getElementById("change-character");
+		    const p1Image = document.getElementById("p1-image");
+		    const p2Image = document.getElementById("p2-image");
+
+		    changeCharacterButton.addEventListener("click", () => {
+		        console.log("addEventListeners: Switch Monster button clicked");
+		        this.showCharacterSelect(false);
+		    });
+		    p1Image.addEventListener("click", () => {
+		        console.log("addEventListeners: Player 1 media clicked");
+		        this.showCharacterSelect(false);
+		    });
+		    document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, document.getElementById("p1-image"), false));
+		    document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, document.getElementById("p2-image"), true));
+		}
 
 		handleGameOverButton() {
 		  console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
