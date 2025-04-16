@@ -1243,23 +1243,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "",
 			  background: true,
 			  extension: "png" // Applies only to character images
-	        }
-	      ]
-	    }
-	    <?php if($innercircle) { ?>
-	    ,
-	    {
-	      group: "Inner Circle Top Secret Themes",
-	      items: [
-	        {
-	          value: "occultarchives",
-	          project: "Billy Martin",
-	          title: "Occult Archives",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "cardanians",
@@ -1280,6 +1263,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "",
 			  background: true,
 			  extension: "mov" // Applies only to character images
+	        }
+	      ]
+	    }
+	    <?php if($innercircle) { ?>
+	    ,
+	    {
+	      group: "Inner Circle Top Secret Themes",
+	      items: [
+	        {
+	          value: "occultarchives",
+	          project: "Billy Martin",
+	          title: "Occult Archives",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        },
 	        {
 	          value: "rubberrebels",
