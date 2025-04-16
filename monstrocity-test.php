@@ -1621,32 +1621,41 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    }
 			    updatePending = true;
 			    console.time('updateTheme_' + newTheme);
-			    var self = this;
+			    const self = this;
 			    this.theme = newTheme;
 			    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
-			    localStorage.setItem('gameTheme', this.theme); // Save the theme to local storage
+			    localStorage.setItem('gameTheme', this.theme);
 			    this.setBackground();
 
 			    // Update the logo immediately
 			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
+
+			    // Show loading indicator
+			    const characterOptions = document.getElementById('character-options');
+			    if (characterOptions) {
+			        characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+			    }
 
 			    getAssets(this.theme).then(function(assets) {
 			        console.time('updateCharacters_' + newTheme);
 			        self.playerCharactersConfig = assets;
 			        self.playerCharacters = [];
 
-			        // Preload images first
+			        // Preload assets
 			        assets.forEach(config => {
 			            const char = self.createCharacter(config);
-			            const img = new Image();
-			            img.src = char.imageUrl;
-			            img.onload = () => console.log('Preloaded: ' + char.imageUrl);
-			            img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+			            if (char.mediaType === 'image') {
+			                const img = new Image();
+			                img.src = char.imageUrl;
+			                img.onload = () => console.log('Preloaded: ' + char.imageUrl);
+			                img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+			            }
 			            self.playerCharacters.push(char);
 			        });
 
+			        // Update player and opponent only if game is active
 			        if (self.player1) {
-			            var newConfig = self.playerCharactersConfig.find(function(c) { return c.name === self.player1.name; }) || self.playerCharactersConfig[0];
+			            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
 			            self.player1 = self.createCharacter(newConfig);
 			            self.updatePlayerDisplay();
 			        }
@@ -1655,41 +1664,53 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            self.updateOpponentDisplay();
 			        }
 
-			        // Fix tile lock-ups
-			        // 1. Remove old event listeners from tiles
-			        const tiles = document.querySelectorAll('.tile');
-			        tiles.forEach(tile => {
-			            tile.removeEventListener('mousedown', self.handleMouseDown);
-			            tile.removeEventListener('touchstart', self.handleTouchStart);
-			        });
-
-			        // 2. Re-render the board to recreate tiles and reattach event listeners
-			        self.renderBoard();
-
-			        // 3. Reset interaction flags
-			        self.isDragging = false;
-			        self.selectedTile = null;
-			        self.targetTile = null;
-
-			        // 4. Set the game state correctly based on whose turn it is
-			        self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
-			        console.log("Game state reset to: " + self.gameState);
-
-			        var container = document.getElementById('character-select-container');
-			        if (container.style.display === 'block') {
-			            self.showCharacterSelect(self.player1 === null);
+			        // Render board only if game is initialized (fixes tile lockups during gameplay)
+			        if (self.player1 && self.gameState !== 'initializing') {
+			            // Clear old event listeners to prevent lockups
+			            const tiles = document.querySelectorAll('.tile');
+			            tiles.forEach(tile => {
+			                tile.removeEventListener('mousedown', self.handleMouseDown);
+			                tile.removeEventListener('touchstart', self.handleTouchStart);
+			            });
+			            self.renderBoard();
+			            console.log('updateTheme: Board rendered for active game');
+			        } else {
+			            console.log('updateTheme: Skipping board render, no active game');
 			        }
+
+			        // Reset interaction flags only if game is active
+			        if (self.player1) {
+			            self.isDragging = false;
+			            self.selectedTile = null;
+			            self.targetTile = null;
+			            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
+			        }
+
+			        // Always show character select after theme switch
+			        const container = document.getElementById('character-select-container');
+			        container.style.display = 'block';
+			        self.showCharacterSelect(self.player1 === null);
 
 			        console.timeEnd('updateCharacters_' + newTheme);
 			        console.timeEnd('updateTheme_' + newTheme);
 			        updatePending = false;
 			    }).catch(function(error) {
 			        console.error('Error updating theme assets:', error);
+			        // Fallback to default monstrocity assets
+			        self.playerCharactersConfig = [
+			            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+			        ];
+			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
+			        // Show character select on error
+			        const container = document.getElementById('character-select-container');
+			        container.style.display = 'block';
+			        self.showCharacterSelect(self.player1 === null);
 			        console.timeEnd('updateTheme_' + newTheme);
 			        updatePending = false;
 			    });
 			}
-	  
+			
 		async saveProgress() {
 		  const data = {
 		    currentLevel: this.currentLevel, // Now 1-28
@@ -1902,59 +1923,62 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
 
 	  showCharacterSelect(isInitial) {
-	      var self = this;
 	      console.time('showCharacterSelect');
-	      var container = document.getElementById('character-select-container');
-	      var optionsDiv = document.getElementById('character-options');
-	      optionsDiv.innerHTML = ''; // No loading indicator during theme switch
+	      const container = document.getElementById('character-select-container');
+	      const optionsDiv = document.getElementById('character-options');
+	      optionsDiv.innerHTML = ''; // Clear previous content
 	      container.style.display = 'block';
 
+	      if (!this.playerCharacters || this.playerCharacters.length === 0) {
+	          console.warn('showCharacterSelect: No characters available, using fallback');
+	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No characters available. Please try another theme.</p>';
+	          console.timeEnd('showCharacterSelect');
+	          return;
+	      }
+
 	      document.getElementById('theme-select-button').onclick = () => {
-	          showThemeSelect(self);
+	          showThemeSelect(this);
 	      };
 
 	      const fragment = document.createDocumentFragment();
-	      this.playerCharacters.forEach(function(character) {
-	          var option = document.createElement('div');
+	      this.playerCharacters.forEach(character => {
+	          const option = document.createElement('div');
 	          option.className = 'character-option';
-	          if (character.mediaType === 'video') {
-	              option.innerHTML =
-	                  '<video src="' + character.imageUrl + '" autoplay loop muted alt="' + character.name + '"></video>' +
-	                  '<p><strong>' + character.name + '</strong></p>' +
-	                  '<p>Type: ' + character.type + '</p>' +
-	                  '<p>Health: ' + character.maxHealth + '</p>' +
-	                  '<p>Strength: ' + character.strength + '</p>' +
-	                  '<p>Speed: ' + character.speed + '</p>' +
-	                  '<p>Tactics: ' + character.tactics + '</p>' +
-	                  '<p>Size: ' + character.size + '</p>' +
-	                  '<p>Power-Up: ' + character.powerup + '</p>';
-	          } else {
-	              option.innerHTML =
-	                  '<img loading="eager" onerror="this.src=\'/staking/icons/skull.png\'" src="' + character.imageUrl + '" alt="' + character.name + '">' +
-	                  '<p><strong>' + character.name + '</strong></p>' +
-	                  '<p>Type: ' + character.type + '</p>' +
-	                  '<p>Health: ' + character.maxHealth + '</p>' +
-	                  '<p>Strength: ' + character.strength + '</p>' +
-	                  '<p>Speed: ' + character.speed + '</p>' +
-	                  '<p>Tactics: ' + character.tactics + '</p>' +
-	                  '<p>Size: ' + character.size + '</p>' +
-	                  '<p>Power-Up: ' + character.powerup + '</p>';
-	          }
-	          option.addEventListener('click', function() {
+	          option.innerHTML = character.mediaType === 'video' ?
+	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}"></video>` +
+	              `<p><strong>${character.name}</strong></p>` +
+	              `<p>Type: ${character.type}</p>` +
+	              `<p>Health: ${character.maxHealth}</p>` +
+	              `<p>Strength: ${character.strength}</p>` +
+	              `<p>Speed: ${character.speed}</p>` +
+	              `<p>Tactics: ${character.tactics}</p>` +
+	              `<p>Size: ${character.size}</p>` +
+	              `<p>Power-Up: ${character.powerup}</p>` :
+	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onerror="this.src='/staking/icons/skull.png'">` +
+	              `<p><strong>${character.name}</strong></p>` +
+	              `<p>Type: ${character.type}</p>` +
+	              `<p>Health: ${character.maxHealth}</p>` +
+	              `<p>Strength: ${character.strength}</p>` +
+	              `<p>Speed: ${character.speed}</p>` +
+	              `<p>Tactics: ${character.tactics}</p>` +
+	              `<p>Size: ${character.size}</p>` +
+	              `<p>Power-Up: ${character.powerup}</p>`;
+	          option.addEventListener('click', () => {
 	              console.log('showCharacterSelect: Character selected: ' + character.name);
 	              container.style.display = 'none';
 	              if (isInitial) {
-	                  self.player1 = { ...character };
-	                  console.log('showCharacterSelect: this.player1 set: ' + self.player1.name);
-	                  self.initGame();
+	                  this.player1 = { ...character };
+	                  console.log('showCharacterSelect: this.player1 set: ' + this.player1.name);
+	                  this.initGame();
 	              } else {
-	                  self.swapPlayerCharacter(character);
+	                  this.swapPlayerCharacter(character);
 	              }
 	          });
 	          fragment.appendChild(option);
 	      });
 
 	      optionsDiv.appendChild(fragment);
+	      console.log(`showCharacterSelect: Rendered ${this.playerCharacters.length} characters`);
 	      console.timeEnd('showCharacterSelect');
 	  }
 	  
@@ -2224,23 +2248,24 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    p2ImageNew.classList.remove('winner', 'loser');
 		}
 
-      initBoard() {
-        this.board = [];
-        for (let y = 0; y < this.height; y++) {
-          this.board[y] = [];
-          for (let x = 0; x < this.width; x++) {
-            let tile;
-            do {
-              tile = this.createRandomTile();
-            } while (
-              (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
-              (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
-            );
-            this.board[y][x] = tile;
-          }
-        }
-        this.renderBoard();
-      }
+		initBoard() {
+		    this.board = [];
+		    for (let y = 0; y < this.height; y++) {
+		        this.board[y] = [];
+		        for (let x = 0; x < this.width; x++) {
+		            let tile;
+		            do {
+		                tile = this.createRandomTile();
+		            } while (
+		                (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		            );
+		            this.board[y][x] = tile;
+		        }
+		    }
+		    console.log('initBoard: Board initialized with dimensions', this.width, 'x', this.height);
+		    this.renderBoard();
+		}
 
       createRandomTile() {
         return {
@@ -2254,10 +2279,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const boardElement = document.getElementById("game-board");
 	      boardElement.innerHTML = "";
 
+	      // Guard against uninitialized board
+	      if (!this.board || !Array.isArray(this.board) || this.board.length !== this.height) {
+	          console.warn('renderBoard: Board not initialized, skipping render');
+	          return;
+	      }
+
 	      for (let y = 0; y < this.height; y++) {
+	          if (!Array.isArray(this.board[y])) {
+	              console.warn(`renderBoard: Row ${y} is not an array, skipping`);
+	              continue;
+	          }
 	          for (let x = 0; x < this.width; x++) {
 	              const tile = this.board[y][x];
-	              if (tile.type === null) continue;
+	              if (!tile || tile.type === null) continue;
 	              const tileElement = document.createElement("div");
 	              tileElement.className = `tile ${tile.type}`;
 	              if (this.gameOver) tileElement.classList.add("game-over");
@@ -2274,7 +2309,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  tileElement.style.transform = "translate(0, 0)";
 	              }
 
-	              // Reattach event listeners to ensure responsiveness
 	              if (this.isTouchDevice) {
 	                  tileElement.addEventListener("touchstart", (e) => this.handleTouchStart(e));
 	              } else {
@@ -2284,6 +2318,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      }
 
 	      document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
+	      console.log('renderBoard: Board rendered successfully');
 	  }
 
 		addEventListeners() {
@@ -3356,172 +3391,116 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	
 	const assetCache = {};
 	async function getAssets(selectedTheme) {
-	  if (assetCache[selectedTheme]) {
-	    console.log('getAssets: Cache hit for ' + selectedTheme);
-	    return assetCache[selectedTheme];
-	  }
-
-	  console.time('getAssets_' + selectedTheme);
-	  let monstrocityAssets = [];
-	  try {
-	    console.log('getAssets: Fetching Monstrocity assets');
-	    const monstrocityResponse = await Promise.race([
-	      fetch('ajax/get-monstrocity-assets.php', {
-	        method: 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body: JSON.stringify({ theme: 'monstrocity' })
-	      }),
-	      new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), 1000))
-	    ]);
-
-	    console.log('getAssets: Monstrocity status=', monstrocityResponse.status);
-	    if (!monstrocityResponse.ok) {
-	      throw new Error('Monstrocity HTTP error! Status: ' + monstrocityResponse.status);
+	    if (assetCache[selectedTheme]) {
+	        console.log('getAssets: Cache hit for ' + selectedTheme);
+	        return assetCache[selectedTheme];
 	    }
 
-	    monstrocityAssets = await monstrocityResponse.json();
-	    console.log('getAssets: Monstrocity data=', monstrocityAssets);
-	    if (!Array.isArray(monstrocityAssets)) {
-	      monstrocityAssets = [monstrocityAssets];
-	    }
-
-	    monstrocityAssets = monstrocityAssets.map((asset, index) => {
-	      const mapped = {
-	        ...asset,
-	        theme: 'monstrocity',
-	        name: asset.name || ('Monstrocity_Unknown_' + index),
-	        strength: asset.strength || 4,
-	        speed: asset.speed || 4,
-	        tactics: asset.tactics || 4,
-	        size: asset.size || 'Medium',
-	        type: asset.type || 'Base',
-	        powerup: asset.powerup || 'Regenerate'
-	      };
-	      return mapped;
-	    });
-	  } catch (error) {
-	    console.error('getAssets: Monstrocity fetch error:', error);
-	    monstrocityAssets = [
-	      {
-	        name: 'Craig',
-	        strength: 4,
-	        speed: 4,
-	        tactics: 4,
-	        size: 'Medium',
-	        type: 'Base',
-	        powerup: 'Regenerate',
-	        theme: 'monstrocity'
-	      },
-	      {
-	        name: 'Dankle',
-	        strength: 3,
-	        speed: 5,
-	        tactics: 3,
-	        size: 'Small',
-	        type: 'Base',
-	        powerup: 'Heal',
-	        theme: 'monstrocity'
-	      }
-	    ];
-	    console.log('getAssets: Using default Monstrocity assets');
-	  }
-
-	  if (selectedTheme === 'monstrocity') {
-	    console.log('getAssets: Returning Monstrocity assets');
-	    assetCache[selectedTheme] = monstrocityAssets;
-	    console.timeEnd('getAssets_' + selectedTheme);
-	    return monstrocityAssets;
-	  }
-
-	  let themeData = null;
-	  for (const group of themes) {
-	    themeData = group.items.find(item => item.value === selectedTheme);
-	    if (themeData) break;
-	  }
-
-	  if (!themeData) {
-	    console.warn('getAssets: Theme not found: ' + selectedTheme);
-	    assetCache[selectedTheme] = monstrocityAssets;
-	    console.timeEnd('getAssets_' + selectedTheme);
-	    return monstrocityAssets;
-	  }
-
-	  const policyIds = themeData.policyIds ? themeData.policyIds.split(',').filter(id => id.trim()) : [];
-	  if (!policyIds.length) {
-	    console.log('getAssets: No policy IDs for theme ' + selectedTheme);
-	    assetCache[selectedTheme] = monstrocityAssets;
-	    console.timeEnd('getAssets_' + selectedTheme);
-	    return monstrocityAssets;
-	  }
-
-	  const orientations = themeData.orientations ? themeData.orientations.split(',').filter(o => o.trim()) : [];
-	  const ipfsPrefixes = themeData.ipfsPrefixes ? themeData.ipfsPrefixes.split(',').filter(p => p.trim()) : [];
-
-	  const policies = policyIds.map((policyId, index) => ({
-	    policyId,
-	    orientation: orientations.length === 1 ? orientations[0] : (orientations[index] || 'Right'),
-	    ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[index] || 'https://ipfs.io/ipfs/')
-	  }));
-
-	  let nftAssets = [];
-	  try {
-	    const requestBody = JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme });
-	    console.log('getAssets: Sending NFT POST');
-	    const nftResponse = await Promise.race([
-	      fetch('ajax/get-nft-assets.php', {
-	        method: 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body: requestBody
-	      }),
-	      new Promise((_, reject) => setTimeout(() => reject(new Error('NFT timeout')), 10000))
-	    ]);
-
-	    if (!nftResponse.ok) {
-	      throw new Error('NFT HTTP error! Status: ' + nftResponse.status);
-	    }
-
-	    const nftText = await nftResponse.text();
-	    let parsedAssets;
+	    console.time('getAssets_' + selectedTheme);
+	    let monstrocityAssets = [];
 	    try {
-	      parsedAssets = JSON.parse(nftText);
-	    } catch (parseError) {
-	      console.error('getAssets: NFT parse error:', parseError);
-	      throw parseError;
+	        console.log('getAssets: Fetching Monstrocity assets');
+	        const monstrocityResponse = await Promise.race([
+	            fetch('ajax/get-monstrocity-assets.php', {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify({ theme: 'monstrocity' })
+	            }),
+	            new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), 5000))
+	        ]);
+
+	        if (!monstrocityResponse.ok) {
+	            throw new Error('Monstrocity HTTP error! Status: ' + monstrocityResponse.status);
+	        }
+
+	        monstrocityAssets = await monstrocityResponse.json();
+	        if (!Array.isArray(monstrocityAssets)) {
+	            monstrocityAssets = [monstrocityAssets];
+	        }
+
+	        monstrocityAssets = monstrocityAssets.map((asset, index) => ({
+	            ...asset,
+	            theme: 'monstrocity',
+	            name: asset.name || ('Monstrocity_Unknown_' + index),
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate'
+	        }));
+	    } catch (error) {
+	        console.error('getAssets: Monstrocity fetch error:', error);
+	        monstrocityAssets = [
+	            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+	        ];
 	    }
 
-	    if (parsedAssets === false || parsedAssets === 'false') {
-	      console.log('getAssets: NFT data is false');
-	      nftAssets = [];
-	    } else {
-	      nftAssets = Array.isArray(parsedAssets) ? parsedAssets : [parsedAssets];
+	    if (selectedTheme === 'monstrocity') {
+	        assetCache[selectedTheme] = monstrocityAssets;
+	        console.timeEnd('getAssets_' + selectedTheme);
+	        return monstrocityAssets;
 	    }
 
-	    nftAssets = nftAssets.map((asset, index) => {
-	      const mapped = {
-	        ...asset,
-	        theme: selectedTheme,
-	        name: asset.name || ('NFT_Unknown_' + index),
-	        strength: asset.strength || 4,
-	        speed: asset.speed || 4,
-	        tactics: asset.tactics || 4,
-	        size: asset.size || 'Medium',
-	        type: asset.type || 'Base',
-	        powerup: asset.powerup || 'Regenerate',
-	        policyId: asset.policyId || policies[0].policyId,
-	        ipfs: asset.ipfs || ''
-	      };
-	      return mapped;
-	    });
-	  } catch (error) {
-	    console.error('getAssets: NFT fetch error for theme ' + selectedTheme + ':', error);
-	    nftAssets = [];
-	  }
+	    const themeData = themes.flatMap(group => group.items).find(item => item.value === selectedTheme);
+	    if (!themeData) {
+	        console.warn('getAssets: Theme not found: ' + selectedTheme);
+	        assetCache[selectedTheme] = monstrocityAssets;
+	        console.timeEnd('getAssets_' + selectedTheme);
+	        return monstrocityAssets;
+	    }
 
-	  const finalAssets = [...monstrocityAssets, ...nftAssets];
-	  console.log('getAssets: Returning merged assets, count=' + finalAssets.length);
-	  assetCache[selectedTheme] = finalAssets;
-	  console.timeEnd('getAssets_' + selectedTheme);
-	  return finalAssets;
+	    const policyIds = themeData.policyIds ? themeData.policyIds.split(',').filter(id => id.trim()) : [];
+	    if (!policyIds.length) {
+	        assetCache[selectedTheme] = monstrocityAssets;
+	        console.timeEnd('getAssets_' + selectedTheme);
+	        return monstrocityAssets;
+	    }
+
+	    let nftAssets = [];
+	    try {
+	        const policies = policyIds.map((policyId, index) => ({
+	            policyId,
+	            orientation: themeData.orientations?.split(',')[index] || 'Right',
+	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs.io/ipfs/'
+	        }));
+	        const response = await Promise.race([
+	            fetch('ajax/get-nft-assets.php', {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme })
+	            }),
+	            new Promise((_, reject) => setTimeout(() => reject(new Error('NFT timeout')), 10000))
+	        ]);
+
+	        if (!response.ok) {
+	            throw new Error('NFT HTTP error! Status: ' + response.status);
+	        }
+
+	        const data = await response.json();
+	        nftAssets = Array.isArray(data) ? data : [data];
+	        nftAssets = nftAssets.filter(asset => asset && asset.name && asset.ipfs).map((asset, index) => ({
+	            ...asset,
+	            theme: selectedTheme,
+	            name: asset.name || ('NFT_Unknown_' + index),
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate',
+	            policyId: asset.policyId || policies[0].policyId,
+	            ipfs: asset.ipfs || ''
+	        }));
+	    } catch (error) {
+	        console.error('getAssets: NFT fetch error for theme ' + selectedTheme + ':', error);
+	    }
+
+	    const finalAssets = [...monstrocityAssets, ...nftAssets];
+	    assetCache[selectedTheme] = finalAssets;
+	    console.timeEnd('getAssets_' + selectedTheme);
+	    return finalAssets;
 	}
 	
 	// Instantiation
