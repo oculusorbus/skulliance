@@ -2025,13 +2025,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    }
 
 		initGame() {
-		  var self = this;
-		  console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
-		  var gameContainer = document.querySelector('.game-container');
-		  var gameBoard = document.getElementById('game-board');
-		  gameContainer.style.display = 'block';
-		  gameBoard.style.visibility = 'visible';
-		  this.setBackground();
+		    var self = this;
+		    console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
+		    var gameContainer = document.querySelector('.game-container');
+		    var gameBoard = document.getElementById('game-board');
+		    gameContainer.style.display = 'block';
+		    gameBoard.style.visibility = 'visible';
+		    this.setBackground();
 
 		    this.sounds.reset.play();
 		    log('Starting Level ' + this.currentLevel + '...');
@@ -2052,13 +2052,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    this.roundStats = [];
 
-		    p1Image.classList.remove('winner', 'loser');
-		    p2Image.classList.remove('winner', 'loser');
+		    // Fetch current elements and remove classes
+		    const currentP1Image = document.getElementById('p1-image');
+		    const currentP2Image = document.getElementById('p2-image');
+		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
+		    if (currentP2Image) currentP2Image.classList.remove('winner', 'loser');
+
 		    this.updatePlayerDisplay();
 		    this.updateOpponentDisplay();
 
-			p1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
-			p2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		    // Use current elements for transform
+		    if (currentP1Image) currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		    if (currentP2Image) currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
 
 		    this.updateHealth(this.player1);
 		    this.updateHealth(this.player2);
@@ -2190,6 +2195,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        p2ImageNew.style.display = 'block';
 		    }
 		    p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
+
+		    // Ensure no lingering classes
+		    p2ImageNew.classList.remove('winner', 'loser');
 		}
 
       initBoard() {
