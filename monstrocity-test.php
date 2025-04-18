@@ -780,12 +780,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         display: none;
       }
       
-      .character img {
+      .character img, .character video {
 		  width: 85px;
+		  height: auto;
           float: left;
           position: absolute;
           left: 15px;
           top: 55px;
+		  min-height: 40px;
       }
       
       .character table{
@@ -1113,6 +1115,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "sh4pes",
+	          project: "Nemonium",
+	          title: "Sh4pes x Nemonium",
+	          policyIds: "2d868badf3dc317234fe253859621fedf661bf9eba275faea80a8bfe",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    },
@@ -1210,6 +1222,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "skada",
+	          project: "Ritual",
+	          title: "Skada",
+	          policyIds: "2eacad9ddcb9edd7721af49f682bd356e8e28194bafa4bbc2f559bb7",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "sinderskullz",
 	          project: "Sinder Skullz",
 	          title: "Sinder Skullz",
@@ -1247,7 +1269,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        {
 	          value: "cardanians",
 	          project: "Cardanians",
-	          title: "Cardanian Snow Globes (gif)",
+	          title: "Cardanian Snow Globes (GIF)",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
@@ -1257,7 +1279,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        {
 	          value: "cardanians2",
 	          project: "Cardanians",
-	          title: "Cardanian Snow Globes (mov)",
+	          title: "Cardanian Snow Globes (MOV)",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
@@ -1812,6 +1834,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      console.log('createCharacter: config=', config);
 	      var typeFolder;
 	      var imageUrl;
+	      var fallbackUrl; // New variable for fallback URL
 	      var orientation = 'Left';
 	      var isNFT = false;
 	      var mediaType = 'image'; // Default to image
@@ -1820,20 +1843,21 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 	      const extension = themeData?.extension || 'png'; // Default to "png" if not specified
 	      const videoExtensions = ['mov', 'mp4']; // Define video extensions
+	      const defaultIpfsPrefix = 'https://ipfs.io/ipfs/'; // Default fallback prefix
 
 	      if (config.ipfs && config.policyId) {
 	          isNFT = true;
-	          var themeOption = document.querySelector('#theme-select option[value="' + config.theme + '"]');
-	          var policyMetadata = { orientation: 'Right', ipfsPrefix: 'https://ipfs.io/ipfs/' };
-	          if (themeOption) {
-	              var policyIds = themeOption.dataset.policyIds ? themeOption.dataset.policyIds.split(',').filter(function(id) { return id.trim(); }) : [];
-	              var orientations = themeOption.dataset.orientations ? themeOption.dataset.orientations.split(',').filter(function(o) { return o.trim(); }) : [];
-	              var ipfsPrefixes = themeOption.dataset.ipfsPrefixes ? themeOption.dataset.ipfsPrefixes.split(',').filter(function(p) { return p.trim(); }) : [];
+	          var policyMetadata = { orientation: 'Right', ipfsPrefix: themeData?.ipfsPrefixes || defaultIpfsPrefix };
+	          // Use theme-specific ipfsPrefixes if available
+	          if (themeData && themeData.policyIds) {
+	              var policyIds = themeData.policyIds.split(',').filter(id => id.trim());
+	              var orientations = themeData.orientations ? themeData.orientations.split(',').filter(o => o.trim()) : [];
+	              var ipfsPrefixes = themeData.ipfsPrefixes ? themeData.ipfsPrefixes.split(',').filter(p => p.trim()) : [defaultIpfsPrefix];
 	              var policyIndex = policyIds.indexOf(config.policyId);
 	              if (policyIndex !== -1) {
 	                  policyMetadata = {
 	                      orientation: orientations.length === 1 ? orientations[0] : (orientations[policyIndex] || 'Right'),
-	                      ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[policyIndex] || 'https://ipfs.io/ipfs/')
+	                      ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[policyIndex] || defaultIpfsPrefix)
 	                  };
 	              }
 	          }
@@ -1843,6 +1867,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              orientation = policyMetadata.orientation;
 	          }
 	          imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
+	          fallbackUrl = defaultIpfsPrefix + config.ipfs; // Set fallback URL
 	          // Determine mediaType from IPFS URL extension if present
 	          const urlExtension = imageUrl.split('.').pop().toLowerCase();
 	          if (videoExtensions.includes(urlExtension)) {
@@ -1856,6 +1881,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              default: typeFolder = 'base';
 	          }
 	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.' + extension;
+	          fallbackUrl = '/staking/icons/skull.png'; // Fallback for non-NFTs
 	          orientation = characterDirections[config.name] || 'Left';
 	          // Determine mediaType from extension
 	          if (videoExtensions.includes(extension.toLowerCase())) {
@@ -1905,9 +1931,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          boostValue: 0,
 	          lastStandActive: false,
 	          imageUrl: imageUrl,
+	          fallbackUrl: fallbackUrl, // Add fallbackUrl to character object
 	          orientation: orientation,
 	          isNFT: isNFT,
-	          mediaType: mediaType // Add mediaType to character object
+	          mediaType: mediaType
 	      };
 	  }
 	  
@@ -1945,7 +1972,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          const option = document.createElement('div');
 	          option.className = 'character-option';
 	          option.innerHTML = character.mediaType === 'video' ?
-	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}"></video>` +
+	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}" onerror="this.src='${character.fallbackUrl}'"></video>` +
 	              `<p><strong>${character.name}</strong></p>` +
 	              `<p>Type: ${character.type}</p>` +
 	              `<p>Health: ${character.maxHealth}</p>` +
@@ -1954,7 +1981,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              `<p>Tactics: ${character.tactics}</p>` +
 	              `<p>Size: ${character.size}</p>` +
 	              `<p>Power-Up: ${character.powerup}</p>` :
-	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onerror="this.src='/staking/icons/skull.png'">` +
+	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onerror="this.src='${character.fallbackUrl}'">` +
 	              `<p><strong>${character.name}</strong></p>` +
 	              `<p>Type: ${character.type}</p>` +
 	              `<p>Health: ${character.maxHealth}</p>` +
@@ -2164,9 +2191,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		            newVideo.loop = true;
 		            newVideo.muted = true;
 		            newVideo.alt = this.player1.name;
+		            newVideo.onerror = () => { newVideo.src = this.player1.fallbackUrl; };
 		            parent.replaceChild(newVideo, p1Image);
 		        } else {
-		            p1Image.src = this.player1.imageUrl; // Update source if already a video
+		            p1Image.src = this.player1.imageUrl;
+		            p1Image.onerror = () => { p1Image.src = this.player1.fallbackUrl; };
 		        }
 		    } else {
 		        // Only replace if current element is not an image
@@ -2175,9 +2204,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		            newImage.id = 'p1-image';
 		            newImage.src = this.player1.imageUrl;
 		            newImage.alt = this.player1.name;
+		            newImage.onerror = () => { newImage.src = this.player1.fallbackUrl; };
 		            parent.replaceChild(newImage, p1Image);
 		        } else {
-		            p1Image.src = this.player1.imageUrl; // Update source if already an image
+		            p1Image.src = this.player1.imageUrl;
+		            p1Image.onerror = () => { p1Image.src = this.player1.fallbackUrl; };
 		        }
 		    }
 
