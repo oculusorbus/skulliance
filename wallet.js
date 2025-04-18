@@ -39,17 +39,16 @@ function capitalizeFirstLetter(string) {
 
 (function ($) {
     const SupportedWallets = [
-         'nami',
+         'lace',
 		 'eternl',
 		 'vespr',
-		 'gerowallet',
-		 'flint',
-		 'lace',
-		 'LodeWallet',
-		 'nufi',
-		 'tokeo',
 		 'typhoncip30',
+		 'tokeo',
+		 'flint',
 		 'yoroi'
+		 'gerowallet',
+		 'LodeWallet',
+		 'nufi'
     ];
 
     let retries = 10;
