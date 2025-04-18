@@ -45,7 +45,7 @@ function capitalizeFirstLetter(string) {
 		 'typhoncip30',
 		 'tokeo',
 		 'flint',
-		 'yoroi'
+		 'yoroi',
 		 'gerowallet',
 		 'LodeWallet',
 		 'nufi'
