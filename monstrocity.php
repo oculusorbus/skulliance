@@ -96,6 +96,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  border-left: 3px solid black;
 	  border-right: 3px solid black;
 	  display: none; /* Initially hidden */
+	  height: 100%;
+	  max-height: 2050px;
 	}
 
     .game-logo {
