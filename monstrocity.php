@@ -1117,6 +1117,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "fauna",
+	          project: "Nemonium",
+	          title: "Fauna x Nemonium",
+	          policyIds: "7cd357f96d7a7325ff3038e78e004840706887790d8b513913b45c27",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "sh4pes",
 	          project: "Nemonium",
 	          title: "Sh4pes x Nemonium",
