@@ -1598,6 +1598,50 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
 		}
+		
+		// Simple hash function for tamper-proofing
+		createBoardHash(board) {
+		  let hash = 0;
+		  const str = JSON.stringify(board.map(row => row.map(tile => tile.type)));
+		  for (let i = 0; i < str.length; i++) {
+		    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+		    hash |= 0; // Convert to 32-bit integer
+		  }
+		  return hash.toString();
+		}
+
+		// Save board to localStorage
+		saveBoard() {
+		  const boardState = {
+		    level: this.currentLevel,
+		    board: this.board.map(row => row.map(tile => ({ type: tile.type }))), // Store only tile types
+		    hash: this.createBoardHash(this.board)
+		  };
+		  localStorage.setItem(`board_level_${this.currentLevel}`, JSON.stringify(boardState));
+		}
+
+		// Load board from localStorage
+		loadBoard() {
+		  const key = `board_level_${this.currentLevel}`;
+		  const boardState = JSON.parse(localStorage.getItem(key));
+		  if (boardState && boardState.level === this.currentLevel) {
+		    const expectedHash = this.createBoardHash(boardState.board);
+		    if (boardState.hash === expectedHash) {
+		      return boardState.board.map(row => row.map(tile => ({
+		        type: tile.type,
+		        element: null // Element will be set during render
+		      })));
+		    } else {
+		      console.warn(`loadBoard: Invalid hash for level ${this.currentLevel}, generating new board`);
+		    }
+		  }
+		  return null;
+		}
+
+		// Clear board from localStorage
+		clearBoard() {
+		  localStorage.removeItem(`board_level_${this.currentLevel}`);
+		}
 		  
 		  async init() {
 		      console.log("init: Starting async initialization");
@@ -1826,8 +1870,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	      const result = await response.json();
 	      if (result.status === 'success') {
-	        this.currentLevel = 1; // Reset to level 1 (was 0)
+	        this.currentLevel = 1;
 	        this.grandTotalScore = 0;
+	        this.clearBoard(); // Clear board for level 1
 	        log('Progress cleared');
 	      }
 	    } catch (error) {
@@ -2291,22 +2336,32 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		}
 
 		initBoard() {
+		  // Try to load board from localStorage
+		  const savedBoard = this.loadBoard();
+		  if (savedBoard) {
+		    this.board = savedBoard;
+		    console.log('initBoard: Loaded board from localStorage for level', this.currentLevel);
+		  } else {
+		    // Generate new board
 		    this.board = [];
 		    for (let y = 0; y < this.height; y++) {
-		        this.board[y] = [];
-		        for (let x = 0; x < this.width; x++) {
-		            let tile;
-		            do {
-		                tile = this.createRandomTile();
-		            } while (
-		                (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
-		                (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
-		            );
-		            this.board[y][x] = tile;
-		        }
+		      this.board[y] = [];
+		      for (let x = 0; x < this.width; x++) {
+		        let tile;
+		        do {
+		          tile = this.createRandomTile();
+		        } while (
+		          (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		          (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		        );
+		        this.board[y][x] = tile;
+		      }
 		    }
-		    console.log('initBoard: Board initialized with dimensions', this.width, 'x', this.height);
-		    this.renderBoard();
+		    // Save the new board to localStorage
+		    this.saveBoard();
+		    console.log('initBoard: Generated and saved new board for level', this.currentLevel);
+		  }
+		  this.renderBoard();
 		}
 
       createRandomTile() {
@@ -3210,114 +3265,115 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
 
 	  async checkGameOver() {
-	      if (this.gameOver || this.isCheckingGameOver) {
-	          console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
-	          return;
+	    if (this.gameOver || this.isCheckingGameOver) {
+	      console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
+	      return;
+	    }
+
+	    this.isCheckingGameOver = true;
+	    console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
+
+	    const tryAgainButton = document.getElementById("try-again");
+	    if (this.player1.health <= 0) {
+	      console.log("Player 1 health <= 0, triggering game over (loss)");
+	      this.gameOver = true;
+	      this.gameState = "gameOver";
+	      gameOver.textContent = "You Lose!";
+	      turnIndicator.textContent = "Game Over";
+	      log(`${this.player2.name} defeats ${this.player1.name}!`);
+	      tryAgainButton.textContent = "TRY AGAIN";
+	      document.getElementById("game-over-container").style.display = "block";
+	      try {
+	        this.sounds.loss.play();
+	      } catch (err) {
+	        console.error("Error playing lose sound:", err);
+	      }
+	    } else if (this.player2.health <= 0) {
+	      console.log("Player 2 health <= 0, triggering game over (win)");
+	      this.gameOver = true;
+	      this.gameState = "gameOver";
+	      gameOver.textContent = "You Win!";
+	      turnIndicator.textContent = "Game Over";
+	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
+	      document.getElementById("game-over-container").style.display = "block";
+
+	      if (this.currentTurn === this.player1) {
+	        const currentRound = this.roundStats[this.roundStats.length - 1];
+	        if (currentRound && !currentRound.completed) {
+	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	          currentRound.completed = true;
+
+	          const roundScore = currentRound.matches > 0 
+	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
+	            : 0;
+
+	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
+
+	          this.grandTotalScore += roundScore;
+
+	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	          log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
+	        }
 	      }
 
-	      this.isCheckingGameOver = true;
-	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
+	      await this.saveScoreToDatabase(this.currentLevel);
 
-	      const tryAgainButton = document.getElementById("try-again");
-	      if (this.player1.health <= 0) {
-	          console.log("Player 1 health <= 0, triggering game over (loss)");
-	          this.gameOver = true;
-	          this.gameState = "gameOver";
-	          gameOver.textContent = "You Lose!";
-	          turnIndicator.textContent = "Game Over";
-	          log(`${this.player2.name} defeats ${this.player1.name}!`);
-	          tryAgainButton.textContent = "TRY AGAIN";
-	          document.getElementById("game-over-container").style.display = "block";
-	          try {
-	              this.sounds.loss.play();
-	          } catch (err) {
-	              console.error("Error playing lose sound:", err);
-	          }
-	      } else if (this.player2.health <= 0) {
-	          console.log("Player 2 health <= 0, triggering game over (win)");
-	          this.gameOver = true;
-	          this.gameState = "gameOver";
-	          gameOver.textContent = "You Win!";
-	          turnIndicator.textContent = "Game Over";
-	          tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
-	          document.getElementById("game-over-container").style.display = "block";
-
-	          if (this.currentTurn === this.player1) {
-	              const currentRound = this.roundStats[this.roundStats.length - 1];
-	              if (currentRound && !currentRound.completed) {
-	                  currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
-	                  currentRound.completed = true;
-
-	                  const roundScore = currentRound.matches > 0 
-	                      ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
-	                      : 0;
-
-	                  log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-	                  log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
-
-	                  this.grandTotalScore += roundScore;
-
-	                  log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	                  log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
-	              }
-	          }
-
-	          await this.saveScoreToDatabase(this.currentLevel);
-
-	          if (this.currentLevel === opponentsConfig.length) {
-	              this.sounds.finalWin.play();
-	              log(`Final level completed! Final score: ${this.grandTotalScore}`);
-	              this.grandTotalScore = 0;
-	              await this.clearProgress();
-	              log("Game completed! Grand total score reset.");
-	          } else {
-	              this.currentLevel += 1;
-	              await this.saveProgress();
-	              console.log(`Progress saved: currentLevel=${this.currentLevel}`);
-	              this.sounds.win.play();
-	          }
-
-	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
-	          const extension = themeData?.extension || 'png';
-	          const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
-
-	          const p2Image = document.getElementById('p2-image');
-	          const parent = p2Image.parentNode;
-
-	          if (this.player2.mediaType === 'video') {
-	              if (p2Image.tagName !== 'VIDEO') {
-	                  const newVideo = document.createElement('video');
-	                  newVideo.id = 'p2-image';
-	                  newVideo.src = damagedUrl;
-	                  newVideo.autoplay = true;
-	                  newVideo.loop = true;
-	                  newVideo.muted = true;
-	                  newVideo.alt = this.player2.name;
-	                  parent.replaceChild(newVideo, p2Image);
-	              } else {
-	                  p2Image.src = damagedUrl;
-	              }
-	          } else {
-	              if (p2Image.tagName !== 'IMG') {
-	                  const newImage = document.createElement('img');
-	                  newImage.id = 'p2-image';
-	                  newImage.src = damagedUrl;
-	                  newImage.alt = this.player2.name;
-	                  parent.replaceChild(newImage, p2Image);
-	              } else {
-	                  p2Image.src = damagedUrl;
-	              }
-	          }
-
-	          const p2ImageNew = document.getElementById("p2-image");
-	          p2ImageNew.style.display = "block";
-	          p2ImageNew.classList.add("loser");
-	          p1Image.classList.add("winner");
-	          this.renderBoard();
+	      if (this.currentLevel === opponentsConfig.length) {
+	        this.sounds.finalWin.play();
+	        log(`Final level completed! Final score: ${this.grandTotalScore}`);
+	        this.grandTotalScore = 0;
+	        await this.clearProgress();
+	        log("Game completed! Grand total score reset.");
+	      } else {
+	        this.clearBoard(); // Clear board before advancing to next level
+	        this.currentLevel += 1;
+	        await this.saveProgress();
+	        console.log(`Progress saved: currentLevel=${this.currentLevel}`);
+	        this.sounds.win.play();
 	      }
 
-	      this.isCheckingGameOver = false;
-	      console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
+	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+	      const extension = themeData?.extension || 'png';
+	      const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
+
+	      const p2Image = document.getElementById('p2-image');
+	      const parent = p2Image.parentNode;
+
+	      if (this.player2.mediaType === 'video') {
+	        if (p2Image.tagName !== 'VIDEO') {
+	          const newVideo = document.createElement('video');
+	          newVideo.id = 'p2-image';
+	          newVideo.src = damagedUrl;
+	          newVideo.autoplay = true;
+	          newVideo.loop = true;
+	          newVideo.muted = true;
+	          newVideo.alt = this.player2.name;
+	          parent.replaceChild(newVideo, p2Image);
+	        } else {
+	          p2Image.src = damagedUrl;
+	        }
+	      } else {
+	        if (p2Image.tagName !== 'IMG') {
+	          const newImage = document.createElement('img');
+	          newImage.id = 'p2-image';
+	          newImage.src = damagedUrl;
+	          newImage.alt = this.player2.name;
+	          parent.replaceChild(newImage, p2Image);
+	        } else {
+	          p2Image.src = damagedUrl;
+	        }
+	      }
+
+	      const p2ImageNew = document.getElementById("p2-image");
+	      p2ImageNew.style.display = "block";
+	      p2ImageNew.classList.add("loser");
+	      p1Image.classList.add("winner");
+	      this.renderBoard();
+	    }
+
+	    this.isCheckingGameOver = false;
+	    console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
