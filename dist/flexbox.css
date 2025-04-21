@@ -1481,28 +1481,34 @@ section.active {
 	    width: 33.33% !important;
 	}
 	
-	.aeoniumsky .nft-data {
-	    height: 415px;
-	    text-align: left !important;
-	}
+    .aeoniumsky .nft-data {
+        height: 486px;
+        text-align: left !important;
+        padding: 0px;
+        margin: 0px;
+        margin-top: -2px !important;
+    }
 	
 	.aeoniumsky .nft-name {
-	    font-size: 1rem !important;
-	    text-align: left;
-	}
+        font-size: 1rem !important;
+        text-align: left;
+        display: none;
+    }
 	
-	.aeoniumsky .nft-image {
-	    max-height: none;
-	    top: 5px;
-	    left: 0px;
-	}
+    .aeoniumsky .nft-image {
+        max-height: none;
+        top: 0px;
+        left: 0px;
+        margin-right: 0px !important;
+        padding: 0px;
+    }
 	
-	.aeoniumsky img {
-	    width: 100% !important;
-	    max-width: 355px !important;
-	    max-height: none !important;
-	    height: auto;
-	}
+    .aeoniumsky img {
+        width: 100% !important;
+        max-width: 487px !important;
+        max-height: none !important;
+        height: auto;
+    }
 }
 
 @media screen and (max-width: 1780px) {
