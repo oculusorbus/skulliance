@@ -1440,6 +1440,10 @@ section.active {
     border-color: #b500ff;
 }
 
+.aeoniumsky .nft-name {
+    font-size: 0.8rem !important;
+}
+
 @media screen and (min-width: 1201px) {
 	.missions .nft {
 		width: 50%;
