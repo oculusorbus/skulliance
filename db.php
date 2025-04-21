@@ -831,7 +831,7 @@ function getMissions($conn, $quest_id, $project_id) {
 			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
-		echo "<span class='nft-image'><img class='mission-image' src='".$image.".png'/></span>";
+		echo "<span class='nft-image'><img class='mission-image' src='".$image.(($row["project_id"] == 37)?".gif":".png")."'/></span>";
 		//echo "<span class='nft-level'><strong>Description</strong><br>".$row["description"]."</span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["name"]."</span>";
 		echo "<span class='nft-level'><strong>Cost</strong><br>".number_format($row["cost"])." ".$row["currency"]."</span>";
