@@ -414,9 +414,13 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 	if(isset($image)){
 		// Dank Bit Fix
 		if(is_array($image)){
-			$image = $image[0].$image[1];
+			//$image = $image[0].$image[1];
+			$image = implode("", $image);
 		}
-		$ipfs = substr($image, 7, strlen($image));
+		// On-chain check for Digi Monks
+		if(!str_contains($image, "data:image/svg+xml;base64")){
+			$ipfs = substr($image, 7, strlen($image));
+		}
 	}else{
 		$ipfs = "";
 	}
