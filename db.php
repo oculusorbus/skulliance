@@ -822,10 +822,13 @@ function getMissions($conn, $quest_id, $project_id) {
 				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
 				$image = "icons/padlock";
 			}else{
+				echo "<div class='nft project-".$row["project_id"].(($row["project_id"] == 37)?" aeoniumsky":"")."' id='quest-".$row["id"]."'>";
+	    		echo "<div class='nft-data".$class." mission-data' onclick='document.getElementById(\"submit-".$row["id"]."\").click()' style='".$style."'>";
+				/*
 				echo "<div class='nft-data".$class." mission-data disabled' onclick='document.getElementById(\"submit-".$row["id"]."\").click()'>";
 				//echo "<div class='nft-data".$class." mission-data disabled'>";
 				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
-				$image = "icons/padlock";
+				$image = "icons/padlock";*/
 			}
 		}
 		echo "<span class='nft-name'>".$title."</span>";
