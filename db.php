@@ -407,7 +407,7 @@ function getProjects($conn, $type=""){
 		$where = " WHERE id <= 7";
 	}
 	if($type == "partner"){
-		$where = " WHERE id > 7 && id != 15";
+		$where = " WHERE id > 7 && id != 15 && id != 37";
 	}
 	$sql = "SELECT id, name, currency, discord_id FROM projects".$where." ORDER by name ASC";
 	$result = $conn->query($sql);
@@ -2550,7 +2550,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		}else if($filterby == "core"){
 			$filterby = "project_id IN(1,2,3,4,5,6) ";
 		}else{
-			$filterby = "project_id != 37";
+			$filterby = "";
 		}
 		$user_filter = "";
 		if($advanced_filter == "all"){
