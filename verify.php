@@ -418,7 +418,9 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 			$image = implode("", $image);
 		}
 		// On-chain check for Digi Monks
-		if(!str_contains($image, "data:image/svg+xml;base64")){
+		if(str_contains($image, "data:image/svg+xml;base64")){
+			$ipfs = $image;
+		}else{
 			$ipfs = substr($image, 7, strlen($image));
 		}
 	}else{
