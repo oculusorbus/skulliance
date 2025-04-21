@@ -2550,7 +2550,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		}else if($filterby == "core"){
 			$filterby = "project_id IN(1,2,3,4,5,6) ";
 		}else{
-			$filterby = "";
+			$filterby = "project_id != 37";
 		}
 		$user_filter = "";
 		if($advanced_filter == "all"){
