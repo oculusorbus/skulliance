@@ -1476,6 +1476,35 @@ section.active {
 	}
 }
 
+@media screen and (min-width: 1991px) {
+	.aeoniumsky {
+	    width: 33.33% !important;
+	}
+	
+	.aeoniumsky .nft-data {
+	    height: 415px;
+	    text-align: left !important;
+	}
+	
+	.aeoniumsky .nft-name {
+	    font-size: 1rem !important;
+	    text-align: left;
+	}
+	
+	.aeoniumsky .nft-image {
+	    max-height: none;
+	    top: 5px;
+	    left: 0px;
+	}
+	
+	.aeoniumsky img {
+	    width: 100% !important;
+	    max-width: 355px !important;
+	    max-height: none !important;
+	    height: auto;
+	}
+}
+
 @media screen and (max-width: 1780px) {
 	body{
   	  background-position: bottom;
