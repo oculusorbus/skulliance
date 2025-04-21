@@ -2148,6 +2148,8 @@ function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
 		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
 		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+	}else if($collection_id == 260){
+		return "<span class='nft-image'><img style='min-height:165px' ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else{
 		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}
