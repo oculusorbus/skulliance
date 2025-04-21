@@ -716,7 +716,7 @@ function getMissionLevels($conn) {
 
 function getMissionsFilters($conn, $quest_id, $projects) {
 	$eligible = "";
-	$sql = "SELECT DISTINCT projects.id, projects.name, projects.currency AS currency FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.id";
+	$sql = "SELECT DISTINCT projects.id, projects.name, projects.currency AS currency FROM quests INNER JOIN projects ON projects.id = quests.project_id AND projects.id != 37 ORDER BY projects.id";
 	
 	$result = $conn->query($sql);
 	
