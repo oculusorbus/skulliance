@@ -2116,7 +2116,7 @@ function removeUser($conn, $user_id){
 
 // Render IPFS
 function getIPFS($ipfs, $collection_id){
-	if(str_contains($image, "data:image/svg+xml;base64")){
+	if(str_contains($ipfs, "data:image/svg+xml;base64")){
 		return $ipfs;
 	}else{
 		$ipfs = str_replace("ipfs/", "", $ipfs);
@@ -2137,7 +2137,7 @@ function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
 	if($icon){
 		$class = "class='icon' ";
 	}
-	if(!str_contains($image, "data:image/svg+xml;base64")){
+	if(!str_contains($ipfs, "data:image/svg+xml;base64")){
 		$ipfs = str_replace("ipfs/", "", $ipfs);
 	}
 	if($collection_id == 4 || $collection_id == 23){
