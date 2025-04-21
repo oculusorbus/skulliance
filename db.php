@@ -816,7 +816,7 @@ function getMissions($conn, $quest_id, $project_id) {
 		}else{
 			$locked_quest_ids[$row["id"]] = $row["id"];
 			// Removed display none from this div
-			echo "<div class='nft project-".$row["project_id"]..(($row["project_id"] == 37)?" aeoniumsky":"")."' id='quest-".$row["id"]."'>";
+			echo "<div class='nft project-".$row["project_id"].(($row["project_id"] == 37)?" aeoniumsky":"")."' id='quest-".$row["id"]."'>";
 			if($_SESSION['userData']['discord_id'] != '772831523899965440'){
 				echo "<div class='nft-data".$class." mission-data disabled'>";
 				$title = preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $row["title"]));
