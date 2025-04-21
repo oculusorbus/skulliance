@@ -1099,6 +1099,7 @@ li form {
 	max-width: 175px;
 	max-height: 165px;
 	width: inherit;
+	min-height: 165px;
 }
 
 .nft .small-button {
