@@ -1495,6 +1495,10 @@ section.active {
         display: none;
     }
 	
+	.aeoniumsky .nft-level {
+        display: none;
+    }
+	
     .aeoniumsky .nft-image {
         max-height: none;
         top: 0px;
