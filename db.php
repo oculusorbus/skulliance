@@ -2116,14 +2116,18 @@ function removeUser($conn, $user_id){
 
 // Render IPFS
 function getIPFS($ipfs, $collection_id){
-	$ipfs = str_replace("ipfs/", "", $ipfs);
-	return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
-	if($collection_id == 4 || $collection_id == 23){
-		return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
-	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		return "https://storage.googleapis.com/jpeg-optim-files/".$ipfs;
+	if(str_contains($image, "data:image/svg+xml;base64")){
+		return $ipfs;
 	}else{
-		return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
+		$ipfs = str_replace("ipfs/", "", $ipfs);
+		return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
+		if($collection_id == 4 || $collection_id == 23){
+			return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
+		}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
+			return "https://storage.googleapis.com/jpeg-optim-files/".$ipfs;
+		}else{
+			return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
+		}
 	}
 }
 
@@ -2133,7 +2137,9 @@ function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
 	if($icon){
 		$class = "class='icon' ";
 	}
-	$ipfs = str_replace("ipfs/", "", $ipfs);
+	if(!str_contains($image, "data:image/svg+xml;base64")){
+		$ipfs = str_replace("ipfs/", "", $ipfs);
+	}
 	if($collection_id == 4 || $collection_id == 23){
 		// Resource intensive IPFS code, disabled to save server resources, swapped for fallback skull icon
 		// onError='this.src=\"image.php?ipfs=".$ipfs."\";'
