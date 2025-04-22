@@ -1261,6 +1261,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "wave",
+	          project: "Squashua",
+	          title: "Wavy Ape Vibe Empire",
+	          policyIds: "d458857ae7d121bfb5af64d78c0454a519133248e030a0225734452b",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    },
