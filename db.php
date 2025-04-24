@@ -5760,7 +5760,9 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			foreach($rows AS $duration => $output){
 			    $final_output .= $output;
 			}
-			$final_output .=  "</table></div>";
+			$final_output .= "</table>";
+			$final_output .= "<a href='raids.php'>View ".ucfirst($status)." Raids History</a>";
+			$final_output .= "</div>";
 			return $final_output;
 		} else {
 		  //echo "0 results";
