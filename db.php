@@ -5606,7 +5606,7 @@ function checkMaxRaids($conn, $realm_id){
 	}
 }
 
-function getRaids($conn, $type, $status="pending"){
+function getRaids($conn, $type, $status="pending", $history=false){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
 		$id1 = "";
@@ -5629,8 +5629,13 @@ function getRaids($conn, $type, $status="pending"){
 		}else if($status == "completed"){
 			$outcome_operator = " != '0'";
 		}
+		if(!$history){
+			$limit = "LIMIT 10";
+		}else{
+			$limit = "LIMIT 100";
+		}
 		$sql = "SELECT raids.id AS raid_id, outcome, realms.name AS realm_name, theme_id, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
-			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY raids.id DESC LIMIT 10";
+			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY raids.id DESC ".$limit;
 		$result = $conn->query($sql);
 		
 		// Handle Toggle Sessions
