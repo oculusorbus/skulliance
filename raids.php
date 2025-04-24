@@ -12,10 +12,6 @@ if($realm_status){ ?>
 <div class="row">	
 	<div class="main">
 		<?php
-			echo '<div id="stats">';
-			getTotalFactionRaids($conn);
-			getTotalRaids($conn);
-			echo '</div>';
 			echo '<div id="raids">';
 			$outgoing_raids = getRaids($conn, "outgoing", "pending", true); 
 			if(isset($outgoing_raids)){
