@@ -323,6 +323,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			if(isset($outgoing_completed)){
 				echo '<div class="content raids">';
 				echo $outgoing_completed;
+				echo "<a href='raids.php'>View Outgoing Raids History</a>";
 				echo '</div>';
 			}	
 			$incoming_raids = getRaids($conn, "incoming", "pending"); 
@@ -335,6 +336,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			if(isset($incoming_completed)){
 				echo '<div class="content raids">';
 				echo $incoming_completed;
+				echo "<a href='raids.php'>View Incoming Raids History</a>";
 				echo '</div>';
 			}
 			echo "</div>";	
