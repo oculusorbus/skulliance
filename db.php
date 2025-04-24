@@ -5761,7 +5761,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			    $final_output .= $output;
 			}
 			$final_output .= "</table>";
-			if(!$history){
+			if(!$history && $status != "pending"){
 				$final_output .= "<a href='raids.php'>View ".ucfirst($type)." Raids History</a>";
 			}
 			$final_output .= "</div>";
