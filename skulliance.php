@@ -294,13 +294,13 @@ if(isset($_POST['item_id'])) {
 function havocWorlds($havoc_key, $address){
 	// URL to send the request to
 	// Preprod
-	$url = "https://api-testnet.havocworlds.io/havoc/staking/skulliance-claim";
+	//$url = "https://api-testnet.havocworlds.io/havoc/staking/skulliance-claim";
 	// Mainnet
-	//$url = "https://api.havocworlds.io/havoc/staking/skulliance-claim";
+	$url = "https://api.havocworlds.io/havoc/staking/skulliance-claim";
 
 	// Data to send (single variable)
 	$data = array(
-	    'claimer_address' => 'addr_test1qpspjm8huu3svyh286wcrfs8hvv2pa0rlewk5zsj308wwduf9vr444v7z8xktt4l5z20f6dv2yujs9z6gc3hxzqjunqsqfj6lm'
+	    'claimer_address' => $address
 	);
 	
 	// Convert data to JSON
@@ -335,9 +335,9 @@ function havocWorlds($havoc_key, $address){
 	    // Output the response
 	    //echo $response;
 		// Preprod
-		$mint_url = "https://testnet.havocworlds.io/mint/?rid=";
+		//$mint_url = "https://testnet.havocworlds.io/mint/?rid=";
 		// Mainnet
-		//$mint_url = "https://havocworlds.io/mint/?rid=";
+		$mint_url = "https://havocworlds.io/mint/?rid=";
 		return $mint_url.$response;
 	}
 
