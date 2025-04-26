@@ -53,15 +53,6 @@ if (isset($_SESSION['userData']['user_id'])) {
         echo json_encode(false);
         exit;
     }
-	
-	// Function to decode hex-encoded strings
-	function hex2str($hex) {
-	    $str = '';
-	    for ($i = 0; $i < strlen($hex); $i += 2) {
-	        $str .= chr(hexdec(substr($hex, $i, 2)));
-	    }
-	    return $str;
-	}
 
     function getNFTAssets($conn, $policy_ids) {
         global $is_debug;
@@ -180,137 +171,114 @@ if (isset($_SESSION['userData']['user_id'])) {
                 fclose($verbose);
             }
 
-			// Process Koios response
-			if (is_array($tokenresponse)) {
-			    if ($is_debug) {
-			        echo "Batch $batch_index Koios returned " . count($tokenresponse) . " assets\n";
-			    }
-			    foreach ($tokenresponse as $tokenresponsedata) {
-			        $policy_id = $tokenresponsedata->policy_id;
-			        $asset_name_ascii = $tokenresponsedata->asset_name_ascii ?: '';
-			        $asset_name_hex = $tokenresponsedata->asset_name ?: '';
+            if (is_array($tokenresponse)) {
+                if ($is_debug) {
+                    echo "Batch $batch_index Koios returned " . count($tokenresponse) . " assets\n";
+                }
+                foreach ($tokenresponse as $tokenresponsedata) {
+                    $policy_id = $tokenresponsedata->policy_id;
+                    $asset_name_ascii = $tokenresponsedata->asset_name_ascii ?: '';
+                    $asset_name_hex = $tokenresponsedata->asset_name ?: '';
 
-			        if ($is_debug) {
-			            echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
-			        }
+                    if ($is_debug) {
+                        echo "Asset: policy_id=$policy_id, asset_name_ascii=$asset_name_ascii\n";
+                    }
 
-			        if (empty($asset_name_ascii)) {
-			            error_log("get-nft-assets: Empty asset_name_ascii for policy_id=$policy_id in batch $batch_index");
-			            if ($is_debug) {
-			                echo "No asset_name_ascii for policy_id=$policy_id\n";
-			            }
-			            continue;
-			        }
+                    if (empty($asset_name_ascii)) {
+                        error_log("get-nft-assets: Empty asset_name_ascii for policy_id=$policy_id in batch $batch_index");
+                        if ($is_debug) {
+                            echo "No asset_name_ascii for policy_id=$policy_id\n";
+                        }
+                        continue;
+                    }
 
-			        $nft_metadata = null;
-			        $is_cip68 = false;
+                    $metadata_key = $asset_name_ascii;
+                    if (isset($tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$metadata_key})) {
+                        $nft_metadata = $tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$metadata_key};
 
-			        // Check for CIP-25 metadata
-			        if (isset($tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$asset_name_ascii})) {
-			            $nft_metadata = $tokenresponsedata->minting_tx_metadata->{'721'}->{$policy_id}->{$asset_name_ascii};
-			        }
-			        // Check for CIP-68 metadata
-			        elseif (isset($tokenresponsedata->cip68_metadata->{'100'}->fields[0]->map)) {
-			            $is_cip68 = true;
-			            $cip68_map = $tokenresponsedata->cip68_metadata->{'100'}->fields[0]->map;
-			            $nft_metadata = [];
+                        $name = 'NFT Unknown';
+                        if (isset($nft_metadata->name)) {
+                            $name = $nft_metadata->name;
+                        } elseif (isset($nft_metadata->title)) {
+                            $name = $nft_metadata->title;
+                        } elseif ($asset_name_ascii) {
+                            $name = $asset_name_ascii;
+                        }
 
-			            // Decode the CIP-68 metadata map
-			            foreach ($cip68_map as $entry) {
-			                if (isset($entry->k->bytes) && isset($entry->v->bytes)) {
-			                    $key = hex2str($entry->k->bytes);
-			                    $value = hex2str($entry->v->bytes);
-			                    $nft_metadata[$key] = $value;
-			                }
-			            }
-			        } else {
-			            error_log("get-nft-assets: No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id in batch $batch_index");
-			            if ($is_debug) {
-			                echo "No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id\n";
-			            }
-			            continue;
-			        }
+                        $ipfs = '';
+                        if (isset($nft_metadata->files) && is_array($nft_metadata->files) && !empty($nft_metadata->files)) {
+                            foreach ($nft_metadata->files as $file) {
+                                if (isset($file->src) && strpos($file->src, 'ipfs://') === 0) {
+                                    $ipfs = str_replace('ipfs://', '', $file->src);
+                                    break;
+                                }
+                            }
+                        }
+                        if (empty($ipfs) && isset($nft_metadata->image)) {
+                            $ipfs = str_replace('ipfs://', '', $nft_metadata->image);
+                        }
 
-			        // Extract name
-			        $name = 'NFT Unknown';
-			        if (isset($nft_metadata['name'])) {
-			            $name = $nft_metadata['name'];
-			        } elseif (isset($nft_metadata['title'])) {
-			            $name = $nft_metadata['title'];
-			        } elseif ($asset_name_ascii) {
-			            $name = $asset_name_ascii;
-			        }
+                        if (empty($ipfs)) {
+                            error_log("get-nft-assets: No IPFS for $name, policy_id=$policy_id in batch $batch_index");
+                            if ($is_debug) {
+                                echo "No IPFS for name=$name, policy_id=$policy_id\n";
+                            }
+                            continue;
+                        }
 
-			        // Extract IPFS link
-			        $ipfs = '';
-			        if (isset($nft_metadata['files']) && is_array($nft_metadata['files']) && !empty($nft_metadata['files'])) {
-			            foreach ($nft_metadata['files'] as $file) {
-			                if (isset($file->src) && strpos($file->src, 'ipfs://') === 0) {
-			                    $ipfs = str_replace('ipfs://', '', $file->src);
-			                    break;
-			                }
-			            }
-			        }
-			        if (empty($ipfs) && isset($nft_metadata['image'])) {
-			            $ipfs = str_replace('ipfs://', '', $nft_metadata['image']);
-			        }
+                        $char_sum = 0;
+                        $length = strlen($asset_name_ascii);
+                        for ($i = 0; $i < $length; $i++) {
+                            $char_sum += ord($asset_name_ascii[$i]);
+                        }
 
-			        if (empty($ipfs)) {
-			            error_log("get-nft-assets: No IPFS for $name, policy_id=$policy_id in batch $batch_index");
-			            if ($is_debug) {
-			                echo "No IPFS for name=$name, policy_id=$policy_id\n";
-			            }
-			            continue;
-			        }
+                        $strength = ($char_sum % 8) + 1;
+                        $speed_sum = 0;
+                        for ($i = 0; $i < min(10, $length); $i++) {
+                            $speed_sum += ord($asset_name_ascii[$i]);
+                        }
+                        $speed = ($speed_sum % 7) + 1;
+                        $tactics_sum = 0;
+                        for ($i = max(0, $length - 10); $i < $length; $i++) {
+                            $tactics_sum += ord($asset_name_ascii[$i]);
+                        }
+                        $tactics = ($tactics_sum % 7) + 1;
+                        $size_map = ['Small', 'Medium', 'Large'];
+                        $size = $size_map[$length % 3];
+                        $type_map = ['Base', 'Leader', 'Battle Damaged'];
+                        $hash = crc32($asset_name_ascii); // or sum of all ord() values
+                        $type = $type_map[$hash % 3];
+                        $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
+                        $powerup = $powerup_map[ord($asset_name_ascii[$length - 1]) % 4];
 
-			        // Calculate attributes (unchanged)
-			        $char_sum = 0;
-			        $length = strlen($asset_name_ascii);
-			        for ($i = 0; $i < $length; $i++) {
-			            $char_sum += ord($asset_name_ascii[$i]);
-			        }
-			        $strength = ($char_sum % 8) + 1;
-			        $speed_sum = 0;
-			        for ($i = 0; $i < min(10, $length); $i++) {
-			            $speed_sum += ord($asset_name_ascii[$i]);
-			        }
-			        $speed = ($speed_sum % 7) + 1;
-			        $tactics_sum = 0;
-			        for ($i = max(0, $length - 10); $i < $length; $i++) {
-			            $tactics_sum += ord($asset_name_ascii[$i]);
-			        }
-			        $tactics = ($tactics_sum % 7) + 1;
-			        $size_map = ['Small', 'Medium', 'Large'];
-			        $size = $size_map[$length % 3];
-			        $type_map = ['Base', 'Leader', 'Battle Damaged'];
-			        $hash = crc32($asset_name_ascii);
-			        $type = $type_map[$hash % 3];
-			        $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
-			        $powerup = $powerup_map[ord($asset_name_ascii[$length - 1]) % 4];
-
-			        // Add to final array
-			        $final_array[] = [
-			            'name' => $name,
-			            'ipfs' => $ipfs,
-			            'policyId' => $policy_id,
-			            'strength' => $strength,
-			            'speed' => $speed,
-			            'tactics' => $tactics,
-			            'size' => $size,
-			            'type' => $type,
-			            'powerup' => $powerup,
-			            'theme' => $theme
-			        ];
-			        if ($is_debug) {
-			            echo "Added NFT: name=$name, policy_id=$policy_id, is_cip68=$is_cip68\n";
-			        }
-			    }
-			} else {
-			    error_log("get-nft-assets: Invalid Koios response for batch $batch_index");
-			    if ($is_debug) {
-			        echo "Error: Invalid Koios response for batch $batch_index\n";
-			    }
-			}
+                        $final_array[] = [
+                            'name' => $name,
+                            'ipfs' => $ipfs,
+                            'policyId' => $policy_id,
+                            'strength' => $strength,
+                            'speed' => $speed,
+                            'tactics' => $tactics,
+                            'size' => $size,
+                            'type' => $type,
+                            'powerup' => $powerup,
+                            'theme' => $theme
+                        ];
+                        if ($is_debug) {
+                            echo "Added NFT: name=$name, policy_id=$policy_id\n";
+                        }
+                    } else {
+                        error_log("get-nft-assets: No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id in batch $batch_index");
+                        if ($is_debug) {
+                            echo "No metadata for asset_name_ascii=$asset_name_ascii, policy_id=$policy_id\n";
+                        }
+                    }
+                }
+            } else {
+                error_log("get-nft-assets: Invalid Koios response for batch $batch_index");
+                if ($is_debug) {
+                    echo "Error: Invalid Koios response for batch $batch_index\n";
+                }
+            }
         }
 
         if (!empty($final_array)) {
