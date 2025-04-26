@@ -237,7 +237,7 @@ if(isset($_POST['item_id'])) {
 				if($balance >= $price){
 					$item = getItemInfo($conn, $_POST['item_id'], $_POST['project_id']);
 					$havoc_worlds = false;
-					if($item["name"] == "S2 Havoc Worlds"){
+					if(str_contains($item["name"], "S2 Havoc Worlds")){
 						$havoc_worlds = true;
 					}
 					if($havoc_worlds){
