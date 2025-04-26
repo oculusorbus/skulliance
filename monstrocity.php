@@ -1183,6 +1183,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "happypeople",
+	          project: "Netanel Cohen",
+	          title: "Happy People",
+	          policyIds: "ac9067e22a857ee2e4ea20f77c6c047f78a11511f285d30d81857196",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "maxi",
 	          project: "Maxingo",
 	          title: "Digital Hell Citizens 2: Fighters",
