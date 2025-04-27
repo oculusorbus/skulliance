@@ -5,6 +5,7 @@ session_start();
 $member = false;
 $elite = false;
 $innercircle = false;
+$dev = false;
 
 // Restore session from cookie if logged out
 if (!isset($_SESSION['logged_in'])) {
@@ -37,6 +38,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
             }
         }
     }
+	if($_SESSION['userData']['discord_id'] == "772831523899965440"){
+		$dev = true;
+	}
 }
 ?>
 <!DOCTYPE html>
@@ -1406,6 +1410,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
+			 <?php if($dev) { ?>
 	        {
 	          value: "j2",
 	          project: "J2",
@@ -1416,6 +1421,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
+			<?php } ?>
 	        {
 	          value: "jetchicken",
 	          project: "Jet Chicken",
