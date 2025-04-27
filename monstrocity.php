@@ -1328,6 +1328,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "",
 			  background: true,
 			  extension: "mov" // Applies only to character images
+	        },
+	        {
+	          value: "handies",
+	          project: "Handies",
+	          title: "Handies",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    }
