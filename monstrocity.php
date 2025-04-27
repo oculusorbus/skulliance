@@ -1300,16 +1300,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
-	          value: "animeorigins",
-	          project: "Nel",
-	          title: "Anime Origins",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
 	          value: "cardanians",
 	          project: "Cardanians",
 	          title: "Cardanian Snow Globes (GIF)",
@@ -1333,6 +1323,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          value: "handies",
 	          project: "Handies",
 	          title: "Handies",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "animeorigins",
+	          project: "Nel",
+	          title: "Anime Origins",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
