@@ -1407,6 +1407,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "jetchicken",
+	          project: "Jet Chicken",
+	          title: "Jet Chicken",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "karranka",
 	          project: "Karranka",
 	          title: "Badass Heroes",
