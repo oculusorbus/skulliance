@@ -100,8 +100,16 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 											<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
 										<?php 
 											$balance = getBalance($conn, $location_id);
-											if($balance >= $cost){ ?>
-												<input id='upgrade-button-<?php echo $location_id; ?>' class='small-button' type='button' value='Upgrade to Level <?php echo ($duration); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost;?>, <?php echo $location_id; ?>)'>
+											if($balance >= $cost){ 
+												$upgrade_verbiage = "";
+												if($levels[$location_id] >= 10){
+													$upgrade_verbiage = "Maintain";
+												}else{
+													$upgrade_verbiage = "Upgrade to";
+												}
+												?>
+												
+												<input id='upgrade-button-<?php echo $location_id; ?>' class='small-button' type='button' value='<?php echo $upgrade_verbiage; ?> Level <?php echo ($duration); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost;?>, <?php echo $location_id; ?>)'>
 										<?php
 											}else{
 												echo "<span id='upgrade-message-".$location_id."'>Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency']."</span>";
