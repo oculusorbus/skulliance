@@ -39,7 +39,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         }
     }
 	if($_SESSION['userData']['discord_id'] == "772831523899965440"){
-		$dev = false;
+		$dev = true;
 	}
 }
 ?>
