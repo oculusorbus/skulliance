@@ -105,6 +105,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       height: auto;
       margin: 0 auto 10px;
       display: block;
+      -webkit-filter: drop-shadow(2px 5px 10px #000);
+      filter: drop-shadow(2px 5px 10px #000);
     }
 
     .turn-indicator {
