@@ -1229,6 +1229,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "beelzebub",
+	          project: "Ritual",
+	          title: "Beelzebub",
+	          policyIds: "cd3a338f248a8ccb484032327b499e90b0303c499beea47e37039bf2",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "bogeyman",
 	          project: "Ritual",
 	          title: "Bogeyman",
