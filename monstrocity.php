@@ -155,8 +155,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 	
 	.character img[src$=".gif"] {
-	    animation: none !important; /* Clear any existing animation */
-	    animation-iteration-count: infinite !important; /* Force infinite loops */
+	    animation: play 1s steps(1) infinite;
+	}
+	
+	@keyframes play {
+	    0% { opacity: 1; }
+	    100% { opacity: 1; }
 	}
     
     .character p{
@@ -535,8 +539,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 	
 	.character-option img[src$=".gif"] {
-	    animation: none !important; /* Clear any existing animation */
-	    animation-iteration-count: infinite !important; /* Force infinite loops */
+	    animation: play 1s steps(1) infinite;
 	}
 
     .character-option p {
