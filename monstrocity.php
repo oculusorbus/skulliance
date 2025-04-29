@@ -155,7 +155,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 	
 	.character img[src$=".gif"] {
-	    animation: play 1s steps(1) infinite;
+	    animation: none !important; /* Clear any existing animation */
+	    animation-iteration-count: infinite !important; /* Force infinite loops */
 	}
     
     .character p{
@@ -534,7 +535,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 	
 	.character-option img[src$=".gif"] {
-	    animation: play 1s steps(1) infinite;
+	    animation: none !important; /* Clear any existing animation */
+	    animation-iteration-count: infinite !important; /* Force infinite loops */
 	}
 
     .character-option p {
