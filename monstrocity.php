@@ -153,15 +153,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    filter: drop-shadow(2px 5px 10px #000);
 	    min-height: 265px;
 	}
-	
-	.character img[src$=".gif"] {
-	    animation: restart 0.1s step-end infinite !important;
-	}
-
-	@keyframes restart {
-	    0% { transform: scale(1); }
-	    100% { transform: scale(1); }
-	}
     
     .character p{
       font-weight: bold;
@@ -536,10 +527,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    border-radius: 5px;
 	    -webkit-filter: drop-shadow(2px 5px 10px #000);
 	    filter: drop-shadow(2px 5px 10px #000);
-	}
-	
-	.character-option img[src$=".gif"] {
-	    animation: restart 0.1s step-end infinite !important;
 	}
 
     .character-option p {
