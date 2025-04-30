@@ -35,7 +35,7 @@ function getBosses($conn) {
                 b.size,
                 b.powerup,
                 b.bounty,
-                b.currency,
+                p.currency,
                 b.extension
             FROM bosses b
             INNER JOIN projects p ON b.project_id = p.id
