@@ -17,6 +17,7 @@ function getBosses($conn) {
     // Initialize query variables for error logging
     $sql = '';
     $healthSql = '';
+    $countSql = '';
     $nftsSql = '';
 
     try {
@@ -46,6 +47,12 @@ function getBosses($conn) {
             throw new Exception('Query failed: ' . $conn->error);
         }
         $results = $result->fetch_all(MYSQLI_ASSOC);
+
+        // Check if no bosses exist
+        if (empty($results)) {
+            echo json_encode([]);
+            return;
+        }
 
         // Query 2: Fetch player health for the user
         $healthSql = "
@@ -126,7 +133,7 @@ function getBosses($conn) {
             // Check if player can fight (owns matching NFT)
             $canFight = in_array($row['policy'], $userPolicies);
 
-            // Get player health
+            // Get player health (default 1000 if no record)
             $playerHealth = isset($healthMap[$row['id']]) ? $healthMap[$row['id']] : 1000;
 
             $bosses[] = [
@@ -157,7 +164,7 @@ function getBosses($conn) {
 
     } catch (Exception $e) {
         // Log error for debugging
-        error_log("SQL Error in getBosses: " . $e->getMessage() . "\nMain Query: " . $sql . "\nHealth Query: " . $healthSql . "\nNFTs Query: " . $nftsSql);
+        error_log("SQL Error in getBosses: " . $e->getMessage() . "\nMain Query: " . $sql . "\nHealth Query: " . $healthSql . "\nCount Query: " . $countSql . "\nNFTs Query: " . $nftsSql);
         http_response_code(500);
         echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
     }
