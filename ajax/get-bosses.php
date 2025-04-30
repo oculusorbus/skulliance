@@ -79,7 +79,7 @@ function getBosses($conn) {
                 boss_id,
                 COUNT(DISTINCT user_id) AS player_count
             FROM encounters
-            WHERE rewarded = FALSE
+            WHERE reward = 0
             GROUP BY boss_id
         ";
         $countResult = $conn->query($countSql);
