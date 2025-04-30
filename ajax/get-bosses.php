@@ -16,7 +16,7 @@ function getBosses($conn) {
 
     // SQL query to fetch bosses, player health, and player count
     $sql = "
-		SELECT 
+        SELECT 
             p.name AS project_name,
             c.policy_id AS policy_id,
             b.id,
@@ -31,14 +31,11 @@ function getBosses($conn) {
             b.bounty,
             b.currency,
             b.extension,
-            h.health AS player_health,
-            COUNT(DISTINCT e.user_id) AS player_count
+            h.health AS player_health
         FROM bosses b
         INNER JOIN projects p ON b.project_id = p.id
         INNER JOIN collections c ON b.policy_id = c.policy_id
         LEFT JOIN health h ON h.boss_id = b.id AND h.user_id = :userId
-        LEFT JOIN encounters e ON e.boss_id = b.id AND e.rewarded = FALSE
-        GROUP BY b.id
     ";
 
     try {
