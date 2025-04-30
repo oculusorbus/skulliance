@@ -124,13 +124,13 @@ function getBosses($conn) {
             $multiplier = max(1.0, 2.0 - ($playerCount / $maxPlayerCount));
 
             // Slugify boss name (e.g., "Jack O'Treat" -> "jack-o-treat")
-            $slugifiedName = strtolower(preg_replace(
-                ["/\s+/", "/\'/", "/[^a-z0-9]+/"],
-                ["-", "-", "-"],
-                trim($row['boss_name'])
-            ));
+            $slugifiedName = strtolower($row['boss_name']);
+            $slugifiedName = preg_replace(
+                ["/\s+/", "/\'/", "/[^a-z0-9\-]+/", "/-+/"], 
+                ["-", "", "-", "-"], 
+                $slugifiedName
+            );
             $slugifiedName = trim($slugifiedName, '-');
-            $slugifiedName = preg_replace("/-+/", "-", $slugifiedName);
 
             // Check if player can fight (owns matching NFT)
             $canFight = in_array($row['policy'], $userPolicies);
