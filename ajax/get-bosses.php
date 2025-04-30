@@ -66,10 +66,10 @@ function getBosses($conn) {
         }
         $healthStmt->bind_param('i', $userId);
         $healthStmt->execute();
-        $healthResult = $healthStmt->get_result();
+        $healthStmt->bind_result($bossId, $health);
         $healthMap = [];
-        while ($healthRow = $healthResult->fetch_assoc()) {
-            $healthMap[$healthRow['boss_id']] = (int)$healthRow['health'];
+        while ($healthStmt->fetch()) {
+            $healthMap[$bossId] = (int)$health;
         }
         $healthStmt->close();
 
@@ -109,10 +109,10 @@ function getBosses($conn) {
         }
         $nftsStmt->bind_param('i', $userId);
         $nftsStmt->execute();
-        $nftsResult = $nftsStmt->get_result();
+        $nftsStmt->bind_result($policy);
         $userPolicies = [];
-        while ($row = $nftsResult->fetch_assoc()) {
-            $userPolicies[] = $row['policy'];
+        while ($nftsStmt->fetch()) {
+            $userPolicies[] = $policy;
         }
         $nftsStmt->close();
 
@@ -133,8 +133,8 @@ function getBosses($conn) {
             // Check if player can fight (owns matching NFT)
             $canFight = in_array($row['policy'], $userPolicies);
 
-            // Get player health (default 1000 if no record)
-            $playerHealth = isset($healthMap[$row['id']]) ? $healthMap[$row['id']] : 1000;
+            // Get player health (null if no record, to be set by NFT selection)
+            $playerHealth = isset($healthMap[$row['id']]) ? $healthMap[$row['id']] : null;
 
             $bosses[] = [
                 'id' => (int)$row['id'],
@@ -143,7 +143,7 @@ function getBosses($conn) {
                 'name' => $row['boss_name'],
                 'health' => (int)$row['health'],
                 'maxHealth' => (int)$row['max_health'],
-                'strength' => (int)$row['strength'],
+                'strength' => (int)$row['实力'],
                 'speed' => $row['speed'] ? (int)$row['speed'] : null,
                 'tactics' => (int)$row['tactics'],
                 'size' => $row['size'],
