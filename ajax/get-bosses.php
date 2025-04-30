@@ -16,7 +16,7 @@ function getBosses($conn) {
 
     // SQL query to fetch bosses, player health, and player count
     $sql = "
-        SELECT 
+		SELECT 
             p.name AS project_name,
             c.policy_id AS policy_id,
             b.id,
@@ -32,13 +32,7 @@ function getBosses($conn) {
             b.currency,
             b.extension,
             h.health AS player_health,
-            COUNT(DISTINCT e.user_id) AS player_count,
-            EXISTS (
-                SELECT 1 
-                FROM nfts n 
-                INNER JOIN collections c2 ON n.collection_id = c2.id 
-                WHERE n.user_id = :userId AND c2.policy_id = c.policy_id
-            ) AS can_fight
+            COUNT(DISTINCT e.user_id) AS player_count
         FROM bosses b
         INNER JOIN projects p ON b.project_id = p.id
         INNER JOIN collections c ON b.policy_id = c.policy_id
