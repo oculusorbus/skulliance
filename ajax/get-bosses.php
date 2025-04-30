@@ -15,7 +15,7 @@ function getBosses($conn) {
     }
 
     // SQL query to fetch bosses, player health, and player count
-    $sql = "
+	$sql = "
         SELECT 
             p.name AS project_name,
             c.policy_id AS policy_id,
@@ -40,8 +40,9 @@ function getBosses($conn) {
 
     try {
         // Prepare and execute query
-        $stmt = $conn->prepare($sql);
-        $stmt->execute(['userId' => $userId]);
+		$stmt = $conn->prepare($sql);
+        $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
 
         // Calculate participation multipliers
         $bosses = [];
