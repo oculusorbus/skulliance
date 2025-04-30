@@ -143,7 +143,7 @@ function getBosses($conn) {
                 'name' => $row['boss_name'],
                 'health' => (int)$row['health'],
                 'maxHealth' => (int)$row['max_health'],
-                'strength' => (int)$row['实力'],
+                'strength' => (int)$row['strength'],
                 'speed' => $row['speed'] ? (int)$row['speed'] : null,
                 'tactics' => (int)$row['tactics'],
                 'size' => $row['size'],
