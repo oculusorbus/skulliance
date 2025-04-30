@@ -105,6 +105,8 @@ function getBosses($conn) {
     }
 }
 
+getBosses($conn);
+
 // Close DB Connection
 $conn->close();
 ?>
