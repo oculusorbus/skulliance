@@ -14,29 +14,33 @@ function getBosses($conn) {
         return;
     }
 
-    // Query 1: Fetch boss data
-    $sql = "
-        SELECT 
-            p.name AS project_name,
-            c.policy_id AS policy_id,
-            b.id,
-            b.name AS boss_name,
-            b.health,
-            b.max_health,
-            b.strength,
-            b.speed,
-            b.tactics,
-            b.size,
-            b.powerup,
-            b.bounty,
-            b.currency,
-            b.extension
-        FROM bosses b
-        INNER JOIN projects p ON b.project_id = p.id
-        INNER JOIN collections c ON b.policy_id = c.policy_id
-    ";
+    // Initialize query variables for error logging
+    $sql = '';
+    $healthSql = '';
+    $nftsSql = '';
 
     try {
+        // Query 1: Fetch boss data
+        $sql = "
+            SELECT 
+                p.name AS project_name,
+                c.policy AS policy,
+                b.id,
+                b.name AS boss_name,
+                b.health,
+                b.max_health,
+                b.strength,
+                b.speed,
+                b.tactics,
+                b.size,
+                b.powerup,
+                b.bounty,
+                b.currency,
+                b.extension
+            FROM bosses b
+            INNER JOIN projects p ON b.project_id = p.id
+            INNER JOIN collections c ON b.policy = c.policy
+        ";
         $result = $conn->query($sql);
         if (!$result) {
             throw new Exception('Query failed: ' . $conn->error);
@@ -85,9 +89,9 @@ function getBosses($conn) {
             $maxPlayerCount = max($maxPlayerCount, $count['player_count']);
         }
 
-        // Query 4: Fetch user’s eligible policy_ids
+        // Query 4: Fetch user’s eligible policies
         $nftsSql = "
-            SELECT DISTINCT c.policy_id
+            SELECT DISTINCT c.policy
             FROM nfts n
             INNER JOIN collections c ON n.collection_id = c.id
             WHERE n.user_id = ?
@@ -99,9 +103,9 @@ function getBosses($conn) {
         $nftsStmt->bind_param('i', $userId);
         $nftsStmt->execute();
         $nftsResult = $nftsStmt->get_result();
-        $userPolicyIds = [];
+        $userPolicies = [];
         while ($row = $nftsResult->fetch_assoc()) {
-            $userPolicyIds[] = $row['policy_id'];
+            $userPolicies[] = $row['policy'];
         }
         $nftsStmt->close();
 
@@ -120,7 +124,7 @@ function getBosses($conn) {
             ));
 
             // Check if player can fight (owns matching NFT)
-            $canFight = in_array($row['policy_id'], $userPolicyIds);
+            $canFight = in_array($row['policy'], $userPolicies);
 
             // Get player health
             $playerHealth = isset($healthMap[$row['id']]) ? $healthMap[$row['id']] : 1000;
@@ -128,7 +132,7 @@ function getBosses($conn) {
             $bosses[] = [
                 'id' => (int)$row['id'],
                 'projectName' => $row['project_name'],
-                'policyId' => $row['policy_id'],
+                'policy' => $row['policy'],
                 'name' => $row['boss_name'],
                 'health' => (int)$row['health'],
                 'maxHealth' => (int)$row['max_health'],
