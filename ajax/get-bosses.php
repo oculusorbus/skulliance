@@ -14,49 +14,53 @@ function getBosses($conn) {
         return;
     }
 
-    try {
-        // Ensure native prepared statements
-        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    // Query 1: Fetch boss data
+    $sql = "
+        SELECT 
+            p.name AS project_name,
+            c.policy_id AS policy_id,
+            b.id,
+            b.name AS boss_name,
+            b.health,
+            b.max_health,
+            b.strength,
+            b.speed,
+            b.tactics,
+            b.size,
+            b.powerup,
+            b.bounty,
+            b.currency,
+            b.extension
+        FROM bosses b
+        INNER JOIN projects p ON b.project_id = p.id
+        INNER JOIN collections c ON b.policy_id = c.policy_id
+    ";
 
-        // Query 1: Fetch boss data (without player health)
-        $sql = "
-            SELECT 
-                p.name AS project_name,
-                c.policy_id AS policy_id,
-                b.id,
-                b.name AS boss_name,
-                b.health,
-                b.max_health,
-                b.strength,
-                b.speed,
-                b.tactics,
-                b.size,
-                b.powerup,
-                b.bounty,
-                b.currency,
-                b.extension
-            FROM bosses b
-            INNER JOIN projects p ON b.project_id = p.id
-            INNER JOIN collections c ON b.policy_id = c.policy_id
-        ";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $result = $conn->query($sql);
+        if (!$result) {
+            throw new Exception('Query failed: ' . $conn->error);
+        }
+        $results = $result->fetch_all(MYSQLI_ASSOC);
 
         // Query 2: Fetch player health for the user
         $healthSql = "
             SELECT boss_id, health
             FROM health
-            WHERE user_id = :userId
+            WHERE user_id = ?
         ";
         $healthStmt = $conn->prepare($healthSql);
-        $healthStmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+        if (!$healthStmt) {
+            throw new Exception('Prepare failed: ' . $conn->error);
+        }
+        $healthStmt->bind_param('i', $userId);
         $healthStmt->execute();
-        $healthResults = $healthStmt->fetchAll(PDO::FETCH_ASSOC);
+        $healthResult = $healthStmt->get_result();
         $healthMap = [];
-        foreach ($healthResults as $healthRow) {
+        while ($healthRow = $healthResult->fetch_assoc()) {
             $healthMap[$healthRow['boss_id']] = (int)$healthRow['health'];
         }
+        $healthStmt->close();
 
         // Query 3: Fetch player counts for participation multiplier
         $countSql = "
@@ -67,9 +71,11 @@ function getBosses($conn) {
             WHERE rewarded = FALSE
             GROUP BY boss_id
         ";
-        $countStmt = $conn->prepare($countSql);
-        $countStmt->execute();
-        $playerCounts = $countStmt->fetchAll(PDO::FETCH_ASSOC);
+        $countResult = $conn->query($countSql);
+        if (!$countResult) {
+            throw new Exception('Query failed: ' . $conn->error);
+        }
+        $playerCounts = $countResult->fetch_all(MYSQLI_ASSOC);
 
         // Build player count map
         $playerCountMap = [];
@@ -84,12 +90,20 @@ function getBosses($conn) {
             SELECT DISTINCT c.policy_id
             FROM nfts n
             INNER JOIN collections c ON n.collection_id = c.id
-            WHERE n.user_id = :userId
+            WHERE n.user_id = ?
         ";
         $nftsStmt = $conn->prepare($nftsSql);
-        $nftsStmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+        if (!$nftsStmt) {
+            throw new Exception('Prepare failed: ' . $conn->error);
+        }
+        $nftsStmt->bind_param('i', $userId);
         $nftsStmt->execute();
-        $userPolicyIds = array_column($nftsStmt->fetchAll(PDO::FETCH_ASSOC), 'policy_id');
+        $nftsResult = $nftsStmt->get_result();
+        $userPolicyIds = [];
+        while ($row = $nftsResult->fetch_assoc()) {
+            $userPolicyIds[] = $row['policy_id'];
+        }
+        $nftsStmt->close();
 
         // Process results
         $bosses = [];
@@ -139,7 +153,7 @@ function getBosses($conn) {
 
     } catch (Exception $e) {
         // Log error for debugging
-        error_log("SQL Error in getBosses: " . $e->getMessage() . "\nMain Query: " . $sql . "\nHealth Query: " . $healthSql);
+        error_log("SQL Error in getBosses: " . $e->getMessage() . "\nMain Query: " . $sql . "\nHealth Query: " . $healthSql . "\nNFTs Query: " . $nftsSql);
         http_response_code(500);
         echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
     }
