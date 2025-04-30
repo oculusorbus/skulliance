@@ -5,6 +5,7 @@ session_start();
 $member = false;
 $elite = false;
 $innercircle = false;
+$dev = false;
 
 // Restore session from cookie if logged out
 if (!isset($_SESSION['logged_in'])) {
@@ -37,6 +38,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
             }
         }
     }
+	if($_SESSION['userData']['discord_id'] == "772831523899965440"){
+		$dev = true;
+	}
 }
 ?>
 <!DOCTYPE html>
@@ -105,6 +109,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       height: auto;
       margin: 0 auto 10px;
       display: block;
+      -webkit-filter: drop-shadow(2px 5px 10px #000);
+      filter: drop-shadow(2px 5px 10px #000);
     }
 
     .turn-indicator {
@@ -1183,6 +1189,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "happypeople",
+	          project: "Netanel Cohen",
+	          title: "Happy People",
+	          policyIds: "ac9067e22a857ee2e4ea20f77c6c047f78a11511f285d30d81857196",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "maxi",
 	          project: "Maxingo",
 	          title: "Digital Hell Citizens 2: Fighters",
@@ -1207,6 +1223,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          project: "Ohh Meed",
 	          title: "Shorty Verse Engaged",
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "beelzebub",
+	          project: "Ritual",
+	          title: "Beelzebub",
+	          policyIds: "cd3a338f248a8ccb484032327b499e90b0303c499beea47e37039bf2",
 	          orientations: "Random",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
@@ -1261,6 +1287,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "wave",
+	          project: "Squashua",
+	          title: "Wavy Ape Vibe Empire",
+	          policyIds: "d458857ae7d121bfb5af64d78c0454a519133248e030a0225734452b",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    },
@@ -1296,6 +1332,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "",
 			  background: true,
 			  extension: "mov" // Applies only to character images
+	        },
+	        {
+	          value: "handies",
+	          project: "Handies",
+	          title: "Handies",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "animeorigins",
+	          project: "Nel",
+	          title: "Anime Origins",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    }
@@ -1361,6 +1417,28 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+			 <?php if($dev) { ?>
+	        {
+	          value: "j2",
+	          project: "J2",
+	          title: "J2",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+			<?php } ?>
+	        {
+	          value: "jetchicken",
+	          project: "Jet Chicken",
+	          title: "Jet Chicken",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
