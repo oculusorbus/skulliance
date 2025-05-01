@@ -2593,20 +2593,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      console.time('showCharacterSelect');
 	      const container = document.getElementById('character-select-container');
 	      const optionsDiv = document.getElementById('character-options');
-	      optionsDiv.innerHTML = ''; // Clear previous content
+	      optionsDiv.innerHTML = '';
 	      container.style.display = 'block';
-		  
-		  const selectBossButton = document.getElementById('select-boss-button');
-		  if (this.selectedBoss && window.isLoggedIn) {
-		      selectBossButton.style.display = 'inline-block';
-		      selectBossButton.onclick = () => {
-		          const container = document.getElementById('character-select-container');
-		          container.style.display = 'none';
-		          showBossSelect(this); // Assuming this function exists
-		      };
-		  } else {
-		      selectBossButton.style.display = 'none';
-		  }
+
+	      const selectBossButton = document.getElementById('select-boss-button');
+	      if (this.selectedBoss && window.isLoggedIn) {
+	          selectBossButton.style.display = 'inline-block';
+	          selectBossButton.onclick = () => {
+	              container.style.display = 'none';
+	              showBossSelect(this);
+	          };
+	      } else {
+	          selectBossButton.style.display = 'none';
+	      }
 
 	      if (!this.playerCharacters || this.playerCharacters.length === 0) {
 	          console.warn('showCharacterSelect: No characters available, using fallback');
@@ -2644,16 +2643,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              `<p>Power-Up: ${character.powerup}</p>`;
 	          option.addEventListener('click', () => {
 	              console.log('showCharacterSelect: Character selected: ' + character.name);
-	              console.log('showCharacterSelect: Checking for selectedBoss:', this.selectedBoss); // New log
+	              console.log('showCharacterSelect: Checking for selectedBoss:', this.selectedBoss);
 	              container.style.display = 'none';
-	              if (this.selectedBoss) {
-	                  console.log('showCharacterSelect: Boss battle flow - calling setSelectedCharacter');
-	                  this.setSelectedCharacter(character);
-	              } else if (isInitial) {
-	                  console.log('showCharacterSelect: Normal flow - setting player1 and starting game');
-	                  this.player1 = { ...character };
-	                  console.log('showCharacterSelect: this.player1 set: ' + this.player1.name);
-	                  this.initGame();
+	              if (isInitial) {
+	                  console.log('showCharacterSelect: Initial selection');
+	                  if (this.selectedBoss) {
+	                      console.log('showCharacterSelect: Boss battle initial - calling setSelectedCharacter');
+	                      this.setSelectedCharacter(character);
+	                  } else {
+	                      console.log('showCharacterSelect: Theme game initial - setting player1 and starting game');
+	                      this.player1 = { ...character };
+	                      console.log('showCharacterSelect: this.player1 set: ' + this.player1.name);
+	                      this.initGame();
+	                  }
 	              } else {
 	                  console.log('showCharacterSelect: Swapping character during game');
 	                  this.swapPlayerCharacter(character);
