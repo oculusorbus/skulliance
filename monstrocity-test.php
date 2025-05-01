@@ -2455,12 +2455,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              `<p>Power-Up: ${character.powerup}</p>`;
 	          option.addEventListener('click', () => {
 	              console.log('showCharacterSelect: Character selected: ' + character.name);
+	              console.log('showCharacterSelect: Checking for selectedBoss:', this.selectedBoss); // New log
 	              container.style.display = 'none';
-	              if (isInitial) {
+	              if (this.selectedBoss) {
+	                  console.log('showCharacterSelect: Boss battle flow - calling setSelectedCharacter');
+	                  this.setSelectedCharacter(character);
+	              } else if (isInitial) {
+	                  console.log('showCharacterSelect: Normal flow - setting player1 and starting game');
 	                  this.player1 = { ...character };
 	                  console.log('showCharacterSelect: this.player1 set: ' + this.player1.name);
 	                  this.initGame();
 	              } else {
+	                  console.log('showCharacterSelect: Swapping character during game');
 	                  this.swapPlayerCharacter(character);
 	              }
 	          });
