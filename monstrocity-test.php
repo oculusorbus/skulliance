@@ -393,10 +393,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    cursor: pointer;
 	    font-weight: bold;
 	    margin-bottom: 20px;
-	    min-width: 150px; /* Still sets a minimum, but width takes precedence */
-	    width: 160px; /* Fixed width for both buttons */
+	    min-width: 150px;
 	    font-size: 13px;
-	    text-align: center; /* Centers the text for a polished look */
 	}
 	
 	button:hover {
