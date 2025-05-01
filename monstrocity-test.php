@@ -1938,7 +1938,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('  Name:', boss.name);
 		    console.log('  Health:', boss.health, '/', boss.maxHealth);
 		    console.log('  Strength:', boss.strength);
-		    this.selectedBoss = { ...boss, type: "Boss" }; // Override type to "Boss"
+		    this.selectedBoss = boss;
 		    console.log(`MonstrocityMatch3: Selected boss set to ${boss.name}`);
 		}
 
@@ -1976,7 +1976,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        speed: this.selectedBoss.speed || 4,
 		        tactics: this.selectedBoss.tactics || 4,
 		        size: this.selectedBoss.size || 'Medium',
-		        type: 'Base',
+		        type: 'Boss',
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme,
 		        imageUrl: this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png',
