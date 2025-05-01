@@ -2163,7 +2163,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    console.time('updateTheme_' + newTheme);
 			    const self = this;
 			    this.theme = newTheme;
-			    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
+			    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
 			    localStorage.setItem('gameTheme', this.theme);
 			    this.setBackground();
 
