@@ -1935,40 +1935,64 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        this.startBossBattle();
 	    }
 
-	    // New placeholder method for starting the boss battle
-	    startBossBattle() {
-	        console.log('Starting boss battle...');
-	        console.log(`Player: ${this.selectedCharacter.name} vs Boss: ${this.selectedBoss.name}`);
+		startBossBattle() {
+		    // Log that the boss battle is starting
+		    console.log('Starting boss battle...');
+		    console.log('Selected Character:', this.selectedCharacter.name);
+		    console.log('Selected Boss:', this.selectedBoss.name);
 
-	        // Map boss data to character config format expected by createCharacter
-	        const bossConfig = {
-	            name: this.selectedBoss.name,
-	            strength: this.selectedBoss.strength,
-	            speed: this.selectedBoss.speed,
-	            tactics: this.selectedBoss.tactics,
-	            size: this.selectedBoss.size,
-	            type: 'Base', // Bosses are treated as Base type for now
-	            powerup: this.selectedBoss.powerup || 'Minor Regen',
-	            theme: this.theme // Use current theme
-	        };
+		    // Prepare the boss data to create a character object
+		    const bossConfig = {
+		        name: this.selectedBoss.name,
+		        strength: this.selectedBoss.strength,
+		        speed: this.selectedBoss.speed,
+		        tactics: this.selectedBoss.tactics,
+		        size: this.selectedBoss.size,
+		        type: 'Base', // Bosses are treated as Base type
+		        powerup: this.selectedBoss.powerup || 'Minor Regen',
+		        theme: this.theme // Use the current theme (no changes)
+		    };
 
-	        // Create character objects for the battle
-	        this.player1 = { ...this.selectedCharacter }; // Use a copy to avoid modifying the original
-	        this.player2 = this.createCharacter(bossConfig);
-	        this.player2.health = this.selectedBoss.health; // Override health with boss's health
-	        this.player2.maxHealth = this.selectedBoss.maxHealth;
+		    // Set player1 to the selected character and player2 to the boss
+		    this.player1 = { ...this.selectedCharacter }; // Copy the selected character
+		    this.player2 = this.createCharacter(bossConfig); // Create a character from the boss data
+		    this.player2.health = this.selectedBoss.health; // Set boss health
+		    this.player2.maxHealth = this.selectedBoss.maxHealth; // Set boss max health
 
-	        // Reset game state
-	        this.currentLevel = 1; // Boss battles don't use level progression
-	        this.grandTotalScore = 0; // Reset score for boss battle
-	        this.roundStats = [];
+		    // Log the details of player1 and player2 to verify they are loaded correctly
+		    console.log('Player 1 (Selected Character) Details:');
+		    console.log('  Name:', this.player1.name);
+		    console.log('  Health:', this.player1.health, '/', this.player1.maxHealth);
+		    console.log('  Strength:', this.player1.strength);
+		    console.log('  Speed:', this.player1.speed);
+		    console.log('  Tactics:', this.player1.tactics);
+		    console.log('  Size:', this.player1.size);
+		    console.log('  Type:', this.player1.type);
+		    console.log('  Powerup:', this.player1.powerup);
+		    console.log('  Theme:', this.player1.theme);
 
-	        // Start the game using existing initGame logic
-	        this.initGame();
+		    console.log('Player 2 (Boss) Details:');
+		    console.log('  Name:', this.player2.name);
+		    console.log('  Health:', this.player2.health, '/', this.player2.maxHealth);
+		    console.log('  Strength:', this.player2.strength);
+		    console.log('  Speed:', this.player2.speed);
+		    console.log('  Tactics:', this.player2.tactics);
+		    console.log('  Size:', this.player2.size);
+		    console.log('  Type:', this.player2.type);
+		    console.log('  Powerup:', this.player2.powerup);
+		    console.log('  Theme:', this.player2.theme);
 
-	        // Log the battle start
-	        log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
-	    }
+		    // Reset game state for the boss battle
+		    this.currentLevel = 1; // Reset level
+		    this.grandTotalScore = 0; // Reset score
+		    this.roundStats = [];
+
+		    // Start the game
+		    this.initGame();
+
+		    // Log the start of the battle
+		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
+		}
 		
 		// Simple hash function for tamper-proofing
 		createBoardHash(board) {
