@@ -1663,116 +1663,119 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
 	  
 	  function showBossSelect(game) {
-	    console.time('showBossSelect');
-	    console.log('Session user ID:', window.isLoggedIn ? 'User logged in' : 'No user logged in');
-	    console.log('Current user session data:', <?php echo json_encode($_SESSION['userData'] ?? 'No session data'); ?>); // New: Log full session data
-	    const container = document.getElementById('boss-select-container');
-	    const themeContainer = document.getElementById('theme-select-container');
-	    const characterContainer = document.getElementById('character-select-container');
+	      console.time('showBossSelect');
+	      const container = document.getElementById('boss-select-container');
+	      const themeContainer = document.getElementById('theme-select-container');
+	      const characterContainer = document.getElementById('character-select-container');
 
-	    // Rebuild container with Back to Themes button at the top
-	    container.innerHTML = `
-	      <h2>Select Boss</h2>
-	      <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
-	      <div id="boss-options"></div>
-	    `;
-	    const optionsDiv = document.getElementById('boss-options');
+	      container.innerHTML = `
+	          <h2>Select Boss</h2>
+	          <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
+	          <div id="boss-options"></div>
+	      `;
+	      const optionsDiv = document.getElementById('boss-options');
 
-	    // Show boss selection, hide other modals
-	    container.style.display = 'block';
-	    themeContainer.style.display = 'none';
-	    characterContainer.style.display = 'none';
-
-	    // Add close button handler
-	    const closeButton = document.getElementById('boss-close-button');
-	    closeButton.addEventListener('click', () => {
-	      container.style.display = 'none';
-	      themeContainer.style.display = 'block';
+	      container.style.display = 'block';
+	      themeContainer.style.display = 'none';
 	      characterContainer.style.display = 'none';
-	    });
 
-	    // Fetch boss data
-	    fetch('ajax/get-bosses.php', {
-	      method: 'GET',
-	      headers: { 'Content-Type': 'application/json' }
-	    })
-	      .then(response => {
-	        if (!response.ok) {
-	          throw new Error(`HTTP error! Status: ${response.status}`);
-	        }
-	        return response.json();
-	      })
-	      .then(bosses => {
-	        if (!Array.isArray(bosses) || bosses.length === 0) {
-	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No bosses available.</p>';
-	          console.warn('showBossSelect: No bosses returned');
-	          return;
-	        }
-
-	        const fragment = document.createDocumentFragment();
-	        bosses.forEach(boss => {
-	          const option = document.createElement('div');
-	          option.className = `boss-option ${boss.canFight ? '' : 'disabled'}`;
-	          const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
-	          option.innerHTML = `
-	            <img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'">
-	            <p><strong>${boss.name}</strong></p>
-	            <table>
-	              <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
-	              <tr><td>Strength:</td><td>${boss.strength}</td></tr>
-	              <tr><td>Speed:</td><td>${boss.speed}</td></tr>
-	              <tr><td>Tactics:</td><td>${boss.tactics}</td></tr>
-	              <tr><td>Size:</td><td>${boss.size}</td></tr>
-	              <tr><td>Powerup:</td><td>${boss.powerup}</td></tr>
-	              <tr><td>Players:</td><td>${boss.playerCount}</td></tr>
-	              <tr><td>Multiplier:</td><td>${boss.participationMultiplier}</td></tr>
-	              <tr><td>Bounty:</td><td>${boss.bounty} ${boss.currency}</td></tr>
-	            </table>
-	          `;
-	          if (boss.canFight) {
-	            option.addEventListener('click', () => {
-	              console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
-	              // Store the selected boss
-	              game.setSelectedBoss(boss);
-	              // Fetch NFT characters using the boss's policy
-	              fetch(`ajax/get-nft-assets.php?policyId=${encodeURIComponent(boss.policy)}`, {
-	                method: 'GET',
-	                headers: { 'Content-Type': 'application/json' }
-	              })
-	                .then(response => {
-	                  if (!response.ok) {
-	                    throw new Error(`HTTP error! Status: ${response.status}`);
-	                  }
-	                  return response.json();
-	                })
-	                .then(characters => {
-	                  if (!Array.isArray(characters) || characters.length === 0) {
-	                    alert('No NFT characters available for this boss.');
-	                    console.warn('showBossSelect: No NFT characters returned');
-	                    return;
-	                  }
-	                  // Hide boss select, show character select
-	                  container.style.display = 'none';
-	                  showCharacterSelect(characters, game);
-	                })
-	                .catch(error => {
-	                  console.error('showBossSelect: Error fetching NFT characters:', error);
-	                  alert('Error loading NFT characters. Please try again.');
-	                });
-	            });
-	          }
-	          fragment.appendChild(option);
-	        });
-
-	        optionsDiv.appendChild(fragment);
-	        console.log(`showBossSelect: Rendered ${bosses.length} bosses`);
-	      })
-	      .catch(error => {
-	        console.error('showBossSelect: Error fetching bosses:', error);
-	        optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Error loading bosses. Please try again.</p>';
+	      const closeButton = document.getElementById('boss-close-button');
+	      closeButton.addEventListener('click', () => {
+	          container.style.display = 'none';
+	          themeContainer.style.display = 'block';
+	          characterContainer.style.display = 'none';
 	      });
 
-	    console.timeEnd('showBossSelect');
+	      fetch('ajax/get-bosses.php', {
+	          method: 'GET',
+	          headers: { 'Content-Type': 'application/json' }
+	      })
+	          .then(response => {
+	              if (!response.ok) {
+	                  throw new Error(`HTTP error! Status: ${response.status}`);
+	              }
+	              return response.json();
+	          })
+	          .then(bosses => {
+	              if (!Array.isArray(bosses) || bosses.length === 0) {
+	                  optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No bosses available.</p>';
+	                  console.warn('showBossSelect: No bosses returned');
+	                  return;
+	              }
+
+	              const fragment = document.createDocumentFragment();
+	              bosses.forEach(boss => {
+	                  const option = document.createElement('div');
+	                  option.className = `boss-option ${boss.canFight ? '' : 'disabled'}`;
+	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
+	                  option.innerHTML = `
+	                      <img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'">
+	                      <p><strong>${boss.name}</strong></p>
+	                      <table>
+	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
+	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
+	                          <tr><td>Speed:</td><td>${boss.speed}</td></tr>
+	                          <tr><td>Tactics:</td><td>${boss.tactics}</td></tr>
+	                          <tr><td>Size:</td><td>${boss.size}</td></tr>
+	                          <tr><td>Powerup:</td><td>${boss.powerup}</td></tr>
+	                          <tr><td>Players:</td><td>${boss.playerCount}</td></tr>
+	                          <tr><td>Multiplier:</td><td>${boss.participationMultiplier}</td></tr>
+	                          <tr><td>Bounty:</td><td>${boss.bounty} ${boss.currency}</td></tr>
+	                      </table>
+	                  `;
+	                  if (boss.canFight) {
+	                      option.addEventListener('click', () => {
+	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
+	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
+	                          game.setSelectedBoss(boss);
+	                          fetch('ajax/get-nft-assets.php', {
+	                              method: 'POST', // Changed to POST
+	                              headers: { 'Content-Type': 'application/json' },
+	                              body: JSON.stringify({
+	                                  policyIds: [boss.policy], // Send as an array
+	                                  theme: game.theme // Include the theme, matching the init method
+	                              })
+	                          })
+	                              .then(response => {
+	                                  if (!response.ok) {
+	                                      throw new Error(`HTTP error! Status: ${response.status}`);
+	                                  }
+	                                  return response.json();
+	                              })
+	                              .then(characters => {
+	                                  console.log('NFT characters response:', characters);
+	                                  if (characters === false) {
+	                                      console.warn('showBossSelect: get-nft-assets.php returned false');
+	                                      alert('No NFT characters available for this boss. The server returned an invalid response.');
+	                                      return;
+	                                  }
+	                                  if (!Array.isArray(characters) || characters.length === 0) {
+	                                      alert('No NFT characters available for this boss.');
+	                                      console.warn('showBossSelect: No NFT characters returned');
+	                                      return;
+	                                  }
+	                                  container.style.display = 'none';
+	                                  game.playerCharacters = characters.map(character => game.createCharacter(character));
+	                                  game.showCharacterSelect(true);
+	                              })
+	                              .catch(error => {
+	                                  console.error('showBossSelect: Error fetching NFT characters:', error);
+	                                  alert('Error loading NFT characters. Please try again.');
+	                              });
+	                      });
+	                  }
+	                  fragment.appendChild(option);
+	              });
+
+	              optionsDiv.appendChild(fragment);
+	              console.log(`showBossSelect: Rendered ${bosses.length} bosses`);
+	          })
+	          .catch(error => {
+	              console.error('showBossSelect: Error fetching bosses:', error);
+	              optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Error loading bosses. Please try again.</p>';
+	          });
+
+	      console.timeEnd('showBossSelect');
 	  }
 	  
 	  const opponentsConfig = [
