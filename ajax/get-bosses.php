@@ -153,7 +153,7 @@ function getBosses($conn) {
                 'bounty' => (int)$row['bounty'],
                 'currency' => $row['currency'],
                 'extension' => $row['extension'],
-                'imageUrl' => "/images/monstrocity/bosses/{$slugifiedName}.{$row['extension']}",
+                'imageUrl' => "images/monstrocity/bosses/{$slugifiedName}.{$row['extension']}",
                 'playerHealth' => $playerHealth,
                 'playerCount' => $playerCount,
                 'participationMultiplier' => round($multiplier, 2),
