@@ -2112,22 +2112,35 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		}
 		
 		refreshBoard() {
-		    console.log('refreshBoard: Refreshing game board for boss battle');
+		    console.log('refreshBoard: Unsticking game board for boss battle');
     
-		    // Reinitialize the board
-		    this.initBoard();
-    
-		    // Reset interaction flags
+		    // Clear stale input states
 		    this.isDragging = false;
 		    this.selectedTile = null;
 		    this.targetTile = null;
 
-		    // Update game state to current turn
+		    // Clear existing tile event listeners
+		    const tiles = document.querySelectorAll('.tile');
+		    tiles.forEach(tile => {
+		        tile.removeEventListener('mousedown', this.handleMouseDown);
+		        tile.removeEventListener('touchstart', this.handleTouchStart);
+		    });
+
+		    // Re-render the current board without changing tiles
+		    this.renderBoard();
+
+		    // Ensure game state and turn indicator are consistent
 		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
 		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
     
-		    // Log the refresh
-		    log('Board refreshed. Continue the battle!');
+		    // Log the action and state for debugging
+		    console.log('refreshBoard: Board state preserved', {
+		        player1: this.player1.name,
+		        player2: this.player2.name,
+		        currentTurn: this.currentTurn.name,
+		        gameState: this.gameState
+		    });
+		    log('Board unstuck. Continue the battle!');
     
 		    // Trigger AI turn if it's the boss's turn
 		    if (this.currentTurn === this.player2) {
