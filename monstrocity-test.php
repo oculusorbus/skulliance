@@ -2015,7 +2015,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    }
 
 		    // Set boss health
-		    this.player2.health = this.selectedBoss.health || this.player2.maxHealth;
+		    this.player2.health = this.selectedBoss.health;
 
 		    // Log player details
 		    console.log('Player 1 Details:', {
