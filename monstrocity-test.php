@@ -1177,6 +1177,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
   	  <p>Leaderboards, Game Saves, and Rewards are Available to Skulliance Stakers</p>
       <button id="theme-select-button">Select Theme</button>
+	  <button id="select-boss-button" style="display: none;">Select Boss</button>
 	  <h2>Select Character</h2>
       <div id="character-options"></div>
     </div>
@@ -2376,7 +2377,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      // Use config.imageUrl if provided (e.g., for bosses), otherwise proceed with existing logic
 	      if (config.imageUrl) {
 	          imageUrl = config.imageUrl;
-	          fallbackUrl = config.fallbackUrl || '/staking/icons/skull.png';
+	          fallbackUrl = config.fallbackUrl || 'icons/skull.png';
 	          orientation = config.orientation || 'Right'; // Default to Right for bosses if not specified
 	      } else if (config.ipfs && config.policyId) {
 	          isNFT = true;
@@ -2414,7 +2415,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              default: typeFolder = 'base';
 	          }
 	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.' + extension;
-	          fallbackUrl = '/staking/icons/skull.png'; // Fallback for non-NFTs
+	          fallbackUrl = 'icons/skull.png'; // Fallback for non-NFTs
 	          orientation = characterDirections[config.name] || 'Left';
 	          // Determine mediaType from extension
 	          if (videoExtensions.includes(extension.toLowerCase())) {
@@ -2488,6 +2489,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const optionsDiv = document.getElementById('character-options');
 	      optionsDiv.innerHTML = ''; // Clear previous content
 	      container.style.display = 'block';
+		  
+		  const selectBossButton = document.getElementById('select-boss-button');
+		  if (this.selectedBoss && window.isLoggedIn) {
+		      selectBossButton.style.display = 'inline-block';
+		      selectBossButton.onclick = () => {
+		          const container = document.getElementById('character-select-container');
+		          container.style.display = 'none';
+		          showBossSelect(this); // Assuming this function exists
+		      };
+		  } else {
+		      selectBossButton.style.display = 'none';
+		  }
 
 	      if (!this.playerCharacters || this.playerCharacters.length === 0) {
 	          console.warn('showCharacterSelect: No characters available, using fallback');
