@@ -3356,7 +3356,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          if (hasMatches) {
 	              this.gameState = "animating";
-	              // afterMove will be called by cascadeTiles via endTurn
+	              // The turn will end naturally after cascades via cascadeTiles calling endTurn
 	          } else {
 	              log("No match, reverting tiles...");
 	              this.sounds.badMove.play();
@@ -3381,7 +3381,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  }
 	                  this.renderBoard();
 	                  this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	                  afterMove();
+	                  // Do not call afterMove() to prevent ending the turn
 	              }, 200);
 	          }
 	      }, 200);
