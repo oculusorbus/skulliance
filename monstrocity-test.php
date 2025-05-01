@@ -998,8 +998,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       </div>
     </div>
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
-    <button id="restart">Restart Level</button>
-    <button id="change-character" style="display: none;">Switch Character</button>
+    <button id="restart" class="game-button">Restart Level</button>
+    <button id="refresh-board" class="game-button" style="display: none;">Refresh Board</button>
+    <button id="change-character" class="game-button" style="display: none;">Switch Character</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
@@ -1950,38 +1951,44 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Selected Boss imageUrl:', this.selectedBoss.imageUrl);
 
 		    // Determine boss orientation
-		    let bossOrientation = this.selectedBoss.orientation || 'Right'; // Fallback to Right if undefined
+		    let bossOrientation = this.selectedBoss.orientation || 'Right';
 		    if (bossOrientation === 'Random') {
 		        bossOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
-		        console.log(`Random orientation resolved to: ${bossOrientation}`);
+		        console.log(`Random boss orientation resolved to: ${bossOrientation}`);
 		    }
 
-		    // Prepare the boss data to create a character object
-		    const bossImageUrl = this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png'; // Fallback if imageUrl is missing
+		    // Ensure player1 orientation
+		    let playerOrientation = this.selectedCharacter.orientation || 'Random';
+		    if (playerOrientation === 'Random') {
+		        playerOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
+		        console.log(`Random player1 orientation resolved to: ${playerOrientation}`);
+		    }
+		    this.selectedCharacter.orientation = playerOrientation;
+
+		    // Prepare the boss data
+		    const bossImageUrl = this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png';
 		    const bossConfig = {
 		        name: this.selectedBoss.name,
 		        strength: this.selectedBoss.strength || 4,
 		        speed: this.selectedBoss.speed || 4,
 		        tactics: this.selectedBoss.tactics || 4,
 		        size: this.selectedBoss.size || 'Medium',
-		        type: 'Base', // Bosses are treated as Base type
+		        type: 'Base',
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme,
 		        imageUrl: `${bossImageUrl}`,
 		        fallbackUrl: 'icons/skull.png',
-		        orientation: bossOrientation // Use the resolved orientation
+		        orientation: bossOrientation
 		    };
 
-		    console.log('Boss Config for creating character:', bossConfig);
-
-		    // Set player1 to the selected character and player2 to the boss
+		    // Set players
 		    this.player1 = { ...this.selectedCharacter };
 		    this.player2 = this.createCharacter(bossConfig);
 		    this.player2.health = this.selectedBoss.health;
 		    this.player2.maxHealth = this.selectedBoss.maxHealth;
 
 		    // Log player details
-		    console.log('Player 1 (Selected Character) Details:', {
+		    console.log('Player 1 Details:', {
 		        Name: this.player1.name,
 		        Health: `${this.player1.health}/${this.player1.maxHealth}`,
 		        Strength: this.player1.strength,
@@ -1993,7 +2000,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        Theme: this.player1.theme,
 		        Orientation: this.player1.orientation
 		    });
-		    console.log('Player 2 (Boss) Details:', {
+		    console.log('Player 2 Details:', {
 		        Name: this.player2.name,
 		        Health: `${this.player2.health}/${this.player2.maxHealth}`,
 		        Strength: this.player2.strength,
@@ -2042,14 +2049,46 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.updateOpponentDisplay();
 
 		    // Apply orientation transforms
-		    if (currentP1Image) currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
-		    if (currentP2Image) currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		    if (currentP1Image) {
+		        currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		        console.log(`startBossBattle: player1 orientation set to ${this.player1.orientation}, transform: ${currentP1Image.style.transform}`);
+		    }
+		    if (currentP2Image) {
+		        currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		        console.log(`startBossBattle: player2 orientation set to ${this.player2.orientation}, transform: ${currentP2Image.style.transform}`);
+		    }
 
 		    this.updateHealth(this.player1);
 		    this.updateHealth(this.player2);
 
 		    battleLog.innerHTML = '';
 		    gameOver.textContent = '';
+
+		    // Toggle buttons for boss battle with null checks
+		    const restartButton = document.getElementById('restart');
+		    const refreshButton = document.getElementById('refresh-board');
+		    if (restartButton) {
+		        restartButton.style.display = 'none';
+		        console.log('startBossBattle: Hid restart button');
+		    } else {
+		        console.warn('startBossBattle: restart button not found');
+		    }
+		    if (refreshButton) {
+		        refreshButton.style.display = 'inline-block';
+		        refreshButton.onclick = () => {
+		            console.log('refresh-board clicked');
+		            this.refreshBoard();
+		        };
+		        console.log('startBossBattle: Showed refresh-board button');
+		    } else {
+		        console.warn('startBossBattle: refresh-board button not found');
+		    }
+
+		    // Preserve existing change-character logic
+		    const changeCharacterButton = document.getElementById('change-character');
+		    if (changeCharacterButton) {
+		        changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
+		    }
 
 		    if (this.player1.size !== 'Medium') {
 		        log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics}!`);
@@ -2065,15 +2104,35 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
 		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
 
-		    if (this.playerCharacters.length > 1) {
-		        document.getElementById('change-character').style.display = 'inline-block';
-		    }
-
 		    if (this.currentTurn === this.player2) {
 		        setTimeout(function() { self.aiTurn(); }, 1000);
 		    }
 
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
+		}
+		
+		refreshBoard() {
+		    console.log('refreshBoard: Refreshing game board for boss battle');
+    
+		    // Reinitialize the board
+		    this.initBoard();
+    
+		    // Reset interaction flags
+		    this.isDragging = false;
+		    this.selectedTile = null;
+		    this.targetTile = null;
+
+		    // Update game state to current turn
+		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
+		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
+    
+		    // Log the refresh
+		    log('Board refreshed. Continue the battle!');
+    
+		    // Trigger AI turn if it's the boss's turn
+		    if (this.currentTurn === this.player2) {
+		        setTimeout(() => this.aiTurn(), 1000);
+		    }
 		}
 		
 		// Simple hash function for tamper-proofing
@@ -2671,6 +2730,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		initGame() {
 		    var self = this;
 		    console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
+		    this.selectedBoss = null;
+		    this.selectedCharacter = null;
+		    console.log('initGame: Cleared selectedBoss and selectedCharacter');
+
 		    var gameContainer = document.querySelector('.game-container');
 		    var gameBoard = document.getElementById('game-board');
 		    gameContainer.style.display = 'block';
@@ -2696,7 +2759,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    this.roundStats = [];
 
-		    // Fetch current elements and remove classes
+		    // Remove winner/loser classes
 		    const currentP1Image = document.getElementById('p1-image');
 		    const currentP2Image = document.getElementById('p2-image');
 		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
@@ -2705,7 +2768,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.updatePlayerDisplay();
 		    this.updateOpponentDisplay();
 
-		    // Use current elements for transform
+		    // Apply orientation transforms
 		    if (currentP1Image) currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
 		    if (currentP2Image) currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
 
@@ -2714,6 +2777,28 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    battleLog.innerHTML = '';
 		    gameOver.textContent = '';
+
+		    // Toggle buttons for theme game with null checks
+		    const restartButton = document.getElementById('restart');
+		    const refreshButton = document.getElementById('refresh-board');
+		    if (restartButton) {
+		        restartButton.style.display = 'inline-block';
+		        console.log('initGame: Showed restart button');
+		    } else {
+		        console.warn('initGame: restart button not found');
+		    }
+		    if (refreshButton) {
+		        refreshButton.style.display = 'none';
+		        console.log('initGame: Hid refresh-board button');
+		    } else {
+		        console.warn('initGame: refresh-board button not found');
+		    }
+
+		    // Preserve existing change-character logic
+		    const changeCharacterButton = document.getElementById('change-character');
+		    if (changeCharacterButton) {
+		        changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
+		    }
 
 		    if (this.player1.size !== 'Medium') {
 		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
@@ -2728,10 +2813,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.initBoard();
 		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
 		    turnIndicator.textContent = 'Level ' + this.currentLevel + ' - ' + (this.currentTurn === this.player1 ? 'Player' : 'Opponent') + '\'s Turn';
-
-		    if (this.playerCharacters.length > 1) {
-		        document.getElementById('change-character').style.display = 'inline-block';
-		    }
 
 		    if (this.currentTurn === this.player2) {
 		        setTimeout(function() { self.aiTurn(); }, 1000);
