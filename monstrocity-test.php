@@ -1904,7 +1904,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.theme = storedTheme && validThemes.includes(storedTheme) ? storedTheme : 
 		                 initialTheme && validThemes.includes(initialTheme) ? initialTheme : 'monstrocity';
 		    console.log('constructor: initialTheme=' + initialTheme + ', storedTheme=' + storedTheme + ', selected theme=' + this.theme);
-		    this.baseImagePath = 'https://www.skulliance.io/staking/images/monstrocity/' + this.theme + '/';
+		    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
 		    this.sounds = {
 		        match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
 		        cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
@@ -2142,7 +2142,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  console.log('setBackground: Attempting for theme=' + this.theme);
 			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 			  console.log('setBackground: themeData=', themeData);
-			  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${this.theme}/monstrocity.png`;
+			  const backgroundUrl = `images/monstrocity/${this.theme}/monstrocity.png`;
 			  console.log('setBackground: Setting background to ' + backgroundUrl);
 			  if (themeData && themeData.background) {
 			    document.body.style.backgroundImage = `url(${backgroundUrl})`;
