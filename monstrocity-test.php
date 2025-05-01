@@ -1949,12 +1949,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        this.startBossBattle();
 	    }
 
-		startBossBattle() {
+		async startBossBattle() {
 		    console.log('Starting boss battle...');
 		    console.log('Selected Character:', this.selectedCharacter.name);
 		    console.log('Selected Boss:', this.selectedBoss.name);
-		    console.log('Full selectedBoss data:', this.selectedBoss);
-		    console.log('Selected Boss imageUrl:', this.selectedBoss.imageUrl);
 
 		    // Determine boss orientation
 		    let bossOrientation = this.selectedBoss.orientation || 'Right';
@@ -1963,17 +1961,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        console.log(`Random boss orientation resolved to: ${bossOrientation}`);
 		    }
 
-		    // Ensure player1 orientation
+		    // Determine player orientation
 		    let playerOrientation = this.selectedCharacter.orientation || 'Random';
 		    if (playerOrientation === 'Random') {
 		        playerOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
-		        console.log(`Random player1 orientation resolved to: ${playerOrientation}`);
+		        console.log(`Random player orientation resolved to: ${playerOrientation}`);
 		    }
-		    this.selectedCharacter.orientation = playerOrientation;
 
-		    // Prepare the boss data
-		    const bossImageUrl = this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png';
-		    const bossConfig = {
+		    // Set up player and boss
+		    this.player1 = { ...this.selectedCharacter, orientation: playerOrientation };
+		    this.player2 = {
 		        name: this.selectedBoss.name,
 		        strength: this.selectedBoss.strength || 4,
 		        speed: this.selectedBoss.speed || 4,
@@ -1982,16 +1979,43 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        type: 'Base',
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme,
-		        imageUrl: `${bossImageUrl}`,
+		        imageUrl: this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png',
 		        fallbackUrl: 'icons/skull.png',
-		        orientation: bossOrientation
+		        orientation: bossOrientation,
+		        health: this.selectedBoss.health,
+		        maxHealth: this.selectedBoss.maxHealth
 		    };
 
-		    // Set players
-		    this.player1 = { ...this.selectedCharacter };
-		    this.player2 = this.createCharacter(bossConfig);
-		    this.player2.health = this.selectedBoss.health;
-		    this.player2.maxHealth = this.selectedBoss.maxHealth;
+		    // Load saved health for the player
+		    const userId = window.userId || null;
+		    if (userId && this.selectedBoss && this.selectedBoss.id) {
+		        try {
+		            const response = await fetch('ajax/get-health.php', {
+		                method: 'POST',
+		                headers: {
+		                    'Content-Type': 'application/x-www-form-urlencoded'
+		                },
+		                body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(this.selectedBoss.id)}`
+		            });
+		            const data = await response.json();
+		            if (data.success && data.health !== null) {
+		                this.player1.health = data.health;
+		                console.log(`Loaded saved health: ${this.player1.health}`);
+		            } else {
+		                this.player1.health = this.player1.maxHealth;
+		                console.log('No saved health found, using max health');
+		            }
+		        } catch (error) {
+		            console.error('Error loading health:', error);
+		            this.player1.health = this.player1.maxHealth;
+		        }
+		    } else {
+		        this.player1.health = this.player1.maxHealth;
+		        console.log('No userId or bossId, using max health');
+		    }
+
+		    // Set boss health
+		    this.player2.health = this.selectedBoss.health || this.player2.maxHealth;
 
 		    // Log player details
 		    console.log('Player 1 Details:', {
@@ -2021,7 +2045,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    });
 
 		    // Reset game state
-		    const self = this;
 		    const gameContainer = document.querySelector('.game-container');
 		    const gameBoard = document.getElementById('game-board');
 		    gameContainer.style.display = 'block';
@@ -2030,8 +2053,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    this.sounds.reset.play();
 		    log('Starting Boss Battle...');
-
-		    this.player1.health = this.player1.maxHealth;
 
 		    this.currentTurn = this.player1.speed > this.player2.speed 
 		        ? this.player1 
@@ -2073,15 +2094,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    // Toggle buttons for boss battle
 		    this.toggleGameButtons(true);
 
-		    // Bind refresh-board button (redundant but ensures binding)
-		    const refreshButton = document.getElementById('refresh-board');
-		    if (refreshButton) {
-		        refreshButton.onclick = () => {
-		            console.log('refresh-board clicked');
-		            this.refreshBoard();
-		        };
-		    }
-
 		    if (this.player1.size !== 'Medium') {
 		        log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics}!`);
 		    }
@@ -2089,7 +2101,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics}!`);
 		    }
 
-		    log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+		    log(`${this.player1.name} starts with ${this.player1.health}/${this.player1.maxHealth} HP!`);
 		    log(`${this.currentTurn.name} goes first!`);
 
 		    this.initBoard();
@@ -2097,7 +2109,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
 
 		    if (this.currentTurn === this.player2) {
-		        setTimeout(function() { self.aiTurn(); }, 1000);
+		        setTimeout(() => this.aiTurn(), 1000);
 		    }
 
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
@@ -3937,115 +3949,123 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
 
 	  async checkGameOver() {
-	    if (this.gameOver || this.isCheckingGameOver) {
-	      console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
-	      return;
-	    }
-
-	    this.isCheckingGameOver = true;
-	    console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
-
-	    const tryAgainButton = document.getElementById("try-again");
-	    if (this.player1.health <= 0) {
-	      console.log("Player 1 health <= 0, triggering game over (loss)");
-	      this.gameOver = true;
-	      this.gameState = "gameOver";
-	      gameOver.textContent = "You Lose!";
-	      turnIndicator.textContent = "Game Over";
-	      log(`${this.player2.name} defeats ${this.player1.name}!`);
-	      tryAgainButton.textContent = "TRY AGAIN";
-	      document.getElementById("game-over-container").style.display = "block";
-	      try {
-	        this.sounds.loss.play();
-	      } catch (err) {
-	        console.error("Error playing lose sound:", err);
-	      }
-	    } else if (this.player2.health <= 0) {
-	      console.log("Player 2 health <= 0, triggering game over (win)");
-	      this.gameOver = true;
-	      this.gameState = "gameOver";
-	      gameOver.textContent = "You Win!";
-	      turnIndicator.textContent = "Game Over";
-	      tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
-	      document.getElementById("game-over-container").style.display = "block";
-
-	      if (this.currentTurn === this.player1) {
-	        const currentRound = this.roundStats[this.roundStats.length - 1];
-	        if (currentRound && !currentRound.completed) {
-	          currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
-	          currentRound.completed = true;
-
-	          const roundScore = currentRound.matches > 0 
-	            ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
-	            : 0;
-
-	          log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-	          log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
-
-	          this.grandTotalScore += roundScore;
-
-	          log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	          log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
-	        }
+	      if (this.gameOver || this.isCheckingGameOver) {
+	          console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
+	          return;
 	      }
 
-	      await this.saveScoreToDatabase(this.currentLevel);
+	      this.isCheckingGameOver = true;
+	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
 
-	      if (this.currentLevel === opponentsConfig.length) {
-	        this.sounds.finalWin.play();
-	        log(`Final level completed! Final score: ${this.grandTotalScore}`);
-	        this.grandTotalScore = 0;
-	        await this.clearProgress();
-	        log("Game completed! Grand total score reset.");
-	      } else {
-	        this.clearBoard(); // Clear board before advancing to next level
-	        this.currentLevel += 1;
-	        await this.saveProgress();
-	        console.log(`Progress saved: currentLevel=${this.currentLevel}`);
-	        this.sounds.win.play();
+	      const tryAgainButton = document.getElementById("try-again");
+	      if (this.player1.health <= 0) {
+	          console.log("Player 1 health <= 0, triggering game over (loss)");
+
+	          // Save health as 0 for boss battles
+	          if (this.selectedBoss) {
+	              this.player1.health = 0;
+	              await this.savePlayerHealth();
+	              console.log("Health saved as 0 for boss battle");
+	          }
+
+	          this.gameOver = true;
+	          this.gameState = "gameOver";
+	          gameOver.textContent = "You Lose!";
+	          turnIndicator.textContent = "Game Over";
+	          log(`${this.player2.name} defeats ${this.player1.name}!`);
+	          tryAgainButton.textContent = "TRY AGAIN";
+	          document.getElementById("game-over-container").style.display = "block";
+	          try {
+	              this.sounds.loss.play();
+	          } catch (err) {
+	              console.error("Error playing lose sound:", err);
+	          }
+	      } else if (this.player2.health <= 0) {
+	          console.log("Player 2 health <= 0, triggering game over (win)");
+	          this.gameOver = true;
+	          this.gameState = "gameOver";
+	          gameOver.textContent = "You Win!";
+	          turnIndicator.textContent = "Game Over";
+	          tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
+	          document.getElementById("game-over-container").style.display = "block";
+
+	          if (this.currentTurn === this.player1) {
+	              const currentRound = this.roundStats[this.roundStats.length - 1];
+	              if (currentRound && !currentRound.completed) {
+	                  currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	                  currentRound.completed = true;
+
+	                  const roundScore = currentRound.matches > 0 
+	                      ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
+	                      : 0;
+
+	                  log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+	                  log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
+
+	                  this.grandTotalScore += roundScore;
+
+	                  log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	                  log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
+	              }
+	          }
+
+	          await this.saveScoreToDatabase(this.currentLevel);
+
+	          if (this.currentLevel === opponentsConfig.length) {
+	              this.sounds.finalWin.play();
+	              log(`Final level completed! Final score: ${this.grandTotalScore}`);
+	              this.grandTotalScore = 0;
+	              await this.clearProgress();
+	              log("Game completed! Grand total score reset.");
+	          } else {
+	              this.clearBoard();
+	              this.currentLevel += 1;
+	              await this.saveProgress();
+	              console.log(`Progress saved: currentLevel=${this.currentLevel}`);
+	              this.sounds.win.play();
+	          }
+
+	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+	          const extension = themeData?.extension || 'png';
+	          const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
+
+	          const p2Image = document.getElementById('p2-image');
+	          const parent = p2Image.parentNode;
+
+	          if (this.player2.mediaType === 'video') {
+	              if (p2Image.tagName !== 'VIDEO') {
+	                  const newVideo = document.createElement('video');
+	                  newVideo.id = 'p2-image';
+	                  newVideo.src = damagedUrl;
+	                  newVideo.autoplay = true;
+	                  newVideo.loop = true;
+	                  newVideo.muted = true;
+	                  newVideo.alt = this.player2.name;
+	                  parent.replaceChild(newVideo, p2Image);
+	              } else {
+	                  p2Image.src = damagedUrl;
+	              }
+	          } else {
+	              if (p2Image.tagName !== 'IMG') {
+	                  const newImage = document.createElement('img');
+	                  newImage.id = 'p2-image';
+	                  newImage.src = damagedUrl;
+	                  newImage.alt = this.player2.name;
+	                  parent.replaceChild(newImage, p2Image);
+	              } else {
+	                  p2Image.src = damagedUrl;
+	              }
+	          }
+
+	          const p2ImageNew = document.getElementById("p2-image");
+	          p2ImageNew.style.display = "block";
+	          p2ImageNew.classList.add("loser");
+	          p1Image.classList.add("winner");
+	          this.renderBoard();
 	      }
 
-	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
-	      const extension = themeData?.extension || 'png';
-	      const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
-
-	      const p2Image = document.getElementById('p2-image');
-	      const parent = p2Image.parentNode;
-
-	      if (this.player2.mediaType === 'video') {
-	        if (p2Image.tagName !== 'VIDEO') {
-	          const newVideo = document.createElement('video');
-	          newVideo.id = 'p2-image';
-	          newVideo.src = damagedUrl;
-	          newVideo.autoplay = true;
-	          newVideo.loop = true;
-	          newVideo.muted = true;
-	          newVideo.alt = this.player2.name;
-	          parent.replaceChild(newVideo, p2Image);
-	        } else {
-	          p2Image.src = damagedUrl;
-	        }
-	      } else {
-	        if (p2Image.tagName !== 'IMG') {
-	          const newImage = document.createElement('img');
-	          newImage.id = 'p2-image';
-	          newImage.src = damagedUrl;
-	          newImage.alt = this.player2.name;
-	          parent.replaceChild(newImage, p2Image);
-	        } else {
-	          p2Image.src = damagedUrl;
-	        }
-	      }
-
-	      const p2ImageNew = document.getElementById("p2-image");
-	      p2ImageNew.style.display = "block";
-	      p2ImageNew.classList.add("loser");
-	      p1Image.classList.add("winner");
-	      this.renderBoard();
-	    }
-
-	    this.isCheckingGameOver = false;
-	    console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
+	      this.isCheckingGameOver = false;
+	      console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
