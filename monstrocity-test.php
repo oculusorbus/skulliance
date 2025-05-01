@@ -1960,7 +1960,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        type: 'Base', // Bosses are treated as Base type
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme, // Use the current theme (no changes)
-		        imageUrl: `/testing${bossImageUrl}`, // Prepend /testing/ to match relative path
+		        imageUrl: `${bossImageUrl}`, // Prepend /testing/ to match relative path
 		        fallbackUrl: '/staking/icons/skull.png', // Explicit fallback
 		        orientation: 'Right' // Ensure boss faces the correct direction
 		    };
