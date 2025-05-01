@@ -2364,7 +2364,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const videoExtensions = ['mov', 'mp4']; // Define video extensions
 	      const defaultIpfsPrefix = 'https://ipfs.io/ipfs/'; // Default fallback prefix
 
-	      if (config.ipfs && config.policyId) {
+	      // Use config.imageUrl if provided (e.g., for bosses), otherwise proceed with existing logic
+	      if (config.imageUrl) {
+	          imageUrl = config.imageUrl;
+	          fallbackUrl = config.fallbackUrl || '/staking/icons/skull.png';
+	          orientation = config.orientation || 'Right'; // Default to Right for bosses if not specified
+	      } else if (config.ipfs && config.policyId) {
 	          isNFT = true;
 	          var policyMetadata = { orientation: 'Right', ipfsPrefix: themeData?.ipfsPrefixes || defaultIpfsPrefix };
 	          // Use theme-specific ipfsPrefixes if available
