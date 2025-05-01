@@ -614,7 +614,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		filter: drop-shadow(2px 5px 10px #000);
 	}
 	
-	#theme-select-button {
+	#theme-select-button, #select-boss-button {
 	  padding: 10px 20px;
 	  background-color: #49BBE3;
 	  border: none;
