@@ -13,14 +13,13 @@ $user_id = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
 $boss_id = isset($_POST['boss_id']) ? (int)$_POST['boss_id'] : 0;
 $health = isset($_POST['health']) ? (int)$_POST['health'] : 0;
 
-// Validate input
 if ($user_id <= 0 || $boss_id <= 0 || $health < 0) {
     echo json_encode(['success' => false, 'error' => 'Invalid input']);
     $conn->close();
     exit;
 }
 
-// Fetch current player health to calculate damage taken
+// Step 1: Check if health record exists
 $query = "SELECT health FROM health WHERE user_id = ? AND boss_id = ?";
 $stmt1 = $conn->prepare($query);
 $stmt1->bind_param('ii', $user_id, $boss_id);
@@ -28,26 +27,25 @@ $stmt1->execute();
 $stmt1->bind_result($current_health);
 $exists = $stmt1->fetch();
 $stmt1->free_result(); // Free the result set
-$stmt1->close();
+$stmt1->close();       // Close the statement
 
-// Calculate damage taken
-$damage_taken = $exists ? max(0, $current_health - $health) : 0; // Damage taken by player, 0 if new row
+$damage_taken = $exists ? max(0, $current_health - $health) : 0; // Calculate damage taken
 
-// Update or insert health row
+// Step 2: Update or insert health record
 if ($exists) {
     $query = "UPDATE health SET health = ?, date_updated = CURRENT_TIMESTAMP WHERE user_id = ? AND boss_id = ?";
     $stmt2 = $conn->prepare($query);
     $stmt2->bind_param('iii', $health, $user_id, $boss_id);
     $stmt2->execute();
     if ($stmt2->affected_rows > 0) {
-        // Update encounters table
+        // Step 3: Update encounters
         $query = "SELECT id, damage_taken FROM encounters WHERE user_id = ? AND boss_id = ? AND reward = 0 ORDER BY id DESC LIMIT 1";
         $stmt3 = $conn->prepare($query);
         $stmt3->bind_param('ii', $user_id, $boss_id);
         $stmt3->execute();
         $stmt3->bind_result($encounter_id, $existing_damage_taken);
         if ($stmt3->fetch()) {
-            // Update existing row with reward = 0
+            // Step 4a: Update existing encounter
             $new_damage_taken = $existing_damage_taken + $damage_taken;
             $query = "UPDATE encounters SET damage_taken = ?, date_created = CURRENT_TIMESTAMP WHERE id = ?";
             $stmt4 = $conn->prepare($query);
@@ -55,7 +53,7 @@ if ($exists) {
             $stmt4->execute();
             $stmt4->close();
         } else {
-            // Create new row
+            // Step 4b: Insert new encounter
             $query = "INSERT INTO encounters (user_id, boss_id, damage_dealt, damage_taken, reward, date_created) 
                       VALUES (?, ?, 0, ?, 0, CURRENT_TIMESTAMP)";
             $stmt4 = $conn->prepare($query);
@@ -64,7 +62,7 @@ if ($exists) {
             $stmt4->close();
         }
         $stmt3->free_result(); // Free the result set
-        $stmt3->close();
+        $stmt3->close();       // Close the statement
         echo json_encode(['success' => true, 'message' => 'Health and encounters updated']);
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to update health']);
@@ -77,7 +75,7 @@ if ($exists) {
     $stmt2->bind_param('iii', $user_id, $boss_id, $health);
     $stmt2->execute();
     if ($stmt2->affected_rows > 0) {
-        // New health row, initialize encounters
+        // Step 3: Initialize encounters
         $query = "INSERT INTO encounters (user_id, boss_id, damage_dealt, damage_taken, reward, date_created) 
                   VALUES (?, ?, 0, 0, 0, CURRENT_TIMESTAMP)";
         $stmt3 = $conn->prepare($query);
