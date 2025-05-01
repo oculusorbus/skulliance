@@ -1923,10 +1923,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		}
 		
 		// New method to set the selected boss
-	    setSelectedBoss(boss) {
-	        this.selectedBoss = boss;
-	        console.log(`MonstrocityMatch3: Selected boss set to ${boss.name}`);
-	    }
+		setSelectedBoss(boss) {
+		    console.log('Boss selected:');
+		    console.log('  Name:', boss.name);
+		    console.log('  Health:', boss.health, '/', boss.maxHealth);
+		    console.log('  Strength:', boss.strength);
+		    this.selectedBoss = boss;
+		    console.log(`MonstrocityMatch3: Selected boss set to ${boss.name}`);
+		}
 
 	    // New method to set the selected character and start the boss battle
 	    setSelectedCharacter(character) {
