@@ -747,7 +747,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	
 	#boss-battles-button-container {
 	  text-align: center;
-	  margin: 20px 0;
+	  margin: 10px 0 20px 0; /* Reduced top margin, increased bottom margin */
 	}
 
 	@media (max-width: 1025px) {
@@ -765,14 +765,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    font-size: 0.8em;
 	    padding: 8px;
 	  }
-	    #boss-battles-button-container {
-	      margin: 10px 0;
-	    }
-	    .theme-select-button {
-	      font-size: 14px;
-	      padding: 8px 16px;
-	      min-width: 120px;
-	    }
+	  #boss-battles-button-container {
+	    margin: 5px 0 15px 0; /* Adjusted for mobile */
+	  }
+	  .theme-select-button {
+	    font-size: 14px;
+	    padding: 8px 16px;
+	    min-width: 120px;
+	  }
 	}
 
     @media (max-width: 1025px) {
@@ -1499,13 +1499,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    let container = document.getElementById('theme-select-container');
 	    const characterContainer = document.getElementById('character-select-container');
 
-	    // Rebuild container with Boss Battles button
+	    // Rebuild container with Boss Battles button near the top
 	    container.innerHTML = `
 	      <h2>Select Theme</h2>
-	      <div id="theme-options"></div>
 	      <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
 	        <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
 	      </div>
+	      <div id="theme-options"></div>
 	    `;
 	    const optionsDiv = document.getElementById('theme-options');
 
