@@ -1730,8 +1730,33 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          if (boss.canFight) {
 	            option.addEventListener('click', () => {
 	              console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
-	              alert(`Selected boss: ${boss.name}! (Boss battle to be implemented)`);
-	              // Future: game.startBossBattle(boss);
+	              // Store the selected boss
+	              game.setSelectedBoss(boss);
+	              // Fetch NFT characters using the boss's policy
+	              fetch(`ajax/get-nft-assets.php?policyId=${encodeURIComponent(boss.policy)}`, {
+	                method: 'GET',
+	                headers: { 'Content-Type': 'application/json' }
+	              })
+	                .then(response => {
+	                  if (!response.ok) {
+	                    throw new Error(`HTTP error! Status: ${response.status}`);
+	                  }
+	                  return response.json();
+	                })
+	                .then(characters => {
+	                  if (!Array.isArray(characters) || characters.length === 0) {
+	                    alert('No NFT characters available for this boss.');
+	                    console.warn('showBossSelect: No NFT characters returned');
+	                    return;
+	                  }
+	                  // Hide boss select, show character select
+	                  container.style.display = 'none';
+	                  showCharacterSelect(characters, game);
+	                })
+	                .catch(error => {
+	                  console.error('showBossSelect: Error fetching NFT characters:', error);
+	                  alert('Error loading NFT characters. Please try again.');
+	                });
 	            });
 	          }
 	          fragment.appendChild(option);
