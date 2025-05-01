@@ -1891,6 +1891,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.tileTypes = ['first-attack', 'second-attack', 'special-attack', 'power-up', 'last-stand'];
 		    this.roundStats = [];
 		    this.grandTotalScore = 0;
+	        this.selectedBoss = null; // New: Store the selected boss
+	        this.selectedCharacter = null; // New: Store the selected character for boss battle
 		    // Validate theme
 		    const validThemes = themes.flatMap(group => group.items).map(item => item.value);
 		    const storedTheme = localStorage.getItem('gameTheme');
@@ -1914,6 +1916,54 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.updateTileSizeWithGap();
 		    this.addEventListeners();
 		}
+		
+		// New method to set the selected boss
+	    setSelectedBoss(boss) {
+	        this.selectedBoss = boss;
+	        console.log(`MonstrocityMatch3: Selected boss set to ${boss.name}`);
+	    }
+
+	    // New method to set the selected character and start the boss battle
+	    setSelectedCharacter(character) {
+	        this.selectedCharacter = character;
+	        console.log(`MonstrocityMatch3: Selected character set to ${character.name}`);
+	        this.startBossBattle();
+	    }
+
+	    // New placeholder method for starting the boss battle
+	    startBossBattle() {
+	        console.log('Starting boss battle...');
+	        console.log(`Player: ${this.selectedCharacter.name} vs Boss: ${this.selectedBoss.name}`);
+
+	        // Map boss data to character config format expected by createCharacter
+	        const bossConfig = {
+	            name: this.selectedBoss.name,
+	            strength: this.selectedBoss.strength,
+	            speed: this.selectedBoss.speed,
+	            tactics: this.selectedBoss.tactics,
+	            size: this.selectedBoss.size,
+	            type: 'Base', // Bosses are treated as Base type for now
+	            powerup: this.selectedBoss.powerup || 'Minor Regen',
+	            theme: this.theme // Use current theme
+	        };
+
+	        // Create character objects for the battle
+	        this.player1 = { ...this.selectedCharacter }; // Use a copy to avoid modifying the original
+	        this.player2 = this.createCharacter(bossConfig);
+	        this.player2.health = this.selectedBoss.health; // Override health with boss's health
+	        this.player2.maxHealth = this.selectedBoss.maxHealth;
+
+	        // Reset game state
+	        this.currentLevel = 1; // Boss battles don't use level progression
+	        this.grandTotalScore = 0; // Reset score for boss battle
+	        this.roundStats = [];
+
+	        // Start the game using existing initGame logic
+	        this.initGame();
+
+	        // Log the battle start
+	        log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
+	    }
 		
 		// Simple hash function for tamper-proofing
 		createBoardHash(board) {
