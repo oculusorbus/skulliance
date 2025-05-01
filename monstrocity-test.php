@@ -1938,7 +1938,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('  Name:', boss.name);
 		    console.log('  Health:', boss.health, '/', boss.maxHealth);
 		    console.log('  Strength:', boss.strength);
-		    this.selectedBoss = boss;
+		    this.selectedBoss = { ...boss, type: "Boss" }; // Override type to "Boss"
 		    console.log(`MonstrocityMatch3: Selected boss set to ${boss.name}`);
 		}
 
