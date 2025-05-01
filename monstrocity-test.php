@@ -2100,50 +2100,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
 		}
 		
-		savePlayerHealth() {
-		    // Skip if not a boss battle or player1 is missing
-		    if (!this.selectedBoss || !this.player1) {
-		        console.warn('savePlayerHealth: Missing boss or player, skipping save');
-		        return;
-		    }
-
-		    const userId = window.userId || 0;
-		    const bossId = this.selectedBoss.id;
-		    const health = this.player1.health;
-
-		    // Validate userId
-		    if (userId <= 0) {
-		        console.warn('savePlayerHealth: Invalid userId, skipping save');
-		        return;
-		    }
-
-		    console.log(`savePlayerHealth: Saving health ${health} for user ${userId}, boss ${bossId}`);
-
-		    fetch('ajax/save_health.php', {
-		        method: 'POST',
-		        headers: {
-		            'Content-Type': 'application/x-www-form-urlencoded'
-		        },
-		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
-		    })
-		    .then(response => {
-		        if (!response.ok) {
-		            throw new Error(`HTTP error! Status: ${response.status}`);
-		        }
-		        return response.json();
-		    })
-		    .then(data => {
-		        if (data.success) {
-		            console.log(`savePlayerHealth: ${data.message}`);
-		        } else {
-		            console.error(`savePlayerHealth: Failed - ${data.error}`);
-		        }
-		    })
-		    .catch(error => {
-		        console.error('savePlayerHealth: AJAX error', error);
-		    });
-		}
-		
 		refreshBoard() {
 		    console.log('refreshBoard: Unsticking game board for boss battle');
     
@@ -3380,138 +3336,136 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
             }, 200);
           }
         }, 200);
-	    this.resolveMatches(x1, y1, callback);
       }
 
-	  resolveMatches(selectedX = null, selectedY = null, callback = () => this.endTurn()) {
-	      console.log("resolveMatches started, gameOver:", this.gameOver);
-	      if (this.gameOver) {
-	          console.log("Game over, exiting resolveMatches");
-	          return false;
-	      }
-
-	      const isInitialMove = selectedX !== null && selectedY !== null;
-	      console.log(`Is initial move: ${isInitialMove}`);
-
-	      const matches = this.checkMatches();
-	      console.log(`Found ${matches.length} matches:`, matches);
-
-	      // Calculate total tiles matched for multi-match bonus (only for initial move)
-	      let comboBonus = 1;
-	      let comboMessage = "";
-	      if (isInitialMove && matches.length > 1) { // Multi-match requires more than one match
-	          const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
-	          console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
-	          if (totalTilesMatched >= 6 && totalTilesMatched <= 8) {
-	              comboBonus = 1.2; // 20% bonus for multi-match 6-8 tiles
-	              comboMessage = `Multi-Match! ${totalTilesMatched} tiles matched for a 20% bonus!`;
-	              this.sounds.multiMatch.play();
-	          } else if (totalTilesMatched >= 9) {
-	              comboBonus = 3.0; // 200% bonus for multi-match 9+ tiles
-	              comboMessage = `Mega Multi-Match! ${totalTilesMatched} tiles matched for a 200% bonus!`;
-	              this.sounds.multiMatch.play();
-	          }
-	      }
-
-	      if (matches.length > 0) {
-	          const allMatchedTiles = new Set();
-	          let totalDamage = 0;
-	          const attacker = this.currentTurn;
-	          const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
-
-	          try {
-	              matches.forEach(match => {
-	                  console.log("Processing match:", match);
-	                  match.coordinates.forEach(coord => allMatchedTiles.add(coord));
-	                  const damage = this.handleMatch(match, isInitialMove);
-	                  console.log(`Damage from match: ${damage}`);
-	                  if (this.gameOver) {
-	                      console.log("Game over detected during match processing, stopping further processing");
-	                      return;
-	                  }
-	                  if (damage > 0) totalDamage += damage;
-	              });
-
-	              if (this.gameOver) {
-	                  console.log("Game over after processing matches, exiting resolveMatches");
-	                  return true;
-	              }
-
-	              console.log(`Total damage dealt: ${totalDamage}, tiles to clear:`, [...allMatchedTiles]);
-	              if (totalDamage > 0 && !this.gameOver) {
-	                  setTimeout(() => {
-	                      if (this.gameOver) {
-	                          console.log("Game over, skipping recoil animation");
-	                          return;
-	                      }
-	                      console.log("Animating recoil for defender:", defender.name);
-	                      this.animateRecoil(defender, totalDamage);
-	                  }, 100);
-	              }
-
-	              setTimeout(() => {
-	                  if (this.gameOver) {
-	                      console.log("Game over, skipping match animation and cascading");
-	                      return;
-	                  }
-	                  console.log("Animating matched tiles, allMatchedTiles:", [...allMatchedTiles]);
-	                  allMatchedTiles.forEach(tile => {
-	                      const [x, y] = tile.split(",").map(Number);
-	                      if (this.board[y][x]?.element) {
-	                          this.board[y][x].element.classList.add("matched");
-	                      } else {
-	                          console.warn(`Tile at (${x},${y}) has no element to animate`);
-	                      }
-	                  });
-
-	                  setTimeout(() => {
-	                      if (this.gameOver) {
-	                          console.log("Game over, skipping tile clearing and cascading");
-	                          return;
-	                      }
-	                      console.log("Clearing matched tiles:", [...allMatchedTiles]);
-	                      allMatchedTiles.forEach(tile => {
-	                          const [x, y] = tile.split(",").map(Number);
-	                          if (this.board[y][x]) {
-	                              this.board[y][x].type = null;
-	                              this.board[y][x].element = null;
-	                          }
-	                      });
-	                      this.sounds.match.play();
-	                      console.log("Cascading tiles");
-
-	                      // Apply combo bonus to round points (only for initial move)
-	                      if (comboBonus > 1 && this.roundStats.length > 0) {
-	                          const currentRound = this.roundStats[this.roundStats.length - 1];
-	                          const originalPoints = currentRound.points;
-	                          currentRound.points = Math.round(currentRound.points * comboBonus);
-	                          if (comboMessage) {
-	                              log(comboMessage);
-	                              log(`Round points increased from ${originalPoints} to ${currentRound.points} after multi-match bonus!`);
-	                          }
-	                      }
-
-	                      this.cascadeTiles(() => {
-	                          if (this.gameOver) {
-	                              console.log("Game over, skipping callback");
-	                              return;
-	                          }
-	                          console.log("Cascade complete, executing callback");
-	                          callback(); // Execute the provided callback instead of this.endTurn()
-	                      });
-	                  }, 300);
-	              }, 200);
-
-	              return true;
-	          } catch (error) {
-	              console.error("Error in resolveMatches:", error);
-	              this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	              return false;
-	          }
-	      }
-	      console.log("No matches found, executing callback");
-	      callback(); // Execute callback if no matches are found
+	  resolveMatches(selectedX = null, selectedY = null) {
+	    console.log("resolveMatches started, gameOver:", this.gameOver);
+	    if (this.gameOver) {
+	      console.log("Game over, exiting resolveMatches");
 	      return false;
+	    }
+
+	    const isInitialMove = selectedX !== null && selectedY !== null;
+	    console.log(`Is initial move: ${isInitialMove}`);
+
+	    const matches = this.checkMatches();
+	    console.log(`Found ${matches.length} matches:`, matches);
+
+	    // Calculate total tiles matched for multi-match bonus (only for initial move)
+	    let comboBonus = 1;
+	    let comboMessage = "";
+	    if (isInitialMove && matches.length > 1) { // Multi-match requires more than one match
+	      const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
+	      console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
+	      if (totalTilesMatched >= 6 && totalTilesMatched <= 8) {
+	        comboBonus = 1.2; // 20% bonus for multi-match 6-8 tiles
+	        comboMessage = `Multi-Match! ${totalTilesMatched} tiles matched for a 20% bonus!`;
+	        this.sounds.multiMatch.play();
+	      } else if (totalTilesMatched >= 9) {
+	        comboBonus = 3.0; // 200% bonus for multi-match 9+ tiles
+	        comboMessage = `Mega Multi-Match! ${totalTilesMatched} tiles matched for a 200% bonus!`;
+	        this.sounds.multiMatch.play();
+	      }
+	    }
+
+	    if (matches.length > 0) {
+	      const allMatchedTiles = new Set();
+	      let totalDamage = 0;
+	      const attacker = this.currentTurn;
+	      const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+
+	      try {
+	        matches.forEach(match => {
+	          console.log("Processing match:", match);
+	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
+	          const damage = this.handleMatch(match, isInitialMove);
+	          console.log(`Damage from match: ${damage}`);
+	          if (this.gameOver) {
+	            console.log("Game over detected during match processing, stopping further processing");
+	            return;
+	          }
+	          if (damage > 0) totalDamage += damage;
+	        });
+
+	        if (this.gameOver) {
+	          console.log("Game over after processing matches, exiting resolveMatches");
+	          return true;
+	        }
+
+	        console.log(`Total damage dealt: ${totalDamage}, tiles to clear:`, [...allMatchedTiles]);
+	        if (totalDamage > 0 && !this.gameOver) {
+	          setTimeout(() => {
+	            if (this.gameOver) {
+	              console.log("Game over, skipping recoil animation");
+	              return;
+	            }
+	            console.log("Animating recoil for defender:", defender.name);
+	            this.animateRecoil(defender, totalDamage);
+	          }, 100);
+	        }
+
+	        setTimeout(() => {
+	          if (this.gameOver) {
+	            console.log("Game over, skipping match animation and cascading");
+	            return;
+	          }
+	          console.log("Animating matched tiles, allMatchedTiles:", [...allMatchedTiles]);
+	          allMatchedTiles.forEach(tile => {
+	            const [x, y] = tile.split(",").map(Number);
+	            if (this.board[y][x]?.element) {
+	              this.board[y][x].element.classList.add("matched");
+	            } else {
+	              console.warn(`Tile at (${x},${y}) has no element to animate`);
+	            }
+	          });
+
+	          setTimeout(() => {
+	            if (this.gameOver) {
+	              console.log("Game over, skipping tile clearing and cascading");
+	              return;
+	            }
+	            console.log("Clearing matched tiles:", [...allMatchedTiles]);
+	            allMatchedTiles.forEach(tile => {
+	              const [x, y] = tile.split(",").map(Number);
+	              if (this.board[y][x]) {
+	                this.board[y][x].type = null;
+	                this.board[y][x].element = null;
+	              }
+	            });
+	            this.sounds.match.play();
+	            console.log("Cascading tiles");
+
+	            // Apply combo bonus to round points (only for initial move)
+	            if (comboBonus > 1 && this.roundStats.length > 0) {
+	              const currentRound = this.roundStats[this.roundStats.length - 1];
+	              const originalPoints = currentRound.points;
+	              currentRound.points = Math.round(currentRound.points * comboBonus);
+	              if (comboMessage) {
+	                log(comboMessage);
+	                log(`Round points increased from ${originalPoints} to ${currentRound.points} after multi-match bonus!`);
+	              }
+	            }
+
+	            this.cascadeTiles(() => {
+	              if (this.gameOver) {
+	                console.log("Game over, skipping endTurn");
+	                return;
+	              }
+	              console.log("Cascade complete, ending turn");
+	              this.endTurn();
+	            });
+	          }, 300);
+	        }, 200);
+
+	        return true;
+	      } catch (error) {
+	        console.error("Error in resolveMatches:", error);
+	        this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	        return false;
+	      }
+	    }
+	    console.log("No matches found, returning false");
+	    return false;
 	  }
 
 	  checkMatches() {
@@ -3721,52 +3675,50 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    return damage;
 	  }
 
-	  cascadeTiles(callback = () => this.endTurn()) {
-	      if (this.gameOver) {
-	          console.log("Game over, skipping cascadeTiles");
-	          return;
-	      }
+	  cascadeTiles(callback) {
+	    if (this.gameOver) {
+	      console.log("Game over, skipping cascadeTiles");
+	      return;
+	    }
 
-	      // Move tiles down to fill gaps
-	      const moved = this.cascadeTilesWithoutRender(); // Assume this exists to handle logic
+	    const moved = this.cascadeTilesWithoutRender();
+	    const fallClass = "falling";
 
-	      // Add falling animation
-	      const fallClass = "falling";
-	      for (let x = 0; x < this.width; x++) {
-	          for (let y = 0; y < this.height; y++) {
-	              const tile = this.board[y][x];
-	              if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
-	                  const emptyBelow = this.countEmptyBelow(x, y); // Assume this counts gaps
-	                  if (emptyBelow > 0) {
-	                      tile.element.classList.add(fallClass);
-	                      tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
-	                  }
-	              }
+	    for (let x = 0; x < this.width; x++) {
+	      for (let y = 0; y < this.height; y++) {
+	        const tile = this.board[y][x];
+	        if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
+	          const emptyBelow = this.countEmptyBelow(x, y);
+	          if (emptyBelow > 0) {
+	            tile.element.classList.add(fallClass);
+	            tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
 	          }
+	        }
 	      }
+	    }
 
-	      this.renderBoard();
+	    this.renderBoard();
 
-	      if (moved) {
-	          setTimeout(() => {
-	              if (this.gameOver) {
-	                  console.log("Game over, skipping cascade resolution");
-	                  return;
-	              }
-	              this.sounds.cascade.play();
-	              const hasMatches = this.resolveMatches(null, null, callback); // Pass callback
-	              const tiles = document.querySelectorAll(`.${fallClass}`);
-	              tiles.forEach(tile => {
-	                  tile.classList.remove(fallClass);
-	                  tile.style.transform = "translate(0, 0)";
-	              });
-	              if (!hasMatches) {
-	                  callback(); // Call callback if no new matches
-	              }
-	          }, 300); // Animation delay
-	      } else {
-	          callback(); // No tiles moved, proceed to callback
-	      }
+	    if (moved) {
+	      setTimeout(() => {
+	        if (this.gameOver) {
+	          console.log("Game over, skipping cascade resolution");
+	          return;
+	        }
+	        this.sounds.cascade.play();
+	        const hasMatches = this.resolveMatches();
+	        const tiles = document.querySelectorAll(`.${fallClass}`);
+	        tiles.forEach(tile => {
+	          tile.classList.remove(fallClass);
+	          tile.style.transform = "translate(0, 0)";
+	        });
+	        if (!hasMatches) {
+	          callback();
+	        }
+	      }, 300);
+	    } else {
+	      callback();
+	    }
 	  }
 
       cascadeTilesWithoutRender() {
@@ -3896,10 +3848,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
           log(`${this.player2.name} passes...`);
           this.endTurn();
         }
-	    this.slideTiles(bestMove.x1, bestMove.y1, bestMove.x2, bestMove.y2, () => {
-	        this.savePlayerHealth(); // Save health after boss move
-	        this.endTurn();
-	    });
       }
 
       findAIMove() {
