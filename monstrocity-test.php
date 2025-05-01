@@ -744,6 +744,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  text-align: center;
 	  box-sizing: border-box;
 	}
+	
+	#boss-battles-button-container {
+	  text-align: center;
+	  margin: 20px 0;
+	}
 
 	@media (max-width: 1025px) {
 	  .theme-option {
@@ -760,6 +765,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    font-size: 0.8em;
 	    padding: 8px;
 	  }
+	    #boss-battles-button-container {
+	      margin: 10px 0;
+	    }
+	    .theme-select-button {
+	      font-size: 14px;
+	      padding: 8px 16px;
+	      min-width: 120px;
+	    }
 	}
 
     @media (max-width: 1025px) {
@@ -868,6 +881,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
     }
   </style>
+  <script type="text/javascript">
+    // Pass login status to JavaScript
+    window.isLoggedIn = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && !empty($_SESSION['userData']['user_id'])); ?>;
+  </script>
 </head>
 <body>
   <div class="game-container">
@@ -1478,61 +1495,74 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  ];
 	  
 	  function showThemeSelect(game) {
-	      console.time('showThemeSelect');
-	      let container = document.getElementById('theme-select-container');
-	      const characterContainer = document.getElementById('character-select-container');
+	    console.time('showThemeSelect');
+	    let container = document.getElementById('theme-select-container');
+	    const characterContainer = document.getElementById('character-select-container');
 
-	      // Rebuild container without the close button
-	      container.innerHTML = `
-	          <h2>Select Theme</h2>
-	          <div id="theme-options"></div>
-	      `;
-	      const optionsDiv = document.getElementById('theme-options');
+	    // Rebuild container with Boss Battles button
+	    container.innerHTML = `
+	      <h2>Select Theme</h2>
+	      <div id="theme-options"></div>
+	      <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
+	        <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
+	      </div>
+	    `;
+	    const optionsDiv = document.getElementById('theme-options');
 
-	      // Show theme selection screen, hide character select screen
-	      container.style.display = 'block';
-	      characterContainer.style.display = 'none';
+	    // Show theme selection screen, hide character select screen
+	    container.style.display = 'block';
+	    characterContainer.style.display = 'none';
 
-	      // Populate theme options
-	      themes.forEach(group => {
-	          const groupDiv = document.createElement('div');
-	          groupDiv.className = 'theme-group';
-	          const groupTitle = document.createElement('h3');
-	          groupTitle.textContent = group.group;
-	          groupDiv.appendChild(groupTitle);
+	    // Populate theme options (unchanged)
+	    themes.forEach(group => {
+	      const groupDiv = document.createElement('div');
+	      groupDiv.className = 'theme-group';
+	      const groupTitle = document.createElement('h3');
+	      groupTitle.textContent = group.group;
+	      groupDiv.appendChild(groupTitle);
 
-	          group.items.forEach(theme => {
-	              const option = document.createElement('div');
-	              option.className = 'theme-option';
-	              if (theme.background) {
-	                  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
-	                  option.style.backgroundImage = `url(${backgroundUrl})`;
-	              }
-	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
-	              option.innerHTML = `
-	                  <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
-	                  <p>${theme.title}</p>
-	              `;
-	              option.addEventListener('click', () => {
-	                  // Clear old characters and show loading message
-	                  const characterOptions = document.getElementById('character-options');
-	                  if (characterOptions) {
-	                      characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-	                  }
-	                  // Hide theme selection and show character select
-	                  container.innerHTML = '';
-	                  container.style.display = 'none';
-	                  characterContainer.style.display = 'block';
-	                  // Update the theme and load characters
-	                  game.updateTheme(theme.value);
-	              });
-	              groupDiv.appendChild(option);
-	          });
-
-	          optionsDiv.appendChild(groupDiv);
+	      group.items.forEach(theme => {
+	        const option = document.createElement('div');
+	        option.className = 'theme-option';
+	        if (theme.background) {
+	          const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	          option.style.backgroundImage = `url(${backgroundUrl})`;
+	        }
+	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
+	        option.innerHTML = `
+	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
+	          <p>${theme.title}</p>
+	        `;
+	        option.addEventListener('click', () => {
+	          // Clear old characters and show loading message
+	          const characterOptions = document.getElementById('character-options');
+	          if (characterOptions) {
+	            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+	          }
+	          // Hide theme selection and show character select
+	          container.innerHTML = '';
+	          container.style.display = 'none';
+	          characterContainer.style.display = 'block';
+	          // Update the theme and load characters
+	          game.updateTheme(theme.value);
+	        });
+	        groupDiv.appendChild(option);
 	      });
 
-	      console.timeEnd('showThemeSelect');
+	      optionsDiv.appendChild(groupDiv);
+	    });
+
+	    // Add click handler for Boss Battles button
+	    const bossButton = document.getElementById('boss-battles-button');
+	    if (bossButton) {
+	      bossButton.addEventListener('click', () => {
+	        console.log('Boss Battles button clicked');
+	        alert('Boss Battles mode selected! (Boss selection modal to be implemented)');
+	        // Future: game.showBossSelectionModal();
+	      });
+	    }
+
+	    console.timeEnd('showThemeSelect');
 	  }
 	  
 	  const opponentsConfig = [
