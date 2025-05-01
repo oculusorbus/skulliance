@@ -2172,7 +2172,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        headers: {
 		            'Content-Type': 'application/x-www-form-urlencoded'
 		        },
-		        body: `boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
 		    })
 		    .then(response => {
 		        console.log('saveBossHealth: Response status:', response.status);

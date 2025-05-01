@@ -20,49 +20,67 @@ if ($user_id <= 0 || $boss_id <= 0 || $health < 0) {
     exit;
 }
 
-// Check if row exists
-$query = "SELECT id FROM health WHERE user_id = ? AND boss_id = ?";
+// Fetch current player health to calculate damage taken
+$query = "SELECT health FROM health WHERE user_id = ? AND boss_id = ?";
 $stmt = $conn->prepare($query);
-if (!$stmt) {
-    echo json_encode(['success' => false, 'error' => 'Prepare failed: ' . $conn->error]);
-    $conn->close();
-    exit;
-}
 $stmt->bind_param('ii', $user_id, $boss_id);
 $stmt->execute();
-$stmt->bind_result($id);  // Bind the 'id' column to $id
-$exists = $stmt->fetch(); // Fetch the result; $exists is true if a row exists
+$stmt->bind_result($current_health);
+$exists = $stmt->fetch();
 $stmt->close();
 
+$damage_taken = $exists ? max(0, $current_health - $health) : 0; // Damage taken by player, 0 if new row
+
+// Update or insert health row
 if ($exists) {
-    // Update existing row
     $query = "UPDATE health SET health = ?, date_updated = CURRENT_TIMESTAMP WHERE user_id = ? AND boss_id = ?";
     $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        echo json_encode(['success' => false, 'error' => 'Prepare failed: ' . $conn->error]);
-        $conn->close();
-        exit;
-    }
     $stmt->bind_param('iii', $health, $user_id, $boss_id);
     $stmt->execute();
     if ($stmt->affected_rows > 0) {
-        echo json_encode(['success' => true, 'message' => 'Health updated']);
+        // Update encounters table
+        $query = "SELECT id, damage_taken FROM encounters WHERE user_id = ? AND boss_id = ? AND reward = 0 ORDER BY id DESC LIMIT 1";
+        $stmt2 = $conn->prepare($query);
+        $stmt2->bind_param('ii', $user_id, $boss_id);
+        $stmt2->execute();
+        $stmt2->bind_result($encounter_id, $existing_damage_taken);
+        if ($stmt2->fetch()) {
+            // Update existing row with reward = 0
+            $new_damage_taken = $existing_damage_taken + $damage_taken;
+            $query = "UPDATE encounters SET damage_taken = ?, date_created = CURRENT_TIMESTAMP WHERE id = ?";
+            $stmt3 = $conn->prepare($query);
+            $stmt3->bind_param('ii', $new_damage_taken, $encounter_id);
+            $stmt3->execute();
+            $stmt3->close();
+        } else {
+            // Create new row
+            $query = "INSERT INTO encounters (user_id, boss_id, damage_dealt, damage_taken, reward, date_created) 
+                      VALUES (?, ?, 0, ?, 0, CURRENT_TIMESTAMP)";
+            $stmt3 = $conn->prepare($query);
+            $stmt3->bind_param('iii', $user_id, $boss_id, $damage_taken);
+            $stmt3->execute();
+            $stmt3->close();
+        }
+        $stmt2->close();
+        echo json_encode(['success' => true, 'message' => 'Health and encounters updated']);
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to update health']);
     }
 } else {
-    // Insert new row
-    $query = "INSERT INTO health (user_id, boss_id, health, date_created, date_updated) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+    $query = "INSERT INTO health (user_id, boss_id, health, date_created, date_updated) 
+              VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        echo json_encode(['success' => false, 'error' => 'Prepare failed: ' . $conn->error]);
-        $conn->close();
-        exit;
-    }
     $stmt->bind_param('iii', $user_id, $boss_id, $health);
     $stmt->execute();
     if ($stmt->affected_rows > 0) {
-        echo json_encode(['success' => true, 'message' => 'Health saved']);
+        // New health row, initialize encounters
+        $query = "INSERT INTO encounters (user_id, boss_id, damage_dealt, damage_taken, reward, date_created) 
+                  VALUES (?, ?, 0, 0, 0, CURRENT_TIMESTAMP)";
+        $stmt2 = $conn->prepare($query);
+        $stmt2->bind_param('ii', $user_id, $boss_id);
+        $stmt2->execute();
+        $stmt2->close();
+        echo json_encode(['success' => true, 'message' => 'Health saved and encounters initialized']);
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to save health']);
     }
