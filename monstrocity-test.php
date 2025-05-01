@@ -1951,10 +1951,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    // Prepare the boss data to create a character object
 		    const bossConfig = {
 		        name: this.selectedBoss.name,
-		        strength: this.selectedBoss.strength,
-		        speed: this.selectedBoss.speed,
-		        tactics: this.selectedBoss.tactics,
-		        size: this.selectedBoss.size,
+		        strength: this.selectedBoss.strength || 4,
+		        speed: this.selectedBoss.speed || 4,
+		        tactics: this.selectedBoss.tactics || 4,
+		        size: this.selectedBoss.size || 'Medium',
 		        type: 'Base', // Bosses are treated as Base type
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme // Use the current theme (no changes)
@@ -1992,15 +1992,71 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('  Powerup:', this.player2.powerup);
 		    console.log('  Theme:', this.player2.theme);
 
-		    // Reset game state for the boss battle
-		    this.currentLevel = 1; // Reset level
-		    this.grandTotalScore = 0; // Reset score
+		    // Reset game state for the boss battle (mimicking initGame but without setting player2)
+		    var self = this;
+		    var gameContainer = document.querySelector('.game-container');
+		    var gameBoard = document.getElementById('game-board');
+		    gameContainer.style.display = 'block';
+		    gameBoard.style.visibility = 'visible';
+		    this.setBackground();
+
+		    this.sounds.reset.play();
+		    log('Starting Boss Battle...');
+
+		    this.player1.health = this.player1.maxHealth;
+
+		    this.currentTurn = this.player1.speed > this.player2.speed 
+		        ? this.player1 
+		        : this.player2.speed > this.player1.speed 
+		        ? this.player2 
+		        : this.player1.strength >= this.player2.strength 
+		        ? this.player1 
+		        : this.player2;
+		    this.gameState = 'initializing';
+		    this.gameOver = false;
+
 		    this.roundStats = [];
 
-		    // Start the game
-		    console.log('Calling initGame to start the boss battle...');
-		    this.initGame();
-		    console.log('initGame called successfully.');
+		    // Fetch current elements and remove classes
+		    const currentP1Image = document.getElementById('p1-image');
+		    const currentP2Image = document.getElementById('p2-image');
+		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
+		    if (currentP2Image) currentP2Image.classList.remove('winner', 'loser');
+
+		    this.updatePlayerDisplay();
+		    this.updateOpponentDisplay();
+
+		    // Use current elements for transform
+		    if (currentP1Image) currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		    if (currentP2Image) currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+
+		    this.updateHealth(this.player1);
+		    this.updateHealth(this.player2);
+
+		    battleLog.innerHTML = '';
+		    gameOver.textContent = '';
+
+		    if (this.player1.size !== 'Medium') {
+		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
+		    }
+		    if (this.player2.size !== 'Medium') {
+		        log(this.player2.name + '\'s ' + this.player2.size + ' size ' + (this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics) + '!');
+		    }
+
+		    log(this.player1.name + ' starts at full strength with ' + this.player1.health + '/' + this.player1.maxHealth + ' HP!');
+		    log(this.currentTurn.name + ' goes first!');
+
+		    this.initBoard();
+		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
+		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
+
+		    if (this.playerCharacters.length > 1) {
+		        document.getElementById('change-character').style.display = 'inline-block';
+		    }
+
+		    if (this.currentTurn === this.player2) {
+		        setTimeout(function() { self.aiTurn(); }, 1000);
+		    }
 
 		    // Log the start of the battle
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
