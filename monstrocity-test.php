@@ -1664,6 +1664,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  
 	  function showBossSelect(game) {
 	    console.time('showBossSelect');
+	    console.log('Session user ID:', window.isLoggedIn ? 'User logged in' : 'No user logged in');
+	    console.log('Current user session data:', <?php echo json_encode($_SESSION['userData'] ?? 'No session data'); ?>); // New: Log full session data
 	    const container = document.getElementById('boss-select-container');
 	    const themeContainer = document.getElementById('theme-select-container');
 	    const characterContainer = document.getElementById('character-select-container');
