@@ -2181,6 +2181,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    localStorage.setItem('gameTheme', this.theme);
 			    this.setBackground();
 
+			    // Clear boss-related overrides
+			    this.selectedBoss = null;
+			    this.selectedCharacter = null; // Also clear selected character to avoid confusion
+			    console.log('updateTheme: Cleared selectedBoss and selectedCharacter');
+
 			    // Update the logo immediately
 			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
 
@@ -2213,12 +2218,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            self.player1 = self.createCharacter(newConfig);
 			            self.updatePlayerDisplay();
 			        }
-			        if (self.player2) {
+			        // Always reset opponent to default for the current level
+			        if (self.player1) {
 			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
 			            self.updateOpponentDisplay();
+			            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
 			        }
 
-			        // Render board only if game is initialized (fixes tile lockups during gameplay)
+			        // Render board only if game is initialized
 			        if (self.player1 && self.gameState !== 'initializing') {
 			            // Clear old event listeners to prevent lockups
 			            const tiles = document.querySelectorAll('.tile');
@@ -2256,6 +2263,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
 			        ];
 			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
+			        // Clear boss overrides in case of error
+			        self.selectedBoss = null;
+			        self.selectedCharacter = null;
 			        // Show character select on error
 			        const container = document.getElementById('character-select-container');
 			        container.style.display = 'block';
