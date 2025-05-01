@@ -4025,6 +4025,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          }
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
+
+	          // Save boss health as 0 for boss battles
+	          if (this.selectedBoss) {
+	              this.player2.health = 0;
+	              await this.saveBossHealth();
+	              console.log("Boss health saved as 0 for boss battle");
+	          }
+
 	          this.gameOver = true;
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Win!";
