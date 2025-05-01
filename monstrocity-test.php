@@ -3280,110 +3280,112 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         return null;
       }
 
-      slideTiles(startX, startY, endX, endY) {
-        const tileSizeWithGap = this.tileSizeWithGap;
-        let direction;
+	  slideTiles(startX, startY, endX, endY, afterMove = () => this.endTurn()) {
+	      const tileSizeWithGap = this.tileSizeWithGap;
+	      let direction;
 
-        const originalTiles = [];
-        const tileElements = [];
-        if (startY === endY) {
-          direction = startX < endX ? 1 : -1;
-          const minX = Math.min(startX, endX);
-          const maxX = Math.max(startX, endX);
-          for (let x = minX; x <= maxX; x++) {
-            originalTiles.push({ ...this.board[startY][x] });
-            tileElements.push(this.board[startY][x].element);
-          }
-        } else if (startX === endX) {
-          direction = startY < endY ? 1 : -1;
-          const minY = Math.min(startY, endY);
-          const maxY = Math.max(startY, endY);
-          for (let y = minY; y <= maxY; y++) {
-            originalTiles.push({ ...this.board[y][startX] });
-            tileElements.push(this.board[y][startX].element);
-          }
-        }
+	      const originalTiles = [];
+	      const tileElements = [];
+	      if (startY === endY) {
+	          direction = startX < endX ? 1 : -1;
+	          const minX = Math.min(startX, endX);
+	          const maxX = Math.max(startX, endX);
+	          for (let x = minX; x <= maxX; x++) {
+	              originalTiles.push({ ...this.board[startY][x] });
+	              tileElements.push(this.board[startY][x].element);
+	          }
+	      } else if (startX === endX) {
+	          direction = startY < endY ? 1 : -1;
+	          const minY = Math.min(startY, endY);
+	          const maxY = Math.max(startY, endY);
+	          for (let y = minY; y <= maxY; y++) {
+	              originalTiles.push({ ...this.board[y][startX] });
+	              tileElements.push(this.board[y][startX].element);
+	          }
+	      }
 
-        const selectedElement = this.board[startY][startX].element;
-        const dx = (endX - startX) * tileSizeWithGap;
-        const dy = (endY - startY) * tileSizeWithGap;
+	      const selectedElement = this.board[startY][startX].element;
+	      const dx = (endX - startX) * tileSizeWithGap;
+	      const dy = (endY - startY) * tileSizeWithGap;
 
-        selectedElement.style.transition = "transform 0.2s ease";
-        selectedElement.style.transform = `translate(${dx}px, ${dy}px)`;
+	      selectedElement.style.transition = "transform 0.2s ease";
+	      selectedElement.style.transform = `translate(${dx}px, ${dy}px)`;
 
-        let i = 0;
-        if (startY === endY) {
-          for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
-            if (x === startX) continue;
-            const offsetX = direction * -tileSizeWithGap * (x - startX) / Math.abs(endX - startX);
-            tileElements[i].style.transition = "transform 0.2s ease";
-            tileElements[i].style.transform = `translate(${offsetX}px, 0)`;
-            i++;
-          }
-        } else {
-          for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
-            if (y === startY) continue;
-            const offsetY = direction * -tileSizeWithGap * (y - startY) / Math.abs(endY - startY);
-            tileElements[i].style.transition = "transform 0.2s ease";
-            tileElements[i].style.transform = `translate(0, ${offsetY}px)`;
-            i++;
-          }
-        }
+	      let i = 0;
+	      if (startY === endY) {
+	          for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+	              if (x === startX) continue;
+	              const offsetX = direction * -tileSizeWithGap * (x - startX) / Math.abs(endX - startX);
+	              tileElements[i].style.transition = "transform 0.2s ease";
+	              tileElements[i].style.transform = `translate(${offsetX}px, 0)`;
+	              i++;
+	          }
+	      } else {
+	          for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+	              if (y === startY) continue;
+	              const offsetY = direction * -tileSizeWithGap * (y - startY) / Math.abs(endY - startY);
+	              tileElements[i].style.transition = "transform 0.2s ease";
+	              tileElements[i].style.transform = `translate(0, ${offsetY}px)`;
+	              i++;
+	          }
+	      }
 
-        setTimeout(() => {
-          if (startY === endY) {
-            const row = this.board[startY];
-            const tempRow = [...row];
-            if (startX < endX) {
-              for (let x = startX; x < endX; x++) row[x] = tempRow[x + 1];
-            } else {
-              for (let x = startX; x > endX; x--) row[x] = tempRow[x - 1];
-            }
-            row[endX] = tempRow[startX];
-          } else {
-            const tempCol = [];
-            for (let y = 0; y < this.height; y++) tempCol[y] = { ...this.board[y][startX] };
-            if (startY < endY) {
-              for (let y = startY; y < endY; y++) this.board[y][startX] = tempCol[y + 1];
-            } else {
-              for (let y = startY; y > endY; y--) this.board[y][startX] = tempCol[y - 1];
-            }
-            this.board[endY][endX] = tempCol[startY];
-          }
+	      setTimeout(() => {
+	          if (startY === endY) {
+	              const row = this.board[startY];
+	              const tempRow = [...row];
+	              if (startX < endX) {
+	                  for (let x = startX; x < endX; x++) row[x] = tempRow[x + 1];
+	              } else {
+	                  for (let x = startX; x > endX; x--) row[x] = tempRow[x - 1];
+	              }
+	              row[endX] = tempRow[startX];
+	          } else {
+	              const tempCol = [];
+	              for (let y = 0; y < this.height; y++) tempCol[y] = { ...this.board[y][startX] };
+	              if (startY < endY) {
+	                  for (let y = startY; y < endY; y++) this.board[y][startX] = tempCol[y + 1];
+	              } else {
+	                  for (let y = startY; y > endY; y--) this.board[y][startX] = tempCol[y - 1];
+	              }
+	              this.board[endY][endX] = tempCol[startY];
+	          }
 
-          this.renderBoard();
-          const hasMatches = this.resolveMatches(endX, endY);
+	          this.renderBoard();
+	          const hasMatches = this.resolveMatches(endX, endY);
 
-          if (hasMatches) {
-            this.gameState = "animating";
-          } else {
-            log("No match, reverting tiles...");
-            this.sounds.badMove.play();
-            selectedElement.style.transition = "transform 0.2s ease";
-            selectedElement.style.transform = "translate(0, 0)";
-            tileElements.forEach(element => {
-              element.style.transition = "transform 0.2s ease";
-              element.style.transform = "translate(0, 0)";
-            });
+	          if (hasMatches) {
+	              this.gameState = "animating";
+	              // afterMove will be called by cascadeTiles via endTurn
+	          } else {
+	              log("No match, reverting tiles...");
+	              this.sounds.badMove.play();
+	              selectedElement.style.transition = "transform 0.2s ease";
+	              selectedElement.style.transform = "translate(0, 0)";
+	              tileElements.forEach(element => {
+	                  element.style.transition = "transform 0.2s ease";
+	                  element.style.transform = "translate(0, 0)";
+	              });
 
-            setTimeout(() => {
-              if (startY === endY) {
-                const minX = Math.min(startX, endX);
-                for (let i = 0; i < originalTiles.length; i++) {
-                  this.board[startY][minX + i] = { ...originalTiles[i], element: tileElements[i] };
-                }
-              } else {
-                const minY = Math.min(startY, endY);
-                for (let i = 0; i < originalTiles.length; i++) {
-                  this.board[minY + i][startX] = { ...originalTiles[i], element: tileElements[i] };
-                }
-              }
-              this.renderBoard();
-              this.gameState = "playerTurn";
-            }, 200);
-          }
-        }, 200);
-      }
+	              setTimeout(() => {
+	                  if (startY === endY) {
+	                      const minX = Math.min(startX, endX);
+	                      for (let i = 0; i < originalTiles.length; i++) {
+	                          this.board[startY][minX + i] = { ...originalTiles[i], element: tileElements[i] };
+	                      }
+	                  } else {
+	                      const minY = Math.min(startY, endY);
+	                      for (let i = 0; i < originalTiles.length; i++) {
+	                          this.board[minY + i][startX] = { ...originalTiles[i], element: tileElements[i] };
+	                      }
+	                  }
+	                  this.renderBoard();
+	                  this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	                  afterMove();
+	              }, 200);
+	          }
+	      }, 200);
+	  }
 
 	  resolveMatches(selectedX = null, selectedY = null) {
 	    console.log("resolveMatches started, gameOver:", this.gameOver);
@@ -3870,32 +3872,48 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
 
 	  endTurn() {
-	    if (this.gameState === "gameOver" || this.gameOver) {
-	      console.log("Game over, skipping endTurn");
-	      return;
-	    }
-	    this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
-	    this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
-	    log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : "Opponent"}`);
+	      if (this.gameState === "gameOver" || this.gameOver) {
+	          console.log("Game over, skipping endTurn");
+	          return;
+	      }
+	      // Save health if it's the boss's turn ending in a boss battle
+	      if (this.currentTurn === this.player2 && this.selectedBoss) {
+	          console.log("endTurn: Boss turn ending, saving player health");
+	          this.savePlayerHealth();
+	      }
+	      this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
+	      this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	      turnIndicator.textContent = this.selectedBoss
+	          ? `Boss Battle - ${this.currentTurn === this.player1 ? "Player" : "Boss"}'s Turn`
+	          : `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+	      log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : this.selectedBoss ? "Boss" : "Opponent"}`);
 
-	    if (this.currentTurn === this.player2) {
-	      setTimeout(() => this.aiTurn(), 1000);
-	    }
+	      if (this.currentTurn === this.player2 && !this.gameOver) {
+	          setTimeout(() => this.aiTurn(), 1000);
+	      }
 	  }
 
-      aiTurn() {
-        if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) return;
-        this.gameState = "animating";
-        const move = this.findAIMove();
-        if (move) {
-          log(`${this.player2.name} swaps tiles at (${move.x1}, ${move.y1}) to (${move.x2}, ${move.y2})`);
-          this.slideTiles(move.x1, move.y1, move.x2, move.y2);
-        } else {
-          log(`${this.player2.name} passes...`);
-          this.endTurn();
-        }
-      }
+	  aiTurn() {
+	      if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) return;
+	      this.gameState = "animating";
+	      const move = this.findAIMove();
+	      if (move) {
+	          log(`${this.player2.name} swaps tiles at (${move.x1}, ${move.y1}) to (${move.x2}, ${move.y2})`);
+	          const callback = () => {
+	              if (this.selectedBoss) { // Assuming this indicates a boss battle
+	                  this.savePlayerHealth(); // Save health after move completes
+	              }
+	              this.endTurn(); // Switch turn to player
+	          };
+	          this.slideTiles(move.x1, move.y1, move.x2, move.y2, callback);
+	      } else {
+	          log(`${this.player2.name} passes...`);
+	          if (this.selectedBoss) { // Save health on pass in boss battle
+	              this.savePlayerHealth();
+	          }
+	          this.endTurn();
+	      }
+	  }
 
       findAIMove() {
         for (let y = 0; y < this.height; y++) {
