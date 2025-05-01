@@ -37,6 +37,7 @@ function getBosses($conn) {
                 b.powerup,
                 b.bounty,
                 p.currency,
+				b.orientation,
                 b.extension
             FROM bosses b
             INNER JOIN projects p ON b.project_id = p.id
@@ -152,6 +153,7 @@ function getBosses($conn) {
                 'powerup' => $row['powerup'] ?: null,
                 'bounty' => (int)$row['bounty'],
                 'currency' => $row['currency'],
+				'orientation' => ucfirst($row['orientation']),
                 'extension' => $row['extension'],
                 'imageUrl' => "images/monstrocity/bosses/{$slugifiedName}.{$row['extension']}",
                 'playerHealth' => $playerHealth,
