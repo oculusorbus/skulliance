@@ -23,14 +23,26 @@ if ($user_id <= 0 || $boss_id <= 0 || $health < 0) {
 // Check if row exists
 $query = "SELECT id FROM health WHERE user_id = ? AND boss_id = ?";
 $stmt = $conn->prepare($query);
+if (!$stmt) {
+    echo json_encode(['success' => false, 'error' => 'Prepare failed: ' . $conn->error]);
+    $conn->close();
+    exit;
+}
 $stmt->bind_param('ii', $user_id, $boss_id);
 $stmt->execute();
-$result = $stmt->get_result();
+$stmt->bind_result($id);  // Bind the 'id' column to $id
+$exists = $stmt->fetch(); // Fetch the result; $exists is true if a row exists
+$stmt->close();
 
-if ($result->num_rows > 0) {
+if ($exists) {
     // Update existing row
     $query = "UPDATE health SET health = ?, date_updated = CURRENT_TIMESTAMP WHERE user_id = ? AND boss_id = ?";
     $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        echo json_encode(['success' => false, 'error' => 'Prepare failed: ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $stmt->bind_param('iii', $health, $user_id, $boss_id);
     $stmt->execute();
     if ($stmt->affected_rows > 0) {
@@ -42,6 +54,11 @@ if ($result->num_rows > 0) {
     // Insert new row
     $query = "INSERT INTO health (user_id, boss_id, health, date_created, date_updated) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        echo json_encode(['success' => false, 'error' => 'Prepare failed: ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $stmt->bind_param('iii', $user_id, $boss_id, $health);
     $stmt->execute();
     if ($stmt->affected_rows > 0) {
