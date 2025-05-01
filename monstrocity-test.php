@@ -385,7 +385,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     #battle-log li { margin: 5px 0; opacity: 0; animation: fadeIn 0.5s forwards; }
     @keyframes fadeIn { to { opacity: 1; } }
 
-    button {
+	button {
 	    padding: 10px 20px;
 	    background-color: #49BBE3;
 	    border: none;
@@ -393,11 +393,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    cursor: pointer;
 	    font-weight: bold;
 	    margin-bottom: 20px;
-	    min-width: 150px;
+	    min-width: 150px; /* Still sets a minimum, but width takes precedence */
+	    width: 160px; /* Fixed width for both buttons */
 	    font-size: 13px;
-    }
-
-    button:hover { background-color: #54d4ff; }
+	    text-align: center; /* Centers the text for a polished look */
+	}
+	
+	button:hover {
+	    background-color: #54d4ff;
+	}
 
 	.legend {
 	  margin-top: 20px;
