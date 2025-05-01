@@ -1643,11 +1643,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    const themeContainer = document.getElementById('theme-select-container');
 	    const characterContainer = document.getElementById('character-select-container');
 
-	    // Rebuild container
+	    // Rebuild container with Back to Themes button at the top
 	    container.innerHTML = `
 	      <h2>Select Boss</h2>
+	      <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
 	      <div id="boss-options"></div>
-	      <button id="boss-close-button" class="theme-select-button" style="margin-top: 20px;">Back to Themes</button>
 	    `;
 	    const optionsDiv = document.getElementById('boss-options');
 
@@ -1686,8 +1686,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        bosses.forEach(boss => {
 	          const option = document.createElement('div');
 	          option.className = `boss-option ${boss.canFight ? '' : 'disabled'}`;
+	          const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
 	          option.innerHTML = `
-	            <img src="${boss.imageUrl}" alt="${boss.name}" onerror="this.src='/staking/icons/skull.png'">
+	            <img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'">
 	            <p><strong>${boss.name}</strong></p>
 	            <p>Health: ${boss.health}/${boss.maxHealth}</p>
 	            <p>Strength: ${boss.strength}</p>
