@@ -749,6 +749,70 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  text-align: center;
 	  margin: 10px 0 20px 0; /* Reduced top margin, increased bottom margin */
 	}
+	
+	#boss-select-container {
+	  position: fixed;
+	  top: 50%;
+	  left: 50%;
+	  transform: translate(-50%, -50%);
+	  background: #002f44;
+	  padding: 20px;
+	  z-index: 102; /* Above theme-select-container (101) */
+	  width: 100%;
+	  height: 100%;
+	  overflow-y: auto;
+	  border: 3px solid black;
+	  text-align: center;
+	  display: none;
+	}
+
+	#boss-select-container h2 {
+	  text-align: center;
+	  margin-bottom: 20px;
+	  margin-top: 20px;
+	}
+
+	/* Reuse character-option for boss-option */
+	.boss-option {
+	  display: inline-block;
+	  width: 200px;
+	  margin: 10px;
+	  padding: 10px;
+	  background: #165777;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  transition: transform 0.2s ease, background 0.2s ease;
+	  border: 1px solid black;
+	}
+
+	.boss-option:hover {
+	  transform: scale(1.05);
+	  background: #2080ad;
+	}
+
+	.boss-option img {
+	  width: 100%;
+	  height: auto;
+	  border-radius: 5px;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+	  filter: drop-shadow(2px 5px 10px #000);
+	}
+
+	.boss-option p {
+	  margin: 5px 0;
+	  font-size: 0.9em;
+	}
+
+	/* Style for non-fightable bosses */
+	.boss-option.disabled {
+	  opacity: 0.5;
+	  cursor: not-allowed;
+	}
+
+	.boss-option.disabled:hover {
+	  transform: none;
+	  background: #165777;
+	}
 
 	@media (max-width: 1025px) {
 	  .theme-option {
@@ -772,6 +836,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    font-size: 14px;
 	    padding: 8px 16px;
 	    min-width: 120px;
+	  }
+	  #boss-select-container {
+	    width: 90%;
+	    padding: 10px;
+	  }
+	  .boss-option {
+	    width: 140px;
+	    margin: 5px;
+	  }
+	  .boss-option p {
+	    font-size: 0.8em;
 	  }
 	}
 
@@ -1083,6 +1158,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	<!-- New Theme Select Modal -->
 	<!-- Theme Select Template (initially empty, built by JS) -->
 	<div id="theme-select-container" style="display: none;"></div>
+    <div id="boss-select-container" style="display: none;"></div>
   <script>
 	  let updatePending = false;
 	  // Theme data extracted from original <select>
@@ -1534,16 +1610,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
-	          // Clear old characters and show loading message
 	          const characterOptions = document.getElementById('character-options');
 	          if (characterOptions) {
 	            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
 	          }
-	          // Hide theme selection and show character select
 	          container.innerHTML = '';
 	          container.style.display = 'none';
 	          characterContainer.style.display = 'block';
-	          // Update the theme and load characters
 	          game.updateTheme(theme.value);
 	        });
 	        groupDiv.appendChild(option);
@@ -1552,17 +1625,93 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      optionsDiv.appendChild(groupDiv);
 	    });
 
-	    // Add click handler for Boss Battles button
+	    // Update Boss Battles button handler
 	    const bossButton = document.getElementById('boss-battles-button');
 	    if (bossButton) {
 	      bossButton.addEventListener('click', () => {
 	        console.log('Boss Battles button clicked');
-	        alert('Boss Battles mode selected! (Boss selection modal to be implemented)');
-	        // Future: game.showBossSelectionModal();
+	        showBossSelect(game);
 	      });
 	    }
 
 	    console.timeEnd('showThemeSelect');
+	  }
+	  
+	  function showBossSelect(game) {
+	    console.time('showBossSelect');
+	    const container = document.getElementById('boss-select-container');
+	    const themeContainer = document.getElementById('theme-select-container');
+	    const characterContainer = document.getElementById('character-select-container');
+
+	    // Rebuild container
+	    container.innerHTML = `
+	      <h2>Select Boss</h2>
+	      <div id="boss-options"></div>
+	      <button id="boss-close-button" class="theme-select-button" style="margin-top: 20px;">Back to Themes</button>
+	    `;
+	    const optionsDiv = document.getElementById('boss-options');
+
+	    // Show boss selection, hide other modals
+	    container.style.display = 'block';
+	    themeContainer.style.display = 'none';
+	    characterContainer.style.display = 'none';
+
+	    // Add close button handler
+	    const closeButton = document.getElementById('boss-close-button');
+	    closeButton.addEventListener('click', () => {
+	      container.style.display = 'none';
+	      themeContainer.style.display = 'block';
+	      characterContainer.style.display = 'none';
+	    });
+
+	    // Fetch boss data
+	    fetch('/ajax/get-bosses.php', {
+	      method: 'GET',
+	      headers: { 'Content-Type': 'application/json' }
+	    })
+	      .then(response => {
+	        if (!response.ok) {
+	          throw new Error(`HTTP error! Status: ${response.status}`);
+	        }
+	        return response.json();
+	      })
+	      .then(bosses => {
+	        if (!Array.isArray(bosses) || bosses.length === 0) {
+	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No bosses available.</p>';
+	          console.warn('showBossSelect: No bosses returned');
+	          return;
+	        }
+
+	        const fragment = document.createDocumentFragment();
+	        bosses.forEach(boss => {
+	          const option = document.createElement('div');
+	          option.className = `boss-option ${boss.canFight ? '' : 'disabled'}`;
+	          option.innerHTML = `
+	            <img src="${boss.imageUrl}" alt="${boss.name}" onerror="this.src='/staking/icons/skull.png'">
+	            <p><strong>${boss.name}</strong></p>
+	            <p>Health: ${boss.health}/${boss.maxHealth}</p>
+	            <p>Strength: ${boss.strength}</p>
+	            <p>Bounty: ${boss.bounty} ${boss.currency}</p>
+	          `;
+	          if (boss.canFight) {
+	            option.addEventListener('click', () => {
+	              console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
+	              alert(`Selected boss: ${boss.name}! (Boss battle to be implemented)`);
+	              // Future: game.startBossBattle(boss);
+	            });
+	          }
+	          fragment.appendChild(option);
+	        });
+
+	        optionsDiv.appendChild(fragment);
+	        console.log(`showBossSelect: Rendered ${bosses.length} bosses`);
+	      })
+	      .catch(error => {
+	        console.error('showBossSelect: Error fetching bosses:', error);
+	        optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Error loading bosses. Please try again.</p>';
+	      });
+
+	    console.timeEnd('showBossSelect');
 	  }
 	  
 	  const opponentsConfig = [
