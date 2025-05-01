@@ -18,6 +18,8 @@ if (!isset($_SESSION['logged_in'])) {
     }
 }
 
+$user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+
 // Process user data only if valid session exists
 if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     extract($_SESSION['userData']);
@@ -986,6 +988,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   <script type="text/javascript">
     // Pass login status to JavaScript
     window.isLoggedIn = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && !empty($_SESSION['userData']['user_id'])); ?>;
+	window.userId = <?php echo json_encode($user_id); ?>;
   </script>
 </head>
 <body>
@@ -2098,6 +2101,50 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    }
 
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
+		}
+		
+		savePlayerHealth() {
+		    if (!this.selectedBoss) {
+		        console.log('savePlayerHealth: Not a boss battle, skipping');
+		        return;
+		    }
+		    // Assume userId is passed from PHP; if not, we'll fetch it or alert the issue
+		    const userId = window.userId || null;
+		    if (!userId) {
+		        console.warn('savePlayerHealth: userId not defined. Ensure window.userId is set in PHP.');
+		        log('Cannot save health: User not logged in or userId missing.');
+		        return;
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const health = this.player1.health;
+		    console.log(`savePlayerHealth: Saving - userId=${userId}, bossId=${bossId}, health=${health}`);
+		    fetch('ajax/save-health.php', {
+		        method: 'POST',
+		        headers: {
+		            'Content-Type': 'application/x-www-form-urlencoded'
+		        },
+		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		    })
+		    .then(response => {
+		        console.log('savePlayerHealth: Response status:', response.status);
+		        if (!response.ok) {
+		            throw new Error(`HTTP error! Status: ${response.status}`);
+		        }
+		        return response.json();
+		    })
+		    .then(data => {
+		        if (data.success) {
+		            console.log('savePlayerHealth: Health saved successfully');
+		            log(`Health saved: ${health} HP for ${this.player1.name} vs ${this.selectedBoss.name}`);
+		        } else {
+		            console.error('savePlayerHealth: Failed to save health:', data.error || 'Unknown error');
+		            log(`Failed to save health: ${data.error || 'Server error'}`);
+		        }
+		    })
+		    .catch(error => {
+		        console.error('savePlayerHealth: Error saving health:', error);
+		        log(`Error saving health: ${error.message}`);
+		    });
 		}
 		
 		refreshBoard() {
