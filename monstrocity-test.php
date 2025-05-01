@@ -627,7 +627,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  color: black;
 	}
 
-	#theme-select-button:hover {
+	#theme-select-button:hover, #select-boss-button:hover {
 	  background-color: #54d4ff;
 	}
 
