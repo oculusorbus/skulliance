@@ -1601,6 +1601,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  
 	  function showThemeSelect(game) {
 	    console.time('showThemeSelect');
+		this.toggleGameButtons(false); // Ensure theme game button state
 	    let container = document.getElementById('theme-select-container');
 	    const characterContainer = document.getElementById('character-select-container');
 
@@ -2064,30 +2065,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    battleLog.innerHTML = '';
 		    gameOver.textContent = '';
 
-		    // Toggle buttons for boss battle with null checks
-		    const restartButton = document.getElementById('restart');
+		    // Toggle buttons for boss battle
+		    this.toggleGameButtons(true);
+
+		    // Bind refresh-board button (redundant but ensures binding)
 		    const refreshButton = document.getElementById('refresh-board');
-		    if (restartButton) {
-		        restartButton.style.display = 'none';
-		        console.log('startBossBattle: Hid restart button');
-		    } else {
-		        console.warn('startBossBattle: restart button not found');
-		    }
 		    if (refreshButton) {
-		        refreshButton.style.display = 'inline-block';
 		        refreshButton.onclick = () => {
 		            console.log('refresh-board clicked');
 		            this.refreshBoard();
 		        };
-		        console.log('startBossBattle: Showed refresh-board button');
-		    } else {
-		        console.warn('startBossBattle: refresh-board button not found');
-		    }
-
-		    // Preserve existing change-character logic
-		    const changeCharacterButton = document.getElementById('change-character');
-		    if (changeCharacterButton) {
-		        changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
 		    }
 
 		    if (this.player1.size !== 'Medium') {
@@ -2145,6 +2132,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    // Trigger AI turn if it's the boss's turn
 		    if (this.currentTurn === this.player2) {
 		        setTimeout(() => this.aiTurn(), 1000);
+		    }
+		}
+		
+		toggleGameButtons(isBossBattle) {
+		    console.log(`toggleGameButtons: Setting buttons for ${isBossBattle ? 'boss battle' : 'theme game'}`);
+		    const restartButton = document.getElementById('restart');
+		    const refreshButton = document.getElementById('refresh-board');
+		    const changeCharacterButton = document.getElementById('change-character');
+
+		    if (restartButton) {
+		        restartButton.style.display = isBossBattle ? 'none' : 'inline-block';
+		        console.log(`toggleGameButtons: restart button ${isBossBattle ? 'hidden' : 'shown'}`);
+		    } else {
+		        console.warn('toggleGameButtons: restart button not found');
+		    }
+		    if (refreshButton) {
+		        refreshButton.style.display = isBossBattle ? 'inline-block' : 'none';
+		        console.log(`toggleGameButtons: refresh-board button ${isBossBattle ? 'shown' : 'hidden'}`);
+		    } else {
+		        console.warn('toggleGameButtons: refresh-board button not found');
+		    }
+		    if (changeCharacterButton) {
+		        changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
+		    } else {
+		        console.warn('toggleGameButtons: change-character button not found');
 		    }
 		}
 		
@@ -2791,27 +2803,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    battleLog.innerHTML = '';
 		    gameOver.textContent = '';
 
-		    // Toggle buttons for theme game with null checks
-		    const restartButton = document.getElementById('restart');
-		    const refreshButton = document.getElementById('refresh-board');
-		    if (restartButton) {
-		        restartButton.style.display = 'inline-block';
-		        console.log('initGame: Showed restart button');
-		    } else {
-		        console.warn('initGame: restart button not found');
-		    }
-		    if (refreshButton) {
-		        refreshButton.style.display = 'none';
-		        console.log('initGame: Hid refresh-board button');
-		    } else {
-		        console.warn('initGame: refresh-board button not found');
-		    }
-
-		    // Preserve existing change-character logic
-		    const changeCharacterButton = document.getElementById('change-character');
-		    if (changeCharacterButton) {
-		        changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
-		    }
+		    // Toggle buttons for theme game
+		    this.toggleGameButtons(false);
 
 		    if (this.player1.size !== 'Medium') {
 		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
