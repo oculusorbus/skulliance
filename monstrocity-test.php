@@ -1943,14 +1943,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    }
 
 		startBossBattle() {
-		    // Log that the boss battle is starting
 		    console.log('Starting boss battle...');
 		    console.log('Selected Character:', this.selectedCharacter.name);
 		    console.log('Selected Boss:', this.selectedBoss.name);
-
-		    // Log the full selectedBoss data to ensure it's correct
 		    console.log('Full selectedBoss data:', this.selectedBoss);
 		    console.log('Selected Boss imageUrl:', this.selectedBoss.imageUrl);
+
+		    // Determine boss orientation
+		    let bossOrientation = this.selectedBoss.orientation || 'Right'; // Fallback to Right if undefined
+		    if (bossOrientation === 'Random') {
+		        bossOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
+		        console.log(`Random orientation resolved to: ${bossOrientation}`);
+		    }
 
 		    // Prepare the boss data to create a character object
 		    const bossImageUrl = this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png'; // Fallback if imageUrl is missing
@@ -1962,49 +1966,51 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        size: this.selectedBoss.size || 'Medium',
 		        type: 'Base', // Bosses are treated as Base type
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
-		        theme: this.theme, // Use the current theme (no changes)
-		        imageUrl: `${bossImageUrl}`, // Prepend /testing/ to match relative path
-		        fallbackUrl: 'icons/skull.png', // Explicit fallback
-		        orientation: 'Right' // Ensure boss faces the correct direction
+		        theme: this.theme,
+		        imageUrl: `${bossImageUrl}`,
+		        fallbackUrl: 'icons/skull.png',
+		        orientation: bossOrientation // Use the resolved orientation
 		    };
 
-		    // Log the bossConfig to ensure it's correct
 		    console.log('Boss Config for creating character:', bossConfig);
 
 		    // Set player1 to the selected character and player2 to the boss
-		    this.player1 = { ...this.selectedCharacter }; // Copy the selected character
-		    this.player2 = this.createCharacter(bossConfig); // Create a character from the boss data
-		    this.player2.health = this.selectedBoss.health; // Set boss health
-		    this.player2.maxHealth = this.selectedBoss.maxHealth; // Set boss max health
+		    this.player1 = { ...this.selectedCharacter };
+		    this.player2 = this.createCharacter(bossConfig);
+		    this.player2.health = this.selectedBoss.health;
+		    this.player2.maxHealth = this.selectedBoss.maxHealth;
 
-		    // Log the details of player1 and player2 to verify they are loaded correctly
-		    console.log('Player 1 (Selected Character) Details:');
-		    console.log('  Name:', this.player1.name);
-		    console.log('  Health:', this.player1.health, '/', this.player1.maxHealth);
-		    console.log('  Strength:', this.player1.strength);
-		    console.log('  Speed:', this.player1.speed);
-		    console.log('  Tactics:', this.player1.tactics);
-		    console.log('  Size:', this.player1.size);
-		    console.log('  Type:', this.player1.type);
-		    console.log('  Powerup:', this.player1.powerup);
-		    console.log('  Theme:', this.player1.theme);
+		    // Log player details
+		    console.log('Player 1 (Selected Character) Details:', {
+		        Name: this.player1.name,
+		        Health: `${this.player1.health}/${this.player1.maxHealth}`,
+		        Strength: this.player1.strength,
+		        Speed: this.player1.speed,
+		        Tactics: this.player1.tactics,
+		        Size: this.player1.size,
+		        Type: this.player1.type,
+		        Powerup: this.player1.powerup,
+		        Theme: this.player1.theme,
+		        Orientation: this.player1.orientation
+		    });
+		    console.log('Player 2 (Boss) Details:', {
+		        Name: this.player2.name,
+		        Health: `${this.player2.health}/${this.player2.maxHealth}`,
+		        Strength: this.player2.strength,
+		        Speed: this.player2.speed,
+		        Tactics: this.player2.tactics,
+		        Size: this.player2.size,
+		        Type: this.player2.type,
+		        Powerup: this.player2.powerup,
+		        Theme: this.player2.theme,
+		        ImageUrl: this.player2.imageUrl,
+		        Orientation: this.player2.orientation
+		    });
 
-		    console.log('Player 2 (Boss) Details:');
-		    console.log('  Name:', this.player2.name);
-		    console.log('  Health:', this.player2.health, '/', this.player2.maxHealth);
-		    console.log('  Strength:', this.player2.strength);
-		    console.log('  Speed:', this.player2.speed);
-		    console.log('  Tactics:', this.player2.tactics);
-		    console.log('  Size:', this.player2.size);
-		    console.log('  Type:', this.player2.type);
-		    console.log('  Powerup:', this.player2.powerup);
-		    console.log('  Theme:', this.player2.theme);
-		    console.log('  Image URL:', this.player2.imageUrl);
-
-		    // Reset game state for the boss battle (mimicking initGame but without setting player2)
-		    var self = this;
-		    var gameContainer = document.querySelector('.game-container');
-		    var gameBoard = document.getElementById('game-board');
+		    // Reset game state
+		    const self = this;
+		    const gameContainer = document.querySelector('.game-container');
+		    const gameBoard = document.getElementById('game-board');
 		    gameContainer.style.display = 'block';
 		    gameBoard.style.visibility = 'visible';
 		    this.setBackground();
@@ -2026,7 +2032,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    this.roundStats = [];
 
-		    // Fetch current elements and remove classes
+		    // Remove winner/loser classes
 		    const currentP1Image = document.getElementById('p1-image');
 		    const currentP2Image = document.getElementById('p2-image');
 		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
@@ -2035,7 +2041,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.updatePlayerDisplay();
 		    this.updateOpponentDisplay();
 
-		    // Use current elements for transform
+		    // Apply orientation transforms
 		    if (currentP1Image) currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
 		    if (currentP2Image) currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
 
@@ -2046,14 +2052,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    gameOver.textContent = '';
 
 		    if (this.player1.size !== 'Medium') {
-		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
+		        log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics}!`);
 		    }
 		    if (this.player2.size !== 'Medium') {
-		        log(this.player2.name + '\'s ' + this.player2.size + ' size ' + (this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics) + '!');
+		        log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics}!`);
 		    }
 
-		    log(this.player1.name + ' starts at full strength with ' + this.player1.health + '/' + this.player1.maxHealth + ' HP!');
-		    log(this.currentTurn.name + ' goes first!');
+		    log(`${this.player1.name} starts at full strength with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+		    log(`${this.currentTurn.name} goes first!`);
 
 		    this.initBoard();
 		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
@@ -2067,7 +2073,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        setTimeout(function() { self.aiTurn(); }, 1000);
 		    }
 
-		    // Log the start of the battle
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
 		}
 		
