@@ -2159,6 +2159,43 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    });
 		}
 		
+		saveBossHealth() {
+		    if (!this.selectedBoss) {
+		        console.log('saveBossHealth: Not a boss battle, skipping');
+		        return;
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const health = this.player2.health;
+		    console.log(`saveBossHealth: Saving - bossId=${bossId}, health=${health}`);
+		    fetch('ajax/save-boss-health.php', {
+		        method: 'POST',
+		        headers: {
+		            'Content-Type': 'application/x-www-form-urlencoded'
+		        },
+		        body: `boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		    })
+		    .then(response => {
+		        console.log('saveBossHealth: Response status:', response.status);
+		        if (!response.ok) {
+		            throw new Error(`HTTP error! Status: ${response.status}`);
+		        }
+		        return response.json();
+		    })
+		    .then(data => {
+		        if (data.success) {
+		            console.log('saveBossHealth: Boss health saved successfully');
+		            log(`Boss health saved: ${health} HP for ${this.selectedBoss.name}`);
+		        } else {
+		            console.error('saveBossHealth: Failed to save boss health:', data.error || 'Unknown error');
+		            log(`Failed to save boss health: ${data.error || 'Server error'}`);
+		        }
+		    })
+		    .catch(error => {
+		        console.error('saveBossHealth: Error saving boss health:', error);
+		        log(`Error saving boss health: ${error.message}`);
+		    });
+		}
+		
 		refreshBoard() {
 		    console.log('refreshBoard: Unsticking game board for boss battle');
     
@@ -3888,10 +3925,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          console.log("Game over, skipping endTurn");
 	          return;
 	      }
-	      // Save health if it's the boss's turn ending in a boss battle
-	      if (this.currentTurn === this.player2 && this.selectedBoss) {
-	          console.log("endTurn: Boss turn ending, saving player health");
-	          this.savePlayerHealth();
+	      if (this.selectedBoss) {
+	          if (this.currentTurn === this.player1) {
+	              // Save boss health after player's turn
+	              console.log("endTurn: Player turn ending, saving boss health");
+	              this.saveBossHealth();
+	          } else if (this.currentTurn === this.player2) {
+	              // Save player health after boss's turn
+	              console.log("endTurn: Boss turn ending, saving player health");
+	              this.savePlayerHealth();
+	          }
 	      }
 	      this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
 	      this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
