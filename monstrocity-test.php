@@ -3137,6 +3137,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    document.getElementById("restart").addEventListener("click", () => {
 		        this.initGame();
 		    });
+			
+			// Add the missing event listener for the Refresh Board button
+		    const refreshButton = document.getElementById("refresh-board");
+		    refreshButton.addEventListener("click", () => {
+		        console.log("Refresh Board button clicked");
+		        this.refreshBoard();
+		    });
+			
 		    const changeCharacterButton = document.getElementById("change-character");
 		    const p1Image = document.getElementById("p1-image");
 		    const p2Image = document.getElementById("p2-image");
