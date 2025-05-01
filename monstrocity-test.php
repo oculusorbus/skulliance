@@ -813,6 +813,28 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  transform: none;
 	  background: #165777;
 	}
+	
+	.boss-option table {
+	  width: 100%;
+	  margin: 5px 0;
+	  border-collapse: collapse;
+	  font-size: 0.9em;
+	  color: #fff;
+	}
+
+	.boss-option table td {
+	  padding: 2px 5px;
+	  text-align: left;
+	}
+
+	.boss-option table td:first-child {
+	  font-weight: bold;
+	  width: 50%;
+	}
+
+	.boss-option table td:last-child {
+	  text-align: right;
+	}
 
 	@media (max-width: 1025px) {
 	  .theme-option {
@@ -846,6 +868,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    margin: 5px;
 	  }
 	  .boss-option p {
+	    font-size: 0.8em;
+	  }
+	  .boss-option table {
 	    font-size: 0.8em;
 	  }
 	}
@@ -1690,9 +1715,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          option.innerHTML = `
 	            <img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'">
 	            <p><strong>${boss.name}</strong></p>
-	            <p>Health: ${boss.health}/${boss.maxHealth}</p>
-	            <p>Strength: ${boss.strength}</p>
-	            <p>Bounty: ${boss.bounty} ${boss.currency}</p>
+	            <table>
+	              <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
+	              <tr><td>Strength:</td><td>${boss.strength}</td></tr>
+	              <tr><td>Speed:</td><td>${boss.speed}</td></tr>
+	              <tr><td>Tactics:</td><td>${boss.tactics}</td></tr>
+	              <tr><td>Size:</td><td>${boss.size}</td></tr>
+	              <tr><td>Powerup:</td><td>${boss.powerup}</td></tr>
+	              <tr><td>Players:</td><td>${boss.playerCount}</td></tr>
+	              <tr><td>Multiplier:</td><td>${boss.participationMultiplier}</td></tr>
+	              <tr><td>Bounty:</td><td>${boss.bounty} ${boss.currency}</td></tr>
+	            </table>
 	          `;
 	          if (boss.canFight) {
 	            option.addEventListener('click', () => {
