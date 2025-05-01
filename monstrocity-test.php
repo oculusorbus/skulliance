@@ -1665,7 +1665,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    });
 
 	    // Fetch boss data
-	    fetch('/ajax/get-bosses.php', {
+	    fetch('ajax/get-bosses.php', {
 	      method: 'GET',
 	      headers: { 'Content-Type': 'application/json' }
 	    })
