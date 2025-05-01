@@ -1600,70 +1600,73 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  ];
 	  
 	  function showThemeSelect(game) {
-	    console.time('showThemeSelect');
-	    let container = document.getElementById('theme-select-container');
-	    const characterContainer = document.getElementById('character-select-container');
+	      console.time('showThemeSelect');
+	      let container = document.getElementById('theme-select-container');
+	      const characterContainer = document.getElementById('character-select-container');
 
-	    // Rebuild container with Boss Battles button near the top
-	    container.innerHTML = `
-	      <h2>Select Theme</h2>
-	      <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
-	        <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
-	      </div>
-	      <div id="theme-options"></div>
-	    `;
-	    const optionsDiv = document.getElementById('theme-options');
+	      // Rebuild container with Boss Battles button near the top
+	      container.innerHTML = `
+	        <h2>Select Theme</h2>
+	        <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
+	          <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
+	        </div>
+	        <div id="theme-options"></div>
+	      `;
+	      const optionsDiv = document.getElementById('theme-options');
 
-	    // Show theme selection screen, hide character select screen
-	    container.style.display = 'block';
-	    characterContainer.style.display = 'none';
+	      // Show theme selection screen, hide character select screen
+	      container.style.display = 'block';
+	      characterContainer.style.display = 'none';
 
-	    // Populate theme options (unchanged)
-	    themes.forEach(group => {
-	      const groupDiv = document.createElement('div');
-	      groupDiv.className = 'theme-group';
-	      const groupTitle = document.createElement('h3');
-	      groupTitle.textContent = group.group;
-	      groupDiv.appendChild(groupTitle);
+	      // Set button states for theme game
+	      game.toggleGameButtons(false);
 
-	      group.items.forEach(theme => {
-	        const option = document.createElement('div');
-	        option.className = 'theme-option';
-	        if (theme.background) {
-	          const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
-	          option.style.backgroundImage = `url(${backgroundUrl})`;
-	        }
-	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
-	        option.innerHTML = `
-	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
-	          <p>${theme.title}</p>
-	        `;
-	        option.addEventListener('click', () => {
-	          const characterOptions = document.getElementById('character-options');
-	          if (characterOptions) {
-	            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-	          }
-	          container.innerHTML = '';
-	          container.style.display = 'none';
-	          characterContainer.style.display = 'block';
-	          game.updateTheme(theme.value);
-	        });
-	        groupDiv.appendChild(option);
+	      // Populate theme options
+	      themes.forEach(group => {
+	          const groupDiv = document.createElement('div');
+	          groupDiv.className = 'theme-group';
+	          const groupTitle = document.createElement('h3');
+	          groupTitle.textContent = group.group;
+	          groupDiv.appendChild(groupTitle);
+
+	          group.items.forEach(theme => {
+	              const option = document.createElement('div');
+	              option.className = 'theme-option';
+	              if (theme.background) {
+	                  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	                  option.style.backgroundImage = `url(${backgroundUrl})`;
+	              }
+	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
+	              option.innerHTML = `
+	                <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
+	                <p>${theme.title}</p>
+	              `;
+	              option.addEventListener('click', () => {
+	                  const characterOptions = document.getElementById('character-options');
+	                  if (characterOptions) {
+	                      characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+	                  }
+	                  container.innerHTML = '';
+	                  container.style.display = 'none';
+	                  characterContainer.style.display = 'block';
+	                  game.updateTheme(theme.value);
+	              });
+	              groupDiv.appendChild(option);
+	          });
+
+	          optionsDiv.appendChild(groupDiv);
 	      });
 
-	      optionsDiv.appendChild(groupDiv);
-	    });
+	      // Update Boss Battles button handler
+	      const bossButton = document.getElementById('boss-battles-button');
+	      if (bossButton) {
+	          bossButton.addEventListener('click', () => {
+	              console.log('Boss Battles button clicked');
+	              showBossSelect(game);
+	          });
+	      }
 
-	    // Update Boss Battles button handler
-	    const bossButton = document.getElementById('boss-battles-button');
-	    if (bossButton) {
-	      bossButton.addEventListener('click', () => {
-	        console.log('Boss Battles button clicked');
-	        showBossSelect(game);
-	      });
-	    }
-
-	    console.timeEnd('showThemeSelect');
+	      console.timeEnd('showThemeSelect');
 	  }
 	  
 	  function showBossSelect(game) {
@@ -2136,27 +2139,30 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		
 		toggleGameButtons(isBossBattle) {
 		    console.log(`toggleGameButtons: Setting buttons for ${isBossBattle ? 'boss battle' : 'theme game'}`);
+		    const gameContainer = document.querySelector('.game-container');
+		    if (!gameContainer) {
+		        console.error('toggleGameButtons: game-container not found');
+		        return;
+		    }
+
 		    const restartButton = document.getElementById('restart');
 		    const refreshButton = document.getElementById('refresh-board');
 		    const changeCharacterButton = document.getElementById('change-character');
 
-		    if (restartButton) {
-		        restartButton.style.display = isBossBattle ? 'none' : 'inline-block';
-		        console.log(`toggleGameButtons: restart button ${isBossBattle ? 'hidden' : 'shown'}`);
-		    } else {
-		        console.warn('toggleGameButtons: restart button not found');
+		    if (!restartButton || !refreshButton || !changeCharacterButton) {
+		        console.warn('toggleGameButtons: One or more buttons not found', {
+		            restart: !!restartButton,
+		            refresh: !!refreshButton,
+		            changeCharacter: !!changeCharacterButton
+		        });
+		        return;
 		    }
-		    if (refreshButton) {
-		        refreshButton.style.display = isBossBattle ? 'inline-block' : 'none';
-		        console.log(`toggleGameButtons: refresh-board button ${isBossBattle ? 'shown' : 'hidden'}`);
-		    } else {
-		        console.warn('toggleGameButtons: refresh-board button not found');
-		    }
-		    if (changeCharacterButton) {
-		        changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
-		    } else {
-		        console.warn('toggleGameButtons: change-character button not found');
-		    }
+
+		    restartButton.style.display = isBossBattle ? 'none' : 'inline-block';
+		    refreshButton.style.display = isBossBattle ? 'inline-block' : 'none';
+		    changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
+
+		    console.log(`toggleGameButtons: Buttons set - restart: ${restartButton.style.display}, refresh: ${refreshButton.style.display}, change: ${changeCharacterButton.style.display}`);
 		}
 		
 		// Simple hash function for tamper-proofing
