@@ -1601,7 +1601,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  
 	  function showThemeSelect(game) {
 	    console.time('showThemeSelect');
-		this.toggleGameButtons(false); // Ensure theme game button state
 	    let container = document.getElementById('theme-select-container');
 	    const characterContainer = document.getElementById('character-select-container');
 
