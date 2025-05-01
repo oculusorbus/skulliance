@@ -2358,6 +2358,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      var isNFT = false;
 	      var mediaType = 'image'; // Default to image
 
+	      // Log specifically for imageUrl to debug
+	      console.log('createCharacter: config.imageUrl=', config.imageUrl);
+
 	      // Find the theme data for the current theme
 	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 	      const extension = themeData?.extension || 'png'; // Default to "png" if not specified
