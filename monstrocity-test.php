@@ -1945,6 +1945,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Selected Character:', this.selectedCharacter.name);
 		    console.log('Selected Boss:', this.selectedBoss.name);
 
+		    // Log the full selectedBoss data to ensure it's correct
+		    console.log('Full selectedBoss data:', this.selectedBoss);
+
 		    // Prepare the boss data to create a character object
 		    const bossConfig = {
 		        name: this.selectedBoss.name,
@@ -1956,6 +1959,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme // Use the current theme (no changes)
 		    };
+
+		    // Log the bossConfig to ensure it's correct
+		    console.log('Boss Config for creating character:', bossConfig);
 
 		    // Set player1 to the selected character and player2 to the boss
 		    this.player1 = { ...this.selectedCharacter }; // Copy the selected character
@@ -1992,7 +1998,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.roundStats = [];
 
 		    // Start the game
+		    console.log('Calling initGame to start the boss battle...');
 		    this.initGame();
+		    console.log('initGame called successfully.');
 
 		    // Log the start of the battle
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
