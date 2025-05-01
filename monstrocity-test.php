@@ -1631,7 +1631,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        }
 	        const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
 	        option.innerHTML = `
-	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='/staking/icons/skull.png'">
+	          <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
 	          <p>${theme.title}</p>
 	        `;
 	        option.addEventListener('click', () => {
@@ -1950,7 +1950,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Selected Boss imageUrl:', this.selectedBoss.imageUrl);
 
 		    // Prepare the boss data to create a character object
-		    const bossImageUrl = this.selectedBoss.imageUrl || '/images/monstrocity/dark-hunters.png'; // Fallback if imageUrl is missing
+		    const bossImageUrl = this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png'; // Fallback if imageUrl is missing
 		    const bossConfig = {
 		        name: this.selectedBoss.name,
 		        strength: this.selectedBoss.strength || 4,
@@ -1961,7 +1961,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
 		        theme: this.theme, // Use the current theme (no changes)
 		        imageUrl: `${bossImageUrl}`, // Prepend /testing/ to match relative path
-		        fallbackUrl: '/staking/icons/skull.png', // Explicit fallback
+		        fallbackUrl: 'icons/skull.png', // Explicit fallback
 		        orientation: 'Right' // Ensure boss faces the correct direction
 		    };
 
