@@ -1947,8 +1947,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    // Log the full selectedBoss data to ensure it's correct
 		    console.log('Full selectedBoss data:', this.selectedBoss);
+		    console.log('Selected Boss imageUrl:', this.selectedBoss.imageUrl);
 
 		    // Prepare the boss data to create a character object
+		    const bossImageUrl = this.selectedBoss.imageUrl || '/images/monstrocity/dark-hunters.png'; // Fallback if imageUrl is missing
 		    const bossConfig = {
 		        name: this.selectedBoss.name,
 		        strength: this.selectedBoss.strength || 4,
@@ -1957,7 +1959,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        size: this.selectedBoss.size || 'Medium',
 		        type: 'Base', // Bosses are treated as Base type
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
-		        theme: this.theme // Use the current theme (no changes)
+		        theme: this.theme, // Use the current theme (no changes)
+		        imageUrl: `/testing${bossImageUrl}`, // Prepend /testing/ to match relative path
+		        fallbackUrl: '/staking/icons/skull.png', // Explicit fallback
+		        orientation: 'Right' // Ensure boss faces the correct direction
 		    };
 
 		    // Log the bossConfig to ensure it's correct
@@ -1991,6 +1996,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('  Type:', this.player2.type);
 		    console.log('  Powerup:', this.player2.powerup);
 		    console.log('  Theme:', this.player2.theme);
+		    console.log('  Image URL:', this.player2.imageUrl);
 
 		    // Reset game state for the boss battle (mimicking initGame but without setting player2)
 		    var self = this;
