@@ -1715,6 +1715,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	              const fragment = document.createDocumentFragment();
 	              bosses.forEach(boss => {
+	                  // Log the raw playerHealth value to debug
+	                  console.log(`Boss ${boss.name}: playerHealth=${boss.playerHealth} (type: ${typeof boss.playerHealth})`);
+
 	                  const option = document.createElement('div');
 	                  option.className = `boss-option`;
 
