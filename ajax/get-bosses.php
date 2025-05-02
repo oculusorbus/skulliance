@@ -151,8 +151,8 @@ function getBosses($conn) {
                 'strength' => (int)$row['strength'],
                 'speed' => $row['speed'] ? (int)$row['speed'] : null,
                 'tactics' => (int)$row['tactics'],
-                'size' => $row['size'],
-                'powerup' => $row['powerup'] ?: null,
+                'size' => ucfirst($row['size']),
+                'powerup' => capitalizeWords($row['powerup'], ' ') ?: null,
                 'bounty' => (int)$row['max_health'],
                 'currency' => $row['currency'],
 				'theme' => $row['theme'],
@@ -176,6 +176,22 @@ function getBosses($conn) {
         http_response_code(500);
         echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
     }
+}
+
+function capitalizeWords($string, $delimiter = ' ') {
+    // Check if the input is a string and not empty
+    if (!is_string($string) || $string === '') {
+        return $string;
+    }
+
+    // Trim leading/trailing spaces to clean input
+    $string = trim($string);
+
+    // Use ucwords to capitalize the first letter of each word
+    // Pass the delimiter to handle custom word separators (e.g., hyphens)
+    $capitalized = ucwords($string, $delimiter);
+
+    return $capitalized;
 }
 
 getBosses($conn);
