@@ -6739,7 +6739,7 @@ function distributeBounties($conn) {
             'id' => $row['id'],
             'user_id' => $row['user_id'],
             'damage_dealt' => $row['damage_dealt'],
-            'date_created' => $row['date_created'] ?? '2025-05-02 00:00:00' // Fallback for missing column
+            'date_created' => $row['date_created']
         ];
         $boss_encounters[$boss_id]['total_damage'] += $row['damage_dealt'];
     }
@@ -6777,7 +6777,7 @@ function distributeBounties($conn) {
         $latest_encounter = $encounters[0];
         $user_id = $latest_encounter['user_id'];
 
-        // Assign the entire bounty to the latest encounter's user
+        // Assign the bounty to the latest encounter's user
         $conn->begin_transaction();
         try {
             // Update the latest encounter with the reward
@@ -6786,7 +6786,7 @@ function distributeBounties($conn) {
             $stmt->bind_param("ii", $bounty_to_distribute, $latest_encounter['id']);
             $stmt->execute();
 
-            // Set reward to 0 for other encounters (if duplicates exist)
+            // Set reward to 0 for other encounters
             foreach ($encounters as $enc) {
                 if ($enc['id'] !== $latest_encounter['id']) {
                     $update_sql = "UPDATE encounters SET reward = '0' WHERE id = ?";
