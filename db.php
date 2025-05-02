@@ -4659,6 +4659,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			// Mark all current encounters as rewarded
 			// Reset Player Health to NULL
 			// Reset Boss Health to Max Health
+			// Distribute all Bounties based on damage dealt
 				
 			$title = "Weekly Boss Battle Leaderboard Results";
 			$imageurl = "";
