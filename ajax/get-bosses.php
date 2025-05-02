@@ -42,7 +42,8 @@ function getBosses($conn) {
                 b.extension
             FROM bosses b
             INNER JOIN projects p ON b.project_id = p.id
-            INNER JOIN collections c ON b.collection_id = c.id
+            INNER JOIN collections c ON b.collection_id = c.id 
+			ORDER BY b.project_id
         ";
         $result = $conn->query($sql);
         if (!$result) {
