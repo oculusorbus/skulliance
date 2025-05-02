@@ -1999,7 +1999,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        theme: this.selectedBoss.theme || this.theme,
 		        imageUrl: bossImageUrl,
 		        extension: bossExtension,
-		        battleDamagedUrl: bossBattleDamagedUrl, // Add battleDamagedUrl
+		        battleDamagedUrl: bossBattleDamagedUrl,
 		        fallbackUrl: 'icons/skull.png',
 		        orientation: bossOrientation,
 		        health: this.selectedBoss.health,
@@ -2037,6 +2037,77 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    // Set boss health
 		    this.player2.health = this.selectedBoss.health;
+
+		    // Check if either the player or the boss has zero health
+		    if (this.player1.health <= 0 || this.player2.health <= 0) {
+		        console.log(`startBossBattle: Immediate game over - player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
+		        this.gameOver = true;
+		        this.gameState = "gameOver";
+
+		        const gameContainer = document.querySelector('.game-container');
+		        const gameBoard = document.getElementById('game-board');
+		        gameContainer.style.display = 'block';
+		        gameBoard.style.visibility = 'visible';
+		        this.setBackground();
+
+		        this.updatePlayerDisplay();
+		        this.updateOpponentDisplay();
+
+		        // Apply orientation transforms
+		        const currentP1Image = document.getElementById('p1-image');
+		        const currentP2Image = document.getElementById('p2-image');
+		        if (currentP1Image) {
+		            currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		            console.log(`startBossBattle: player1 orientation set to ${this.player1.orientation}, transform: ${currentP1Image.style.transform}`);
+		        }
+		        if (currentP2Image) {
+		            currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		            console.log(`startBossBattle: player2 orientation set to ${this.player2.orientation}, transform: ${currentP2Image.style.transform}`);
+		        }
+
+		        this.updateHealth(this.player1);
+		        this.updateHealth(this.player2);
+
+		        battleLog.innerHTML = '';
+		        gameOver.textContent = '';
+
+		        // Toggle buttons for boss battle
+		        this.toggleGameButtons(true);
+
+		        // Determine win/loss
+		        if (this.player1.health <= 0) {
+		            gameOver.textContent = "You Lose!";
+		            turnIndicator.textContent = "Game Over";
+		            log(`${this.player1.name} has no health left and cannot fight!`);
+		            this.sounds.loss.play();
+		        } else if (this.player2.health <= 0) {
+		            gameOver.textContent = "You Win!";
+		            turnIndicator.textContent = "Game Over";
+		            log(`${this.player2.name} has been defeated before the battle begins!`);
+		            this.sounds.win.play();
+
+		            // Set battle-damaged image for player2
+		            let damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
+		            const p2Image = document.getElementById('p2-image');
+		            if (p2Image.tagName === 'IMG') {
+		                p2Image.src = damagedUrl;
+		                p2Image.onerror = () => { p2Image.src = this.player2.fallbackUrl; };
+		            }
+		            p2Image.classList.add("loser");
+		            currentP1Image.classList.add("winner");
+		        }
+
+		        // Configure game over button to return to boss selection
+		        const tryAgainButton = document.getElementById("try-again");
+		        tryAgainButton.textContent = "SELECT BOSS";
+		        const newButton = tryAgainButton.cloneNode(true);
+		        tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+		        newButton.addEventListener('click', () => this.showBossSelectionScreen());
+
+		        document.getElementById("game-over-container").style.display = "block";
+		        this.renderBoard();
+		        return;
+		    }
 
 		    // Log player details
 		    console.log('Player 1 Details:', {
