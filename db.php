@@ -6706,8 +6706,8 @@ function resetBossBattles($conn){
 }
 
 function distributeBounties($conn) {
-    // Step 1: Fetch unrewarded encounters with boss health and project_id
-    $sql = "SELECT e.user_id, e.boss_id, e.damage_dealt, b.health, b.max_health AS bounty, b.project_id 
+    // Step 1: Fetch unrewarded encounters
+    $sql = "SELECT e.id, e.user_id, e.boss_id, e.damage_dealt, b.health, b.max_health AS bounty, b.project_id 
             FROM encounters e 
             INNER JOIN bosses b ON b.id = e.boss_id 
             WHERE e.reward = '0'";
@@ -6719,10 +6719,10 @@ function distributeBounties($conn) {
     }
 
     if ($result->num_rows == 0) {
-        return true; // No unrewarded encounters
+        return true;
     }
 
-    // Step 2: Group encounters by boss_id
+    // Step 2: Group encounters by boss_id, summing damage_dealt
     $boss_encounters = [];
     while ($row = $result->fetch_assoc()) {
         $boss_id = $row['boss_id'];
@@ -6732,12 +6732,14 @@ function distributeBounties($conn) {
                 'health' => $row['health'],
                 'project_id' => $row['project_id'],
                 'total_damage' => 0,
-                'players' => []
+                'encounters' => []
             ];
         }
-        $boss_encounters[$boss_id]['players'][] = [
+        $boss_encounters[$boss_id]['encounters'][] = [
+            'id' => $row['id'],
             'user_id' => $row['user_id'],
-            'damage_dealt' => $row['damage_dealt']
+            'damage_dealt' => $row['damage_dealt'],
+            'date_created' => $row['date_created'] ?? '2025-05-02 00:00:00' // Fallback for missing column
         ];
         $boss_encounters[$boss_id]['total_damage'] += $row['damage_dealt'];
     }
@@ -6748,11 +6750,11 @@ function distributeBounties($conn) {
         $health = $data['health'];
         $project_id = $data['project_id'];
         $total_damage = $data['total_damage'];
-        $players = $data['players'];
+        $encounters = $data['encounters'];
 
-        // Validate total damage (use health-based calculation for consistency)
+        // Validate total damage
         $damage_from_health = $max_health - $health;
-        $total_damage = max($total_damage, $damage_from_health); // Use higher value to avoid under-rewarding
+        $total_damage = max($total_damage, $damage_from_health);
         if ($total_damage <= 0) {
             error_log("No damage dealt for boss_id: $boss_id, skipping bounty distribution");
             continue;
@@ -6760,57 +6762,49 @@ function distributeBounties($conn) {
 
         // Calculate bounty to distribute
         $bounty_to_distribute = ($health == 0)
-            ? $max_health // Full bounty for defeated boss
-            : round($max_health * ($total_damage / $max_health)); // Reduced bounty for partial damage
+            ? $max_health
+            : round($max_health * ($total_damage / $max_health));
 
-        // Skip if no bounty to distribute
         if ($bounty_to_distribute <= 0) {
             error_log("No bounty to distribute for boss_id: $boss_id (bounty: $bounty_to_distribute)");
             continue;
         }
 
-        // Calculate player shares
-        $shares = [];
-        $remaining_bounty = $bounty_to_distribute;
-        $last_player_index = count($players) - 1;
+        // Find the latest encounter to assign the reward
+        usort($encounters, function($a, $b) {
+            return strtotime($b['date_created']) - strtotime($a['date_created']);
+        });
+        $latest_encounter = $encounters[0];
+        $user_id = $latest_encounter['user_id'];
 
-        foreach ($players as $index => $player) {
-            $damage = $player['damage_dealt'];
-            $user_id = $player['user_id'];
+        // Assign the entire bounty to the latest encounter's user
+        $conn->begin_transaction();
+        try {
+            // Update the latest encounter with the reward
+            $update_sql = "UPDATE encounters SET reward = ? WHERE id = ?";
+            $stmt = $conn->prepare($update_sql);
+            $stmt->bind_param("ii", $bounty_to_distribute, $latest_encounter['id']);
+            $stmt->execute();
 
-            // Proportional share, rounded
-            $share = ($index === $last_player_index)
-                ? $remaining_bounty
-                : round($bounty_to_distribute * ($damage / $total_damage));
-
-            $shares[] = [
-                'user_id' => $user_id,
-                'share' => $share
-            ];
-            $remaining_bounty -= $share;
-        }
-
-        // Step 4: Apply rewards and update database
-        foreach ($shares as $share) {
-            $user_id = $conn->real_escape_string($share['user_id']);
-            $reward = (int)$share['share'];
-
-            // Skip if no reward
-            if ($reward <= 0) {
-                continue;
+            // Set reward to 0 for other encounters (if duplicates exist)
+            foreach ($encounters as $enc) {
+                if ($enc['id'] !== $latest_encounter['id']) {
+                    $update_sql = "UPDATE encounters SET reward = '0' WHERE id = ?";
+                    $stmt = $conn->prepare($update_sql);
+                    $stmt->bind_param("i", $enc['id']);
+                    $stmt->execute();
+                }
             }
 
-            // Update balance and log credit
-            updateBalance($conn, $user_id, $project_id, $reward);
-            logCredit($conn, $user_id, $reward, $project_id);
+            // Apply reward
+            updateBalance($conn, $user_id, $project_id, $bounty_to_distribute);
+            logCredit($conn, $user_id, $bounty_to_distribute, $project_id);
 
-            // Mark encounter as rewarded
-            $update_sql = "UPDATE encounters 
-                           SET reward = '$reward' 
-                           WHERE user_id = '$user_id' AND boss_id = '$boss_id' AND reward = '0'";
-            if (!$conn->query($update_sql)) {
-                error_log("Failed to update reward for user_id: $user_id, boss_id: $boss_id: " . $conn->error);
-            }
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            error_log("Transaction failed for boss_id: $boss_id: " . $e->getMessage());
+            continue;
         }
     }
 
