@@ -793,6 +793,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  transform: scale(1.05);
 	  background: #2080ad;
 	}
+	
+	.boss-option div {
+	  max-height: 200px;
+	  border-radius: 5px;
+	  overflow: hidden;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+	  filter: drop-shadow(2px 5px 10px #000);
+	}
 
 	.boss-option img {
 	  width: 100%;
@@ -1739,7 +1747,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
 	                  option.innerHTML = `
-	                      <img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'">
+	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
 	                      <p><strong>${boss.name}</strong></p>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
