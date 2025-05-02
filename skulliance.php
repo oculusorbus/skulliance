@@ -802,6 +802,10 @@ if(isset($_POST['filterbyswaps'])){
 	$filterby = $_POST['filterbyswaps'];
 	$_SESSION['userData']['filterby'] = $filterby;
 }
+if(isset($_POST['filterbybosses'])){
+	$filterby = $_POST['filterbybosses'];
+	$_SESSION['userData']['filterby'] = $filterby;
+}
 
 $filterbydiamond = "";
 if(isset($_POST['filterbydiamond'])){
@@ -970,6 +974,10 @@ function filterLeaderboard($page){
 			<optgroup label="Skull Swaps">
 				<option value="swaps">All Skull Swaps</option>
 				<option value="weekly-swaps">Weekly Skull Swaps</option>
+			</optgroup>
+			<optgroup label="Boss Battles">
+				<option value="bosses">All Boss Battles</option>
+				<option value="weekly-bosses">Weekly Boss Battles</option>
 			</optgroup>
 			<optgroup label="Monstrocity">
 				<option value="monstrocity">All Monstrocity</option>
