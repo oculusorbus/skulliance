@@ -6723,7 +6723,7 @@ function distributeBounties($conn) {
         return true;
     }
 
-    // Step 2: Group encounters by boss_id, summing damage_dealt
+    // Step 2: Group encounters by boss_id
     $boss_encounters = [];
     while ($row = $result->fetch_assoc()) {
         $boss_id = $row['boss_id'];
@@ -6732,7 +6732,6 @@ function distributeBounties($conn) {
                 'bounty' => $row['bounty'],
                 'health' => $row['health'],
                 'project_id' => $row['project_id'],
-                'total_damage' => 0,
                 'encounters' => []
             ];
         }
@@ -6742,87 +6741,43 @@ function distributeBounties($conn) {
             'damage_dealt' => $row['damage_dealt'],
             'date_created' => $row['date_created'] ?? '1970-01-01 00:00:00'
         ];
-        $boss_encounters[$boss_id]['total_damage'] += $row['damage_dealt'];
     }
 
-    // Step 3: Calculate and distribute bounty for each boss
+    // Step 3: Process each boss and its encounters
     foreach ($boss_encounters as $boss_id => $data) {
         $max_health = $data['bounty'];
         $health = $data['health'];
         $project_id = $data['project_id'];
-        $total_damage = $data['total_damage'];
         $encounters = $data['encounters'];
 
-        // Validate total damage
-        $damage_from_health = $max_health - $health;
-        $total_damage = max($total_damage, $damage_from_health);
-        if ($total_damage <= 0) {
-            error_log("No damage dealt for boss_id: $boss_id, skipping bounty distribution");
-            continue;
-        }
+        // Step 4: Update each encounter with reward = damage_dealt
+        foreach ($encounters as $enc) {
+            $encounter_id = $enc['id'];
+            $user_id = $enc['user_id'];
+            $damage_dealt = $enc['damage_dealt'];
 
-        // Calculate bounty to distribute
-        $bounty_to_distribute = ($health == 0)
-            ? $max_health
-            : round($max_health * ($total_damage / $max_health));
-
-        if ($bounty_to_distribute <= 0) {
-            error_log("No bounty to distribute for boss_id: $boss_id (bounty: $bounty_to_distribute)");
-            continue;
-        }
-
-        // Find the latest encounter to assign the reward
-        usort($encounters, function($a, $b) {
-            $dateA = $a['date_created'] ?? '1970-01-01 00:00:00';
-            $dateB = $b['date_created'] ?? '1970-01-01 00:00:00';
-            return strtotime($dateB) - strtotime($dateA);
-        });
-        $latest_encounter = $encounters[0];
-        $user_id = $latest_encounter['user_id'];
-
-        // Step 4: Update the encounters table with the reward
-        $conn->begin_transaction();
-        try {
-            // Update the latest encounter with the reward (treat reward as string)
-            $update_sql = "UPDATE encounters SET reward = ? WHERE id = ?";
-            $stmt = $conn->prepare($update_sql);
-            $bounty_str = (string)$bounty_to_distribute;
-            $stmt->bind_param("si", $bounty_str, $latest_encounter['id']);
-            if (!$stmt->execute()) {
-                throw new Exception("Failed to update reward for encounter id: " . $latest_encounter['id'] . ", error: " . $stmt->error);
-            }
-            if ($stmt->affected_rows == 0) {
-                throw new Exception("No rows updated for encounter id: " . $latest_encounter['id'] . " (boss_id: $boss_id)");
+            // Skip if no damage dealt
+            if ($damage_dealt <= 0) {
+                error_log("No damage dealt for encounter id: $encounter_id, boss_id: $boss_id, skipping");
+                continue;
             }
 
-            // Set reward to '0' for other encounters (if duplicates exist)
-            foreach ($encounters as $enc) {
-                if ($enc['id'] !== $latest_encounter['id']) {
-                    $update_sql = "UPDATE encounters SET reward = '0' WHERE id = ?";
-                    $stmt = $conn->prepare($update_sql);
-                    $stmt->bind_param("i", $enc['id']);
-                    if (!$stmt->execute()) {
-                        throw new Exception("Failed to set reward to 0 for encounter id: " . $enc['id'] . ", error: " . $stmt->error);
-                    }
-                }
+            // Set reward to damage_dealt
+            $reward = (string)$damage_dealt; // Treat reward as string
+            $update_sql = "UPDATE encounters SET reward = '$reward' WHERE id = " . $conn->real_escape_string($encounter_id);
+            if (!$conn->query($update_sql)) {
+                error_log("Failed to update reward for encounter id: $encounter_id, boss_id: $boss_id: " . $conn->error);
+                continue;
+            }
+            if ($conn->affected_rows == 0) {
+                error_log("No rows updated for encounter id: $encounter_id (boss_id: $boss_id)");
+                continue;
             }
 
-            $conn->commit();
-            error_log("Successfully updated encounters table for boss_id: $boss_id, reward: $bounty_str, encounter_id: " . $latest_encounter['id']);
-        } catch (Exception $e) {
-            $conn->rollback();
-            error_log("Failed to update encounters table for boss_id: $boss_id: " . $e->getMessage());
-            continue;
-        }
-
-        // Step 5: Apply reward to user balance (outside transaction)
-        try {
-            updateBalance($conn, $user_id, $project_id, $bounty_to_distribute);
-            logCredit($conn, $user_id, $bounty_to_distribute, $project_id);
-            error_log("Successfully applied reward for boss_id: $boss_id, amount: $bounty_to_distribute, user_id: $user_id");
-        } catch (Exception $e) {
-            error_log("Failed to apply reward for boss_id: $boss_id, user_id: $user_id: " . $e->getMessage());
-            // Continue despite failure, as encounters table is already updated
+            // Apply reward to user balance
+            updateBalance($conn, $user_id, $project_id, $damage_dealt);
+            logCredit($conn, $user_id, $damage_dealt, $project_id);
+            error_log("Successfully distributed bounty for boss_id: $boss_id, encounter_id: $encounter_id, amount: $damage_dealt, user_id: $user_id");
         }
     }
 
