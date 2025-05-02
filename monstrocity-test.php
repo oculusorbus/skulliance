@@ -1005,7 +1005,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       <div id="game-over"></div>
       <div id="game-over-buttons">
         <button id="try-again"></button>
-		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
+		<div id="leaderboard-button"></div> <!-- Placeholder for leaderboard form -->
       </div>
     </div>
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
@@ -4202,6 +4202,34 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
 
 	      const tryAgainButton = document.getElementById("try-again");
+	      const leaderboardButtonDiv = document.getElementById("leaderboard-button");
+
+	      // Clear the leaderboard button div to avoid duplicate forms
+	      leaderboardButtonDiv.innerHTML = '';
+
+	      // Define the leaderboard form based on game mode
+	      let leaderboardForm;
+	      if (this.selectedBoss) {
+	          // Boss battle leaderboard
+	          leaderboardForm = `
+	              <form action="leaderboards.php" method="post">
+	                  <input type="hidden" name="filterbybosses" id="filterbybosses" value="weekly-bosses">
+	                  <input id="leaderboard" type="submit" value="LEADERBOARD">
+	              </form>
+	          `;
+	      } else {
+	          // Default game leaderboard
+	          leaderboardForm = `
+	              <form action="leaderboards.php" method="post">
+	                  <input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity">
+	                  <input id="leaderboard" type="submit" value="LEADERBOARD">
+	              </form>
+	          `;
+	      }
+
+	      // Populate the leaderboard button div
+	      leaderboardButtonDiv.innerHTML = leaderboardForm;
+
 	      if (this.player1.health <= 0) {
 	          console.log("Player 1 health <= 0, triggering game over (loss)");
 
@@ -4216,7 +4244,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Lose!";
 	          turnIndicator.textContent = "Game Over";
-        
+
 	          if (this.selectedBoss) {
 	              // Boss battle: Show "Select Boss" button
 	              tryAgainButton.textContent = "SELECT BOSS";
@@ -4228,7 +4256,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              // Default game: Show "Try Again" button
 	              tryAgainButton.textContent = "TRY AGAIN";
 	          }
-        
+
 	          document.getElementById("game-over-container").style.display = "block";
 	          try {
 	              this.sounds.loss.play();
@@ -4270,7 +4298,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              // Default game: Show "Next Level" or "Start Over"
 	              tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
 	          }
-        
+
 	          document.getElementById("game-over-container").style.display = "block";
 
 	          if (!this.selectedBoss) {
