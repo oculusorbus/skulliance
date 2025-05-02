@@ -1953,6 +1953,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Starting boss battle...');
 		    console.log('Selected Character:', this.selectedCharacter.name);
 		    console.log('Selected Boss:', this.selectedBoss.name);
+		    console.log('Boss Theme:', this.selectedBoss.theme);
+
+		    // Ensure the game is using the boss's theme
+		    if (this.theme !== this.selectedBoss.theme) {
+		        console.warn(`startBossBattle: Theme mismatch (current: ${this.theme}, boss: ${this.selectedBoss.theme}), updating to boss theme`);
+		        const validThemes = themes.flatMap(group => group.items).map(item => item.value);
+		        if (this.selectedBoss.theme && validThemes.includes(this.selectedBoss.theme)) {
+		            this.updateTheme(this.selectedBoss.theme);
+		        }
+		    }
+
+		    // Set the logo based on the boss's theme
+		    document.querySelector('.game-logo').src = `images/monstrocity/${this.theme}/logo.png`;
 
 		    // Determine boss orientation
 		    let bossOrientation = this.selectedBoss.orientation || 'Right';
@@ -1968,6 +1981,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        console.log(`Random player orientation resolved to: ${playerOrientation}`);
 		    }
 
+		    // Construct boss image URL using extension for consistency
+		    const bossExtension = this.selectedBoss.extension || 'png';
+		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+
 		    // Set up player and boss
 		    this.player1 = { ...this.selectedCharacter, orientation: playerOrientation };
 		    this.player2 = {
@@ -1978,12 +1996,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        size: this.selectedBoss.size || 'Medium',
 		        type: 'Boss',
 		        powerup: this.selectedBoss.powerup || 'Minor Regen',
-		        theme: this.theme,
-		        imageUrl: this.selectedBoss.imageUrl || 'images/monstrocity/bosses/dark-hunters.png',
+		        theme: this.selectedBoss.theme || this.theme,
+		        imageUrl: bossImageUrl,
+		        extension: bossExtension,
+		        battleDamagedUrl: bossBattleDamagedUrl, // Add battleDamagedUrl
 		        fallbackUrl: 'icons/skull.png',
 		        orientation: bossOrientation,
 		        health: this.selectedBoss.health,
-		        maxHealth: this.selectedBoss.maxHealth
+		        maxHealth: this.selectedBoss.maxHealth,
+		        mediaType: this.selectedBoss.mediaType || 'image'
 		    };
 
 		    // Load saved health for the player
@@ -2041,6 +2062,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        Powerup: this.player2.powerup,
 		        Theme: this.player2.theme,
 		        ImageUrl: this.player2.imageUrl,
+		        BattleDamagedUrl: this.player2.battleDamagedUrl,
+		        Extension: this.player2.extension,
 		        Orientation: this.player2.orientation
 		    });
 
@@ -4031,6 +4054,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          } catch (err) {
 	              console.error("Error playing lose sound:", err);
 	          }
+
+	          // Revert to previous theme after boss battle loss
+	          if (this.selectedBoss && this.previousTheme) {
+	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
+	              this.updateTheme(this.previousTheme);
+	              this.previousTheme = null;
+	              this.selectedBoss = null;
+	              this.selectedCharacter = null;
+	          }
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
 
@@ -4084,9 +4116,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              this.sounds.win.play();
 	          }
 
+	          // Set battle-damaged image for player2
+	          let damagedUrl;
+	          let fallbackUrl = this.player2.fallbackUrl || 'icons/skull.png';
 	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
-	          const extension = themeData?.extension || 'png';
-	          const damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${extension}`;
+	          const themeExtension = themeData?.extension || 'png';
+
+	          if (this.selectedBoss) {
+	              // Boss battle: Use battleDamagedUrl or fallback to constructed URL
+	              damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
+	          } else {
+	              // Default game: Use theme-specific battle-damaged image
+	              damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${themeExtension}`;
+	          }
 
 	          const p2Image = document.getElementById('p2-image');
 	          const parent = p2Image.parentNode;
@@ -4100,9 +4142,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  newVideo.loop = true;
 	                  newVideo.muted = true;
 	                  newVideo.alt = this.player2.name;
+	                  newVideo.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged video: ${damagedUrl}, using fallback`);
+	                      newVideo.src = fallbackUrl;
+	                  };
 	                  parent.replaceChild(newVideo, p2Image);
 	              } else {
 	                  p2Image.src = damagedUrl;
+	                  p2Image.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged video: ${damagedUrl}, using fallback`);
+	                      p2Image.src = fallbackUrl;
+	                  };
 	              }
 	          } else {
 	              if (p2Image.tagName !== 'IMG') {
@@ -4110,9 +4160,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  newImage.id = 'p2-image';
 	                  newImage.src = damagedUrl;
 	                  newImage.alt = this.player2.name;
+	                  newImage.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged image: ${damagedUrl}, using fallback`);
+	                      newImage.src = fallbackUrl;
+	                  };
 	                  parent.replaceChild(newImage, p2Image);
 	              } else {
 	                  p2Image.src = damagedUrl;
+	                  p2Image.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged image: ${damagedUrl}, using fallback`);
+	                      p2Image.src = fallbackUrl;
+	                  };
 	              }
 	          }
 
@@ -4121,6 +4179,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          p2ImageNew.classList.add("loser");
 	          p1Image.classList.add("winner");
 	          this.renderBoard();
+
+	          // Revert to previous theme after boss battle win
+	          if (this.selectedBoss && this.previousTheme) {
+	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
+	              this.updateTheme(this.previousTheme);
+	              this.previousTheme = null;
+	              this.selectedBoss = null;
+	              this.selectedCharacter = null;
+	          }
 	      }
 
 	      this.isCheckingGameOver = false;

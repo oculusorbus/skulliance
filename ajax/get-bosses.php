@@ -156,6 +156,7 @@ function getBosses($conn) {
 				'orientation' => ucfirst($row['orientation']),
                 'extension' => $row['extension'],
                 'imageUrl' => "images/monstrocity/bosses/{$slugifiedName}.{$row['extension']}",
+				'battleDamagedUrl' => "images/monstrocity/bosses/battle-damaged/{$slugifiedName}.{$row['extension']}",
                 'playerHealth' => $playerHealth,
                 'playerCount' => $playerCount,
                 'participationMultiplier' => round($multiplier, 2),
