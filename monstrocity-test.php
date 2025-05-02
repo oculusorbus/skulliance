@@ -1974,7 +1974,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        console.warn(`startBossBattle: Theme mismatch (current: ${this.theme}, boss: ${this.selectedBoss.theme}), updating to boss theme`);
 		        const validThemes = themes.flatMap(group => group.items).map(item => item.value);
 		        if (this.selectedBoss.theme && validThemes.includes(this.selectedBoss.theme)) {
-		            this.updateTheme(this.selectedBoss.theme, true); // Pass true to indicate boss battle context
+		            await this.updateTheme(this.selectedBoss.theme, true); // Await the theme update
 		        }
 		    }
 
@@ -2496,7 +2496,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			updateTheme(newTheme, isBossBattle = false) {
 			    if (updatePending) {
 			        console.log('updateTheme: Skipped due to pending update');
-			        return;
+			        return Promise.resolve(); // Return a resolved promise for async handling
 			    }
 			    updatePending = true;
 			    console.time('updateTheme_' + newTheme);
@@ -2518,13 +2518,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    // Update the logo immediately
 			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
 
-			    // Show loading indicator
-			    const characterOptions = document.getElementById('character-options');
-			    if (characterOptions) {
-			        characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+			    // Show loading indicator only if not a boss battle (since boss battle doesn't need character selection here)
+			    if (!isBossBattle) {
+			        const characterOptions = document.getElementById('character-options');
+			        if (characterOptions) {
+			            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+			        }
 			    }
 
-			    getAssets(this.theme).then(function(assets) {
+			    return getAssets(this.theme).then(function(assets) {
 			        console.time('updateCharacters_' + newTheme);
 			        self.playerCharactersConfig = assets;
 			        self.playerCharacters = [];
@@ -2542,20 +2544,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			        });
 
 			        // Update player and opponent only if game is active
-			        if (self.player1) {
+			        if (self.player1 && !isBossBattle) {
 			            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
 			            self.player1 = self.createCharacter(newConfig);
 			            self.updatePlayerDisplay();
 			        }
-			        // Always reset opponent to default for the current level
-			        if (self.player1) {
+			        // Always reset opponent to default for the current level if not a boss battle
+			        if (self.player1 && !isBossBattle) {
 			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
 			            self.updateOpponentDisplay();
 			            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
 			        }
 
-			        // Render board only if game is initialized
-			        if (self.player1 && self.gameState !== 'initializing') {
+			        // Render board only if game is initialized and not a boss battle
+			        if (self.player1 && self.gameState !== 'initializing' && !isBossBattle) {
 			            // Clear old event listeners to prevent lockups
 			            const tiles = document.querySelectorAll('.tile');
 			            tiles.forEach(tile => {
@@ -2565,21 +2567,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            self.renderBoard();
 			            console.log('updateTheme: Board rendered for active game');
 			        } else {
-			            console.log('updateTheme: Skipping board render, no active game');
+			            console.log('updateTheme: Skipping board render, no active game or boss battle in progress');
 			        }
 
-			        // Reset interaction flags only if game is active
-			        if (self.player1) {
+			        // Reset interaction flags only if game is active and not a boss battle
+			        if (self.player1 && !isBossBattle) {
 			            self.isDragging = false;
 			            self.selectedTile = null;
 			            self.targetTile = null;
 			            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
 			        }
 
-			        // Always show character select after theme switch
-			        const container = document.getElementById('character-select-container');
-			        container.style.display = 'block';
-			        self.showCharacterSelect(self.player1 === null);
+			        // Show character select only if not a boss battle
+			        if (!isBossBattle) {
+			            const container = document.getElementById('character-select-container');
+			            container.style.display = 'block';
+			            self.showCharacterSelect(self.player1 === null);
+			        }
 
 			        console.timeEnd('updateCharacters_' + newTheme);
 			        console.timeEnd('updateTheme_' + newTheme);
@@ -2592,15 +2596,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
 			        ];
 			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
-			        // Clear boss overrides in case of error
+			        // Clear boss overrides in case of error, unless it's a boss battle
 			        if (!isBossBattle) {
 			            self.selectedBoss = null;
 			            self.selectedCharacter = null;
 			        }
-			        // Show character select on error
-			        const container = document.getElementById('character-select-container');
-			        container.style.display = 'block';
-			        self.showCharacterSelect(self.player1 === null);
+			        // Show character select on error only if not a boss battle
+			        if (!isBossBattle) {
+			            const container = document.getElementById('character-select-container');
+			            container.style.display = 'block';
+			            self.showCharacterSelect(self.player1 === null);
+			        }
 			        console.timeEnd('updateTheme_' + newTheme);
 			        updatePending = false;
 			    });
