@@ -4656,10 +4656,11 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			}
 		}
 		if($rewards){
+			// Distribute all Bounties based on damage dealt
 			// Mark all current encounters as rewarded
 			// Reset Player Health to NULL
 			// Reset Boss Health to Max Health
-			// Distribute all Bounties based on damage dealt
+			resetBossBattles($conn);
 				
 			$title = "Weekly Boss Battle Leaderboard Results";
 			$imageurl = "";
@@ -6678,6 +6679,142 @@ function resetSwapScores($conn){
 	} else {
 		echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+}
+
+function resetBossBattles($conn){
+	// Distribute all Bounties based on damage dealt
+	// Mark all current encounters as rewarded
+	if (distributeBounties($conn)) {
+	    echo "Bounties distributed successfully.";
+	} else {
+	    echo "Error distributing bounties.";
+	}
+	// Reset Player Health to NULL
+	$sql = "UPDATE health SET health = NULL";
+	if ($conn->query($sql) === TRUE) {
+		//echo "All scores marked as rewarded.";
+	} else {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+	// Reset Boss Health to Max Health
+	$sql = "UPDATE bosses SET health = max_health";
+	if ($conn->query($sql) === TRUE) {
+		//echo "All scores marked as rewarded.";
+	} else {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+function distributeBounties($conn) {
+    // Step 1: Fetch unrewarded encounters with boss health and project_id
+    $sql = "SELECT e.user_id, e.boss_id, e.damage_dealt, b.health, b.max_health AS bounty, b.project_id 
+            FROM encounters e 
+            INNER JOIN bosses b ON b.id = e.boss_id 
+            WHERE e.reward = '0'";
+    $result = $conn->query($sql);
+
+    if (!$result) {
+        error_log("Query failed: " . $conn->error);
+        return false;
+    }
+
+    if ($result->num_rows == 0) {
+        return true; // No unrewarded encounters
+    }
+
+    // Step 2: Group encounters by boss_id
+    $boss_encounters = [];
+    while ($row = $result->fetch_assoc()) {
+        $boss_id = $row['boss_id'];
+        if (!isset($boss_encounters[$boss_id])) {
+            $boss_encounters[$boss_id] = [
+                'bounty' => $row['bounty'],
+                'health' => $row['health'],
+                'project_id' => $row['project_id'],
+                'total_damage' => 0,
+                'players' => []
+            ];
+        }
+        $boss_encounters[$boss_id]['players'][] = [
+            'user_id' => $row['user_id'],
+            'damage_dealt' => $row['damage_dealt']
+        ];
+        $boss_encounters[$boss_id]['total_damage'] += $row['damage_dealt'];
+    }
+
+    // Step 3: Calculate and distribute bounty for each boss
+    foreach ($boss_encounters as $boss_id => $data) {
+        $max_health = $data['bounty'];
+        $health = $data['health'];
+        $project_id = $data['project_id'];
+        $total_damage = $data['total_damage'];
+        $players = $data['players'];
+
+        // Validate total damage (use health-based calculation for consistency)
+        $damage_from_health = $max_health - $health;
+        $total_damage = max($total_damage, $damage_from_health); // Use higher value to avoid under-rewarding
+        if ($total_damage <= 0) {
+            error_log("No damage dealt for boss_id: $boss_id, skipping bounty distribution");
+            continue;
+        }
+
+        // Calculate bounty to distribute
+        $bounty_to_distribute = ($health == 0)
+            ? $max_health // Full bounty for defeated boss
+            : round($max_health * ($total_damage / $max_health)); // Reduced bounty for partial damage
+
+        // Skip if no bounty to distribute
+        if ($bounty_to_distribute <= 0) {
+            error_log("No bounty to distribute for boss_id: $boss_id (bounty: $bounty_to_distribute)");
+            continue;
+        }
+
+        // Calculate player shares
+        $shares = [];
+        $remaining_bounty = $bounty_to_distribute;
+        $last_player_index = count($players) - 1;
+
+        foreach ($players as $index => $player) {
+            $damage = $player['damage_dealt'];
+            $user_id = $player['user_id'];
+
+            // Proportional share, rounded
+            $share = ($index === $last_player_index)
+                ? $remaining_bounty
+                : round($bounty_to_distribute * ($damage / $total_damage));
+
+            $shares[] = [
+                'user_id' => $user_id,
+                'share' => $share
+            ];
+            $remaining_bounty -= $share;
+        }
+
+        // Step 4: Apply rewards and update database
+        foreach ($shares as $share) {
+            $user_id = $conn->real_escape_string($share['user_id']);
+            $reward = (int)$share['share'];
+
+            // Skip if no reward
+            if ($reward <= 0) {
+                continue;
+            }
+
+            // Update balance and log credit
+            updateBalance($conn, $user_id, $project_id, $reward);
+            logCredit($conn, $user_id, $reward, $project_id);
+
+            // Mark encounter as rewarded
+            $update_sql = "UPDATE encounters 
+                           SET reward = '$reward' 
+                           WHERE user_id = '$user_id' AND boss_id = '$boss_id' AND reward = '0'";
+            if (!$conn->query($update_sql)) {
+                error_log("Failed to update reward for user_id: $user_id, boss_id: $boss_id: " . $conn->error);
+            }
+        }
+    }
+
+    return true;
 }
 
 function resetMonstrocityScores($conn){
