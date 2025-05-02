@@ -2138,6 +2138,38 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
 		}
 		
+		showBossSelectionScreen() {
+		    console.log('Navigating to boss selection screen');
+    
+		    // Hide game board and game over popup
+		    const gameContainer = document.querySelector('.game-container');
+		    const gameOverContainer = document.getElementById('game-over-container');
+		    gameContainer.style.display = 'none';
+		    gameOverContainer.style.display = 'none';
+    
+		    // Show boss selection screen
+		    const bossSelectContainer = document.getElementById('boss-select-container');
+		    if (bossSelectContainer) {
+		        bossSelectContainer.style.display = 'block';
+		        // Assuming a method exists to populate the boss selection UI
+		        if (typeof this.showBossSelect === 'function') {
+		            this.showBossSelect();
+		        } else {
+		            console.warn('showBossSelect method not found, ensure boss selection UI is populated');
+		        }
+		    } else {
+		        console.error('Boss select container (#boss-select-container) not found');
+		    }
+    
+		    // Reset boss battle state
+		    this.selectedBoss = null;
+		    this.selectedCharacter = null;
+		    this.gameState = 'initializing';
+		    this.gameOver = false;
+		    battleLog.innerHTML = '';
+		    gameOver.textContent = '';
+		}
+		
 		savePlayerHealth() {
 		    if (!this.selectedBoss) {
 		        console.log('savePlayerHealth: Not a boss battle, skipping');
@@ -4046,8 +4078,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Lose!";
 	          turnIndicator.textContent = "Game Over";
-	          log(`${this.player2.name} defeats ${this.player1.name}!`);
-	          tryAgainButton.textContent = "TRY AGAIN";
+        
+	          if (this.selectedBoss) {
+	              // Boss battle: Show "Select Boss" button
+	              tryAgainButton.textContent = "Select Boss";
+	              // Remove existing listeners to avoid conflicts
+	              const newButton = tryAgainButton.cloneNode(true);
+	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
+	          } else {
+	              // Default game: Show "Try Again" button
+	              tryAgainButton.textContent = "TRY AGAIN";
+	          }
+        
 	          document.getElementById("game-over-container").style.display = "block";
 	          try {
 	              this.sounds.loss.play();
@@ -4077,43 +4120,58 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Win!";
 	          turnIndicator.textContent = "Game Over";
-	          tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
+
+	          if (this.selectedBoss) {
+	              // Boss battle: Show "Select Boss" button
+	              tryAgainButton.textContent = "Select Boss";
+	              // Remove existing listeners to avoid conflicts
+	              const newButton = tryAgainButton.cloneNode(true);
+	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
+	          } else {
+	              // Default game: Show "Next Level" or "Start Over"
+	              tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
+	          }
+        
 	          document.getElementById("game-over-container").style.display = "block";
 
-	          if (this.currentTurn === this.player1) {
-	              const currentRound = this.roundStats[this.roundStats.length - 1];
-	              if (currentRound && !currentRound.completed) {
-	                  currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
-	                  currentRound.completed = true;
+	          if (!this.selectedBoss) {
+	              // Default game: Update score and level
+	              if (this.currentTurn === this.player1) {
+	                  const currentRound = this.roundStats[this.roundStats.length - 1];
+	                  if (currentRound && !currentRound.completed) {
+	                      currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	                      currentRound.completed = true;
 
-	                  const roundScore = currentRound.matches > 0 
-	                      ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
-	                      : 0;
+	                      const roundScore = currentRound.matches > 0 
+	                          ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
+	                          : 0;
 
-	                  log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
-	                  log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
+	                      log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+	                      log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
 
-	                  this.grandTotalScore += roundScore;
+	                      this.grandTotalScore += roundScore;
 
-	                  log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
-	                  log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
+	                      log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	                      log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
+	                  }
 	              }
-	          }
 
-	          await this.saveScoreToDatabase(this.currentLevel);
+	              await this.saveScoreToDatabase(this.currentLevel);
 
-	          if (this.currentLevel === opponentsConfig.length) {
-	              this.sounds.finalWin.play();
-	              log(`Final level completed! Final score: ${this.grandTotalScore}`);
-	              this.grandTotalScore = 0;
-	              await this.clearProgress();
-	              log("Game completed! Grand total score reset.");
-	          } else {
-	              this.clearBoard();
-	              this.currentLevel += 1;
-	              await this.saveProgress();
-	              console.log(`Progress saved: currentLevel=${this.currentLevel}`);
-	              this.sounds.win.play();
+	              if (this.currentLevel === opponentsConfig.length) {
+	                  this.sounds.finalWin.play();
+	                  log(`Final level completed! Final score: ${this.grandTotalScore}`);
+	                  this.grandTotalScore = 0;
+	                  await this.clearProgress();
+	                  log("Game completed! Grand total score reset.");
+	              } else {
+	                  this.clearBoard();
+	                  this.currentLevel += 1;
+	                  await this.saveProgress();
+	                  console.log(`Progress saved: currentLevel=${this.currentLevel}`);
+	                  this.sounds.win.play();
+	              }
 	          }
 
 	          // Set battle-damaged image for player2
