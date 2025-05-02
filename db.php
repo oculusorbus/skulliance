@@ -4637,7 +4637,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "</td>";
 			if($weekly){
 				echo "<td align='center'>";
-				echo number_format(round($points/$leaderboardCounter))." CLAW/CARBON = ";
+				echo number_format(round($points/$leaderboardCounter))." CLAW/CARBON";
 				echo "</td>";
 			}
 			echo "</tr>";
