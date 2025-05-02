@@ -13,7 +13,7 @@ include 'header.php';
 				           $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && 
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" && 
 				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" && 
-						   $filterby != "weekly-bosses") && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
+						   $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
