@@ -2000,6 +2000,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Selected Boss:', this.selectedBoss.name);
 		    console.log('Boss Theme:', this.selectedBoss.theme);
 
+		    // Hide player and boss images to prevent flash of previous characters
+		    const currentP1Image = document.getElementById('p1-image');
+		    const currentP2Image = document.getElementById('p2-image');
+		    if (currentP1Image) currentP1Image.style.display = 'none';
+		    if (currentP2Image) currentP2Image.style.display = 'none';
+
 		    // Preload boss and character images
 		    const bossExtension = this.selectedBoss.extension || 'png';
 		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
@@ -2037,9 +2043,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        playerOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
 		        console.log(`Random player orientation resolved to: ${playerOrientation}`);
 		    }
-
-		    // Construct boss image URL using extension for consistency
-		    // (Already defined above for preloading, no need to redefine)
 
 		    // Set up player and boss
 		    this.player1 = { ...this.selectedCharacter, orientation: playerOrientation };
@@ -2108,9 +2111,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        this.updatePlayerDisplay();
 		        this.updateOpponentDisplay();
 
+		        // Show images after loading
+		        if (currentP1Image) {
+		            currentP1Image.onload = () => {
+		                currentP1Image.style.display = 'block';
+		                console.log('Player image loaded and displayed');
+		            };
+		            currentP1Image.onerror = () => {
+		                currentP1Image.src = this.player1.fallbackUrl || 'icons/skull.png';
+		                currentP1Image.style.display = 'block';
+		                console.log('Player image failed to load, using fallback');
+		            };
+		        }
+		        if (currentP2Image) {
+		            currentP2Image.onload = () => {
+		                currentP2Image.style.display = 'block';
+		                console.log('Boss image loaded and displayed');
+		            };
+		            currentP2Image.onerror = () => {
+		                currentP2Image.src = this.player2.fallbackUrl;
+		                currentP2Image.style.display = 'block';
+		                console.log('Boss image failed to load, using fallback');
+		            };
+		        }
+
 		        // Apply orientation transforms
-		        const currentP1Image = document.getElementById('p1-image');
-		        const currentP2Image = document.getElementById('p2-image');
 		        if (currentP1Image) {
 		            currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
 		            console.log(`startBossBattle: player1 orientation set to ${this.player1.orientation}, transform: ${currentP1Image.style.transform}`);
@@ -2143,12 +2168,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		            // Set battle-damaged image for player2
 		            let damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
-		            const p2Image = document.getElementById('p2-image');
-		            if (p2Image.tagName === 'IMG') {
-		                p2Image.src = damagedUrl;
-		                p2Image.onerror = () => { p2Image.src = this.player2.fallbackUrl; };
+		            if (currentP2Image.tagName === 'IMG') {
+		                currentP2Image.src = damagedUrl;
+		                currentP2Image.onload = () => {
+		                    currentP2Image.style.display = 'block';
+		                    console.log('Boss battle-damaged image loaded and displayed');
+		                };
+		                currentP2Image.onerror = () => {
+		                    currentP2Image.src = this.player2.fallbackUrl;
+		                    currentP2Image.style.display = 'block';
+		                    console.log('Boss battle-damaged image failed to load, using fallback');
+		                };
 		            }
-		            p2Image.classList.add("loser");
+		            currentP2Image.classList.add("loser");
 		            currentP1Image.classList.add("winner");
 		        }
 
@@ -2216,13 +2248,35 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.roundStats = [];
 
 		    // Remove winner/loser classes
-		    const currentP1Image = document.getElementById('p1-image');
-		    const currentP2Image = document.getElementById('p2-image');
 		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
 		    if (currentP2Image) currentP2Image.classList.remove('winner', 'loser');
 
 		    this.updatePlayerDisplay();
 		    this.updateOpponentDisplay();
+
+		    // Show images after loading
+		    if (currentP1Image) {
+		        currentP1Image.onload = () => {
+		            currentP1Image.style.display = 'block';
+		            console.log('Player image loaded and displayed');
+		        };
+		        currentP1Image.onerror = () => {
+		            currentP1Image.src = this.player1.fallbackUrl || 'icons/skull.png';
+		            currentP1Image.style.display = 'block';
+		            console.log('Player image failed to load, using fallback');
+		        };
+		    }
+		    if (currentP2Image) {
+		        currentP2Image.onload = () => {
+		            currentP2Image.style.display = 'block';
+		            console.log('Boss image loaded and displayed');
+		        };
+		        currentP2Image.onerror = () => {
+		            currentP2Image.src = this.player2.fallbackUrl;
+		            currentP2Image.style.display = 'block';
+		            console.log('Boss image failed to load, using fallback');
+		        };
+		    }
 
 		    // Apply orientation transforms
 		    if (currentP1Image) {
