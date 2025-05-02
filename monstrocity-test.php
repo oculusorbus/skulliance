@@ -2276,14 +2276,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    const bossSelectContainer = document.getElementById('boss-select-container');
 		    if (bossSelectContainer) {
 		        bossSelectContainer.style.display = 'block';
-		        // Populate the boss selection UI
-		        if (typeof this.showBossSelect === 'function') {
-		            this.showBossSelect(bossesConfig);
+		        // Populate the boss selection UI using the global showBossSelect function
+		        if (typeof showBossSelect === 'function') {
+		            showBossSelect(this); // Pass the game instance
+		            console.log('showBossSelectionScreen: Called global showBossSelect');
 		        } else {
-		            console.warn('showBossSelect method not found, ensure boss selection UI is populated');
+		            console.error('showBossSelectionScreen: showBossSelect function not found');
+		            bossSelectContainer.innerHTML = '<p style="color: #fff; text-align: center;">Error: Boss selection UI unavailable.</p>';
 		        }
 		    } else {
-		        console.error('Boss select container (#boss-select-container) not found');
+		        console.error('showBossSelectionScreen: Boss select container (#boss-select-container) not found');
 		    }
 
 		    // Reset boss battle state
