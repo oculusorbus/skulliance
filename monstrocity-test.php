@@ -4081,7 +4081,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         
 	          if (this.selectedBoss) {
 	              // Boss battle: Show "Select Boss" button
-	              tryAgainButton.textContent = "Select Boss";
+	              tryAgainButton.textContent = "SELECT BOSS";
 	              // Remove existing listeners to avoid conflicts
 	              const newButton = tryAgainButton.cloneNode(true);
 	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
@@ -4123,7 +4123,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          if (this.selectedBoss) {
 	              // Boss battle: Show "Select Boss" button
-	              tryAgainButton.textContent = "Select Boss";
+	              tryAgainButton.textContent = "SELECT BOSS";
 	              // Remove existing listeners to avoid conflicts
 	              const newButton = tryAgainButton.cloneNode(true);
 	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
