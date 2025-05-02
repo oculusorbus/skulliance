@@ -32,10 +32,10 @@ if(isset($_GET['factions'])){
 	checkFactionsLeaderboard($conn, false, true);
 }
 if(isset($_GET['swaps'])){
-	checkSkullSwapsLeaderboard($conn, true, true);
+	checkSkullSwapsLeaderboard($conn, false, true);
 }
 if(isset($_GET['bosses'])){
-	checkBossBattlesLeaderboard($conn, true, true);
+	checkBossBattlesLeaderboard($conn, false, true);
 }
 if(isset($_GET['monstrocity'])){
 	checkMonstrocityLeaderboard($conn, false, true);

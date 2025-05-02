@@ -4535,7 +4535,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 	if($weekly || $rewards){
 		$where = "WHERE reward = '0'";
 	}
-	$sql =" SELECT ".($weekly ? "SUM" : "AVG")."(damage_dealt) AS damage_dealt_total,".($weekly ? "SUM" : "AVG")."(damage_taken) AS damage_taken_total, COUNT(encounters.id) AS encounters_total, user_id, discord_id, avatar, visibility, username FROM encounters INNER JOIN users ON users.id = encounters.user_id ".$where." GROUP BY user_id ORDER BY damage_dealt_total DESC";
+	$sql =" SELECT ".(($weekly || $rewards) ? "SUM" : "AVG")."(damage_dealt) AS damage_dealt_total,".(($weekly || $rewards) ? "SUM" : "AVG")."(damage_taken) AS damage_taken_total, COUNT(encounters.id) AS encounters_total, user_id, discord_id, avatar, visibility, username FROM encounters INNER JOIN users ON users.id = encounters.user_id ".$where." GROUP BY user_id ORDER BY damage_dealt_total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
