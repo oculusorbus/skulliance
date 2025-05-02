@@ -153,6 +153,7 @@ function getBosses($conn) {
                 'powerup' => $row['powerup'] ?: null,
                 'bounty' => (int)$row['bounty'],
                 'currency' => $row['currency'],
+				'theme' => $row['theme'],
 				'orientation' => ucfirst($row['orientation']),
                 'extension' => $row['extension'],
                 'imageUrl' => "images/monstrocity/bosses/{$slugifiedName}.{$row['extension']}",
