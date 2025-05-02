@@ -2000,6 +2000,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Selected Boss:', this.selectedBoss.name);
 		    console.log('Boss Theme:', this.selectedBoss.theme);
 
+		    // Preload boss and character images
+		    const bossExtension = this.selectedBoss.extension || 'png';
+		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const preloadImages = [bossImageUrl, bossBattleDamagedUrl, this.selectedCharacter.imageUrl];
+		    preloadImages.forEach(url => {
+		        const img = new Image();
+		        img.src = url;
+		        img.onload = () => console.log(`Preloaded image: ${url}`);
+		        img.onerror = () => console.log(`Failed to preload image: ${url}`);
+		    });
+
 		    // Ensure the game is using the boss's theme
 		    if (this.theme !== this.selectedBoss.theme) {
 		        console.warn(`startBossBattle: Theme mismatch (current: ${this.theme}, boss: ${this.selectedBoss.theme}), updating to boss theme`);
@@ -2027,9 +2039,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    }
 
 		    // Construct boss image URL using extension for consistency
-		    const bossExtension = this.selectedBoss.extension || 'png';
-		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
-		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    // (Already defined above for preloading, no need to redefine)
 
 		    // Set up player and boss
 		    this.player1 = { ...this.selectedCharacter, orientation: playerOrientation };
