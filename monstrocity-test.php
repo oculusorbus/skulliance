@@ -1719,10 +1719,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  option.className = `boss-option`;
 
 	                  // Check health conditions
-	                  const isPlayerDead = boss.playerHealth <= 0;
+	                  const isPlayerDead = boss.playerHealth === 0; // Only disable if explicitly 0, not null
 	                  const isBossDead = boss.health <= 0;
 
-	                  // Apply styling and disable clicking if either health is zero
+	                  // Apply styling and disable clicking if either health condition is met
 	                  if (isPlayerDead || isBossDead) {
 	                      option.style.pointerEvents = 'none'; // Disable clicking
 	                      if (isBossDead) {
@@ -1740,7 +1740,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      <p><strong>${boss.name}</strong></p>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
-	                          <tr><td>Your Health:</td><td>${boss.playerHealth}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
 	                          <tr><td>Speed:</td><td>${boss.speed}</td></tr>
 	                          <tr><td>Tactics:</td><td>${boss.tactics}</td></tr>
@@ -1752,7 +1751,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      </table>
 	                  `;
 
-	                  // Only add click event if the boss is clickable (based on health, ignoring canFight for this purpose)
+	                  // Only add click event if the boss is clickable
 	                  if (!isPlayerDead && !isBossDead) {
 	                      option.addEventListener('click', () => {
 	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
