@@ -1716,13 +1716,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              const fragment = document.createDocumentFragment();
 	              bosses.forEach(boss => {
 	                  const option = document.createElement('div');
-	                  option.className = `boss-option ${boss.canFight ? '' : 'disabled'}`;
+	                  option.className = `boss-option`;
+
+	                  // Check health conditions
+	                  const isPlayerDead = boss.playerHealth <= 0;
+	                  const isBossDead = boss.health <= 0;
+
+	                  // Apply styling and disable clicking if either health is zero
+	                  if (isPlayerDead || isBossDead) {
+	                      option.style.pointerEvents = 'none'; // Disable clicking
+	                      if (isBossDead) {
+	                          option.style.filter = 'grayscale(100%) sepia(100%) hue-rotate(0deg) saturate(500%)'; // Red hue
+	                          option.style.opacity = '0.6';
+	                      } else if (isPlayerDead) {
+	                          option.style.filter = 'grayscale(100%)'; // Grey out
+	                          option.style.opacity = '0.6';
+	                      }
+	                  }
+
 	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
 	                  option.innerHTML = `
 	                      <img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'">
 	                      <p><strong>${boss.name}</strong></p>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
+	                          <tr><td>Your Health:</td><td>${boss.playerHealth}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
 	                          <tr><td>Speed:</td><td>${boss.speed}</td></tr>
 	                          <tr><td>Tactics:</td><td>${boss.tactics}</td></tr>
@@ -1733,7 +1751,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                          <tr><td>Bounty:</td><td>${boss.bounty} ${boss.currency}</td></tr>
 	                      </table>
 	                  `;
-	                  if (boss.canFight) {
+
+	                  // Only add click event if the boss is clickable (based on health, ignoring canFight for this purpose)
+	                  if (!isPlayerDead && !isBossDead) {
 	                      option.addEventListener('click', () => {
 	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
 	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
@@ -1788,6 +1808,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                              });
 	                      });
 	                  }
+
 	                  fragment.appendChild(option);
 	              });
 
@@ -2225,27 +2246,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		
 		showBossSelectionScreen() {
 		    console.log('Navigating to boss selection screen');
-    
+
 		    // Hide game board and game over popup
 		    const gameContainer = document.querySelector('.game-container');
 		    const gameOverContainer = document.getElementById('game-over-container');
 		    gameContainer.style.display = 'none';
 		    gameOverContainer.style.display = 'none';
-    
+
 		    // Show boss selection screen
 		    const bossSelectContainer = document.getElementById('boss-select-container');
 		    if (bossSelectContainer) {
 		        bossSelectContainer.style.display = 'block';
-		        // Assuming a method exists to populate the boss selection UI
+		        // Populate the boss selection UI
 		        if (typeof this.showBossSelect === 'function') {
-		            this.showBossSelect();
+		            this.showBossSelect(bossesConfig);
 		        } else {
 		            console.warn('showBossSelect method not found, ensure boss selection UI is populated');
 		        }
 		    } else {
 		        console.error('Boss select container (#boss-select-container) not found');
 		    }
-    
+
 		    // Reset boss battle state
 		    this.selectedBoss = null;
 		    this.selectedCharacter = null;
