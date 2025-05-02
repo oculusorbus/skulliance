@@ -56,24 +56,25 @@ function getBosses($conn) {
             return;
         }
 
-        // Query 2: Fetch player health for the user
-        $healthSql = "
-            SELECT boss_id, health
-            FROM health
-            WHERE user_id = ?
-        ";
-        $healthStmt = $conn->prepare($healthSql);
-        if (!$healthStmt) {
-            throw new Exception('Prepare failed: ' . $conn->error);
-        }
-        $healthStmt->bind_param('i', $userId);
-        $healthStmt->execute();
-        $healthStmt->bind_result($bossId, $health);
-        $healthMap = [];
-        while ($healthStmt->fetch()) {
-            $healthMap[$bossId] = (int)$health;
-        }
-        $healthStmt->close();
+		// Query 2: Fetch player health for the user
+		$healthSql = "
+		    SELECT boss_id, health
+		    FROM health
+		    WHERE user_id = ?
+		";
+		$healthStmt = $conn->prepare($healthSql);
+		if (!$healthStmt) {
+		    throw new Exception('Prepare failed: ' . $conn->error);
+		}
+		$healthStmt->bind_param('i', $userId);
+		$healthStmt->execute();
+		$healthStmt->bind_result($bossId, $health);
+		$healthMap = [];
+		while ($healthStmt->fetch()) {
+		    // Only cast to int if health is not null
+		    $healthMap[$bossId] = $health !== null ? (int)$health : null;
+		}
+		$healthStmt->close();
 
         // Query 3: Fetch player counts for participation multiplier
         $countSql = "
