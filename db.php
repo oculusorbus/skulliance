@@ -6705,7 +6705,7 @@ function resetBossBattles($conn){
 }
 
 function distributeBounties($conn) {
-    // Step 1: Fetch unrewarded encounters, including date_created
+    // Step 1: Fetch unrewarded encounters
     $sql = "SELECT e.id, e.user_id, e.boss_id, e.damage_dealt, e.date_created, 
                    b.health, b.max_health AS bounty, b.project_id 
             FROM encounters e 
@@ -6739,7 +6739,7 @@ function distributeBounties($conn) {
             'id' => $row['id'],
             'user_id' => $row['user_id'],
             'damage_dealt' => $row['damage_dealt'],
-            'date_created' => $row['date_created'] ?? '1970-01-01 00:00:00' // Fallback for missing date
+            'date_created' => $row['date_created'] ?? '1970-01-01 00:00:00'
         ];
         $boss_encounters[$boss_id]['total_damage'] += $row['damage_dealt'];
     }
@@ -6782,19 +6782,27 @@ function distributeBounties($conn) {
         // Assign the bounty to the latest encounter's user
         $conn->begin_transaction();
         try {
-            // Update the latest encounter with the reward
+            // Update the latest encounter with the reward (treat reward as string)
             $update_sql = "UPDATE encounters SET reward = ? WHERE id = ?";
             $stmt = $conn->prepare($update_sql);
-            $stmt->bind_param("ii", $bounty_to_distribute, $latest_encounter['id']);
-            $stmt->execute();
+            $bounty_str = (string)$bounty_to_distribute; // Cast to string
+            $stmt->bind_param("si", $bounty_str, $latest_encounter['id']);
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to update reward for encounter id: " . $latest_encounter['id'] . ", error: " . $stmt->error);
+            }
+            if ($stmt->affected_rows == 0) {
+                error_log("No rows updated for encounter id: " . $latest_encounter['id'] . " (boss_id: $boss_id)");
+            }
 
-            // Set reward to 0 for other encounters
+            // Set reward to '0' for other encounters
             foreach ($encounters as $enc) {
                 if ($enc['id'] !== $latest_encounter['id']) {
                     $update_sql = "UPDATE encounters SET reward = '0' WHERE id = ?";
                     $stmt = $conn->prepare($update_sql);
                     $stmt->bind_param("i", $enc['id']);
-                    $stmt->execute();
+                    if (!$stmt->execute()) {
+                        throw new Exception("Failed to set reward to 0 for encounter id: " . $enc['id'] . ", error: " . $stmt->error);
+                    }
                 }
             }
 
@@ -6803,6 +6811,7 @@ function distributeBounties($conn) {
             logCredit($conn, $user_id, $bounty_to_distribute, $project_id);
 
             $conn->commit();
+            error_log("Successfully distributed bounty for boss_id: $boss_id, amount: $bounty_to_distribute, user_id: $user_id");
         } catch (Exception $e) {
             $conn->rollback();
             error_log("Transaction failed for boss_id: $boss_id: " . $e->getMessage());
