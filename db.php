@@ -6719,6 +6719,7 @@ function distributeBounties($conn) {
     }
 
     if ($result->num_rows == 0) {
+        error_log("No unrewarded encounters found.");
         return true;
     }
 
@@ -6779,22 +6780,22 @@ function distributeBounties($conn) {
         $latest_encounter = $encounters[0];
         $user_id = $latest_encounter['user_id'];
 
-        // Assign the bounty to the latest encounter's user
+        // Step 4: Update the encounters table with the reward
         $conn->begin_transaction();
         try {
             // Update the latest encounter with the reward (treat reward as string)
             $update_sql = "UPDATE encounters SET reward = ? WHERE id = ?";
             $stmt = $conn->prepare($update_sql);
-            $bounty_str = (string)$bounty_to_distribute; // Cast to string
+            $bounty_str = (string)$bounty_to_distribute;
             $stmt->bind_param("si", $bounty_str, $latest_encounter['id']);
             if (!$stmt->execute()) {
                 throw new Exception("Failed to update reward for encounter id: " . $latest_encounter['id'] . ", error: " . $stmt->error);
             }
             if ($stmt->affected_rows == 0) {
-                error_log("No rows updated for encounter id: " . $latest_encounter['id'] . " (boss_id: $boss_id)");
+                throw new Exception("No rows updated for encounter id: " . $latest_encounter['id'] . " (boss_id: $boss_id)");
             }
 
-            // Set reward to '0' for other encounters
+            // Set reward to '0' for other encounters (if duplicates exist)
             foreach ($encounters as $enc) {
                 if ($enc['id'] !== $latest_encounter['id']) {
                     $update_sql = "UPDATE encounters SET reward = '0' WHERE id = ?";
@@ -6806,16 +6807,22 @@ function distributeBounties($conn) {
                 }
             }
 
-            // Apply reward
-            updateBalance($conn, $user_id, $project_id, $bounty_to_distribute);
-            logCredit($conn, $user_id, $bounty_to_distribute, $project_id);
-
             $conn->commit();
-            error_log("Successfully distributed bounty for boss_id: $boss_id, amount: $bounty_to_distribute, user_id: $user_id");
+            error_log("Successfully updated encounters table for boss_id: $boss_id, reward: $bounty_str, encounter_id: " . $latest_encounter['id']);
         } catch (Exception $e) {
             $conn->rollback();
-            error_log("Transaction failed for boss_id: $boss_id: " . $e->getMessage());
+            error_log("Failed to update encounters table for boss_id: $boss_id: " . $e->getMessage());
             continue;
+        }
+
+        // Step 5: Apply reward to user balance (outside transaction)
+        try {
+            updateBalance($conn, $user_id, $project_id, $bounty_to_distribute);
+            logCredit($conn, $user_id, $bounty_to_distribute, $project_id);
+            error_log("Successfully applied reward for boss_id: $boss_id, amount: $bounty_to_distribute, user_id: $user_id");
+        } catch (Exception $e) {
+            error_log("Failed to apply reward for boss_id: $boss_id, user_id: $user_id: " . $e->getMessage());
+            // Continue despite failure, as encounters table is already updated
         }
     }
 
