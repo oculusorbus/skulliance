@@ -1974,7 +1974,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        console.warn(`startBossBattle: Theme mismatch (current: ${this.theme}, boss: ${this.selectedBoss.theme}), updating to boss theme`);
 		        const validThemes = themes.flatMap(group => group.items).map(item => item.value);
 		        if (this.selectedBoss.theme && validThemes.includes(this.selectedBoss.theme)) {
-		            this.updateTheme(this.selectedBoss.theme);
+		            this.updateTheme(this.selectedBoss.theme, true); // Pass true to indicate boss battle context
 		        }
 		    }
 
@@ -2493,7 +2493,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			}
 
 	    // Update theme and refresh visuals
-			updateTheme(newTheme) {
+			updateTheme(newTheme, isBossBattle = false) {
 			    if (updatePending) {
 			        console.log('updateTheme: Skipped due to pending update');
 			        return;
@@ -2506,10 +2506,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			    localStorage.setItem('gameTheme', this.theme);
 			    this.setBackground();
 
-			    // Clear boss-related overrides
-			    this.selectedBoss = null;
-			    this.selectedCharacter = null; // Also clear selected character to avoid confusion
-			    console.log('updateTheme: Cleared selectedBoss and selectedCharacter');
+			    // Clear boss-related overrides only if not in a boss battle context
+			    if (!isBossBattle) {
+			        console.log('updateTheme: Not a boss battle, clearing selectedBoss and selectedCharacter');
+			        this.selectedBoss = null;
+			        this.selectedCharacter = null;
+			    } else {
+			        console.log('updateTheme: Boss battle context, preserving selectedBoss and selectedCharacter');
+			    }
 
 			    // Update the logo immediately
 			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
@@ -2589,8 +2593,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			        ];
 			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
 			        // Clear boss overrides in case of error
-			        self.selectedBoss = null;
-			        self.selectedCharacter = null;
+			        if (!isBossBattle) {
+			            self.selectedBoss = null;
+			            self.selectedCharacter = null;
+			        }
 			        // Show character select on error
 			        const container = document.getElementById('character-select-container');
 			        container.style.display = 'block';
