@@ -37,6 +37,7 @@ function getBosses($conn) {
                 b.powerup,
                 b.bounty,
                 p.currency,
+				b.theme,
 				b.orientation,
                 b.extension
             FROM bosses b
