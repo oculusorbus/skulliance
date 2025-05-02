@@ -12,7 +12,8 @@ include 'header.php';
 				    case ($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && 
 				           $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && 
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" && 
-				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
+				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" && 
+						   $filterby != "weekly-bosses") && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -60,6 +61,14 @@ include 'header.php';
 				        $title = "Weekly Skull Swaps";
 				        $filterby = "weekly-swaps";
 				        break;
+				    case ($filterby == "bosses"):
+				        $title = "All Boss Battles";
+				        $filterby = "bosses";
+				        break;
+				    case ($filterby == "weekly-bosses"):
+				        $title = "Weekly Boss Battles";
+				        $filterby = "weekly-bosses";
+				        break;
 				    case ($filterby == "monstrocity"):
 				        $title = "All Monstrocity";
 				        $filterby = "monstrocity";
@@ -80,7 +89,8 @@ include 'header.php';
 				        case ($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && 
 				              $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && 
 				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" && 
-				              $filterby != "weekly-swaps" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
+				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" && 
+							  $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -113,6 +123,12 @@ include 'header.php';
 				            break;
 				        case ($filterby == "weekly-swaps"):
 				            checkSkullSwapsLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "bosses"):
+				            checkBossBattlesLeaderboard($conn);
+				            break;
+				        case ($filterby == "weekly-bosses"):
+				            checkBossBattlesLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "monstrocity"):
 				            checkMonstrocityLeaderboard($conn);

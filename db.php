@@ -4528,6 +4528,154 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 	}
 }
 
+// Check Boss Battles Leaderboard
+function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
+	$points = 10000;
+	$where = "";
+	if($weekly || $rewards){
+		$where = "WHERE reward = '0'";
+	}
+	$sql =" SELECT ".($weekly ? "SUM" : "AVG")."(damage_dealt) AS damage_dealt_total,".($weekly ? "SUM" : "AVG")."(damage_taken) AS damage_taken_total, COUNT(encounters.id) AS encounters_total, user_id, discord_id, avatar, visibility, username FROM encounters INNER JOIN users ON users.id = encounters.user_id ".$where." GROUP BY user_id ORDER BY damage_dealt_total DESC";
+	$result = $conn->query($sql);
+
+	if ($result->num_rows > 0) {
+		$fireworks = false;
+		$leaderboardCounter = 0;
+		$last_total = 0;
+		$third_total = 0;
+		$width = 40;
+		$score = 0;
+		$description = "";
+		$counter = 0;
+		echo "<table id='transactions' cellspacing='0'>";
+		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>".($weekly ? "Damage Dealt" : "Average Damage Dealt")."</th><th>".($weekly ? "Damage Taken" : "Average Damage Taken")."</th><th>Encounters</th>";
+		if($weekly){
+			echo "<th>Projected Rewards</th>";
+		}
+		while($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			$trophy = "";
+			$score = $row["max_score"];
+			if($leaderboardCounter == 1){
+				//$width = 50;
+				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter == 2){
+				//$width = 45;
+				if($last_total != $score){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+				}else{
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
+					$leaderboardCounter--;
+				}
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter == 3){
+				//$width = 40;
+				if($last_total != $score){
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+					$third_total = $score;
+				}else{
+					$trophy = "<img style='width:".$width."px' src='/staking/icons/second.png' class='icon'/>";
+					$leaderboardCounter--;
+				}
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter > 3 && $third_total == $score){
+				$trophy = "<img style='width:".$width."px' src='/staking/icons/third.png' class='icon'/>";
+				$leaderboardCounter--;
+				if(isset($_SESSION['userData']['user_id'])){
+					if($_SESSION['userData']['user_id'] == $row["user_id"]){
+						$fireworks = true;
+					}
+				}
+			}else if($leaderboardCounter > 3 && $last_total == $score){
+				$leaderboardCounter--;
+			}
+			$highlight = "";
+			if(isset($_SESSION['userData']['user_id'])){
+				if($row["user_id"] == $_SESSION['userData']['user_id']){
+					$highlight = "highlight";
+				}
+			}
+			echo "<tr class='".$highlight."'>";
+			echo "<td align='center'>";
+			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			echo $avatar;
+			echo "</td>";
+			echo "<td align='left'>";
+			$username = "";
+			if($row["visibility"] == "2"){
+				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
+			}else{
+				$username = $row["username"];
+			}
+			echo "<strong style='font-size:20px'>".$username."</strong>";
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["damage_dealt_total"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["damage_taken_total"]);
+			echo "</td>";
+			echo "<td align='center'>";
+			echo number_format($row["encounters_total"]);
+			echo "</td>";
+			if($weekly){
+				echo "<td align='center'>";
+				echo number_format(round($points/$leaderboardCounter))." CLAW/CARBON = ";
+				echo "</td>";
+			}
+			echo "</tr>";
+			$last_total = $score;
+			if($rewards){
+				updateBalance($conn, $row["user_id"], 15, round($points/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($points/$leaderboardCounter), 15);
+				updateBalance($conn, $row["user_id"], 36, round($points/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($points/$leaderboardCounter), 36);
+				
+				// Limit number of rows added to description to prevent going over Discord notification text length limit
+				if($counter <= 45){
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Damage Dealt: ".$row["damage_dealt_total"].", Damage Taken: ".$row["damage_taken_total"].", Encounters: ".$row["encounters_total"]."\r\n";
+					$description .= "        ".number_format(round($points/$leaderboardCounter))." CLAW/CARBON \r\n";
+				}
+			}
+		}
+		if($rewards){
+			// Mark all current encounters as rewarded
+			// Reset Player Health to NULL
+			// Reset Boss Health to Max Health
+				
+			$title = "Weekly Boss Battle Leaderboard Results";
+			$imageurl = "";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+		}
+		echo "</table>";
+		if($fireworks){
+			fireworks();
+		}
+	}else{
+		echo "<p>No Boss Battles have been completed yet for the week.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterbybosses" id="filterbybosses" value="bosses"><input type="submit" class="small-button" value="View All Boss Battles Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+
 // Check Monstrocity Leaderboard
 function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 	$claw = 30000;
