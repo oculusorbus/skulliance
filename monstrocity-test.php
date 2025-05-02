@@ -822,7 +822,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  width: 100%;
 	  margin: 5px 0;
 	  border-collapse: collapse;
-	  font-size: 0.9em;
+	  font-size: 0.75em;
 	  color: #fff;
 	}
 
@@ -875,7 +875,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    font-size: 0.8em;
 	  }
 	  .boss-option table {
-	    font-size: 0.8em;
+	    font-size: 0.75em;
 	  }
 	}
 
