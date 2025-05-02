@@ -2000,6 +2000,28 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    console.log('Selected Boss:', this.selectedBoss.name);
 		    console.log('Boss Theme:', this.selectedBoss.theme);
 
+		    // Show game container and board immediately
+		    const gameContainer = document.querySelector('.game-container');
+		    const gameBoard = document.getElementById('game-board');
+		    gameContainer.style.display = 'block';
+		    gameBoard.style.visibility = 'visible';
+		    this.setBackground();
+
+		    // Set the logo based on the boss's theme
+		    document.querySelector('.game-logo').src = `images/monstrocity/${this.theme}/logo.png`;
+
+		    // Preload boss and character images
+		    const bossExtension = this.selectedBoss.extension || 'png';
+		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const preloadImages = [bossImageUrl, bossBattleDamagedUrl, this.selectedCharacter.imageUrl];
+		    preloadImages.forEach(url => {
+		        const img = new Image();
+		        img.src = url;
+		        img.onload = () => console.log(`Preloaded image: ${url}`);
+		        img.onerror = () => console.log(`Failed to preload image: ${url}`);
+		    });
+
 		    // Ensure the game is using the boss's theme
 		    if (this.theme !== this.selectedBoss.theme) {
 		        console.warn(`startBossBattle: Theme mismatch (current: ${this.theme}, boss: ${this.selectedBoss.theme}), updating to boss theme`);
@@ -2008,9 +2030,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		            await this.updateTheme(this.selectedBoss.theme, true); // Await the theme update
 		        }
 		    }
-
-		    // Set the logo based on the boss's theme
-		    document.querySelector('.game-logo').src = `images/monstrocity/${this.theme}/logo.png`;
 
 		    // Determine boss orientation
 		    let bossOrientation = this.selectedBoss.orientation || 'Right';
@@ -2025,11 +2044,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        playerOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
 		        console.log(`Random player orientation resolved to: ${playerOrientation}`);
 		    }
-
-		    // Construct boss image URL using extension for consistency
-		    const bossExtension = this.selectedBoss.extension || 'png';
-		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
-		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
 
 		    // Set up player and boss
 		    this.player1 = { ...this.selectedCharacter, orientation: playerOrientation };
@@ -2052,35 +2066,55 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        mediaType: this.selectedBoss.mediaType || 'image'
 		    };
 
-		    // Load saved health for the player
+		    // Load saved health and NFT assets concurrently
 		    const userId = window.userId || null;
+		    let playerHealth = this.player1.maxHealth;
+		    let characters = null; // Only fetch if needed
 		    if (userId && this.selectedBoss && this.selectedBoss.id) {
-		        try {
-		            const response = await fetch('ajax/get-health.php', {
+		        const [healthResponse, nftResponse] = await Promise.all([
+		            fetch('ajax/get-health.php', {
 		                method: 'POST',
-		                headers: {
-		                    'Content-Type': 'application/x-www-form-urlencoded'
-		                },
+		                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 		                body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(this.selectedBoss.id)}`
-		            });
-		            const data = await response.json();
+		            }).catch(error => {
+		                console.error('Error loading health:', error);
+		                return { ok: false };
+		            }),
+		            fetch('ajax/get-nft-assets.php', {
+		                method: 'POST',
+		                headers: { 'Content-Type': 'application/json' },
+		                body: JSON.stringify({
+		                    policyIds: [this.selectedBoss.policy],
+		                    theme: this.theme
+		                })
+		            }).catch(error => {
+		                console.error('Error fetching NFT assets:', error);
+		                return { ok: false };
+		            })
+		        ]);
+
+		        if (healthResponse.ok) {
+		            const data = await healthResponse.json();
 		            if (data.success && data.health !== null) {
-		                this.player1.health = data.health;
-		                console.log(`Loaded saved health: ${this.player1.health}`);
+		                playerHealth = data.health;
+		                console.log(`Loaded saved health: ${playerHealth}`);
 		            } else {
-		                this.player1.health = this.player1.maxHealth;
+		                playerHealth = this.player1.maxHealth;
 		                console.log('No saved health found, using max health');
 		            }
-		        } catch (error) {
-		            console.error('Error loading health:', error);
-		            this.player1.health = this.player1.maxHealth;
+		        }
+
+		        if (nftResponse.ok) {
+		            characters = await nftResponse.json();
+		            this.playerCharacters = characters.map(character => this.createCharacter(character));
+		            console.log(`startBossBattle: Loaded ${characters.length} NFT characters`);
 		        }
 		    } else {
-		        this.player1.health = this.player1.maxHealth;
+		        playerHealth = this.player1.maxHealth;
 		        console.log('No userId or bossId, using max health');
 		    }
 
-		    // Set boss health
+		    this.player1.health = playerHealth;
 		    this.player2.health = this.selectedBoss.health;
 
 		    // Check if either the player or the boss has zero health
@@ -2088,12 +2122,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        console.log(`startBossBattle: Immediate game over - player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
 		        this.gameOver = true;
 		        this.gameState = "gameOver";
-
-		        const gameContainer = document.querySelector('.game-container');
-		        const gameBoard = document.getElementById('game-board');
-		        gameContainer.style.display = 'block';
-		        gameBoard.style.visibility = 'visible';
-		        this.setBackground();
 
 		        this.updatePlayerDisplay();
 		        this.updateOpponentDisplay();
@@ -2184,12 +2212,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    });
 
 		    // Reset game state
-		    const gameContainer = document.querySelector('.game-container');
-		    const gameBoard = document.getElementById('game-board');
-		    gameContainer.style.display = 'block';
-		    gameBoard.style.visibility = 'visible';
-		    this.setBackground();
-
 		    this.sounds.reset.play();
 		    log('Starting Boss Battle...');
 
