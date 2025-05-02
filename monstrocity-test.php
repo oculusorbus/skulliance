@@ -3683,14 +3683,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          if (hasMatches) {
 	              this.gameState = "animating";
-	              // Pass a callback to cascadeTiles to save the board when settled
-	              this.cascadeTiles(() => {
-	                  if (this.selectedBoss) {
-	                      this.saveBossBoard(this.selectedBoss.id);
-	                      console.log(`cascadeTiles: Saved board for bossId=${this.selectedBoss.id} after board settled`);
-	                  }
-	              });
-	              // The turn will end naturally via cascadeTiles calling endTurn
+	              // Save board state for boss battle after a successful move
+	              if (this.selectedBoss) {
+	                  this.saveBossBoard(this.selectedBoss.id);
+	                  console.log(`slideTiles: Saved board for bossId=${this.selectedBoss.id} after successful move`);
+	              }
+	              // The turn will end naturally after cascades via cascadeTiles calling endTurn
 	          } else {
 	              log("No match, reverting tiles...");
 	              this.sounds.badMove.play();
@@ -4058,64 +4056,50 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    return damage;
 	  }
 
-	  cascadeTiles(callback = () => {}) {
-	      let hasDropped = false;
-	      let hasMatches = false;
+	  cascadeTiles(callback) {
+	    if (this.gameOver) {
+	      console.log("Game over, skipping cascadeTiles");
+	      return;
+	    }
 
-	      // Drop existing tiles down to fill gaps
-	      for (let x = 0; x < this.width; x++) {
-	          let emptySpaces = 0;
-	          for (let y = this.height - 1; y >= 0; y--) {
-	              if (!this.board[y][x]) {
-	                  emptySpaces++;
-	              } else if (emptySpaces > 0) {
-	                  this.board[y + emptySpaces][x] = this.board[y][x];
-	                  this.board[y][x] = null;
-	                  const element = this.board[y + emptySpaces][x].element;
-	                  const tileSizeWithGap = this.tileSizeWithGap;
-	                  element.style.transition = "transform 0.3s ease";
-	                  element.style.transform = `translate(${(x * tileSizeWithGap)}px, ${(y + emptySpaces) * tileSizeWithGap}px)`;
-	                  hasDropped = true;
-	              }
-	          }
+	    const moved = this.cascadeTilesWithoutRender();
+	    const fallClass = "falling";
 
-	          // Fill the top with new tiles
-	          for (let y = 0; y < emptySpaces; y++) {
-	              const tile = this.createRandomTile();
-	              this.board[y][x] = tile;
-	              const element = this.createTileElement(tile.type, x, y - emptySpaces);
-	              tile.element = element;
-	              this.gameBoard.appendChild(element);
-	              element.style.transition = "transform 0.3s ease";
-	              element.style.transform = `translate(${(x * tileSizeWithGap)}px, ${y * tileSizeWithGap}px)`;
-	              hasDropped = true;
+	    for (let x = 0; x < this.width; x++) {
+	      for (let y = 0; y < this.height; y++) {
+	        const tile = this.board[y][x];
+	        if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
+	          const emptyBelow = this.countEmptyBelow(x, y);
+	          if (emptyBelow > 0) {
+	            tile.element.classList.add(fallClass);
+	            tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
 	          }
+	        }
 	      }
+	    }
 
-	      if (!hasDropped) {
-	          console.log('cascadeTiles: No tiles dropped, checking for matches');
-	          // Check for new matches after dropping
-	          for (let y = 0; y < this.height; y++) {
-	              for (let x = 0; x < this.width; x++) {
-	                  if (this.resolveMatches(x, y)) {
-	                      hasMatches = true;
-	                  }
-	              }
-	          }
+	    this.renderBoard();
 
-	          if (!hasMatches) {
-	              console.log('cascadeTiles: No more matches or drops, board is settled');
-	              this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
-	              turnIndicator.textContent = this.currentTurn === this.player1 ? "Player's Turn" : "AI's Turn";
-	              this.endTurn();
-	              // Board is fully settled, execute the callback
-	              callback();
-	              return;
-	          }
-	      }
-
-	      // Continue cascading if there were drops or matches
-	      setTimeout(() => this.cascadeTiles(callback), 300);
+	    if (moved) {
+	      setTimeout(() => {
+	        if (this.gameOver) {
+	          console.log("Game over, skipping cascade resolution");
+	          return;
+	        }
+	        this.sounds.cascade.play();
+	        const hasMatches = this.resolveMatches();
+	        const tiles = document.querySelectorAll(`.${fallClass}`);
+	        tiles.forEach(tile => {
+	          tile.classList.remove(fallClass);
+	          tile.style.transform = "translate(0, 0)";
+	        });
+	        if (!hasMatches) {
+	          callback();
+	        }
+	      }, 300);
+	    } else {
+	      callback();
+	    }
 	  }
 
       cascadeTilesWithoutRender() {
