@@ -772,7 +772,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	#boss-select-container h2 {
 	  text-align: center;
-	  margin-bottom: 0px;
+	  margin-bottom: 10px;
 	  margin-top: 30px;
 	}
 
