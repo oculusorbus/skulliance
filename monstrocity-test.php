@@ -2378,6 +2378,53 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    });
 		}
 		
+		// Save board state for a specific boss
+		saveBossBoard(bossId) {
+		    if (!bossId) {
+		        console.warn('saveBossBoard: No bossId provided, skipping');
+		        return;
+		    }
+		    const boardState = {
+		        bossId: bossId,
+		        board: this.board.map(row => row.map(tile => ({ type: tile.type }))),
+		        hash: this.createBoardHash(this.board)
+		    };
+		    localStorage.setItem(`boss_board_${bossId}`, JSON.stringify(boardState));
+		    console.log(`saveBossBoard: Saved board for bossId=${bossId}`);
+		}
+
+		// Load board state for a specific boss
+		loadBossBoard(bossId) {
+		    if (!bossId) {
+		        console.warn('loadBossBoard: No bossId provided, returning null');
+		        return null;
+		    }
+		    const key = `boss_board_${bossId}`;
+		    const boardState = JSON.parse(localStorage.getItem(key));
+		    if (boardState && boardState.bossId === bossId) {
+		        const expectedHash = this.createBoardHash(boardState.board);
+		        if (boardState.hash === expectedHash) {
+		            return boardState.board.map(row => row.map(tile => ({
+		                type: tile.type,
+		                element: null // Element will be set during render
+		            })));
+		        } else {
+		            console.warn(`loadBossBoard: Invalid hash for bossId=${bossId}, generating new board`);
+		        }
+		    }
+		    return null;
+		}
+
+		// Clear board state for a specific boss
+		clearBossBoard(bossId) {
+		    if (!bossId) {
+		        console.warn('clearBossBoard: No bossId provided, skipping');
+		        return;
+		    }
+		    localStorage.removeItem(`boss_board_${bossId}`);
+		    console.log(`clearBossBoard: Cleared board for bossId=${bossId}`);
+		}
+		
 		refreshBoard() {
 		    console.log('refreshBoard: Unsticking game board for boss battle');
     
@@ -3234,32 +3281,60 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		}
 
 		initBoard() {
-		  // Try to load board from localStorage
-		  const savedBoard = this.loadBoard();
-		  if (savedBoard) {
-		    this.board = savedBoard;
-		    console.log('initBoard: Loaded board from localStorage for level', this.currentLevel);
-		  } else {
-		    // Generate new board
-		    this.board = [];
-		    for (let y = 0; y < this.height; y++) {
-		      this.board[y] = [];
-		      for (let x = 0; x < this.width; x++) {
-		        let tile;
-		        do {
-		          tile = this.createRandomTile();
-		        } while (
-		          (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
-		          (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
-		        );
-		        this.board[y][x] = tile;
-		      }
+		    console.log('initBoard: Initializing board, selectedBoss=', this.selectedBoss);
+
+		    if (this.selectedBoss) {
+		        // Boss battle mode
+		        const savedBoard = this.loadBossBoard(this.selectedBoss.id);
+		        if (savedBoard) {
+		            this.board = savedBoard;
+		            console.log(`initBoard: Loaded saved board for bossId=${this.selectedBoss.id}`);
+		        } else {
+		            // Generate a fresh board for the boss
+		            this.board = [];
+		            for (let y = 0; y < this.height; y++) {
+		                this.board[y] = [];
+		                for (let x = 0; x < this.width; x++) {
+		                    let tile;
+		                    do {
+		                        tile = this.createRandomTile();
+		                    } while (
+		                        (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                        (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		                    );
+		                    this.board[y][x] = tile;
+		                }
+		            }
+		            console.log(`initBoard: Generated fresh board for bossId=${this.selectedBoss.id}`);
+		            this.saveBossBoard(this.selectedBoss.id);
+		        }
+		    } else {
+		        // Default game mode
+		        const savedBoard = this.loadBoard();
+		        if (savedBoard) {
+		            this.board = savedBoard;
+		            console.log('initBoard: Loaded board from localStorage for level', this.currentLevel);
+		        } else {
+		            this.board = [];
+		            for (let y = 0; y < this.height; y++) {
+		                this.board[y] = [];
+		                for (let x = 0; x < this.width; x++) {
+		                    let tile;
+		                    do {
+		                        tile = this.createRandomTile();
+		                    } while (
+		                        (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                        (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		                    );
+		                    this.board[y][x] = tile;
+		                }
+		            }
+		            this.saveBoard();
+		            console.log('initBoard: Generated and saved new board for level', this.currentLevel);
+		        }
 		    }
-		    // Save the new board to localStorage
-		    this.saveBoard();
-		    console.log('initBoard: Generated and saved new board for level', this.currentLevel);
-		  }
-		  this.renderBoard();
+
+		    this.renderBoard();
 		}
 
       createRandomTile() {
@@ -3608,6 +3683,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          if (hasMatches) {
 	              this.gameState = "animating";
+	              // Save board state for boss battle after a successful move
+	              if (this.selectedBoss) {
+	                  this.saveBossBoard(this.selectedBoss.id);
+	                  console.log(`slideTiles: Saved board for bossId=${this.selectedBoss.id} after successful move`);
+	              }
 	              // The turn will end naturally after cascades via cascadeTiles calling endTurn
 	          } else {
 	              log("No match, reverting tiles...");
@@ -4240,6 +4320,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              this.player1.health = 0;
 	              await this.savePlayerHealth();
 	              console.log("Health saved as 0 for boss battle");
+	              // Clear boss board state
+	              this.clearBossBoard(this.selectedBoss.id);
 	          }
 
 	          this.gameOver = true;
@@ -4282,6 +4364,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              this.player2.health = 0;
 	              await this.saveBossHealth();
 	              console.log("Boss health saved as 0 for boss battle");
+	              // Clear boss board state
+	              this.clearBossBoard(this.selectedBoss.id);
 	          }
 
 	          this.gameOver = true;
