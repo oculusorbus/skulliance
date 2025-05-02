@@ -1737,13 +1737,25 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      option.addEventListener('click', () => {
 	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
 	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
+
+	                          // Immediately hide the boss select screen and show character select screen
+	                          container.style.display = 'none';
+	                          characterContainer.style.display = 'block';
+
+	                          // Show loading message while fetching NFTs
+	                          const characterOptions = document.getElementById('character-options');
+	                          if (characterOptions) {
+	                              characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+	                          }
+
+	                          // Set the selected boss and fetch NFT characters
 	                          game.setSelectedBoss(boss);
 	                          fetch('ajax/get-nft-assets.php', {
-	                              method: 'POST', // Changed to POST
+	                              method: 'POST',
 	                              headers: { 'Content-Type': 'application/json' },
 	                              body: JSON.stringify({
-	                                  policyIds: [boss.policy], // Send as an array
-	                                  theme: game.theme // Include the theme, matching the init method
+	                                  policyIds: [boss.policy],
+	                                  theme: game.theme
 	                              })
 	                          })
 	                              .then(response => {
@@ -1764,13 +1776,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                                      console.warn('showBossSelect: No NFT characters returned');
 	                                      return;
 	                                  }
-	                                  container.style.display = 'none';
 	                                  game.playerCharacters = characters.map(character => game.createCharacter(character));
 	                                  game.showCharacterSelect(true);
 	                              })
 	                              .catch(error => {
 	                                  console.error('showBossSelect: Error fetching NFT characters:', error);
 	                                  alert('Error loading NFT characters. Please try again.');
+	                                  // Optionally, return to boss selection on error
+	                                  characterContainer.style.display = 'none';
+	                                  container.style.display = 'block';
 	                              });
 	                      });
 	                  }
