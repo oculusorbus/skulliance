@@ -4556,7 +4556,6 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			$leaderboardCounter++;
 			$counter++;
 			$trophy = "";
-			$score = $row["max_score"];
 			if($leaderboardCounter == 1){
 				//$width = 50;
 				$trophy = "<img style='width:".$width."px' src='/staking/icons/first.png' class='icon'/>";
@@ -6706,8 +6705,9 @@ function resetBossBattles($conn){
 }
 
 function distributeBounties($conn) {
-    // Step 1: Fetch unrewarded encounters
-    $sql = "SELECT e.id, e.user_id, e.boss_id, e.damage_dealt, b.health, b.max_health AS bounty, b.project_id 
+    // Step 1: Fetch unrewarded encounters, including date_created
+    $sql = "SELECT e.id, e.user_id, e.boss_id, e.damage_dealt, e.date_created, 
+                   b.health, b.max_health AS bounty, b.project_id 
             FROM encounters e 
             INNER JOIN bosses b ON b.id = e.boss_id 
             WHERE e.reward = '0'";
@@ -6739,7 +6739,7 @@ function distributeBounties($conn) {
             'id' => $row['id'],
             'user_id' => $row['user_id'],
             'damage_dealt' => $row['damage_dealt'],
-            'date_created' => $row['date_created']
+            'date_created' => $row['date_created'] ?? '1970-01-01 00:00:00' // Fallback for missing date
         ];
         $boss_encounters[$boss_id]['total_damage'] += $row['damage_dealt'];
     }
@@ -6772,7 +6772,9 @@ function distributeBounties($conn) {
 
         // Find the latest encounter to assign the reward
         usort($encounters, function($a, $b) {
-            return strtotime($b['date_created']) - strtotime($a['date_created']);
+            $dateA = $a['date_created'] ?? '1970-01-01 00:00:00';
+            $dateB = $b['date_created'] ?? '1970-01-01 00:00:00';
+            return strtotime($dateB) - strtotime($dateA);
         });
         $latest_encounter = $encounters[0];
         $user_id = $latest_encounter['user_id'];
