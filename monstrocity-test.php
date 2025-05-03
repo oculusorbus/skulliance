@@ -1617,24 +1617,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      let container = document.getElementById('theme-select-container');
 	      const characterContainer = document.getElementById('character-select-container');
 
-	      // Rebuild container with Boss Battles button near the top
+	      // Clear boss mode state to ensure default game mode
+	      game.selectedBoss = null;
+	      game.selectedCharacter = null;
+	      game.clearBoardState();
+	      console.log('showThemeSelect: Cleared boss mode state (selectedBoss, selectedCharacter, board state)');
+
 	      container.innerHTML = `
-	        <h2>Select Theme</h2>
-	        <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
-	          <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
-	        </div>
-	        <div id="theme-options"></div>
+	          <h2>Select Theme</h2>
+	          <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
+	              <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
+	          </div>
+	          <div id="theme-options"></div>
 	      `;
 	      const optionsDiv = document.getElementById('theme-options');
 
-	      // Show theme selection screen, hide character select screen
 	      container.style.display = 'block';
 	      characterContainer.style.display = 'none';
 
-	      // Set button states for theme game
 	      game.toggleGameButtons(false);
 
-	      // Populate theme options
 	      themes.forEach(group => {
 	          const groupDiv = document.createElement('div');
 	          groupDiv.className = 'theme-group';
@@ -1651,8 +1653,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              }
 	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
 	              option.innerHTML = `
-	                <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
-	                <p>${theme.title}</p>
+	                  <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
+	                  <p>${theme.title}</p>
 	              `;
 	              option.addEventListener('click', () => {
 	                  const characterOptions = document.getElementById('character-options');
@@ -1670,11 +1672,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          optionsDiv.appendChild(groupDiv);
 	      });
 
-	      // Update Boss Battles button handler
 	      const bossButton = document.getElementById('boss-battles-button');
 	      if (bossButton) {
 	          bossButton.addEventListener('click', () => {
-	              console.log('Boss Battles button clicked');
+	              console.log('showThemeSelect: Boss Battles button clicked, entering boss mode');
 	              showBossSelect(game);
 	          });
 	      }
@@ -1687,6 +1688,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const container = document.getElementById('boss-select-container');
 	      const themeContainer = document.getElementById('theme-select-container');
 	      const characterContainer = document.getElementById('character-select-container');
+
+	      console.log('showBossSelect: Entering boss mode');
 
 	      container.innerHTML = `
 	          <h2>Select Boss</h2>
@@ -1701,9 +1704,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	      const closeButton = document.getElementById('boss-close-button');
 	      closeButton.addEventListener('click', () => {
+	          // Clear boss mode state to ensure default game mode
+	          game.selectedBoss = null;
+	          game.selectedCharacter = null;
+	          game.clearBoardState();
+	          console.log('showBossSelect: Back to Themes clicked, cleared boss mode state');
 	          container.style.display = 'none';
 	          themeContainer.style.display = 'block';
-	          characterContainer.style.display = 'none';
+	          showThemeSelect(game);
 	      });
 
 	      fetch('ajax/get-bosses.php', {
@@ -1725,49 +1733,45 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	              const fragment = document.createDocumentFragment();
 	              bosses.forEach(boss => {
-	                  // Log the raw playerHealth value to debug
 	                  console.log(`Boss ${boss.name}: playerHealth=${boss.playerHealth} (type: ${typeof boss.playerHealth})`);
 
 	                  const option = document.createElement('div');
 	                  option.className = `boss-option`;
 
-	                  // Check health conditions
-	                  const isPlayerDead = boss.playerHealth === 0; // Only disable if explicitly 0, not null
+	                  const isPlayerDead = boss.playerHealth === 0;
 	                  const isBossDead = boss.health <= 0;
 
-	                  // Apply styling and disable clicking if either health condition is met
 	                  if (isPlayerDead || isBossDead) {
-	                      option.style.pointerEvents = 'none'; // Disable clicking
+	                      option.style.pointerEvents = 'none';
 	                      if (isBossDead) {
-	                          option.style.filter = 'grayscale(100%) sepia(100%) hue-rotate(0deg) saturate(500%)'; // Red hue
+	                          option.style.filter = 'grayscale(100%) sepia(100%) hue-rotate(0deg) saturate(500%)';
 	                          option.style.opacity = '0.6';
 	                      } else if (isPlayerDead) {
-	                          option.style.filter = 'grayscale(100%)'; // Grey out
+	                          option.style.filter = 'grayscale(100%)';
 	                          option.style.opacity = '0.6';
 	                      }
 	                  }
 
 	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
 
-	                  // Calculate health percentage and color
 	                  const healthPercentage = (boss.health || 0) / (boss.maxHealth || 100) * 100;
 	                  let healthColor;
 	                  if (healthPercentage > 75) {
-	                      healthColor = '#4CAF50'; // Green
+	                      healthColor = '#4CAF50';
 	                  } else if (healthPercentage > 50) {
-	                      healthColor = '#FFC105'; // Yellow
+	                      healthColor = '#FFC105';
 	                  } else if (healthPercentage > 25) {
-	                      healthColor = '#FFA500'; // Orange
+	                      healthColor = '#FFA500';
 	                  } else {
-	                      healthColor = '#F44336'; // Red
+	                      healthColor = '#F44336';
 	                  }
 
 	                  option.innerHTML = `
 	                      <p><strong>${boss.name}</strong></p>
 	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
 	                      <div class="health-bar" style="margin-bottom: 10px;">
-					  	  <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
-					      </div>
+	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
+	                      </div>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
@@ -1780,23 +1784,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      </table>
 	                  `;
 
-	                  // Only add click event if the boss is clickable
 	                  if (!isPlayerDead && !isBossDead) {
 	                      option.addEventListener('click', () => {
 	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
 	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
 
-	                          // Immediately hide the boss select screen and show character select screen
 	                          container.style.display = 'none';
 	                          characterContainer.style.display = 'block';
 
-	                          // Show loading message while fetching NFTs
-	                          const characterOptions = document.getElementById('character-options');
-	                          if (characterOptions) {
-	                              characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-	                          }
-
-	                          // Set the selected boss and fetch NFT characters
 	                          game.setSelectedBoss(boss);
 	                          fetch('ajax/get-nft-assets.php', {
 	                              method: 'POST',
@@ -1830,7 +1825,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                              .catch(error => {
 	                                  console.error('showBossSelect: Error fetching NFT characters:', error);
 	                                  alert('Error loading NFT characters. Please try again.');
-	                                  // Optionally, return to boss selection on error
 	                                  characterContainer.style.display = 'none';
 	                                  container.style.display = 'block';
 	                              });
