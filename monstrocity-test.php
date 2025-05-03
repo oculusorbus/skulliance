@@ -625,6 +625,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  margin: 10px 0;
 	  min-width: 150px;
 	  color: black !important;
+      -webkit-appearance: none; /* Remove Safari’s default button styling */
+      -webkit-text-fill-color: black; /* Override Safari’s default text fill */
 	}
 
 	#theme-select-button:hover, #select-boss-button:hover {
