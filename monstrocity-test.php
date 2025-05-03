@@ -4329,7 +4329,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      }
 
 	      this.isCheckingGameOver = true;
-	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
+	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}, selectedBoss=${this.selectedBoss ? this.selectedBoss.name : 'none'}`);
 
 	      const tryAgainButton = document.getElementById("try-again");
 	      const leaderboardButtonDiv = document.getElementById("leaderboard-button");
@@ -4356,13 +4356,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      leaderboardButtonDiv.innerHTML = leaderboardForm;
 
 	      if (this.player1.health <= 0) {
-	          console.log("Player 1 health <= 0, triggering game over (loss)");
+	          console.log("Player 1 health <= 0, triggering game over (loss), boss mode=" + !!this.selectedBoss);
 
 	          if (this.selectedBoss) {
 	              this.player1.health = 0;
 	              await this.savePlayerHealth();
 	              console.log("Health saved as 0 for boss battle");
-	              // Clear board state
 	              this.clearBoardState();
 	          }
 
@@ -4371,28 +4370,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          gameOver.textContent = "You Lose!";
 	          turnIndicator.textContent = "Game Over";
 
-	          if (this.selectedBoss) {
-	              tryAgainButton.textContent = "SELECT BOSS";
-	              const newButton = tryAgainButton.cloneNode(true);
-	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
-	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
-	          } else {
-	              tryAgainButton.textContent = "TRY AGAIN";
-	          }
+	          // Replace try-again button to clear old event listeners
+	          const newButton = document.createElement('button');
+	          newButton.id = "try-again";
+	          newButton.textContent = this.selectedBoss ? "SELECT BOSS" : "TRY AGAIN";
+	          tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	          newButton.addEventListener('click', () => {
+	              console.log("checkGameOver: Button clicked, text=" + newButton.textContent + ", selectedBoss=" + (this.selectedBoss ? this.selectedBoss.name : 'none'));
+	              document.getElementById("game-over-container").style.display = "none";
+	              if (this.selectedBoss) {
+	                  this.showBossSelectionScreen();
+	              } else {
+	                  this.handleGameOverButton();
+	              }
+	          });
 
 	          document.getElementById("game-over-container").style.display = "block";
 	          try {
 	              this.sounds.loss.play();
 	          } catch (err) {
 	              console.error("Error playing lose sound:", err);
-	          }
-
-	          if (this.selectedBoss && this.previousTheme) {
-	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
-	              this.updateTheme(this.previousTheme);
-	              this.previousTheme = null;
-	              this.selectedBoss = null;
-	              this.selectedCharacter = null;
 	          }
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
@@ -4401,7 +4398,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              this.player2.health = 0;
 	              await this.saveBossHealth();
 	              console.log("Boss health saved as 0 for boss battle");
-	              // Clear board state
 	              this.clearBoardState();
 	          }
 
@@ -4410,20 +4406,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          gameOver.textContent = "You Win!";
 	          turnIndicator.textContent = "Game Over";
 
-	          if (this.selectedBoss) {
-	              tryAgainButton.textContent = "SELECT BOSS";
-	              const newButton = tryAgainButton.cloneNode(true);
-	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
-	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
-	              // Play finalWin sound for defeating a boss
-	              try {
-	                  this.sounds.finalWin.play();
-	              } catch (err) {
-	                  console.error("Error playing finalWin sound for boss defeat:", err);
+	          // Replace try-again button to clear old event listeners
+	          const newButton = document.createElement('button');
+	          newButton.id = "try-again";
+	          newButton.textContent = this.selectedBoss ? "SELECT BOSS" : (this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL");
+	          tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	          newButton.addEventListener('click', () => {
+	              console.log("checkGameOver: Button clicked, text=" + newButton.textContent + ", selectedBoss=" + (this.selectedBoss ? this.selectedBoss.name : 'none'));
+	              document.getElementById("game-over-container").style.display = "none";
+	              if (this.selectedBoss) {
+	                  this.showBossSelectionScreen();
+	              } else {
+	                  this.handleGameOverButton();
 	              }
-	          } else {
-	              tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
-	          }
+	          });
 
 	          document.getElementById("game-over-container").style.display = "block";
 
@@ -4454,7 +4450,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  try {
 	                      this.sounds.finalWin.play();
 	                  } catch (err) {
-	                      console.error("Error playing finalWin sound for final level:", err);
+	                      console.error("Error playing finalWin sound:", err);
 	                  }
 	                  log(`Final level completed! Final score: ${this.grandTotalScore}`);
 	                  this.grandTotalScore = 0;
@@ -4529,18 +4525,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          p2ImageNew.classList.add("loser");
 	          p1Image.classList.add("winner");
 	          this.renderBoard();
-
-	          if (this.selectedBoss && this.previousTheme) {
-	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
-	              this.updateTheme(this.previousTheme);
-	              this.previousTheme = null;
-	              this.selectedBoss = null;
-	              this.selectedCharacter = null;
-	          }
 	      }
 
 	      this.isCheckingGameOver = false;
-	      console.log(`checkGameOver completed: currentLevel=${this.currentLevel}, gameOver=${this.gameOver}`);
+	      console.log(`checkGameOver completed: gameOver=${this.gameOver}, gameState=${this.gameState}`);
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
