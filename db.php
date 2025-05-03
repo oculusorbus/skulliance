@@ -6688,6 +6688,13 @@ function resetBossBattles($conn){
 	} else {
 	    echo "Error distributing bounties.";
 	}
+	// Mark all encounters as rewarded, even those with no damage dealt that didn't receive a bounty
+	$sql = "UPDATE encounters SET reward = '1' WHERE reward = '0'";
+	if ($conn->query($sql) === TRUE) {
+		//echo "All scores marked as rewarded.";
+	} else {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
 	// Reset Player Health to NULL
 	$sql = "UPDATE health SET health = NULL";
 	if ($conn->query($sql) === TRUE) {
