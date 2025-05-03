@@ -624,7 +624,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  font-size: 16px;
 	  margin: 10px 0;
 	  min-width: 150px;
-	  color: black;
+	  color: black !important;
 	}
 
 	#theme-select-button:hover, #select-boss-button:hover {
