@@ -4732,7 +4732,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        const policies = policyIds.map((policyId, index) => ({
 	            policyId,
 	            orientation: themeData.orientations?.split(',')[index] || 'Right',
-	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs.io/ipfs/'
+	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs5.jpgstoreapis.com/ipfs/'
 	        }));
 	        const response = await Promise.race([
 	            fetch('ajax/get-nft-assets.php', {
