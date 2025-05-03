@@ -1969,6 +1969,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.grandTotalScore = 0;
 	        this.selectedBoss = null; // New: Store the selected boss
 	        this.selectedCharacter = null; // New: Store the selected character for boss battle
+			this.isSwitchingCharacter = false; // New flag to prevent rapid clicks
 		    // Validate theme
 		    const validThemes = themes.flatMap(group => group.items).map(item => item.value);
 		    const storedTheme = localStorage.getItem('gameTheme');
@@ -2636,124 +2637,113 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			}
 
 	    // Update theme and refresh visuals
-			updateTheme(newTheme, isBossBattle = false) {
-			    if (updatePending) {
-			        console.log('updateTheme: Skipped due to pending update');
-			        return Promise.resolve(); // Return a resolved promise for async handling
-			    }
-			    updatePending = true;
-			    console.time('updateTheme_' + newTheme);
-			    const self = this;
-			    this.theme = newTheme;
-			    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
-			    localStorage.setItem('gameTheme', this.theme);
-			    this.setBackground();
+		updateTheme(newTheme, isBossBattle = false) {
+		    if (updatePending) {
+		        console.log('updateTheme: Skipped due to pending update');
+		        return Promise.resolve();
+		    }
+		    updatePending = true;
+		    console.time('updateTheme_' + newTheme);
+		    const self = this;
+		    this.theme = newTheme;
+		    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
+		    localStorage.setItem('gameTheme', this.theme);
+		    this.setBackground();
 
-			    // Clear boss-related overrides only if not in a boss battle context
-			    if (!isBossBattle) {
-			        console.log('updateTheme: Not a boss battle, clearing selectedBoss and selectedCharacter');
-			        this.selectedBoss = null;
-			        this.selectedCharacter = null;
-			    } else {
-			        console.log('updateTheme: Boss battle context, preserving selectedBoss and selectedCharacter');
-			    }
+		    // Only clear boss-related state if not in a boss battle and explicitly exiting
+		    if (!isBossBattle && !this.selectedBoss) {
+		        console.log('updateTheme: Not a boss battle and no selected boss, clearing boss-related state');
+		        this.selectedBoss = null;
+		        this.selectedCharacter = null;
+		    } else {
+		        console.log('updateTheme: Preserving boss battle state', {
+		            selectedBoss: this.selectedBoss?.name,
+		            selectedCharacter: this.selectedCharacter?.name
+		        });
+		    }
 
-			    // Update the logo immediately
-			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
+		    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
 
-			    // Show loading indicator only if not a boss battle (since boss battle doesn't need character selection here)
-			    if (!isBossBattle) {
-			        const characterOptions = document.getElementById('character-options');
-			        if (characterOptions) {
-			            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-			        }
-			    }
+		    if (!isBossBattle) {
+		        const characterOptions = document.getElementById('character-options');
+		        if (characterOptions) {
+		            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+		        }
+		    }
 
-			    return getAssets(this.theme).then(function(assets) {
-			        console.time('updateCharacters_' + newTheme);
-			        self.playerCharactersConfig = assets;
-			        self.playerCharacters = [];
+		    return getAssets(this.theme).then(function(assets) {
+		        console.time('updateCharacters_' + newTheme);
+		        self.playerCharactersConfig = assets;
+		        self.playerCharacters = [];
 
-			        // Preload assets
-			        assets.forEach(config => {
-			            const char = self.createCharacter(config);
-			            if (char.mediaType === 'image') {
-			                const img = new Image();
-			                img.src = char.imageUrl;
-			                img.onload = () => console.log('Preloaded: ' + char.imageUrl);
-			                img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
-			            }
-			            self.playerCharacters.push(char);
-			        });
+		        assets.forEach(config => {
+		            const char = self.createCharacter(config);
+		            if (char.mediaType === 'image') {
+		                const img = new Image();
+		                img.src = char.imageUrl;
+		                img.onload = () => console.log('Preloaded: ' + char.imageUrl);
+		                img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+		            }
+		            self.playerCharacters.push(char);
+		        });
 
-			        // Update player and opponent only if game is active
-			        if (self.player1 && !isBossBattle) {
-			            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
-			            self.player1 = self.createCharacter(newConfig);
-			            self.updatePlayerDisplay();
-			        }
-			        // Always reset opponent to default for the current level if not a boss battle
-			        if (self.player1 && !isBossBattle) {
-			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
-			            self.updateOpponentDisplay();
-			            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
-			        }
+		        if (self.player1 && !isBossBattle) {
+		            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
+		            self.player1 = self.createCharacter(newConfig);
+		            self.updatePlayerDisplay();
+		        }
+		        if (self.player1 && !isBossBattle) {
+		            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
+		            self.updateOpponentDisplay();
+		            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
+		        }
 
-			        // Render board only if game is initialized and not a boss battle
-			        if (self.player1 && self.gameState !== 'initializing' && !isBossBattle) {
-			            // Clear old event listeners to prevent lockups
-			            const tiles = document.querySelectorAll('.tile');
-			            tiles.forEach(tile => {
-			                tile.removeEventListener('mousedown', self.handleMouseDown);
-			                tile.removeEventListener('touchstart', self.handleTouchStart);
-			            });
-			            self.renderBoard();
-			            console.log('updateTheme: Board rendered for active game');
-			        } else {
-			            console.log('updateTheme: Skipping board render, no active game or boss battle in progress');
-			        }
+		        if (self.player1 && self.gameState !== 'initializing' && !isBossBattle) {
+		            const tiles = document.querySelectorAll('.tile');
+		            tiles.forEach(tile => {
+		                tile.removeEventListener('mousedown', self.handleMouseDown);
+		                tile.removeEventListener('touchstart', self.handleTouchStart);
+		            });
+		            self.renderBoard();
+		            console.log('updateTheme: Board rendered for active game');
+		        }
 
-			        // Reset interaction flags only if game is active and not a boss battle
-			        if (self.player1 && !isBossBattle) {
-			            self.isDragging = false;
-			            self.selectedTile = null;
-			            self.targetTile = null;
-			            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
-			        }
+		        if (self.player1 && !isBossBattle) {
+		            self.isDragging = false;
+		            self.selectedTile = null;
+		            self.targetTile = null;
+		            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
+		        }
 
-			        // Show character select only if not a boss battle
-			        if (!isBossBattle) {
-			            const container = document.getElementById('character-select-container');
-			            container.style.display = 'block';
-			            self.showCharacterSelect(self.player1 === null);
-			        }
+		        if (!isBossBattle) {
+		            const container = document.getElementById('character-select-container');
+		            container.style.display = 'block';
+		            self.showCharacterSelect(self.player1 === null);
+		        }
 
-			        console.timeEnd('updateCharacters_' + newTheme);
-			        console.timeEnd('updateTheme_' + newTheme);
-			        updatePending = false;
-			    }).catch(function(error) {
-			        console.error('Error updating theme assets:', error);
-			        // Fallback to default monstrocity assets
-			        self.playerCharactersConfig = [
-			            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
-			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
-			        ];
-			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
-			        // Clear boss overrides in case of error, unless it's a boss battle
-			        if (!isBossBattle) {
-			            self.selectedBoss = null;
-			            self.selectedCharacter = null;
-			        }
-			        // Show character select on error only if not a boss battle
-			        if (!isBossBattle) {
-			            const container = document.getElementById('character-select-container');
-			            container.style.display = 'block';
-			            self.showCharacterSelect(self.player1 === null);
-			        }
-			        console.timeEnd('updateTheme_' + newTheme);
-			        updatePending = false;
-			    });
-			}
+		        console.timeEnd('updateCharacters_' + newTheme);
+		        console.timeEnd('updateTheme_' + newTheme);
+		        updatePending = false;
+		    }).catch(function(error) {
+		        console.error('Error updating theme assets:', error);
+		        self.playerCharactersConfig = [
+		            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+		            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+		        ];
+		        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
+		        if (!isBossBattle) {
+		            self.selectedBoss = null;
+		            self.selectedCharacter = null;
+		        }
+		        if (!isBossBattle) {
+		            const container = document.getElementById('character-select-container');
+		            container.style.display = 'block';
+		            self.showCharacterSelect(self.player1 === null);
+		        }
+		        console.timeEnd('updateTheme_' + newTheme);
+		        updatePending = false;
+		    });
+		}
 			
 		async saveProgress() {
 		  const data = {
@@ -2981,34 +2971,80 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
 
 	  showCharacterSelect(isInitial) {
-	      console.time('showCharacterSelect');
-	      const container = document.getElementById('character-select-container');
-	      const optionsDiv = document.getElementById('character-options');
-	      optionsDiv.innerHTML = '';
-	      container.style.display = 'block';
+	      return new Promise((resolve, reject) => {
+	          console.time('showCharacterSelect');
+	          const container = document.getElementById('character-select-container');
+	          const optionsDiv = document.getElementById('character-options');
+	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Loading characters...</p>';
+	          container.style.display = 'block';
 
-	      const selectBossButton = document.getElementById('select-boss-button');
-	      if (this.selectedBoss && window.isLoggedIn) {
-	          selectBossButton.style.display = 'inline-block';
-	          selectBossButton.onclick = () => {
-	              container.style.display = 'none';
-	              showBossSelect(this);
+	          const selectBossButton = document.getElementById('select-boss-button');
+	          if (this.selectedBoss && window.isLoggedIn) {
+	              selectBossButton.style.display = 'inline-block';
+	              selectBossButton.onclick = () => {
+	                  container.style.display = 'none';
+	                  showBossSelect(this);
+	              };
+	          } else {
+	              selectBossButton.style.display = 'none';
+	          }
+
+	          document.getElementById('theme-select-button').onclick = () => {
+	              showThemeSelect(this);
 	          };
-	      } else {
-	          selectBossButton.style.display = 'none';
-	      }
 
-	      if (!this.playerCharacters || this.playerCharacters.length === 0) {
-	          console.warn('showCharacterSelect: No characters available, using fallback');
-	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No characters available. Please try another theme.</p>';
-	          console.timeEnd('showCharacterSelect');
-	          return;
-	      }
+	          if (this.selectedBoss && !isInitial) {
+	              console.log(`showCharacterSelect: Boss battle active, fetching NFTs for boss policy: ${this.selectedBoss.policy}`);
+	              fetch('ajax/get-nft-assets.php', {
+	                  method: 'POST',
+	                  headers: { 'Content-Type': 'application/json' },
+	                  body: JSON.stringify({
+	                      policyIds: [this.selectedBoss.policy],
+	                      theme: this.theme
+	                  })
+	              })
+	              .then(response => {
+	                  if (!response.ok) {
+	                      throw new Error(`HTTP error! Status: ${response.status}`);
+	                  }
+	                  return response.json();
+	              })
+	              .then(characters => {
+	                  console.log('showCharacterSelect: NFT characters for boss:', characters);
+	                  if (!Array.isArray(characters) || characters.length === 0) {
+	                      optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No characters available for this boss.</p>';
+	                      console.warn('showCharacterSelect: No NFT characters returned for boss');
+	                      resolve();
+	                      return;
+	                  }
 
-	      document.getElementById('theme-select-button').onclick = () => {
-	          showThemeSelect(this);
-	      };
+	                  this.playerCharacters = characters.map(character => this.createCharacter(character));
+	                  this.renderCharacterOptions(optionsDiv, isInitial);
+	                  resolve();
+	              })
+	              .catch(error => {
+	                  console.error('showCharacterSelect: Error fetching boss NFT characters:', error);
+	                  optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Error loading characters. Please try again.</p>';
+	                  reject(error);
+	              });
+	          } else {
+	              if (!this.playerCharacters || this.playerCharacters.length === 0) {
+	                  console.warn('showCharacterSelect: No characters available, using fallback');
+	                  optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No characters available. Please try another theme.</p>';
+	                  console.timeEnd('showCharacterSelect');
+	                  resolve();
+	                  return;
+	              }
+	              this.renderCharacterOptions(optionsDiv, isInitial);
+	              console.timeEnd('showCharacterSelect');
+	              resolve();
+	          }
+	      });
+	  }
 
+	  // New method to render character options (extracted for reuse)
+	  renderCharacterOptions(optionsDiv, isInitial) {
+	      optionsDiv.innerHTML = '';
 	      const fragment = document.createDocumentFragment();
 	      this.playerCharacters.forEach(character => {
 	          const option = document.createElement('div');
@@ -3035,6 +3071,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          option.addEventListener('click', () => {
 	              console.log('showCharacterSelect: Character selected: ' + character.name);
 	              console.log('showCharacterSelect: Checking for selectedBoss:', this.selectedBoss);
+	              const container = document.getElementById('character-select-container');
 	              container.style.display = 'none';
 	              if (isInitial) {
 	                  console.log('showCharacterSelect: Initial selection');
@@ -3056,41 +3093,48 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      });
 
 	      optionsDiv.appendChild(fragment);
-	      console.log(`showCharacterSelect: Rendered ${this.playerCharacters.length} characters`);
-	      console.timeEnd('showCharacterSelect');
+	      console.log(`renderCharacterOptions: Rendered ${this.playerCharacters.length} characters`);
 	  }
 	  
 	  swapPlayerCharacter(newCharacter) {
-	    const oldHealth = this.player1.health;
-	    const oldMaxHealth = this.player1.maxHealth;
-	    const newInstance = { ...newCharacter };
-  
-	    const healthPercentage = Math.min(1, oldHealth / oldMaxHealth);
-	    newInstance.health = Math.round(newInstance.maxHealth * healthPercentage);
-	    newInstance.health = Math.max(0, Math.min(newInstance.maxHealth, newInstance.health));
-  
-	    newInstance.boostActive = false;
-	    newInstance.boostValue = 0;
-	    newInstance.lastStandActive = false;
-  
-	    this.player1 = newInstance;
-	    this.updatePlayerDisplay();
-	    this.updateHealth(this.player1);
-  
-	    log(`${this.player1.name} steps into the fray with ${this.player1.health}/${this.player1.maxHealth} HP!`);
-  
-	    this.currentTurn = this.player1.speed > this.player2.speed 
-	      ? this.player1 
-	      : this.player2.speed > this.player1.speed 
-	        ? this.player2 
-	        : this.player1.strength >= this.player2.strength 
+	      const oldHealth = this.player1.health;
+	      const oldMaxHealth = this.player1.maxHealth;
+	      const newInstance = { ...newCharacter };
+
+	      const healthPercentage = Math.min(1, oldHealth / oldMaxHealth);
+	      newInstance.health = Math.round(newInstance.maxHealth * healthPercentage);
+	      newInstance.health = Math.max(0, Math.min(newInstance.maxHealth, newInstance.health));
+
+	      newInstance.boostActive = false;
+	      newInstance.boostValue = 0;
+	      newInstance.lastStandActive = false;
+
+	      this.player1 = newInstance;
+	      this.selectedCharacter = newInstance; // Update selectedCharacter for boss battle
+	      this.updatePlayerDisplay();
+	      this.updateHealth(this.player1);
+
+	      log(`${this.player1.name} steps into the fray with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+
+	      this.currentTurn = this.player1.speed > this.player2.speed 
+	          ? this.player1 
+	          : this.player2.speed > this.player1.speed 
+	          ? this.player2 
+	          : this.player1.strength >= this.player2.strength 
 	          ? this.player1 
 	          : this.player2;
-	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
-  
-	    if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
-	      setTimeout(() => this.aiTurn(), 1000);
-	    }
+	      turnIndicator.textContent = this.selectedBoss 
+	          ? `Boss Battle - ${this.currentTurn === this.player1 ? "Player" : "Boss"}'s Turn`
+	          : `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+
+	      if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
+	          setTimeout(() => this.aiTurn(), 1000);
+	      }
+
+	      // Save player health after swapping in boss battle
+	      if (this.selectedBoss) {
+	          this.savePlayerHealth();
+	      }
 	  }
 	  
 	  showProgressPopup(loadedLevel, loadedScore) {
@@ -3442,45 +3486,56 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      console.log('renderBoard: Board rendered successfully');
 	  }
 
-		addEventListeners() {
-		    const board = document.getElementById("game-board");
-		    if (this.isTouchDevice) {
-		        board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
-		        board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
-		        board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
-		    } else {
-		        board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
-		        board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
-		        board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
-		    }
+	  addEventListeners() {
+	      const board = document.getElementById("game-board");
+	      if (this.isTouchDevice) {
+	          board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
+	          board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
+	          board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
+	      } else {
+	          board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+	          board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+	          board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+	      }
 
-		    document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
-		    document.getElementById("restart").addEventListener("click", () => {
-		        this.initGame();
-		    });
-			
-			// Add the missing event listener for the Refresh Board button
-		    const refreshButton = document.getElementById("refresh-board");
-		    refreshButton.addEventListener("click", () => {
-		        console.log("Refresh Board button clicked");
-		        this.refreshBoard();
-		    });
-			
-		    const changeCharacterButton = document.getElementById("change-character");
-		    const p1Image = document.getElementById("p1-image");
-		    const p2Image = document.getElementById("p2-image");
+	      document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
+	      document.getElementById("restart").addEventListener("click", () => {
+	          this.initGame();
+	      });
+	      document.getElementById("refresh-board").addEventListener("click", () => {
+	          console.log("Refresh Board button clicked");
+	          this.refreshBoard();
+	      });
 
-		    changeCharacterButton.addEventListener("click", () => {
-		        console.log("addEventListeners: Switch Monster button clicked");
-		        this.showCharacterSelect(false);
-		    });
-		    p1Image.addEventListener("click", () => {
-		        console.log("addEventListeners: Player 1 media clicked");
-		        this.showCharacterSelect(false);
-		    });
-		    document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, document.getElementById("p1-image"), false));
-		    document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, document.getElementById("p2-image"), true));
-		}
+	      const changeCharacterButton = document.getElementById("change-character");
+	      const p1Image = document.getElementById("p1-image");
+	      const p2Image = document.getElementById("p2-image");
+
+	      changeCharacterButton.addEventListener("click", () => {
+	          if (this.isSwitchingCharacter) {
+	              console.log("addEventListeners: Switch Monster button ignored, already switching");
+	              return;
+	          }
+	          this.isSwitchingCharacter = true;
+	          console.log("addEventListeners: Switch Monster button clicked, isBossBattle:", !!this.selectedBoss);
+	          this.showCharacterSelect(false).finally(() => {
+	              this.isSwitchingCharacter = false;
+	          });
+	      });
+	      p1Image.addEventListener("click", () => {
+	          if (this.isSwitchingCharacter) {
+	              console.log("addEventListeners: Player 1 media click ignored, already switching");
+	              return;
+	          }
+	          this.isSwitchingCharacter = true;
+	          console.log("addEventListeners: Player 1 media clicked, isBossBattle:", !!this.selectedBoss);
+	          this.showCharacterSelect(false).finally(() => {
+	              this.isSwitchingCharacter = false;
+	          });
+	      });
+	      document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, document.getElementById("p1-image"), false));
+	      document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, document.getElementById("p2-image"), true));
+	  }
 
 		handleGameOverButton() {
 		  console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
