@@ -1761,9 +1761,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  }
 
 	                  option.innerHTML = `
+	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
 	                      <p><strong>${boss.name}</strong></p>
-						  <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
-	                      <div class="health-bar"><div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor};"></div></div>
+	                      <div class="health-bar"><div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div></div>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
@@ -1772,6 +1772,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                          <tr><td>Size:</td><td>${boss.size}</td></tr>
 	                          <tr><td>Powerup:</td><td>${boss.powerup}</td></tr>
 	                          <tr><td>Players:</td><td>${boss.playerCount}</td></tr>
+	                          <tr><td>Multiplier:</td><td>${boss.participationMultiplier}</td></tr>
 	                          <tr><td>Bounty:</td><td>${boss.bounty} ${boss.currency}</td></tr>
 	                      </table>
 	                  `;
