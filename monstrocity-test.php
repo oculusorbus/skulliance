@@ -2378,6 +2378,91 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    });
 		}
 		
+		// Save board state for boss battle in localStorage
+		saveBoardState() {
+		    if (!this.selectedBoss) {
+		        console.log('saveBoardState: Not a boss battle, skipping');
+		        return;
+		    }
+		    const userId = window.userId || 'guest'; // Fallback to 'guest' if userId isn't set
+		    if (!userId) {
+		        console.warn('saveBoardState: userId not defined. Using "guest" as fallback.');
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const key = `boss_board_${userId}_${bossId}`;
+    
+		    // Serialize the board state (only the tile types)
+		    const boardState = this.board.map(row => row.map(tile => ({ type: tile.type })));
+		    console.log(`saveBoardState: Saving - key=${key}, boardState=`, boardState);
+    
+		    try {
+		        localStorage.setItem(key, JSON.stringify(boardState));
+		        console.log(`saveBoardState: Board state saved successfully for ${this.selectedBoss.name}`);
+		        log(`Board state saved for ${this.selectedBoss.name}`);
+		    } catch (error) {
+		        console.error('saveBoardState: Error saving board state:', error);
+		        log(`Error saving board state: ${error.message}`);
+		    }
+		}
+
+		// Load board state for boss battle from localStorage
+		loadBoardState() {
+		    if (!this.selectedBoss) {
+		        console.log('loadBoardState: Not a boss battle, skipping');
+		        return null;
+		    }
+		    const userId = window.userId || 'guest';
+		    if (!userId) {
+		        console.warn('loadBoardState: userId not defined. Using "guest" as fallback.');
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const key = `boss_board_${userId}_${bossId}`;
+    
+		    console.log(`loadBoardState: Loading - key=${key}`);
+		    try {
+		        const savedBoard = localStorage.getItem(key);
+		        if (savedBoard) {
+		            const boardState = JSON.parse(savedBoard);
+		            console.log(`loadBoardState: Board state loaded successfully:`, boardState);
+		            return boardState.map(row => row.map(tile => ({
+		                type: tile.type,
+		                element: null // Element will be set during render
+		            })));
+		        } else {
+		            console.log('loadBoardState: No saved board state found');
+		            return null;
+		        }
+		    } catch (error) {
+		        console.error('loadBoardState: Error loading board state:', error);
+		        log(`Error loading board state: ${error.message}`);
+		        return null;
+		    }
+		}
+		
+		// Clear board state for boss battle from localStorage
+		clearBoardState() {
+		    if (!this.selectedBoss) {
+		        console.log('clearBoardState: Not a boss battle, skipping');
+		        return;
+		    }
+		    const userId = window.userId || 'guest';
+		    if (!userId) {
+		        console.warn('clearBoardState: userId not defined. Using "guest" as fallback.');
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const key = `boss_board_${userId}_${bossId}`;
+    
+		    console.log(`clearBoardState: Clearing - key=${key}`);
+		    try {
+		        localStorage.removeItem(key);
+		        console.log(`clearBoardState: Board state cleared successfully for ${this.selectedBoss.name}`);
+		        log(`Board state cleared for ${this.selectedBoss.name}`);
+		    } catch (error) {
+		        console.error('clearBoardState: Error clearing board state:', error);
+		        log(`Error clearing board state: ${error.message}`);
+		    }
+		}
+		
 		refreshBoard() {
 		    console.log('refreshBoard: Unsticking game board for boss battle');
     
@@ -3234,32 +3319,57 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		}
 
 		initBoard() {
-		  // Try to load board from localStorage
-		  const savedBoard = this.loadBoard();
-		  if (savedBoard) {
-		    this.board = savedBoard;
-		    console.log('initBoard: Loaded board from localStorage for level', this.currentLevel);
-		  } else {
-		    // Generate new board
-		    this.board = [];
-		    for (let y = 0; y < this.height; y++) {
-		      this.board[y] = [];
-		      for (let x = 0; x < this.width; x++) {
-		        let tile;
-		        do {
-		          tile = this.createRandomTile();
-		        } while (
-		          (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
-		          (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
-		        );
-		        this.board[y][x] = tile;
-		      }
+		    if (this.selectedBoss) {
+		        console.log('initBoard: Attempting to load board state for boss battle');
+		        const savedBoard = this.loadBoardState();
+		        if (savedBoard) {
+		            this.board = savedBoard;
+		            console.log('initBoard: Loaded board from localStorage for boss battle');
+		        } else {
+		            // Generate new board if no saved state
+		            this.board = [];
+		            for (let y = 0; y < this.height; y++) {
+		                this.board[y] = [];
+		                for (let x = 0; x < this.width; x++) {
+		                    let tile;
+		                    do {
+		                        tile = this.createRandomTile();
+		                    } while (
+		                        (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                        (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		                    );
+		                    this.board[y][x] = tile;
+		                }
+		            }
+		            console.log('initBoard: Generated new board for boss battle');
+		        }
+		        this.renderBoard();
+		    } else {
+		        // Existing logic for default game mode
+		        const savedBoard = this.loadBoard();
+		        if (savedBoard) {
+		            this.board = savedBoard;
+		            console.log('initBoard: Loaded board from localStorage for level', this.currentLevel);
+		        } else {
+		            this.board = [];
+		            for (let y = 0; y < this.height; y++) {
+		                this.board[y] = [];
+		                for (let x = 0; x < this.width; x++) {
+		                    let tile;
+		                    do {
+		                        tile = this.createRandomTile();
+		                    } while (
+		                        (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                        (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		                    );
+		                    this.board[y][x] = tile;
+		                }
+		            }
+		            this.saveBoard();
+		            console.log('initBoard: Generated and saved new board for level', this.currentLevel);
+		        }
+		        this.renderBoard();
 		    }
-		    // Save the new board to localStorage
-		    this.saveBoard();
-		    console.log('initBoard: Generated and saved new board for level', this.currentLevel);
-		  }
-		  this.renderBoard();
 		}
 
       createRandomTile() {
@@ -4133,10 +4243,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              // Save boss health after player's turn
 	              console.log("endTurn: Player turn ending, saving boss health");
 	              this.saveBossHealth();
+	              // Save board state after player's turn
+	              console.log("endTurn: Player turn ending, saving board state");
+	              this.saveBoardState();
 	          } else if (this.currentTurn === this.player2) {
 	              // Save player health after boss's turn
 	              console.log("endTurn: Boss turn ending, saving player health");
 	              this.savePlayerHealth();
+	              // Save board state after boss's turn
+	              console.log("endTurn: Boss turn ending, saving board state");
+	              this.saveBoardState();
 	          }
 	      }
 	      this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
@@ -4206,13 +4322,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const tryAgainButton = document.getElementById("try-again");
 	      const leaderboardButtonDiv = document.getElementById("leaderboard-button");
 
-	      // Clear the leaderboard button div to avoid duplicate forms
 	      leaderboardButtonDiv.innerHTML = '';
 
-	      // Define the leaderboard form based on game mode
 	      let leaderboardForm;
 	      if (this.selectedBoss) {
-	          // Boss battle leaderboard
 	          leaderboardForm = `
 	              <form action="leaderboards.php" method="post">
 	                  <input type="hidden" name="filterbybosses" id="filterbybosses" value="weekly-bosses">
@@ -4220,7 +4333,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              </form>
 	          `;
 	      } else {
-	          // Default game leaderboard
 	          leaderboardForm = `
 	              <form action="leaderboards.php" method="post">
 	                  <input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity">
@@ -4229,17 +4341,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          `;
 	      }
 
-	      // Populate the leaderboard button div
 	      leaderboardButtonDiv.innerHTML = leaderboardForm;
 
 	      if (this.player1.health <= 0) {
 	          console.log("Player 1 health <= 0, triggering game over (loss)");
 
-	          // Save health as 0 for boss battles
 	          if (this.selectedBoss) {
 	              this.player1.health = 0;
 	              await this.savePlayerHealth();
 	              console.log("Health saved as 0 for boss battle");
+	              // Clear board state
+	              this.clearBoardState();
 	          }
 
 	          this.gameOver = true;
@@ -4248,14 +4360,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          turnIndicator.textContent = "Game Over";
 
 	          if (this.selectedBoss) {
-	              // Boss battle: Show "Select Boss" button
 	              tryAgainButton.textContent = "SELECT BOSS";
-	              // Remove existing listeners to avoid conflicts
 	              const newButton = tryAgainButton.cloneNode(true);
 	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
 	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
 	          } else {
-	              // Default game: Show "Try Again" button
 	              tryAgainButton.textContent = "TRY AGAIN";
 	          }
 
@@ -4266,7 +4375,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              console.error("Error playing lose sound:", err);
 	          }
 
-	          // Revert to previous theme after boss battle loss
 	          if (this.selectedBoss && this.previousTheme) {
 	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
 	              this.updateTheme(this.previousTheme);
@@ -4277,11 +4385,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
 
-	          // Save boss health as 0 for boss battles
 	          if (this.selectedBoss) {
 	              this.player2.health = 0;
 	              await this.saveBossHealth();
 	              console.log("Boss health saved as 0 for boss battle");
+	              // Clear board state
+	              this.clearBoardState();
 	          }
 
 	          this.gameOver = true;
@@ -4290,21 +4399,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          turnIndicator.textContent = "Game Over";
 
 	          if (this.selectedBoss) {
-	              // Boss battle: Show "Select Boss" button
 	              tryAgainButton.textContent = "SELECT BOSS";
-	              // Remove existing listeners to avoid conflicts
 	              const newButton = tryAgainButton.cloneNode(true);
 	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
 	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
 	          } else {
-	              // Default game: Show "Next Level" or "Start Over"
 	              tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
 	          }
 
 	          document.getElementById("game-over-container").style.display = "block";
 
 	          if (!this.selectedBoss) {
-	              // Default game: Update score and level
 	              if (this.currentTurn === this.player1) {
 	                  const currentRound = this.roundStats[this.roundStats.length - 1];
 	                  if (currentRound && !currentRound.completed) {
@@ -4342,17 +4447,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              }
 	          }
 
-	          // Set battle-damaged image for player2
 	          let damagedUrl;
 	          let fallbackUrl = this.player2.fallbackUrl || 'icons/skull.png';
 	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 	          const themeExtension = themeData?.extension || 'png';
 
 	          if (this.selectedBoss) {
-	              // Boss battle: Use battleDamagedUrl or fallback to constructed URL
 	              damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
 	          } else {
-	              // Default game: Use theme-specific battle-damaged image
 	              damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${themeExtension}`;
 	          }
 
@@ -4406,7 +4508,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          p1Image.classList.add("winner");
 	          this.renderBoard();
 
-	          // Revert to previous theme after boss battle win
 	          if (this.selectedBoss && this.previousTheme) {
 	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
 	              this.updateTheme(this.previousTheme);
