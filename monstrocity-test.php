@@ -1619,11 +1619,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	      // Rebuild container with Boss Battles button near the top
 	      container.innerHTML = `
-	        <h2>Select Theme</h2>
-	        <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
-	          <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
-	        </div>
-	        <div id="theme-options"></div>
+	          <h2>Select Theme</h2>
+	          <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
+	              <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
+	          </div>
+	          <div id="theme-options"></div>
 	      `;
 	      const optionsDiv = document.getElementById('theme-options');
 
@@ -1651,8 +1651,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              }
 	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
 	              option.innerHTML = `
-	                <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
-	                <p>${theme.title}</p>
+	                  <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
+	                  <p>${theme.title}</p>
 	              `;
 	              option.addEventListener('click', () => {
 	                  const characterOptions = document.getElementById('character-options');
@@ -1662,7 +1662,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  container.innerHTML = '';
 	                  container.style.display = 'none';
 	                  characterContainer.style.display = 'block';
-	                  game.updateTheme(theme.value);
+	                  // [FIX] Pass isBossBattle = false to clear boss state
+	                  game.updateTheme(theme.value, false);
 	              });
 	              groupDiv.appendChild(option);
 	          });
@@ -2990,7 +2991,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      container.style.display = 'block';
 
 	      const selectBossButton = document.getElementById('select-boss-button');
-	      if (this.selectedBoss && window.isLoggedIn) {
+	      if (window.isLoggedIn) { // Always show for logged-in users
 	          selectBossButton.style.display = 'inline-block';
 	          selectBossButton.onclick = () => {
 	              container.style.display = 'none';
@@ -3000,6 +3001,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          selectBossButton.style.display = 'none';
 	      }
 
+	      // [FIX] Check if in boss battle mode or default mode
+	      if (!this.selectedBoss) {
+	          console.log('showCharacterSelect: Default mode, fetching theme assets for theme=' + this.theme);
+	          getAssets(this.theme).then(assets => {
+	              this.playerCharactersConfig = assets;
+	              this.playerCharacters = assets.map(config => this.createCharacter(config));
+	              this.renderCharacterOptions(isInitial);
+	          }).catch(error => {
+	              console.error('showCharacterSelect: Error fetching theme assets:', error);
+	              optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Error loading characters. Please try another theme.</p>';
+	              console.timeEnd('showCharacterSelect');
+	          });
+	      } else {
+	          console.log('showCharacterSelect: Boss battle mode, using existing playerCharacters');
+	          this.renderCharacterOptions(isInitial);
+	      }
+	  }
+
+	  // [FIX] Helper method to render character options
+	  renderCharacterOptions(isInitial) {
+	      const optionsDiv = document.getElementById('character-options');
 	      if (!this.playerCharacters || this.playerCharacters.length === 0) {
 	          console.warn('showCharacterSelect: No characters available, using fallback');
 	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No characters available. Please try another theme.</p>';
@@ -3159,6 +3181,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    this.selectedCharacter = null;
 		    console.log('initGame: Cleared selectedBoss and selectedCharacter');
 
+		    // [FIX] Reset playerCharacters to theme-based assets
+		    getAssets(this.theme).then(assets => {
+		        this.playerCharactersConfig = assets;
+		        this.playerCharacters = assets.map(config => this.createCharacter(config));
+		        console.log('initGame: playerCharacters reset with theme assets:', this.playerCharacters.map(c => c.name));
+		    }).catch(error => {
+		        console.error('initGame: Error resetting playerCharacters:', error);
+		        this.playerCharactersConfig = [
+		            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+		            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+		        ];
+		        this.playerCharacters = this.playerCharactersConfig.map(config => this.createCharacter(config));
+		    });
+
 		    var gameContainer = document.querySelector('.game-container');
 		    var gameBoard = document.getElementById('game-board');
 		    gameContainer.style.display = 'block';
@@ -3169,6 +3205,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    log('Starting Level ' + this.currentLevel + '...');
 		    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
 		    console.log('Loaded opponent for level ' + this.currentLevel + ': ' + this.player2.name + ' (opponentsConfig[' + (this.currentLevel - 1) + '])');
+
+		    // [FIX] Check player1 early to show character select if not set
+		    if (!this.player1) {
+		        console.log('initGame: No player1 set, showing character select');
+		        this.showCharacterSelect(true);
+		        return;
+		    }
 
 		    this.player1.health = this.player1.maxHealth;
 
@@ -3210,7 +3253,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
 		    }
 		    if (this.player2.size !== 'Medium') {
-		        log(this.player2.name + '\'s ' + this.player2.size + ' size ' + (this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics) + '!');
+		        log(this.player2.name + '\'s ' + this.player2.size + ' size ' + (this.player2.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics) + '!');
 		    }
 
 		    log(this.player1.name + ' starts at full strength with ' + this.player1.health + '/' + this.player1.maxHealth + ' HP!');
