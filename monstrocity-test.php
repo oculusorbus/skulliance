@@ -1617,13 +1617,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      let container = document.getElementById('theme-select-container');
 	      const characterContainer = document.getElementById('character-select-container');
 
+	      // Clear boss battle state to ensure default game mode
+	      game.selectedBoss = null;
+	      game.selectedCharacter = null;
+	      game.clearBoardState(); // Clear any saved boss battle board state
+	      console.log('showThemeSelect: Cleared boss battle state (selectedBoss, selectedCharacter, board state)');
+
 	      // Rebuild container with Boss Battles button near the top
 	      container.innerHTML = `
-	        <h2>Select Theme</h2>
-	        <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
-	          <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
-	        </div>
-	        <div id="theme-options"></div>
+	          <h2>Select Theme</h2>
+	          <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
+	              <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
+	          </div>
+	          <div id="theme-options"></div>
 	      `;
 	      const optionsDiv = document.getElementById('theme-options');
 
@@ -1651,8 +1657,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              }
 	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
 	              option.innerHTML = `
-	                <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
-	                <p>${theme.title}</p>
+	                  <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
+	                  <p>${theme.title}</p>
 	              `;
 	              option.addEventListener('click', () => {
 	                  const characterOptions = document.getElementById('character-options');
@@ -1688,6 +1694,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const themeContainer = document.getElementById('theme-select-container');
 	      const characterContainer = document.getElementById('character-select-container');
 
+	      // Set boss mode state
+	      console.log('showBossSelect: Entering boss battle mode');
+	      game.previousTheme = game.theme; // Store current theme for potential reversion
+
 	      container.innerHTML = `
 	          <h2>Select Boss</h2>
 	          <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
@@ -1701,6 +1711,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	      const closeButton = document.getElementById('boss-close-button');
 	      closeButton.addEventListener('click', () => {
+	          // Clear boss battle state when going back to themes
+	          game.selectedBoss = null;
+	          game.selectedCharacter = null;
+	          game.clearBoardState();
+	          console.log('showBossSelect: Back to Themes clicked, cleared boss battle state');
 	          container.style.display = 'none';
 	          themeContainer.style.display = 'block';
 	          characterContainer.style.display = 'none';
@@ -1725,49 +1740,45 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	              const fragment = document.createDocumentFragment();
 	              bosses.forEach(boss => {
-	                  // Log the raw playerHealth value to debug
 	                  console.log(`Boss ${boss.name}: playerHealth=${boss.playerHealth} (type: ${typeof boss.playerHealth})`);
 
 	                  const option = document.createElement('div');
 	                  option.className = `boss-option`;
 
-	                  // Check health conditions
-	                  const isPlayerDead = boss.playerHealth === 0; // Only disable if explicitly 0, not null
+	                  const isPlayerDead = boss.playerHealth === 0;
 	                  const isBossDead = boss.health <= 0;
 
-	                  // Apply styling and disable clicking if either health condition is met
 	                  if (isPlayerDead || isBossDead) {
-	                      option.style.pointerEvents = 'none'; // Disable clicking
+	                      option.style.pointerEvents = 'none';
 	                      if (isBossDead) {
-	                          option.style.filter = 'grayscale(100%) sepia(100%) hue-rotate(0deg) saturate(500%)'; // Red hue
+	                          option.style.filter = 'grayscale(100%) sepia(100%) hue-rotate(0deg) saturate(500%)';
 	                          option.style.opacity = '0.6';
 	                      } else if (isPlayerDead) {
-	                          option.style.filter = 'grayscale(100%)'; // Grey out
+	                          option.style.filter = 'grayscale(100%)';
 	                          option.style.opacity = '0.6';
 	                      }
 	                  }
 
 	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
 
-	                  // Calculate health percentage and color
 	                  const healthPercentage = (boss.health || 0) / (boss.maxHealth || 100) * 100;
 	                  let healthColor;
 	                  if (healthPercentage > 75) {
-	                      healthColor = '#4CAF50'; // Green
+	                      healthColor = '#4CAF50';
 	                  } else if (healthPercentage > 50) {
-	                      healthColor = '#FFC105'; // Yellow
+	                      healthColor = '#FFC105';
 	                  } else if (healthPercentage > 25) {
-	                      healthColor = '#FFA500'; // Orange
+	                      healthColor = '#FFA500';
 	                  } else {
-	                      healthColor = '#F44336'; // Red
+	                      healthColor = '#F44336';
 	                  }
 
 	                  option.innerHTML = `
 	                      <p><strong>${boss.name}</strong></p>
 	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
 	                      <div class="health-bar" style="margin-bottom: 10px;">
-					  	  <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
-					      </div>
+	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
+	                      </div>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
@@ -1780,23 +1791,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      </table>
 	                  `;
 
-	                  // Only add click event if the boss is clickable
 	                  if (!isPlayerDead && !isBossDead) {
 	                      option.addEventListener('click', () => {
 	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
 	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
 
-	                          // Immediately hide the boss select screen and show character select screen
 	                          container.style.display = 'none';
 	                          characterContainer.style.display = 'block';
 
-	                          // Show loading message while fetching NFTs
-	                          const characterOptions = document.getElementById('character-options');
-	                          if (characterOptions) {
-	                              characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-	                          }
-
-	                          // Set the selected boss and fetch NFT characters
 	                          game.setSelectedBoss(boss);
 	                          fetch('ajax/get-nft-assets.php', {
 	                              method: 'POST',
@@ -1830,7 +1832,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                              .catch(error => {
 	                                  console.error('showBossSelect: Error fetching NFT characters:', error);
 	                                  alert('Error loading NFT characters. Please try again.');
-	                                  // Optionally, return to boss selection on error
 	                                  characterContainer.style.display = 'none';
 	                                  container.style.display = 'block';
 	                              });
@@ -2638,124 +2639,122 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			}
 
 	    // Update theme and refresh visuals
-			updateTheme(newTheme, isBossBattle = false) {
-			    if (updatePending) {
-			        console.log('updateTheme: Skipped due to pending update');
-			        return Promise.resolve(); // Return a resolved promise for async handling
-			    }
-			    updatePending = true;
-			    console.time('updateTheme_' + newTheme);
-			    const self = this;
-			    this.theme = newTheme;
-			    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
-			    localStorage.setItem('gameTheme', this.theme);
-			    this.setBackground();
+		updateTheme(newTheme, isBossBattle = false) {
+		    if (updatePending) {
+		        console.log('updateTheme: Skipped due to pending update');
+		        return Promise.resolve();
+		    }
+		    updatePending = true;
+		    console.time('updateTheme_' + newTheme);
+		    const self = this;
+		    this.theme = newTheme;
+		    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
+		    localStorage.setItem('gameTheme', this.theme);
+		    this.setBackground();
 
-			    // Clear boss-related overrides only if not in a boss battle context
-			    if (!isBossBattle) {
-			        console.log('updateTheme: Not a boss battle, clearing selectedBoss and selectedCharacter');
-			        this.selectedBoss = null;
-			        this.selectedCharacter = null;
-			    } else {
-			        console.log('updateTheme: Boss battle context, preserving selectedBoss and selectedCharacter');
-			    }
+		    // Clear boss-related state unless in a boss battle
+		    if (!isBossBattle) {
+		        console.log('updateTheme: Not a boss battle, clearing boss state');
+		        this.selectedBoss = null;
+		        this.selectedCharacter = null;
+		        this.clearBoardState();
+		    } else {
+		        console.log('updateTheme: Boss battle context, preserving boss state');
+		    }
 
-			    // Update the logo immediately
-			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
+		    // Update the logo immediately
+		    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
 
-			    // Show loading indicator only if not a boss battle (since boss battle doesn't need character selection here)
-			    if (!isBossBattle) {
-			        const characterOptions = document.getElementById('character-options');
-			        if (characterOptions) {
-			            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
-			        }
-			    }
+		    // Show loading indicator only if not a boss battle
+		    if (!isBossBattle) {
+		        const characterOptions = document.getElementById('character-options');
+		        if (characterOptions) {
+		            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+		        }
+		    }
 
-			    return getAssets(this.theme).then(function(assets) {
-			        console.time('updateCharacters_' + newTheme);
-			        self.playerCharactersConfig = assets;
-			        self.playerCharacters = [];
+		    return getAssets(this.theme).then(function(assets) {
+		        console.time('updateCharacters_' + newTheme);
+		        self.playerCharactersConfig = assets;
+		        self.playerCharacters = [];
 
-			        // Preload assets
-			        assets.forEach(config => {
-			            const char = self.createCharacter(config);
-			            if (char.mediaType === 'image') {
-			                const img = new Image();
-			                img.src = char.imageUrl;
-			                img.onload = () => console.log('Preloaded: ' + char.imageUrl);
-			                img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
-			            }
-			            self.playerCharacters.push(char);
-			        });
+		        // Preload assets
+		        assets.forEach(config => {
+		            const char = self.createCharacter(config);
+		            if (char.mediaType === 'image') {
+		                const img = new Image();
+		                img.src = char.imageUrl;
+		                img.onload = () => console.log('Preloaded: ' + char.imageUrl);
+		                img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+		            }
+		            self.playerCharacters.push(char);
+		        });
 
-			        // Update player and opponent only if game is active
-			        if (self.player1 && !isBossBattle) {
-			            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
-			            self.player1 = self.createCharacter(newConfig);
-			            self.updatePlayerDisplay();
-			        }
-			        // Always reset opponent to default for the current level if not a boss battle
-			        if (self.player1 && !isBossBattle) {
-			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
-			            self.updateOpponentDisplay();
-			            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
-			        }
+		        // Update player and opponent only if game is active
+		        if (self.player1 && !isBossBattle) {
+		            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
+		            self.player1 = self.createCharacter(newConfig);
+		            self.updatePlayerDisplay();
+		        }
+		        // Always reset opponent to default for the current level if not a boss battle
+		        if (self.player1 && !isBossBattle) {
+		            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
+		            self.updateOpponentDisplay();
+		            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
+		        }
 
-			        // Render board only if game is initialized and not a boss battle
-			        if (self.player1 && self.gameState !== 'initializing' && !isBossBattle) {
-			            // Clear old event listeners to prevent lockups
-			            const tiles = document.querySelectorAll('.tile');
-			            tiles.forEach(tile => {
-			                tile.removeEventListener('mousedown', self.handleMouseDown);
-			                tile.removeEventListener('touchstart', self.handleTouchStart);
-			            });
-			            self.renderBoard();
-			            console.log('updateTheme: Board rendered for active game');
-			        } else {
-			            console.log('updateTheme: Skipping board render, no active game or boss battle in progress');
-			        }
+		        // Render board only if game is initialized and not a boss battle
+		        if (self.player1 && self.gameState !== 'initializing' && !isBossBattle) {
+		            const tiles = document.querySelectorAll('.tile');
+		            tiles.forEach(tile => {
+		                tile.removeEventListener('mousedown', self.handleMouseDown);
+		                tile.removeEventListener('touchstart', self.handleTouchStart);
+		            });
+		            self.renderBoard();
+		            console.log('updateTheme: Board rendered for active game');
+		        } else {
+		            console.log('updateTheme: Skipping board render, no active game or boss battle in progress');
+		        }
 
-			        // Reset interaction flags only if game is active and not a boss battle
-			        if (self.player1 && !isBossBattle) {
-			            self.isDragging = false;
-			            self.selectedTile = null;
-			            self.targetTile = null;
-			            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
-			        }
+		        // Reset interaction flags only if game is active and not a boss battle
+		        if (self.player1 && !isBossBattle) {
+		            self.isDragging = false;
+		            self.selectedTile = null;
+		            self.targetTile = null;
+		            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
+		        }
 
-			        // Show character select only if not a boss battle
-			        if (!isBossBattle) {
-			            const container = document.getElementById('character-select-container');
-			            container.style.display = 'block';
-			            self.showCharacterSelect(self.player1 === null);
-			        }
+		        // Show character select only if not a boss battle
+		        if (!isBossBattle) {
+		            const container = document.getElementById('character-select-container');
+		            container.style.display = 'block';
+		            self.showCharacterSelect(self.player1 === null);
+		        }
 
-			        console.timeEnd('updateCharacters_' + newTheme);
-			        console.timeEnd('updateTheme_' + newTheme);
-			        updatePending = false;
-			    }).catch(function(error) {
-			        console.error('Error updating theme assets:', error);
-			        // Fallback to default monstrocity assets
-			        self.playerCharactersConfig = [
-			            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
-			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
-			        ];
-			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
-			        // Clear boss overrides in case of error, unless it's a boss battle
-			        if (!isBossBattle) {
-			            self.selectedBoss = null;
-			            self.selectedCharacter = null;
-			        }
-			        // Show character select on error only if not a boss battle
-			        if (!isBossBattle) {
-			            const container = document.getElementById('character-select-container');
-			            container.style.display = 'block';
-			            self.showCharacterSelect(self.player1 === null);
-			        }
-			        console.timeEnd('updateTheme_' + newTheme);
-			        updatePending = false;
-			    });
-			}
+		        console.timeEnd('updateCharacters_' + newTheme);
+		        console.timeEnd('updateTheme_' + newTheme);
+		        updatePending = false;
+		    }).catch(function(error) {
+		        console.error('Error updating theme assets:', error);
+		        self.playerCharactersConfig = [
+		            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+		            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+		        ];
+		        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
+		        if (!isBossBattle) {
+		            self.selectedBoss = null;
+		            self.selectedCharacter = null;
+		            self.clearBoardState();
+		        }
+		        if (!isBossBattle) {
+		            const container = document.getElementById('character-select-container');
+		            container.style.display = 'block';
+		            self.showCharacterSelect(self.player1 === null);
+		        }
+		        console.timeEnd('updateTheme_' + newTheme);
+		        updatePending = false;
+		    });
+		}
 			
 		async saveProgress() {
 		  const data = {
@@ -2990,9 +2989,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      container.style.display = 'block';
 
 	      const selectBossButton = document.getElementById('select-boss-button');
-	      if (this.selectedBoss && window.isLoggedIn) {
+	      if (window.isLoggedIn) {
 	          selectBossButton.style.display = 'inline-block';
 	          selectBossButton.onclick = () => {
+	              console.log('showCharacterSelect: Select Boss clicked, entering boss battle mode');
 	              container.style.display = 'none';
 	              showBossSelect(this);
 	          };
@@ -4368,7 +4368,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              this.player1.health = 0;
 	              await this.savePlayerHealth();
 	              console.log("Health saved as 0 for boss battle");
-	              // Clear board state
 	              this.clearBoardState();
 	          }
 
@@ -4395,10 +4394,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          if (this.selectedBoss && this.previousTheme) {
 	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
-	              this.updateTheme(this.previousTheme);
+	              await this.updateTheme(this.previousTheme);
 	              this.previousTheme = null;
 	              this.selectedBoss = null;
 	              this.selectedCharacter = null;
+	              this.clearBoardState();
 	          }
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
@@ -4407,7 +4407,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              this.player2.health = 0;
 	              await this.saveBossHealth();
 	              console.log("Boss health saved as 0 for boss battle");
-	              // Clear board state
 	              this.clearBoardState();
 	          }
 
@@ -4421,7 +4420,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              const newButton = tryAgainButton.cloneNode(true);
 	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
 	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
-	              // Play finalWin sound for defeating a boss
 	              try {
 	                  this.sounds.finalWin.play();
 	              } catch (err) {
@@ -4429,6 +4427,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              }
 	          } else {
 	              tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
+	              const newButton = tryAgainButton.cloneNode(true);
+	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	              newButton.addEventListener('click', () => this.handleGameOverButton());
 	          }
 
 	          document.getElementById("game-over-container").style.display = "block";
@@ -4538,10 +4539,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          if (this.selectedBoss && this.previousTheme) {
 	              console.log(`checkGameOver: Reverting to previous theme: ${this.previousTheme}`);
-	              this.updateTheme(this.previousTheme);
+	              await this.updateTheme(this.previousTheme);
 	              this.previousTheme = null;
 	              this.selectedBoss = null;
 	              this.selectedCharacter = null;
+	              this.clearBoardState();
 	          }
 	      }
 
