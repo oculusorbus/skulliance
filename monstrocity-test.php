@@ -4419,6 +4419,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              const newButton = tryAgainButton.cloneNode(true);
 	              tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
 	              newButton.addEventListener('click', () => this.showBossSelectionScreen());
+	              // Play finalWin sound for defeating a boss
+	              try {
+	                  this.sounds.finalWin.play();
+	              } catch (err) {
+	                  console.error("Error playing finalWin sound for boss defeat:", err);
+	              }
 	          } else {
 	              tryAgainButton.textContent = this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL";
 	          }
@@ -4449,7 +4455,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              await this.saveScoreToDatabase(this.currentLevel);
 
 	              if (this.currentLevel === opponentsConfig.length) {
-	                  this.sounds.finalWin.play();
+	                  try {
+	                      this.sounds.finalWin.play();
+	                  } catch (err) {
+	                      console.error("Error playing finalWin sound for final level:", err);
+	                  }
 	                  log(`Final level completed! Final score: ${this.grandTotalScore}`);
 	                  this.grandTotalScore = 0;
 	                  await this.clearProgress();
