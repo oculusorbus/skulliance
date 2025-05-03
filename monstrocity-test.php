@@ -1763,7 +1763,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  option.innerHTML = `
 	                      <p><strong>${boss.name}</strong></p>
 	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
-	                      <div class="health-bar" style="margin-bottom: 5px;"><div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div></div>
+	                      <div class="health-bar" style="margin-bottom: 10px;">
+					  	  <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
+					      </div>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
