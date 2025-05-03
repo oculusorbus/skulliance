@@ -3474,7 +3474,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    changeCharacterButton.addEventListener("click", () => {
 		        console.log("addEventListeners: Switch Monster button clicked");
-		        this.showCharacterSelect(true);
+		        this.showCharacterSelect(false);
 		    });
 		    p1Image.addEventListener("click", () => {
 		        console.log("addEventListeners: Player 1 media clicked");
