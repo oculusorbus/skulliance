@@ -1746,9 +1746,24 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  }
 
 	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
+
+	                  // Calculate health percentage and color
+	                  const healthPercentage = (boss.health || 0) / (boss.maxHealth || 100) * 100;
+	                  let healthColor;
+	                  if (healthPercentage > 75) {
+	                      healthColor = '#4CAF50'; // Green
+	                  } else if (healthPercentage > 50) {
+	                      healthColor = '#FFC105'; // Yellow
+	                  } else if (healthPercentage > 25) {
+	                      healthColor = '#FFA500'; // Orange
+	                  } else {
+	                      healthColor = '#F44336'; // Red
+	                  }
+
 	                  option.innerHTML = `
 	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
 	                      <p><strong>${boss.name}</strong></p>
+	                      <div class="health-bar"><div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor};"></div></div>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
 	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
