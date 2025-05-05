@@ -18,6 +18,8 @@ if (!isset($_SESSION['logged_in'])) {
     }
 }
 
+$user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+
 // Process user data only if valid session exists
 if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     extract($_SESSION['userData']);
@@ -61,6 +63,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       margin: 0;
       background-size: cover;
       background-position: center;
+  	  background-attachment: fixed;
     }
 	
 	#theme-select {
@@ -385,7 +388,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     #battle-log li { margin: 5px 0; opacity: 0; animation: fadeIn 0.5s forwards; }
     @keyframes fadeIn { to { opacity: 1; } }
 
-    button {
+	button {
 	    padding: 10px 20px;
 	    background-color: #49BBE3;
 	    border: none;
@@ -395,9 +398,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    margin-bottom: 20px;
 	    min-width: 150px;
 	    font-size: 13px;
-    }
-
-    button:hover { background-color: #54d4ff; }
+	}
+	
+	button:hover {
+	    background-color: #54d4ff;
+	}
 
 	.legend {
 	  margin-top: 20px;
@@ -610,7 +615,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		filter: drop-shadow(2px 5px 10px #000);
 	}
 	
-	#theme-select-button {
+	#theme-select-button, #select-boss-button {
 	  padding: 10px 20px;
 	  background-color: #49BBE3;
 	  border: none;
@@ -620,10 +625,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  font-size: 16px;
 	  margin: 10px 0;
 	  min-width: 150px;
-	  color: black;
+	  color: black !important;
+      -webkit-appearance: none; /* Remove Safari’s default button styling */
+      -webkit-text-fill-color: black; /* Override Safari’s default text fill */
 	}
 
-	#theme-select-button:hover {
+	#theme-select-button:hover, #select-boss-button:hover {
 	  background-color: #54d4ff;
 	}
 
@@ -744,6 +751,105 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  text-align: center;
 	  box-sizing: border-box;
 	}
+	
+	#boss-battles-button-container {
+	  text-align: center;
+	  margin: 10px 0 20px 0; /* Reduced top margin, increased bottom margin */
+	}
+	
+	#boss-select-container {
+	  position: fixed;
+	  top: 50%;
+	  left: 50%;
+	  transform: translate(-50%, -50%);
+	  background: #002f44;
+	  padding: 20px;
+	  z-index: 102; /* Above theme-select-container (101) */
+	  width: 100%;
+	  height: 100%;
+	  overflow-y: auto;
+	  border: 3px solid black;
+	  text-align: center;
+	  display: none;
+	}
+
+	#boss-select-container h2 {
+	  text-align: center;
+	  margin-bottom: 10px;
+	  margin-top: 30px;
+	}
+
+	/* Reuse character-option for boss-option */
+	.boss-option {
+	  display: inline-block;
+	  width: 200px;
+	  margin: 10px;
+	  padding: 10px;
+	  background: #165777;
+	  border-radius: 5px;
+	  cursor: pointer;
+	  transition: transform 0.2s ease, background 0.2s ease;
+	  border: 1px solid black;
+	}
+
+	.boss-option:hover {
+	  transform: scale(1.05);
+	  background: #2080ad;
+	}
+	
+	.boss-option div {
+	  max-height: 200px;
+	  border-radius: 5px;
+	  overflow: hidden;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+	  filter: drop-shadow(2px 5px 10px #000);
+	}
+
+	.boss-option img {
+	  width: 100%;
+	  height: auto;
+	  border-radius: 5px;
+	  -webkit-filter: drop-shadow(2px 5px 10px #000);
+	  filter: drop-shadow(2px 5px 10px #000);
+	}
+
+	.boss-option p {
+	  margin: 5px 0;
+	  font-size: 0.9em;
+	}
+
+	/* Style for non-fightable bosses */
+	.boss-option.disabled {
+	  opacity: 0.5;
+	  cursor: not-allowed;
+	}
+
+	.boss-option.disabled:hover {
+	  transform: none;
+	  background: #165777;
+	}
+	
+	.boss-option table {
+	  width: 100%;
+	  margin: 5px 0;
+	  border-collapse: collapse;
+	  font-size: 0.75em;
+	  color: #fff;
+	}
+
+	.boss-option table td {
+	  padding: 2px 5px;
+	  text-align: left;
+	}
+
+	.boss-option table td:first-child {
+	  font-weight: bold;
+	  width: 50%;
+	}
+
+	.boss-option table td:last-child {
+	  text-align: right;
+	}
 
 	@media (max-width: 1025px) {
 	  .theme-option {
@@ -759,6 +865,28 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  .theme-option p {
 	    font-size: 0.8em;
 	    padding: 8px;
+	  }
+	  #boss-battles-button-container {
+	    margin: 5px 0 15px 0; /* Adjusted for mobile */
+	  }
+	  .theme-select-button {
+	    font-size: 14px;
+	    padding: 8px 16px;
+	    min-width: 120px;
+	  }
+	  #boss-select-container {
+	    width: 90%;
+	    padding: 10px;
+	  }
+	  .boss-option {
+	    width: 140px;
+	    margin: 5px;
+	  }
+	  .boss-option p {
+	    font-size: 0.8em;
+	  }
+	  .boss-option table {
+	    font-size: 0.75em;
 	  }
 	}
 
@@ -868,6 +996,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
     }
   </style>
+  <script type="text/javascript">
+    // Pass login status to JavaScript
+    window.isLoggedIn = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && !empty($_SESSION['userData']['user_id'])); ?>;
+	window.userId = <?php echo json_encode($user_id); ?>;
+  </script>
 </head>
 <body>
   <div class="game-container">
@@ -875,12 +1008,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       <div id="game-over"></div>
       <div id="game-over-buttons">
         <button id="try-again"></button>
-		<form action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity"><input id="leaderboard" type="submit" value="LEADERBOARD"></form>
+		<div id="leaderboard-button"></div> <!-- Placeholder for leaderboard form -->
       </div>
     </div>
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">
-    <button id="restart">Restart Level</button>
-    <button id="change-character" style="display: none;">Switch Character</button>
+    <button id="restart" class="game-button">Restart Level</button>
+    <button id="refresh-board" class="game-button" style="display: none;">Refresh Board</button>
+    <button id="change-character" class="game-button" style="display: none;">Switch Character</button>
     <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
 
     <div class="battlefield">
@@ -1060,12 +1194,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
   	  <p>Leaderboards, Game Saves, and Rewards are Available to Skulliance Stakers</p>
       <button id="theme-select-button">Select Theme</button>
+	  <button id="select-boss-button" style="display: none;">Select Boss</button>
 	  <h2>Select Character</h2>
       <div id="character-options"></div>
     </div>
 	<!-- New Theme Select Modal -->
 	<!-- Theme Select Template (initially empty, built by JS) -->
 	<div id="theme-select-container" style="display: none;"></div>
+    <div id="boss-select-container" style="display: none;"></div>
   <script>
 	  let updatePending = false;
 	  // Theme data extracted from original <select>
@@ -1080,6 +1216,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "apprentices",
+	          project: "Apprentices",
+	          title: "Apprentices",
+	          policyIds: "93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1164,6 +1310,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Galaxy of Sons",
 	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
 	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "crypties2",
+	          project: "Crypties",
+	          title: "Crypties S2",
+	          policyIds: "e77fe5101469bdbd2d596f69abbd8ea6311008f5687dec3d950bb17a",
+	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
