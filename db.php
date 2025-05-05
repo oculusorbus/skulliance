@@ -4547,6 +4547,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 		$score = 0;
 		$description = "";
 		$counter = 0;
+		$score = $row["damage_dealt_total"];
 		echo "<table id='transactions' cellspacing='0'>";
 		echo "<th>Rank</th><th>Avatar</th><th align='left'>Username</th><th>Damage Dealt</th><th>Damage Taken</th><th>Encounters</th>";
 		if($weekly){
