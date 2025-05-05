@@ -146,8 +146,9 @@ if (isset($_SESSION['userData']['user_id'])) {
             }
             $tactics = ($tactics_sum % 7) + 1;
 
-            $size_map = ['Small', 'Medium', 'Large'];
-            $size = $size_map[$length % 3];
+			$size_map = ['Small', 'Medium', 'Large'];
+			$hash = crc32($unique_id); // Compute hash
+			$size = $size_map[$hash % 3]; // Use hash to pick size
 
             $type_map = ['Base', 'Leader', 'Battle Damaged'];
             $hash = crc32($unique_id);
