@@ -63,6 +63,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       margin: 0;
       background-size: cover;
       background-position: center;
+  	  background-attachment: fixed;
     }
 	
 	#theme-select {
@@ -1219,6 +1220,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "apprentices",
+	          project: "Apprentices",
+	          title: "Apprentices",
+	          policyIds: "93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "discosolaris",
 	          project: "Disco Solaris",
 	          title: "Moebius Pioneers",
@@ -1299,6 +1310,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Galaxy of Sons",
 	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
 	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "crypties2",
+	          project: "Crypties",
+	          title: "Crypties S2",
+	          policyIds: "e77fe5101469bdbd2d596f69abbd8ea6311008f5687dec3d950bb17a",
+	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
