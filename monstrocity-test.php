@@ -1811,9 +1811,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
 
 	                          container.style.display = 'none';
-	                          characterContainer.style.display = 'block';
 
-	                          game.setSelectedBoss(boss);
+	                          // Clear existing player characters to prevent unrelated characters from being used
+	                          game.playerCharacters = [];
+	                          console.log('showBossSelect: Cleared game.playerCharacters before fetching NFTs');
+
 	                          fetch('ajax/get-nft-assets.php', {
 	                              method: 'POST',
 	                              headers: { 'Content-Type': 'application/json' },
@@ -1830,24 +1832,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                              })
 	                              .then(characters => {
 	                                  console.log('NFT characters response:', characters);
-	                                  if (characters === false) {
-	                                      console.warn('showBossSelect: get-nft-assets.php returned false');
-	                                      alert('No NFT characters available for this boss. The server returned an invalid response.');
-	                                      return;
-	                                  }
-	                                  if (!Array.isArray(characters) || characters.length === 0) {
-	                                      alert('No NFT characters available for this boss.');
-	                                      console.warn('showBossSelect: No NFT characters returned');
+	                                  if (characters === false || !Array.isArray(characters) || characters.length === 0) {
+	                                      console.warn('showBossSelect: No valid NFT characters returned');
+	                                      alert('No qualifying NFT characters available for this boss. Please ensure you own the required NFTs.');
+	                                      // Return to boss selection instead of showing character select
+	                                      container.style.display = 'block';
+	                                      characterContainer.style.display = 'none';
 	                                      return;
 	                                  }
 	                                  game.playerCharacters = characters.map(character => game.createCharacter(character));
+	                                  console.log(`showBossSelect: Loaded ${game.playerCharacters.length} NFT characters`);
+	                                  game.setSelectedBoss(boss);
+	                                  characterContainer.style.display = 'block';
 	                                  game.showCharacterSelect(true);
 	                              })
 	                              .catch(error => {
 	                                  console.error('showBossSelect: Error fetching NFT characters:', error);
 	                                  alert('Error loading NFT characters. Please try again.');
-	                                  characterContainer.style.display = 'none';
+	                                  // Return to boss selection instead of showing character select
 	                                  container.style.display = 'block';
+	                                  characterContainer.style.display = 'none';
 	                              });
 	                      });
 	                  }
