@@ -407,7 +407,7 @@ function getProjects($conn, $type=""){
 		$where = " WHERE id <= 7";
 	}
 	if($type == "partner"){
-		$where = " WHERE id > 7 && id != 15 && id != 37";
+		$where = " WHERE id > 7 && id != 15";
 	}
 	$sql = "SELECT id, name, currency, discord_id FROM projects".$where." ORDER by name ASC";
 	$result = $conn->query($sql);
@@ -716,7 +716,7 @@ function getMissionLevels($conn) {
 
 function getMissionsFilters($conn, $quest_id, $projects) {
 	$eligible = "";
-	$sql = "SELECT DISTINCT projects.id, projects.name, projects.currency AS currency FROM quests INNER JOIN projects ON projects.id = quests.project_id AND projects.id != 37 ORDER BY projects.id";
+	$sql = "SELECT DISTINCT projects.id, projects.name, projects.currency AS currency FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.id";
 	
 	$result = $conn->query($sql);
 	
@@ -2593,7 +2593,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		if($_SESSION['userData']['user_id'] == 1){
 			//$limit = " LIMIT 300";
 		}
-		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40), collection_id".$limit;
+		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
@@ -3073,7 +3073,7 @@ function getBalances($conn, $skulliance=true){
 		if($skulliance == true){
 			$project_filter = " AND (project_id <= '7' OR project_id = '15')";
 		}else{
-			$project_filter = " AND project_id > '7' AND project_id != '15' AND project_id != '37'";
+			$project_filter = " AND project_id > '7' AND project_id != '15'";
 		}
 		$sql = "SELECT balance, project_id, projects.currency AS currency FROM balances INNER JOIN projects ON balances.project_id = projects.id WHERE user_id = '".$_SESSION['userData']['user_id']."' ".$project_filter;
 		$result = $conn->query($sql);
