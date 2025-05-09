@@ -1465,6 +1465,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "ug",
+	          project: "Squashua",
+	          title: "Ug Vs Donuts",
+	          policyIds: "8972aab912aed2cf44b65916e206324c6bdcb6fbd3dc4eb634fdbd28",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "wave",
 	          project: "Squashua",
 	          title: "Wavy Ape Vibe Empire",
