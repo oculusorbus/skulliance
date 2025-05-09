@@ -1345,6 +1345,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "galactico",
+	          project: "Galactico",
+	          title: "Galactico",
+	          policyIds: "bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8,89c01dc68d57169d9c02c3f35562d219884bbafa9d9f868c2f39ce67",
+	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "gif" // Applies only to character images
+	        },
+	        {
 	          value: "happypeople",
 	          project: "Netanel Cohen",
 	          title: "Happy People",
@@ -1380,6 +1390,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Shorty Verse Engaged",
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "dropship",
+	          project: "Ohh Meed",
+	          title: "Drop Ship",
+	          policyIds: "4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c",
+	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
