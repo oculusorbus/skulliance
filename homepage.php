@@ -209,6 +209,19 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<a href="https://x.com/_nemonium" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/discosolaris" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png" alt="Danketsu"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
 			<a href="https://x.com/Joshua_Squashua" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg" alt="Squashua"/></a>
 		</div>
 		<div class="project">
@@ -229,19 +242,6 @@
 		</div>
 		<div class="project">
 			<a href="https://x.com/havocworlds" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/havocworlds.jpg" alt="Havoc Worlds"/></a>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
-			<a href="https://x.com/_nemonium" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/discosolaris" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/DanketsuNFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png" alt="Danketsu"/></a>
 		</div>
 	</div>
 </div>
