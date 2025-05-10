@@ -212,10 +212,10 @@
 			<a href="https://x.com/Joshua_Squashua" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg" alt="Squashua"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/madmaxi__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png" alt="Maxingo"/></a>
+			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png" alt="Netanel Cohen"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png" alt="Netanel Cohen"/></a>
+			<a href="https://x.com/madmaxi__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png" alt="Maxingo"/></a>
 		</div>
 	</div>
 </div>
