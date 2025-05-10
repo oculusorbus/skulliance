@@ -209,6 +209,32 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
+			<a href="https://x.com/Joshua_Squashua" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg" alt="Squashua"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/aeoniumsky" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/aeoniumsky.jpg" alt="Aeoniumsky"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png" alt="Netanel Cohen"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
+			<a href="https://x.com/madmaxi__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png" alt="Maxingo"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold"/></a>
+		</div>
+		<div class="project">
+			<a href="https://x.com/Fiqhi_Alfani" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/bungking.jpg" alt="Bungking"/></a>
+		</div>
+	</div>
+</div>
+<div class="row project-row" id="row1">
+	<div class="projects">
+		<div class="project">
 			<a href="https://x.com/_nemonium" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium"/></a>
 		</div>
 		<div class="project">
@@ -222,28 +248,14 @@
 <div class="row project-row" id="row1">
 	<div class="projects">
 		<div class="project">
-			<a href="https://x.com/Joshua_Squashua" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg" alt="Squashua"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/netanelchn" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png" alt="Netanel Cohen"/></a>
-		</div>
-		<div class="project">
-			<a href="https://x.com/madmaxi__" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png" alt="Maxingo"/></a>
-		</div>
-	</div>
-</div>
-<div class="row project-row" id="row1">
-	<div class="projects">
-		<div class="project">
 			<a href="https://x.com/Pendulum_NFT" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum"/></a>
 		</div>
 		<div class="project">
 			<a href="https://x.com/adaGOATS" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/goattribe.jpg" alt="Goat Tribe"/></a>
 		</div>
 		<div class="project">
-			<a href="https://x.com/Threefoldbold" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold"/></a>
+			<a href="https://x.com/havocworlds" target="_blank"><img src="https://www.skulliance.io/staking/images/projects/havocworlds.jpg" alt="Havoc Worlds"/></a>
 		</div>
-
 	</div>
 </div>
 <div class="row project-row" id="row1">
