@@ -183,21 +183,36 @@ if (isset($_SESSION['userData']['user_id'])) {
         return $final_array;
     }
 
-    $final_array = getNFTAssets($conn, $policy_ids, $theme);
-    if (is_array($final_array) && !empty($final_array)) {
-        error_log('get-nft-assets: Returning ' . count($final_array) . ' NFTs');
-        if ($is_debug) {
-            echo "Returning " . count($final_array) . " NFTs\n";
-            echo json_encode($final_array, JSON_PRETTY_PRINT) . "\n";
-        }
-        echo json_encode($final_array);
-    } else {
-        error_log('get-nft-assets: No valid NFTs');
-        if ($is_debug) {
-            echo "No valid NFTs\n";
-        }
-        echo json_encode(false);
-    }
+	$final_array = getNFTAssets($conn, $policy_ids, $theme);
+	if (is_array($final_array) && !empty($final_array)) {
+	    error_log('get-nft-assets: Returning ' . count($final_array) . ' NFTs');
+    
+	    // Sort final_array by strength, tactics, and speed (descending)
+	    usort($final_array, function($a, $b) {
+	        // Compare strength
+	        if ($a['strength'] !== $b['strength']) {
+	            return $b['strength'] - $a['strength']; // Descending
+	        }
+	        // If strength is equal, compare tactics
+	        if ($a['tactics'] !== $b['tactics']) {
+	            return $b['tactics'] - $a['tactics']; // Descending
+	        }
+	        // If tactics is equal, compare speed
+	        return $b['speed'] - $a['speed']; // Descending
+	    });
+
+	    if ($is_debug) {
+	        echo "Returning " . count($final_array) . " NFTs\n";
+	        echo json_encode($final_array, JSON_PRETTY_PRINT) . "\n";
+	    }
+	    echo json_encode($final_array);
+	} else {
+	    error_log('get-nft-assets: No valid NFTs');
+	    if ($is_debug) {
+	        echo "No valid NFTs\n";
+	    }
+	    echo json_encode(false);
+	}
 } else {
     error_log('get-nft-assets: User not logged in');
     if ($is_debug) {
