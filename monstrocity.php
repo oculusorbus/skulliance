@@ -1355,6 +1355,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "gif" // Applies only to character images
 	        },
 	        {
+	          value: "animeorigins",
+	          project: "Nel",
+	          title: "Anime Origins",
+	          policyIds: "c7ad13b8f11d1d1d2abe519b4394b4ca62c1dd2ce737e382ab573947",
+	          orientations: "left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "happypeople",
 	          project: "Netanel Cohen",
 	          title: "Happy People",
@@ -1523,16 +1533,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          value: "handies",
 	          project: "Handies",
 	          title: "Handies",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
-	          value: "animeorigins",
-	          project: "Nel",
-	          title: "Anime Origins",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
