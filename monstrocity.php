@@ -1375,6 +1375,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "machineheadz",
+	          project: "Kimosabe Art",
+	          title: "Machine Headz Carnage",
+	          policyIds: "8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17,f4ae899bda2d478baec88620a06108619b231dfc6197be2a3b74a0ea,243f0ca18ded6b45ba87655ce3917abc8e04830b23ba1f498de67a8a,dcd1fa7b85bf5854fbe9f94238e9079fd502bf10ab2a3c26cf3d5465",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "maxi",
 	          project: "Maxingo",
 	          title: "Digital Hell Citizens 2: Fighters",
