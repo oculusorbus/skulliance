@@ -1190,6 +1190,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
   </div>
     <div id="character-select-container">
+	  <h1>Match 3 RPG Game</h1>
 	  <h2>Staking Info</h2>
   	  <!--<p><a href="https://www.jpg.store/collection/monstrocity" target="_blank">Purchase Monstrocity NFTs</a> to Add More Characters</p>-->
   	  <p><a href="https://www.skulliance.io/staking" target="_blank">Visit Skulliance Staking</a> to Connect Wallet(s) and Load in Qualifying NFTs</p>
