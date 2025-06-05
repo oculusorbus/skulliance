@@ -50,7 +50,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monstrocity Match-3</title>
+  <title>Monstrocity | Free Online Match 3 RPG Game | No Download</title>
+  <meta name="description" content="Play Monstrocity now! A free online Match 3 RPG game. No download is required. Featuring original artwork from many talented artists and projects on Cardano.">
   <style>
     body {
       font-family: Arial, sans-serif;
