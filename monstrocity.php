@@ -1262,6 +1262,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "proxy",
+	          project: "Heist on Alpha",
+	          title: "Proxy",
+	          policyIds: "f85be1a54efa2607de78a0f8855f9d73c9dd79bfa116f3767c015098",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "muses",
 	          project: "Josh Howard",
 	          title: "Muses of the Multiverse",
