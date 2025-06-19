@@ -1232,6 +1232,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "moebiuspioneers",
+	          project: "Disco Solaris",
+	          title: "Legends",
+	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "discosolaris",
 	          project: "Disco Solaris",
 	          title: "Moebius Pioneers",
@@ -1247,16 +1257,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Oculus Lounge",
 	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
-	          value: "moebiuspioneers",
-	          project: "Disco Solaris",
-	          title: "Legends",
-	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
-	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
