@@ -1252,6 +1252,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "moebiuspioneers",
+	          project: "Disco Solaris",
+	          title: "Legends",
+	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "havocworlds",
 	          project: "Havoc Worlds",
 	          title: "Season 1",
@@ -1613,16 +1623,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          project: "Dead Pop Hell",
 	          title: "NSFW",
 	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
-	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
-	          value: "moebiuspioneers",
-	          project: "Disco Solaris",
-	          title: "Legends",
-	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
