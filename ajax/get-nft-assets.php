@@ -133,6 +133,9 @@ if (isset($_SESSION['userData']['user_id'])) {
                 $char_sum += ord($unique_id[$i]);
             }
             $strength = ($char_sum % 8) + 1;
+			if($strength < 4){
+				$strength = $strength*2;
+			}
 
             $speed_sum = 0;
             for ($i = 0; $i < min(10, $length); $i++) {
