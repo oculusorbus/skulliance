@@ -502,6 +502,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  display: block; /* Initially visible */
 	  border: 3px solid black;
 	  text-align: center;
+	  overflow: hidden;
 	}
 
     #character-select-container h2 {
