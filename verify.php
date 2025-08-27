@@ -69,7 +69,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 				curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 				curl_setopt( $ch, CURLOPT_HEADER, 0);
 				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-				curl_setopt( $ch, CURLOPT_VERBOSE, true);
+				//curl_setopt( $ch, CURLOPT_VERBOSE, true);
 				
 				// Verbose Debugging Parameters
 				//curl_setopt( $ch, CURLOPT_VERBOSE, true);
@@ -186,7 +186,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
 						curl_setopt( $tokench, CURLOPT_HEADER, 0);
 						curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
-						curl_setopt( $tokench, CURLOPT_VERBOSE, true);
+						//curl_setopt( $tokench, CURLOPT_VERBOSE, true);
 			
 						//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
 						//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
