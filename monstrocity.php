@@ -4486,7 +4486,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          try {
           		  this.sounds.win.play();
 	          } catch (err) {
-	              console.error("Error playing lose sound:", err);
+	              console.error("Error playing win sound:", err);
 	          }
 
 	          // Replace try-again button to clear old event listeners
