@@ -1686,7 +1686,3178 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    <?php } ?>
 	  ];
 	  
-const _0x12575b=_0x372b;function _0x372b(_0x466071,_0x2dca96){const _0x424a8c=_0x424a();return _0x372b=function(_0x372bc1,_0x36fd52){_0x372bc1=_0x372bc1-0x1bd;let _0x4554a4=_0x424a8c[_0x372bc1];return _0x4554a4;},_0x372b(_0x466071,_0x2dca96);}(function(_0x36ff6d,_0x1d0eda){const _0x1e0ca9=_0x372b,_0x483e61=_0x36ff6d();while(!![]){try{const _0x18378a=parseInt(_0x1e0ca9(0x452))/0x1+parseInt(_0x1e0ca9(0x418))/0x2+-parseInt(_0x1e0ca9(0x2ba))/0x3*(parseInt(_0x1e0ca9(0x276))/0x4)+parseInt(_0x1e0ca9(0x4a5))/0x5+parseInt(_0x1e0ca9(0x3b3))/0x6+-parseInt(_0x1e0ca9(0x361))/0x7*(-parseInt(_0x1e0ca9(0x474))/0x8)+-parseInt(_0x1e0ca9(0x1c8))/0x9*(parseInt(_0x1e0ca9(0x3ea))/0xa);if(_0x18378a===_0x1d0eda)break;else _0x483e61['push'](_0x483e61['shift']());}catch(_0x445f6a){_0x483e61['push'](_0x483e61['shift']());}}}(_0x424a,0x1aed8));function showThemeSelect(_0x3d6e47){const _0x193833=_0x372b;console[_0x193833(0x2b6)](_0x193833(0x395));let _0x2c7b1e=document[_0x193833(0x43c)]('theme-select-container');const _0x1c2621=document[_0x193833(0x43c)](_0x193833(0x3a2));_0x3d6e47[_0x193833(0x2e9)]=null,_0x3d6e47[_0x193833(0x292)]=null,_0x3d6e47[_0x193833(0x341)](),console[_0x193833(0x253)](_0x193833(0x387)),_0x2c7b1e[_0x193833(0x20b)]=_0x193833(0x1d8)+(window[_0x193833(0x306)]?_0x193833(0x3df):_0x193833(0x396))+_0x193833(0x1e1);const _0xf989df=document[_0x193833(0x43c)](_0x193833(0x330));_0x2c7b1e[_0x193833(0x3ff)][_0x193833(0x2c6)]=_0x193833(0x3df),_0x1c2621[_0x193833(0x3ff)][_0x193833(0x2c6)]=_0x193833(0x396),_0x3d6e47[_0x193833(0x273)](![]),themes[_0x193833(0x439)](_0x224bb9=>{const _0x7a2b67=_0x193833,_0x4fb367=document['createElement'](_0x7a2b67(0x3d0));_0x4fb367[_0x7a2b67(0x43b)]=_0x7a2b67(0x479);const _0x3f1f6c=document[_0x7a2b67(0x3a8)]('h3');_0x3f1f6c[_0x7a2b67(0x1c2)]=_0x224bb9['group'],_0x4fb367[_0x7a2b67(0x4b7)](_0x3f1f6c),_0x224bb9[_0x7a2b67(0x296)][_0x7a2b67(0x439)](_0x555fce=>{const _0x151eaf=_0x7a2b67,_0x4d9232=document[_0x151eaf(0x3a8)](_0x151eaf(0x3d0));_0x4d9232[_0x151eaf(0x43b)]='theme-option';if(_0x555fce[_0x151eaf(0x272)]){const _0x4b4d48='https://www.skulliance.io/staking/images/monstrocity/'+_0x555fce[_0x151eaf(0x27d)]+_0x151eaf(0x2e6);_0x4d9232[_0x151eaf(0x3ff)][_0x151eaf(0x340)]=_0x151eaf(0x34b)+_0x4b4d48+')';}const _0x44cee3=_0x151eaf(0x369)+_0x555fce['value']+_0x151eaf(0x42c);_0x4d9232[_0x151eaf(0x20b)]=_0x151eaf(0x307)+_0x44cee3+_0x151eaf(0x4bd)+_0x555fce['title']+_0x151eaf(0x45a)+_0x555fce[_0x151eaf(0x460)]+_0x151eaf(0x379)+_0x555fce[_0x151eaf(0x309)]+_0x151eaf(0x20d),_0x4d9232[_0x151eaf(0x27c)]('click',()=>{const _0x82b889=_0x151eaf,_0x42bbf3=document[_0x82b889(0x43c)](_0x82b889(0x26a));_0x42bbf3&&(_0x42bbf3[_0x82b889(0x20b)]=_0x82b889(0x28a)),_0x2c7b1e[_0x82b889(0x20b)]='',_0x2c7b1e[_0x82b889(0x3ff)][_0x82b889(0x2c6)]=_0x82b889(0x396),_0x1c2621[_0x82b889(0x3ff)][_0x82b889(0x2c6)]=_0x82b889(0x3df),_0x3d6e47[_0x82b889(0x399)](_0x555fce[_0x82b889(0x27d)]);}),_0x4fb367[_0x151eaf(0x4b7)](_0x4d9232);}),_0xf989df[_0x7a2b67(0x4b7)](_0x4fb367);});const _0x44d137=document[_0x193833(0x43c)](_0x193833(0x2e2));_0x44d137&&_0x44d137[_0x193833(0x27c)]('click',()=>{const _0x13c2f9=_0x193833;console[_0x13c2f9(0x253)](_0x13c2f9(0x3bb)),showBossSelect(_0x3d6e47);}),console[_0x193833(0x1d4)](_0x193833(0x395));}function showBossSelect(_0x3babcf){const _0xd72aee=_0x372b;console[_0xd72aee(0x2b6)](_0xd72aee(0x45e));const _0x387d50=document[_0xd72aee(0x43c)](_0xd72aee(0x2f4)),_0x482bdd=document[_0xd72aee(0x43c)](_0xd72aee(0x226)),_0x536fd9=document['getElementById'](_0xd72aee(0x3a2));console[_0xd72aee(0x253)]('showBossSelect:\x20Entering\x20boss\x20mode'),_0x387d50[_0xd72aee(0x20b)]=_0xd72aee(0x441);const _0x41b057=document[_0xd72aee(0x43c)](_0xd72aee(0x1fb));_0x387d50['style']['display']=_0xd72aee(0x3df),_0x482bdd['style'][_0xd72aee(0x2c6)]=_0xd72aee(0x396),_0x536fd9[_0xd72aee(0x3ff)][_0xd72aee(0x2c6)]='none';const _0x42e4f5=document[_0xd72aee(0x43c)](_0xd72aee(0x393));_0x42e4f5[_0xd72aee(0x27c)]('click',()=>{const _0x3b40a4=_0xd72aee;_0x3babcf[_0x3b40a4(0x2e9)]=null,_0x3babcf[_0x3b40a4(0x292)]=null,_0x3babcf[_0x3b40a4(0x341)](),console[_0x3b40a4(0x253)](_0x3b40a4(0x1d6)),_0x387d50[_0x3b40a4(0x3ff)][_0x3b40a4(0x2c6)]=_0x3b40a4(0x396),_0x482bdd[_0x3b40a4(0x3ff)]['display']='block',showThemeSelect(_0x3babcf);}),fetch(_0xd72aee(0x3f8),{'method':'GET','headers':{'Content-Type':_0xd72aee(0x36c)}})['then'](_0x467fa2=>{const _0x41845d=_0xd72aee;if(!_0x467fa2['ok'])throw new Error(_0x41845d(0x48f)+_0x467fa2[_0x41845d(0x2ac)]);return _0x467fa2['json']();})['then'](_0x1fafbf=>{const _0xcd6dab=_0xd72aee;if(!Array['isArray'](_0x1fafbf)||_0x1fafbf['length']===0x0){_0x41b057[_0xcd6dab(0x20b)]=_0xcd6dab(0x26c),console[_0xcd6dab(0x21f)](_0xcd6dab(0x2b0));return;}const _0x15962d=document[_0xcd6dab(0x492)]();_0x1fafbf[_0xcd6dab(0x439)](_0x46b8c3=>{const _0xf7cd62=_0xcd6dab;console[_0xf7cd62(0x253)](_0xf7cd62(0x1be)+_0x46b8c3[_0xf7cd62(0x266)]+':\x20playerHealth='+_0x46b8c3['playerHealth']+_0xf7cd62(0x1db)+typeof _0x46b8c3[_0xf7cd62(0x47c)]+')');const _0x3fbacd=document[_0xf7cd62(0x3a8)]('div');_0x3fbacd['className']='boss-option';const _0x4ee2ac=_0x46b8c3[_0xf7cd62(0x47c)]===0x0,_0x27ea50=_0x46b8c3[_0xf7cd62(0x39e)]<=0x0;if(_0x4ee2ac||_0x27ea50){_0x3fbacd[_0xf7cd62(0x3ff)]['pointerEvents']=_0xf7cd62(0x396);if(_0x27ea50)_0x3fbacd[_0xf7cd62(0x3ff)][_0xf7cd62(0x3cd)]=_0xf7cd62(0x206),_0x3fbacd[_0xf7cd62(0x3ff)]['opacity']=_0xf7cd62(0x3cf);else _0x4ee2ac&&(_0x3fbacd['style']['filter']='grayscale(100%)',_0x3fbacd['style']['opacity']=_0xf7cd62(0x3cf));}const _0x2baee1=_0x46b8c3[_0xf7cd62(0x431)][_0xf7cd62(0x2a9)]('/')?_0x46b8c3['imageUrl'][_0xf7cd62(0x303)](0x1):_0x46b8c3[_0xf7cd62(0x431)],_0x4ffb16=(_0x46b8c3[_0xf7cd62(0x39e)]||0x0)/(_0x46b8c3[_0xf7cd62(0x1da)]||0x64)*0x64;let _0x1c8433;if(_0x4ffb16>0x4b)_0x1c8433='#4CAF50';else{if(_0x4ffb16>0x32)_0x1c8433=_0xf7cd62(0x2a1);else _0x4ffb16>0x19?_0x1c8433=_0xf7cd62(0x33b):_0x1c8433=_0xf7cd62(0x203);}_0x3fbacd['innerHTML']=_0xf7cd62(0x2f7)+_0x46b8c3[_0xf7cd62(0x266)]+_0xf7cd62(0x2cb)+_0x2baee1+_0xf7cd62(0x4bd)+_0x46b8c3['name']+_0xf7cd62(0x46c)+_0x4ffb16+_0xf7cd62(0x1e9)+_0x1c8433+_0xf7cd62(0x1e3)+_0x46b8c3[_0xf7cd62(0x39e)]+'/'+_0x46b8c3['maxHealth']+_0xf7cd62(0x426)+_0x46b8c3[_0xf7cd62(0x3a4)]+_0xf7cd62(0x3e4)+_0x46b8c3['speed']+_0xf7cd62(0x27a)+_0x46b8c3[_0xf7cd62(0x232)]+_0xf7cd62(0x35f)+_0x46b8c3[_0xf7cd62(0x3ee)]+_0xf7cd62(0x3ab)+_0x46b8c3[_0xf7cd62(0x3ef)]+'</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Players:</td><td>'+_0x46b8c3[_0xf7cd62(0x41b)]+'</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Bounty:</td><td>'+_0x46b8c3[_0xf7cd62(0x2e5)]+'\x20'+_0x46b8c3['currency']+_0xf7cd62(0x231),!_0x4ee2ac&&!_0x27ea50&&_0x3fbacd[_0xf7cd62(0x27c)]('click',()=>{const _0x40f1f6=_0xf7cd62;console[_0x40f1f6(0x253)]('Boss\x20selected:\x20'+_0x46b8c3[_0x40f1f6(0x266)]+_0x40f1f6(0x308)+_0x46b8c3['id']+')'),console[_0x40f1f6(0x253)](_0x40f1f6(0x1d5)+_0x46b8c3[_0x40f1f6(0x20f)]),_0x387d50[_0x40f1f6(0x3ff)]['display']=_0x40f1f6(0x396),_0x3babcf[_0x40f1f6(0x46d)]=[],console[_0x40f1f6(0x253)](_0x40f1f6(0x1d9)),fetch('ajax/get-nft-assets.php',{'method':'POST','headers':{'Content-Type':'application/json'},'body':JSON['stringify']({'policyIds':[_0x46b8c3['policy']],'theme':_0x3babcf[_0x40f1f6(0x404)]})})['then'](_0x1b42cd=>{const _0x7f70c6=_0x40f1f6;if(!_0x1b42cd['ok'])throw new Error(_0x7f70c6(0x48f)+_0x1b42cd[_0x7f70c6(0x2ac)]);return _0x1b42cd[_0x7f70c6(0x32b)]();})['then'](_0x16ee09=>{const _0xa5a2d2=_0x40f1f6;console[_0xa5a2d2(0x253)]('NFT\x20characters\x20response:',_0x16ee09);if(_0x16ee09===![]||!Array[_0xa5a2d2(0x208)](_0x16ee09)||_0x16ee09[_0xa5a2d2(0x3eb)]===0x0){console[_0xa5a2d2(0x21f)](_0xa5a2d2(0x2a5)),alert(_0xa5a2d2(0x23f)),_0x387d50['style'][_0xa5a2d2(0x2c6)]=_0xa5a2d2(0x3df),_0x536fd9[_0xa5a2d2(0x3ff)][_0xa5a2d2(0x2c6)]=_0xa5a2d2(0x396);return;}_0x3babcf['playerCharacters']=_0x16ee09[_0xa5a2d2(0x377)](_0x535d57=>_0x3babcf[_0xa5a2d2(0x26b)](_0x535d57)),console['log'](_0xa5a2d2(0x390)+_0x3babcf[_0xa5a2d2(0x46d)][_0xa5a2d2(0x3eb)]+_0xa5a2d2(0x360)),_0x3babcf[_0xa5a2d2(0x263)](_0x46b8c3),_0x536fd9[_0xa5a2d2(0x3ff)][_0xa5a2d2(0x2c6)]=_0xa5a2d2(0x3df),_0x3babcf[_0xa5a2d2(0x2ae)](!![]);})[_0x40f1f6(0x2b4)](_0x3405c5=>{const _0x58d89c=_0x40f1f6;console[_0x58d89c(0x49f)](_0x58d89c(0x3ed),_0x3405c5),alert('Error\x20loading\x20NFT\x20characters.\x20Please\x20try\x20again.'),_0x387d50[_0x58d89c(0x3ff)][_0x58d89c(0x2c6)]=_0x58d89c(0x3df),_0x536fd9[_0x58d89c(0x3ff)][_0x58d89c(0x2c6)]=_0x58d89c(0x396);});}),_0x15962d['appendChild'](_0x3fbacd);}),_0x41b057[_0xcd6dab(0x4b7)](_0x15962d),console[_0xcd6dab(0x253)](_0xcd6dab(0x322)+_0x1fafbf['length']+'\x20bosses');})[_0xd72aee(0x2b4)](_0x3e1cae=>{const _0x2aebac=_0xd72aee;console[_0x2aebac(0x49f)](_0x2aebac(0x45c),_0x3e1cae),_0x41b057['innerHTML']=_0x2aebac(0x44f);}),console[_0xd72aee(0x1d4)](_0xd72aee(0x45e));}const opponentsConfig=[{'name':'Craig','strength':0x1,'speed':0x1,'tactics':0x1,'size':'Medium','type':'Base','powerup':_0x12575b(0x35a),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x45d),'strength':0x1,'speed':0x1,'tactics':0x1,'size':_0x12575b(0x2d7),'type':_0x12575b(0x268),'powerup':_0x12575b(0x35a),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x44c),'strength':0x2,'speed':0x2,'tactics':0x2,'size':_0x12575b(0x205),'type':_0x12575b(0x268),'powerup':_0x12575b(0x35a),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x343),'strength':0x2,'speed':0x2,'tactics':0x2,'size':_0x12575b(0x41d),'type':'Base','powerup':_0x12575b(0x35a),'theme':_0x12575b(0x38d)},{'name':'Mandiblus','strength':0x3,'speed':0x3,'tactics':0x3,'size':'Medium','type':_0x12575b(0x268),'powerup':_0x12575b(0x446),'theme':'monstrocity'},{'name':_0x12575b(0x221),'strength':0x3,'speed':0x3,'tactics':0x3,'size':_0x12575b(0x41d),'type':'Base','powerup':_0x12575b(0x446),'theme':'monstrocity'},{'name':_0x12575b(0x3d7),'strength':0x4,'speed':0x4,'tactics':0x4,'size':'Small','type':_0x12575b(0x268),'powerup':_0x12575b(0x446),'theme':'monstrocity'},{'name':_0x12575b(0x344),'strength':0x4,'speed':0x4,'tactics':0x4,'size':_0x12575b(0x41d),'type':_0x12575b(0x268),'powerup':_0x12575b(0x446),'theme':'monstrocity'},{'name':_0x12575b(0x257),'strength':0x5,'speed':0x5,'tactics':0x5,'size':_0x12575b(0x41d),'type':_0x12575b(0x268),'powerup':_0x12575b(0x2d8),'theme':'monstrocity'},{'name':_0x12575b(0x488),'strength':0x5,'speed':0x5,'tactics':0x5,'size':_0x12575b(0x41d),'type':_0x12575b(0x268),'powerup':_0x12575b(0x2d8),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x467),'strength':0x6,'speed':0x6,'tactics':0x6,'size':_0x12575b(0x205),'type':_0x12575b(0x268),'powerup':'Heal','theme':_0x12575b(0x38d)},{'name':_0x12575b(0x3b4),'strength':0x7,'speed':0x7,'tactics':0x7,'size':'Large','type':_0x12575b(0x268),'powerup':_0x12575b(0x476),'theme':'monstrocity'},{'name':'Ouchie','strength':0x7,'speed':0x7,'tactics':0x7,'size':_0x12575b(0x41d),'type':_0x12575b(0x268),'powerup':_0x12575b(0x476),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x1bd),'strength':0x8,'speed':0x7,'tactics':0x7,'size':_0x12575b(0x41d),'type':'Base','powerup':_0x12575b(0x476),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x241),'strength':0x1,'speed':0x1,'tactics':0x1,'size':_0x12575b(0x41d),'type':_0x12575b(0x44e),'powerup':'Minor\x20Regen','theme':_0x12575b(0x38d)},{'name':_0x12575b(0x45d),'strength':0x1,'speed':0x1,'tactics':0x1,'size':_0x12575b(0x2d7),'type':_0x12575b(0x44e),'powerup':'Minor\x20Regen','theme':_0x12575b(0x38d)},{'name':_0x12575b(0x44c),'strength':0x2,'speed':0x2,'tactics':0x2,'size':'Small','type':_0x12575b(0x44e),'powerup':_0x12575b(0x35a),'theme':'monstrocity'},{'name':'Texby','strength':0x2,'speed':0x2,'tactics':0x2,'size':_0x12575b(0x41d),'type':_0x12575b(0x44e),'powerup':_0x12575b(0x317),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x345),'strength':0x3,'speed':0x3,'tactics':0x3,'size':_0x12575b(0x41d),'type':_0x12575b(0x44e),'powerup':_0x12575b(0x446),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x221),'strength':0x3,'speed':0x3,'tactics':0x3,'size':_0x12575b(0x41d),'type':_0x12575b(0x44e),'powerup':_0x12575b(0x446),'theme':'monstrocity'},{'name':_0x12575b(0x3d7),'strength':0x4,'speed':0x4,'tactics':0x4,'size':_0x12575b(0x205),'type':_0x12575b(0x44e),'powerup':'Regenerate','theme':_0x12575b(0x38d)},{'name':_0x12575b(0x344),'strength':0x4,'speed':0x4,'tactics':0x4,'size':_0x12575b(0x41d),'type':'Leader','powerup':'Regenerate','theme':_0x12575b(0x38d)},{'name':_0x12575b(0x257),'strength':0x5,'speed':0x5,'tactics':0x5,'size':_0x12575b(0x41d),'type':'Leader','powerup':'Boost\x20Attack','theme':_0x12575b(0x38d)},{'name':_0x12575b(0x488),'strength':0x5,'speed':0x5,'tactics':0x5,'size':'Medium','type':_0x12575b(0x44e),'powerup':_0x12575b(0x2d8),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x467),'strength':0x6,'speed':0x6,'tactics':0x6,'size':'Small','type':_0x12575b(0x44e),'powerup':_0x12575b(0x476),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x3b4),'strength':0x7,'speed':0x7,'tactics':0x7,'size':'Large','type':_0x12575b(0x44e),'powerup':_0x12575b(0x476),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x41e),'strength':0x7,'speed':0x7,'tactics':0x7,'size':_0x12575b(0x41d),'type':_0x12575b(0x44e),'powerup':_0x12575b(0x476),'theme':_0x12575b(0x38d)},{'name':_0x12575b(0x1bd),'strength':0x8,'speed':0x7,'tactics':0x7,'size':_0x12575b(0x41d),'type':_0x12575b(0x44e),'powerup':_0x12575b(0x476),'theme':_0x12575b(0x38d)}],characterDirections={'Billandar\x20and\x20Ted':'Left','Craig':_0x12575b(0x3e2),'Dankle':_0x12575b(0x3e2),'Drake':_0x12575b(0x34d),'Goblin\x20Ganger':_0x12575b(0x3e2),'Jarhead':'Right','Katastrophy':'Right','Koipon':'Left','Mandiblus':'Left','Merdock':_0x12575b(0x3e2),'Ouchie':_0x12575b(0x3e2),'Slime\x20Mind':_0x12575b(0x34d),'Spydrax':'Right','Texby':_0x12575b(0x3e2)};class MonstrocityMatch3{constructor(_0x1e8da1,_0x121a77){const _0x515400=_0x12575b;this[_0x515400(0x471)]='ontouchstart'in window||navigator['maxTouchPoints']>0x0||navigator['msMaxTouchPoints']>0x0,this[_0x515400(0x473)]=0x5,this[_0x515400(0x2ca)]=0x5,this['board']=[],this[_0x515400(0x37b)]=null,this[_0x515400(0x254)]=![],this[_0x515400(0x31c)]=null,this['player1']=null,this[_0x515400(0x385)]=null,this[_0x515400(0x499)]='initializing',this[_0x515400(0x4b4)]=![],this[_0x515400(0x1f9)]=null,this[_0x515400(0x31a)]=null,this['offsetX']=0x0,this[_0x515400(0x327)]=0x0,this[_0x515400(0x240)]=0x1,this['playerCharactersConfig']=_0x1e8da1,this[_0x515400(0x46d)]=[],this[_0x515400(0x30c)]=![],this[_0x515400(0x478)]=[_0x515400(0x219),'second-attack','special-attack',_0x515400(0x338),'last-stand'],this[_0x515400(0x293)]=[],this[_0x515400(0x421)]=0x0,this[_0x515400(0x2e9)]=null,this[_0x515400(0x292)]=null;const _0x3cc1f6=themes[_0x515400(0x3a1)](_0x2b4b88=>_0x2b4b88[_0x515400(0x296)])[_0x515400(0x377)](_0x66df44=>_0x66df44[_0x515400(0x27d)]),_0x56605b=localStorage[_0x515400(0x2f3)](_0x515400(0x2d0));this[_0x515400(0x404)]=_0x56605b&&_0x3cc1f6[_0x515400(0x3d1)](_0x56605b)?_0x56605b:_0x121a77&&_0x3cc1f6[_0x515400(0x3d1)](_0x121a77)?_0x121a77:_0x515400(0x38d),console[_0x515400(0x253)](_0x515400(0x3da)+_0x121a77+_0x515400(0x497)+_0x56605b+_0x515400(0x33a)+this[_0x515400(0x404)]),this[_0x515400(0x468)]='images/monstrocity/'+this[_0x515400(0x404)]+'/',this[_0x515400(0x3c3)]={'match':new Audio(_0x515400(0x477)),'cascade':new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),'badMove':new Audio(_0x515400(0x252)),'gameOver':new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),'reset':new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),'loss':new Audio(_0x515400(0x353)),'win':new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),'finalWin':new Audio(_0x515400(0x323)),'powerGem':new Audio(_0x515400(0x2ab)),'hyperCube':new Audio(_0x515400(0x27f)),'multiMatch':new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')},this['updateTileSizeWithGap'](),this[_0x515400(0x339)]();}[_0x12575b(0x263)](_0x3a6849){const _0x25a697=_0x12575b;console[_0x25a697(0x253)](_0x25a697(0x461)),console['log']('\x20\x20Name:',_0x3a6849['name']),console[_0x25a697(0x253)](_0x25a697(0x326),_0x3a6849['health'],'/',_0x3a6849[_0x25a697(0x1da)]),console[_0x25a697(0x253)](_0x25a697(0x3b0),_0x3a6849[_0x25a697(0x3a4)]),this[_0x25a697(0x2e9)]=_0x3a6849,console[_0x25a697(0x253)](_0x25a697(0x35c)+_0x3a6849['name']);}[_0x12575b(0x1cc)](_0x5613f3){const _0x3db444=_0x12575b;this['selectedCharacter']=_0x5613f3,console['log'](_0x3db444(0x49b)+_0x5613f3[_0x3db444(0x266)]),this[_0x3db444(0x239)]();}async['startBossBattle'](){const _0x33cf5b=_0x12575b;console[_0x33cf5b(0x253)](_0x33cf5b(0x1cb)),console[_0x33cf5b(0x253)](_0x33cf5b(0x215),this['selectedCharacter'][_0x33cf5b(0x266)]),console[_0x33cf5b(0x253)](_0x33cf5b(0x443),this[_0x33cf5b(0x2e9)][_0x33cf5b(0x266)]),console[_0x33cf5b(0x253)](_0x33cf5b(0x335),this[_0x33cf5b(0x2e9)][_0x33cf5b(0x404)]);const _0x1a6e13=this[_0x33cf5b(0x2e9)][_0x33cf5b(0x1f8)]||_0x33cf5b(0x3e9),_0xabe3e9=this[_0x33cf5b(0x2e9)][_0x33cf5b(0x431)]||'images/monstrocity/bosses/'+this[_0x33cf5b(0x2e9)][_0x33cf5b(0x266)][_0x33cf5b(0x260)]()[_0x33cf5b(0x49a)](/ /g,'-')+'.'+_0x1a6e13,_0xa86593=this[_0x33cf5b(0x2e9)]['battleDamagedUrl']||_0x33cf5b(0x217)+this[_0x33cf5b(0x2e9)]['name'][_0x33cf5b(0x260)]()[_0x33cf5b(0x49a)](/ /g,'-')+'.'+_0x1a6e13,_0x2603da=[_0xabe3e9,_0xa86593,this[_0x33cf5b(0x292)][_0x33cf5b(0x431)]];_0x2603da[_0x33cf5b(0x439)](_0x224678=>{const _0x204ebf=_0x33cf5b,_0x11dd47=new Image();_0x11dd47[_0x204ebf(0x2ed)]=_0x224678,_0x11dd47[_0x204ebf(0x4b8)]=()=>console[_0x204ebf(0x253)]('Preloaded\x20image:\x20'+_0x224678),_0x11dd47[_0x204ebf(0x4a2)]=()=>console[_0x204ebf(0x253)](_0x204ebf(0x324)+_0x224678);});if(this[_0x33cf5b(0x404)]!==this[_0x33cf5b(0x2e9)][_0x33cf5b(0x404)]){console[_0x33cf5b(0x21f)](_0x33cf5b(0x4af)+this['theme']+_0x33cf5b(0x4a3)+this[_0x33cf5b(0x2e9)][_0x33cf5b(0x404)]+_0x33cf5b(0x490));const _0x5ef6e9=themes[_0x33cf5b(0x3a1)](_0x518109=>_0x518109['items'])[_0x33cf5b(0x377)](_0x1e8100=>_0x1e8100[_0x33cf5b(0x27d)]);this['selectedBoss']['theme']&&_0x5ef6e9['includes'](this['selectedBoss'][_0x33cf5b(0x404)])&&await this[_0x33cf5b(0x399)](this[_0x33cf5b(0x2e9)][_0x33cf5b(0x404)],!![]);}document[_0x33cf5b(0x4a4)](_0x33cf5b(0x407))[_0x33cf5b(0x2ed)]=_0x33cf5b(0x367)+this[_0x33cf5b(0x404)]+_0x33cf5b(0x42c);let _0x56c6aa=this['selectedBoss'][_0x33cf5b(0x2fd)]||_0x33cf5b(0x34d);_0x56c6aa===_0x33cf5b(0x3ba)&&(_0x56c6aa=Math[_0x33cf5b(0x47e)]()<0.5?_0x33cf5b(0x3e2):_0x33cf5b(0x34d),console[_0x33cf5b(0x253)]('Random\x20boss\x20orientation\x20resolved\x20to:\x20'+_0x56c6aa));let _0x105f23=this[_0x33cf5b(0x292)][_0x33cf5b(0x2fd)]||_0x33cf5b(0x3ba);_0x105f23===_0x33cf5b(0x3ba)&&(_0x105f23=Math[_0x33cf5b(0x47e)]()<0.5?'Left':'Right',console[_0x33cf5b(0x253)](_0x33cf5b(0x1f5)+_0x105f23));this[_0x33cf5b(0x1ca)]={...this[_0x33cf5b(0x292)],'orientation':_0x105f23},this[_0x33cf5b(0x385)]={'name':this[_0x33cf5b(0x2e9)][_0x33cf5b(0x266)],'strength':this[_0x33cf5b(0x2e9)][_0x33cf5b(0x3a4)]||0x4,'speed':this[_0x33cf5b(0x2e9)]['speed']||0x4,'tactics':this['selectedBoss'][_0x33cf5b(0x232)]||0x4,'size':this[_0x33cf5b(0x2e9)]['size']||_0x33cf5b(0x41d),'type':'Boss','powerup':this[_0x33cf5b(0x2e9)][_0x33cf5b(0x3ef)]||_0x33cf5b(0x35a),'theme':this[_0x33cf5b(0x2e9)][_0x33cf5b(0x404)]||this[_0x33cf5b(0x404)],'imageUrl':_0xabe3e9,'extension':_0x1a6e13,'battleDamagedUrl':_0xa86593,'fallbackUrl':_0x33cf5b(0x204),'orientation':_0x56c6aa,'health':this[_0x33cf5b(0x2e9)]['health'],'maxHealth':this[_0x33cf5b(0x2e9)][_0x33cf5b(0x1da)],'mediaType':this['selectedBoss'][_0x33cf5b(0x44d)]||_0x33cf5b(0x23a),'isBossBattle':!![]};const _0x46bf76=window[_0x33cf5b(0x3e8)]||null;if(_0x46bf76&&this[_0x33cf5b(0x2e9)]&&this[_0x33cf5b(0x2e9)]['id'])try{const _0x5189fb=await fetch(_0x33cf5b(0x235),{'method':_0x33cf5b(0x1f6),'headers':{'Content-Type':_0x33cf5b(0x328)},'body':'user_id='+encodeURIComponent(_0x46bf76)+_0x33cf5b(0x47a)+encodeURIComponent(this[_0x33cf5b(0x2e9)]['id'])}),_0x376be9=await _0x5189fb[_0x33cf5b(0x32b)]();_0x376be9[_0x33cf5b(0x4ad)]&&_0x376be9[_0x33cf5b(0x39e)]!==null?(this['player1']['health']=_0x376be9['health'],console[_0x33cf5b(0x253)](_0x33cf5b(0x375)+this['player1'][_0x33cf5b(0x39e)])):(this[_0x33cf5b(0x1ca)]['health']=this[_0x33cf5b(0x1ca)][_0x33cf5b(0x1da)],console['log'](_0x33cf5b(0x419)));}catch(_0xf9cd6b){console['error'](_0x33cf5b(0x238),_0xf9cd6b),this[_0x33cf5b(0x1ca)]['health']=this[_0x33cf5b(0x1ca)][_0x33cf5b(0x1da)];}else this[_0x33cf5b(0x1ca)][_0x33cf5b(0x39e)]=this[_0x33cf5b(0x1ca)]['maxHealth'],console[_0x33cf5b(0x253)](_0x33cf5b(0x2ad));this[_0x33cf5b(0x385)][_0x33cf5b(0x39e)]=this[_0x33cf5b(0x2e9)][_0x33cf5b(0x39e)];if(this[_0x33cf5b(0x1ca)]['health']<=0x0||this[_0x33cf5b(0x385)][_0x33cf5b(0x39e)]<=0x0){console[_0x33cf5b(0x253)](_0x33cf5b(0x289)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x39e)]+_0x33cf5b(0x4b3)+this[_0x33cf5b(0x385)][_0x33cf5b(0x39e)]),this[_0x33cf5b(0x254)]=!![],this[_0x33cf5b(0x499)]=_0x33cf5b(0x254);const _0xbdd052=document[_0x33cf5b(0x4a4)](_0x33cf5b(0x2c7)),_0x1de780=document['getElementById'](_0x33cf5b(0x383));_0xbdd052[_0x33cf5b(0x3ff)][_0x33cf5b(0x2c6)]=_0x33cf5b(0x3df),_0x1de780[_0x33cf5b(0x3ff)][_0x33cf5b(0x288)]=_0x33cf5b(0x242),this[_0x33cf5b(0x47b)](),this[_0x33cf5b(0x38f)](),this[_0x33cf5b(0x1d0)]();const _0xea82ae=document['getElementById'](_0x33cf5b(0x265)),_0x391f36=document['getElementById'](_0x33cf5b(0x381));_0xea82ae&&(_0xea82ae[_0x33cf5b(0x3ff)][_0x33cf5b(0x2a4)]=this['player1'][_0x33cf5b(0x2fd)]===_0x33cf5b(0x3e2)?'scaleX(-1)':'none',console[_0x33cf5b(0x253)](_0x33cf5b(0x41c)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x2fd)]+_0x33cf5b(0x374)+_0xea82ae[_0x33cf5b(0x3ff)][_0x33cf5b(0x2a4)]));_0x391f36&&(_0x391f36[_0x33cf5b(0x3ff)][_0x33cf5b(0x2a4)]=this[_0x33cf5b(0x385)][_0x33cf5b(0x2fd)]===_0x33cf5b(0x34d)?_0x33cf5b(0x491):_0x33cf5b(0x396),console[_0x33cf5b(0x253)]('startBossBattle:\x20player2\x20orientation\x20set\x20to\x20'+this[_0x33cf5b(0x385)][_0x33cf5b(0x2fd)]+_0x33cf5b(0x374)+_0x391f36[_0x33cf5b(0x3ff)][_0x33cf5b(0x2a4)]));this[_0x33cf5b(0x24a)](this[_0x33cf5b(0x1ca)]),this['updateHealth'](this[_0x33cf5b(0x385)]),battleLog[_0x33cf5b(0x20b)]='',gameOver[_0x33cf5b(0x1c2)]='',this['toggleGameButtons'](!![]);if(this[_0x33cf5b(0x1ca)][_0x33cf5b(0x39e)]<=0x0)gameOver['textContent']='You\x20Lose!',turnIndicator[_0x33cf5b(0x1c2)]=_0x33cf5b(0x314),log(this['player1'][_0x33cf5b(0x266)]+_0x33cf5b(0x1e2)),this['sounds'][_0x33cf5b(0x435)][_0x33cf5b(0x391)]();else{if(this[_0x33cf5b(0x385)]['health']<=0x0){gameOver['textContent']=_0x33cf5b(0x2d5),turnIndicator['textContent']='Game\x20Over',log(this['player2'][_0x33cf5b(0x266)]+_0x33cf5b(0x3e7)),this[_0x33cf5b(0x3c3)][_0x33cf5b(0x36b)][_0x33cf5b(0x391)]();let _0x1c9c27=this[_0x33cf5b(0x385)]['battleDamagedUrl']||_0x33cf5b(0x217)+this[_0x33cf5b(0x385)]['name'][_0x33cf5b(0x260)]()[_0x33cf5b(0x49a)](/ /g,'-')+'.'+(this[_0x33cf5b(0x385)][_0x33cf5b(0x1f8)]||_0x33cf5b(0x3e9));const _0x48fa6b=document[_0x33cf5b(0x43c)](_0x33cf5b(0x381));_0x48fa6b[_0x33cf5b(0x2af)]===_0x33cf5b(0x277)&&(_0x48fa6b[_0x33cf5b(0x2ed)]=_0x1c9c27,_0x48fa6b[_0x33cf5b(0x4a2)]=()=>{const _0x3e9e4f=_0x33cf5b;_0x48fa6b[_0x3e9e4f(0x2ed)]=this[_0x3e9e4f(0x385)]['fallbackUrl'];}),_0x48fa6b[_0x33cf5b(0x3fd)][_0x33cf5b(0x2b3)](_0x33cf5b(0x233)),_0xea82ae[_0x33cf5b(0x3fd)][_0x33cf5b(0x2b3)](_0x33cf5b(0x2b5));}}const _0x12c072=document[_0x33cf5b(0x43c)](_0x33cf5b(0x285));_0x12c072[_0x33cf5b(0x1c2)]=_0x33cf5b(0x3d3);const _0xc65757=_0x12c072[_0x33cf5b(0x2a6)](!![]);_0x12c072[_0x33cf5b(0x25d)][_0x33cf5b(0x2c4)](_0xc65757,_0x12c072),_0xc65757[_0x33cf5b(0x27c)]('click',()=>this[_0x33cf5b(0x415)]()),document[_0x33cf5b(0x43c)](_0x33cf5b(0x23b))[_0x33cf5b(0x3ff)][_0x33cf5b(0x2c6)]=_0x33cf5b(0x3df),this[_0x33cf5b(0x2f6)]();return;}console[_0x33cf5b(0x253)](_0x33cf5b(0x3be),{'Name':this['player1'][_0x33cf5b(0x266)],'Health':this['player1'][_0x33cf5b(0x39e)]+'/'+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x1da)],'Strength':this[_0x33cf5b(0x1ca)]['strength'],'Speed':this[_0x33cf5b(0x1ca)][_0x33cf5b(0x3e3)],'Tactics':this[_0x33cf5b(0x1ca)][_0x33cf5b(0x232)],'Size':this[_0x33cf5b(0x1ca)][_0x33cf5b(0x3ee)],'Type':this['player1'][_0x33cf5b(0x386)],'Powerup':this[_0x33cf5b(0x1ca)]['powerup'],'Theme':this[_0x33cf5b(0x1ca)]['theme'],'Orientation':this['player1']['orientation']}),console['log'](_0x33cf5b(0x2c2),{'Name':this[_0x33cf5b(0x385)][_0x33cf5b(0x266)],'Health':this['player2'][_0x33cf5b(0x39e)]+'/'+this[_0x33cf5b(0x385)]['maxHealth'],'Strength':this[_0x33cf5b(0x385)]['strength'],'Speed':this['player2'][_0x33cf5b(0x3e3)],'Tactics':this['player2'][_0x33cf5b(0x232)],'Size':this[_0x33cf5b(0x385)][_0x33cf5b(0x3ee)],'Type':this['player2'][_0x33cf5b(0x386)],'Powerup':this['player2'][_0x33cf5b(0x3ef)],'Theme':this[_0x33cf5b(0x385)]['theme'],'ImageUrl':this[_0x33cf5b(0x385)][_0x33cf5b(0x431)],'BattleDamagedUrl':this[_0x33cf5b(0x385)][_0x33cf5b(0x444)],'Extension':this['player2']['extension'],'Orientation':this[_0x33cf5b(0x385)][_0x33cf5b(0x2fd)],'IsBossBattle':this[_0x33cf5b(0x385)][_0x33cf5b(0x3c7)]});const _0x255c4a=document[_0x33cf5b(0x4a4)](_0x33cf5b(0x2c7)),_0x70d04c=document[_0x33cf5b(0x43c)](_0x33cf5b(0x383));_0x255c4a[_0x33cf5b(0x3ff)][_0x33cf5b(0x2c6)]=_0x33cf5b(0x3df),_0x70d04c[_0x33cf5b(0x3ff)][_0x33cf5b(0x288)]='visible',this['setBackground'](),this[_0x33cf5b(0x3c3)][_0x33cf5b(0x1ea)]['play'](),log('Starting\x20Boss\x20Battle...'),this[_0x33cf5b(0x31c)]=this['player1'][_0x33cf5b(0x3e3)]>this[_0x33cf5b(0x385)]['speed']?this[_0x33cf5b(0x1ca)]:this[_0x33cf5b(0x385)]['speed']>this['player1'][_0x33cf5b(0x3e3)]?this[_0x33cf5b(0x385)]:this['player1']['strength']>=this[_0x33cf5b(0x385)][_0x33cf5b(0x3a4)]?this[_0x33cf5b(0x1ca)]:this[_0x33cf5b(0x385)],this[_0x33cf5b(0x499)]='initializing',this['gameOver']=![],this['roundStats']=[];const _0x1b34d6=document[_0x33cf5b(0x43c)](_0x33cf5b(0x265)),_0x392a9b=document[_0x33cf5b(0x43c)](_0x33cf5b(0x381));if(_0x1b34d6)_0x1b34d6[_0x33cf5b(0x3fd)][_0x33cf5b(0x37a)](_0x33cf5b(0x2b5),_0x33cf5b(0x233));if(_0x392a9b)_0x392a9b['classList']['remove'](_0x33cf5b(0x2b5),_0x33cf5b(0x233));this[_0x33cf5b(0x38f)](),this[_0x33cf5b(0x1d0)](),_0x1b34d6&&(_0x1b34d6['style']['transform']=this[_0x33cf5b(0x1ca)][_0x33cf5b(0x2fd)]===_0x33cf5b(0x3e2)?_0x33cf5b(0x491):'none',console[_0x33cf5b(0x253)]('startBossBattle:\x20player1\x20orientation\x20set\x20to\x20'+this[_0x33cf5b(0x1ca)]['orientation']+_0x33cf5b(0x374)+_0x1b34d6[_0x33cf5b(0x3ff)][_0x33cf5b(0x2a4)])),_0x392a9b&&(_0x392a9b[_0x33cf5b(0x3ff)][_0x33cf5b(0x2a4)]=this['player2']['orientation']===_0x33cf5b(0x34d)?_0x33cf5b(0x491):'none',console[_0x33cf5b(0x253)](_0x33cf5b(0x3fe)+this[_0x33cf5b(0x385)]['orientation']+_0x33cf5b(0x374)+_0x392a9b['style']['transform'])),this[_0x33cf5b(0x24a)](this[_0x33cf5b(0x1ca)]),this['updateHealth'](this['player2']),battleLog[_0x33cf5b(0x20b)]='',gameOver[_0x33cf5b(0x1c2)]='',this[_0x33cf5b(0x273)](!![]),this[_0x33cf5b(0x1ca)][_0x33cf5b(0x3ee)]!=='Medium'&&log(this[_0x33cf5b(0x1ca)]['name']+_0x33cf5b(0x37d)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x3ee)]+_0x33cf5b(0x3de)+(this[_0x33cf5b(0x1ca)]['size']==='Large'?_0x33cf5b(0x41a)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x1da)]+'\x20but\x20dulls\x20tactics\x20to\x20'+this[_0x33cf5b(0x1ca)]['tactics']:_0x33cf5b(0x32f)+this[_0x33cf5b(0x1ca)]['maxHealth']+_0x33cf5b(0x1f0)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x232)])+'!'),this[_0x33cf5b(0x385)]['size']!=='Medium'&&log(this['player2'][_0x33cf5b(0x266)]+_0x33cf5b(0x37d)+this[_0x33cf5b(0x385)][_0x33cf5b(0x3ee)]+_0x33cf5b(0x3de)+(this[_0x33cf5b(0x385)][_0x33cf5b(0x3ee)]===_0x33cf5b(0x2d7)?_0x33cf5b(0x41a)+this[_0x33cf5b(0x385)][_0x33cf5b(0x1da)]+_0x33cf5b(0x405)+this[_0x33cf5b(0x385)][_0x33cf5b(0x232)]:_0x33cf5b(0x32f)+this['player2'][_0x33cf5b(0x1da)]+_0x33cf5b(0x1f0)+this[_0x33cf5b(0x385)]['tactics'])+'!'),log(this[_0x33cf5b(0x1ca)][_0x33cf5b(0x266)]+_0x33cf5b(0x3b6)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x39e)]+'/'+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x1da)]+_0x33cf5b(0x284)),log(this[_0x33cf5b(0x31c)][_0x33cf5b(0x266)]+_0x33cf5b(0x1ff)),this[_0x33cf5b(0x3c6)](),this['gameState']=this[_0x33cf5b(0x31c)]===this[_0x33cf5b(0x1ca)]?_0x33cf5b(0x2fb):_0x33cf5b(0x23d),turnIndicator[_0x33cf5b(0x1c2)]=_0x33cf5b(0x251)+(this[_0x33cf5b(0x31c)]===this['player1']?_0x33cf5b(0x403):_0x33cf5b(0x366))+_0x33cf5b(0x2f2),this[_0x33cf5b(0x31c)]===this[_0x33cf5b(0x385)]&&setTimeout(()=>this['aiTurn'](),0x3e8),log(_0x33cf5b(0x1dc)+this[_0x33cf5b(0x1ca)][_0x33cf5b(0x266)]+_0x33cf5b(0x243)+this[_0x33cf5b(0x385)][_0x33cf5b(0x266)]+'!');}[_0x12575b(0x415)](){const _0x177a94=_0x12575b;console[_0x177a94(0x253)](_0x177a94(0x2eb));const _0xf9cc9a=document['querySelector'](_0x177a94(0x2c7)),_0x253bd8=document[_0x177a94(0x43c)](_0x177a94(0x23b));_0xf9cc9a[_0x177a94(0x3ff)][_0x177a94(0x2c6)]='none',_0x253bd8[_0x177a94(0x3ff)][_0x177a94(0x2c6)]=_0x177a94(0x396);const _0x4071c1=document[_0x177a94(0x43c)]('boss-select-container');_0x4071c1?(_0x4071c1[_0x177a94(0x3ff)][_0x177a94(0x2c6)]='block',typeof showBossSelect===_0x177a94(0x25f)?(showBossSelect(this),console[_0x177a94(0x253)]('showBossSelectionScreen:\x20Called\x20global\x20showBossSelect')):(console['error']('showBossSelectionScreen:\x20showBossSelect\x20function\x20not\x20found'),_0x4071c1[_0x177a94(0x20b)]='<p\x20style=\x22color:\x20#fff;\x20text-align:\x20center;\x22>Error:\x20Boss\x20selection\x20UI\x20unavailable.</p>')):console[_0x177a94(0x49f)]('showBossSelectionScreen:\x20Boss\x20select\x20container\x20(#boss-select-container)\x20not\x20found'),this['selectedBoss']=null,this[_0x177a94(0x292)]=null,this[_0x177a94(0x499)]=_0x177a94(0x2f0),this[_0x177a94(0x254)]=![],battleLog[_0x177a94(0x20b)]='',gameOver[_0x177a94(0x1c2)]='';}[_0x12575b(0x21c)](){const _0x26de9b=_0x12575b;if(!this[_0x26de9b(0x2e9)]){console[_0x26de9b(0x253)](_0x26de9b(0x2a3));return;}const _0x3ec0f3=window['userId']||null;if(!_0x3ec0f3){console[_0x26de9b(0x21f)]('savePlayerHealth:\x20userId\x20not\x20defined.\x20Ensure\x20window.userId\x20is\x20set\x20in\x20PHP.'),log('Cannot\x20save\x20health:\x20User\x20not\x20logged\x20in\x20or\x20userId\x20missing.');return;}const _0x3e223a=this[_0x26de9b(0x2e9)]['id'],_0x53fc47=this[_0x26de9b(0x1ca)][_0x26de9b(0x39e)];console[_0x26de9b(0x253)](_0x26de9b(0x336)+_0x3ec0f3+_0x26de9b(0x24f)+_0x3e223a+_0x26de9b(0x213)+_0x53fc47),fetch(_0x26de9b(0x376),{'method':_0x26de9b(0x1f6),'headers':{'Content-Type':_0x26de9b(0x328)},'body':_0x26de9b(0x304)+encodeURIComponent(_0x3ec0f3)+_0x26de9b(0x47a)+encodeURIComponent(_0x3e223a)+'&health='+encodeURIComponent(_0x53fc47)})[_0x26de9b(0x3b8)](_0x212c1e=>{const _0x157eb0=_0x26de9b;console['log'](_0x157eb0(0x318),_0x212c1e[_0x157eb0(0x2ac)]);if(!_0x212c1e['ok'])throw new Error('HTTP\x20error!\x20Status:\x20'+_0x212c1e['status']);return _0x212c1e[_0x157eb0(0x32b)]();})[_0x26de9b(0x3b8)](_0x29b785=>{const _0x38dfca=_0x26de9b;_0x29b785[_0x38dfca(0x4ad)]?(console['log'](_0x38dfca(0x248)),log(_0x38dfca(0x414)+_0x53fc47+_0x38dfca(0x34c)+this[_0x38dfca(0x1ca)][_0x38dfca(0x266)]+'\x20vs\x20'+this['selectedBoss']['name'])):(console[_0x38dfca(0x49f)](_0x38dfca(0x1f3),_0x29b785[_0x38dfca(0x49f)]||_0x38dfca(0x42e)),log('Failed\x20to\x20save\x20health:\x20'+(_0x29b785['error']||_0x38dfca(0x25c))));})[_0x26de9b(0x2b4)](_0x3f386e=>{const _0x14204e=_0x26de9b;console['error'](_0x14204e(0x416),_0x3f386e),log(_0x14204e(0x315)+_0x3f386e[_0x14204e(0x291)]);});}[_0x12575b(0x371)](){const _0x5a2cdb=_0x12575b;if(!this[_0x5a2cdb(0x2e9)]){console[_0x5a2cdb(0x253)](_0x5a2cdb(0x220));return;}const _0x389320=this[_0x5a2cdb(0x2e9)]['id'],_0x2272e6=this['player2'][_0x5a2cdb(0x39e)];console['log']('saveBossHealth:\x20Saving\x20-\x20bossId='+_0x389320+',\x20health='+_0x2272e6),fetch(_0x5a2cdb(0x249),{'method':_0x5a2cdb(0x1f6),'headers':{'Content-Type':_0x5a2cdb(0x328)},'body':'user_id='+encodeURIComponent(userId)+'&boss_id='+encodeURIComponent(_0x389320)+_0x5a2cdb(0x32c)+encodeURIComponent(_0x2272e6)})[_0x5a2cdb(0x3b8)](_0x35f272=>{const _0x43251f=_0x5a2cdb;console['log'](_0x43251f(0x299),_0x35f272[_0x43251f(0x2ac)]);if(!_0x35f272['ok'])throw new Error(_0x43251f(0x48f)+_0x35f272[_0x43251f(0x2ac)]);return _0x35f272[_0x43251f(0x32b)]();})[_0x5a2cdb(0x3b8)](_0x28f25f=>{const _0x3538e4=_0x5a2cdb;_0x28f25f[_0x3538e4(0x4ad)]?(console[_0x3538e4(0x253)](_0x3538e4(0x21e)),log(_0x3538e4(0x295)+_0x2272e6+_0x3538e4(0x34c)+this[_0x3538e4(0x2e9)][_0x3538e4(0x266)])):(console[_0x3538e4(0x49f)](_0x3538e4(0x225),_0x28f25f[_0x3538e4(0x49f)]||_0x3538e4(0x42e)),log(_0x3538e4(0x22a)+(_0x28f25f[_0x3538e4(0x49f)]||_0x3538e4(0x25c))));})['catch'](_0x5d4b6e=>{const _0xa70e84=_0x5a2cdb;console[_0xa70e84(0x49f)](_0xa70e84(0x2a2),_0x5d4b6e),log(_0xa70e84(0x321)+_0x5d4b6e[_0xa70e84(0x291)]);});}[_0x12575b(0x22c)](){const _0x508ec3=_0x12575b;if(!this[_0x508ec3(0x2e9)]){console[_0x508ec3(0x253)](_0x508ec3(0x49e));return;}const _0x3facbb=window[_0x508ec3(0x3e8)]||_0x508ec3(0x310);!_0x3facbb&&console[_0x508ec3(0x21f)](_0x508ec3(0x3d6));const _0x466827=this[_0x508ec3(0x2e9)]['id'],_0x59dd0a=_0x508ec3(0x218)+_0x3facbb+'_'+_0x466827,_0x3faf36=this[_0x508ec3(0x2d1)]['map'](_0x5afe37=>_0x5afe37[_0x508ec3(0x377)](_0x4144ca=>({'type':_0x4144ca[_0x508ec3(0x386)]})));console['log'](_0x508ec3(0x270)+_0x59dd0a+_0x508ec3(0x1d7),_0x3faf36);try{localStorage['setItem'](_0x59dd0a,JSON[_0x508ec3(0x24e)](_0x3faf36)),console[_0x508ec3(0x253)](_0x508ec3(0x216)+this[_0x508ec3(0x2e9)][_0x508ec3(0x266)]),log(_0x508ec3(0x359)+this[_0x508ec3(0x2e9)][_0x508ec3(0x266)]);}catch(_0x15dfa1){console['error'](_0x508ec3(0x41f),_0x15dfa1),log('Error\x20saving\x20board\x20state:\x20'+_0x15dfa1[_0x508ec3(0x291)]);}}[_0x12575b(0x262)](){const _0x394179=_0x12575b;if(!this[_0x394179(0x2e9)])return console[_0x394179(0x253)](_0x394179(0x2ef)),null;const _0x33cc32=window['userId']||_0x394179(0x310);!_0x33cc32&&console['warn'](_0x394179(0x33e));const _0x5d32a1=this[_0x394179(0x2e9)]['id'],_0x23d1bb=_0x394179(0x218)+_0x33cc32+'_'+_0x5d32a1;console[_0x394179(0x253)](_0x394179(0x1f7)+_0x23d1bb);try{const _0x431fa4=localStorage[_0x394179(0x2f3)](_0x23d1bb);if(_0x431fa4){const _0xcebbb3=JSON[_0x394179(0x484)](_0x431fa4);return console[_0x394179(0x253)](_0x394179(0x45b),_0xcebbb3),_0xcebbb3[_0x394179(0x377)](_0x5bb525=>_0x5bb525['map'](_0x5838e1=>({'type':_0x5838e1[_0x394179(0x386)],'element':null})));}else return console['log'](_0x394179(0x337)),null;}catch(_0x270fe8){return console[_0x394179(0x49f)](_0x394179(0x21b),_0x270fe8),log(_0x394179(0x271)+_0x270fe8[_0x394179(0x291)]),null;}}[_0x12575b(0x341)](){const _0x4e405c=_0x12575b;if(!this[_0x4e405c(0x2e9)]){console[_0x4e405c(0x253)](_0x4e405c(0x351));return;}const _0x3f4c34=window[_0x4e405c(0x3e8)]||_0x4e405c(0x310);!_0x3f4c34&&console[_0x4e405c(0x21f)](_0x4e405c(0x224));const _0x599a0f=this[_0x4e405c(0x2e9)]['id'],_0x8d5ba=_0x4e405c(0x218)+_0x3f4c34+'_'+_0x599a0f;console[_0x4e405c(0x253)](_0x4e405c(0x3f2)+_0x8d5ba);try{localStorage[_0x4e405c(0x2cd)](_0x8d5ba),console[_0x4e405c(0x253)](_0x4e405c(0x4be)+this[_0x4e405c(0x2e9)][_0x4e405c(0x266)]),log(_0x4e405c(0x26e)+this['selectedBoss'][_0x4e405c(0x266)]);}catch(_0x365592){console['error'](_0x4e405c(0x201),_0x365592),log(_0x4e405c(0x2e1)+_0x365592[_0x4e405c(0x291)]);}}[_0x12575b(0x36d)](){const _0x20213f=_0x12575b;console[_0x20213f(0x253)](_0x20213f(0x40c)),this[_0x20213f(0x4b4)]=![],this[_0x20213f(0x37b)]=null,this[_0x20213f(0x1f9)]=null;const _0x562452=document[_0x20213f(0x2b2)](_0x20213f(0x264));_0x562452[_0x20213f(0x439)](_0xf3c521=>{const _0x18bbdb=_0x20213f;_0xf3c521['removeEventListener'](_0x18bbdb(0x3ad),this[_0x18bbdb(0x325)]),_0xf3c521[_0x18bbdb(0x2dc)]('touchstart',this[_0x18bbdb(0x494)]);}),this[_0x20213f(0x2f6)](),this[_0x20213f(0x499)]=this['currentTurn']===this[_0x20213f(0x1ca)]?_0x20213f(0x2fb):'aiTurn',turnIndicator['textContent']=_0x20213f(0x251)+(this['currentTurn']===this['player1']?'Player':_0x20213f(0x366))+'\x27s\x20Turn',console[_0x20213f(0x253)](_0x20213f(0x329),{'player1':this[_0x20213f(0x1ca)]['name'],'player2':this[_0x20213f(0x385)][_0x20213f(0x266)],'currentTurn':this['currentTurn'][_0x20213f(0x266)],'gameState':this[_0x20213f(0x499)]}),log('Board\x20unstuck.\x20Continue\x20the\x20battle!'),this[_0x20213f(0x31c)]===this[_0x20213f(0x385)]&&setTimeout(()=>this['aiTurn'](),0x3e8);}['toggleGameButtons'](_0x19047f){const _0x37c573=_0x12575b;console[_0x37c573(0x253)](_0x37c573(0x480)+(_0x19047f?_0x37c573(0x1d3):_0x37c573(0x429)));const _0x523355=document[_0x37c573(0x4a4)](_0x37c573(0x2c7));if(!_0x523355){console[_0x37c573(0x49f)](_0x37c573(0x21d));return;}const _0x96b29b=document[_0x37c573(0x43c)](_0x37c573(0x469)),_0x510d6e=document[_0x37c573(0x43c)]('refresh-board'),_0x4f53f0=document[_0x37c573(0x43c)]('change-character');if(!_0x96b29b||!_0x510d6e||!_0x4f53f0){console[_0x37c573(0x21f)](_0x37c573(0x256),{'restart':!!_0x96b29b,'refresh':!!_0x510d6e,'changeCharacter':!!_0x4f53f0});return;}_0x96b29b[_0x37c573(0x3ff)][_0x37c573(0x2c6)]=_0x19047f?_0x37c573(0x396):'inline-block',_0x510d6e[_0x37c573(0x3ff)][_0x37c573(0x2c6)]=_0x19047f?_0x37c573(0x46a):_0x37c573(0x396),_0x4f53f0[_0x37c573(0x3ff)][_0x37c573(0x2c6)]=this[_0x37c573(0x46d)][_0x37c573(0x3eb)]>0x1?_0x37c573(0x46a):_0x37c573(0x396),console[_0x37c573(0x253)]('toggleGameButtons:\x20Buttons\x20set\x20-\x20restart:\x20'+_0x96b29b['style']['display']+_0x37c573(0x298)+_0x510d6e['style']['display']+',\x20change:\x20'+_0x4f53f0[_0x37c573(0x3ff)][_0x37c573(0x2c6)]);}['createBoardHash'](_0x5cc0d4){const _0x1d6cde=_0x12575b;let _0xe23ad7=0x0;const _0x5d9201=JSON['stringify'](_0x5cc0d4[_0x1d6cde(0x377)](_0x29e358=>_0x29e358[_0x1d6cde(0x377)](_0x1907b1=>_0x1907b1[_0x1d6cde(0x386)])));for(let _0x51f024=0x0;_0x51f024<_0x5d9201['length'];_0x51f024++){_0xe23ad7=(_0xe23ad7<<0x5)-_0xe23ad7+_0x5d9201[_0x1d6cde(0x384)](_0x51f024),_0xe23ad7|=0x0;}return _0xe23ad7[_0x1d6cde(0x40e)]();}['saveBoard'](){const _0xcfad2c=_0x12575b,_0x5b8a30={'level':this['currentLevel'],'board':this[_0xcfad2c(0x2d1)][_0xcfad2c(0x377)](_0x256112=>_0x256112[_0xcfad2c(0x377)](_0x30ff86=>({'type':_0x30ff86[_0xcfad2c(0x386)]}))),'hash':this['createBoardHash'](this[_0xcfad2c(0x2d1)])};localStorage[_0xcfad2c(0x258)](_0xcfad2c(0x229)+this[_0xcfad2c(0x240)],JSON[_0xcfad2c(0x24e)](_0x5b8a30));}[_0x12575b(0x33d)](){const _0x529b71=_0x12575b,_0x41dad1=_0x529b71(0x229)+this[_0x529b71(0x240)],_0x4b9773=JSON[_0x529b71(0x484)](localStorage['getItem'](_0x41dad1));if(_0x4b9773&&_0x4b9773['level']===this[_0x529b71(0x240)]){const _0x15ccac=this[_0x529b71(0x454)](_0x4b9773[_0x529b71(0x2d1)]);if(_0x4b9773[_0x529b71(0x3e6)]===_0x15ccac)return _0x4b9773[_0x529b71(0x2d1)]['map'](_0x284156=>_0x284156[_0x529b71(0x377)](_0x5cd3f6=>({'type':_0x5cd3f6[_0x529b71(0x386)],'element':null})));else console['warn'](_0x529b71(0x447)+this['currentLevel']+_0x529b71(0x2ce));}return null;}[_0x12575b(0x35b)](){const _0x340e2a=_0x12575b;localStorage['removeItem'](_0x340e2a(0x229)+this[_0x340e2a(0x240)]);}async[_0x12575b(0x1ef)](){const _0xd44c7c=_0x12575b;console['log'](_0xd44c7c(0x30e)),this[_0xd44c7c(0x46d)]=this['playerCharactersConfig'][_0xd44c7c(0x377)](_0x1e95cd=>this[_0xd44c7c(0x26b)](_0x1e95cd)),await this['showCharacterSelect'](!![]);const _0x4704f5=await this['loadProgress'](),{loadedLevel:_0xe82a0,loadedScore:_0x14a2a9,hasProgress:_0xc76003}=_0x4704f5;if(_0xc76003){console[_0xd44c7c(0x253)](_0xd44c7c(0x210)+_0xe82a0+_0xd44c7c(0x2cf)+_0x14a2a9);const _0x1afb04=await this[_0xd44c7c(0x24c)](_0xe82a0,_0x14a2a9);_0x1afb04?(this[_0xd44c7c(0x240)]=_0xe82a0,this['grandTotalScore']=_0x14a2a9,log(_0xd44c7c(0x2fa)+this[_0xd44c7c(0x240)]+_0xd44c7c(0x4ab)+this[_0xd44c7c(0x421)])):(this[_0xd44c7c(0x240)]=0x1,this[_0xd44c7c(0x421)]=0x0,await this[_0xd44c7c(0x28e)](),log(_0xd44c7c(0x3c1)));}else this['currentLevel']=0x1,this['grandTotalScore']=0x0,log(_0xd44c7c(0x487));console[_0xd44c7c(0x253)]('init:\x20Async\x20initialization\x20completed');}['setBackground'](){const _0x32f5c7=_0x12575b;console[_0x32f5c7(0x253)](_0x32f5c7(0x26d)+this[_0x32f5c7(0x404)]);const _0x304842=themes[_0x32f5c7(0x3a1)](_0x1e4760=>_0x1e4760['items'])['find'](_0x47e7b1=>_0x47e7b1[_0x32f5c7(0x27d)]===this[_0x32f5c7(0x404)]);console['log']('setBackground:\x20themeData=',_0x304842);const _0x554fa4='images/monstrocity/'+this['theme']+_0x32f5c7(0x2e6);console[_0x32f5c7(0x253)]('setBackground:\x20Setting\x20background\x20to\x20'+_0x554fa4),_0x304842&&_0x304842[_0x32f5c7(0x272)]?(document[_0x32f5c7(0x245)][_0x32f5c7(0x3ff)][_0x32f5c7(0x340)]=_0x32f5c7(0x34b)+_0x554fa4+')',document['body'][_0x32f5c7(0x3ff)][_0x32f5c7(0x3dc)]='cover',document[_0x32f5c7(0x245)]['style'][_0x32f5c7(0x30b)]=_0x32f5c7(0x48d)):document['body'][_0x32f5c7(0x3ff)]['backgroundImage']=_0x32f5c7(0x396);}[_0x12575b(0x399)](_0x2381de,_0x180a74=![]){const _0x1f2a9d=_0x12575b;if(updatePending)return console[_0x1f2a9d(0x253)](_0x1f2a9d(0x25e)),Promise[_0x1f2a9d(0x346)]();updatePending=!![],console[_0x1f2a9d(0x2b6)](_0x1f2a9d(0x394)+_0x2381de);const _0x57bcb3=this;this[_0x1f2a9d(0x404)]=_0x2381de,this[_0x1f2a9d(0x468)]=_0x1f2a9d(0x367)+this[_0x1f2a9d(0x404)]+'/',localStorage[_0x1f2a9d(0x258)](_0x1f2a9d(0x2d0),this['theme']),this[_0x1f2a9d(0x47b)]();!_0x180a74?(console[_0x1f2a9d(0x253)](_0x1f2a9d(0x489)),this['selectedBoss']=null,this[_0x1f2a9d(0x292)]=null):console['log'](_0x1f2a9d(0x43e));document[_0x1f2a9d(0x4a4)](_0x1f2a9d(0x407))[_0x1f2a9d(0x2ed)]=this['baseImagePath']+_0x1f2a9d(0x411);if(!_0x180a74){const _0x3f745d=document[_0x1f2a9d(0x43c)](_0x1f2a9d(0x26a));_0x3f745d&&(_0x3f745d[_0x1f2a9d(0x20b)]=_0x1f2a9d(0x28a));}return getAssets(this['theme'])[_0x1f2a9d(0x3b8)](function(_0xa081af){const _0x39e75e=_0x1f2a9d;console[_0x39e75e(0x2b6)](_0x39e75e(0x2bd)+_0x2381de),_0x57bcb3['playerCharactersConfig']=_0xa081af,_0x57bcb3[_0x39e75e(0x46d)]=[],_0xa081af[_0x39e75e(0x439)](_0x439cf7=>{const _0x5aff42=_0x39e75e,_0x5a016d=_0x57bcb3[_0x5aff42(0x26b)](_0x439cf7);if(_0x5a016d[_0x5aff42(0x44d)]===_0x5aff42(0x23a)){const _0x1b73b4=new Image();_0x1b73b4[_0x5aff42(0x2ed)]=_0x5a016d['imageUrl'],_0x1b73b4[_0x5aff42(0x4b8)]=()=>console[_0x5aff42(0x253)]('Preloaded:\x20'+_0x5a016d[_0x5aff42(0x431)]),_0x1b73b4[_0x5aff42(0x4a2)]=()=>console['log']('Failed\x20to\x20preload:\x20'+_0x5a016d['imageUrl']);}_0x57bcb3[_0x5aff42(0x46d)][_0x5aff42(0x4bc)](_0x5a016d);});if(_0x57bcb3[_0x39e75e(0x1ca)]&&!_0x180a74){const _0x1baaaf=_0x57bcb3[_0x39e75e(0x43d)]['find'](_0x29da8c=>_0x29da8c[_0x39e75e(0x266)]===_0x57bcb3[_0x39e75e(0x1ca)][_0x39e75e(0x266)])||_0x57bcb3[_0x39e75e(0x43d)][0x0];_0x57bcb3[_0x39e75e(0x1ca)]=_0x57bcb3[_0x39e75e(0x26b)](_0x1baaaf),_0x57bcb3[_0x39e75e(0x38f)]();}_0x57bcb3[_0x39e75e(0x1ca)]&&!_0x180a74&&(_0x57bcb3[_0x39e75e(0x385)]=_0x57bcb3[_0x39e75e(0x26b)](opponentsConfig[_0x57bcb3[_0x39e75e(0x240)]-0x1]),_0x57bcb3['updateOpponentDisplay'](),console[_0x39e75e(0x253)](_0x39e75e(0x436)+_0x57bcb3[_0x39e75e(0x385)][_0x39e75e(0x266)]));if(_0x57bcb3['player1']&&_0x57bcb3[_0x39e75e(0x499)]!==_0x39e75e(0x2f0)&&!_0x180a74){const _0x4bedb8=document['querySelectorAll'](_0x39e75e(0x264));_0x4bedb8['forEach'](_0x4b4c21=>{const _0x53da4d=_0x39e75e;_0x4b4c21[_0x53da4d(0x2dc)]('mousedown',_0x57bcb3[_0x53da4d(0x325)]),_0x4b4c21[_0x53da4d(0x2dc)](_0x53da4d(0x4bb),_0x57bcb3['handleTouchStart']);}),_0x57bcb3[_0x39e75e(0x2f6)](),console[_0x39e75e(0x253)](_0x39e75e(0x2c9));}else console[_0x39e75e(0x253)](_0x39e75e(0x332));_0x57bcb3['player1']&&!_0x180a74&&(_0x57bcb3[_0x39e75e(0x4b4)]=![],_0x57bcb3[_0x39e75e(0x37b)]=null,_0x57bcb3[_0x39e75e(0x1f9)]=null,_0x57bcb3[_0x39e75e(0x499)]=_0x57bcb3[_0x39e75e(0x31c)]===_0x57bcb3[_0x39e75e(0x1ca)]?_0x39e75e(0x2fb):_0x39e75e(0x23d));if(!_0x180a74){const _0x3772fb=document[_0x39e75e(0x43c)](_0x39e75e(0x3a2));_0x3772fb['style'][_0x39e75e(0x2c6)]=_0x39e75e(0x3df),_0x57bcb3[_0x39e75e(0x2ae)](_0x57bcb3['player1']===null);}console[_0x39e75e(0x1d4)](_0x39e75e(0x2bd)+_0x2381de),console[_0x39e75e(0x1d4)](_0x39e75e(0x394)+_0x2381de),updatePending=![];})[_0x1f2a9d(0x2b4)](function(_0xa08317){const _0x5da2e1=_0x1f2a9d;console[_0x5da2e1(0x49f)](_0x5da2e1(0x25a),_0xa08317),_0x57bcb3['playerCharactersConfig']=[{'name':'Craig','strength':0x4,'speed':0x4,'tactics':0x4,'size':_0x5da2e1(0x41d),'type':_0x5da2e1(0x268),'powerup':_0x5da2e1(0x446),'theme':'monstrocity'},{'name':_0x5da2e1(0x257),'strength':0x3,'speed':0x5,'tactics':0x3,'size':'Small','type':_0x5da2e1(0x268),'powerup':_0x5da2e1(0x476),'theme':_0x5da2e1(0x38d)}],_0x57bcb3[_0x5da2e1(0x46d)]=_0x57bcb3[_0x5da2e1(0x43d)][_0x5da2e1(0x377)](_0x4fc434=>_0x57bcb3['createCharacter'](_0x4fc434));!_0x180a74&&(_0x57bcb3[_0x5da2e1(0x2e9)]=null,_0x57bcb3['selectedCharacter']=null);if(!_0x180a74){const _0x360d3c=document['getElementById'](_0x5da2e1(0x3a2));_0x360d3c[_0x5da2e1(0x3ff)]['display']=_0x5da2e1(0x3df),_0x57bcb3[_0x5da2e1(0x2ae)](_0x57bcb3['player1']===null);}console['timeEnd']('updateTheme_'+_0x2381de),updatePending=![];});}async[_0x12575b(0x1fc)](){const _0x1bab3c=_0x12575b,_0x406e6f={'currentLevel':this[_0x1bab3c(0x240)],'grandTotalScore':this['grandTotalScore']};console[_0x1bab3c(0x253)](_0x1bab3c(0x402),_0x406e6f);try{const _0x182d3b=await fetch(_0x1bab3c(0x20c),{'method':'POST','headers':{'Content-Type':_0x1bab3c(0x36c)},'body':JSON[_0x1bab3c(0x24e)](_0x406e6f)});console[_0x1bab3c(0x253)](_0x1bab3c(0x481),_0x182d3b[_0x1bab3c(0x2ac)]);const _0x3c0761=await _0x182d3b['text']();console['log'](_0x1bab3c(0x3a6),_0x3c0761);if(!_0x182d3b['ok'])throw new Error(_0x1bab3c(0x48f)+_0x182d3b[_0x1bab3c(0x2ac)]);const _0x1ad812=JSON[_0x1bab3c(0x484)](_0x3c0761);console[_0x1bab3c(0x253)]('Parsed\x20response:',_0x1ad812),_0x1ad812[_0x1bab3c(0x2ac)]===_0x1bab3c(0x4ad)?log(_0x1bab3c(0x1eb)+this[_0x1bab3c(0x240)]):console[_0x1bab3c(0x49f)](_0x1bab3c(0x4a0),_0x1ad812[_0x1bab3c(0x291)]);}catch(_0x326f39){console[_0x1bab3c(0x49f)](_0x1bab3c(0x35d),_0x326f39);}}async['loadProgress'](){const _0x35c881=_0x12575b;try{console[_0x35c881(0x253)]('Fetching\x20progress\x20from\x20ajax/load-monstrocity-progress.php');const _0x55c054=await fetch('ajax/load-monstrocity-progress.php',{'method':_0x35c881(0x211),'headers':{'Content-Type':'application/json'}});console[_0x35c881(0x253)](_0x35c881(0x481),_0x55c054['status']);if(!_0x55c054['ok'])throw new Error('HTTP\x20error!\x20Status:\x20'+_0x55c054[_0x35c881(0x2ac)]);const _0x4dc24b=await _0x55c054['json']();console[_0x35c881(0x253)](_0x35c881(0x3a3),_0x4dc24b);if(_0x4dc24b[_0x35c881(0x2ac)]==='success'&&_0x4dc24b[_0x35c881(0x261)]){const _0x3e098d=_0x4dc24b[_0x35c881(0x261)];return{'loadedLevel':_0x3e098d[_0x35c881(0x240)]||0x1,'loadedScore':_0x3e098d[_0x35c881(0x421)]||0x0,'hasProgress':!![]};}else return console[_0x35c881(0x253)]('No\x20progress\x20found\x20or\x20status\x20not\x20success:',_0x4dc24b),{'loadedLevel':0x1,'loadedScore':0x0,'hasProgress':![]};}catch(_0x57c782){return console[_0x35c881(0x49f)](_0x35c881(0x4b5),_0x57c782),{'loadedLevel':0x1,'loadedScore':0x0,'hasProgress':![]};}}async[_0x12575b(0x28e)](){const _0x12ae74=_0x12575b;try{const _0x5be8e3=await fetch(_0x12ae74(0x30f),{'method':_0x12ae74(0x1f6),'headers':{'Content-Type':_0x12ae74(0x36c)}});if(!_0x5be8e3['ok'])throw new Error(_0x12ae74(0x48f)+_0x5be8e3[_0x12ae74(0x2ac)]);const _0x150e46=await _0x5be8e3[_0x12ae74(0x32b)]();_0x150e46[_0x12ae74(0x2ac)]==='success'&&(this[_0x12ae74(0x240)]=0x1,this[_0x12ae74(0x421)]=0x0,this[_0x12ae74(0x35b)](),log(_0x12ae74(0x428)));}catch(_0x3ac9cd){console[_0x12ae74(0x49f)](_0x12ae74(0x2f5),_0x3ac9cd);}}[_0x12575b(0x33c)](){const _0x3daa61=_0x12575b,_0x58569e=document[_0x3daa61(0x43c)](_0x3daa61(0x383)),_0x336d73=_0x58569e[_0x3daa61(0x30d)]||0x12c;this['tileSizeWithGap']=(_0x336d73-0.5*(this['width']-0x1))/this[_0x3daa61(0x473)];}[_0x12575b(0x26b)](_0x2fdfba){const _0x118992=_0x12575b;console[_0x118992(0x253)](_0x118992(0x1c1),_0x2fdfba);var _0x98d0c0,_0x37d5d7,_0x4dc2ca,_0x39b554=_0x118992(0x3e2),_0x59014b=![],_0x73f6d2='image';console['log'](_0x118992(0x422),_0x2fdfba[_0x118992(0x431)]);const _0x41c4a9=themes[_0x118992(0x3a1)](_0x4cf389=>_0x4cf389[_0x118992(0x296)])['find'](_0x3dafd0=>_0x3dafd0['value']===this[_0x118992(0x404)]),_0x30af5e=_0x41c4a9?.[_0x118992(0x1f8)]||_0x118992(0x3e9),_0x4dea57=['mov','mp4'],_0x54a336=_0x118992(0x1c6);if(_0x2fdfba[_0x118992(0x431)])_0x37d5d7=_0x2fdfba[_0x118992(0x431)],_0x4dc2ca=_0x2fdfba['fallbackUrl']||_0x118992(0x204),_0x39b554=_0x2fdfba[_0x118992(0x2fd)]||_0x118992(0x34d);else{if(_0x2fdfba[_0x118992(0x305)]&&_0x2fdfba[_0x118992(0x355)]){_0x59014b=!![];var _0x57606a={'orientation':'Right','ipfsPrefix':_0x41c4a9?.[_0x118992(0x450)]||_0x54a336};if(_0x41c4a9&&_0x41c4a9[_0x118992(0x1f1)]){var _0x3a4d92=_0x41c4a9[_0x118992(0x1f1)][_0x118992(0x362)](',')[_0x118992(0x3cd)](_0x5a8dd0=>_0x5a8dd0[_0x118992(0x352)]()),_0x4b5475=_0x41c4a9[_0x118992(0x212)]?_0x41c4a9[_0x118992(0x212)][_0x118992(0x362)](',')[_0x118992(0x3cd)](_0x10b2d4=>_0x10b2d4['trim']()):[],_0x51363f=_0x41c4a9[_0x118992(0x450)]?_0x41c4a9['ipfsPrefixes'][_0x118992(0x362)](',')[_0x118992(0x3cd)](_0x415d1a=>_0x415d1a[_0x118992(0x352)]()):[_0x54a336],_0x5ea8f4=_0x3a4d92['indexOf'](_0x2fdfba[_0x118992(0x355)]);_0x5ea8f4!==-0x1&&(_0x57606a={'orientation':_0x4b5475[_0x118992(0x3eb)]===0x1?_0x4b5475[0x0]:_0x4b5475[_0x5ea8f4]||_0x118992(0x34d),'ipfsPrefix':_0x51363f[_0x118992(0x3eb)]===0x1?_0x51363f[0x0]:_0x51363f[_0x5ea8f4]||_0x54a336});}_0x57606a[_0x118992(0x2fd)]==='Random'?_0x39b554=Math[_0x118992(0x47e)]()<0.5?_0x118992(0x3e2):'Right':_0x39b554=_0x57606a[_0x118992(0x2fd)];_0x37d5d7=_0x57606a[_0x118992(0x3b2)]+_0x2fdfba[_0x118992(0x305)],_0x4dc2ca=_0x54a336+_0x2fdfba[_0x118992(0x305)];const _0x984a3a=_0x37d5d7[_0x118992(0x362)]('.')[_0x118992(0x3bd)]()[_0x118992(0x260)]();_0x4dea57[_0x118992(0x3d1)](_0x984a3a)&&(_0x73f6d2=_0x118992(0x22f));}else{switch(_0x2fdfba[_0x118992(0x386)]){case'Base':_0x98d0c0=_0x118992(0x1dd);break;case _0x118992(0x44e):_0x98d0c0=_0x118992(0x3fa);break;case _0x118992(0x3cc):_0x98d0c0=_0x118992(0x3f0);break;default:_0x98d0c0=_0x118992(0x1dd);}_0x37d5d7=this['baseImagePath']+_0x98d0c0+'/'+_0x2fdfba['name'][_0x118992(0x260)]()['replace'](/ /g,'-')+'.'+_0x30af5e,_0x4dc2ca='icons/skull.png',_0x39b554=characterDirections[_0x2fdfba[_0x118992(0x266)]]||_0x118992(0x3e2),_0x4dea57['includes'](_0x30af5e['toLowerCase']())&&(_0x73f6d2=_0x118992(0x22f));}}var _0x52c5c6;switch(_0x2fdfba['type']){case _0x118992(0x44e):_0x52c5c6=0x64;break;case _0x118992(0x3cc):_0x52c5c6=0x46;break;case _0x118992(0x268):default:_0x52c5c6=0x55;}var _0x5f1380=0x1,_0x3aa0ef=0x0;switch(_0x2fdfba['size']){case'Large':_0x5f1380=1.2,_0x3aa0ef=_0x2fdfba[_0x118992(0x232)]>0x1?-0x2:0x0;break;case _0x118992(0x205):_0x5f1380=0.8,_0x3aa0ef=_0x2fdfba[_0x118992(0x232)]<0x6?0x2:0x7-_0x2fdfba[_0x118992(0x232)];break;case _0x118992(0x41d):_0x5f1380=0x1,_0x3aa0ef=0x0;break;}var _0xf49548=Math[_0x118992(0x319)](_0x52c5c6*_0x5f1380),_0x408a75=Math['max'](0x1,Math['min'](0x7,_0x2fdfba[_0x118992(0x232)]+_0x3aa0ef));return{'name':_0x2fdfba[_0x118992(0x266)],'type':_0x2fdfba['type'],'strength':_0x2fdfba['strength'],'speed':_0x2fdfba['speed'],'tactics':_0x408a75,'size':_0x2fdfba[_0x118992(0x3ee)],'powerup':_0x2fdfba[_0x118992(0x3ef)],'health':_0xf49548,'maxHealth':_0xf49548,'boostActive':![],'boostValue':0x0,'lastStandActive':![],'imageUrl':_0x37d5d7,'fallbackUrl':_0x4dc2ca,'orientation':_0x39b554,'isNFT':_0x59014b,'mediaType':_0x73f6d2};}['flipCharacter'](_0x9998bf,_0x35f9d0,_0x519819=![]){const _0x2deeac=_0x12575b;_0x9998bf[_0x2deeac(0x2fd)]==='Left'?(_0x9998bf['orientation']='Right',_0x35f9d0[_0x2deeac(0x3ff)][_0x2deeac(0x2a4)]=_0x519819?_0x2deeac(0x491):'none'):(_0x9998bf[_0x2deeac(0x2fd)]=_0x2deeac(0x3e2),_0x35f9d0[_0x2deeac(0x3ff)]['transform']=_0x519819?_0x2deeac(0x396):_0x2deeac(0x491)),log(_0x9998bf[_0x2deeac(0x266)]+'\x27s\x20orientation\x20flipped\x20to\x20'+_0x9998bf[_0x2deeac(0x2fd)]+'!');}[_0x12575b(0x2ae)](_0x500b38){const _0x1737aa=_0x12575b;console['time'](_0x1737aa(0x2ae));const _0x5dfb2b=document['getElementById'](_0x1737aa(0x3a2)),_0x3a0b2e=document[_0x1737aa(0x43c)](_0x1737aa(0x26a));_0x3a0b2e[_0x1737aa(0x20b)]='',_0x5dfb2b[_0x1737aa(0x3ff)][_0x1737aa(0x2c6)]='block';const _0x37944e=document['getElementById'](_0x1737aa(0x464));this[_0x1737aa(0x2e9)]&&window[_0x1737aa(0x306)]?(_0x37944e[_0x1737aa(0x3ff)][_0x1737aa(0x2c6)]='inline-block',_0x37944e['onclick']=()=>{const _0x1138b7=_0x1737aa;_0x5dfb2b['style'][_0x1138b7(0x2c6)]=_0x1138b7(0x396),showBossSelect(this);}):_0x37944e[_0x1737aa(0x3ff)][_0x1737aa(0x2c6)]='none';if(!this[_0x1737aa(0x46d)]||this[_0x1737aa(0x46d)][_0x1737aa(0x3eb)]===0x0){console[_0x1737aa(0x21f)](_0x1737aa(0x2d3)),_0x3a0b2e[_0x1737aa(0x20b)]=_0x1737aa(0x2db),console[_0x1737aa(0x1d4)](_0x1737aa(0x2ae));return;}document[_0x1737aa(0x43c)](_0x1737aa(0x301))[_0x1737aa(0x34e)]=()=>{showThemeSelect(this);};const _0x163c6a=document['createDocumentFragment']();this[_0x1737aa(0x46d)]['forEach'](_0x2384bf=>{const _0x2fa0f4=_0x1737aa,_0x4fe929=document[_0x2fa0f4(0x3a8)](_0x2fa0f4(0x3d0));_0x4fe929['className']='character-option',_0x4fe929[_0x2fa0f4(0x20b)]=_0x2384bf['mediaType']==='video'?_0x2fa0f4(0x368)+_0x2384bf[_0x2fa0f4(0x431)]+_0x2fa0f4(0x37f)+_0x2384bf[_0x2fa0f4(0x266)]+'\x22\x20onerror=\x22this.src=\x27'+_0x2384bf['fallbackUrl']+_0x2fa0f4(0x23c)+('<p><strong>'+_0x2384bf[_0x2fa0f4(0x266)]+_0x2fa0f4(0x28b))+(_0x2fa0f4(0x3ae)+_0x2384bf[_0x2fa0f4(0x386)]+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x3b7)+_0x2384bf[_0x2fa0f4(0x1da)]+_0x2fa0f4(0x3e5))+('<p>Strength:\x20'+_0x2384bf['strength']+_0x2fa0f4(0x3e5))+('<p>Speed:\x20'+_0x2384bf[_0x2fa0f4(0x3e3)]+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x1ce)+_0x2384bf[_0x2fa0f4(0x232)]+'</p>')+(_0x2fa0f4(0x498)+_0x2384bf[_0x2fa0f4(0x3ee)]+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x21a)+_0x2384bf[_0x2fa0f4(0x3ef)]+_0x2fa0f4(0x3e5)):_0x2fa0f4(0x312)+_0x2384bf['imageUrl']+'\x22\x20alt=\x22'+_0x2384bf[_0x2fa0f4(0x266)]+_0x2fa0f4(0x2b8)+_0x2384bf['fallbackUrl']+'\x27\x22>'+(_0x2fa0f4(0x48e)+_0x2384bf[_0x2fa0f4(0x266)]+'</strong></p>')+('<p>Type:\x20'+_0x2384bf[_0x2fa0f4(0x386)]+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x3b7)+_0x2384bf[_0x2fa0f4(0x1da)]+_0x2fa0f4(0x3e5))+('<p>Strength:\x20'+_0x2384bf[_0x2fa0f4(0x3a4)]+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x3c5)+_0x2384bf['speed']+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x1ce)+_0x2384bf['tactics']+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x498)+_0x2384bf[_0x2fa0f4(0x3ee)]+_0x2fa0f4(0x3e5))+(_0x2fa0f4(0x21a)+_0x2384bf[_0x2fa0f4(0x3ef)]+_0x2fa0f4(0x3e5)),_0x4fe929[_0x2fa0f4(0x27c)](_0x2fa0f4(0x382),()=>{const _0x9f41a4=_0x2fa0f4;console[_0x9f41a4(0x253)](_0x9f41a4(0x1e8)+_0x2384bf['name']),console[_0x9f41a4(0x253)](_0x9f41a4(0x320),this[_0x9f41a4(0x2e9)]),_0x5dfb2b[_0x9f41a4(0x3ff)][_0x9f41a4(0x2c6)]=_0x9f41a4(0x396),_0x500b38?(console[_0x9f41a4(0x253)](_0x9f41a4(0x3b1)),this['selectedBoss']?(console[_0x9f41a4(0x253)]('showCharacterSelect:\x20Boss\x20battle\x20initial\x20-\x20calling\x20setSelectedCharacter'),this[_0x9f41a4(0x1cc)](_0x2384bf)):(console[_0x9f41a4(0x253)](_0x9f41a4(0x389)),this[_0x9f41a4(0x1ca)]={..._0x2384bf},console[_0x9f41a4(0x253)](_0x9f41a4(0x2da)+this[_0x9f41a4(0x1ca)]['name']),this[_0x9f41a4(0x283)]())):(console['log'](_0x9f41a4(0x3c8)),this[_0x9f41a4(0x22d)](_0x2384bf));}),_0x163c6a[_0x2fa0f4(0x4b7)](_0x4fe929);}),_0x3a0b2e[_0x1737aa(0x4b7)](_0x163c6a),console['log']('showCharacterSelect:\x20Rendered\x20'+this['playerCharacters'][_0x1737aa(0x3eb)]+_0x1737aa(0x29e)),console['timeEnd'](_0x1737aa(0x2ae));}['swapPlayerCharacter'](_0x344a61){const _0x504770=_0x12575b,_0x29ba20=this['player1']['health'],_0x27113c=this['player1'][_0x504770(0x1da)],_0x9bf96a={..._0x344a61},_0x4af4fd=Math[_0x504770(0x278)](0x1,_0x29ba20/_0x27113c);_0x9bf96a[_0x504770(0x39e)]=Math[_0x504770(0x319)](_0x9bf96a['maxHealth']*_0x4af4fd),_0x9bf96a['health']=Math[_0x504770(0x42d)](0x0,Math['min'](_0x9bf96a['maxHealth'],_0x9bf96a[_0x504770(0x39e)])),_0x9bf96a[_0x504770(0x209)]=![],_0x9bf96a[_0x504770(0x49c)]=0x0,_0x9bf96a['lastStandActive']=![],this[_0x504770(0x1ca)]=_0x9bf96a,this[_0x504770(0x38f)](),this[_0x504770(0x24a)](this[_0x504770(0x1ca)]),log(this[_0x504770(0x1ca)]['name']+_0x504770(0x493)+this[_0x504770(0x1ca)][_0x504770(0x39e)]+'/'+this[_0x504770(0x1ca)][_0x504770(0x1da)]+_0x504770(0x284)),this[_0x504770(0x31c)]=this[_0x504770(0x1ca)][_0x504770(0x3e3)]>this[_0x504770(0x385)][_0x504770(0x3e3)]?this[_0x504770(0x1ca)]:this[_0x504770(0x385)]['speed']>this[_0x504770(0x1ca)][_0x504770(0x3e3)]?this['player2']:this[_0x504770(0x1ca)][_0x504770(0x3a4)]>=this[_0x504770(0x385)][_0x504770(0x3a4)]?this['player1']:this[_0x504770(0x385)],turnIndicator[_0x504770(0x1c2)]=_0x504770(0x2fc)+this[_0x504770(0x240)]+_0x504770(0x427)+(this[_0x504770(0x31c)]===this[_0x504770(0x1ca)]?_0x504770(0x403):_0x504770(0x39c))+_0x504770(0x2f2),this[_0x504770(0x31c)]===this['player2']&&this[_0x504770(0x499)]!=='gameOver'&&setTimeout(()=>this['aiTurn'](),0x3e8);}[_0x12575b(0x24c)](_0x39aba9,_0x5374b6){const _0x57115b=_0x12575b;return console[_0x57115b(0x253)](_0x57115b(0x363)+_0x39aba9+',\x20score='+_0x5374b6),new Promise(_0x215b63=>{const _0x58fbc0=_0x57115b,_0x8ac082=document[_0x58fbc0(0x3a8)](_0x58fbc0(0x3d0));_0x8ac082['id']=_0x58fbc0(0x3ac),_0x8ac082['className']=_0x58fbc0(0x3ac);const _0x5eb428=document[_0x58fbc0(0x3a8)](_0x58fbc0(0x3d0));_0x5eb428[_0x58fbc0(0x43b)]=_0x58fbc0(0x39a);const _0x440ff6=document[_0x58fbc0(0x3a8)]('p');_0x440ff6['id']=_0x58fbc0(0x313),_0x440ff6['textContent']='Resume\x20from\x20Level\x20'+_0x39aba9+_0x58fbc0(0x3c4)+_0x5374b6+'?',_0x5eb428[_0x58fbc0(0x4b7)](_0x440ff6);const _0x3de250=document['createElement'](_0x58fbc0(0x3d0));_0x3de250[_0x58fbc0(0x43b)]=_0x58fbc0(0x294);const _0x3567e1=document[_0x58fbc0(0x3a8)]('button');_0x3567e1['id']=_0x58fbc0(0x2e7),_0x3567e1[_0x58fbc0(0x1c2)]=_0x58fbc0(0x250),_0x3de250['appendChild'](_0x3567e1);const _0x39e464=document[_0x58fbc0(0x3a8)](_0x58fbc0(0x2c3));_0x39e464['id']=_0x58fbc0(0x425),_0x39e464[_0x58fbc0(0x1c2)]=_0x58fbc0(0x463),_0x3de250['appendChild'](_0x39e464),_0x5eb428['appendChild'](_0x3de250),_0x8ac082[_0x58fbc0(0x4b7)](_0x5eb428),document[_0x58fbc0(0x245)][_0x58fbc0(0x4b7)](_0x8ac082),_0x8ac082[_0x58fbc0(0x3ff)][_0x58fbc0(0x2c6)]=_0x58fbc0(0x3a7);const _0x57f6b1=()=>{const _0x4d966d=_0x58fbc0;console[_0x4d966d(0x253)](_0x4d966d(0x37e)),_0x8ac082[_0x4d966d(0x3ff)][_0x4d966d(0x2c6)]=_0x4d966d(0x396),document[_0x4d966d(0x245)][_0x4d966d(0x331)](_0x8ac082),_0x3567e1[_0x4d966d(0x2dc)]('click',_0x57f6b1),_0x39e464[_0x4d966d(0x2dc)](_0x4d966d(0x382),_0x1ba726),_0x215b63(!![]);},_0x1ba726=()=>{const _0x5370e3=_0x58fbc0;console['log'](_0x5370e3(0x287)),_0x8ac082[_0x5370e3(0x3ff)][_0x5370e3(0x2c6)]=_0x5370e3(0x396),document[_0x5370e3(0x245)][_0x5370e3(0x331)](_0x8ac082),_0x3567e1[_0x5370e3(0x2dc)](_0x5370e3(0x382),_0x57f6b1),_0x39e464['removeEventListener']('click',_0x1ba726),_0x215b63(![]);};_0x3567e1['addEventListener']('click',_0x57f6b1),_0x39e464[_0x58fbc0(0x27c)](_0x58fbc0(0x382),_0x1ba726);});}[_0x12575b(0x283)](){const _0x483136=_0x12575b;var _0x2447fe=this;console['log'](_0x483136(0x34f)+this['currentLevel']),this[_0x483136(0x2e9)]=null,this[_0x483136(0x292)]=null,console[_0x483136(0x253)](_0x483136(0x311));var _0x5b1386=document[_0x483136(0x4a4)](_0x483136(0x2c7)),_0x584db6=document[_0x483136(0x43c)](_0x483136(0x383));_0x5b1386[_0x483136(0x3ff)][_0x483136(0x2c6)]=_0x483136(0x3df),_0x584db6[_0x483136(0x3ff)][_0x483136(0x288)]='visible',this[_0x483136(0x47b)](),this[_0x483136(0x3c3)][_0x483136(0x1ea)]['play'](),log(_0x483136(0x456)+this[_0x483136(0x240)]+_0x483136(0x466)),this[_0x483136(0x385)]=this[_0x483136(0x26b)](opponentsConfig[this[_0x483136(0x240)]-0x1]),console[_0x483136(0x253)](_0x483136(0x354)+this[_0x483136(0x240)]+':\x20'+this[_0x483136(0x385)][_0x483136(0x266)]+_0x483136(0x40b)+(this[_0x483136(0x240)]-0x1)+'])'),this[_0x483136(0x1ca)][_0x483136(0x39e)]=this[_0x483136(0x1ca)]['maxHealth'],this['currentTurn']=this['player1']['speed']>this[_0x483136(0x385)][_0x483136(0x3e3)]?this[_0x483136(0x1ca)]:this[_0x483136(0x385)][_0x483136(0x3e3)]>this['player1'][_0x483136(0x3e3)]?this[_0x483136(0x385)]:this[_0x483136(0x1ca)][_0x483136(0x3a4)]>=this[_0x483136(0x385)][_0x483136(0x3a4)]?this[_0x483136(0x1ca)]:this[_0x483136(0x385)],this[_0x483136(0x499)]=_0x483136(0x2f0),this[_0x483136(0x254)]=![],this['roundStats']=[];const _0x1c0b7b=document['getElementById'](_0x483136(0x265)),_0x58c699=document[_0x483136(0x43c)](_0x483136(0x381));if(_0x1c0b7b)_0x1c0b7b['classList'][_0x483136(0x37a)]('winner',_0x483136(0x233));if(_0x58c699)_0x58c699[_0x483136(0x3fd)][_0x483136(0x37a)](_0x483136(0x2b5),_0x483136(0x233));this[_0x483136(0x38f)](),this[_0x483136(0x1d0)]();if(_0x1c0b7b)_0x1c0b7b['style'][_0x483136(0x2a4)]=this['player1'][_0x483136(0x2fd)]===_0x483136(0x3e2)?'scaleX(-1)':_0x483136(0x396);if(_0x58c699)_0x58c699[_0x483136(0x3ff)][_0x483136(0x2a4)]=this['player2'][_0x483136(0x2fd)]===_0x483136(0x34d)?_0x483136(0x491):_0x483136(0x396);this['updateHealth'](this[_0x483136(0x1ca)]),this['updateHealth'](this['player2']),battleLog[_0x483136(0x20b)]='',gameOver[_0x483136(0x1c2)]='',this[_0x483136(0x273)](![]),this[_0x483136(0x1ca)][_0x483136(0x3ee)]!=='Medium'&&log(this[_0x483136(0x1ca)][_0x483136(0x266)]+_0x483136(0x37d)+this['player1']['size']+_0x483136(0x3de)+(this[_0x483136(0x1ca)][_0x483136(0x3ee)]===_0x483136(0x2d7)?_0x483136(0x41a)+this[_0x483136(0x1ca)]['maxHealth']+'\x20but\x20dulls\x20tactics\x20to\x20'+this['player1']['tactics']:'drops\x20health\x20to\x20'+this['player1']['maxHealth']+_0x483136(0x1f0)+this[_0x483136(0x1ca)][_0x483136(0x232)])+'!'),this[_0x483136(0x385)]['size']!==_0x483136(0x41d)&&log(this[_0x483136(0x385)][_0x483136(0x266)]+'\x27s\x20'+this['player2'][_0x483136(0x3ee)]+_0x483136(0x3de)+(this[_0x483136(0x385)][_0x483136(0x3ee)]===_0x483136(0x2d7)?_0x483136(0x41a)+this[_0x483136(0x385)][_0x483136(0x1da)]+_0x483136(0x405)+this[_0x483136(0x385)][_0x483136(0x232)]:_0x483136(0x32f)+this[_0x483136(0x385)][_0x483136(0x1da)]+'\x20but\x20sharpens\x20tactics\x20to\x20'+this[_0x483136(0x385)][_0x483136(0x232)])+'!'),log(this[_0x483136(0x1ca)][_0x483136(0x266)]+_0x483136(0x2b9)+this[_0x483136(0x1ca)]['health']+'/'+this[_0x483136(0x1ca)]['maxHealth']+_0x483136(0x284)),log(this[_0x483136(0x31c)]['name']+_0x483136(0x1ff)),this[_0x483136(0x3c6)](),this['gameState']=this[_0x483136(0x31c)]===this[_0x483136(0x1ca)]?_0x483136(0x2fb):_0x483136(0x23d),turnIndicator['textContent']=_0x483136(0x2fc)+this[_0x483136(0x240)]+_0x483136(0x427)+(this[_0x483136(0x31c)]===this['player1']?_0x483136(0x403):'Opponent')+_0x483136(0x2f2),this[_0x483136(0x31c)]===this[_0x483136(0x385)]&&setTimeout(function(){const _0x42c517=_0x483136;_0x2447fe[_0x42c517(0x23d)]();},0x3e8);}[_0x12575b(0x38f)](){const _0x59bba6=_0x12575b;p1Name['textContent']=this['player1'][_0x59bba6(0x3d2)]||this[_0x59bba6(0x404)]==='monstrocity'?this['player1'][_0x59bba6(0x266)]:_0x59bba6(0x2a7),p1Type[_0x59bba6(0x1c2)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x386)],p1Strength[_0x59bba6(0x1c2)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x3a4)],p1Speed[_0x59bba6(0x1c2)]=this['player1'][_0x59bba6(0x3e3)],p1Tactics[_0x59bba6(0x1c2)]=this[_0x59bba6(0x1ca)]['tactics'],p1Size['textContent']=this['player1']['size'],p1Powerup[_0x59bba6(0x1c2)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x3ef)];const _0x2c37ad=document['getElementById'](_0x59bba6(0x265)),_0x3e7615=_0x2c37ad['parentNode'];if(this['player1'][_0x59bba6(0x44d)]===_0x59bba6(0x22f)){if(_0x2c37ad[_0x59bba6(0x2af)]!=='VIDEO'){const _0x588910=document[_0x59bba6(0x3a8)](_0x59bba6(0x22f));_0x588910['id']=_0x59bba6(0x265),_0x588910['src']=this[_0x59bba6(0x1ca)][_0x59bba6(0x431)],_0x588910['autoplay']=!![],_0x588910[_0x59bba6(0x472)]=!![],_0x588910[_0x59bba6(0x2be)]=!![],_0x588910[_0x59bba6(0x437)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x266)],_0x588910[_0x59bba6(0x4a2)]=()=>{const _0x13b10c=_0x59bba6;_0x588910['src']=this[_0x13b10c(0x1ca)][_0x13b10c(0x48b)];},_0x3e7615[_0x59bba6(0x2c4)](_0x588910,_0x2c37ad);}else _0x2c37ad[_0x59bba6(0x2ed)]=this[_0x59bba6(0x1ca)]['imageUrl'],_0x2c37ad[_0x59bba6(0x4a2)]=()=>{const _0xbfeb9=_0x59bba6;_0x2c37ad[_0xbfeb9(0x2ed)]=this[_0xbfeb9(0x1ca)][_0xbfeb9(0x48b)];};}else{if(_0x2c37ad['tagName']!==_0x59bba6(0x277)){const _0x26713c=document[_0x59bba6(0x3a8)](_0x59bba6(0x4b6));_0x26713c['id']=_0x59bba6(0x265),_0x26713c[_0x59bba6(0x2ed)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x431)],_0x26713c[_0x59bba6(0x437)]=this[_0x59bba6(0x1ca)]['name'],_0x26713c[_0x59bba6(0x4a2)]=()=>{const _0x1c997d=_0x59bba6;_0x26713c[_0x1c997d(0x2ed)]=this['player1'][_0x1c997d(0x48b)];},_0x3e7615[_0x59bba6(0x2c4)](_0x26713c,_0x2c37ad);}else _0x2c37ad[_0x59bba6(0x2ed)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x431)],_0x2c37ad[_0x59bba6(0x4a2)]=()=>{const _0x5d6591=_0x59bba6;_0x2c37ad['src']=this[_0x5d6591(0x1ca)]['fallbackUrl'];};}const _0x5b2022=document[_0x59bba6(0x43c)](_0x59bba6(0x265));_0x5b2022[_0x59bba6(0x3ff)][_0x59bba6(0x2a4)]=this[_0x59bba6(0x1ca)][_0x59bba6(0x2fd)]===_0x59bba6(0x3e2)?_0x59bba6(0x491):_0x59bba6(0x396),_0x5b2022[_0x59bba6(0x2af)]===_0x59bba6(0x277)?_0x5b2022['onload']=function(){const _0x1ea303=_0x59bba6;_0x5b2022[_0x1ea303(0x3ff)][_0x1ea303(0x2c6)]=_0x1ea303(0x3df);}:_0x5b2022[_0x59bba6(0x3ff)][_0x59bba6(0x2c6)]=_0x59bba6(0x3df),p1Hp[_0x59bba6(0x1c2)]=this['player1']['health']+'/'+this[_0x59bba6(0x1ca)][_0x59bba6(0x1da)],_0x5b2022[_0x59bba6(0x34e)]=()=>{const _0x1d516e=_0x59bba6;console[_0x1d516e(0x253)](_0x1d516e(0x269)),this[_0x1d516e(0x2ae)](![]);};}[_0x12575b(0x1d0)](){const _0x5282f2=_0x12575b;p2Name[_0x5282f2(0x1c2)]=this[_0x5282f2(0x385)][_0x5282f2(0x3c7)]?this[_0x5282f2(0x385)][_0x5282f2(0x266)]:this['theme']===_0x5282f2(0x38d)?this[_0x5282f2(0x385)][_0x5282f2(0x266)]:_0x5282f2(0x228),p2Type['textContent']=this[_0x5282f2(0x385)]['type'],p2Strength['textContent']=this[_0x5282f2(0x385)][_0x5282f2(0x3a4)],p2Speed['textContent']=this[_0x5282f2(0x385)][_0x5282f2(0x3e3)],p2Tactics[_0x5282f2(0x1c2)]=this[_0x5282f2(0x385)][_0x5282f2(0x232)],p2Size[_0x5282f2(0x1c2)]=this[_0x5282f2(0x385)][_0x5282f2(0x3ee)],p2Powerup[_0x5282f2(0x1c2)]=this[_0x5282f2(0x385)][_0x5282f2(0x3ef)];const _0x1ef2e6=document['getElementById'](_0x5282f2(0x381)),_0x570b83=_0x1ef2e6['parentNode'];if(this['player2'][_0x5282f2(0x44d)]===_0x5282f2(0x22f)){if(_0x1ef2e6[_0x5282f2(0x2af)]!==_0x5282f2(0x465)){const _0x34299c=document[_0x5282f2(0x3a8)](_0x5282f2(0x22f));_0x34299c['id']=_0x5282f2(0x381),_0x34299c[_0x5282f2(0x2ed)]=this['player2'][_0x5282f2(0x431)],_0x34299c[_0x5282f2(0x30a)]=!![],_0x34299c[_0x5282f2(0x472)]=!![],_0x34299c['muted']=!![],_0x34299c[_0x5282f2(0x437)]=this[_0x5282f2(0x385)][_0x5282f2(0x266)],_0x570b83[_0x5282f2(0x2c4)](_0x34299c,_0x1ef2e6);}else _0x1ef2e6[_0x5282f2(0x2ed)]=this[_0x5282f2(0x385)][_0x5282f2(0x431)];}else{if(_0x1ef2e6[_0x5282f2(0x2af)]!==_0x5282f2(0x277)){const _0x57e5b5=document['createElement'](_0x5282f2(0x4b6));_0x57e5b5['id']='p2-image',_0x57e5b5[_0x5282f2(0x2ed)]=this['player2'][_0x5282f2(0x431)],_0x57e5b5[_0x5282f2(0x437)]=this[_0x5282f2(0x385)][_0x5282f2(0x266)],_0x570b83[_0x5282f2(0x2c4)](_0x57e5b5,_0x1ef2e6);}else _0x1ef2e6[_0x5282f2(0x2ed)]=this[_0x5282f2(0x385)][_0x5282f2(0x431)];}const _0x607f74=document[_0x5282f2(0x43c)]('p2-image');_0x607f74[_0x5282f2(0x3ff)][_0x5282f2(0x2a4)]=this[_0x5282f2(0x385)][_0x5282f2(0x2fd)]==='Right'?_0x5282f2(0x491):_0x5282f2(0x396),_0x607f74[_0x5282f2(0x2af)]==='IMG'?_0x607f74[_0x5282f2(0x4b8)]=function(){const _0x383e0e=_0x5282f2;_0x607f74[_0x383e0e(0x3ff)][_0x383e0e(0x2c6)]='block';}:_0x607f74[_0x5282f2(0x3ff)][_0x5282f2(0x2c6)]=_0x5282f2(0x3df),p2Hp[_0x5282f2(0x1c2)]=this[_0x5282f2(0x385)][_0x5282f2(0x39e)]+'/'+this['player2'][_0x5282f2(0x1da)],_0x607f74[_0x5282f2(0x3fd)][_0x5282f2(0x37a)]('winner',_0x5282f2(0x233));}[_0x12575b(0x3c6)](){const _0x1e5b8a=_0x12575b;if(this[_0x1e5b8a(0x2e9)]){console['log']('initBoard:\x20Attempting\x20to\x20load\x20board\x20state\x20for\x20boss\x20battle');const _0x2cba5f=this[_0x1e5b8a(0x262)]();if(_0x2cba5f)this[_0x1e5b8a(0x2d1)]=_0x2cba5f,console[_0x1e5b8a(0x253)](_0x1e5b8a(0x23e));else{this[_0x1e5b8a(0x2d1)]=[];for(let _0x1cd30c=0x0;_0x1cd30c<this[_0x1e5b8a(0x2ca)];_0x1cd30c++){this['board'][_0x1cd30c]=[];for(let _0x39cf32=0x0;_0x39cf32<this[_0x1e5b8a(0x473)];_0x39cf32++){let _0x4e289f;do{_0x4e289f=this['createRandomTile']();}while(_0x39cf32>=0x2&&this[_0x1e5b8a(0x2d1)][_0x1cd30c][_0x39cf32-0x1]?.[_0x1e5b8a(0x386)]===_0x4e289f[_0x1e5b8a(0x386)]&&this['board'][_0x1cd30c][_0x39cf32-0x2]?.[_0x1e5b8a(0x386)]===_0x4e289f['type']||_0x1cd30c>=0x2&&this[_0x1e5b8a(0x2d1)][_0x1cd30c-0x1]?.[_0x39cf32]?.[_0x1e5b8a(0x386)]===_0x4e289f['type']&&this[_0x1e5b8a(0x2d1)][_0x1cd30c-0x2]?.[_0x39cf32]?.[_0x1e5b8a(0x386)]===_0x4e289f['type']);this[_0x1e5b8a(0x2d1)][_0x1cd30c][_0x39cf32]=_0x4e289f;}}console[_0x1e5b8a(0x253)]('initBoard:\x20Generated\x20new\x20board\x20for\x20boss\x20battle');}this[_0x1e5b8a(0x2f6)]();}else{const _0x37fbba=this['loadBoard']();if(_0x37fbba)this[_0x1e5b8a(0x2d1)]=_0x37fbba,console[_0x1e5b8a(0x253)](_0x1e5b8a(0x365),this['currentLevel']);else{this['board']=[];for(let _0x5c5306=0x0;_0x5c5306<this[_0x1e5b8a(0x2ca)];_0x5c5306++){this[_0x1e5b8a(0x2d1)][_0x5c5306]=[];for(let _0x3c65de=0x0;_0x3c65de<this[_0x1e5b8a(0x473)];_0x3c65de++){let _0x36d330;do{_0x36d330=this[_0x1e5b8a(0x39b)]();}while(_0x3c65de>=0x2&&this[_0x1e5b8a(0x2d1)][_0x5c5306][_0x3c65de-0x1]?.[_0x1e5b8a(0x386)]===_0x36d330[_0x1e5b8a(0x386)]&&this[_0x1e5b8a(0x2d1)][_0x5c5306][_0x3c65de-0x2]?.[_0x1e5b8a(0x386)]===_0x36d330[_0x1e5b8a(0x386)]||_0x5c5306>=0x2&&this['board'][_0x5c5306-0x1]?.[_0x3c65de]?.['type']===_0x36d330['type']&&this['board'][_0x5c5306-0x2]?.[_0x3c65de]?.['type']===_0x36d330[_0x1e5b8a(0x386)]);this[_0x1e5b8a(0x2d1)][_0x5c5306][_0x3c65de]=_0x36d330;}}this[_0x1e5b8a(0x2e8)](),console[_0x1e5b8a(0x253)](_0x1e5b8a(0x380),this['currentLevel']);}this['renderBoard']();}}[_0x12575b(0x39b)](){return{'type':randomChoice(this['tileTypes']),'element':null};}[_0x12575b(0x2f6)](){const _0x1443b3=_0x12575b;this['updateTileSizeWithGap']();const _0x2e6b04=document[_0x1443b3(0x43c)](_0x1443b3(0x383));_0x2e6b04[_0x1443b3(0x20b)]='';if(!this[_0x1443b3(0x2d1)]||!Array[_0x1443b3(0x208)](this[_0x1443b3(0x2d1)])||this[_0x1443b3(0x2d1)]['length']!==this['height']){console['warn']('renderBoard:\x20Board\x20not\x20initialized,\x20skipping\x20render');return;}for(let _0x212d9a=0x0;_0x212d9a<this[_0x1443b3(0x2ca)];_0x212d9a++){if(!Array['isArray'](this[_0x1443b3(0x2d1)][_0x212d9a])){console[_0x1443b3(0x21f)](_0x1443b3(0x40d)+_0x212d9a+'\x20is\x20not\x20an\x20array,\x20skipping');continue;}for(let _0x27822c=0x0;_0x27822c<this[_0x1443b3(0x473)];_0x27822c++){const _0x11494d=this[_0x1443b3(0x2d1)][_0x212d9a][_0x27822c];if(!_0x11494d||_0x11494d[_0x1443b3(0x386)]===null)continue;const _0x358dd0=document[_0x1443b3(0x3a8)]('div');_0x358dd0['className']='tile\x20'+_0x11494d[_0x1443b3(0x386)];if(this['gameOver'])_0x358dd0['classList'][_0x1443b3(0x2b3)](_0x1443b3(0x200));const _0xd26f60=document[_0x1443b3(0x3a8)]('img');_0xd26f60['src']=_0x1443b3(0x1c7)+_0x11494d['type']+'.png',_0xd26f60[_0x1443b3(0x437)]=_0x11494d[_0x1443b3(0x386)],_0x358dd0[_0x1443b3(0x4b7)](_0xd26f60),_0x358dd0[_0x1443b3(0x451)]['x']=_0x27822c,_0x358dd0['dataset']['y']=_0x212d9a,_0x2e6b04[_0x1443b3(0x4b7)](_0x358dd0),_0x11494d['element']=_0x358dd0,(!this[_0x1443b3(0x4b4)]||this[_0x1443b3(0x37b)]&&(this[_0x1443b3(0x37b)]['x']!==_0x27822c||this[_0x1443b3(0x37b)]['y']!==_0x212d9a))&&(_0x358dd0[_0x1443b3(0x3ff)][_0x1443b3(0x2a4)]='translate(0,\x200)'),this[_0x1443b3(0x471)]?_0x358dd0['addEventListener']('touchstart',_0x5e5995=>this['handleTouchStart'](_0x5e5995)):_0x358dd0[_0x1443b3(0x27c)](_0x1443b3(0x3ad),_0x43064d=>this['handleMouseDown'](_0x43064d));}}document[_0x1443b3(0x43c)](_0x1443b3(0x23b))['style'][_0x1443b3(0x2c6)]=this['gameOver']?'block':'none',console[_0x1443b3(0x253)](_0x1443b3(0x44a));}[_0x12575b(0x339)](){const _0x2902bf=_0x12575b,_0x5f2c33=document[_0x2902bf(0x43c)](_0x2902bf(0x383));this[_0x2902bf(0x471)]?(_0x5f2c33[_0x2902bf(0x27c)]('touchstart',_0x3c0685=>this[_0x2902bf(0x494)](_0x3c0685)),_0x5f2c33[_0x2902bf(0x27c)]('touchmove',_0x59ae29=>this[_0x2902bf(0x25b)](_0x59ae29)),_0x5f2c33['addEventListener'](_0x2902bf(0x32e),_0x5e3895=>this[_0x2902bf(0x406)](_0x5e3895))):(_0x5f2c33[_0x2902bf(0x27c)](_0x2902bf(0x3ad),_0x21b2a5=>this[_0x2902bf(0x325)](_0x21b2a5)),_0x5f2c33[_0x2902bf(0x27c)](_0x2902bf(0x3e0),_0x34af1b=>this[_0x2902bf(0x45f)](_0x34af1b)),_0x5f2c33[_0x2902bf(0x27c)](_0x2902bf(0x1cf),_0x3df04a=>this['handleMouseUp'](_0x3df04a)));document[_0x2902bf(0x43c)](_0x2902bf(0x285))[_0x2902bf(0x27c)]('click',()=>this[_0x2902bf(0x2d2)]()),document['getElementById'](_0x2902bf(0x469))[_0x2902bf(0x27c)](_0x2902bf(0x382),()=>{this['initGame']();});const _0x17cc1d=document[_0x2902bf(0x43c)]('refresh-board');_0x17cc1d[_0x2902bf(0x27c)](_0x2902bf(0x382),()=>{const _0x31f75e=_0x2902bf;console[_0x31f75e(0x253)](_0x31f75e(0x40a)),this[_0x31f75e(0x36d)]();});const _0x5b8ad2=document[_0x2902bf(0x43c)](_0x2902bf(0x48a)),_0x5c5bda=document[_0x2902bf(0x43c)](_0x2902bf(0x265)),_0xea74cd=document[_0x2902bf(0x43c)]('p2-image');_0x5b8ad2[_0x2902bf(0x27c)](_0x2902bf(0x382),()=>{const _0x1ea5f8=_0x2902bf;console[_0x1ea5f8(0x253)](_0x1ea5f8(0x2b7)),this[_0x1ea5f8(0x2ae)](![]);}),_0x5c5bda[_0x2902bf(0x27c)](_0x2902bf(0x382),()=>{const _0x4f1d8a=_0x2902bf;console[_0x4f1d8a(0x253)]('addEventListeners:\x20Player\x201\x20media\x20clicked'),this[_0x4f1d8a(0x2ae)](![]);}),document[_0x2902bf(0x43c)]('flip-p1')['addEventListener'](_0x2902bf(0x382),()=>this[_0x2902bf(0x38e)](this[_0x2902bf(0x1ca)],document[_0x2902bf(0x43c)](_0x2902bf(0x265)),![])),document[_0x2902bf(0x43c)](_0x2902bf(0x3f1))[_0x2902bf(0x27c)](_0x2902bf(0x382),()=>this[_0x2902bf(0x38e)](this[_0x2902bf(0x385)],document['getElementById'](_0x2902bf(0x381)),!![]));}[_0x12575b(0x2d2)](){const _0x2dfaef=_0x12575b;console[_0x2dfaef(0x253)]('handleGameOverButton\x20started:\x20currentLevel='+this['currentLevel']+',\x20player2.health='+this['player2'][_0x2dfaef(0x39e)]),this[_0x2dfaef(0x385)]['health']<=0x0&&this[_0x2dfaef(0x240)]>opponentsConfig[_0x2dfaef(0x3eb)]&&(this['currentLevel']=0x1,console[_0x2dfaef(0x253)](_0x2dfaef(0x3b9)+this['currentLevel'])),this[_0x2dfaef(0x283)](),console[_0x2dfaef(0x253)](_0x2dfaef(0x2e0)+this[_0x2dfaef(0x240)]);}[_0x12575b(0x325)](_0x5bbc06){const _0x24e9c7=_0x12575b;if(this[_0x24e9c7(0x254)]||this[_0x24e9c7(0x499)]!==_0x24e9c7(0x2fb)||this[_0x24e9c7(0x31c)]!==this['player1'])return;_0x5bbc06[_0x24e9c7(0x29a)]();const _0x124192=this[_0x24e9c7(0x2ee)](_0x5bbc06);if(!_0x124192||!_0x124192[_0x24e9c7(0x2cc)])return;this['isDragging']=!![],this[_0x24e9c7(0x37b)]={'x':_0x124192['x'],'y':_0x124192['y']},_0x124192[_0x24e9c7(0x2cc)]['classList']['add'](_0x24e9c7(0x3f6));const _0x4a502d=document[_0x24e9c7(0x43c)](_0x24e9c7(0x383))[_0x24e9c7(0x1de)]();this[_0x24e9c7(0x420)]=_0x5bbc06[_0x24e9c7(0x3d4)]-(_0x4a502d[_0x24e9c7(0x4b1)]+this['selectedTile']['x']*this[_0x24e9c7(0x222)]),this[_0x24e9c7(0x327)]=_0x5bbc06[_0x24e9c7(0x49d)]-(_0x4a502d[_0x24e9c7(0x40f)]+this[_0x24e9c7(0x37b)]['y']*this[_0x24e9c7(0x222)]);}[_0x12575b(0x45f)](_0x2f1592){const _0x40bf70=_0x12575b;if(!this[_0x40bf70(0x4b4)]||!this[_0x40bf70(0x37b)]||this[_0x40bf70(0x254)]||this[_0x40bf70(0x499)]!==_0x40bf70(0x2fb))return;_0x2f1592['preventDefault']();const _0xa545c8=document[_0x40bf70(0x43c)]('game-board')[_0x40bf70(0x1de)](),_0x4fb535=_0x2f1592[_0x40bf70(0x3d4)]-_0xa545c8[_0x40bf70(0x4b1)]-this['offsetX'],_0x4d2748=_0x2f1592[_0x40bf70(0x49d)]-_0xa545c8[_0x40bf70(0x40f)]-this[_0x40bf70(0x327)],_0x31ed6=this[_0x40bf70(0x2d1)][this[_0x40bf70(0x37b)]['y']][this[_0x40bf70(0x37b)]['x']]['element'];_0x31ed6[_0x40bf70(0x3ff)][_0x40bf70(0x442)]='';if(!this[_0x40bf70(0x31a)]){const _0x10dbc9=Math[_0x40bf70(0x348)](_0x4fb535-this[_0x40bf70(0x37b)]['x']*this[_0x40bf70(0x222)]),_0x517907=Math[_0x40bf70(0x348)](_0x4d2748-this['selectedTile']['y']*this['tileSizeWithGap']);if(_0x10dbc9>_0x517907&&_0x10dbc9>0x5)this['dragDirection']='row';else{if(_0x517907>_0x10dbc9&&_0x517907>0x5)this['dragDirection']=_0x40bf70(0x4a1);}}if(!this[_0x40bf70(0x31a)])return;if(this[_0x40bf70(0x31a)]===_0x40bf70(0x31d)){const _0x1b3133=Math[_0x40bf70(0x42d)](0x0,Math['min']((this[_0x40bf70(0x473)]-0x1)*this[_0x40bf70(0x222)],_0x4fb535));_0x31ed6['style'][_0x40bf70(0x2a4)]=_0x40bf70(0x424)+(_0x1b3133-this[_0x40bf70(0x37b)]['x']*this[_0x40bf70(0x222)])+_0x40bf70(0x2aa),this[_0x40bf70(0x1f9)]={'x':Math[_0x40bf70(0x319)](_0x1b3133/this[_0x40bf70(0x222)]),'y':this['selectedTile']['y']};}else{if(this[_0x40bf70(0x31a)]===_0x40bf70(0x4a1)){const _0xc54c=Math[_0x40bf70(0x42d)](0x0,Math[_0x40bf70(0x278)]((this[_0x40bf70(0x2ca)]-0x1)*this[_0x40bf70(0x222)],_0x4d2748));_0x31ed6[_0x40bf70(0x3ff)]['transform']='translate(0,\x20'+(_0xc54c-this[_0x40bf70(0x37b)]['y']*this[_0x40bf70(0x222)])+_0x40bf70(0x2d6),this[_0x40bf70(0x1f9)]={'x':this['selectedTile']['x'],'y':Math['round'](_0xc54c/this['tileSizeWithGap'])};}}}[_0x12575b(0x4a9)](_0x17134e){const _0x423158=_0x12575b;if(!this['isDragging']||!this[_0x423158(0x37b)]||!this[_0x423158(0x1f9)]||this[_0x423158(0x254)]||this[_0x423158(0x499)]!==_0x423158(0x2fb)){if(this[_0x423158(0x37b)]){const _0x282829=this[_0x423158(0x2d1)][this['selectedTile']['y']][this[_0x423158(0x37b)]['x']];if(_0x282829[_0x423158(0x2cc)])_0x282829[_0x423158(0x2cc)][_0x423158(0x3fd)][_0x423158(0x37a)]('selected');}this['isDragging']=![],this[_0x423158(0x37b)]=null,this[_0x423158(0x1f9)]=null,this[_0x423158(0x31a)]=null,this[_0x423158(0x2f6)]();return;}const _0x3b046d=this[_0x423158(0x2d1)][this[_0x423158(0x37b)]['y']][this['selectedTile']['x']];if(_0x3b046d[_0x423158(0x2cc)])_0x3b046d['element'][_0x423158(0x3fd)][_0x423158(0x37a)](_0x423158(0x3f6));this['slideTiles'](this[_0x423158(0x37b)]['x'],this[_0x423158(0x37b)]['y'],this[_0x423158(0x1f9)]['x'],this[_0x423158(0x1f9)]['y']),this[_0x423158(0x4b4)]=![],this[_0x423158(0x37b)]=null,this['targetTile']=null,this[_0x423158(0x31a)]=null;}[_0x12575b(0x494)](_0x196c31){const _0x2ea692=_0x12575b;if(this[_0x2ea692(0x254)]||this[_0x2ea692(0x499)]!==_0x2ea692(0x2fb)||this[_0x2ea692(0x31c)]!==this[_0x2ea692(0x1ca)])return;_0x196c31['preventDefault']();const _0x49ab76=this[_0x2ea692(0x2ee)](_0x196c31[_0x2ea692(0x43a)][0x0]);if(!_0x49ab76||!_0x49ab76[_0x2ea692(0x2cc)])return;this[_0x2ea692(0x4b4)]=!![],this['selectedTile']={'x':_0x49ab76['x'],'y':_0x49ab76['y']},_0x49ab76[_0x2ea692(0x2cc)][_0x2ea692(0x3fd)][_0x2ea692(0x2b3)](_0x2ea692(0x3f6));const _0x549b23=document[_0x2ea692(0x43c)](_0x2ea692(0x383))['getBoundingClientRect']();this[_0x2ea692(0x420)]=_0x196c31['touches'][0x0][_0x2ea692(0x3d4)]-(_0x549b23[_0x2ea692(0x4b1)]+this['selectedTile']['x']*this[_0x2ea692(0x222)]),this[_0x2ea692(0x327)]=_0x196c31[_0x2ea692(0x43a)][0x0]['clientY']-(_0x549b23[_0x2ea692(0x40f)]+this[_0x2ea692(0x37b)]['y']*this[_0x2ea692(0x222)]);}[_0x12575b(0x25b)](_0x269301){const _0x4acd66=_0x12575b;if(!this['isDragging']||!this['selectedTile']||this[_0x4acd66(0x254)]||this['gameState']!==_0x4acd66(0x2fb))return;_0x269301['preventDefault']();const _0x31221b=document['getElementById']('game-board')[_0x4acd66(0x1de)](),_0x42db71=_0x269301['touches'][0x0][_0x4acd66(0x3d4)]-_0x31221b['left']-this[_0x4acd66(0x420)],_0x59901d=_0x269301[_0x4acd66(0x43a)][0x0][_0x4acd66(0x49d)]-_0x31221b[_0x4acd66(0x40f)]-this[_0x4acd66(0x327)],_0x540eb6=this[_0x4acd66(0x2d1)][this[_0x4acd66(0x37b)]['y']][this['selectedTile']['x']][_0x4acd66(0x2cc)];requestAnimationFrame(()=>{const _0x9a3217=_0x4acd66;if(!this['dragDirection']){const _0x1a0675=Math[_0x9a3217(0x348)](_0x42db71-this[_0x9a3217(0x37b)]['x']*this[_0x9a3217(0x222)]),_0x3debcb=Math[_0x9a3217(0x348)](_0x59901d-this[_0x9a3217(0x37b)]['y']*this[_0x9a3217(0x222)]);if(_0x1a0675>_0x3debcb&&_0x1a0675>0x7)this[_0x9a3217(0x31a)]=_0x9a3217(0x31d);else{if(_0x3debcb>_0x1a0675&&_0x3debcb>0x7)this[_0x9a3217(0x31a)]=_0x9a3217(0x4a1);}}_0x540eb6[_0x9a3217(0x3ff)][_0x9a3217(0x442)]='';if(this[_0x9a3217(0x31a)]==='row'){const _0x49d98e=Math[_0x9a3217(0x42d)](0x0,Math[_0x9a3217(0x278)]((this[_0x9a3217(0x473)]-0x1)*this['tileSizeWithGap'],_0x42db71));_0x540eb6['style'][_0x9a3217(0x2a4)]=_0x9a3217(0x424)+(_0x49d98e-this['selectedTile']['x']*this['tileSizeWithGap'])+_0x9a3217(0x2aa),this['targetTile']={'x':Math[_0x9a3217(0x319)](_0x49d98e/this[_0x9a3217(0x222)]),'y':this[_0x9a3217(0x37b)]['y']};}else{if(this[_0x9a3217(0x31a)]===_0x9a3217(0x4a1)){const _0x1ad068=Math[_0x9a3217(0x42d)](0x0,Math[_0x9a3217(0x278)]((this['height']-0x1)*this[_0x9a3217(0x222)],_0x59901d));_0x540eb6['style'][_0x9a3217(0x2a4)]='translate(0,\x20'+(_0x1ad068-this['selectedTile']['y']*this[_0x9a3217(0x222)])+_0x9a3217(0x2d6),this[_0x9a3217(0x1f9)]={'x':this['selectedTile']['x'],'y':Math[_0x9a3217(0x319)](_0x1ad068/this[_0x9a3217(0x222)])};}}});}['handleTouchEnd'](_0x21da6f){const _0xd2c632=_0x12575b;if(!this[_0xd2c632(0x4b4)]||!this['selectedTile']||!this['targetTile']||this['gameOver']||this[_0xd2c632(0x499)]!=='playerTurn'){if(this[_0xd2c632(0x37b)]){const _0x5af41e=this[_0xd2c632(0x2d1)][this[_0xd2c632(0x37b)]['y']][this[_0xd2c632(0x37b)]['x']];if(_0x5af41e['element'])_0x5af41e['element'][_0xd2c632(0x3fd)]['remove']('selected');}this['isDragging']=![],this[_0xd2c632(0x37b)]=null,this['targetTile']=null,this['dragDirection']=null,this['renderBoard']();return;}const _0x8d6810=this['board'][this[_0xd2c632(0x37b)]['y']][this['selectedTile']['x']];if(_0x8d6810[_0xd2c632(0x2cc)])_0x8d6810[_0xd2c632(0x2cc)][_0xd2c632(0x3fd)][_0xd2c632(0x37a)](_0xd2c632(0x3f6));this[_0xd2c632(0x1c9)](this[_0xd2c632(0x37b)]['x'],this[_0xd2c632(0x37b)]['y'],this[_0xd2c632(0x1f9)]['x'],this[_0xd2c632(0x1f9)]['y']),this[_0xd2c632(0x4b4)]=![],this[_0xd2c632(0x37b)]=null,this[_0xd2c632(0x1f9)]=null,this['dragDirection']=null;}[_0x12575b(0x2ee)](_0x3dc8fb){const _0x20b2ba=_0x12575b,_0x50fc25=document['getElementById'](_0x20b2ba(0x383))[_0x20b2ba(0x1de)](),_0x2d8e72=Math[_0x20b2ba(0x1e7)]((_0x3dc8fb['clientX']-_0x50fc25[_0x20b2ba(0x4b1)])/this[_0x20b2ba(0x222)]),_0x1e6db9=Math[_0x20b2ba(0x1e7)]((_0x3dc8fb[_0x20b2ba(0x49d)]-_0x50fc25[_0x20b2ba(0x40f)])/this[_0x20b2ba(0x222)]);if(_0x2d8e72>=0x0&&_0x2d8e72<this[_0x20b2ba(0x473)]&&_0x1e6db9>=0x0&&_0x1e6db9<this[_0x20b2ba(0x2ca)])return{'x':_0x2d8e72,'y':_0x1e6db9,'element':this['board'][_0x1e6db9][_0x2d8e72][_0x20b2ba(0x2cc)]};return null;}[_0x12575b(0x1c9)](_0x59763f,_0x4cd8aa,_0x599899,_0x59bc02,_0x5d1c7f=()=>this[_0x12575b(0x2d4)]()){const _0x122102=_0x12575b,_0x701407=this[_0x122102(0x222)];let _0x506799;const _0x3044b4=[],_0x37c8c1=[];if(_0x4cd8aa===_0x59bc02){_0x506799=_0x59763f<_0x599899?0x1:-0x1;const _0x1e6b61=Math['min'](_0x59763f,_0x599899),_0x183082=Math['max'](_0x59763f,_0x599899);for(let _0x959905=_0x1e6b61;_0x959905<=_0x183082;_0x959905++){_0x3044b4[_0x122102(0x4bc)]({...this['board'][_0x4cd8aa][_0x959905]}),_0x37c8c1['push'](this[_0x122102(0x2d1)][_0x4cd8aa][_0x959905][_0x122102(0x2cc)]);}}else{if(_0x59763f===_0x599899){_0x506799=_0x4cd8aa<_0x59bc02?0x1:-0x1;const _0x594641=Math[_0x122102(0x278)](_0x4cd8aa,_0x59bc02),_0x47b5ac=Math[_0x122102(0x42d)](_0x4cd8aa,_0x59bc02);for(let _0x3fc7fd=_0x594641;_0x3fc7fd<=_0x47b5ac;_0x3fc7fd++){_0x3044b4[_0x122102(0x4bc)]({...this[_0x122102(0x2d1)][_0x3fc7fd][_0x59763f]}),_0x37c8c1[_0x122102(0x4bc)](this[_0x122102(0x2d1)][_0x3fc7fd][_0x59763f]['element']);}}}const _0x176249=this['board'][_0x4cd8aa][_0x59763f]['element'],_0x2bef3e=(_0x599899-_0x59763f)*_0x701407,_0x2cb016=(_0x59bc02-_0x4cd8aa)*_0x701407;_0x176249[_0x122102(0x3ff)][_0x122102(0x442)]='transform\x200.2s\x20ease',_0x176249[_0x122102(0x3ff)][_0x122102(0x2a4)]=_0x122102(0x424)+_0x2bef3e+_0x122102(0x32d)+_0x2cb016+_0x122102(0x3a9);let _0x26f98e=0x0;if(_0x4cd8aa===_0x59bc02)for(let _0x45469a=Math[_0x122102(0x278)](_0x59763f,_0x599899);_0x45469a<=Math[_0x122102(0x42d)](_0x59763f,_0x599899);_0x45469a++){if(_0x45469a===_0x59763f)continue;const _0x4bed8c=_0x506799*-_0x701407*(_0x45469a-_0x59763f)/Math[_0x122102(0x348)](_0x599899-_0x59763f);_0x37c8c1[_0x26f98e][_0x122102(0x3ff)][_0x122102(0x442)]=_0x122102(0x227),_0x37c8c1[_0x26f98e][_0x122102(0x3ff)]['transform']=_0x122102(0x424)+_0x4bed8c+_0x122102(0x2c5),_0x26f98e++;}else for(let _0x4ed6cb=Math[_0x122102(0x278)](_0x4cd8aa,_0x59bc02);_0x4ed6cb<=Math[_0x122102(0x42d)](_0x4cd8aa,_0x59bc02);_0x4ed6cb++){if(_0x4ed6cb===_0x4cd8aa)continue;const _0xc42711=_0x506799*-_0x701407*(_0x4ed6cb-_0x4cd8aa)/Math[_0x122102(0x348)](_0x59bc02-_0x4cd8aa);_0x37c8c1[_0x26f98e][_0x122102(0x3ff)][_0x122102(0x442)]=_0x122102(0x227),_0x37c8c1[_0x26f98e][_0x122102(0x3ff)][_0x122102(0x2a4)]=_0x122102(0x3ce)+_0xc42711+_0x122102(0x3a9),_0x26f98e++;}setTimeout(()=>{const _0x1deaa8=_0x122102;if(_0x4cd8aa===_0x59bc02){const _0x2a1763=this[_0x1deaa8(0x2d1)][_0x4cd8aa],_0x3399a8=[..._0x2a1763];if(_0x59763f<_0x599899){for(let _0x816f29=_0x59763f;_0x816f29<_0x599899;_0x816f29++)_0x2a1763[_0x816f29]=_0x3399a8[_0x816f29+0x1];}else{for(let _0x20a2df=_0x59763f;_0x20a2df>_0x599899;_0x20a2df--)_0x2a1763[_0x20a2df]=_0x3399a8[_0x20a2df-0x1];}_0x2a1763[_0x599899]=_0x3399a8[_0x59763f];}else{const _0x3b88fc=[];for(let _0x136df9=0x0;_0x136df9<this[_0x1deaa8(0x2ca)];_0x136df9++)_0x3b88fc[_0x136df9]={...this[_0x1deaa8(0x2d1)][_0x136df9][_0x59763f]};if(_0x4cd8aa<_0x59bc02){for(let _0x22acde=_0x4cd8aa;_0x22acde<_0x59bc02;_0x22acde++)this[_0x1deaa8(0x2d1)][_0x22acde][_0x59763f]=_0x3b88fc[_0x22acde+0x1];}else{for(let _0x5e6d82=_0x4cd8aa;_0x5e6d82>_0x59bc02;_0x5e6d82--)this[_0x1deaa8(0x2d1)][_0x5e6d82][_0x59763f]=_0x3b88fc[_0x5e6d82-0x1];}this['board'][_0x59bc02][_0x599899]=_0x3b88fc[_0x4cd8aa];}this[_0x1deaa8(0x2f6)]();const _0x1defab=this[_0x1deaa8(0x46b)](_0x599899,_0x59bc02);_0x1defab?this['gameState']=_0x1deaa8(0x4a7):(log('No\x20match,\x20reverting\x20tiles...'),this[_0x1deaa8(0x3c3)][_0x1deaa8(0x37c)][_0x1deaa8(0x391)](),_0x176249['style'][_0x1deaa8(0x442)]='transform\x200.2s\x20ease',_0x176249[_0x1deaa8(0x3ff)][_0x1deaa8(0x2a4)]=_0x1deaa8(0x400),_0x37c8c1[_0x1deaa8(0x439)](_0x2ead06=>{const _0x2b6a27=_0x1deaa8;_0x2ead06[_0x2b6a27(0x3ff)]['transition']=_0x2b6a27(0x227),_0x2ead06[_0x2b6a27(0x3ff)][_0x2b6a27(0x2a4)]=_0x2b6a27(0x400);}),setTimeout(()=>{const _0x170ce3=_0x1deaa8;if(_0x4cd8aa===_0x59bc02){const _0x2e9340=Math[_0x170ce3(0x278)](_0x59763f,_0x599899);for(let _0x11cfc1=0x0;_0x11cfc1<_0x3044b4[_0x170ce3(0x3eb)];_0x11cfc1++){this[_0x170ce3(0x2d1)][_0x4cd8aa][_0x2e9340+_0x11cfc1]={..._0x3044b4[_0x11cfc1],'element':_0x37c8c1[_0x11cfc1]};}}else{const _0x13e4b7=Math[_0x170ce3(0x278)](_0x4cd8aa,_0x59bc02);for(let _0x3871b2=0x0;_0x3871b2<_0x3044b4[_0x170ce3(0x3eb)];_0x3871b2++){this['board'][_0x13e4b7+_0x3871b2][_0x59763f]={..._0x3044b4[_0x3871b2],'element':_0x37c8c1[_0x3871b2]};}}this[_0x170ce3(0x2f6)](),this[_0x170ce3(0x499)]=this[_0x170ce3(0x31c)]===this[_0x170ce3(0x1ca)]?_0x170ce3(0x2fb):_0x170ce3(0x23d);},0xc8));},0xc8);}[_0x12575b(0x46b)](_0xe1b271=null,_0x24f0d1=null){const _0x2cd6dc=_0x12575b;console[_0x2cd6dc(0x253)](_0x2cd6dc(0x26f),this[_0x2cd6dc(0x254)]);if(this[_0x2cd6dc(0x254)])return console[_0x2cd6dc(0x253)]('Game\x20over,\x20exiting\x20resolveMatches'),![];const _0x4393e4=_0xe1b271!==null&&_0x24f0d1!==null;console[_0x2cd6dc(0x253)](_0x2cd6dc(0x364)+_0x4393e4);const _0x514a32=this['checkMatches']();console[_0x2cd6dc(0x253)]('Found\x20'+_0x514a32[_0x2cd6dc(0x3eb)]+_0x2cd6dc(0x1c0),_0x514a32);let _0x37fb69=0x1,_0x571e8f='';if(_0x4393e4&&_0x514a32[_0x2cd6dc(0x3eb)]>0x1){const _0x15b27d=_0x514a32[_0x2cd6dc(0x417)]((_0x166afa,_0x687c44)=>_0x166afa+_0x687c44[_0x2cd6dc(0x279)],0x0);console['log'](_0x2cd6dc(0x1fd)+_0x15b27d);if(_0x15b27d>=0x6&&_0x15b27d<=0x8)_0x37fb69=1.2,_0x571e8f=_0x2cd6dc(0x28c)+_0x15b27d+'\x20tiles\x20matched\x20for\x20a\x2020%\x20bonus!',this[_0x2cd6dc(0x3c3)][_0x2cd6dc(0x2f1)][_0x2cd6dc(0x391)]();else _0x15b27d>=0x9&&(_0x37fb69=0x3,_0x571e8f='Mega\x20Multi-Match!\x20'+_0x15b27d+'\x20tiles\x20matched\x20for\x20a\x20200%\x20bonus!',this['sounds'][_0x2cd6dc(0x2f1)][_0x2cd6dc(0x391)]());}if(_0x514a32[_0x2cd6dc(0x3eb)]>0x0){const _0x310091=new Set();let _0x8ce962=0x0;const _0x5ae635=this[_0x2cd6dc(0x31c)],_0x2d83f8=this[_0x2cd6dc(0x31c)]===this['player1']?this['player2']:this[_0x2cd6dc(0x1ca)];try{_0x514a32[_0x2cd6dc(0x439)](_0x14f6d2=>{const _0x30d4cb=_0x2cd6dc;console[_0x30d4cb(0x253)](_0x30d4cb(0x27b),_0x14f6d2),_0x14f6d2['coordinates'][_0x30d4cb(0x439)](_0x2b8b79=>_0x310091[_0x30d4cb(0x2b3)](_0x2b8b79));const _0x965f4d=this[_0x30d4cb(0x2dd)](_0x14f6d2,_0x4393e4);console[_0x30d4cb(0x253)](_0x30d4cb(0x482)+_0x965f4d);if(this[_0x30d4cb(0x254)]){console[_0x30d4cb(0x253)](_0x30d4cb(0x2ec));return;}if(_0x965f4d>0x0)_0x8ce962+=_0x965f4d;});if(this[_0x2cd6dc(0x254)])return console[_0x2cd6dc(0x253)](_0x2cd6dc(0x458)),!![];return console[_0x2cd6dc(0x253)]('Total\x20damage\x20dealt:\x20'+_0x8ce962+_0x2cd6dc(0x259),[..._0x310091]),_0x8ce962>0x0&&!this[_0x2cd6dc(0x254)]&&setTimeout(()=>{const _0x53c8ad=_0x2cd6dc;if(this[_0x53c8ad(0x254)]){console[_0x53c8ad(0x253)](_0x53c8ad(0x1e5));return;}console[_0x53c8ad(0x253)](_0x53c8ad(0x48c),_0x2d83f8[_0x53c8ad(0x266)]),this[_0x53c8ad(0x3db)](_0x2d83f8,_0x8ce962);},0x64),setTimeout(()=>{const _0x3f32a1=_0x2cd6dc;if(this[_0x3f32a1(0x254)]){console[_0x3f32a1(0x253)]('Game\x20over,\x20skipping\x20match\x20animation\x20and\x20cascading');return;}console[_0x3f32a1(0x253)](_0x3f32a1(0x2fe),[..._0x310091]),_0x310091[_0x3f32a1(0x439)](_0xbe01c2=>{const _0x3c2486=_0x3f32a1,[_0xea18b1,_0x48c937]=_0xbe01c2[_0x3c2486(0x362)](',')['map'](Number);this[_0x3c2486(0x2d1)][_0x48c937][_0xea18b1]?.[_0x3c2486(0x2cc)]?this[_0x3c2486(0x2d1)][_0x48c937][_0xea18b1][_0x3c2486(0x2cc)][_0x3c2486(0x3fd)][_0x3c2486(0x2b3)](_0x3c2486(0x486)):console[_0x3c2486(0x21f)](_0x3c2486(0x230)+_0xea18b1+','+_0x48c937+_0x3c2486(0x1ee));}),setTimeout(()=>{const _0x4fd548=_0x3f32a1;if(this[_0x4fd548(0x254)]){console['log'](_0x4fd548(0x457));return;}console[_0x4fd548(0x253)]('Clearing\x20matched\x20tiles:',[..._0x310091]),_0x310091[_0x4fd548(0x439)](_0x2391fc=>{const _0x43620a=_0x4fd548,[_0x42db22,_0x188d67]=_0x2391fc[_0x43620a(0x362)](',')[_0x43620a(0x377)](Number);this[_0x43620a(0x2d1)][_0x188d67][_0x42db22]&&(this[_0x43620a(0x2d1)][_0x188d67][_0x42db22][_0x43620a(0x386)]=null,this['board'][_0x188d67][_0x42db22][_0x43620a(0x2cc)]=null);}),this[_0x4fd548(0x3c3)]['match'][_0x4fd548(0x391)](),console[_0x4fd548(0x253)](_0x4fd548(0x1fa));if(_0x37fb69>0x1&&this['roundStats']['length']>0x0){const _0x2ade53=this[_0x4fd548(0x293)][this['roundStats'][_0x4fd548(0x3eb)]-0x1],_0xe7521d=_0x2ade53[_0x4fd548(0x22b)];_0x2ade53[_0x4fd548(0x22b)]=Math[_0x4fd548(0x319)](_0x2ade53[_0x4fd548(0x22b)]*_0x37fb69),_0x571e8f&&(log(_0x571e8f),log(_0x4fd548(0x388)+_0xe7521d+'\x20to\x20'+_0x2ade53['points']+_0x4fd548(0x1e6)));}this[_0x4fd548(0x20a)](()=>{const _0x608de2=_0x4fd548;if(this[_0x608de2(0x254)]){console[_0x608de2(0x253)]('Game\x20over,\x20skipping\x20endTurn');return;}console[_0x608de2(0x253)]('Cascade\x20complete,\x20ending\x20turn'),this[_0x608de2(0x2d4)]();});},0x12c);},0xc8),!![];}catch(_0x2d84bc){return console[_0x2cd6dc(0x49f)]('Error\x20in\x20resolveMatches:',_0x2d84bc),this[_0x2cd6dc(0x499)]=this[_0x2cd6dc(0x31c)]===this[_0x2cd6dc(0x1ca)]?'playerTurn':'aiTurn',![];}}return console[_0x2cd6dc(0x253)](_0x2cd6dc(0x356)),![];}[_0x12575b(0x2de)](){const _0x878241=_0x12575b;console[_0x878241(0x253)](_0x878241(0x4b9));const _0x136315=[];try{const _0x2d51d7=[];for(let _0x20db57=0x0;_0x20db57<this[_0x878241(0x2ca)];_0x20db57++){let _0x5cf1cb=0x0;for(let _0x24ad55=0x0;_0x24ad55<=this[_0x878241(0x473)];_0x24ad55++){const _0x4c7f30=_0x24ad55<this[_0x878241(0x473)]?this[_0x878241(0x2d1)][_0x20db57][_0x24ad55]?.[_0x878241(0x386)]:null;if(_0x4c7f30!==this[_0x878241(0x2d1)][_0x20db57][_0x5cf1cb]?.[_0x878241(0x386)]||_0x24ad55===this[_0x878241(0x473)]){const _0x563cc5=_0x24ad55-_0x5cf1cb;if(_0x563cc5>=0x3){const _0x170bfd=new Set();for(let _0x41783f=_0x5cf1cb;_0x41783f<_0x24ad55;_0x41783f++){_0x170bfd[_0x878241(0x2b3)](_0x41783f+','+_0x20db57);}_0x2d51d7[_0x878241(0x4bc)]({'type':this['board'][_0x20db57][_0x5cf1cb][_0x878241(0x386)],'coordinates':_0x170bfd}),console[_0x878241(0x253)](_0x878241(0x3d9)+_0x20db57+_0x878241(0x475)+_0x5cf1cb+'-'+(_0x24ad55-0x1)+':',[..._0x170bfd]);}_0x5cf1cb=_0x24ad55;}}}for(let _0x4bb36f=0x0;_0x4bb36f<this[_0x878241(0x473)];_0x4bb36f++){let _0x7a074b=0x0;for(let _0x88f6e8=0x0;_0x88f6e8<=this['height'];_0x88f6e8++){const _0x29d1ba=_0x88f6e8<this['height']?this[_0x878241(0x2d1)][_0x88f6e8][_0x4bb36f]?.['type']:null;if(_0x29d1ba!==this['board'][_0x7a074b][_0x4bb36f]?.[_0x878241(0x386)]||_0x88f6e8===this[_0x878241(0x2ca)]){const _0x186071=_0x88f6e8-_0x7a074b;if(_0x186071>=0x3){const _0x547252=new Set();for(let _0x2f17ab=_0x7a074b;_0x2f17ab<_0x88f6e8;_0x2f17ab++){_0x547252['add'](_0x4bb36f+','+_0x2f17ab);}_0x2d51d7[_0x878241(0x4bc)]({'type':this[_0x878241(0x2d1)][_0x7a074b][_0x4bb36f][_0x878241(0x386)],'coordinates':_0x547252}),console[_0x878241(0x253)]('Vertical\x20match\x20found\x20at\x20col\x20'+_0x4bb36f+_0x878241(0x347)+_0x7a074b+'-'+(_0x88f6e8-0x1)+':',[..._0x547252]);}_0x7a074b=_0x88f6e8;}}}const _0x35c809=[],_0x3a8a20=new Set();return _0x2d51d7['forEach']((_0x2ce596,_0x47472d)=>{const _0x3914fb=_0x878241;if(_0x3a8a20['has'](_0x47472d))return;const _0x50ad9c={'type':_0x2ce596['type'],'coordinates':new Set(_0x2ce596[_0x3914fb(0x223)])};_0x3a8a20[_0x3914fb(0x2b3)](_0x47472d);for(let _0x197877=0x0;_0x197877<_0x2d51d7[_0x3914fb(0x3eb)];_0x197877++){if(_0x3a8a20[_0x3914fb(0x3bc)](_0x197877))continue;const _0x1aad3e=_0x2d51d7[_0x197877];if(_0x1aad3e[_0x3914fb(0x386)]===_0x50ad9c['type']){const _0x1b8284=[..._0x1aad3e[_0x3914fb(0x223)]][_0x3914fb(0x36f)](_0x104213=>_0x50ad9c[_0x3914fb(0x223)][_0x3914fb(0x3bc)](_0x104213));_0x1b8284&&(_0x1aad3e['coordinates'][_0x3914fb(0x439)](_0x325d7f=>_0x50ad9c[_0x3914fb(0x223)]['add'](_0x325d7f)),_0x3a8a20[_0x3914fb(0x2b3)](_0x197877));}}_0x35c809[_0x3914fb(0x4bc)]({'type':_0x50ad9c[_0x3914fb(0x386)],'coordinates':_0x50ad9c[_0x3914fb(0x223)],'totalTiles':_0x50ad9c[_0x3914fb(0x223)][_0x3914fb(0x3ee)]});}),_0x136315[_0x878241(0x4bc)](..._0x35c809),console[_0x878241(0x253)]('checkMatches\x20completed,\x20returning\x20matches:',_0x136315),_0x136315;}catch(_0x12c863){return console[_0x878241(0x49f)](_0x878241(0x2f8),_0x12c863),[];}}['handleMatch'](_0xa77a1b,_0xff23c5=!![]){const _0x1e3f3a=_0x12575b;console[_0x1e3f3a(0x253)]('handleMatch\x20started,\x20match:',_0xa77a1b,_0x1e3f3a(0x413),_0xff23c5);const _0x5a9716=this[_0x1e3f3a(0x31c)],_0x576cb4=this[_0x1e3f3a(0x31c)]===this[_0x1e3f3a(0x1ca)]?this['player2']:this['player1'],_0x8ffa41=_0xa77a1b[_0x1e3f3a(0x386)],_0x5b858e=_0xa77a1b[_0x1e3f3a(0x279)];let _0x3d4115=0x0,_0x1716d8=0x0;console['log'](_0x576cb4[_0x1e3f3a(0x266)]+_0x1e3f3a(0x3c0)+_0x576cb4[_0x1e3f3a(0x39e)]);_0x5b858e==0x4&&(this[_0x1e3f3a(0x3c3)][_0x1e3f3a(0x438)]['play'](),log(_0x5a9716[_0x1e3f3a(0x266)]+'\x20created\x20a\x20match\x20of\x20'+_0x5b858e+_0x1e3f3a(0x462)));_0x5b858e>=0x5&&(this[_0x1e3f3a(0x3c3)][_0x1e3f3a(0x4a6)]['play'](),log(_0x5a9716[_0x1e3f3a(0x266)]+_0x1e3f3a(0x4ba)+_0x5b858e+_0x1e3f3a(0x462)));if(_0x8ffa41===_0x1e3f3a(0x219)||_0x8ffa41===_0x1e3f3a(0x3f7)||_0x8ffa41==='special-attack'||_0x8ffa41===_0x1e3f3a(0x4aa)){_0x3d4115=Math[_0x1e3f3a(0x319)](_0x5a9716[_0x1e3f3a(0x3a4)]*(_0x5b858e===0x3?0x2:_0x5b858e===0x4?0x3:0x4));let _0x4991f7=0x1;if(_0x5b858e===0x4)_0x4991f7=1.5;else _0x5b858e>=0x5&&(_0x4991f7=0x2);_0x3d4115=Math['round'](_0x3d4115*_0x4991f7),console[_0x1e3f3a(0x253)](_0x1e3f3a(0x1d1)+_0x5a9716[_0x1e3f3a(0x3a4)]*(_0x5b858e===0x3?0x2:_0x5b858e===0x4?0x3:0x4)+_0x1e3f3a(0x3f3)+_0x4991f7+_0x1e3f3a(0x372)+_0x3d4115);_0x8ffa41==='special-attack'&&(_0x3d4115=Math[_0x1e3f3a(0x319)](_0x3d4115*1.2),console[_0x1e3f3a(0x253)](_0x1e3f3a(0x3e1)+_0x3d4115));_0x5a9716[_0x1e3f3a(0x209)]&&(_0x3d4115+=_0x5a9716[_0x1e3f3a(0x49c)]||0xa,_0x5a9716[_0x1e3f3a(0x209)]=![],log(_0x5a9716['name']+_0x1e3f3a(0x2e4)),console[_0x1e3f3a(0x253)](_0x1e3f3a(0x357)+_0x3d4115));_0x1716d8=_0x3d4115;const _0x47ef17=_0x576cb4[_0x1e3f3a(0x232)]*0xa;Math[_0x1e3f3a(0x47e)]()*0x64<_0x47ef17&&(_0x3d4115=Math[_0x1e3f3a(0x1e7)](_0x3d4115/0x2),log(_0x576cb4['name']+_0x1e3f3a(0x3a0)+_0x3d4115+_0x1e3f3a(0x433)),console[_0x1e3f3a(0x253)](_0x1e3f3a(0x3aa)+_0x3d4115));let _0x37a014=0x0;_0x576cb4['lastStandActive']&&(_0x37a014=Math[_0x1e3f3a(0x278)](_0x3d4115,0x5),_0x3d4115=Math[_0x1e3f3a(0x42d)](0x0,_0x3d4115-_0x37a014),_0x576cb4[_0x1e3f3a(0x334)]=![],console[_0x1e3f3a(0x253)](_0x1e3f3a(0x496)+_0x37a014+_0x1e3f3a(0x39d)+_0x3d4115));const _0x47d575=_0x8ffa41==='first-attack'?_0x1e3f3a(0x2df):_0x8ffa41===_0x1e3f3a(0x3f7)?_0x1e3f3a(0x2ea):'Shadow\x20Strike';let _0x39abe8;if(_0x37a014>0x0)_0x39abe8=_0x5a9716[_0x1e3f3a(0x266)]+_0x1e3f3a(0x342)+_0x47d575+'\x20on\x20'+_0x576cb4[_0x1e3f3a(0x266)]+_0x1e3f3a(0x495)+_0x1716d8+_0x1e3f3a(0x440)+_0x576cb4[_0x1e3f3a(0x266)]+_0x1e3f3a(0x2b1)+_0x37a014+'\x20damage,\x20resulting\x20in\x20'+_0x3d4115+'\x20damage!';else _0x8ffa41==='last-stand'?_0x39abe8=_0x5a9716[_0x1e3f3a(0x266)]+_0x1e3f3a(0x275)+_0x3d4115+_0x1e3f3a(0x43f)+_0x576cb4['name']+'\x20and\x20preparing\x20to\x20mitigate\x205\x20damage\x20on\x20the\x20next\x20attack!':_0x39abe8=_0x5a9716[_0x1e3f3a(0x266)]+_0x1e3f3a(0x342)+_0x47d575+_0x1e3f3a(0x1df)+_0x576cb4['name']+_0x1e3f3a(0x495)+_0x3d4115+_0x1e3f3a(0x433);_0xff23c5?log(_0x39abe8):log('Cascade:\x20'+_0x39abe8),_0x576cb4[_0x1e3f3a(0x39e)]=Math[_0x1e3f3a(0x42d)](0x0,_0x576cb4[_0x1e3f3a(0x39e)]-_0x3d4115),console[_0x1e3f3a(0x253)](_0x576cb4[_0x1e3f3a(0x266)]+'\x20health\x20after\x20damage:\x20'+_0x576cb4[_0x1e3f3a(0x39e)]),this[_0x1e3f3a(0x24a)](_0x576cb4),console[_0x1e3f3a(0x253)](_0x1e3f3a(0x358)),this[_0x1e3f3a(0x373)](),!this[_0x1e3f3a(0x254)]&&(console[_0x1e3f3a(0x253)]('Game\x20not\x20over,\x20animating\x20attack'),this['animateAttack'](_0x5a9716,_0x3d4115,_0x8ffa41));}else _0x8ffa41===_0x1e3f3a(0x338)&&(this[_0x1e3f3a(0x20e)](_0x5a9716,_0x576cb4,_0x5b858e),!this[_0x1e3f3a(0x254)]&&(console[_0x1e3f3a(0x253)]('Animating\x20powerup'),this[_0x1e3f3a(0x3f5)](_0x5a9716)));(!this[_0x1e3f3a(0x293)][this['roundStats'][_0x1e3f3a(0x3eb)]-0x1]||this[_0x1e3f3a(0x293)][this[_0x1e3f3a(0x293)][_0x1e3f3a(0x3eb)]-0x1]['completed'])&&this[_0x1e3f3a(0x293)][_0x1e3f3a(0x4bc)]({'points':0x0,'matches':0x0,'healthPercentage':0x0,'completed':![]});const _0x42f942=this[_0x1e3f3a(0x293)][this['roundStats']['length']-0x1];return _0x42f942[_0x1e3f3a(0x22b)]+=_0x3d4115,_0x42f942[_0x1e3f3a(0x255)]+=0x1,console[_0x1e3f3a(0x253)](_0x1e3f3a(0x42a)+_0x3d4115),_0x3d4115;}[_0x12575b(0x20a)](_0x19a194){const _0x1cc7d4=_0x12575b;if(this['gameOver']){console['log'](_0x1cc7d4(0x2bf));return;}const _0x46d386=this['cascadeTilesWithoutRender'](),_0x1abc69=_0x1cc7d4(0x410);for(let _0x539f58=0x0;_0x539f58<this[_0x1cc7d4(0x473)];_0x539f58++){for(let _0x244ac7=0x0;_0x244ac7<this[_0x1cc7d4(0x2ca)];_0x244ac7++){const _0xccad9c=this[_0x1cc7d4(0x2d1)][_0x244ac7][_0x539f58];if(_0xccad9c[_0x1cc7d4(0x2cc)]&&_0xccad9c[_0x1cc7d4(0x2cc)]['style'][_0x1cc7d4(0x2a4)]===_0x1cc7d4(0x236)){const _0xf6d65d=this['countEmptyBelow'](_0x539f58,_0x244ac7);_0xf6d65d>0x0&&(_0xccad9c['element'][_0x1cc7d4(0x3fd)][_0x1cc7d4(0x2b3)](_0x1abc69),_0xccad9c['element'][_0x1cc7d4(0x3ff)][_0x1cc7d4(0x2a4)]=_0x1cc7d4(0x3ce)+_0xf6d65d*this[_0x1cc7d4(0x222)]+'px)');}}}this[_0x1cc7d4(0x2f6)](),_0x46d386?setTimeout(()=>{const _0x178e8a=_0x1cc7d4;if(this[_0x178e8a(0x254)]){console[_0x178e8a(0x253)]('Game\x20over,\x20skipping\x20cascade\x20resolution');return;}this[_0x178e8a(0x3c3)]['cascade']['play']();const _0xb717b9=this['resolveMatches'](),_0x27c6c8=document['querySelectorAll']('.'+_0x1abc69);_0x27c6c8[_0x178e8a(0x439)](_0x1e5b65=>{const _0x4d827f=_0x178e8a;_0x1e5b65[_0x4d827f(0x3fd)][_0x4d827f(0x37a)](_0x1abc69),_0x1e5b65['style'][_0x4d827f(0x2a4)]=_0x4d827f(0x400);}),!_0xb717b9&&_0x19a194();},0x12c):_0x19a194();}[_0x12575b(0x207)](){const _0x3b40a6=_0x12575b;let _0x4e38a3=![];for(let _0x2c3319=0x0;_0x2c3319<this['width'];_0x2c3319++){let _0x4a806e=0x0;for(let _0x56a8c2=this['height']-0x1;_0x56a8c2>=0x0;_0x56a8c2--){if(!this[_0x3b40a6(0x2d1)][_0x56a8c2][_0x2c3319][_0x3b40a6(0x386)])_0x4a806e++;else _0x4a806e>0x0&&(this[_0x3b40a6(0x2d1)][_0x56a8c2+_0x4a806e][_0x2c3319]=this[_0x3b40a6(0x2d1)][_0x56a8c2][_0x2c3319],this[_0x3b40a6(0x2d1)][_0x56a8c2][_0x2c3319]={'type':null,'element':null},_0x4e38a3=!![]);}for(let _0x3f9868=0x0;_0x3f9868<_0x4a806e;_0x3f9868++){this[_0x3b40a6(0x2d1)][_0x3f9868][_0x2c3319]=this[_0x3b40a6(0x39b)](),_0x4e38a3=!![];}}return _0x4e38a3;}[_0x12575b(0x3c2)](_0x37322c,_0x2980a3){const _0x451e0c=_0x12575b;let _0x34eae3=0x0;for(let _0x4f0833=_0x2980a3+0x1;_0x4f0833<this[_0x451e0c(0x2ca)];_0x4f0833++){if(!this[_0x451e0c(0x2d1)][_0x4f0833][_0x37322c][_0x451e0c(0x386)])_0x34eae3++;else break;}return _0x34eae3;}[_0x12575b(0x20e)](_0x2bbc8e,_0x311cbb,_0x26a17f){const _0x3789b1=_0x12575b,_0x40941f=0x1-_0x311cbb[_0x3789b1(0x232)]*0.05;let _0x3a099b,_0x41804d,_0xf33b5d,_0x1feb69=0x1,_0x1794f8='';if(_0x26a17f===0x4)_0x1feb69=1.5,_0x1794f8=_0x3789b1(0x2c0);else _0x26a17f>=0x5&&(_0x1feb69=0x2,_0x1794f8=_0x3789b1(0x316));if(_0x2bbc8e['powerup']===_0x3789b1(0x476))_0x41804d=0xa*_0x1feb69,_0x3a099b=Math[_0x3789b1(0x1e7)](_0x41804d*_0x40941f),_0xf33b5d=_0x41804d-_0x3a099b,_0x2bbc8e['health']=Math['min'](_0x2bbc8e[_0x3789b1(0x1da)],_0x2bbc8e[_0x3789b1(0x39e)]+_0x3a099b),log(_0x2bbc8e[_0x3789b1(0x266)]+_0x3789b1(0x1e0)+_0x3a099b+_0x3789b1(0x401)+_0x1794f8+(_0x311cbb[_0x3789b1(0x232)]>0x0?_0x3789b1(0x39f)+_0x41804d+',\x20reduced\x20by\x20'+_0xf33b5d+_0x3789b1(0x4bf)+_0x311cbb[_0x3789b1(0x266)]+'\x27s\x20tactics)':'')+'!');else{if(_0x2bbc8e[_0x3789b1(0x3ef)]===_0x3789b1(0x2d8))_0x41804d=0xa*_0x1feb69,_0x3a099b=Math[_0x3789b1(0x1e7)](_0x41804d*_0x40941f),_0xf33b5d=_0x41804d-_0x3a099b,_0x2bbc8e[_0x3789b1(0x209)]=!![],_0x2bbc8e[_0x3789b1(0x49c)]=_0x3a099b,log(_0x2bbc8e[_0x3789b1(0x266)]+_0x3789b1(0x31f)+_0x3a099b+'\x20damage'+_0x1794f8+(_0x311cbb[_0x3789b1(0x232)]>0x0?'\x20(originally\x20'+_0x41804d+',\x20reduced\x20by\x20'+_0xf33b5d+'\x20due\x20to\x20'+_0x311cbb[_0x3789b1(0x266)]+'\x27s\x20tactics)':'')+'!');else{if(_0x2bbc8e[_0x3789b1(0x3ef)]===_0x3789b1(0x446))_0x41804d=0x7*_0x1feb69,_0x3a099b=Math[_0x3789b1(0x1e7)](_0x41804d*_0x40941f),_0xf33b5d=_0x41804d-_0x3a099b,_0x2bbc8e[_0x3789b1(0x39e)]=Math[_0x3789b1(0x278)](_0x2bbc8e[_0x3789b1(0x1da)],_0x2bbc8e[_0x3789b1(0x39e)]+_0x3a099b),log(_0x2bbc8e[_0x3789b1(0x266)]+_0x3789b1(0x2ff)+_0x3a099b+'\x20HP'+_0x1794f8+(_0x311cbb['tactics']>0x0?_0x3789b1(0x39f)+_0x41804d+_0x3789b1(0x31e)+_0xf33b5d+_0x3789b1(0x4bf)+_0x311cbb[_0x3789b1(0x266)]+_0x3789b1(0x4b2):'')+'!');else _0x2bbc8e[_0x3789b1(0x3ef)]===_0x3789b1(0x35a)&&(_0x41804d=0x5*_0x1feb69,_0x3a099b=Math[_0x3789b1(0x1e7)](_0x41804d*_0x40941f),_0xf33b5d=_0x41804d-_0x3a099b,_0x2bbc8e[_0x3789b1(0x39e)]=Math[_0x3789b1(0x278)](_0x2bbc8e[_0x3789b1(0x1da)],_0x2bbc8e[_0x3789b1(0x39e)]+_0x3a099b),log(_0x2bbc8e[_0x3789b1(0x266)]+_0x3789b1(0x28d)+_0x3a099b+_0x3789b1(0x401)+_0x1794f8+(_0x311cbb[_0x3789b1(0x232)]>0x0?_0x3789b1(0x39f)+_0x41804d+_0x3789b1(0x31e)+_0xf33b5d+'\x20due\x20to\x20'+_0x311cbb['name']+_0x3789b1(0x4b2):'')+'!'));}}this['updateHealth'](_0x2bbc8e);}['updateHealth'](_0x266359){const _0x3bc2d3=_0x12575b,_0xeb3bf4=_0x266359===this[_0x3bc2d3(0x1ca)]?p1Health:p2Health,_0x398d20=_0x266359===this[_0x3bc2d3(0x1ca)]?p1Hp:p2Hp,_0x495c58=_0x266359[_0x3bc2d3(0x39e)]/_0x266359[_0x3bc2d3(0x1da)]*0x64;_0xeb3bf4[_0x3bc2d3(0x3ff)][_0x3bc2d3(0x473)]=_0x495c58+'%';let _0x5b5f34;if(_0x495c58>0x4b)_0x5b5f34=_0x3bc2d3(0x29f);else{if(_0x495c58>0x32)_0x5b5f34=_0x3bc2d3(0x2a1);else _0x495c58>0x19?_0x5b5f34='#FFA500':_0x5b5f34=_0x3bc2d3(0x203);}_0xeb3bf4[_0x3bc2d3(0x3ff)][_0x3bc2d3(0x1ed)]=_0x5b5f34,_0x398d20[_0x3bc2d3(0x1c2)]=_0x266359[_0x3bc2d3(0x39e)]+'/'+_0x266359[_0x3bc2d3(0x1da)];}[_0x12575b(0x2d4)](){const _0x32fea0=_0x12575b;if(this[_0x32fea0(0x499)]==='gameOver'||this[_0x32fea0(0x254)]){console[_0x32fea0(0x253)](_0x32fea0(0x1d2));return;}if(this['selectedBoss']){if(this['currentTurn']===this[_0x32fea0(0x1ca)])console[_0x32fea0(0x253)]('endTurn:\x20Player\x20turn\x20ending,\x20saving\x20boss\x20health'),this[_0x32fea0(0x371)](),console[_0x32fea0(0x253)](_0x32fea0(0x392)),this[_0x32fea0(0x22c)]();else this[_0x32fea0(0x31c)]===this[_0x32fea0(0x385)]&&(console['log'](_0x32fea0(0x3ca)),this[_0x32fea0(0x21c)](),console[_0x32fea0(0x253)]('endTurn:\x20Boss\x20turn\x20ending,\x20saving\x20board\x20state'),this['saveBoardState']());}this[_0x32fea0(0x31c)]=this[_0x32fea0(0x31c)]===this[_0x32fea0(0x1ca)]?this['player2']:this[_0x32fea0(0x1ca)],this[_0x32fea0(0x499)]=this[_0x32fea0(0x31c)]===this[_0x32fea0(0x1ca)]?_0x32fea0(0x2fb):_0x32fea0(0x23d),turnIndicator['textContent']=this[_0x32fea0(0x2e9)]?_0x32fea0(0x251)+(this[_0x32fea0(0x31c)]===this[_0x32fea0(0x1ca)]?_0x32fea0(0x403):_0x32fea0(0x366))+_0x32fea0(0x2f2):_0x32fea0(0x2fc)+this[_0x32fea0(0x240)]+'\x20-\x20'+(this[_0x32fea0(0x31c)]===this['player1']?_0x32fea0(0x403):_0x32fea0(0x39c))+_0x32fea0(0x2f2),log(_0x32fea0(0x29b)+(this[_0x32fea0(0x31c)]===this['player1']?'Player':this[_0x32fea0(0x2e9)]?'Boss':_0x32fea0(0x39c))),this[_0x32fea0(0x31c)]===this[_0x32fea0(0x385)]&&!this['gameOver']&&setTimeout(()=>this[_0x32fea0(0x23d)](),0x3e8);}[_0x12575b(0x23d)](){const _0x1af772=_0x12575b;if(this[_0x1af772(0x499)]!==_0x1af772(0x23d)||this[_0x1af772(0x31c)]!==this[_0x1af772(0x385)])return;this['gameState']='animating';const _0x2f1b25=this[_0x1af772(0x434)]();if(_0x2f1b25){log(this[_0x1af772(0x385)][_0x1af772(0x266)]+_0x1af772(0x3f4)+_0x2f1b25['x1']+',\x20'+_0x2f1b25['y1']+_0x1af772(0x34a)+_0x2f1b25['x2']+',\x20'+_0x2f1b25['y2']+')');const _0x40b818=()=>{const _0x454613=_0x1af772;this[_0x454613(0x2e9)]&&this[_0x454613(0x21c)](),this['endTurn']();};this[_0x1af772(0x1c9)](_0x2f1b25['x1'],_0x2f1b25['y1'],_0x2f1b25['x2'],_0x2f1b25['y2'],_0x40b818);}else log(this[_0x1af772(0x385)][_0x1af772(0x266)]+_0x1af772(0x3d8)),this['selectedBoss']&&this[_0x1af772(0x21c)](),this[_0x1af772(0x2d4)]();}[_0x12575b(0x434)](){const _0x1036da=_0x12575b;for(let _0x121f51=0x0;_0x121f51<this[_0x1036da(0x2ca)];_0x121f51++){for(let _0x1f8e7c=0x0;_0x1f8e7c<this[_0x1036da(0x473)];_0x1f8e7c++){if(_0x1f8e7c<this[_0x1036da(0x473)]-0x1&&this[_0x1036da(0x42f)](_0x1f8e7c,_0x121f51,_0x1f8e7c+0x1,_0x121f51))return{'x1':_0x1f8e7c,'y1':_0x121f51,'x2':_0x1f8e7c+0x1,'y2':_0x121f51};if(_0x121f51<this[_0x1036da(0x2ca)]-0x1&&this[_0x1036da(0x42f)](_0x1f8e7c,_0x121f51,_0x1f8e7c,_0x121f51+0x1))return{'x1':_0x1f8e7c,'y1':_0x121f51,'x2':_0x1f8e7c,'y2':_0x121f51+0x1};}}return null;}[_0x12575b(0x42f)](_0x4599c2,_0x42efbb,_0xc200e,_0x2f3130){const _0x3d6105=_0x12575b,_0x2ad6f4={...this[_0x3d6105(0x2d1)][_0x42efbb][_0x4599c2]},_0x523862={...this[_0x3d6105(0x2d1)][_0x2f3130][_0xc200e]};this[_0x3d6105(0x2d1)][_0x42efbb][_0x4599c2]=_0x523862,this['board'][_0x2f3130][_0xc200e]=_0x2ad6f4;const _0x431caa=this[_0x3d6105(0x2de)]()[_0x3d6105(0x3eb)]>0x0;return this[_0x3d6105(0x2d1)][_0x42efbb][_0x4599c2]=_0x2ad6f4,this[_0x3d6105(0x2d1)][_0x2f3130][_0xc200e]=_0x523862,_0x431caa;}async['checkGameOver'](){const _0x478ece=_0x12575b;if(this[_0x478ece(0x254)]||this[_0x478ece(0x30c)]){console[_0x478ece(0x253)](_0x478ece(0x286)+this['gameOver']+_0x478ece(0x46e)+this['isCheckingGameOver']+_0x478ece(0x24b)+this['currentLevel']);return;}this['isCheckingGameOver']=!![],console['log'](_0x478ece(0x33f)+this[_0x478ece(0x240)]+_0x478ece(0x3fc)+this['player1'][_0x478ece(0x39e)]+_0x478ece(0x4b3)+this[_0x478ece(0x385)][_0x478ece(0x39e)]+',\x20selectedBoss='+(this['selectedBoss']?this['selectedBoss'][_0x478ece(0x266)]:'none'));const _0x373ffa=document['getElementById']('try-again'),_0xbc734c=document[_0x478ece(0x43c)]('leaderboard-button');_0xbc734c[_0x478ece(0x20b)]='';let _0x2f12da;this[_0x478ece(0x2e9)]?_0x2f12da=_0x478ece(0x237):_0x2f12da=_0x478ece(0x449);_0xbc734c[_0x478ece(0x20b)]=_0x2f12da;if(this[_0x478ece(0x1ca)][_0x478ece(0x39e)]<=0x0){console['log'](_0x478ece(0x32a)+!!this[_0x478ece(0x2e9)]);this[_0x478ece(0x2e9)]&&(this[_0x478ece(0x1ca)]['health']=0x0,await this['savePlayerHealth'](),console[_0x478ece(0x253)](_0x478ece(0x38b)),this[_0x478ece(0x341)]());this[_0x478ece(0x254)]=!![],this[_0x478ece(0x499)]=_0x478ece(0x254),gameOver[_0x478ece(0x1c2)]=_0x478ece(0x1cd),turnIndicator[_0x478ece(0x1c2)]=_0x478ece(0x314);const _0x34775d=document['createElement'](_0x478ece(0x2c3));_0x34775d['id']=_0x478ece(0x285),_0x34775d['textContent']=this[_0x478ece(0x2e9)]?_0x478ece(0x3d3):_0x478ece(0x1bf),_0x373ffa[_0x478ece(0x25d)][_0x478ece(0x2c4)](_0x34775d,_0x373ffa),_0x34775d['addEventListener']('click',()=>{const _0x3e8135=_0x478ece;console[_0x3e8135(0x253)](_0x3e8135(0x47d)+_0x34775d[_0x3e8135(0x1c2)]+_0x3e8135(0x2e3)+(this[_0x3e8135(0x2e9)]?this[_0x3e8135(0x2e9)][_0x3e8135(0x266)]:'none')),document[_0x3e8135(0x43c)](_0x3e8135(0x23b))[_0x3e8135(0x3ff)][_0x3e8135(0x2c6)]=_0x3e8135(0x396),this[_0x3e8135(0x2e9)]?this[_0x3e8135(0x415)]():this['handleGameOverButton']();}),document['getElementById']('game-over-container')[_0x478ece(0x3ff)][_0x478ece(0x2c6)]=_0x478ece(0x3df);try{this[_0x478ece(0x3c3)][_0x478ece(0x435)][_0x478ece(0x391)]();}catch(_0x1c47aa){console['error'](_0x478ece(0x3cb),_0x1c47aa);}}else{if(this['player2'][_0x478ece(0x39e)]<=0x0){console['log'](_0x478ece(0x370));this[_0x478ece(0x2e9)]&&(this[_0x478ece(0x385)]['health']=0x0,await this[_0x478ece(0x371)](),console['log'](_0x478ece(0x22e)),this[_0x478ece(0x341)]());this['gameOver']=!![],this[_0x478ece(0x499)]=_0x478ece(0x254),gameOver[_0x478ece(0x1c2)]=_0x478ece(0x2d5),turnIndicator[_0x478ece(0x1c2)]=_0x478ece(0x314);const _0x579962=document[_0x478ece(0x3a8)](_0x478ece(0x2c3));_0x579962['id']='try-again',_0x579962[_0x478ece(0x1c2)]=this[_0x478ece(0x2e9)]?_0x478ece(0x3d3):this['currentLevel']===opponentsConfig['length']?_0x478ece(0x31b):_0x478ece(0x1c5),_0x373ffa[_0x478ece(0x25d)][_0x478ece(0x2c4)](_0x579962,_0x373ffa),_0x579962[_0x478ece(0x27c)](_0x478ece(0x382),()=>{const _0x175d92=_0x478ece;console['log']('checkGameOver:\x20Button\x20clicked,\x20text='+_0x579962[_0x175d92(0x1c2)]+',\x20selectedBoss='+(this['selectedBoss']?this[_0x175d92(0x2e9)]['name']:_0x175d92(0x396))),document[_0x175d92(0x43c)](_0x175d92(0x23b))[_0x175d92(0x3ff)]['display']=_0x175d92(0x396),this[_0x175d92(0x2e9)]?this[_0x175d92(0x415)]():this[_0x175d92(0x2d2)]();}),document[_0x478ece(0x43c)](_0x478ece(0x23b))['style'][_0x478ece(0x2c6)]='block';if(!this[_0x478ece(0x2e9)]){if(this[_0x478ece(0x31c)]===this[_0x478ece(0x1ca)]){const _0x59f8ce=this[_0x478ece(0x293)][this[_0x478ece(0x293)][_0x478ece(0x3eb)]-0x1];if(_0x59f8ce&&!_0x59f8ce[_0x478ece(0x1c4)]){_0x59f8ce[_0x478ece(0x28f)]=this[_0x478ece(0x1ca)][_0x478ece(0x39e)]/this[_0x478ece(0x1ca)][_0x478ece(0x1da)]*0x64,_0x59f8ce['completed']=!![];const _0x3e9e25=_0x59f8ce[_0x478ece(0x255)]>0x0?_0x59f8ce[_0x478ece(0x22b)]/_0x59f8ce[_0x478ece(0x255)]/0x64*(_0x59f8ce['healthPercentage']+0x14)*(0x1+this[_0x478ece(0x240)]/0x38):0x0;log(_0x478ece(0x2bb)+_0x59f8ce[_0x478ece(0x22b)]+_0x478ece(0x3b5)+_0x59f8ce['matches']+_0x478ece(0x2a8)+_0x59f8ce[_0x478ece(0x28f)][_0x478ece(0x46f)](0x2)+',\x20level='+this[_0x478ece(0x240)]),log(_0x478ece(0x378)+_0x59f8ce[_0x478ece(0x22b)]+'\x20/\x20'+_0x59f8ce[_0x478ece(0x255)]+')\x20/\x20100)\x20*\x20('+_0x59f8ce[_0x478ece(0x28f)]+_0x478ece(0x38a)+this[_0x478ece(0x240)]+'\x20/\x2056)\x20=\x20'+_0x3e9e25),this['grandTotalScore']+=_0x3e9e25,log(_0x478ece(0x4a8)+_0x59f8ce[_0x478ece(0x22b)]+_0x478ece(0x4ac)+_0x59f8ce[_0x478ece(0x255)]+',\x20Health\x20Left:\x20'+_0x59f8ce[_0x478ece(0x28f)][_0x478ece(0x46f)](0x2)+'%'),log(_0x478ece(0x408)+_0x3e9e25+_0x478ece(0x234)+this[_0x478ece(0x421)]);}}await this['saveScoreToDatabase'](this[_0x478ece(0x240)]);if(this[_0x478ece(0x240)]===opponentsConfig['length']){try{this[_0x478ece(0x3c3)][_0x478ece(0x29c)][_0x478ece(0x391)]();}catch(_0x39cb7c){console[_0x478ece(0x49f)]('Error\x20playing\x20finalWin\x20sound:',_0x39cb7c);}log(_0x478ece(0x349)+this[_0x478ece(0x421)]),this['grandTotalScore']=0x0,await this[_0x478ece(0x28e)](),log(_0x478ece(0x47f));}else this['clearBoard'](),this[_0x478ece(0x240)]+=0x1,await this[_0x478ece(0x1fc)](),console['log'](_0x478ece(0x29d)+this[_0x478ece(0x240)]),this[_0x478ece(0x3c3)][_0x478ece(0x36b)][_0x478ece(0x391)]();}let _0xc26705,_0x2deba8=this['player2']['fallbackUrl']||_0x478ece(0x204);const _0x223e3b=themes[_0x478ece(0x3a1)](_0x49fe47=>_0x49fe47[_0x478ece(0x296)])[_0x478ece(0x483)](_0xa879da=>_0xa879da['value']===this[_0x478ece(0x404)]),_0x5233f2=_0x223e3b?.[_0x478ece(0x1f8)]||_0x478ece(0x3e9);this[_0x478ece(0x2e9)]?_0xc26705=this[_0x478ece(0x385)][_0x478ece(0x444)]||_0x478ece(0x217)+this['player2'][_0x478ece(0x266)][_0x478ece(0x260)]()[_0x478ece(0x49a)](/ /g,'-')+'.'+(this[_0x478ece(0x385)]['extension']||_0x478ece(0x3e9)):_0xc26705=this['baseImagePath']+_0x478ece(0x1e4)+this[_0x478ece(0x385)][_0x478ece(0x266)]['toLowerCase']()[_0x478ece(0x49a)](/ /g,'-')+'.'+_0x5233f2;const _0x48e131=document[_0x478ece(0x43c)]('p2-image'),_0x2ab29b=_0x48e131[_0x478ece(0x25d)];if(this[_0x478ece(0x385)]['mediaType']==='video'){if(_0x48e131['tagName']!==_0x478ece(0x465)){const _0x146221=document['createElement'](_0x478ece(0x22f));_0x146221['id']=_0x478ece(0x381),_0x146221[_0x478ece(0x2ed)]=_0xc26705,_0x146221['autoplay']=!![],_0x146221['loop']=!![],_0x146221[_0x478ece(0x2be)]=!![],_0x146221['alt']=this[_0x478ece(0x385)][_0x478ece(0x266)],_0x146221['onerror']=()=>{const _0x95da4e=_0x478ece;console['warn']('Failed\x20to\x20load\x20battle-damaged\x20video:\x20'+_0xc26705+_0x95da4e(0x4ae)),_0x146221[_0x95da4e(0x2ed)]=_0x2deba8;},_0x2ab29b[_0x478ece(0x2c4)](_0x146221,_0x48e131);}else _0x48e131[_0x478ece(0x2ed)]=_0xc26705,_0x48e131['onerror']=()=>{const _0x1746ca=_0x478ece;console['warn'](_0x1746ca(0x274)+_0xc26705+_0x1746ca(0x4ae)),_0x48e131[_0x1746ca(0x2ed)]=_0x2deba8;};}else{if(_0x48e131['tagName']!==_0x478ece(0x277)){const _0x3d41e5=document['createElement'](_0x478ece(0x4b6));_0x3d41e5['id']='p2-image',_0x3d41e5[_0x478ece(0x2ed)]=_0xc26705,_0x3d41e5['alt']=this[_0x478ece(0x385)][_0x478ece(0x266)],_0x3d41e5[_0x478ece(0x4a2)]=()=>{const _0x5b0381=_0x478ece;console[_0x5b0381(0x21f)](_0x5b0381(0x2d9)+_0xc26705+_0x5b0381(0x4ae)),_0x3d41e5['src']=_0x2deba8;},_0x2ab29b[_0x478ece(0x2c4)](_0x3d41e5,_0x48e131);}else _0x48e131[_0x478ece(0x2ed)]=_0xc26705,_0x48e131[_0x478ece(0x4a2)]=()=>{const _0x4abc86=_0x478ece;console[_0x4abc86(0x21f)]('Failed\x20to\x20load\x20battle-damaged\x20image:\x20'+_0xc26705+',\x20using\x20fallback'),_0x48e131['src']=_0x2deba8;};}const _0x3c34d8=document[_0x478ece(0x43c)](_0x478ece(0x381));_0x3c34d8[_0x478ece(0x3ff)][_0x478ece(0x2c6)]='block',_0x3c34d8[_0x478ece(0x3fd)][_0x478ece(0x2b3)](_0x478ece(0x233)),p1Image[_0x478ece(0x3fd)][_0x478ece(0x2b3)](_0x478ece(0x2b5)),this[_0x478ece(0x2f6)]();}}this[_0x478ece(0x30c)]=![],console[_0x478ece(0x253)](_0x478ece(0x38c)+this['gameOver']+_0x478ece(0x24d)+this[_0x478ece(0x499)]);}async[_0x12575b(0x1ec)](_0x2d798a){const _0x55ecc1=_0x12575b,_0x460806={'level':_0x2d798a,'score':this['grandTotalScore']};console[_0x55ecc1(0x253)](_0x55ecc1(0x1fe)+_0x460806[_0x55ecc1(0x2c1)]+_0x55ecc1(0x44b)+_0x460806[_0x55ecc1(0x202)]);try{const _0x14e8cc=await fetch(_0x55ecc1(0x214),{'method':_0x55ecc1(0x1f6),'headers':{'Content-Type':_0x55ecc1(0x36c)},'body':JSON[_0x55ecc1(0x24e)](_0x460806)});if(!_0x14e8cc['ok'])throw new Error('HTTP\x20error!\x20Status:\x20'+_0x14e8cc['status']);const _0x4f619f=await _0x14e8cc[_0x55ecc1(0x32b)]();console[_0x55ecc1(0x253)]('Save\x20response:',_0x4f619f),log(_0x55ecc1(0x2fc)+_0x4f619f['level']+_0x55ecc1(0x3af)+_0x4f619f[_0x55ecc1(0x202)][_0x55ecc1(0x46f)](0x2)),_0x4f619f[_0x55ecc1(0x2ac)]===_0x55ecc1(0x4ad)?log('Score\x20Saved:\x20Level\x20'+_0x4f619f[_0x55ecc1(0x2c1)]+',\x20Score\x20'+_0x4f619f['score'][_0x55ecc1(0x46f)](0x2)+_0x55ecc1(0x3f9)+_0x4f619f[_0x55ecc1(0x3a5)]):log(_0x55ecc1(0x485)+_0x4f619f[_0x55ecc1(0x291)]);}catch(_0x1958e9){console['error'](_0x55ecc1(0x246),_0x1958e9),log(_0x55ecc1(0x4b0)+_0x1958e9['message']);}}[_0x12575b(0x412)](_0x2a7dc9,_0x119333,_0x42a590,_0x467047){const _0x8cffe4=_0x12575b,_0x39ccf6=_0x2a7dc9[_0x8cffe4(0x3ff)]['transform']||'',_0x47eaa4=_0x39ccf6['includes'](_0x8cffe4(0x397))?_0x39ccf6[_0x8cffe4(0x455)](/scaleX\([^)]+\)/)[0x0]:'';_0x2a7dc9[_0x8cffe4(0x3ff)][_0x8cffe4(0x442)]=_0x8cffe4(0x448)+_0x467047/0x2/0x3e8+_0x8cffe4(0x27e),_0x2a7dc9[_0x8cffe4(0x3ff)][_0x8cffe4(0x2a4)]=_0x8cffe4(0x42b)+_0x119333+'px)\x20'+_0x47eaa4,_0x2a7dc9[_0x8cffe4(0x3fd)][_0x8cffe4(0x2b3)](_0x42a590),setTimeout(()=>{const _0x5e179a=_0x8cffe4;_0x2a7dc9[_0x5e179a(0x3ff)][_0x5e179a(0x2a4)]=_0x47eaa4,setTimeout(()=>{const _0x2d0952=_0x5e179a;_0x2a7dc9[_0x2d0952(0x3fd)]['remove'](_0x42a590);},_0x467047/0x2);},_0x467047/0x2);}['animateAttack'](_0x38c071,_0x96874f,_0x1e4db2){const _0x8c7e1f=_0x12575b,_0x59804e=_0x38c071===this[_0x8c7e1f(0x1ca)]?p1Image:p2Image,_0x12cd01=_0x38c071===this[_0x8c7e1f(0x1ca)]?0x1:-0x1,_0x5191a9=Math[_0x8c7e1f(0x278)](0xa,0x2+_0x96874f*0.4),_0x19c28d=_0x12cd01*_0x5191a9,_0x3b1d8c=_0x8c7e1f(0x2c8)+_0x1e4db2;this[_0x8c7e1f(0x412)](_0x59804e,_0x19c28d,_0x3b1d8c,0xc8);}[_0x12575b(0x3f5)](_0x5a44e8){const _0x140480=_0x12575b,_0xaa0d96=_0x5a44e8===this[_0x140480(0x1ca)]?p1Image:p2Image;this['applyAnimation'](_0xaa0d96,0x0,_0x140480(0x280),0xc8);}[_0x12575b(0x3db)](_0x1f76d4,_0x161409){const _0x9196ce=_0x12575b,_0x2dc45a=_0x1f76d4===this[_0x9196ce(0x1ca)]?p1Image:p2Image,_0x485eaa=_0x1f76d4===this[_0x9196ce(0x1ca)]?-0x1:0x1,_0x1c3f51=Math[_0x9196ce(0x278)](0xa,0x2+_0x161409*0.4),_0x482cb5=_0x485eaa*_0x1c3f51;this[_0x9196ce(0x412)](_0x2dc45a,_0x482cb5,_0x9196ce(0x459),0xc8);}}function randomChoice(_0x261ff0){const _0x4be7ce=_0x12575b;return _0x261ff0[Math['floor'](Math[_0x4be7ce(0x47e)]()*_0x261ff0[_0x4be7ce(0x3eb)])];}function log(_0x362779){const _0x5e5cf1=_0x12575b,_0x2e242c=document[_0x5e5cf1(0x43c)](_0x5e5cf1(0x281)),_0x20d6aa=document[_0x5e5cf1(0x3a8)]('li');_0x20d6aa[_0x5e5cf1(0x1c2)]=_0x362779,_0x2e242c['insertBefore'](_0x20d6aa,_0x2e242c[_0x5e5cf1(0x2bc)]),_0x2e242c[_0x5e5cf1(0x290)][_0x5e5cf1(0x3eb)]>0x32&&_0x2e242c[_0x5e5cf1(0x331)](_0x2e242c[_0x5e5cf1(0x2f9)]),_0x2e242c[_0x5e5cf1(0x3ec)]=0x0;}const turnIndicator=document['getElementById'](_0x12575b(0x350)),p1Name=document['getElementById'](_0x12575b(0x2a0)),p1Image=document['getElementById'](_0x12575b(0x265)),p1Health=document['getElementById'](_0x12575b(0x3bf)),p1Hp=document['getElementById'](_0x12575b(0x3c9)),p1Strength=document[_0x12575b(0x43c)]('p1-strength'),p1Speed=document[_0x12575b(0x43c)]('p1-speed'),p1Tactics=document[_0x12575b(0x43c)](_0x12575b(0x453)),p1Size=document['getElementById'](_0x12575b(0x3fb)),p1Powerup=document['getElementById'](_0x12575b(0x1f2)),p1Type=document[_0x12575b(0x43c)](_0x12575b(0x247)),p2Name=document[_0x12575b(0x43c)](_0x12575b(0x3d5)),p2Image=document[_0x12575b(0x43c)]('p2-image'),p2Health=document['getElementById'](_0x12575b(0x36e)),p2Hp=document['getElementById']('p2-hp'),p2Strength=document[_0x12575b(0x43c)](_0x12575b(0x1f4)),p2Speed=document[_0x12575b(0x43c)](_0x12575b(0x398)),p2Tactics=document['getElementById']('p2-tactics'),p2Size=document[_0x12575b(0x43c)]('p2-size'),p2Powerup=document[_0x12575b(0x43c)](_0x12575b(0x445)),p2Type=document[_0x12575b(0x43c)]('p2-type'),battleLog=document[_0x12575b(0x43c)](_0x12575b(0x281)),gameOver=document[_0x12575b(0x43c)](_0x12575b(0x200)),assetCache={};async function getAssets(_0x646f9c){const _0x8dca30=_0x12575b;if(assetCache[_0x646f9c])return console[_0x8dca30(0x253)]('getAssets:\x20Cache\x20hit\x20for\x20'+_0x646f9c),assetCache[_0x646f9c];console['time'](_0x8dca30(0x333)+_0x646f9c);let _0x3d43e8=[];try{console[_0x8dca30(0x253)](_0x8dca30(0x432));const _0x4024d8=await Promise[_0x8dca30(0x36a)]([fetch(_0x8dca30(0x282),{'method':'POST','headers':{'Content-Type':'application/json'},'body':JSON['stringify']({'theme':_0x8dca30(0x38d)})}),new Promise((_0x4e2b85,_0x12f034)=>setTimeout(()=>_0x12f034(new Error(_0x8dca30(0x267))),0x1388))]);if(!_0x4024d8['ok'])throw new Error(_0x8dca30(0x302)+_0x4024d8[_0x8dca30(0x2ac)]);_0x3d43e8=await _0x4024d8[_0x8dca30(0x32b)](),!Array['isArray'](_0x3d43e8)&&(_0x3d43e8=[_0x3d43e8]),_0x3d43e8=_0x3d43e8['map']((_0x13fbed,_0x28fc40)=>({..._0x13fbed,'theme':_0x8dca30(0x38d),'name':_0x13fbed[_0x8dca30(0x266)]||'Monstrocity_Unknown_'+_0x28fc40,'strength':_0x13fbed[_0x8dca30(0x3a4)]||0x4,'speed':_0x13fbed[_0x8dca30(0x3e3)]||0x4,'tactics':_0x13fbed[_0x8dca30(0x232)]||0x4,'size':_0x13fbed[_0x8dca30(0x3ee)]||_0x8dca30(0x41d),'type':_0x13fbed[_0x8dca30(0x386)]||'Base','powerup':_0x13fbed[_0x8dca30(0x3ef)]||'Regenerate'}));}catch(_0x564f43){console[_0x8dca30(0x49f)]('getAssets:\x20Monstrocity\x20fetch\x20error:',_0x564f43),_0x3d43e8=[{'name':_0x8dca30(0x241),'strength':0x4,'speed':0x4,'tactics':0x4,'size':_0x8dca30(0x41d),'type':_0x8dca30(0x268),'powerup':'Regenerate','theme':'monstrocity'},{'name':_0x8dca30(0x257),'strength':0x3,'speed':0x5,'tactics':0x3,'size':'Small','type':'Base','powerup':_0x8dca30(0x476),'theme':_0x8dca30(0x38d)}];}if(_0x646f9c===_0x8dca30(0x38d))return assetCache[_0x646f9c]=_0x3d43e8,console['timeEnd'](_0x8dca30(0x333)+_0x646f9c),_0x3d43e8;const _0x3a244e=themes[_0x8dca30(0x3a1)](_0x15d5ba=>_0x15d5ba['items'])[_0x8dca30(0x483)](_0x38cbea=>_0x38cbea[_0x8dca30(0x27d)]===_0x646f9c);if(!_0x3a244e)return console[_0x8dca30(0x21f)](_0x8dca30(0x244)+_0x646f9c),assetCache[_0x646f9c]=_0x3d43e8,console[_0x8dca30(0x1d4)](_0x8dca30(0x333)+_0x646f9c),_0x3d43e8;const _0x55b5f7=_0x3a244e[_0x8dca30(0x1f1)]?_0x3a244e[_0x8dca30(0x1f1)][_0x8dca30(0x362)](',')[_0x8dca30(0x3cd)](_0x422816=>_0x422816['trim']()):[];if(!_0x55b5f7[_0x8dca30(0x3eb)])return assetCache[_0x646f9c]=_0x3d43e8,console[_0x8dca30(0x1d4)](_0x8dca30(0x333)+_0x646f9c),_0x3d43e8;let _0x5e44fe=[];try{const _0x179ba6=_0x55b5f7[_0x8dca30(0x377)]((_0x28c86b,_0x473311)=>({'policyId':_0x28c86b,'orientation':_0x3a244e[_0x8dca30(0x212)]?.[_0x8dca30(0x362)](',')[_0x473311]||_0x8dca30(0x34d),'ipfsPrefix':_0x3a244e[_0x8dca30(0x450)]?.[_0x8dca30(0x362)](',')[_0x473311]||_0x8dca30(0x297)})),_0x509720=await Promise['race']([fetch('ajax/get-nft-assets.php',{'method':'POST','headers':{'Content-Type':_0x8dca30(0x36c)},'body':JSON[_0x8dca30(0x24e)]({'policyIds':_0x179ba6[_0x8dca30(0x377)](_0x397790=>_0x397790[_0x8dca30(0x355)]),'theme':_0x646f9c})}),new Promise((_0x30ebc7,_0x288811)=>setTimeout(()=>_0x288811(new Error('NFT\x20timeout')),0x2710))]);if(!_0x509720['ok'])throw new Error(_0x8dca30(0x409)+_0x509720[_0x8dca30(0x2ac)]);const _0x4e1bd3=await _0x509720['json']();_0x5e44fe=Array[_0x8dca30(0x208)](_0x4e1bd3)?_0x4e1bd3:[_0x4e1bd3],_0x5e44fe=_0x5e44fe['filter'](_0x49f312=>_0x49f312&&_0x49f312[_0x8dca30(0x266)]&&_0x49f312[_0x8dca30(0x305)])[_0x8dca30(0x377)]((_0x5d8e33,_0x439282)=>({..._0x5d8e33,'theme':_0x646f9c,'name':_0x5d8e33['name']||_0x8dca30(0x35e)+_0x439282,'strength':_0x5d8e33[_0x8dca30(0x3a4)]||0x4,'speed':_0x5d8e33[_0x8dca30(0x3e3)]||0x4,'tactics':_0x5d8e33[_0x8dca30(0x232)]||0x4,'size':_0x5d8e33[_0x8dca30(0x3ee)]||_0x8dca30(0x41d),'type':_0x5d8e33[_0x8dca30(0x386)]||_0x8dca30(0x268),'powerup':_0x5d8e33[_0x8dca30(0x3ef)]||'Regenerate','policyId':_0x5d8e33[_0x8dca30(0x355)]||_0x179ba6[0x0][_0x8dca30(0x355)],'ipfs':_0x5d8e33[_0x8dca30(0x305)]||''}));}catch(_0x4b8830){console[_0x8dca30(0x49f)](_0x8dca30(0x1c3)+_0x646f9c+':',_0x4b8830);}const _0x1d7e64=[..._0x3d43e8,..._0x5e44fe];return assetCache[_0x646f9c]=_0x1d7e64,console[_0x8dca30(0x1d4)](_0x8dca30(0x333)+_0x646f9c),_0x1d7e64;}document[_0x12575b(0x27c)](_0x12575b(0x300),function(){var _0xc1ec76=function(){const _0x54bfa7=_0x372b;var _0x3ba7cb=localStorage['getItem']('gameTheme')||_0x54bfa7(0x38d);getAssets(_0x3ba7cb)[_0x54bfa7(0x3b8)](function(_0x14e6c2){const _0x5c9887=_0x54bfa7;console['log'](_0x5c9887(0x430),_0x14e6c2);var _0x2e6c0d=new MonstrocityMatch3(_0x14e6c2,_0x3ba7cb);console[_0x5c9887(0x253)](_0x5c9887(0x3dd)),_0x2e6c0d[_0x5c9887(0x1ef)]()[_0x5c9887(0x3b8)](function(){const _0x16d0ee=_0x5c9887;console['log'](_0x16d0ee(0x470)),document[_0x16d0ee(0x4a4)](_0x16d0ee(0x407))[_0x16d0ee(0x2ed)]=_0x2e6c0d[_0x16d0ee(0x468)]+'logo.png';});})[_0x54bfa7(0x2b4)](function(_0x4bf214){const _0x7c7daf=_0x54bfa7;console[_0x7c7daf(0x49f)](_0x7c7daf(0x423),_0x4bf214);});};_0xc1ec76();});function _0x424a(){const _0x198092=['translate(0,\x200)','\x20HP','Sending\x20saveProgress\x20request\x20with\x20data:','Player','theme','\x20but\x20dulls\x20tactics\x20to\x20','handleTouchEnd','.game-logo','Round\x20Score:\x20','NFT\x20HTTP\x20error!\x20Status:\x20','Refresh\x20Board\x20button\x20clicked','\x20(opponentsConfig[','refreshBoard:\x20Unsticking\x20game\x20board\x20for\x20boss\x20battle','renderBoard:\x20Row\x20','toString','top','falling','logo.png','applyAnimation','isInitialMove:','Health\x20saved:\x20','showBossSelectionScreen','savePlayerHealth:\x20Error\x20saving\x20health:','reduce','15820FnluwW','No\x20saved\x20health\x20found,\x20using\x20max\x20health','boosts\x20health\x20to\x20','playerCount','startBossBattle:\x20player1\x20orientation\x20set\x20to\x20','Medium','Ouchie','saveBoardState:\x20Error\x20saving\x20board\x20state:','offsetX','grandTotalScore','createCharacter:\x20config.imageUrl=','Main:\x20Error\x20initializing\x20game:','translate(','progress-start-fresh','</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Strength:</td><td>','\x20-\x20','Progress\x20cleared','theme\x20game','handleMatch\x20completed,\x20damage\x20dealt:\x20','translateX(','/logo.png','max','Unknown\x20error','canMakeMatch','Main:\x20Player\x20characters\x20loaded:','imageUrl','getAssets:\x20Fetching\x20Monstrocity\x20assets','\x20damage!','findAIMove','loss','updateTheme:\x20Reset\x20player2\x20to\x20default\x20opponent:\x20','alt','powerGem','forEach','touches','className','getElementById','playerCharactersConfig','updateTheme:\x20Boss\x20battle\x20context,\x20preserving\x20selectedBoss\x20and\x20selectedCharacter','\x20damage\x20to\x20','\x20damage,\x20but\x20','\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h2>Select\x20Boss</h2>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22boss-close-button\x22\x20class=\x22theme-select-button\x22\x20style=\x22margin-bottom:\x2010px;\x22>Back\x20to\x20Themes</button>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22boss-options\x22></div>\x0a\x09\x20\x20\x20\x20\x20\x20','transition','Selected\x20Boss:','battleDamagedUrl','p2-powerup','Regenerate','loadBoard:\x20Invalid\x20hash\x20for\x20level\x20','transform\x20','\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<form\x20action=\x22leaderboards.php\x22\x20method=\x22post\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22hidden\x22\x20name=\x22filterbystreak\x22\x20id=\x22filterbystreak\x22\x20value=\x22monthly-monstrocity\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20id=\x22leaderboard\x22\x20type=\x22submit\x22\x20value=\x22LEADERBOARD\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</form>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','renderBoard:\x20Board\x20rendered\x20successfully',',\x20score=','Goblin\x20Ganger','mediaType','Leader','<p\x20style=\x22color:\x20#fff;\x20text-align:\x20center;\x22>Error\x20loading\x20bosses.\x20Please\x20try\x20again.</p>','ipfsPrefixes','dataset','92837kYOAWk','p1-tactics','createBoardHash','match','Starting\x20Level\x20','Game\x20over,\x20skipping\x20tile\x20clearing\x20and\x20cascading','Game\x20over\x20after\x20processing\x20matches,\x20exiting\x20resolveMatches','glow-recoil','\x22\x20data-project=\x22','loadBoardState:\x20Board\x20state\x20loaded\x20successfully:','showBossSelect:\x20Error\x20fetching\x20bosses:','Merdock','showBossSelect','handleMouseMove','project','Boss\x20selected:','\x20tiles!','Restart','select-boss-button','VIDEO','...','Spydrax','baseImagePath','restart','inline-block','resolveMatches','\x22\x20onerror=\x22this.src=\x27staking/icons/skull.png\x27\x22></div>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22health-bar\x22\x20style=\x22margin-bottom:\x2010px;\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22health\x22\x20style=\x22width:\x20','playerCharacters',',\x20isCheckingGameOver=','toFixed','Main:\x20Game\x20initialized\x20successfully','isTouchDevice','loop','width','186456gAHzPJ',',\x20cols\x20','Heal','https://www.skulliance.io/staking/sounds/select.ogg','tileTypes','theme-group','&boss_id=','setBackground','playerHealth','checkGameOver:\x20Button\x20clicked,\x20text=','random','Game\x20completed!\x20Grand\x20total\x20score\x20reset.','toggleGameButtons:\x20Setting\x20buttons\x20for\x20','Response\x20status:','Damage\x20from\x20match:\x20','find','parse','Score\x20Not\x20Saved:\x20','matched','No\x20saved\x20progress\x20found,\x20starting\x20at\x20Level\x201','Jarhead','updateTheme:\x20Not\x20a\x20boss\x20battle,\x20clearing\x20selectedBoss\x20and\x20selectedCharacter','change-character','fallbackUrl','Animating\x20recoil\x20for\x20defender:','center','<p><strong>','HTTP\x20error!\x20Status:\x20','),\x20updating\x20to\x20boss\x20theme','scaleX(-1)','createDocumentFragment','\x20steps\x20into\x20the\x20fray\x20with\x20','handleTouchStart','\x20for\x20','Last\x20Stand\x20applied,\x20mitigated\x20',',\x20storedTheme=','<p>Size:\x20','gameState','replace','MonstrocityMatch3:\x20Selected\x20character\x20set\x20to\x20','boostValue','clientY','saveBoardState:\x20Not\x20a\x20boss\x20battle,\x20skipping','error','Failed\x20to\x20save\x20progress:','column','onerror',',\x20boss:\x20','querySelector','61900VDOyUl','hyperCube','animating','Round\x20Won!\x20Points:\x20','handleMouseUp','last-stand',',\x20Score\x20',',\x20Matches:\x20','success',',\x20using\x20fallback','startBossBattle:\x20Theme\x20mismatch\x20(current:\x20','Error\x20saving\x20score:\x20','left','\x27s\x20tactics)',',\x20player2.health=','isDragging','Error\x20loading\x20progress:','img','appendChild','onload','checkMatches\x20started','\x20created\x20a\x20match\x20of\x20','touchstart','push','\x22\x20alt=\x22','clearBoardState:\x20Board\x20state\x20cleared\x20successfully\x20for\x20','\x20due\x20to\x20','Drake','Boss\x20','TRY\x20AGAIN','\x20matches:','createCharacter:\x20config=','textContent','getAssets:\x20NFT\x20fetch\x20error\x20for\x20theme\x20','completed','NEXT\x20LEVEL','https://ipfs.io/ipfs/','https://www.skulliance.io/staking/icons/','18aNKOAD','slideTiles','player1','Starting\x20boss\x20battle...','setSelectedCharacter','You\x20Lose!','<p>Tactics:\x20','mouseup','updateOpponentDisplay','Base\x20damage:\x20','Game\x20over,\x20skipping\x20endTurn','boss\x20battle','timeEnd','Fetching\x20NFT\x20characters\x20for\x20policy:\x20','showBossSelect:\x20Back\x20to\x20Themes\x20clicked,\x20cleared\x20boss\x20mode\x20state',',\x20boardState=','\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h2>Select\x20Theme</h2>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22boss-battles-button-container\x22\x20style=\x22display:\x20','showBossSelect:\x20Cleared\x20game.playerCharacters\x20before\x20fetching\x20NFTs','maxHealth','\x20(type:\x20','Boss\x20battle\x20begins:\x20','base','getBoundingClientRect','\x20on\x20','\x20uses\x20Heal,\x20restoring\x20',';\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22boss-battles-button\x22\x20class=\x22theme-select-button\x22>Boss\x20Battles</button>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22theme-options\x22></div>\x0a\x09\x20\x20\x20\x20\x20\x20','\x20has\x20no\x20health\x20left\x20and\x20cannot\x20fight!',';\x20filter:\x20none;\x20border-radius:\x205px\x200\x200\x205px;\x22></div>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<table>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Health:</td><td>','battle-damaged/','Game\x20over,\x20skipping\x20recoil\x20animation','\x20after\x20multi-match\x20bonus!','floor','showCharacterSelect:\x20Character\x20selected:\x20','%;\x20background-color:\x20','reset','Progress\x20saved:\x20Level\x20','saveScoreToDatabase','backgroundColor',')\x20has\x20no\x20element\x20to\x20animate','init','\x20but\x20sharpens\x20tactics\x20to\x20','policyIds','p1-powerup','savePlayerHealth:\x20Failed\x20to\x20save\x20health:','p2-strength','Random\x20player\x20orientation\x20resolved\x20to:\x20','POST','loadBoardState:\x20Loading\x20-\x20key=','extension','targetTile','Cascading\x20tiles','boss-options','saveProgress','Total\x20tiles\x20matched\x20from\x20player\x20move:\x20','Saving\x20score:\x20level=','\x20goes\x20first!','game-over','clearBoardState:\x20Error\x20clearing\x20board\x20state:','score','#F44336','icons/skull.png','Small','grayscale(100%)\x20sepia(100%)\x20hue-rotate(0deg)\x20saturate(500%)','cascadeTilesWithoutRender','isArray','boostActive','cascadeTiles','innerHTML','ajax/save-monstrocity-progress.php','</p>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','usePowerup','policy','init:\x20Prompting\x20with\x20loadedLevel=','GET','orientations',',\x20health=','ajax/save-monstrocity-score.php','Selected\x20Character:','saveBoardState:\x20Board\x20state\x20saved\x20successfully\x20for\x20','images/monstrocity/bosses/battle-damaged/','boss_board_','first-attack','<p>Power-Up:\x20','loadBoardState:\x20Error\x20loading\x20board\x20state:','savePlayerHealth','toggleGameButtons:\x20game-container\x20not\x20found','saveBossHealth:\x20Boss\x20health\x20saved\x20successfully','warn','saveBossHealth:\x20Not\x20a\x20boss\x20battle,\x20skipping','Koipon','tileSizeWithGap','coordinates','clearBoardState:\x20userId\x20not\x20defined.\x20Using\x20\x22guest\x22\x20as\x20fallback.','saveBossHealth:\x20Failed\x20to\x20save\x20boss\x20health:','theme-select-container','transform\x200.2s\x20ease','AI\x20Opponent','board_level_','Failed\x20to\x20save\x20boss\x20health:\x20','points','saveBoardState','swapPlayerCharacter','Boss\x20health\x20saved\x20as\x200\x20for\x20boss\x20battle','video','Tile\x20at\x20(','</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</table>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','tactics','loser',',\x20Grand\x20Total\x20Score:\x20','ajax/get-health.php','translate(0px,\x200px)','\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<form\x20action=\x22leaderboards.php\x22\x20method=\x22post\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22hidden\x22\x20name=\x22filterbybosses\x22\x20id=\x22filterbybosses\x22\x20value=\x22weekly-bosses\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20id=\x22leaderboard\x22\x20type=\x22submit\x22\x20value=\x22LEADERBOARD\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</form>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','Error\x20loading\x20health:','startBossBattle','image','game-over-container','\x27\x22></video>','aiTurn','initBoard:\x20Loaded\x20board\x20from\x20localStorage\x20for\x20boss\x20battle','No\x20qualifying\x20NFT\x20characters\x20available\x20for\x20this\x20boss.\x20Please\x20ensure\x20you\x20own\x20the\x20required\x20NFTs.','currentLevel','Craig','visible','\x20vs\x20','getAssets:\x20Theme\x20not\x20found:\x20','body','Error\x20saving\x20to\x20database:','p1-type','savePlayerHealth:\x20Health\x20saved\x20successfully','ajax/save-boss-health.php','updateHealth',',\x20currentLevel=','showProgressPopup',',\x20gameState=','stringify',',\x20bossId=','Resume','Boss\x20Battle\x20-\x20','https://www.skulliance.io/staking/sounds/badmove.ogg','log','gameOver','matches','toggleGameButtons:\x20One\x20or\x20more\x20buttons\x20not\x20found','Dankle','setItem',',\x20tiles\x20to\x20clear:','Error\x20updating\x20theme\x20assets:','handleTouchMove','Server\x20error','parentNode','updateTheme:\x20Skipped\x20due\x20to\x20pending\x20update','function','toLowerCase','progress','loadBoardState','setSelectedBoss','.tile','p1-image','name','Monstrocity\x20timeout','Base','Player\x201\x20media\x20clicked','character-options','createCharacter','<p\x20style=\x22color:\x20#fff;\x20text-align:\x20center;\x22>No\x20bosses\x20available.</p>','setBackground:\x20Attempting\x20for\x20theme=','Board\x20state\x20cleared\x20for\x20','resolveMatches\x20started,\x20gameOver:','saveBoardState:\x20Saving\x20-\x20key=','Error\x20loading\x20board\x20state:\x20','background','toggleGameButtons','Failed\x20to\x20load\x20battle-damaged\x20video:\x20','\x20uses\x20Last\x20Stand,\x20dealing\x20','8SoDJqD','IMG','min','totalTiles','</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Tactics:</td><td>','Processing\x20match:','addEventListener','value','s\x20linear','https://www.skulliance.io/staking/sounds/hypercube_create.ogg','glow-power-up','battle-log','ajax/get-monstrocity-assets.php','initGame','\x20HP!','try-again','checkGameOver\x20skipped:\x20gameOver=','showProgressPopup:\x20User\x20chose\x20Restart','visibility','startBossBattle:\x20Immediate\x20game\x20over\x20-\x20player1.health=','<p\x20style=\x22color:\x20#fff;\x20text-align:\x20center;\x22>Loading\x20new\x20characters...</p>','</strong></p>','Multi-Match!\x20','\x20uses\x20Minor\x20Regen,\x20restoring\x20','clearProgress','healthPercentage','children','message','selectedCharacter','roundStats','progress-modal-buttons','Boss\x20health\x20saved:\x20','items','https://ipfs5.jpgstoreapis.com/ipfs/',',\x20refresh:\x20','saveBossHealth:\x20Response\x20status:','preventDefault','Turn\x20switched\x20to\x20','finalWin','Progress\x20saved:\x20currentLevel=','\x20characters','#4CAF50','p1-name','#FFC105','saveBossHealth:\x20Error\x20saving\x20boss\x20health:','savePlayerHealth:\x20Not\x20a\x20boss\x20battle,\x20skipping','transform','showBossSelect:\x20No\x20valid\x20NFT\x20characters\x20returned','cloneNode','Player\x201',',\x20healthPercentage=','startsWith','px,\x200)\x20scale(1.05)','https://www.skulliance.io/staking/sounds/powergem_created.ogg','status','No\x20userId\x20or\x20bossId,\x20using\x20max\x20health','showCharacterSelect','tagName','showBossSelect:\x20No\x20bosses\x20returned','\x27s\x20Last\x20Stand\x20mitigates\x20','querySelectorAll','add','catch','winner','time','addEventListeners:\x20Switch\x20Monster\x20button\x20clicked','\x22\x20onerror=\x22this.src=\x27','\x20starts\x20at\x20full\x20strength\x20with\x20','149553FtCCUo','Calculating\x20round\x20score:\x20points=','firstChild','updateCharacters_','muted','Game\x20over,\x20skipping\x20cascadeTiles','\x20(50%\x20bonus\x20for\x20match-4)','level','Player\x202\x20Details:','button','replaceChild','px,\x200)','display','.game-container','glow-','updateTheme:\x20Board\x20rendered\x20for\x20active\x20game','height','</strong></p>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div><img\x20src=\x22','element','removeItem',',\x20generating\x20new\x20board',',\x20loadedScore=','gameTheme','board','handleGameOverButton','showCharacterSelect:\x20No\x20characters\x20available,\x20using\x20fallback','endTurn','You\x20Win!','px)\x20scale(1.05)','Large','Boost\x20Attack','Failed\x20to\x20load\x20battle-damaged\x20image:\x20','showCharacterSelect:\x20this.player1\x20set:\x20','<p\x20style=\x22color:\x20#fff;\x20text-align:\x20center;\x22>No\x20characters\x20available.\x20Please\x20try\x20another\x20theme.</p>','removeEventListener','handleMatch','checkMatches','Slash','handleGameOverButton\x20completed:\x20currentLevel=','Error\x20clearing\x20board\x20state:\x20','boss-battles-button',',\x20selectedBoss=','\x27s\x20Boost\x20fades.','bounty','/monstrocity.png','progress-resume','saveBoard','selectedBoss','Bite','Navigating\x20to\x20boss\x20selection\x20screen','Game\x20over\x20detected\x20during\x20match\x20processing,\x20stopping\x20further\x20processing','src','getTileFromEvent','loadBoardState:\x20Not\x20a\x20boss\x20battle,\x20skipping','initializing','multiMatch','\x27s\x20Turn','getItem','boss-select-container','Error\x20clearing\x20progress:','renderBoard','\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>','Error\x20in\x20checkMatches:','lastChild','Resumed\x20at\x20Level\x20','playerTurn','Level\x20','orientation','Animating\x20matched\x20tiles,\x20allMatchedTiles:','\x20uses\x20Regen,\x20restoring\x20','DOMContentLoaded','theme-select-button','Monstrocity\x20HTTP\x20error!\x20Status:\x20','substring','user_id=','ipfs','isLoggedIn','\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<img\x20src=\x22','\x20(ID:\x20','title','autoplay','backgroundPosition','isCheckingGameOver','offsetWidth','init:\x20Starting\x20async\x20initialization','ajax/clear-monstrocity-progress.php','guest','initGame:\x20Cleared\x20selectedBoss\x20and\x20selectedCharacter','<img\x20loading=\x22eager\x22\x20src=\x22','progress-message','Game\x20Over','Error\x20saving\x20health:\x20','\x20(100%\x20bonus\x20for\x20match-5+)','Minor\x20Régén','savePlayerHealth:\x20Response\x20status:','round','dragDirection','START\x20OVER','currentTurn','row',',\x20reduced\x20by\x20','\x20uses\x20Power\x20Surge,\x20next\x20attack\x20+','showCharacterSelect:\x20Checking\x20for\x20selectedBoss:','Error\x20saving\x20boss\x20health:\x20','showBossSelect:\x20Rendered\x20','https://www.skulliance.io/staking/sounds/badgeawarded.ogg','Failed\x20to\x20preload\x20image:\x20','handleMouseDown','\x20\x20Health:','offsetY','application/x-www-form-urlencoded','refreshBoard:\x20Board\x20state\x20preserved','Player\x201\x20health\x20<=\x200,\x20triggering\x20game\x20over\x20(loss),\x20boss\x20mode=','json','&health=','px,\x20','touchend','drops\x20health\x20to\x20','theme-options','removeChild','updateTheme:\x20Skipping\x20board\x20render,\x20no\x20active\x20game\x20or\x20boss\x20battle\x20in\x20progress','getAssets_','lastStandActive','Boss\x20Theme:','savePlayerHealth:\x20Saving\x20-\x20userId=','loadBoardState:\x20No\x20saved\x20board\x20state\x20found','power-up','addEventListeners',',\x20selected\x20theme=','#FFA500','updateTileSizeWithGap','loadBoard','loadBoardState:\x20userId\x20not\x20defined.\x20Using\x20\x22guest\x22\x20as\x20fallback.','checkGameOver\x20started:\x20currentLevel=','backgroundImage','clearBoardState','\x20uses\x20','Texby','Billandar\x20and\x20Ted','Mandiblus','resolve',',\x20rows\x20','abs','Final\x20level\x20completed!\x20Final\x20score:\x20',')\x20to\x20(','url(','\x20HP\x20for\x20','Right','onclick','initGame:\x20Started\x20with\x20this.currentLevel=','turn-indicator','clearBoardState:\x20Not\x20a\x20boss\x20battle,\x20skipping','trim','https://www.skulliance.io/staking/sounds/skullcoinlose.ogg','Loaded\x20opponent\x20for\x20level\x20','policyId','No\x20matches\x20found,\x20returning\x20false','Boost\x20applied,\x20damage:\x20','Calling\x20checkGameOver\x20from\x20handleMatch','Board\x20state\x20saved\x20for\x20','Minor\x20Regen','clearBoard','MonstrocityMatch3:\x20Selected\x20boss\x20set\x20to\x20','Error\x20saving\x20progress:','NFT_Unknown_','</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Size:</td><td>','\x20NFT\x20characters','35VwBhAh','split','showProgressPopup:\x20Displaying\x20popup\x20for\x20level=','Is\x20initial\x20move:\x20','initBoard:\x20Loaded\x20board\x20from\x20localStorage\x20for\x20level','Boss','images/monstrocity/','<video\x20src=\x22','https://www.skulliance.io/staking/images/monstrocity/','race','win','application/json','refreshBoard','p2-health','some','Player\x202\x20health\x20<=\x200,\x20triggering\x20game\x20over\x20(win)','saveBossHealth',',\x20Total\x20damage:\x20','checkGameOver',',\x20transform:\x20','Loaded\x20saved\x20health:\x20','ajax/save-health.php','map','Round\x20Score\x20Formula:\x20(((','\x22\x20onerror=\x22this.src=\x27icons/skull.png\x27\x22>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>','remove','selectedTile','badMove','\x27s\x20','showProgressPopup:\x20User\x20chose\x20Resume','\x22\x20autoplay\x20loop\x20muted\x20alt=\x22','initBoard:\x20Generated\x20and\x20saved\x20new\x20board\x20for\x20level','p2-image','click','game-board','charCodeAt','player2','type','showThemeSelect:\x20Cleared\x20boss\x20mode\x20state\x20(selectedBoss,\x20selectedCharacter,\x20board\x20state)','Round\x20points\x20increased\x20from\x20','showCharacterSelect:\x20Theme\x20game\x20initial\x20-\x20setting\x20player1\x20and\x20starting\x20game','\x20+\x2020))\x20*\x20(1\x20+\x20','Health\x20saved\x20as\x200\x20for\x20boss\x20battle','checkGameOver\x20completed:\x20gameOver=','monstrocity','flipCharacter','updatePlayerDisplay','showBossSelect:\x20Loaded\x20','play','endTurn:\x20Player\x20turn\x20ending,\x20saving\x20board\x20state','boss-close-button','updateTheme_','showThemeSelect','none','scaleX','p2-speed','updateTheme','progress-modal-content','createRandomTile','Opponent',',\x20damage:\x20','health','\x20(originally\x20','\x27s\x20tactics\x20halve\x20the\x20blow,\x20taking\x20only\x20','flatMap','character-select-container','Parsed\x20response:','strength','attempts','Raw\x20response\x20text:','flex','createElement','px)','Tactics\x20applied,\x20damage\x20reduced\x20to:\x20','</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Powerup:</td><td>','progress-modal','mousedown','<p>Type:\x20','\x20Score:\x20','\x20\x20Strength:','showCharacterSelect:\x20Initial\x20selection','ipfsPrefix','800748UdrZbd','Katastrophy',',\x20matches=','\x20starts\x20with\x20','<p>Health:\x20','then','Reset\x20to\x20Level\x201:\x20currentLevel=','Random','showThemeSelect:\x20Boss\x20Battles\x20button\x20clicked,\x20entering\x20boss\x20mode','has','pop','Player\x201\x20Details:','p1-health','\x20health\x20before\x20match:\x20','Starting\x20fresh\x20at\x20Level\x201','countEmptyBelow','sounds','\x20with\x20Score\x20of\x20','<p>Speed:\x20','initBoard','isBossBattle','showCharacterSelect:\x20Swapping\x20character\x20during\x20game','p1-hp','endTurn:\x20Boss\x20turn\x20ending,\x20saving\x20player\x20health','Error\x20playing\x20lose\x20sound:','Battle\x20Damaged','filter','translate(0,\x20','0.6','div','includes','isNFT','SELECT\x20BOSS','clientX','p2-name','saveBoardState:\x20userId\x20not\x20defined.\x20Using\x20\x22guest\x22\x20as\x20fallback.','Slime\x20Mind','\x20passes...','Horizontal\x20match\x20found\x20at\x20row\x20','constructor:\x20initialTheme=','animateRecoil','backgroundSize','Main:\x20Game\x20instance\x20created','\x20size\x20','block','mousemove','Special\x20attack\x20multiplier\x20applied,\x20damage:\x20','Left','speed','</td></tr>\x0a\x09\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr><td>Speed:</td><td>','</p>','hash','\x20has\x20been\x20defeated\x20before\x20the\x20battle\x20begins!','userId','png','765610WJcpbj','length','scrollTop','showBossSelect:\x20Error\x20fetching\x20NFT\x20characters:','size','powerup','battle-damaged','flip-p2','clearBoardState:\x20Clearing\x20-\x20key=',',\x20Match\x20bonus:\x20','\x20swaps\x20tiles\x20at\x20(','animatePowerup','selected','second-attack','ajax/get-bosses.php',',\x20Completions:\x20','leader','p1-size',',\x20player1.health=','classList','startBossBattle:\x20player2\x20orientation\x20set\x20to\x20','style'];_0x424a=function(){return _0x198092;};return _0x424a();}
+	  function showThemeSelect(game) {
+	      console.time('showThemeSelect');
+	      let container = document.getElementById('theme-select-container');
+	      const characterContainer = document.getElementById('character-select-container');
+
+	      // Clear boss mode state to ensure default game mode
+	      game.selectedBoss = null;
+	      game.selectedCharacter = null;
+	      game.clearBoardState();
+	      console.log('showThemeSelect: Cleared boss mode state (selectedBoss, selectedCharacter, board state)');
+
+	      container.innerHTML = `
+	          <h2>Select Theme</h2>
+	          <div id="boss-battles-button-container" style="display: ${window.isLoggedIn ? 'block' : 'none'};">
+	              <button id="boss-battles-button" class="theme-select-button">Boss Battles</button>
+	          </div>
+	          <div id="theme-options"></div>
+	      `;
+	      const optionsDiv = document.getElementById('theme-options');
+
+	      container.style.display = 'block';
+	      characterContainer.style.display = 'none';
+
+	      game.toggleGameButtons(false);
+
+	      themes.forEach(group => {
+	          const groupDiv = document.createElement('div');
+	          groupDiv.className = 'theme-group';
+	          const groupTitle = document.createElement('h3');
+	          groupTitle.textContent = group.group;
+	          groupDiv.appendChild(groupTitle);
+
+	          group.items.forEach(theme => {
+	              const option = document.createElement('div');
+	              option.className = 'theme-option';
+	              if (theme.background) {
+	                  const backgroundUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/monstrocity.png`;
+	                  option.style.backgroundImage = `url(${backgroundUrl})`;
+	              }
+	              const logoUrl = `https://www.skulliance.io/staking/images/monstrocity/${theme.value}/logo.png`;
+	              option.innerHTML = `
+	                  <img src="${logoUrl}" alt="${theme.title}" data-project="${theme.project}" onerror="this.src='icons/skull.png'">
+	                  <p>${theme.title}</p>
+	              `;
+	              option.addEventListener('click', () => {
+	                  const characterOptions = document.getElementById('character-options');
+	                  if (characterOptions) {
+	                      characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+	                  }
+	                  container.innerHTML = '';
+	                  container.style.display = 'none';
+	                  characterContainer.style.display = 'block';
+	                  game.updateTheme(theme.value);
+	              });
+	              groupDiv.appendChild(option);
+	          });
+
+	          optionsDiv.appendChild(groupDiv);
+	      });
+
+	      const bossButton = document.getElementById('boss-battles-button');
+	      if (bossButton) {
+	          bossButton.addEventListener('click', () => {
+	              console.log('showThemeSelect: Boss Battles button clicked, entering boss mode');
+	              showBossSelect(game);
+	          });
+	      }
+
+	      console.timeEnd('showThemeSelect');
+	  }
+	  
+	  function showBossSelect(game) {
+	      console.time('showBossSelect');
+	      const container = document.getElementById('boss-select-container');
+	      const themeContainer = document.getElementById('theme-select-container');
+	      const characterContainer = document.getElementById('character-select-container');
+
+	      console.log('showBossSelect: Entering boss mode');
+
+	      container.innerHTML = `
+	          <h2>Select Boss</h2>
+	          <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
+	          <div id="boss-options"></div>
+	      `;
+	      const optionsDiv = document.getElementById('boss-options');
+
+	      container.style.display = 'block';
+	      themeContainer.style.display = 'none';
+	      characterContainer.style.display = 'none';
+
+	      const closeButton = document.getElementById('boss-close-button');
+	      closeButton.addEventListener('click', () => {
+	          // Clear boss mode state to ensure default game mode
+	          game.selectedBoss = null;
+	          game.selectedCharacter = null;
+	          game.clearBoardState();
+	          console.log('showBossSelect: Back to Themes clicked, cleared boss mode state');
+	          container.style.display = 'none';
+	          themeContainer.style.display = 'block';
+	          showThemeSelect(game);
+	      });
+
+	      fetch('ajax/get-bosses.php', {
+	          method: 'GET',
+	          headers: { 'Content-Type': 'application/json' }
+	      })
+	          .then(response => {
+	              if (!response.ok) {
+	                  throw new Error(`HTTP error! Status: ${response.status}`);
+	              }
+	              return response.json();
+	          })
+	          .then(bosses => {
+	              if (!Array.isArray(bosses) || bosses.length === 0) {
+	                  optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No bosses available.</p>';
+	                  console.warn('showBossSelect: No bosses returned');
+	                  return;
+	              }
+
+	              const fragment = document.createDocumentFragment();
+	              bosses.forEach(boss => {
+	                  console.log(`Boss ${boss.name}: playerHealth=${boss.playerHealth} (type: ${typeof boss.playerHealth})`);
+
+	                  const option = document.createElement('div');
+	                  option.className = `boss-option`;
+
+	                  const isPlayerDead = boss.playerHealth === 0;
+	                  const isBossDead = boss.health <= 0;
+
+	                  if (isPlayerDead || isBossDead) {
+	                      option.style.pointerEvents = 'none';
+	                      if (isBossDead) {
+	                          option.style.filter = 'grayscale(100%) sepia(100%) hue-rotate(0deg) saturate(500%)';
+	                          option.style.opacity = '0.6';
+	                      } else if (isPlayerDead) {
+	                          option.style.filter = 'grayscale(100%)';
+	                          option.style.opacity = '0.6';
+	                      }
+	                  }
+
+	                  const imageSrc = boss.imageUrl.startsWith('/') ? boss.imageUrl.substring(1) : boss.imageUrl;
+
+	                  const healthPercentage = (boss.health || 0) / (boss.maxHealth || 100) * 100;
+	                  let healthColor;
+	                  if (healthPercentage > 75) {
+	                      healthColor = '#4CAF50';
+	                  } else if (healthPercentage > 50) {
+	                      healthColor = '#FFC105';
+	                  } else if (healthPercentage > 25) {
+	                      healthColor = '#FFA500';
+	                  } else {
+	                      healthColor = '#F44336';
+	                  }
+
+	                  option.innerHTML = `
+	                      <p><strong>${boss.name}</strong></p>
+	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
+	                      <div class="health-bar" style="margin-bottom: 10px;">
+	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
+	                      </div>
+	                      <table>
+	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>
+	                          <tr><td>Strength:</td><td>${boss.strength}</td></tr>
+	                          <tr><td>Speed:</td><td>${boss.speed}</td></tr>
+	                          <tr><td>Tactics:</td><td>${boss.tactics}</td></tr>
+	                          <tr><td>Size:</td><td>${boss.size}</td></tr>
+	                          <tr><td>Powerup:</td><td>${boss.powerup}</td></tr>
+	                          <tr><td>Players:</td><td>${boss.playerCount}</td></tr>
+	                          <tr><td>Bounty:</td><td>${boss.bounty} ${boss.currency}</td></tr>
+	                      </table>
+	                  `;
+
+	                  if (!isPlayerDead && !isBossDead) {
+	                      option.addEventListener('click', () => {
+	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
+	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
+
+	                          container.style.display = 'none';
+
+	                          // Clear existing player characters to prevent unrelated characters from being used
+	                          game.playerCharacters = [];
+	                          console.log('showBossSelect: Cleared game.playerCharacters before fetching NFTs');
+
+	                          fetch('ajax/get-nft-assets.php', {
+	                              method: 'POST',
+	                              headers: { 'Content-Type': 'application/json' },
+	                              body: JSON.stringify({
+	                                  policyIds: [boss.policy],
+	                                  theme: game.theme
+	                              })
+	                          })
+	                              .then(response => {
+	                                  if (!response.ok) {
+	                                      throw new Error(`HTTP error! Status: ${response.status}`);
+	                                  }
+	                                  return response.json();
+	                              })
+	                              .then(characters => {
+	                                  console.log('NFT characters response:', characters);
+	                                  if (characters === false || !Array.isArray(characters) || characters.length === 0) {
+	                                      console.warn('showBossSelect: No valid NFT characters returned');
+	                                      alert('No qualifying NFT characters available for this boss. Please ensure you own the required NFTs.');
+	                                      // Return to boss selection instead of showing character select
+	                                      container.style.display = 'block';
+	                                      characterContainer.style.display = 'none';
+	                                      return;
+	                                  }
+	                                  game.playerCharacters = characters.map(character => game.createCharacter(character));
+	                                  console.log(`showBossSelect: Loaded ${game.playerCharacters.length} NFT characters`);
+	                                  game.setSelectedBoss(boss);
+	                                  characterContainer.style.display = 'block';
+	                                  game.showCharacterSelect(true);
+	                              })
+	                              .catch(error => {
+	                                  console.error('showBossSelect: Error fetching NFT characters:', error);
+	                                  alert('Error loading NFT characters. Please try again.');
+	                                  // Return to boss selection instead of showing character select
+	                                  container.style.display = 'block';
+	                                  characterContainer.style.display = 'none';
+	                              });
+	                      });
+	                  }
+
+	                  fragment.appendChild(option);
+	              });
+
+	              optionsDiv.appendChild(fragment);
+	              console.log(`showBossSelect: Rendered ${bosses.length} bosses`);
+	          })
+	          .catch(error => {
+	              console.error('showBossSelect: Error fetching bosses:', error);
+	              optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">Error loading bosses. Please try again.</p>';
+	          });
+
+	      console.timeEnd('showBossSelect');
+	  }
+	  
+	  const opponentsConfig = [
+	      { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Merdock', strength: 1, speed: 1, tactics: 1, size: 'Large', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Goblin Ganger', strength: 2, speed: 2, tactics: 2, size: 'Small', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Texby', strength: 2, speed: 2, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Mandiblus', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Koipon', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Slime Mind', strength: 4, speed: 4, tactics: 4, size: 'Small', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Billandar and Ted', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Dankle', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Jarhead', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Spydrax', strength: 6, speed: 6, tactics: 6, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Katastrophy', strength: 7, speed: 7, tactics: 7, size: 'Large', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Ouchie', strength: 7, speed: 7, tactics: 7, size: 'Medium', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Drake', strength: 8, speed: 7, tactics: 7, size: 'Medium', type: 'Base', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Craig', strength: 1, speed: 1, tactics: 1, size: 'Medium', type: 'Leader', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Merdock', strength: 1, speed: 1, tactics: 1, size: 'Large', type: 'Leader', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Goblin Ganger', strength: 2, speed: 2, tactics: 2, size: 'Small', type: 'Leader', powerup: 'Minor Regen', theme: 'monstrocity' },
+	      { name: 'Texby', strength: 2, speed: 2, tactics: 2, size: 'Medium', type: 'Leader', powerup: 'Minor Régén', theme: 'monstrocity' },
+	      { name: 'Mandiblus', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Koipon', strength: 3, speed: 3, tactics: 3, size: 'Medium', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Slime Mind', strength: 4, speed: 4, tactics: 4, size: 'Small', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Billandar and Ted', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Leader', powerup: 'Regenerate', theme: 'monstrocity' },
+	      { name: 'Dankle', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Leader', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Jarhead', strength: 5, speed: 5, tactics: 5, size: 'Medium', type: 'Leader', powerup: 'Boost Attack', theme: 'monstrocity' },
+	      { name: 'Spydrax', strength: 6, speed: 6, tactics: 6, size: 'Small', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Katastrophy', strength: 7, speed: 7, tactics: 7, size: 'Large', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Ouchie', strength: 7, speed: 7, tactics: 7, size: 'Medium', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' },
+	      { name: 'Drake', strength: 8, speed: 7, tactics: 7, size: 'Medium', type: 'Leader', powerup: 'Heal', theme: 'monstrocity' }
+	  ];
+	
+	 /*
+    const playerCharactersConfig = [
+        { name: "Craig", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Merdock", strength: 4, speed: 4, tactics: 4, size: "Large", type: "Base", powerup: "Regenerate" },
+        { name: "Goblin Ganger", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Base", powerup: "Regenerate" },
+        { name: "Texby", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Mandiblus", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Koipon", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Slime Mind", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Base", powerup: "Regenerate" },
+        { name: "Billandar and Ted", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Dankle", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Jarhead", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Spydrax", strength: 4, speed: 4, tactics: 4, size: "Small", type: "Base", powerup: "Regenerate" },
+        { name: "Katastrophy", strength: 4, speed: 4, tactics: 4, size: "Large", type: "Base", powerup: "Regenerate" },
+        { name: "Ouchie", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Drake", strength: 4, speed: 4, tactics: 4, size: "Medium", type: "Base", powerup: "Regenerate" },
+        { name: "Craig", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Merdock", strength: 3, speed: 3, tactics: 3, size: "Large", type: "Leader", powerup: "Regenerate" },
+        { name: "Goblin Ganger", strength: 3, speed: 3, tactics: 3, size: "Small", type: "Leader", powerup: "Regenerate" },
+        { name: "Texby", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Mandiblus", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Koipon", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Slime Mind", strength: 3, speed: 3, tactics: 3, size: "Small", type: "Leader", powerup: "Regenerate" },
+        { name: "Billandar and Ted", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Dankle", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Jarhead", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Spydrax", strength: 3, speed: 3, tactics: 3, size: "Small", type: "Leader", powerup: "Regenerate" },
+        { name: "Katastrophy", strength: 3, speed: 3, tactics: 3, size: "Large", type: "Leader", powerup: "Regenerate" },
+        { name: "Ouchie", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Drake", strength: 3, speed: 3, tactics: 3, size: "Medium", type: "Leader", powerup: "Regenerate" },
+        { name: "Craig", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Merdock", strength: 5, speed: 5, tactics: 5, size: "Large", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Goblin Ganger", strength: 5, speed: 5, tactics: 5, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Texby", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Mandiblus", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Koipon", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Slime Mind", strength: 5, speed: 5, tactics: 5, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Billandar and Ted", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Dankle", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Jarhead", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Spydrax", strength: 5, speed: 5, tactics: 5, size: "Small", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Katastrophy", strength: 5, speed: 5, tactics: 5, size: "Large", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Ouchie", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" },
+        { name: "Drake", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" }
+    ];*/
+
+    const characterDirections = {
+      "Billandar and Ted": "Left",
+      "Craig": "Left",
+      "Dankle": "Left",
+      "Drake": "Right",
+      "Goblin Ganger": "Left",
+      "Jarhead": "Right",
+      "Katastrophy": "Right",
+      "Koipon": "Left",
+      "Mandiblus": "Left",
+      "Merdock": "Left",
+      "Ouchie": "Left",
+      "Slime Mind": "Right",
+      "Spydrax": "Right",
+      "Texby": "Left"
+    };
+
+    class MonstrocityMatch3 {
+		constructor(playerCharactersConfig, initialTheme) {
+		    this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+		    this.width = 5;
+		    this.height = 5;
+		    this.board = [];
+		    this.selectedTile = null;
+		    this.gameOver = false;
+		    this.currentTurn = null;
+		    this.player1 = null;
+		    this.player2 = null;
+		    this.gameState = 'initializing';
+		    this.isDragging = false;
+		    this.targetTile = null;
+		    this.dragDirection = null;
+		    this.offsetX = 0;
+		    this.offsetY = 0;
+		    this.currentLevel = 1;
+		    this.playerCharactersConfig = playerCharactersConfig;
+		    this.playerCharacters = [];
+		    this.isCheckingGameOver = false;
+		    this.tileTypes = ['first-attack', 'second-attack', 'special-attack', 'power-up', 'last-stand'];
+		    this.roundStats = [];
+		    this.grandTotalScore = 0;
+	        this.selectedBoss = null; // New: Store the selected boss
+	        this.selectedCharacter = null; // New: Store the selected character for boss battle
+		    // Validate theme
+		    const validThemes = themes.flatMap(group => group.items).map(item => item.value);
+		    const storedTheme = localStorage.getItem('gameTheme');
+		    this.theme = storedTheme && validThemes.includes(storedTheme) ? storedTheme : 
+		                 initialTheme && validThemes.includes(initialTheme) ? initialTheme : 'monstrocity';
+		    console.log('constructor: initialTheme=' + initialTheme + ', storedTheme=' + storedTheme + ', selected theme=' + this.theme);
+		    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
+		    this.sounds = {
+		        match: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+		        cascade: new Audio('https://www.skulliance.io/staking/sounds/select.ogg'),
+		        badMove: new Audio('https://www.skulliance.io/staking/sounds/badmove.ogg'),
+		        gameOver: new Audio('https://www.skulliance.io/staking/sounds/voice_gameover.ogg'),
+		        reset: new Audio('https://www.skulliance.io/staking/sounds/voice_go.ogg'),
+		        loss: new Audio('https://www.skulliance.io/staking/sounds/skullcoinlose.ogg'),
+		        win: new Audio('https://www.skulliance.io/staking/sounds/voice_levelcomplete.ogg'),
+		        finalWin: new Audio('https://www.skulliance.io/staking/sounds/badgeawarded.ogg'),
+		        powerGem: new Audio('https://www.skulliance.io/staking/sounds/powergem_created.ogg'),
+		        hyperCube: new Audio('https://www.skulliance.io/staking/sounds/hypercube_create.ogg'),
+		        multiMatch: new Audio('https://www.skulliance.io/staking/sounds/speedmatch1.ogg')
+		    };
+		    this.updateTileSizeWithGap();
+		    this.addEventListeners();
+		}
+		
+		// New method to set the selected boss
+		setSelectedBoss(boss) {
+		    console.log('Boss selected:');
+		    console.log('  Name:', boss.name);
+		    console.log('  Health:', boss.health, '/', boss.maxHealth);
+		    console.log('  Strength:', boss.strength);
+		    this.selectedBoss = boss;
+		    console.log(`MonstrocityMatch3: Selected boss set to ${boss.name}`);
+		}
+
+	    // New method to set the selected character and start the boss battle
+	    setSelectedCharacter(character) {
+	        this.selectedCharacter = character;
+	        console.log(`MonstrocityMatch3: Selected character set to ${character.name}`);
+	        this.startBossBattle();
+	    }
+
+		async startBossBattle() {
+		    console.log('Starting boss battle...');
+		    console.log('Selected Character:', this.selectedCharacter.name);
+		    console.log('Selected Boss:', this.selectedBoss.name);
+		    console.log('Boss Theme:', this.selectedBoss.theme);
+
+		    // Preload boss and character images
+		    const bossExtension = this.selectedBoss.extension || 'png';
+		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const preloadImages = [bossImageUrl, bossBattleDamagedUrl, this.selectedCharacter.imageUrl];
+		    preloadImages.forEach(url => {
+		        const img = new Image();
+		        img.src = url;
+		        img.onload = () => console.log(`Preloaded image: ${url}`);
+		        img.onerror = () => console.log(`Failed to preload image: ${url}`);
+		    });
+
+		    // Ensure the game is using the boss's theme
+		    if (this.theme !== this.selectedBoss.theme) {
+		        console.warn(`startBossBattle: Theme mismatch (current: ${this.theme}, boss: ${this.selectedBoss.theme}), updating to boss theme`);
+		        const validThemes = themes.flatMap(group => group.items).map(item => item.value);
+		        if (this.selectedBoss.theme && validThemes.includes(this.selectedBoss.theme)) {
+		            await this.updateTheme(this.selectedBoss.theme, true); // Await the theme update
+		        }
+		    }
+
+		    // Set the logo based on the boss's theme
+		    document.querySelector('.game-logo').src = `images/monstrocity/${this.theme}/logo.png`;
+
+		    // Determine boss orientation
+		    let bossOrientation = this.selectedBoss.orientation || 'Right';
+		    if (bossOrientation === 'Random') {
+		        bossOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
+		        console.log(`Random boss orientation resolved to: ${bossOrientation}`);
+		    }
+
+		    // Determine player orientation
+		    let playerOrientation = this.selectedCharacter.orientation || 'Random';
+		    if (playerOrientation === 'Random') {
+		        playerOrientation = Math.random() < 0.5 ? 'Left' : 'Right';
+		        console.log(`Random player orientation resolved to: ${playerOrientation}`);
+		    }
+
+		    // Set up player and boss
+		    this.player1 = { ...this.selectedCharacter, orientation: playerOrientation };
+		    this.player2 = {
+		        name: this.selectedBoss.name,
+		        strength: this.selectedBoss.strength || 4,
+		        speed: this.selectedBoss.speed || 4,
+		        tactics: this.selectedBoss.tactics || 4,
+		        size: this.selectedBoss.size || 'Medium',
+		        type: 'Boss',
+		        powerup: this.selectedBoss.powerup || 'Minor Regen',
+		        theme: this.selectedBoss.theme || this.theme,
+		        imageUrl: bossImageUrl,
+		        extension: bossExtension,
+		        battleDamagedUrl: bossBattleDamagedUrl,
+		        fallbackUrl: 'icons/skull.png',
+		        orientation: bossOrientation,
+		        health: this.selectedBoss.health,
+		        maxHealth: this.selectedBoss.maxHealth,
+		        mediaType: this.selectedBoss.mediaType || 'image',
+		        isBossBattle: true // Flag to indicate boss battle mode
+		    };
+
+		    // Load saved health for the player
+		    const userId = window.userId || null;
+		    if (userId && this.selectedBoss && this.selectedBoss.id) {
+		        try {
+		            const response = await fetch('ajax/get-health.php', {
+		                method: 'POST',
+		                headers: {
+		                    'Content-Type': 'application/x-www-form-urlencoded'
+		                },
+		                body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(this.selectedBoss.id)}`
+		            });
+		            const data = await response.json();
+		            if (data.success && data.health !== null) {
+		                this.player1.health = data.health;
+		                console.log(`Loaded saved health: ${this.player1.health}`);
+		            } else {
+		                this.player1.health = this.player1.maxHealth;
+		                console.log('No saved health found, using max health');
+		            }
+		        } catch (error) {
+		            console.error('Error loading health:', error);
+		            this.player1.health = this.player1.maxHealth;
+		        }
+		    } else {
+		        this.player1.health = this.player1.maxHealth;
+		        console.log('No userId or bossId, using max health');
+		    }
+
+		    // Set boss health
+		    this.player2.health = this.selectedBoss.health;
+
+		    // Check if either the player or the boss has zero health
+		    if (this.player1.health <= 0 || this.player2.health <= 0) {
+		        console.log(`startBossBattle: Immediate game over - player1.health=${this.player1.health}, player2.health=${this.player2.health}`);
+		        this.gameOver = true;
+		        this.gameState = "gameOver";
+
+		        const gameContainer = document.querySelector('.game-container');
+		        const gameBoard = document.getElementById('game-board');
+		        gameContainer.style.display = 'block';
+		        gameBoard.style.visibility = 'visible';
+		        this.setBackground();
+
+		        this.updatePlayerDisplay();
+		        this.updateOpponentDisplay();
+
+		        // Apply orientation transforms
+		        const currentP1Image = document.getElementById('p1-image');
+		        const currentP2Image = document.getElementById('p2-image');
+		        if (currentP1Image) {
+		            currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		            console.log(`startBossBattle: player1 orientation set to ${this.player1.orientation}, transform: ${currentP1Image.style.transform}`);
+		        }
+		        if (currentP2Image) {
+		            currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		            console.log(`startBossBattle: player2 orientation set to ${this.player2.orientation}, transform: ${currentP2Image.style.transform}`);
+		        }
+
+		        this.updateHealth(this.player1);
+		        this.updateHealth(this.player2);
+
+		        battleLog.innerHTML = '';
+		        gameOver.textContent = '';
+
+		        // Toggle buttons for boss battle
+		        this.toggleGameButtons(true);
+
+		        // Determine win/loss
+		        if (this.player1.health <= 0) {
+		            gameOver.textContent = "You Lose!";
+		            turnIndicator.textContent = "Game Over";
+		            log(`${this.player1.name} has no health left and cannot fight!`);
+		            this.sounds.loss.play();
+		        } else if (this.player2.health <= 0) {
+		            gameOver.textContent = "You Win!";
+		            turnIndicator.textContent = "Game Over";
+		            log(`${this.player2.name} has been defeated before the battle begins!`);
+		            this.sounds.win.play();
+
+		            // Set battle-damaged image for player2
+		            let damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
+		            const p2Image = document.getElementById('p2-image');
+		            if (p2Image.tagName === 'IMG') {
+		                p2Image.src = damagedUrl;
+		                p2Image.onerror = () => { p2Image.src = this.player2.fallbackUrl; };
+		            }
+		            p2Image.classList.add("loser");
+		            currentP1Image.classList.add("winner");
+		        }
+
+		        // Configure game over button to return to boss selection
+		        const tryAgainButton = document.getElementById("try-again");
+		        tryAgainButton.textContent = "SELECT BOSS";
+		        const newButton = tryAgainButton.cloneNode(true);
+		        tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+		        newButton.addEventListener('click', () => this.showBossSelectionScreen());
+
+		        document.getElementById("game-over-container").style.display = "block";
+		        this.renderBoard();
+		        return;
+		    }
+
+		    // Log player details
+		    console.log('Player 1 Details:', {
+		        Name: this.player1.name,
+		        Health: `${this.player1.health}/${this.player1.maxHealth}`,
+		        Strength: this.player1.strength,
+		        Speed: this.player1.speed,
+		        Tactics: this.player1.tactics,
+		        Size: this.player1.size,
+		        Type: this.player1.type,
+		        Powerup: this.player1.powerup,
+		        Theme: this.player1.theme,
+		        Orientation: this.player1.orientation
+		    });
+		    console.log('Player 2 Details:', {
+		        Name: this.player2.name,
+		        Health: `${this.player2.health}/${this.player2.maxHealth}`,
+		        Strength: this.player2.strength,
+		        Speed: this.player2.speed,
+		        Tactics: this.player2.tactics,
+		        Size: this.player2.size,
+		        Type: this.player2.type,
+		        Powerup: this.player2.powerup,
+		        Theme: this.player2.theme,
+		        ImageUrl: this.player2.imageUrl,
+		        BattleDamagedUrl: this.player2.battleDamagedUrl,
+		        Extension: this.player2.extension,
+		        Orientation: this.player2.orientation,
+		        IsBossBattle: this.player2.isBossBattle
+		    });
+
+		    // Reset game state
+		    const gameContainer = document.querySelector('.game-container');
+		    const gameBoard = document.getElementById('game-board');
+		    gameContainer.style.display = 'block';
+		    gameBoard.style.visibility = 'visible';
+		    this.setBackground();
+
+		    this.sounds.reset.play();
+		    log('Starting Boss Battle...');
+
+		    this.currentTurn = this.player1.speed > this.player2.speed 
+		        ? this.player1 
+		        : this.player2.speed > this.player1.speed 
+		        ? this.player2 
+		        : this.player1.strength >= this.player2.strength 
+		        ? this.player1 
+		        : this.player2;
+		    this.gameState = 'initializing';
+		    this.gameOver = false;
+
+		    this.roundStats = [];
+
+		    // Remove winner/loser classes
+		    const currentP1Image = document.getElementById('p1-image');
+		    const currentP2Image = document.getElementById('p2-image');
+		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
+		    if (currentP2Image) currentP2Image.classList.remove('winner', 'loser');
+
+		    this.updatePlayerDisplay();
+		    this.updateOpponentDisplay();
+
+		    // Apply orientation transforms
+		    if (currentP1Image) {
+		        currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		        console.log(`startBossBattle: player1 orientation set to ${this.player1.orientation}, transform: ${currentP1Image.style.transform}`);
+		    }
+		    if (currentP2Image) {
+		        currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		        console.log(`startBossBattle: player2 orientation set to ${this.player2.orientation}, transform: ${currentP2Image.style.transform}`);
+		    }
+
+		    this.updateHealth(this.player1);
+		    this.updateHealth(this.player2);
+
+		    battleLog.innerHTML = '';
+		    gameOver.textContent = '';
+
+		    // Toggle buttons for boss battle
+		    this.toggleGameButtons(true);
+
+		    if (this.player1.size !== 'Medium') {
+		        log(`${this.player1.name}'s ${this.player1.size} size ${this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics}!`);
+		    }
+		    if (this.player2.size !== 'Medium') {
+		        log(`${this.player2.name}'s ${this.player2.size} size ${this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics}!`);
+		    }
+
+		    log(`${this.player1.name} starts with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+		    log(`${this.currentTurn.name} goes first!`);
+
+		    this.initBoard();
+		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
+		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
+
+		    if (this.currentTurn === this.player2) {
+		        setTimeout(() => this.aiTurn(), 1000);
+		    }
+
+		    log(`Boss battle begins: ${this.player1.name} vs ${this.player2.name}!`);
+		}
+		
+		showBossSelectionScreen() {
+		    console.log('Navigating to boss selection screen');
+
+		    // Hide game board and game over popup
+		    const gameContainer = document.querySelector('.game-container');
+		    const gameOverContainer = document.getElementById('game-over-container');
+		    gameContainer.style.display = 'none';
+		    gameOverContainer.style.display = 'none';
+
+		    // Show boss selection screen
+		    const bossSelectContainer = document.getElementById('boss-select-container');
+		    if (bossSelectContainer) {
+		        bossSelectContainer.style.display = 'block';
+		        // Populate the boss selection UI using the global showBossSelect function
+		        if (typeof showBossSelect === 'function') {
+		            showBossSelect(this); // Pass the game instance
+		            console.log('showBossSelectionScreen: Called global showBossSelect');
+		        } else {
+		            console.error('showBossSelectionScreen: showBossSelect function not found');
+		            bossSelectContainer.innerHTML = '<p style="color: #fff; text-align: center;">Error: Boss selection UI unavailable.</p>';
+		        }
+		    } else {
+		        console.error('showBossSelectionScreen: Boss select container (#boss-select-container) not found');
+		    }
+
+		    // Reset boss battle state
+		    this.selectedBoss = null;
+		    this.selectedCharacter = null;
+		    this.gameState = 'initializing';
+		    this.gameOver = false;
+		    battleLog.innerHTML = '';
+		    gameOver.textContent = '';
+		}
+		
+		savePlayerHealth() {
+		    if (!this.selectedBoss) {
+		        console.log('savePlayerHealth: Not a boss battle, skipping');
+		        return;
+		    }
+		    // Assume userId is passed from PHP; if not, we'll fetch it or alert the issue
+		    const userId = window.userId || null;
+		    if (!userId) {
+		        console.warn('savePlayerHealth: userId not defined. Ensure window.userId is set in PHP.');
+		        log('Cannot save health: User not logged in or userId missing.');
+		        return;
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const health = this.player1.health;
+		    console.log(`savePlayerHealth: Saving - userId=${userId}, bossId=${bossId}, health=${health}`);
+		    fetch('ajax/save-health.php', {
+		        method: 'POST',
+		        headers: {
+		            'Content-Type': 'application/x-www-form-urlencoded'
+		        },
+		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		    })
+		    .then(response => {
+		        console.log('savePlayerHealth: Response status:', response.status);
+		        if (!response.ok) {
+		            throw new Error(`HTTP error! Status: ${response.status}`);
+		        }
+		        return response.json();
+		    })
+		    .then(data => {
+		        if (data.success) {
+		            console.log('savePlayerHealth: Health saved successfully');
+		            log(`Health saved: ${health} HP for ${this.player1.name} vs ${this.selectedBoss.name}`);
+		        } else {
+		            console.error('savePlayerHealth: Failed to save health:', data.error || 'Unknown error');
+		            log(`Failed to save health: ${data.error || 'Server error'}`);
+		        }
+		    })
+		    .catch(error => {
+		        console.error('savePlayerHealth: Error saving health:', error);
+		        log(`Error saving health: ${error.message}`);
+		    });
+		}
+		
+		saveBossHealth() {
+		    if (!this.selectedBoss) {
+		        console.log('saveBossHealth: Not a boss battle, skipping');
+		        return;
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const health = this.player2.health;
+		    console.log(`saveBossHealth: Saving - bossId=${bossId}, health=${health}`);
+		    fetch('ajax/save-boss-health.php', {
+		        method: 'POST',
+		        headers: {
+		            'Content-Type': 'application/x-www-form-urlencoded'
+		        },
+		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		    })
+		    .then(response => {
+		        console.log('saveBossHealth: Response status:', response.status);
+		        if (!response.ok) {
+		            throw new Error(`HTTP error! Status: ${response.status}`);
+		        }
+		        return response.json();
+		    })
+		    .then(data => {
+		        if (data.success) {
+		            console.log('saveBossHealth: Boss health saved successfully');
+		            log(`Boss health saved: ${health} HP for ${this.selectedBoss.name}`);
+		        } else {
+		            console.error('saveBossHealth: Failed to save boss health:', data.error || 'Unknown error');
+		            log(`Failed to save boss health: ${data.error || 'Server error'}`);
+		        }
+		    })
+		    .catch(error => {
+		        console.error('saveBossHealth: Error saving boss health:', error);
+		        log(`Error saving boss health: ${error.message}`);
+		    });
+		}
+		
+		// Save board state for boss battle in localStorage
+		saveBoardState() {
+		    if (!this.selectedBoss) {
+		        console.log('saveBoardState: Not a boss battle, skipping');
+		        return;
+		    }
+		    const userId = window.userId || 'guest'; // Fallback to 'guest' if userId isn't set
+		    if (!userId) {
+		        console.warn('saveBoardState: userId not defined. Using "guest" as fallback.');
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const key = `boss_board_${userId}_${bossId}`;
+    
+		    // Serialize the board state (only the tile types)
+		    const boardState = this.board.map(row => row.map(tile => ({ type: tile.type })));
+		    console.log(`saveBoardState: Saving - key=${key}, boardState=`, boardState);
+    
+		    try {
+		        localStorage.setItem(key, JSON.stringify(boardState));
+		        console.log(`saveBoardState: Board state saved successfully for ${this.selectedBoss.name}`);
+		        log(`Board state saved for ${this.selectedBoss.name}`);
+		    } catch (error) {
+		        console.error('saveBoardState: Error saving board state:', error);
+		        log(`Error saving board state: ${error.message}`);
+		    }
+		}
+
+		// Load board state for boss battle from localStorage
+		loadBoardState() {
+		    if (!this.selectedBoss) {
+		        console.log('loadBoardState: Not a boss battle, skipping');
+		        return null;
+		    }
+		    const userId = window.userId || 'guest';
+		    if (!userId) {
+		        console.warn('loadBoardState: userId not defined. Using "guest" as fallback.');
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const key = `boss_board_${userId}_${bossId}`;
+    
+		    console.log(`loadBoardState: Loading - key=${key}`);
+		    try {
+		        const savedBoard = localStorage.getItem(key);
+		        if (savedBoard) {
+		            const boardState = JSON.parse(savedBoard);
+		            console.log(`loadBoardState: Board state loaded successfully:`, boardState);
+		            return boardState.map(row => row.map(tile => ({
+		                type: tile.type,
+		                element: null // Element will be set during render
+		            })));
+		        } else {
+		            console.log('loadBoardState: No saved board state found');
+		            return null;
+		        }
+		    } catch (error) {
+		        console.error('loadBoardState: Error loading board state:', error);
+		        log(`Error loading board state: ${error.message}`);
+		        return null;
+		    }
+		}
+		
+		// Clear board state for boss battle from localStorage
+		clearBoardState() {
+		    if (!this.selectedBoss) {
+		        console.log('clearBoardState: Not a boss battle, skipping');
+		        return;
+		    }
+		    const userId = window.userId || 'guest';
+		    if (!userId) {
+		        console.warn('clearBoardState: userId not defined. Using "guest" as fallback.');
+		    }
+		    const bossId = this.selectedBoss.id;
+		    const key = `boss_board_${userId}_${bossId}`;
+    
+		    console.log(`clearBoardState: Clearing - key=${key}`);
+		    try {
+		        localStorage.removeItem(key);
+		        console.log(`clearBoardState: Board state cleared successfully for ${this.selectedBoss.name}`);
+		        log(`Board state cleared for ${this.selectedBoss.name}`);
+		    } catch (error) {
+		        console.error('clearBoardState: Error clearing board state:', error);
+		        log(`Error clearing board state: ${error.message}`);
+		    }
+		}
+		
+		refreshBoard() {
+		    console.log('refreshBoard: Unsticking game board for boss battle');
+    
+		    // Clear stale input states
+		    this.isDragging = false;
+		    this.selectedTile = null;
+		    this.targetTile = null;
+
+		    // Clear existing tile event listeners
+		    const tiles = document.querySelectorAll('.tile');
+		    tiles.forEach(tile => {
+		        tile.removeEventListener('mousedown', this.handleMouseDown);
+		        tile.removeEventListener('touchstart', this.handleTouchStart);
+		    });
+
+		    // Re-render the current board without changing tiles
+		    this.renderBoard();
+
+		    // Ensure game state and turn indicator are consistent
+		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
+		    turnIndicator.textContent = 'Boss Battle - ' + (this.currentTurn === this.player1 ? 'Player' : 'Boss') + '\'s Turn';
+    
+		    // Log the action and state for debugging
+		    console.log('refreshBoard: Board state preserved', {
+		        player1: this.player1.name,
+		        player2: this.player2.name,
+		        currentTurn: this.currentTurn.name,
+		        gameState: this.gameState
+		    });
+		    log('Board unstuck. Continue the battle!');
+    
+		    // Trigger AI turn if it's the boss's turn
+		    if (this.currentTurn === this.player2) {
+		        setTimeout(() => this.aiTurn(), 1000);
+		    }
+		}
+		
+		toggleGameButtons(isBossBattle) {
+		    console.log(`toggleGameButtons: Setting buttons for ${isBossBattle ? 'boss battle' : 'theme game'}`);
+		    const gameContainer = document.querySelector('.game-container');
+		    if (!gameContainer) {
+		        console.error('toggleGameButtons: game-container not found');
+		        return;
+		    }
+
+		    const restartButton = document.getElementById('restart');
+		    const refreshButton = document.getElementById('refresh-board');
+		    const changeCharacterButton = document.getElementById('change-character');
+
+		    if (!restartButton || !refreshButton || !changeCharacterButton) {
+		        console.warn('toggleGameButtons: One or more buttons not found', {
+		            restart: !!restartButton,
+		            refresh: !!refreshButton,
+		            changeCharacter: !!changeCharacterButton
+		        });
+		        return;
+		    }
+
+		    restartButton.style.display = isBossBattle ? 'none' : 'inline-block';
+		    refreshButton.style.display = isBossBattle ? 'inline-block' : 'none';
+		    changeCharacterButton.style.display = this.playerCharacters.length > 1 ? 'inline-block' : 'none';
+
+		    console.log(`toggleGameButtons: Buttons set - restart: ${restartButton.style.display}, refresh: ${refreshButton.style.display}, change: ${changeCharacterButton.style.display}`);
+		}
+		
+		// Simple hash function for tamper-proofing
+		createBoardHash(board) {
+		  let hash = 0;
+		  const str = JSON.stringify(board.map(row => row.map(tile => tile.type)));
+		  for (let i = 0; i < str.length; i++) {
+		    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+		    hash |= 0; // Convert to 32-bit integer
+		  }
+		  return hash.toString();
+		}
+
+		// Save board to localStorage
+		saveBoard() {
+		  const boardState = {
+		    level: this.currentLevel,
+		    board: this.board.map(row => row.map(tile => ({ type: tile.type }))), // Store only tile types
+		    hash: this.createBoardHash(this.board)
+		  };
+		  localStorage.setItem(`board_level_${this.currentLevel}`, JSON.stringify(boardState));
+		}
+
+		// Load board from localStorage
+		loadBoard() {
+		  const key = `board_level_${this.currentLevel}`;
+		  const boardState = JSON.parse(localStorage.getItem(key));
+		  if (boardState && boardState.level === this.currentLevel) {
+		    const expectedHash = this.createBoardHash(boardState.board);
+		    if (boardState.hash === expectedHash) {
+		      return boardState.board.map(row => row.map(tile => ({
+		        type: tile.type,
+		        element: null // Element will be set during render
+		      })));
+		    } else {
+		      console.warn(`loadBoard: Invalid hash for level ${this.currentLevel}, generating new board`);
+		    }
+		  }
+		  return null;
+		}
+
+		// Clear board from localStorage
+		clearBoard() {
+		  localStorage.removeItem(`board_level_${this.currentLevel}`);
+		}
+		  
+		  async init() {
+		      console.log("init: Starting async initialization");
+		      // Initialize playerCharacters here after theme is set
+		      this.playerCharacters = this.playerCharactersConfig.map(config => this.createCharacter(config));
+		      await this.showCharacterSelect(true);
+
+		      const progressData = await this.loadProgress();
+		      const { loadedLevel, loadedScore, hasProgress } = progressData;
+
+		      if (hasProgress) {
+		        console.log(`init: Prompting with loadedLevel=${loadedLevel}, loadedScore=${loadedScore}`);
+		        const userChoice = await this.showProgressPopup(loadedLevel, loadedScore);
+		        if (userChoice) {
+		          this.currentLevel = loadedLevel;
+		          this.grandTotalScore = loadedScore;
+		          log(`Resumed at Level ${this.currentLevel}, Score ${this.grandTotalScore}`);
+		        } else {
+		          this.currentLevel = 1;
+		          this.grandTotalScore = 0;
+		          await this.clearProgress();
+		          log(`Starting fresh at Level 1`);
+		        }
+		      } else {
+		        this.currentLevel = 1;
+		        this.grandTotalScore = 0;
+		        log(`No saved progress found, starting at Level 1`);
+		      }
+
+		      console.log("init: Async initialization completed");
+		    }
+			
+	  	// Set background based on current theme
+			setBackground() {
+			  console.log('setBackground: Attempting for theme=' + this.theme);
+			  const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+			  console.log('setBackground: themeData=', themeData);
+			  const backgroundUrl = `images/monstrocity/${this.theme}/monstrocity.png`;
+			  console.log('setBackground: Setting background to ' + backgroundUrl);
+			  if (themeData && themeData.background) {
+			    document.body.style.backgroundImage = `url(${backgroundUrl})`;
+			    document.body.style.backgroundSize = 'cover';
+			    document.body.style.backgroundPosition = 'center';
+			  } else {
+			    document.body.style.backgroundImage = 'none';
+			  }
+			}
+
+	    // Update theme and refresh visuals
+			updateTheme(newTheme, isBossBattle = false) {
+			    if (updatePending) {
+			        console.log('updateTheme: Skipped due to pending update');
+			        return Promise.resolve(); // Return a resolved promise for async handling
+			    }
+			    updatePending = true;
+			    console.time('updateTheme_' + newTheme);
+			    const self = this;
+			    this.theme = newTheme;
+			    this.baseImagePath = 'images/monstrocity/' + this.theme + '/';
+			    localStorage.setItem('gameTheme', this.theme);
+			    this.setBackground();
+
+			    // Clear boss-related overrides only if not in a boss battle context
+			    if (!isBossBattle) {
+			        console.log('updateTheme: Not a boss battle, clearing selectedBoss and selectedCharacter');
+			        this.selectedBoss = null;
+			        this.selectedCharacter = null;
+			    } else {
+			        console.log('updateTheme: Boss battle context, preserving selectedBoss and selectedCharacter');
+			    }
+
+			    // Update the logo immediately
+			    document.querySelector('.game-logo').src = this.baseImagePath + 'logo.png';
+
+			    // Show loading indicator only if not a boss battle (since boss battle doesn't need character selection here)
+			    if (!isBossBattle) {
+			        const characterOptions = document.getElementById('character-options');
+			        if (characterOptions) {
+			            characterOptions.innerHTML = '<p style="color: #fff; text-align: center;">Loading new characters...</p>';
+			        }
+			    }
+
+			    return getAssets(this.theme).then(function(assets) {
+			        console.time('updateCharacters_' + newTheme);
+			        self.playerCharactersConfig = assets;
+			        self.playerCharacters = [];
+
+			        // Preload assets
+			        assets.forEach(config => {
+			            const char = self.createCharacter(config);
+			            if (char.mediaType === 'image') {
+			                const img = new Image();
+			                img.src = char.imageUrl;
+			                img.onload = () => console.log('Preloaded: ' + char.imageUrl);
+			                img.onerror = () => console.log('Failed to preload: ' + char.imageUrl);
+			            }
+			            self.playerCharacters.push(char);
+			        });
+
+			        // Update player and opponent only if game is active
+			        if (self.player1 && !isBossBattle) {
+			            const newConfig = self.playerCharactersConfig.find(c => c.name === self.player1.name) || self.playerCharactersConfig[0];
+			            self.player1 = self.createCharacter(newConfig);
+			            self.updatePlayerDisplay();
+			        }
+			        // Always reset opponent to default for the current level if not a boss battle
+			        if (self.player1 && !isBossBattle) {
+			            self.player2 = self.createCharacter(opponentsConfig[self.currentLevel - 1]);
+			            self.updateOpponentDisplay();
+			            console.log('updateTheme: Reset player2 to default opponent: ' + self.player2.name);
+			        }
+
+			        // Render board only if game is initialized and not a boss battle
+			        if (self.player1 && self.gameState !== 'initializing' && !isBossBattle) {
+			            // Clear old event listeners to prevent lockups
+			            const tiles = document.querySelectorAll('.tile');
+			            tiles.forEach(tile => {
+			                tile.removeEventListener('mousedown', self.handleMouseDown);
+			                tile.removeEventListener('touchstart', self.handleTouchStart);
+			            });
+			            self.renderBoard();
+			            console.log('updateTheme: Board rendered for active game');
+			        } else {
+			            console.log('updateTheme: Skipping board render, no active game or boss battle in progress');
+			        }
+
+			        // Reset interaction flags only if game is active and not a boss battle
+			        if (self.player1 && !isBossBattle) {
+			            self.isDragging = false;
+			            self.selectedTile = null;
+			            self.targetTile = null;
+			            self.gameState = self.currentTurn === self.player1 ? 'playerTurn' : 'aiTurn';
+			        }
+
+			        // Show character select only if not a boss battle
+			        if (!isBossBattle) {
+			            const container = document.getElementById('character-select-container');
+			            container.style.display = 'block';
+			            self.showCharacterSelect(self.player1 === null);
+			        }
+
+			        console.timeEnd('updateCharacters_' + newTheme);
+			        console.timeEnd('updateTheme_' + newTheme);
+			        updatePending = false;
+			    }).catch(function(error) {
+			        console.error('Error updating theme assets:', error);
+			        // Fallback to default monstrocity assets
+			        self.playerCharactersConfig = [
+			            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+			        ];
+			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
+			        // Clear boss overrides in case of error, unless it's a boss battle
+			        if (!isBossBattle) {
+			            self.selectedBoss = null;
+			            self.selectedCharacter = null;
+			        }
+			        // Show character select on error only if not a boss battle
+			        if (!isBossBattle) {
+			            const container = document.getElementById('character-select-container');
+			            container.style.display = 'block';
+			            self.showCharacterSelect(self.player1 === null);
+			        }
+			        console.timeEnd('updateTheme_' + newTheme);
+			        updatePending = false;
+			    });
+			}
+			
+		async saveProgress() {
+		  const data = {
+		    currentLevel: this.currentLevel, // Now 1-28
+		    grandTotalScore: this.grandTotalScore
+		  };
+
+		  console.log("Sending saveProgress request with data:", data);
+
+		  try {
+		    const response = await fetch('ajax/save-monstrocity-progress.php', {
+		      method: 'POST',
+		      headers: { 'Content-Type': 'application/json' },
+		      body: JSON.stringify(data)
+		    });
+
+		    console.log("Response status:", response.status);
+
+		    const responseText = await response.text();
+		    console.log("Raw response text:", responseText);
+
+		    if (!response.ok) {
+		      throw new Error(`HTTP error! Status: ${response.status}`);
+		    }
+
+		    const result = JSON.parse(responseText);
+		    console.log("Parsed response:", result);
+
+		    if (result.status === 'success') {
+		      log('Progress saved: Level ' + this.currentLevel); // No +1 needed
+		    } else {
+		      console.error('Failed to save progress:', result.message);
+		    }
+		  } catch (error) {
+		    console.error('Error saving progress:', error);
+		  }
+		}
+
+		async loadProgress() {
+		    try {
+		      console.log("Fetching progress from ajax/load-monstrocity-progress.php");
+		      const response = await fetch('ajax/load-monstrocity-progress.php', {
+		        method: 'GET',
+		        headers: { 'Content-Type': 'application/json' }
+		      });
+
+		      console.log("Response status:", response.status);
+		      if (!response.ok) {
+		        throw new Error(`HTTP error! Status: ${response.status}`);
+		      }
+
+		      const result = await response.json();
+		      console.log("Parsed response:", result);
+		      if (result.status === 'success' && result.progress) {
+		        const progress = result.progress;
+		        return {
+		          loadedLevel: progress.currentLevel || 1,
+		          loadedScore: progress.grandTotalScore || 0,
+		          hasProgress: true
+		        };
+		      } else {
+		        console.log("No progress found or status not success:", result);
+		        return { loadedLevel: 1, loadedScore: 0, hasProgress: false };
+		      }
+		    } catch (error) {
+		      console.error('Error loading progress:', error);
+		      return { loadedLevel: 1, loadedScore: 0, hasProgress: false };
+		    }
+		  }
+
+	  async clearProgress() {
+	    try {
+	      const response = await fetch('ajax/clear-monstrocity-progress.php', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' }
+	      });
+
+	      if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	      }
+
+	      const result = await response.json();
+	      if (result.status === 'success') {
+	        this.currentLevel = 1;
+	        this.grandTotalScore = 0;
+	        this.clearBoard(); // Clear board for level 1
+	        log('Progress cleared');
+	      }
+	    } catch (error) {
+	      console.error('Error clearing progress:', error);
+	    }
+	  }
+
+      updateTileSizeWithGap() {
+        const boardElement = document.getElementById("game-board");
+        const boardWidth = boardElement.offsetWidth || 300;
+        this.tileSizeWithGap = (boardWidth - (0.5 * (this.width - 1))) / this.width;
+      }
+
+	  createCharacter(config) {
+	      console.log('createCharacter: config=', config);
+	      var typeFolder;
+	      var imageUrl;
+	      var fallbackUrl; // New variable for fallback URL
+	      var orientation = 'Left';
+	      var isNFT = false;
+	      var mediaType = 'image'; // Default to image
+
+	      // Log specifically for imageUrl to debug
+	      console.log('createCharacter: config.imageUrl=', config.imageUrl);
+
+	      // Find the theme data for the current theme
+	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+	      const extension = themeData?.extension || 'png'; // Default to "png" if not specified
+	      const videoExtensions = ['mov', 'mp4']; // Define video extensions
+	      const defaultIpfsPrefix = 'https://ipfs.io/ipfs/'; // Default fallback prefix
+
+	      // Use config.imageUrl if provided (e.g., for bosses), otherwise proceed with existing logic
+	      if (config.imageUrl) {
+	          imageUrl = config.imageUrl;
+	          fallbackUrl = config.fallbackUrl || 'icons/skull.png';
+	          orientation = config.orientation || 'Right'; // Default to Right for bosses if not specified
+	      } else if (config.ipfs && config.policyId) {
+	          isNFT = true;
+	          var policyMetadata = { orientation: 'Right', ipfsPrefix: themeData?.ipfsPrefixes || defaultIpfsPrefix };
+	          // Use theme-specific ipfsPrefixes if available
+	          if (themeData && themeData.policyIds) {
+	              var policyIds = themeData.policyIds.split(',').filter(id => id.trim());
+	              var orientations = themeData.orientations ? themeData.orientations.split(',').filter(o => o.trim()) : [];
+	              var ipfsPrefixes = themeData.ipfsPrefixes ? themeData.ipfsPrefixes.split(',').filter(p => p.trim()) : [defaultIpfsPrefix];
+	              var policyIndex = policyIds.indexOf(config.policyId);
+	              if (policyIndex !== -1) {
+	                  policyMetadata = {
+	                      orientation: orientations.length === 1 ? orientations[0] : (orientations[policyIndex] || 'Right'),
+	                      ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[policyIndex] || defaultIpfsPrefix)
+	                  };
+	              }
+	          }
+	          if (policyMetadata.orientation === 'Random') {
+	              orientation = Math.random() < 0.5 ? 'Left' : 'Right';
+	          } else {
+	              orientation = policyMetadata.orientation;
+	          }
+	          imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
+	          fallbackUrl = defaultIpfsPrefix + config.ipfs; // Set fallback URL
+	          // Determine mediaType from IPFS URL extension if present
+	          const urlExtension = imageUrl.split('.').pop().toLowerCase();
+	          if (videoExtensions.includes(urlExtension)) {
+	              mediaType = 'video';
+	          }
+	      } else {
+	          switch (config.type) {
+	              case 'Base': typeFolder = 'base'; break;
+	              case 'Leader': typeFolder = 'leader'; break;
+	              case 'Battle Damaged': typeFolder = 'battle-damaged'; break;
+	              default: typeFolder = 'base';
+	          }
+	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.' + extension;
+	          fallbackUrl = 'icons/skull.png'; // Fallback for non-NFTs
+	          orientation = characterDirections[config.name] || 'Left';
+	          // Determine mediaType from extension
+	          if (videoExtensions.includes(extension.toLowerCase())) {
+	              mediaType = 'video';
+	          }
+	      }
+
+	      var baseHealth;
+	      switch (config.type) {
+	          case 'Leader': baseHealth = 100; break;
+	          case 'Battle Damaged': baseHealth = 70; break;
+	          case 'Base':
+	          default: baseHealth = 85;
+	      }
+
+	      var healthModifier = 1;
+	      var tacticsAdjust = 0;
+	      switch (config.size) {
+	          case 'Large':
+	              healthModifier = 1.2;
+	              tacticsAdjust = config.tactics > 1 ? -2 : 0;
+	              break;
+	          case 'Small':
+	              healthModifier = 0.8;
+	              tacticsAdjust = config.tactics < 6 ? 2 : 7 - config.tactics;
+	              break;
+	          case 'Medium':
+	              healthModifier = 1;
+	              tacticsAdjust = 0;
+	              break;
+	      }
+
+	      var adjustedHealth = Math.round(baseHealth * healthModifier);
+	      var adjustedTactics = Math.max(1, Math.min(7, config.tactics + tacticsAdjust));
+
+	      return {
+	          name: config.name,
+	          type: config.type,
+	          strength: config.strength,
+	          speed: config.speed,
+	          tactics: adjustedTactics,
+	          size: config.size,
+	          powerup: config.powerup,
+	          health: adjustedHealth,
+	          maxHealth: adjustedHealth,
+	          boostActive: false,
+	          boostValue: 0,
+	          lastStandActive: false,
+	          imageUrl: imageUrl,
+	          fallbackUrl: fallbackUrl, // Add fallbackUrl to character object
+	          orientation: orientation,
+	          isNFT: isNFT,
+	          mediaType: mediaType
+	      };
+	  }
+	  
+	  flipCharacter(character, mediaElement, isOpponent = false) {
+	      if (character.orientation === 'Left') {
+	          character.orientation = 'Right';
+	          mediaElement.style.transform = isOpponent ? 'scaleX(-1)' : 'none';
+	      } else {
+	          character.orientation = 'Left';
+	          mediaElement.style.transform = isOpponent ? 'none' : 'scaleX(-1)';
+	      }
+	      log(`${character.name}'s orientation flipped to ${character.orientation}!`);
+	  }
+
+	  showCharacterSelect(isInitial) {
+	      console.time('showCharacterSelect');
+	      const container = document.getElementById('character-select-container');
+	      const optionsDiv = document.getElementById('character-options');
+	      optionsDiv.innerHTML = '';
+	      container.style.display = 'block';
+
+	      const selectBossButton = document.getElementById('select-boss-button');
+	      if (this.selectedBoss && window.isLoggedIn) {
+	          selectBossButton.style.display = 'inline-block';
+	          selectBossButton.onclick = () => {
+	              container.style.display = 'none';
+	              showBossSelect(this);
+	          };
+	      } else {
+	          selectBossButton.style.display = 'none';
+	      }
+
+	      if (!this.playerCharacters || this.playerCharacters.length === 0) {
+	          console.warn('showCharacterSelect: No characters available, using fallback');
+	          optionsDiv.innerHTML = '<p style="color: #fff; text-align: center;">No characters available. Please try another theme.</p>';
+	          console.timeEnd('showCharacterSelect');
+	          return;
+	      }
+
+	      document.getElementById('theme-select-button').onclick = () => {
+	          showThemeSelect(this);
+	      };
+
+	      const fragment = document.createDocumentFragment();
+	      this.playerCharacters.forEach(character => {
+	          const option = document.createElement('div');
+	          option.className = 'character-option';
+	          option.innerHTML = character.mediaType === 'video' ?
+	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}" onerror="this.src='${character.fallbackUrl}'"></video>` +
+	              `<p><strong>${character.name}</strong></p>` +
+	              `<p>Type: ${character.type}</p>` +
+	              `<p>Health: ${character.maxHealth}</p>` +
+	              `<p>Strength: ${character.strength}</p>` +
+	              `<p>Speed: ${character.speed}</p>` +
+	              `<p>Tactics: ${character.tactics}</p>` +
+	              `<p>Size: ${character.size}</p>` +
+	              `<p>Power-Up: ${character.powerup}</p>` :
+	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onerror="this.src='${character.fallbackUrl}'">` +
+	              `<p><strong>${character.name}</strong></p>` +
+	              `<p>Type: ${character.type}</p>` +
+	              `<p>Health: ${character.maxHealth}</p>` +
+	              `<p>Strength: ${character.strength}</p>` +
+	              `<p>Speed: ${character.speed}</p>` +
+	              `<p>Tactics: ${character.tactics}</p>` +
+	              `<p>Size: ${character.size}</p>` +
+	              `<p>Power-Up: ${character.powerup}</p>`;
+	          option.addEventListener('click', () => {
+	              console.log('showCharacterSelect: Character selected: ' + character.name);
+	              console.log('showCharacterSelect: Checking for selectedBoss:', this.selectedBoss);
+	              container.style.display = 'none';
+	              if (isInitial) {
+	                  console.log('showCharacterSelect: Initial selection');
+	                  if (this.selectedBoss) {
+	                      console.log('showCharacterSelect: Boss battle initial - calling setSelectedCharacter');
+	                      this.setSelectedCharacter(character);
+	                  } else {
+	                      console.log('showCharacterSelect: Theme game initial - setting player1 and starting game');
+	                      this.player1 = { ...character };
+	                      console.log('showCharacterSelect: this.player1 set: ' + this.player1.name);
+	                      this.initGame();
+	                  }
+	              } else {
+	                  console.log('showCharacterSelect: Swapping character during game');
+	                  this.swapPlayerCharacter(character);
+	              }
+	          });
+	          fragment.appendChild(option);
+	      });
+
+	      optionsDiv.appendChild(fragment);
+	      console.log(`showCharacterSelect: Rendered ${this.playerCharacters.length} characters`);
+	      console.timeEnd('showCharacterSelect');
+	  }
+	  
+	  swapPlayerCharacter(newCharacter) {
+	    const oldHealth = this.player1.health;
+	    const oldMaxHealth = this.player1.maxHealth;
+	    const newInstance = { ...newCharacter };
+  
+	    const healthPercentage = Math.min(1, oldHealth / oldMaxHealth);
+	    newInstance.health = Math.round(newInstance.maxHealth * healthPercentage);
+	    newInstance.health = Math.max(0, Math.min(newInstance.maxHealth, newInstance.health));
+  
+	    newInstance.boostActive = false;
+	    newInstance.boostValue = 0;
+	    newInstance.lastStandActive = false;
+  
+	    this.player1 = newInstance;
+	    this.updatePlayerDisplay();
+	    this.updateHealth(this.player1);
+  
+	    log(`${this.player1.name} steps into the fray with ${this.player1.health}/${this.player1.maxHealth} HP!`);
+  
+	    this.currentTurn = this.player1.speed > this.player2.speed 
+	      ? this.player1 
+	      : this.player2.speed > this.player1.speed 
+	        ? this.player2 
+	        : this.player1.strength >= this.player2.strength 
+	          ? this.player1 
+	          : this.player2;
+	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+  
+	    if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
+	      setTimeout(() => this.aiTurn(), 1000);
+	    }
+	  }
+	  
+	  showProgressPopup(loadedLevel, loadedScore) {
+	      console.log(`showProgressPopup: Displaying popup for level=${loadedLevel}, score=${loadedScore}`);
+	      return new Promise((resolve) => {
+	        const modal = document.createElement("div");
+	        modal.id = "progress-modal";
+	        modal.className = "progress-modal";
+
+	        const modalContent = document.createElement("div");
+	        modalContent.className = "progress-modal-content";
+
+	        const message = document.createElement("p");
+	        message.id = "progress-message";
+	        message.textContent = `Resume from Level ${loadedLevel} with Score of ${loadedScore}?`;
+	        modalContent.appendChild(message);
+
+	        const modalButtons = document.createElement("div");
+	        modalButtons.className = "progress-modal-buttons";
+
+	        const resumeButton = document.createElement("button");
+	        resumeButton.id = "progress-resume";
+	        resumeButton.textContent = "Resume";
+	        modalButtons.appendChild(resumeButton);
+
+	        const startFreshButton = document.createElement("button");
+	        startFreshButton.id = "progress-start-fresh";
+	        startFreshButton.textContent = "Restart";
+	        modalButtons.appendChild(startFreshButton);
+
+	        modalContent.appendChild(modalButtons);
+	        modal.appendChild(modalContent);
+	        document.body.appendChild(modal);
+
+	        modal.style.display = "flex";
+
+	        const onResume = () => {
+	          console.log("showProgressPopup: User chose Resume");
+	          modal.style.display = "none";
+	          document.body.removeChild(modal);
+	          resumeButton.removeEventListener("click", onResume);
+	          startFreshButton.removeEventListener("click", onStartFresh);
+	          resolve(true);
+	        };
+
+	        const onStartFresh = () => {
+	          console.log("showProgressPopup: User chose Restart");
+	          modal.style.display = "none";
+	          document.body.removeChild(modal);
+	          resumeButton.removeEventListener("click", onResume);
+	          startFreshButton.removeEventListener("click", onStartFresh);
+	          resolve(false);
+	        };
+
+	        resumeButton.addEventListener("click", onResume);
+	        startFreshButton.addEventListener("click", onStartFresh);
+	      });
+	    }
+
+		initGame() {
+		    var self = this;
+		    console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
+		    this.selectedBoss = null;
+		    this.selectedCharacter = null;
+		    console.log('initGame: Cleared selectedBoss and selectedCharacter');
+
+		    var gameContainer = document.querySelector('.game-container');
+		    var gameBoard = document.getElementById('game-board');
+		    gameContainer.style.display = 'block';
+		    gameBoard.style.visibility = 'visible';
+		    this.setBackground();
+
+		    this.sounds.reset.play();
+		    log('Starting Level ' + this.currentLevel + '...');
+		    this.player2 = this.createCharacter(opponentsConfig[this.currentLevel - 1]);
+		    console.log('Loaded opponent for level ' + this.currentLevel + ': ' + this.player2.name + ' (opponentsConfig[' + (this.currentLevel - 1) + '])');
+
+		    this.player1.health = this.player1.maxHealth;
+
+		    this.currentTurn = this.player1.speed > this.player2.speed 
+		        ? this.player1 
+		        : this.player2.speed > this.player1.speed 
+		        ? this.player2 
+		        : this.player1.strength >= this.player2.strength 
+		        ? this.player1 
+		        : this.player2;
+		    this.gameState = 'initializing';
+		    this.gameOver = false;
+
+		    this.roundStats = [];
+
+		    // Remove winner/loser classes
+		    const currentP1Image = document.getElementById('p1-image');
+		    const currentP2Image = document.getElementById('p2-image');
+		    if (currentP1Image) currentP1Image.classList.remove('winner', 'loser');
+		    if (currentP2Image) currentP2Image.classList.remove('winner', 'loser');
+
+		    this.updatePlayerDisplay();
+		    this.updateOpponentDisplay();
+
+		    // Apply orientation transforms
+		    if (currentP1Image) currentP1Image.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		    if (currentP2Image) currentP2Image.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+
+		    this.updateHealth(this.player1);
+		    this.updateHealth(this.player2);
+
+		    battleLog.innerHTML = '';
+		    gameOver.textContent = '';
+
+		    // Toggle buttons for theme game
+		    this.toggleGameButtons(false);
+
+		    if (this.player1.size !== 'Medium') {
+		        log(this.player1.name + '\'s ' + this.player1.size + ' size ' + (this.player1.size === 'Large' ? 'boosts health to ' + this.player1.maxHealth + ' but dulls tactics to ' + this.player1.tactics : 'drops health to ' + this.player1.maxHealth + ' but sharpens tactics to ' + this.player1.tactics) + '!');
+		    }
+		    if (this.player2.size !== 'Medium') {
+		        log(this.player2.name + '\'s ' + this.player2.size + ' size ' + (this.player2.size === 'Large' ? 'boosts health to ' + this.player2.maxHealth + ' but dulls tactics to ' + this.player2.tactics : 'drops health to ' + this.player2.maxHealth + ' but sharpens tactics to ' + this.player2.tactics) + '!');
+		    }
+
+		    log(this.player1.name + ' starts at full strength with ' + this.player1.health + '/' + this.player1.maxHealth + ' HP!');
+		    log(this.currentTurn.name + ' goes first!');
+
+		    this.initBoard();
+		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
+		    turnIndicator.textContent = 'Level ' + this.currentLevel + ' - ' + (this.currentTurn === this.player1 ? 'Player' : 'Opponent') + '\'s Turn';
+
+		    if (this.currentTurn === this.player2) {
+		        setTimeout(function() { self.aiTurn(); }, 1000);
+		    }
+		}
+
+		updatePlayerDisplay() {
+		    p1Name.textContent = this.player1.isNFT || this.theme === 'monstrocity' ? this.player1.name : 'Player 1';
+		    p1Type.textContent = this.player1.type;
+		    p1Strength.textContent = this.player1.strength;
+		    p1Speed.textContent = this.player1.speed;
+		    p1Tactics.textContent = this.player1.tactics;
+		    p1Size.textContent = this.player1.size;
+		    p1Powerup.textContent = this.player1.powerup;
+
+		    const p1Image = document.getElementById('p1-image');
+		    const parent = p1Image.parentNode;
+
+		    if (this.player1.mediaType === 'video') {
+		        // Only replace if current element is not a video
+		        if (p1Image.tagName !== 'VIDEO') {
+		            const newVideo = document.createElement('video');
+		            newVideo.id = 'p1-image';
+		            newVideo.src = this.player1.imageUrl;
+		            newVideo.autoplay = true;
+		            newVideo.loop = true;
+		            newVideo.muted = true;
+		            newVideo.alt = this.player1.name;
+		            newVideo.onerror = () => { newVideo.src = this.player1.fallbackUrl; };
+		            parent.replaceChild(newVideo, p1Image);
+		        } else {
+		            p1Image.src = this.player1.imageUrl;
+		            p1Image.onerror = () => { p1Image.src = this.player1.fallbackUrl; };
+		        }
+		    } else {
+		        // Only replace if current element is not an image
+		        if (p1Image.tagName !== 'IMG') {
+		            const newImage = document.createElement('img');
+		            newImage.id = 'p1-image';
+		            newImage.src = this.player1.imageUrl;
+		            newImage.alt = this.player1.name;
+		            newImage.onerror = () => { newImage.src = this.player1.fallbackUrl; };
+		            parent.replaceChild(newImage, p1Image);
+		        } else {
+		            p1Image.src = this.player1.imageUrl;
+		            p1Image.onerror = () => { p1Image.src = this.player1.fallbackUrl; };
+		        }
+		    }
+
+		    const p1ImageNew = document.getElementById('p1-image');
+		    p1ImageNew.style.transform = this.player1.orientation === 'Left' ? 'scaleX(-1)' : 'none';
+		    // Handle onload for images, ensure videos are visible immediately
+		    if (p1ImageNew.tagName === 'IMG') {
+		        p1ImageNew.onload = function() { p1ImageNew.style.display = 'block'; };
+		    } else {
+		        p1ImageNew.style.display = 'block';
+		    }
+		    p1Hp.textContent = this.player1.health + '/' + this.player1.maxHealth;
+
+		    // Reattach click event listener
+		    p1ImageNew.onclick = () => {
+		        console.log("Player 1 media clicked");
+		        this.showCharacterSelect(false);
+		    };
+		}
+
+		updateOpponentDisplay() {
+		    // Use actual boss name in boss battles, otherwise follow theme-based logic
+		    p2Name.textContent = this.player2.isBossBattle ? this.player2.name : (this.theme === 'monstrocity' ? this.player2.name : 'AI Opponent');
+		    p2Type.textContent = this.player2.type;
+		    p2Strength.textContent = this.player2.strength;
+		    p2Speed.textContent = this.player2.speed;
+		    p2Tactics.textContent = this.player2.tactics;
+		    p2Size.textContent = this.player2.size;
+		    p2Powerup.textContent = this.player2.powerup;
+
+		    const p2Image = document.getElementById('p2-image');
+		    const parent = p2Image.parentNode;
+
+		    if (this.player2.mediaType === 'video') {
+		        if (p2Image.tagName !== 'VIDEO') {
+		            const newVideo = document.createElement('video');
+		            newVideo.id = 'p2-image';
+		            newVideo.src = this.player2.imageUrl;
+		            newVideo.autoplay = true;
+		            newVideo.loop = true;
+		            newVideo.muted = true;
+		            newVideo.alt = this.player2.name;
+		            parent.replaceChild(newVideo, p2Image);
+		        } else {
+		            p2Image.src = this.player2.imageUrl;
+		        }
+		    } else {
+		        if (p2Image.tagName !== 'IMG') {
+		            const newImage = document.createElement('img');
+		            newImage.id = 'p2-image';
+		            newImage.src = this.player2.imageUrl;
+		            newImage.alt = this.player2.name;
+		            parent.replaceChild(newImage, p2Image);
+		        } else {
+		            p2Image.src = this.player2.imageUrl;
+		        }
+		    }
+
+		    const p2ImageNew = document.getElementById('p2-image');
+		    p2ImageNew.style.transform = this.player2.orientation === 'Right' ? 'scaleX(-1)' : 'none';
+		    if (p2ImageNew.tagName === 'IMG') {
+		        p2ImageNew.onload = function() { p2ImageNew.style.display = 'block'; };
+		    } else {
+		        p2ImageNew.style.display = 'block';
+		    }
+		    p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
+
+		    // Ensure no lingering classes
+		    p2ImageNew.classList.remove('winner', 'loser');
+		}
+
+		initBoard() {
+		    if (this.selectedBoss) {
+		        console.log('initBoard: Attempting to load board state for boss battle');
+		        const savedBoard = this.loadBoardState();
+		        if (savedBoard) {
+		            this.board = savedBoard;
+		            console.log('initBoard: Loaded board from localStorage for boss battle');
+		        } else {
+		            // Generate new board if no saved state
+		            this.board = [];
+		            for (let y = 0; y < this.height; y++) {
+		                this.board[y] = [];
+		                for (let x = 0; x < this.width; x++) {
+		                    let tile;
+		                    do {
+		                        tile = this.createRandomTile();
+		                    } while (
+		                        (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                        (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		                    );
+		                    this.board[y][x] = tile;
+		                }
+		            }
+		            console.log('initBoard: Generated new board for boss battle');
+		        }
+		        this.renderBoard();
+		    } else {
+		        // Existing logic for default game mode
+		        const savedBoard = this.loadBoard();
+		        if (savedBoard) {
+		            this.board = savedBoard;
+		            console.log('initBoard: Loaded board from localStorage for level', this.currentLevel);
+		        } else {
+		            this.board = [];
+		            for (let y = 0; y < this.height; y++) {
+		                this.board[y] = [];
+		                for (let x = 0; x < this.width; x++) {
+		                    let tile;
+		                    do {
+		                        tile = this.createRandomTile();
+		                    } while (
+		                        (x >= 2 && this.board[y][x-1]?.type === tile.type && this.board[y][x-2]?.type === tile.type) ||
+		                        (y >= 2 && this.board[y-1]?.[x]?.type === tile.type && this.board[y-2]?.[x]?.type === tile.type)
+		                    );
+		                    this.board[y][x] = tile;
+		                }
+		            }
+		            this.saveBoard();
+		            console.log('initBoard: Generated and saved new board for level', this.currentLevel);
+		        }
+		        this.renderBoard();
+		    }
+		}
+
+      createRandomTile() {
+        return {
+          type: randomChoice(this.tileTypes),
+          element: null
+        };
+      }
+
+	  renderBoard() {
+	      this.updateTileSizeWithGap();
+	      const boardElement = document.getElementById("game-board");
+	      boardElement.innerHTML = "";
+
+	      // Guard against uninitialized board
+	      if (!this.board || !Array.isArray(this.board) || this.board.length !== this.height) {
+	          console.warn('renderBoard: Board not initialized, skipping render');
+	          return;
+	      }
+
+	      for (let y = 0; y < this.height; y++) {
+	          if (!Array.isArray(this.board[y])) {
+	              console.warn(`renderBoard: Row ${y} is not an array, skipping`);
+	              continue;
+	          }
+	          for (let x = 0; x < this.width; x++) {
+	              const tile = this.board[y][x];
+	              if (!tile || tile.type === null) continue;
+	              const tileElement = document.createElement("div");
+	              tileElement.className = `tile ${tile.type}`;
+	              if (this.gameOver) tileElement.classList.add("game-over");
+	              const img = document.createElement('img');
+	              img.src = `https://www.skulliance.io/staking/icons/${tile.type}.png`;
+	              img.alt = tile.type;
+	              tileElement.appendChild(img);
+	              tileElement.dataset.x = x;
+	              tileElement.dataset.y = y;
+	              boardElement.appendChild(tileElement);
+	              tile.element = tileElement;
+
+	              if (!this.isDragging || (this.selectedTile && (this.selectedTile.x !== x || this.selectedTile.y !== y))) {
+	                  tileElement.style.transform = "translate(0, 0)";
+	              }
+
+	              if (this.isTouchDevice) {
+	                  tileElement.addEventListener("touchstart", (e) => this.handleTouchStart(e));
+	              } else {
+	                  tileElement.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+	              }
+	          }
+	      }
+
+	      document.getElementById("game-over-container").style.display = this.gameOver ? "block" : "none";
+	      console.log('renderBoard: Board rendered successfully');
+	  }
+
+		addEventListeners() {
+		    const board = document.getElementById("game-board");
+		    if (this.isTouchDevice) {
+		        board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
+		        board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
+		        board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
+		    } else {
+		        board.addEventListener("mousedown", (e) => this.handleMouseDown(e));
+		        board.addEventListener("mousemove", (e) => this.handleMouseMove(e));
+		        board.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+		    }
+
+		    document.getElementById("try-again").addEventListener("click", () => this.handleGameOverButton());
+		    document.getElementById("restart").addEventListener("click", () => {
+		        this.initGame();
+		    });
+			
+			// Add the missing event listener for the Refresh Board button
+		    const refreshButton = document.getElementById("refresh-board");
+		    refreshButton.addEventListener("click", () => {
+		        console.log("Refresh Board button clicked");
+		        this.refreshBoard();
+		    });
+			
+		    const changeCharacterButton = document.getElementById("change-character");
+		    const p1Image = document.getElementById("p1-image");
+		    const p2Image = document.getElementById("p2-image");
+
+		    changeCharacterButton.addEventListener("click", () => {
+		        console.log("addEventListeners: Switch Monster button clicked");
+		        this.showCharacterSelect(false);
+		    });
+		    p1Image.addEventListener("click", () => {
+		        console.log("addEventListeners: Player 1 media clicked");
+		        this.showCharacterSelect(false);
+		    });
+		    document.getElementById("flip-p1").addEventListener("click", () => this.flipCharacter(this.player1, document.getElementById("p1-image"), false));
+		    document.getElementById("flip-p2").addEventListener("click", () => this.flipCharacter(this.player2, document.getElementById("p2-image"), true));
+		}
+
+		handleGameOverButton() {
+		  console.log(`handleGameOverButton started: currentLevel=${this.currentLevel}, player2.health=${this.player2.health}`);
+		  if (this.player2.health <= 0 && this.currentLevel > opponentsConfig.length) {
+		    this.currentLevel = 1; // Reset to Level 1 only after final level win
+		    console.log(`Reset to Level 1: currentLevel=${this.currentLevel}`);
+		  }
+		  // No level reset on loss; keep currentLevel intact
+		  this.initGame();
+		  console.log(`handleGameOverButton completed: currentLevel=${this.currentLevel}`);
+		}
+
+      handleMouseDown(e) {
+        if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
+        e.preventDefault();
+        const tile = this.getTileFromEvent(e);
+        if (!tile || !tile.element) return;
+
+        this.isDragging = true;
+        this.selectedTile = { x: tile.x, y: tile.y };
+        tile.element.classList.add("selected");
+
+        const boardRect = document.getElementById("game-board").getBoundingClientRect();
+        this.offsetX = e.clientX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap);
+        this.offsetY = e.clientY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap);
+      }
+
+      handleMouseMove(e) {
+        if (!this.isDragging || !this.selectedTile || this.gameOver || this.gameState !== "playerTurn") return;
+        e.preventDefault();
+
+        const boardRect = document.getElementById("game-board").getBoundingClientRect();
+        const mouseX = e.clientX - boardRect.left - this.offsetX;
+        const mouseY = e.clientY - boardRect.top - this.offsetY;
+
+        const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
+        selectedTileElement.style.transition = "";
+
+        if (!this.dragDirection) {
+          const dx = Math.abs(mouseX - (this.selectedTile.x * this.tileSizeWithGap));
+          const dy = Math.abs(mouseY - (this.selectedTile.y * this.tileSizeWithGap));
+          if (dx > dy && dx > 5) this.dragDirection = "row";
+          else if (dy > dx && dy > 5) this.dragDirection = "column";
+        }
+
+        if (!this.dragDirection) return;
+
+        if (this.dragDirection === "row") {
+          const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, mouseX));
+          selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
+          this.targetTile = {
+            x: Math.round(constrainedX / this.tileSizeWithGap),
+            y: this.selectedTile.y
+          };
+        } else if (this.dragDirection === "column") {
+          const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, mouseY));
+          selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
+          this.targetTile = {
+            x: this.selectedTile.x,
+            y: Math.round(constrainedY / this.tileSizeWithGap)
+          };
+        }
+      }
+
+      handleMouseUp(e) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.gameState !== "playerTurn") {
+          if (this.selectedTile) {
+            const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+            if (tile.element) tile.element.classList.remove("selected");
+          }
+          this.isDragging = false;
+          this.selectedTile = null;
+          this.targetTile = null;
+          this.dragDirection = null;
+          this.renderBoard();
+          return;
+        }
+
+        const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+        if (tile.element) tile.element.classList.remove("selected");
+
+        this.slideTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
+
+        this.isDragging = false;
+        this.selectedTile = null;
+        this.targetTile = null;
+        this.dragDirection = null;
+      }
+
+      handleTouchStart(e) {
+        if (this.gameOver || this.gameState !== "playerTurn" || this.currentTurn !== this.player1) return;
+        e.preventDefault();
+        const tile = this.getTileFromEvent(e.touches[0]);
+        if (!tile || !tile.element) return;
+
+        this.isDragging = true;
+        this.selectedTile = { x: tile.x, y: tile.y };
+        tile.element.classList.add("selected");
+
+        const boardRect = document.getElementById("game-board").getBoundingClientRect();
+        this.offsetX = e.touches[0].clientX - (boardRect.left + this.selectedTile.x * this.tileSizeWithGap);
+        this.offsetY = e.touches[0].clientY - (boardRect.top + this.selectedTile.y * this.tileSizeWithGap);
+      }
+
+      handleTouchMove(e) {
+        if (!this.isDragging || !this.selectedTile || this.gameOver || this.gameState !== "playerTurn") return;
+        e.preventDefault();
+
+        const boardRect = document.getElementById("game-board").getBoundingClientRect();
+        const touchX = e.touches[0].clientX - boardRect.left - this.offsetX;
+        const touchY = e.touches[0].clientY - boardRect.top - this.offsetY;
+
+        const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
+
+        requestAnimationFrame(() => {
+          if (!this.dragDirection) {
+            const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
+            const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
+            if (dx > dy && dx > 7) this.dragDirection = "row";
+            else if (dy > dx && dy > 7) this.dragDirection = "column";
+          }
+
+          selectedTileElement.style.transition = "";
+
+          if (this.dragDirection === "row") {
+            const constrainedX = Math.max(0, Math.min((this.width - 1) * this.tileSizeWithGap, touchX));
+            selectedTileElement.style.transform = `translate(${constrainedX - this.selectedTile.x * this.tileSizeWithGap}px, 0) scale(1.05)`;
+            this.targetTile = {
+              x: Math.round(constrainedX / this.tileSizeWithGap),
+              y: this.selectedTile.y
+            };
+          } else if (this.dragDirection === "column") {
+            const constrainedY = Math.max(0, Math.min((this.height - 1) * this.tileSizeWithGap, touchY));
+            selectedTileElement.style.transform = `translate(0, ${constrainedY - this.selectedTile.y * this.tileSizeWithGap}px) scale(1.05)`;
+            this.targetTile = {
+              x: this.selectedTile.x,
+              y: Math.round(constrainedY / this.tileSizeWithGap)
+            };
+          }
+        });
+      }
+
+      handleTouchEnd(e) {
+        if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.gameState !== "playerTurn") {
+          if (this.selectedTile) {
+            const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+            if (tile.element) tile.element.classList.remove("selected");
+          }
+          this.isDragging = false;
+          this.selectedTile = null;
+          this.targetTile = null;
+          this.dragDirection = null;
+          this.renderBoard();
+          return;
+        }
+
+        const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+        if (tile.element) tile.element.classList.remove("selected");
+
+        this.slideTiles(this.selectedTile.x, this.selectedTile.y, this.targetTile.x, this.targetTile.y);
+
+        this.isDragging = false;
+        this.selectedTile = null;
+        this.targetTile = null;
+        this.dragDirection = null;
+      }
+
+      getTileFromEvent(e) {
+        const boardRect = document.getElementById("game-board").getBoundingClientRect();
+        const x = Math.floor((e.clientX - boardRect.left) / this.tileSizeWithGap);
+        const y = Math.floor((e.clientY - boardRect.top) / this.tileSizeWithGap);
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+          return { x, y, element: this.board[y][x].element };
+        }
+        return null;
+      }
+
+	  slideTiles(startX, startY, endX, endY, afterMove = () => this.endTurn()) {
+	      const tileSizeWithGap = this.tileSizeWithGap;
+	      let direction;
+
+	      const originalTiles = [];
+	      const tileElements = [];
+	      if (startY === endY) {
+	          direction = startX < endX ? 1 : -1;
+	          const minX = Math.min(startX, endX);
+	          const maxX = Math.max(startX, endX);
+	          for (let x = minX; x <= maxX; x++) {
+	              originalTiles.push({ ...this.board[startY][x] });
+	              tileElements.push(this.board[startY][x].element);
+	          }
+	      } else if (startX === endX) {
+	          direction = startY < endY ? 1 : -1;
+	          const minY = Math.min(startY, endY);
+	          const maxY = Math.max(startY, endY);
+	          for (let y = minY; y <= maxY; y++) {
+	              originalTiles.push({ ...this.board[y][startX] });
+	              tileElements.push(this.board[y][startX].element);
+	          }
+	      }
+
+	      const selectedElement = this.board[startY][startX].element;
+	      const dx = (endX - startX) * tileSizeWithGap;
+	      const dy = (endY - startY) * tileSizeWithGap;
+
+	      selectedElement.style.transition = "transform 0.2s ease";
+	      selectedElement.style.transform = `translate(${dx}px, ${dy}px)`;
+
+	      let i = 0;
+	      if (startY === endY) {
+	          for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+	              if (x === startX) continue;
+	              const offsetX = direction * -tileSizeWithGap * (x - startX) / Math.abs(endX - startX);
+	              tileElements[i].style.transition = "transform 0.2s ease";
+	              tileElements[i].style.transform = `translate(${offsetX}px, 0)`;
+	              i++;
+	          }
+	      } else {
+	          for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+	              if (y === startY) continue;
+	              const offsetY = direction * -tileSizeWithGap * (y - startY) / Math.abs(endY - startY);
+	              tileElements[i].style.transition = "transform 0.2s ease";
+	              tileElements[i].style.transform = `translate(0, ${offsetY}px)`;
+	              i++;
+	          }
+	      }
+
+	      setTimeout(() => {
+	          if (startY === endY) {
+	              const row = this.board[startY];
+	              const tempRow = [...row];
+	              if (startX < endX) {
+	                  for (let x = startX; x < endX; x++) row[x] = tempRow[x + 1];
+	              } else {
+	                  for (let x = startX; x > endX; x--) row[x] = tempRow[x - 1];
+	              }
+	              row[endX] = tempRow[startX];
+	          } else {
+	              const tempCol = [];
+	              for (let y = 0; y < this.height; y++) tempCol[y] = { ...this.board[y][startX] };
+	              if (startY < endY) {
+	                  for (let y = startY; y < endY; y++) this.board[y][startX] = tempCol[y + 1];
+	              } else {
+	                  for (let y = startY; y > endY; y--) this.board[y][startX] = tempCol[y - 1];
+	              }
+	              this.board[endY][endX] = tempCol[startY];
+	          }
+
+	          this.renderBoard();
+	          const hasMatches = this.resolveMatches(endX, endY);
+
+	          if (hasMatches) {
+	              this.gameState = "animating";
+	              // The turn will end naturally after cascades via cascadeTiles calling endTurn
+	          } else {
+	              log("No match, reverting tiles...");
+	              this.sounds.badMove.play();
+	              selectedElement.style.transition = "transform 0.2s ease";
+	              selectedElement.style.transform = "translate(0, 0)";
+	              tileElements.forEach(element => {
+	                  element.style.transition = "transform 0.2s ease";
+	                  element.style.transform = "translate(0, 0)";
+	              });
+
+	              setTimeout(() => {
+	                  if (startY === endY) {
+	                      const minX = Math.min(startX, endX);
+	                      for (let i = 0; i < originalTiles.length; i++) {
+	                          this.board[startY][minX + i] = { ...originalTiles[i], element: tileElements[i] };
+	                      }
+	                  } else {
+	                      const minY = Math.min(startY, endY);
+	                      for (let i = 0; i < originalTiles.length; i++) {
+	                          this.board[minY + i][startX] = { ...originalTiles[i], element: tileElements[i] };
+	                      }
+	                  }
+	                  this.renderBoard();
+	                  this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	                  // Do not call afterMove() to prevent ending the turn
+	              }, 200);
+	          }
+	      }, 200);
+	  }
+
+	  resolveMatches(selectedX = null, selectedY = null) {
+	    console.log("resolveMatches started, gameOver:", this.gameOver);
+	    if (this.gameOver) {
+	      console.log("Game over, exiting resolveMatches");
+	      return false;
+	    }
+
+	    const isInitialMove = selectedX !== null && selectedY !== null;
+	    console.log(`Is initial move: ${isInitialMove}`);
+
+	    const matches = this.checkMatches();
+	    console.log(`Found ${matches.length} matches:`, matches);
+
+	    // Calculate total tiles matched for multi-match bonus (only for initial move)
+	    let comboBonus = 1;
+	    let comboMessage = "";
+	    if (isInitialMove && matches.length > 1) { // Multi-match requires more than one match
+	      const totalTilesMatched = matches.reduce((sum, match) => sum + match.totalTiles, 0);
+	      console.log(`Total tiles matched from player move: ${totalTilesMatched}`);
+	      if (totalTilesMatched >= 6 && totalTilesMatched <= 8) {
+	        comboBonus = 1.2; // 20% bonus for multi-match 6-8 tiles
+	        comboMessage = `Multi-Match! ${totalTilesMatched} tiles matched for a 20% bonus!`;
+	        this.sounds.multiMatch.play();
+	      } else if (totalTilesMatched >= 9) {
+	        comboBonus = 3.0; // 200% bonus for multi-match 9+ tiles
+	        comboMessage = `Mega Multi-Match! ${totalTilesMatched} tiles matched for a 200% bonus!`;
+	        this.sounds.multiMatch.play();
+	      }
+	    }
+
+	    if (matches.length > 0) {
+	      const allMatchedTiles = new Set();
+	      let totalDamage = 0;
+	      const attacker = this.currentTurn;
+	      const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+
+	      try {
+	        matches.forEach(match => {
+	          console.log("Processing match:", match);
+	          match.coordinates.forEach(coord => allMatchedTiles.add(coord));
+	          const damage = this.handleMatch(match, isInitialMove);
+	          console.log(`Damage from match: ${damage}`);
+	          if (this.gameOver) {
+	            console.log("Game over detected during match processing, stopping further processing");
+	            return;
+	          }
+	          if (damage > 0) totalDamage += damage;
+	        });
+
+	        if (this.gameOver) {
+	          console.log("Game over after processing matches, exiting resolveMatches");
+	          return true;
+	        }
+
+	        console.log(`Total damage dealt: ${totalDamage}, tiles to clear:`, [...allMatchedTiles]);
+	        if (totalDamage > 0 && !this.gameOver) {
+	          setTimeout(() => {
+	            if (this.gameOver) {
+	              console.log("Game over, skipping recoil animation");
+	              return;
+	            }
+	            console.log("Animating recoil for defender:", defender.name);
+	            this.animateRecoil(defender, totalDamage);
+	          }, 100);
+	        }
+
+	        setTimeout(() => {
+	          if (this.gameOver) {
+	            console.log("Game over, skipping match animation and cascading");
+	            return;
+	          }
+	          console.log("Animating matched tiles, allMatchedTiles:", [...allMatchedTiles]);
+	          allMatchedTiles.forEach(tile => {
+	            const [x, y] = tile.split(",").map(Number);
+	            if (this.board[y][x]?.element) {
+	              this.board[y][x].element.classList.add("matched");
+	            } else {
+	              console.warn(`Tile at (${x},${y}) has no element to animate`);
+	            }
+	          });
+
+	          setTimeout(() => {
+	            if (this.gameOver) {
+	              console.log("Game over, skipping tile clearing and cascading");
+	              return;
+	            }
+	            console.log("Clearing matched tiles:", [...allMatchedTiles]);
+	            allMatchedTiles.forEach(tile => {
+	              const [x, y] = tile.split(",").map(Number);
+	              if (this.board[y][x]) {
+	                this.board[y][x].type = null;
+	                this.board[y][x].element = null;
+	              }
+	            });
+	            this.sounds.match.play();
+	            console.log("Cascading tiles");
+
+	            // Apply combo bonus to round points (only for initial move)
+	            if (comboBonus > 1 && this.roundStats.length > 0) {
+	              const currentRound = this.roundStats[this.roundStats.length - 1];
+	              const originalPoints = currentRound.points;
+	              currentRound.points = Math.round(currentRound.points * comboBonus);
+	              if (comboMessage) {
+	                log(comboMessage);
+	                log(`Round points increased from ${originalPoints} to ${currentRound.points} after multi-match bonus!`);
+	              }
+	            }
+
+	            this.cascadeTiles(() => {
+	              if (this.gameOver) {
+	                console.log("Game over, skipping endTurn");
+	                return;
+	              }
+	              console.log("Cascade complete, ending turn");
+	              this.endTurn();
+	            });
+	          }, 300);
+	        }, 200);
+
+	        return true;
+	      } catch (error) {
+	        console.error("Error in resolveMatches:", error);
+	        this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	        return false;
+	      }
+	    }
+	    console.log("No matches found, returning false");
+	    return false;
+	  }
+
+	  checkMatches() {
+	    console.log("checkMatches started");
+	    const matches = [];
+
+	    try {
+	      // Step 1: Detect straight-line matches
+	      const straightMatches = [];
+
+	      // Horizontal matches
+	      for (let y = 0; y < this.height; y++) {
+	        let startX = 0;
+	        for (let x = 0; x <= this.width; x++) {
+	          const currentType = x < this.width ? this.board[y][x]?.type : null;
+	          if (currentType !== this.board[y][startX]?.type || x === this.width) {
+	            const matchLength = x - startX;
+	            if (matchLength >= 3) {
+	              const matchCoordinates = new Set();
+	              for (let i = startX; i < x; i++) {
+	                matchCoordinates.add(`${i},${y}`);
+	              }
+	              straightMatches.push({ type: this.board[y][startX].type, coordinates: matchCoordinates });
+	              console.log(`Horizontal match found at row ${y}, cols ${startX}-${x-1}:`, [...matchCoordinates]);
+	            }
+	            startX = x;
+	          }
+	        }
+	      }
+
+	      // Vertical matches
+	      for (let x = 0; x < this.width; x++) {
+	        let startY = 0;
+	        for (let y = 0; y <= this.height; y++) {
+	          const currentType = y < this.height ? this.board[y][x]?.type : null;
+	          if (currentType !== this.board[startY][x]?.type || y === this.height) {
+	            const matchLength = y - startY;
+	            if (matchLength >= 3) {
+	              const matchCoordinates = new Set();
+	              for (let i = startY; i < y; i++) {
+	                matchCoordinates.add(`${x},${i}`);
+	              }
+	              straightMatches.push({ type: this.board[startY][x].type, coordinates: matchCoordinates });
+	              console.log(`Vertical match found at col ${x}, rows ${startY}-${y-1}:`, [...matchCoordinates]);
+	            }
+	            startY = y;
+	          }
+	        }
+	      }
+
+	      // Step 2: Merge overlapping matches of the same tile type
+	      const groupedMatches = [];
+	      const processedMatches = new Set();
+
+	      straightMatches.forEach((match, index) => {
+	        if (processedMatches.has(index)) return;
+
+	        const currentGroup = { type: match.type, coordinates: new Set(match.coordinates) };
+	        processedMatches.add(index);
+
+	        // Look for other matches that overlap and are of the same tile type
+	        for (let i = 0; i < straightMatches.length; i++) {
+	          if (processedMatches.has(i)) continue;
+
+	          const otherMatch = straightMatches[i];
+	          if (otherMatch.type === currentGroup.type) {
+	            const overlaps = [...otherMatch.coordinates].some(coord => currentGroup.coordinates.has(coord));
+	            if (overlaps) {
+	              otherMatch.coordinates.forEach(coord => currentGroup.coordinates.add(coord));
+	              processedMatches.add(i);
+	            }
+	          }
+	        }
+
+	        groupedMatches.push({
+	          type: currentGroup.type,
+	          coordinates: currentGroup.coordinates,
+	          totalTiles: currentGroup.coordinates.size
+	        });
+	      });
+
+	      // Step 3: Add grouped matches to the final list
+	      matches.push(...groupedMatches);
+
+	      console.log("checkMatches completed, returning matches:", matches);
+	      return matches;
+	    } catch (error) {
+	      console.error("Error in checkMatches:", error);
+	      return [];
+	    }
+	  }
+	  
+	  handleMatch(match, isInitialMove = true) {
+	    console.log("handleMatch started, match:", match, "isInitialMove:", isInitialMove);
+	    const attacker = this.currentTurn;
+	    const defender = this.currentTurn === this.player1 ? this.player2 : this.player1;
+	    const type = match.type;
+	    const size = match.totalTiles;
+	    let damage = 0;
+	    let originalDamage = 0; // Store the original damage before mitigation
+
+	    console.log(`${defender.name} health before match: ${defender.health}`);
+
+	    // Log and play sounds for larger matches
+	    if (size == 4) {
+	      this.sounds.powerGem.play();
+	      log(`${attacker.name} created a match of ${size} tiles!`);
+	    }
+	    if (size >= 5) {
+	      this.sounds.hyperCube.play();
+	      log(`${attacker.name} created a match of ${size} tiles!`);
+	    }
+
+	    if (type === "first-attack" || type === "second-attack" || type === "special-attack" || type === "last-stand") {
+	      // Base damage scaling
+	      damage = Math.round(attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4));
+
+	      // Apply a scoring bonus multiplier for larger matches
+	      let matchBonus = 1;
+	      if (size === 4) {
+	        matchBonus = 1.5; // 50% bonus for match-4
+	      } else if (size >= 5) {
+	        matchBonus = 2.0; // 100% bonus for match-5+
+	      }
+	      damage = Math.round(damage * matchBonus);
+
+	      console.log(`Base damage: ${attacker.strength * (size === 3 ? 2 : size === 4 ? 3 : 4)}, Match bonus: ${matchBonus}, Total damage: ${damage}`);
+
+	      if (type === "special-attack") {
+	        damage = Math.round(damage * 1.2);
+	        console.log(`Special attack multiplier applied, damage: ${damage}`);
+	      }
+	      if (attacker.boostActive) {
+	        damage += attacker.boostValue || 10;
+	        attacker.boostActive = false;
+	        log(`${attacker.name}'s Boost fades.`);
+	        console.log(`Boost applied, damage: ${damage}`);
+	      }
+
+	      // Store the original damage before mitigation
+	      originalDamage = damage;
+
+	      const tacticsChance = defender.tactics * 10;
+	      if (Math.random() * 100 < tacticsChance) {
+	        damage = Math.floor(damage / 2);
+	        log(`${defender.name}'s tactics halve the blow, taking only ${damage} damage!`);
+	        console.log(`Tactics applied, damage reduced to: ${damage}`);
+	      }
+
+	      // Apply Last Stand mitigation and log detailed message
+	      let mitigatedAmount = 0;
+	      if (defender.lastStandActive) {
+	        mitigatedAmount = Math.min(damage, 5); // Mitigate up to 5 damage
+	        damage = Math.max(0, damage - mitigatedAmount);
+	        defender.lastStandActive = false;
+	        console.log(`Last Stand applied, mitigated ${mitigatedAmount}, damage: ${damage}`);
+	      }
+
+	      // Log the attack with mitigation details
+	      const attackType = type === "first-attack" ? "Slash" : type === "second-attack" ? "Bite" : "Shadow Strike";
+	      let attackMessage;
+	      if (mitigatedAmount > 0) {
+	        attackMessage = `${attacker.name} uses ${attackType} on ${defender.name} for ${originalDamage} damage, but ${defender.name}'s Last Stand mitigates ${mitigatedAmount} damage, resulting in ${damage} damage!`;
+	      } else if (type === "last-stand") {
+	        attackMessage = `${attacker.name} uses Last Stand, dealing ${damage} damage to ${defender.name} and preparing to mitigate 5 damage on the next attack!`;
+	      } else {
+	        attackMessage = `${attacker.name} uses ${attackType} on ${defender.name} for ${damage} damage!`;
+	      }
+
+	      if (isInitialMove) {
+	        log(attackMessage);
+	      } else {
+	        log(`Cascade: ${attackMessage}`);
+	      }
+
+	      defender.health = Math.max(0, defender.health - damage);
+	      console.log(`${defender.name} health after damage: ${defender.health}`);
+	      this.updateHealth(defender);
+	      console.log("Calling checkGameOver from handleMatch");
+	      this.checkGameOver();
+	      if (!this.gameOver) {
+	        console.log("Game not over, animating attack");
+	        this.animateAttack(attacker, damage, type);
+	      }
+	    } else if (type === "power-up") {
+			  this.usePowerup(attacker, defender, size);
+			  if (!this.gameOver) {
+			    console.log("Animating powerup");
+			    this.animatePowerup(attacker);
+			  }
+		}
+
+	    // Add points and increment matches for both initial and cascading matches
+	    if (!this.roundStats[this.roundStats.length - 1] || this.roundStats[this.roundStats.length - 1].completed) {
+	      this.roundStats.push({
+	        points: 0,
+	        matches: 0,
+	        healthPercentage: 0,
+	        completed: false
+	      });
+	    }
+	    const currentRound = this.roundStats[this.roundStats.length - 1];
+	    currentRound.points += damage;
+	    currentRound.matches += 1;
+
+	    console.log(`handleMatch completed, damage dealt: ${damage}`);
+	    return damage;
+	  }
+
+	  cascadeTiles(callback) {
+	    if (this.gameOver) {
+	      console.log("Game over, skipping cascadeTiles");
+	      return;
+	    }
+
+	    const moved = this.cascadeTilesWithoutRender();
+	    const fallClass = "falling";
+
+	    for (let x = 0; x < this.width; x++) {
+	      for (let y = 0; y < this.height; y++) {
+	        const tile = this.board[y][x];
+	        if (tile.element && tile.element.style.transform === "translate(0px, 0px)") {
+	          const emptyBelow = this.countEmptyBelow(x, y);
+	          if (emptyBelow > 0) {
+	            tile.element.classList.add(fallClass);
+	            tile.element.style.transform = `translate(0, ${emptyBelow * this.tileSizeWithGap}px)`;
+	          }
+	        }
+	      }
+	    }
+
+	    this.renderBoard();
+
+	    if (moved) {
+	      setTimeout(() => {
+	        if (this.gameOver) {
+	          console.log("Game over, skipping cascade resolution");
+	          return;
+	        }
+	        this.sounds.cascade.play();
+	        const hasMatches = this.resolveMatches();
+	        const tiles = document.querySelectorAll(`.${fallClass}`);
+	        tiles.forEach(tile => {
+	          tile.classList.remove(fallClass);
+	          tile.style.transform = "translate(0, 0)";
+	        });
+	        if (!hasMatches) {
+	          callback();
+	        }
+	      }, 300);
+	    } else {
+	      callback();
+	    }
+	  }
+
+      cascadeTilesWithoutRender() {
+        let moved = false;
+        for (let x = 0; x < this.width; x++) {
+          let emptySpaces = 0;
+          for (let y = this.height - 1; y >= 0; y--) {
+            if (!this.board[y][x].type) {
+              emptySpaces++;
+            } else if (emptySpaces > 0) {
+              this.board[y + emptySpaces][x] = this.board[y][x];
+              this.board[y][x] = { type: null, element: null };
+              moved = true;
+            }
+          }
+          for (let i = 0; i < emptySpaces; i++) {
+            this.board[i][x] = this.createRandomTile();
+            moved = true;
+          }
+        }
+        return moved;
+      }
+
+      countEmptyBelow(x, y) {
+        let count = 0;
+        for (let i = y + 1; i < this.height; i++) {
+          if (!this.board[i][x].type) {
+            count++;
+          } else {
+            break;
+          }
+        }
+        return count;
+      }
+
+	  usePowerup(player, defender, size) {
+	    const reductionFactor = 1 - (defender.tactics * 0.05);
+	    let effectValue;
+	    let originalValue;
+	    let reducedBy;
+	    let matchBonus = 1;
+	    let bonusMessage = "";
+
+	    // Apply match bonus for larger matches, same as in handleMatch
+	    if (size === 4) {
+	      matchBonus = 1.5; // 50% bonus for match-4
+	      bonusMessage = " (50% bonus for match-4)";
+	    } else if (size >= 5) {
+	      matchBonus = 2.0; // 100% bonus for match-5+
+	      bonusMessage = " (100% bonus for match-5+)";
+	    }
+
+	    if (player.powerup === "Heal") {
+	      originalValue = 10 * matchBonus;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.health = Math.min(player.maxHealth, player.health + effectValue);
+	      log(`${player.name} uses Heal, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    } else if (player.powerup === "Boost Attack") {
+	      originalValue = 10 * matchBonus;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.boostActive = true;
+	      player.boostValue = effectValue;
+	      log(`${player.name} uses Power Surge, next attack +${effectValue} damage${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    } else if (player.powerup === "Regenerate") {
+	      originalValue = 7 * matchBonus;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.health = Math.min(player.maxHealth, player.health + effectValue);
+	      log(`${player.name} uses Regen, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    } else if (player.powerup === "Minor Regen") {
+	      originalValue = 5 * matchBonus;
+	      effectValue = Math.floor(originalValue * reductionFactor);
+	      reducedBy = originalValue - effectValue;
+	      player.health = Math.min(player.maxHealth, player.health + effectValue);
+	      log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
+	    }
+	    this.updateHealth(player);
+	  }
+
+      updateHealth(player) {
+        const healthBar = player === this.player1 ? p1Health : p2Health;
+        const hpText = player === this.player1 ? p1Hp : p2Hp;
+
+        const percentage = (player.health / player.maxHealth) * 100;
+        healthBar.style.width = `${percentage}%`;
+
+        let color;
+        if (percentage > 75) {
+          color = '#4CAF50'; // Green for >75%
+        } else if (percentage > 50) {
+          color = '#FFC105'; // Yellow for >50%
+        } else if (percentage > 25) {
+          color = '#FFA500'; // Orange for >25%
+        } else {
+          color = '#F44336'; // Red for ≤25%
+        }
+
+        healthBar.style.backgroundColor = color;
+        hpText.textContent = `${player.health}/${player.maxHealth}`;
+      }
+
+	  endTurn() {
+	      if (this.gameState === "gameOver" || this.gameOver) {
+	          console.log("Game over, skipping endTurn");
+	          return;
+	      }
+	      if (this.selectedBoss) {
+	          if (this.currentTurn === this.player1) {
+	              // Save boss health after player's turn
+	              console.log("endTurn: Player turn ending, saving boss health");
+	              this.saveBossHealth();
+	              // Save board state after player's turn
+	              console.log("endTurn: Player turn ending, saving board state");
+	              this.saveBoardState();
+	          } else if (this.currentTurn === this.player2) {
+	              // Save player health after boss's turn
+	              console.log("endTurn: Boss turn ending, saving player health");
+	              this.savePlayerHealth();
+	              // Save board state after boss's turn
+	              console.log("endTurn: Boss turn ending, saving board state");
+	              this.saveBoardState();
+	          }
+	      }
+	      this.currentTurn = this.currentTurn === this.player1 ? this.player2 : this.player1;
+	      this.gameState = this.currentTurn === this.player1 ? "playerTurn" : "aiTurn";
+	      turnIndicator.textContent = this.selectedBoss
+	          ? `Boss Battle - ${this.currentTurn === this.player1 ? "Player" : "Boss"}'s Turn`
+	          : `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+	      log(`Turn switched to ${this.currentTurn === this.player1 ? "Player" : this.selectedBoss ? "Boss" : "Opponent"}`);
+
+	      if (this.currentTurn === this.player2 && !this.gameOver) {
+	          setTimeout(() => this.aiTurn(), 1000);
+	      }
+	  }
+
+	  aiTurn() {
+	      if (this.gameState !== "aiTurn" || this.currentTurn !== this.player2) return;
+	      this.gameState = "animating";
+	      const move = this.findAIMove();
+	      if (move) {
+	          log(`${this.player2.name} swaps tiles at (${move.x1}, ${move.y1}) to (${move.x2}, ${move.y2})`);
+	          const callback = () => {
+	              if (this.selectedBoss) { // Assuming this indicates a boss battle
+	                  this.savePlayerHealth(); // Save health after move completes
+	              }
+	              this.endTurn(); // Switch turn to player
+	          };
+	          this.slideTiles(move.x1, move.y1, move.x2, move.y2, callback);
+	      } else {
+	          log(`${this.player2.name} passes...`);
+	          if (this.selectedBoss) { // Save health on pass in boss battle
+	              this.savePlayerHealth();
+	          }
+	          this.endTurn();
+	      }
+	  }
+
+      findAIMove() {
+        for (let y = 0; y < this.height; y++) {
+          for (let x = 0; x < this.width; x++) {
+            if (x < this.width - 1 && this.canMakeMatch(x, y, x + 1, y)) return { x1: x, y1: y, x2: x + 1, y2: y };
+            if (y < this.height - 1 && this.canMakeMatch(x, y, x, y + 1)) return { x1: x, y1: y, x2: x, y2: y + 1 };
+          }
+        }
+        return null;
+      }
+
+      canMakeMatch(x1, y1, x2, y2) {
+        const temp1 = { ...this.board[y1][x1] };
+        const temp2 = { ...this.board[y2][x2] };
+        this.board[y1][x1] = temp2;
+        this.board[y2][x2] = temp1;
+        const matches = this.checkMatches().length > 0;
+        this.board[y1][x1] = temp1;
+        this.board[y2][x2] = temp2;
+        return matches;
+      }
+
+	  async checkGameOver() {
+	      if (this.gameOver || this.isCheckingGameOver) {
+	          console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
+	          return;
+	      }
+
+	      this.isCheckingGameOver = true;
+	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}, selectedBoss=${this.selectedBoss ? this.selectedBoss.name : 'none'}`);
+
+	      const tryAgainButton = document.getElementById("try-again");
+	      const leaderboardButtonDiv = document.getElementById("leaderboard-button");
+
+	      leaderboardButtonDiv.innerHTML = '';
+
+	      let leaderboardForm;
+	      if (this.selectedBoss) {
+	          leaderboardForm = `
+	              <form action="leaderboards.php" method="post">
+	                  <input type="hidden" name="filterbybosses" id="filterbybosses" value="weekly-bosses">
+	                  <input id="leaderboard" type="submit" value="LEADERBOARD">
+	              </form>
+	          `;
+	      } else {
+	          leaderboardForm = `
+	              <form action="leaderboards.php" method="post">
+	                  <input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-monstrocity">
+	                  <input id="leaderboard" type="submit" value="LEADERBOARD">
+	              </form>
+	          `;
+	      }
+
+	      leaderboardButtonDiv.innerHTML = leaderboardForm;
+
+	      if (this.player1.health <= 0) {
+	          console.log("Player 1 health <= 0, triggering game over (loss), boss mode=" + !!this.selectedBoss);
+
+	          if (this.selectedBoss) {
+	              this.player1.health = 0;
+	              await this.savePlayerHealth();
+	              console.log("Health saved as 0 for boss battle");
+	              this.clearBoardState();
+	          }
+
+	          this.gameOver = true;
+	          this.gameState = "gameOver";
+	          gameOver.textContent = "You Lose!";
+	          turnIndicator.textContent = "Game Over";
+
+	          // Replace try-again button to clear old event listeners
+	          const newButton = document.createElement('button');
+	          newButton.id = "try-again";
+	          newButton.textContent = this.selectedBoss ? "SELECT BOSS" : "TRY AGAIN";
+	          tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	          newButton.addEventListener('click', () => {
+	              console.log("checkGameOver: Button clicked, text=" + newButton.textContent + ", selectedBoss=" + (this.selectedBoss ? this.selectedBoss.name : 'none'));
+	              document.getElementById("game-over-container").style.display = "none";
+	              if (this.selectedBoss) {
+	                  this.showBossSelectionScreen();
+	              } else {
+	                  this.handleGameOverButton();
+	              }
+	          });
+
+	          document.getElementById("game-over-container").style.display = "block";
+	          try {
+	              this.sounds.loss.play();
+	          } catch (err) {
+	              console.error("Error playing lose sound:", err);
+	          }
+	      } else if (this.player2.health <= 0) {
+	          console.log("Player 2 health <= 0, triggering game over (win)");
+
+	          if (this.selectedBoss) {
+	              this.player2.health = 0;
+	              await this.saveBossHealth();
+	              console.log("Boss health saved as 0 for boss battle");
+	              this.clearBoardState();
+	          }
+
+	          this.gameOver = true;
+	          this.gameState = "gameOver";
+	          gameOver.textContent = "You Win!";
+	          turnIndicator.textContent = "Game Over";
+	          try {
+          		  this.sounds.win.play();
+	          } catch (err) {
+	              console.error("Error playing lose sound:", err);
+	          }
+
+	          // Replace try-again button to clear old event listeners
+	          const newButton = document.createElement('button');
+	          newButton.id = "try-again";
+	          newButton.textContent = this.selectedBoss ? "SELECT BOSS" : (this.currentLevel === opponentsConfig.length ? "START OVER" : "NEXT LEVEL");
+	          tryAgainButton.parentNode.replaceChild(newButton, tryAgainButton);
+	          newButton.addEventListener('click', () => {
+	              console.log("checkGameOver: Button clicked, text=" + newButton.textContent + ", selectedBoss=" + (this.selectedBoss ? this.selectedBoss.name : 'none'));
+	              document.getElementById("game-over-container").style.display = "none";
+	              if (this.selectedBoss) {
+	                  this.showBossSelectionScreen();
+	              } else {
+	                  this.handleGameOverButton();
+	              }
+	          });
+
+	          document.getElementById("game-over-container").style.display = "block";
+
+	          if (!this.selectedBoss) {
+	              if (this.currentTurn === this.player1) {
+	                  const currentRound = this.roundStats[this.roundStats.length - 1];
+	                  if (currentRound && !currentRound.completed) {
+	                      currentRound.healthPercentage = (this.player1.health / this.player1.maxHealth) * 100;
+	                      currentRound.completed = true;
+
+	                      const roundScore = currentRound.matches > 0 
+	                          ? (((currentRound.points / currentRound.matches) / 100) * (currentRound.healthPercentage + 20)) * (1 + this.currentLevel / 56)
+	                          : 0;
+
+	                      log(`Calculating round score: points=${currentRound.points}, matches=${currentRound.matches}, healthPercentage=${currentRound.healthPercentage.toFixed(2)}, level=${this.currentLevel}`);
+	                      log(`Round Score Formula: (((${currentRound.points} / ${currentRound.matches}) / 100) * (${currentRound.healthPercentage} + 20)) * (1 + ${this.currentLevel} / 56) = ${roundScore}`);
+
+	                      this.grandTotalScore += roundScore;
+
+	                      log(`Round Won! Points: ${currentRound.points}, Matches: ${currentRound.matches}, Health Left: ${currentRound.healthPercentage.toFixed(2)}%`);
+	                      log(`Round Score: ${roundScore}, Grand Total Score: ${this.grandTotalScore}`);
+	                  }
+	              }
+
+	              await this.saveScoreToDatabase(this.currentLevel);
+
+	              if (this.currentLevel === opponentsConfig.length) {
+	                  try {
+	                      this.sounds.finalWin.play();
+	                  } catch (err) {
+	                      console.error("Error playing finalWin sound:", err);
+	                  }
+	                  log(`Final level completed! Final score: ${this.grandTotalScore}`);
+	                  this.grandTotalScore = 0;
+	                  await this.clearProgress();
+	                  log("Game completed! Grand total score reset.");
+	              } else {
+	                  this.clearBoard();
+	                  this.currentLevel += 1;
+	                  await this.saveProgress();
+	                  console.log(`Progress saved: currentLevel=${this.currentLevel}`);
+	                  this.sounds.win.play();
+	              }
+	          }
+
+	          let damagedUrl;
+	          let fallbackUrl = this.player2.fallbackUrl || 'icons/skull.png';
+	          const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
+	          const themeExtension = themeData?.extension || 'png';
+
+	          if (this.selectedBoss) {
+	              damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
+	          } else {
+	              damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${themeExtension}`;
+	          }
+
+	          const p2Image = document.getElementById('p2-image');
+	          const parent = p2Image.parentNode;
+
+	          if (this.player2.mediaType === 'video') {
+	              if (p2Image.tagName !== 'VIDEO') {
+	                  const newVideo = document.createElement('video');
+	                  newVideo.id = 'p2-image';
+	                  newVideo.src = damagedUrl;
+	                  newVideo.autoplay = true;
+	                  newVideo.loop = true;
+	                  newVideo.muted = true;
+	                  newVideo.alt = this.player2.name;
+	                  newVideo.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged video: ${damagedUrl}, using fallback`);
+	                      newVideo.src = fallbackUrl;
+	                  };
+	                  parent.replaceChild(newVideo, p2Image);
+	              } else {
+	                  p2Image.src = damagedUrl;
+	                  p2Image.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged video: ${damagedUrl}, using fallback`);
+	                      p2Image.src = fallbackUrl;
+	                  };
+	              }
+	          } else {
+	              if (p2Image.tagName !== 'IMG') {
+	                  const newImage = document.createElement('img');
+	                  newImage.id = 'p2-image';
+	                  newImage.src = damagedUrl;
+	                  newImage.alt = this.player2.name;
+	                  newImage.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged image: ${damagedUrl}, using fallback`);
+	                      newImage.src = fallbackUrl;
+	                  };
+	                  parent.replaceChild(newImage, p2Image);
+	              } else {
+	                  p2Image.src = damagedUrl;
+	                  p2Image.onerror = () => {
+	                      console.warn(`Failed to load battle-damaged image: ${damagedUrl}, using fallback`);
+	                      p2Image.src = fallbackUrl;
+	                  };
+	              }
+	          }
+
+	          const p2ImageNew = document.getElementById("p2-image");
+	          p2ImageNew.style.display = "block";
+	          p2ImageNew.classList.add("loser");
+	          p1Image.classList.add("winner");
+	          this.renderBoard();
+	      }
+
+	      this.isCheckingGameOver = false;
+	      console.log(`checkGameOver completed: gameOver=${this.gameOver}, gameState=${this.gameState}`);
+	  }
+	  
+	  async saveScoreToDatabase(completedLevel) {
+	    const data = {
+	      level: completedLevel,
+	      score: this.grandTotalScore
+	    };
+	    console.log(`Saving score: level=${data.level}, score=${data.score}`);
+	    try {
+	      const response = await fetch('ajax/save-monstrocity-score.php', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify(data)
+	      });
+
+	      if (!response.ok) {
+	        throw new Error(`HTTP error! Status: ${response.status}`);
+	      }
+
+	      const result = await response.json();
+	      console.log('Save response:', result);
+
+	      // Always log the scores returned from PHP
+	      log(`Level ${result.level} Score: ${result.score.toFixed(2)}`);
+
+	      // Log whether the score was saved or not
+	      if (result.status === 'success') {
+	        log(`Score Saved: Level ${result.level}, Score ${result.score.toFixed(2)}, Completions: ${result.attempts}`);
+	      } else {
+	        log(`Score Not Saved: ${result.message}`);
+	      }
+	    } catch (error) {
+	      console.error('Error saving to database:', error);
+	      log(`Error saving score: ${error.message}`);
+	    }
+	  }
+
+      applyAnimation(imageElement, shiftX, glowClass, duration) {
+        const originalTransform = imageElement.style.transform || '';
+        const scalePart = originalTransform.includes('scaleX') ? originalTransform.match(/scaleX\([^)]+\)/)[0] : '';
+        imageElement.style.transition = `transform ${duration / 2 / 1000}s linear`;
+        imageElement.style.transform = `translateX(${shiftX}px) ${scalePart}`;
+        imageElement.classList.add(glowClass);
+        setTimeout(() => {
+          imageElement.style.transform = scalePart;
+          setTimeout(() => {
+            imageElement.classList.remove(glowClass);
+          }, duration / 2);
+        }, duration / 2);
+      }
+
+      animateAttack(attacker, damage, type) {
+        const imageElement = attacker === this.player1 ? p1Image : p2Image;
+        const shiftDirection = attacker === this.player1 ? 1 : -1;
+        const shiftDistance = Math.min(10, 2 + damage * 0.4);
+        const shiftX = shiftDirection * shiftDistance;
+        const glowClass = `glow-${type}`;
+        this.applyAnimation(imageElement, shiftX, glowClass, 200);
+      }
+
+      animatePowerup(attacker) {
+        const imageElement = attacker === this.player1 ? p1Image : p2Image;
+        this.applyAnimation(imageElement, 0, 'glow-power-up', 200);
+      }
+
+      animateRecoil(defender, totalDamage) {
+        const imageElement = defender === this.player1 ? p1Image : p2Image;
+        const shiftDirection = defender === this.player1 ? -1 : 1;
+        const shiftDistance = Math.min(10, 2 + totalDamage * 0.4);
+        const shiftX = shiftDirection * shiftDistance;
+        this.applyAnimation(imageElement, shiftX, 'glow-recoil', 200);
+      }
+    }
+
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+	function log(message) {
+	  const battleLog = document.getElementById("battle-log");
+	  const li = document.createElement("li");
+	  li.textContent = message;
+	  battleLog.insertBefore(li, battleLog.firstChild);
+	  if (battleLog.children.length > 50) { // Increased from 10 to 50
+	    battleLog.removeChild(battleLog.lastChild);
+	  }
+	  battleLog.scrollTop = 0; // Scroll to the top to show the latest entry
+	}
+
+    const turnIndicator = document.getElementById("turn-indicator");
+    const p1Name = document.getElementById("p1-name");
+    const p1Image = document.getElementById("p1-image");
+    const p1Health = document.getElementById("p1-health");
+    const p1Hp = document.getElementById("p1-hp");
+    const p1Strength = document.getElementById("p1-strength");
+    const p1Speed = document.getElementById("p1-speed");
+    const p1Tactics = document.getElementById("p1-tactics");
+    const p1Size = document.getElementById("p1-size");
+    const p1Powerup = document.getElementById("p1-powerup");
+    const p1Type = document.getElementById("p1-type");
+    const p2Name = document.getElementById("p2-name");
+    const p2Image = document.getElementById("p2-image");
+    const p2Health = document.getElementById("p2-health");
+    const p2Hp = document.getElementById("p2-hp");
+    const p2Strength = document.getElementById("p2-strength");
+    const p2Speed = document.getElementById("p2-speed");
+    const p2Tactics = document.getElementById("p2-tactics");
+    const p2Size = document.getElementById("p2-size");
+    const p2Powerup = document.getElementById("p2-powerup");
+    const p2Type = document.getElementById("p2-type");
+    const battleLog = document.getElementById("battle-log");
+    const gameOver = document.getElementById("game-over");
+	
+	const assetCache = {};
+	async function getAssets(selectedTheme) {
+	    if (assetCache[selectedTheme]) {
+	        console.log('getAssets: Cache hit for ' + selectedTheme);
+	        return assetCache[selectedTheme];
+	    }
+
+	    console.time('getAssets_' + selectedTheme);
+	    let monstrocityAssets = [];
+	    try {
+	        console.log('getAssets: Fetching Monstrocity assets');
+	        const monstrocityResponse = await Promise.race([
+	            fetch('ajax/get-monstrocity-assets.php', {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify({ theme: 'monstrocity' })
+	            }),
+	            new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), 5000))
+	        ]);
+
+	        if (!monstrocityResponse.ok) {
+	            throw new Error('Monstrocity HTTP error! Status: ' + monstrocityResponse.status);
+	        }
+
+	        monstrocityAssets = await monstrocityResponse.json();
+	        if (!Array.isArray(monstrocityAssets)) {
+	            monstrocityAssets = [monstrocityAssets];
+	        }
+
+	        monstrocityAssets = monstrocityAssets.map((asset, index) => ({
+	            ...asset,
+	            theme: 'monstrocity',
+	            name: asset.name || ('Monstrocity_Unknown_' + index),
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate'
+	        }));
+	    } catch (error) {
+	        console.error('getAssets: Monstrocity fetch error:', error);
+	        monstrocityAssets = [
+	            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
+	            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
+	        ];
+	    }
+
+	    if (selectedTheme === 'monstrocity') {
+	        assetCache[selectedTheme] = monstrocityAssets;
+	        console.timeEnd('getAssets_' + selectedTheme);
+	        return monstrocityAssets;
+	    }
+
+	    const themeData = themes.flatMap(group => group.items).find(item => item.value === selectedTheme);
+	    if (!themeData) {
+	        console.warn('getAssets: Theme not found: ' + selectedTheme);
+	        assetCache[selectedTheme] = monstrocityAssets;
+	        console.timeEnd('getAssets_' + selectedTheme);
+	        return monstrocityAssets;
+	    }
+
+	    const policyIds = themeData.policyIds ? themeData.policyIds.split(',').filter(id => id.trim()) : [];
+	    if (!policyIds.length) {
+	        assetCache[selectedTheme] = monstrocityAssets;
+	        console.timeEnd('getAssets_' + selectedTheme);
+	        return monstrocityAssets;
+	    }
+
+	    let nftAssets = [];
+	    try {
+	        const policies = policyIds.map((policyId, index) => ({
+	            policyId,
+	            orientation: themeData.orientations?.split(',')[index] || 'Right',
+	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs5.jpgstoreapis.com/ipfs/'
+	        }));
+	        const response = await Promise.race([
+	            fetch('ajax/get-nft-assets.php', {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify({ policyIds: policies.map(p => p.policyId), theme: selectedTheme })
+	            }),
+	            new Promise((_, reject) => setTimeout(() => reject(new Error('NFT timeout')), 10000))
+	        ]);
+
+	        if (!response.ok) {
+	            throw new Error('NFT HTTP error! Status: ' + response.status);
+	        }
+
+	        const data = await response.json();
+	        nftAssets = Array.isArray(data) ? data : [data];
+	        nftAssets = nftAssets.filter(asset => asset && asset.name && asset.ipfs).map((asset, index) => ({
+	            ...asset,
+	            theme: selectedTheme,
+	            name: asset.name || ('NFT_Unknown_' + index),
+	            strength: asset.strength || 4,
+	            speed: asset.speed || 4,
+	            tactics: asset.tactics || 4,
+	            size: asset.size || 'Medium',
+	            type: asset.type || 'Base',
+	            powerup: asset.powerup || 'Regenerate',
+	            policyId: asset.policyId || policies[0].policyId,
+	            ipfs: asset.ipfs || ''
+	        }));
+	    } catch (error) {
+	        console.error('getAssets: NFT fetch error for theme ' + selectedTheme + ':', error);
+	    }
+
+	    const finalAssets = [...monstrocityAssets, ...nftAssets];
+	    assetCache[selectedTheme] = finalAssets;
+	    console.timeEnd('getAssets_' + selectedTheme);
+	    return finalAssets;
+	}
+	
+	// Instantiation
+	document.addEventListener('DOMContentLoaded', function() {
+	    var initGame = function() {
+	        var initialTheme = localStorage.getItem('gameTheme') || 'monstrocity';
+	        getAssets(initialTheme).then(function(playerCharactersConfig) {
+	            console.log('Main: Player characters loaded:', playerCharactersConfig);
+	            var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
+	            console.log('Main: Game instance created');
+	            game.init().then(function() {
+	                console.log('Main: Game initialized successfully');
+	                // Set the logo based on the initial theme
+	                document.querySelector('.game-logo').src = game.baseImagePath + 'logo.png';
+	            });
+	        }).catch(function(error) {
+	            console.error('Main: Error initializing game:', error);
+	        });
+	    };
+	    initGame();
+	});
   </script>
 </body>
 </html>
