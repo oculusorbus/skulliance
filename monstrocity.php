@@ -4483,11 +4483,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Win!";
 	          turnIndicator.textContent = "Game Over";
-	          try {
-          		  this.sounds.finalWin.play();
-	          } catch (err) {
-	              console.error("Error playing finalWin sound:", err);
-	          }
+			  if (this.selectedBoss) {
+		          try {
+	          		  this.sounds.finalWin.play();
+		          } catch (err) {
+		              console.error("Error playing finalWin sound:", err);
+		          }
+		  	  }else{
+		          try {
+	          		  this.sounds.win.play();
+		          } catch (err) {
+		              console.error("Error playing win sound:", err);
+		          }
+		  	  }
 
 	          // Replace try-again button to clear old event listeners
 	          const newButton = document.createElement('button');
