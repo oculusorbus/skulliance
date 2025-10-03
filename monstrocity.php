@@ -4484,9 +4484,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          gameOver.textContent = "You Win!";
 	          turnIndicator.textContent = "Game Over";
 	          try {
-          		  this.sounds.win.play();
+          		  this.sounds.finalWin.play();
 	          } catch (err) {
-	              console.error("Error playing win sound:", err);
+	              console.error("Error playing finalWin sound:", err);
 	          }
 
 	          // Replace try-again button to clear old event listeners
