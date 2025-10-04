@@ -202,6 +202,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  -webkit-filter: drop-shadow(2px 5px 10px #000);
       filter: drop-shadow(2px 5px 10px #000);
 	  border: 1px solid black;
+	  display: block;
+	  visibility: visible;
     }
 
     .health {
@@ -792,6 +794,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  cursor: pointer;
 	  transition: transform 0.2s ease, background 0.2s ease;
 	  border: 1px solid black;
+	  position: relative;
 	}
 
 	.boss-option:hover {
