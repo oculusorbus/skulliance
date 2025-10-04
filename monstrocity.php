@@ -193,6 +193,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
     
     .health-bar {
+      order: 1;
       width: 100%;
       height: 20px;
       background-color: #525F65;
@@ -202,8 +203,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  -webkit-filter: drop-shadow(2px 5px 10px #000);
       filter: drop-shadow(2px 5px 10px #000);
 	  border: 1px solid black;
-	  display: block;
-	  visibility: visible;
+	  display: block !important; 
+	  visibility: visible !important;
+	  z-index: 1;
     }
 
     .health {
@@ -785,7 +787,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	/* Reuse character-option for boss-option */
 	.boss-option {
-	  display: inline-block;
+	  display: flex !important;
+      align-items: flex-start;
+	  flex-direction: row;
 	  width: 200px;
 	  margin: 10px;
 	  padding: 10px;
@@ -886,6 +890,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  .boss-option {
 	    width: 140px;
 	    margin: 5px;
+		position: static;
 	  }
 	  .boss-option p {
 	    font-size: 0.8em;
