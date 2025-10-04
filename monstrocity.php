@@ -202,15 +202,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  -webkit-filter: drop-shadow(2px 5px 10px #000);
       filter: drop-shadow(2px 5px 10px #000);
 	  border: 1px solid black;
-	  display: block;
-	  visibility: visible;
-	  z-index: 9;
+	  display: block !important;
+	  visibility: visible !important;
+	  z-index: 1;
     }
 
     .health {
       height: 100%;
       background-color: #4CAF50;
       transition: width 0.3s ease;
+	  display: block !important;
+	  visibility: visible !important;
+	  z-index: 2;
     }
 
     #game-board {
