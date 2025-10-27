@@ -1240,16 +1240,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
-	          value: "danketsu",
-	          project: "Danketsu",
-	          title: "Legends",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
 	          value: "danketsu2",
 	          project: "Danketsu",
 	          title: "The Fourth",
@@ -1640,6 +1630,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          value: "rubberrebels",
 	          project: "Classic Cardtoons",
 	          title: "Rubber Rebels",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "danketsu",
+	          project: "Danketsu",
+	          title: "Legends",
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
