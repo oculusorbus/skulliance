@@ -1260,16 +1260,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
-	          value: "deadpophell",
-	          project: "Dead Pop Hell",
-	          title: "NSFW",
-	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
-	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
 	          value: "moebiuspioneers",
 	          project: "Disco Solaris",
 	          title: "Legends",
@@ -1410,6 +1400,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Island of the Violent Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "deadpophell",
+	          project: "Dead Pop Hell",
+	          title: "NSFW",
+	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
+	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
