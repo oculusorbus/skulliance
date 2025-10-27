@@ -1240,6 +1240,36 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "danketsu",
+	          project: "Danketsu",
+	          title: "Legends",
+	          policyIds: "",
+	          orientations: "",
+	          ipfsPrefixes: "",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "danketsu2",
+	          project: "Danketsu",
+	          title: "The Fourth",
+	          policyIds: "a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "deadpophell",
+	          project: "Dead Pop Hell",
+	          title: "NSFW",
+	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "moebiuspioneers",
 	          project: "Disco Solaris",
 	          title: "Legends",
@@ -1304,6 +1334,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          project: "Nemonium",
 	          title: "Fauna x Nemonium",
 	          policyIds: "7cd357f96d7a7325ff3038e78e004840706887790d8b513913b45c27",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "omen",
+	          project: "Nemonium",
+	          title: "Omen Legends",
+	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
@@ -1606,36 +1646,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
-	        {
-	          value: "danketsu",
-	          project: "Danketsu",
-	          title: "Legends",
-	          policyIds: "",
-	          orientations: "",
-	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
-	          value: "danketsu2",
-	          project: "Danketsu",
-	          title: "The Fourth",
-	          policyIds: "a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb",
-	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
-	          value: "deadpophell",
-	          project: "Dead Pop Hell",
-	          title: "NSFW",
-	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
-	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
 			 <?php if($dev) { ?>
 	        {
 	          value: "j2",
@@ -1675,16 +1685,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          policyIds: "",
 	          orientations: "",
 	          ipfsPrefixes: "",
-			  background: true,
-			  extension: "png" // Applies only to character images
-	        },
-	        {
-	          value: "omen",
-	          project: "Nemonium",
-	          title: "Omen Legends",
-	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
-	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        }
