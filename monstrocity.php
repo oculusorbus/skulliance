@@ -3511,7 +3511,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  tileElement.style.transform = "translate(0, 0)";
 	              }
 
-	              if (this.isTouchDevice) {
+	              if (this.isTouchDevice && window.innerWidth <= 768) {
 	                  tileElement.addEventListener("touchstart", (e) => this.handleTouchStart(e));
 	              } else {
 	                  tileElement.addEventListener("mousedown", (e) => this.handleMouseDown(e));
@@ -3525,7 +3525,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		addEventListeners() {
 		    const board = document.getElementById("game-board");
-		    if (this.isTouchDevice) {
+		    if (this.isTouchDevice && window.innerWidth <= 768) {
 		        board.addEventListener("touchstart", (e) => this.handleTouchStart(e));
 		        board.addEventListener("touchmove", (e) => this.handleTouchMove(e));
 		        board.addEventListener("touchend", (e) => this.handleTouchEnd(e));
