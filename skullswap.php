@@ -208,7 +208,7 @@ include 'header.php';
  class Match3Game {
      constructor() {
          this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-         this.isMobile = (this.isTouchDevice && window.innerWidth > 768) || window.innerWidth <= 768;
+         this.isMobile = (this.isTouchDevice && window.innerWidth <= 768) || window.innerWidth <= 768;
 
          this.width = this.isMobile ? 6 : 8;
          this.height = this.isMobile ? 10 : 8;
