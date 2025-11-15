@@ -1338,6 +1338,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
+	        },
+	        {
+	          value: "perps",
+	          project: "Perps",
+	          title: "Perps",
+	          policyIds: "e6ba9c0ff27be029442c32533c6efd956a60d15ecb976acbb64c4de0",
+	          orientations: "Right",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
 	        }
 	      ]
 	    },
