@@ -48,8 +48,8 @@
 		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
   		  <a href="missions.php">Missions</a>
 		  <a href="realms.php">Realms</a>
+   		  <a href="monstrocity.php" target="_blank">Match 3 RPG</a>
   		  <a href="skullswap.php">Skull Swap</a>
-  		  <a href="monstrocity.php" target="_blank">Match 3 RPG</a>
 		  <a href="store.php">Store</a>
 		  <a href="leaderboards.php">Leaderboards</a>
 		  <a href="collections.php">Collections</a>
