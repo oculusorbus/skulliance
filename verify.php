@@ -63,7 +63,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
 			if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
 				$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list,inline_datum&asset_list=not.is.null".$offset);
-				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
+				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
 				curl_setopt( $ch, CURLOPT_POST, 1);
 				curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
 				curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
@@ -180,7 +180,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 
 					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
 						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3NjYzNzgxMjEsInRpZXIiOjEsInByb2pJRCI6IlNrdWxsaWFuY2UifQ.qS2b0FAm57dB_kddfrmtFWyHeQC27zz8JJl7qyz2dcI'));
+						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
 						curl_setopt( $tokench, CURLOPT_POST, 1);
 						curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
 						curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
