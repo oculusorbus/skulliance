@@ -166,7 +166,7 @@ $campaign_config = [
     'Katastrophy','Ouchie','Drake',
 ];
 $campaign_opponents = [];
-for ($i = 0; $i < $mono_best_level && $i < count($campaign_config); $i++) {
+for ($i = 0; $i < $mono_monthly_level && $i < count($campaign_config); $i++) {
     $n         = $campaign_config[$i];
     $slug      = strtolower(str_replace(' ', '-', $n));
     $type      = ($i >= 14) ? 'Leader' : 'Base';
@@ -921,21 +921,9 @@ include 'header.php';
             <span class="act-stat-lbl">Completions</span>
         </div>
     </div>
-    <?php if ($mono_monthly_level > 0 || $mono_monthly_score > 0): ?>
-    <div style="display:flex;gap:12px;margin-bottom:18px">
-        <div class="act-stat" style="flex:1;text-align:center">
-            <span class="act-stat-num" style="color:#f5c518;font-size:1.2rem"><?php echo $mono_monthly_level; ?></span>
-            <span class="act-stat-lbl">This Month's Level</span>
-        </div>
-        <div class="act-stat" style="flex:1;text-align:center">
-            <span class="act-stat-num" style="color:#c79fff;font-size:1.2rem"><?php echo number_format($mono_monthly_score); ?></span>
-            <span class="act-stat-lbl">This Month's Score</span>
-        </div>
-    </div>
-    <?php endif; ?>
-    <?php if (!empty($campaign_opponents)): ?>
+    <?php if ($mono_monthly_level > 0): ?>
     <div class="image-strip-section-label">
-        Campaign Progress — Level <?php echo $mono_best_level; ?> / <?php echo count($campaign_config); ?>
+        <?php echo date('F'); ?> Campaign — Level <?php echo $mono_monthly_level; ?> / <?php echo count($campaign_config); ?>
     </div>
     <div class="image-strip strip-wide">
         <?php foreach ($campaign_opponents as $opp): ?>
