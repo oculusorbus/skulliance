@@ -630,7 +630,9 @@ include 'header.php';
 .bottom-col-nfts {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 @media (max-width: 680px) {
     .bottom-cols { flex-direction: column; }
@@ -793,13 +795,7 @@ include 'header.php';
     <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:<?php echo $missions_rate; ?>%"></div>
     </div>
-    <div class="progress-bar-label" style="display:flex;justify-content:space-between;align-items:center">
-        <form class="lb-form" action="leaderboards.php" method="post">
-            <input type="hidden" name="filterby" value="monthly">
-            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Missions Leaderboard &rarr;</button>
-        </form>
-        <span>Success rate: <?php echo $missions_rate; ?>%</span>
-    </div>
+    <div class="progress-bar-label">Success rate: <?php echo $missions_rate; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($recent_missions)): ?>
     <div class="image-strip-section-label"><?php echo date('F'); ?> Missions</div>
@@ -819,6 +815,12 @@ include 'header.php';
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+    <div style="margin-top:14px;text-align:right">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterby" value="monthly">
+            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Missions Leaderboard &rarr;</button>
+        </form>
+    </div>
 </div>
 
 <!-- ── Raids ─────────────────────────────────────────────────────────── -->
@@ -846,13 +848,7 @@ include 'header.php';
     <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:<?php echo $raid_rate; ?>%"></div>
     </div>
-    <div class="progress-bar-label" style="display:flex;justify-content:space-between;align-items:center">
-        <form class="lb-form" action="leaderboards.php" method="post">
-            <input type="hidden" name="filterby" value="monthly-raids">
-            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Raids Leaderboard &rarr;</button>
-        </form>
-        <span>Win rate: <?php echo $raid_rate; ?>%</span>
-    </div>
+    <div class="progress-bar-label">Win rate: <?php echo $raid_rate; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($opponents)): ?>
     <div class="image-strip-section-label"><?php echo date('F'); ?> Opponents</div>
@@ -875,6 +871,12 @@ include 'header.php';
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+    <div style="margin-top:14px;text-align:right">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterby" value="monthly-raids">
+            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Raids Leaderboard &rarr;</button>
+        </form>
+    </div>
 </div>
 
 <!-- ── Boss Battles ───────────────────────────────────────────────────── -->
@@ -903,13 +905,7 @@ include 'header.php';
     <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:<?php echo $dmg_ratio; ?>%;background:linear-gradient(90deg,#ff7f7f,#c8003f)"></div>
     </div>
-    <div class="progress-bar-label" style="display:flex;justify-content:space-between;align-items:center">
-        <form class="lb-form" action="leaderboards.php" method="post">
-            <input type="hidden" name="filterbybosses" value="weekly-bosses">
-            <button class="lb-btn" type="submit">Weekly Boss Battles Leaderboard &rarr;</button>
-        </form>
-        <span>Damage dealt vs. taken: <?php echo $dmg_ratio; ?>%</span>
-    </div>
+    <div class="progress-bar-label">Damage dealt vs. taken: <?php echo $dmg_ratio; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($recent_bosses)): ?>
     <div class="image-strip-section-label">This Week's Encounters</div>
@@ -928,6 +924,12 @@ include 'header.php';
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+    <div style="margin-top:14px;text-align:right">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterbybosses" value="weekly-bosses">
+            <button class="lb-btn" type="submit">Weekly Boss Battles Leaderboard &rarr;</button>
+        </form>
+    </div>
 </div>
 
 <!-- ── Monstrocity ───────────────────────────────────────────────────── -->
@@ -1007,97 +1009,7 @@ include 'header.php';
 </div>
 <?php endif; ?>
 
-<!-- ── Daily Rewards Calendar ────────────────────────────────────────── -->
-<div class="profile-section">
-    <div class="section-title" style="margin-bottom:10px">Daily Rewards — Last 13 Weeks</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
-        <span style="font-size:0.78rem;color:#5a7888">
-            <?php echo number_format($streak_days); ?> total claims
-            <?php if (!empty($claim_days)): ?>&nbsp;·&nbsp; <?php echo count($claim_days); ?> in last 91 days<?php endif; ?>
-            &nbsp;·&nbsp;
-            <form class="lb-form" action="leaderboards.php" method="post">
-                <input type="hidden" name="filterbystreak" value="monthly-streaks">
-                <button class="lb-btn" type="submit"><?php echo date('F'); ?> Streaks Leaderboard &rarr;</button>
-            </form>
-        </span>
-        <div class="cal-legend">
-            <div class="legend-swatch" style="background:#152230"></div> Missed
-            <div class="legend-swatch" style="background:#00c8a0"></div> Claimed
-        </div>
-    </div>
-
-    <?php
-    // Build the 13-week grid
-    $today   = new DateTime();
-    $start   = clone $today;
-    $start->modify('-90 days');
-    $dow     = (int)$start->format('w'); // 0=Sun
-    $start->modify("-{$dow} days");
-
-    // Build month label positions (which week column each month starts at)
-    $month_labels = [];
-    $prev_month   = '';
-    for ($w = 0; $w < 13; $w++) {
-        $d = clone $start;
-        $d->modify("+{$w} weeks");
-        $m = $d->format('M');
-        if ($m !== $prev_month) {
-            $month_labels[$w] = $m . ' ' . $d->format('Y');
-            $prev_month = $m;
-        }
-    }
-
-    // Day-of-week labels
-    $dow_labels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    ?>
-
-    <div class="calendar-outer">
-        <!-- Day-of-week labels -->
-        <div class="cal-day-labels">
-            <?php foreach ($dow_labels as $lbl): ?>
-            <div class="cal-day-label"><?php echo $lbl; ?></div>
-            <?php endforeach; ?>
-        </div>
-
-        <div class="cal-weeks-wrap">
-            <!-- Month labels row -->
-            <div class="cal-month-row">
-                <?php for ($w = 0; $w < 13; $w++): ?>
-                <div class="cal-month-label"><?php echo isset($month_labels[$w]) ? $month_labels[$w] : ''; ?></div>
-                <?php endfor; ?>
-            </div>
-
-            <!-- Day grid -->
-            <div class="calendar-grid">
-                <?php for ($week = 0; $week < 13; $week++): ?>
-                <div class="calendar-week">
-                    <?php for ($day = 0; $day < 7; $day++):
-                        $d   = clone $start;
-                        $d->modify("+{$week} weeks +{$day} days");
-                        $key = $d->format('Y-m-d');
-                        $dname = $dow_labels[$day];
-                        $ddate = $d->format('M j, Y');
-                        if ($d > $today) {
-                            $cls   = 'calendar-day future';
-                            $title = '';
-                        } elseif (isset($claim_days[$key])) {
-                            $cls   = 'calendar-day claimed';
-                            $title = "&#10003; Claimed — {$dname}, {$ddate}";
-                        } else {
-                            $cls   = 'calendar-day missed';
-                            $title = "Missed — {$dname}, {$ddate}";
-                        }
-                    ?>
-                    <div class="<?php echo $cls; ?>" title="<?php echo $title; ?>"></div>
-                    <?php endfor; ?>
-                </div>
-                <?php endfor; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ── Points + NFT Collection (bottom two-col) ──────────────────────── -->
+<!-- ── Points | (Daily Rewards + NFT Collection) ─────────────────────── -->
 <div class="bottom-cols">
 
     <!-- Points -->
@@ -1118,31 +1030,118 @@ include 'header.php';
         <?php endif; ?>
     </div>
 
-    <!-- NFT Collection -->
-    <div class="bottom-col-nfts profile-section" style="margin-top:0" id="nft-col">
-        <div class="section-title">
-            NFT Collection
-            <?php if ($show_nfts && !empty($gallery_nfts)): ?>
-            <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
-            <?php endif; ?>
-        </div>
-        <?php if ($show_nfts && !empty($gallery_nfts)): ?>
-        <div class="nft-mosaic" id="nft-mosaic">
-            <?php foreach ($gallery_nfts as $nft): ?>
-            <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
-                <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
+    <!-- Right column: Daily Rewards + NFT Collection -->
+    <div class="bottom-col-nfts">
+
+        <!-- Daily Rewards Calendar -->
+        <div class="profile-section" style="margin-top:0">
+            <div class="section-title" style="margin-bottom:10px">Daily Rewards — Last 13 Weeks</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+                <span style="font-size:0.78rem;color:#5a7888">
+                    <?php echo number_format($streak_days); ?> total claims
+                    <?php if (!empty($claim_days)): ?>&nbsp;·&nbsp; <?php echo count($claim_days); ?> in last 91 days<?php endif; ?>
+                </span>
+                <div class="cal-legend">
+                    <div class="legend-swatch" style="background:#152230"></div> Missed
+                    <div class="legend-swatch" style="background:#00c8a0"></div> Claimed
+                </div>
             </div>
-            <?php endforeach; ?>
+
+            <?php
+            $today   = new DateTime();
+            $start   = clone $today;
+            $start->modify('-90 days');
+            $dow     = (int)$start->format('w');
+            $start->modify("-{$dow} days");
+
+            $month_labels = [];
+            $prev_month   = '';
+            for ($w = 0; $w < 13; $w++) {
+                $d = clone $start;
+                $d->modify("+{$w} weeks");
+                $m = $d->format('M');
+                if ($m !== $prev_month) {
+                    $month_labels[$w] = $m . ' ' . $d->format('Y');
+                    $prev_month = $m;
+                }
+            }
+            $dow_labels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            ?>
+
+            <div class="calendar-outer">
+                <div class="cal-day-labels">
+                    <?php foreach ($dow_labels as $lbl): ?>
+                    <div class="cal-day-label"><?php echo $lbl; ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="cal-weeks-wrap">
+                    <div class="cal-month-row">
+                        <?php for ($w = 0; $w < 13; $w++): ?>
+                        <div class="cal-month-label"><?php echo isset($month_labels[$w]) ? $month_labels[$w] : ''; ?></div>
+                        <?php endfor; ?>
+                    </div>
+                    <div class="calendar-grid">
+                        <?php for ($week = 0; $week < 13; $week++): ?>
+                        <div class="calendar-week">
+                            <?php for ($day = 0; $day < 7; $day++):
+                                $d   = clone $start;
+                                $d->modify("+{$week} weeks +{$day} days");
+                                $key = $d->format('Y-m-d');
+                                $dname = $dow_labels[$day];
+                                $ddate = $d->format('M j, Y');
+                                if ($d > $today) {
+                                    $cls   = 'calendar-day future';
+                                    $title = '';
+                                } elseif (isset($claim_days[$key])) {
+                                    $cls   = 'calendar-day claimed';
+                                    $title = "&#10003; Claimed — {$dname}, {$ddate}";
+                                } else {
+                                    $cls   = 'calendar-day missed';
+                                    $title = "Missed — {$dname}, {$ddate}";
+                                }
+                            ?>
+                            <div class="<?php echo $cls; ?>" title="<?php echo $title; ?>"></div>
+                            <?php endfor; ?>
+                        </div>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:14px;text-align:right">
+                <form class="lb-form" action="leaderboards.php" method="post">
+                    <input type="hidden" name="filterbystreak" value="monthly-streaks">
+                    <button class="lb-btn" type="submit"><?php echo date('F'); ?> Streaks Leaderboard &rarr;</button>
+                </form>
+            </div>
         </div>
-        <?php else: ?>
-        <div class="visibility-notice">
-            &#128274;&nbsp; This user's collection is private.
-            <?php if ($is_own_profile): ?>
-            &nbsp;<a href="wallets.php" style="color:#00c8a0;text-decoration:none">Change in Wallets &rarr;</a>
+
+        <!-- NFT Collection -->
+        <div class="profile-section" style="margin-top:0" id="nft-col">
+            <div class="section-title">
+                NFT Collection
+                <?php if ($show_nfts && !empty($gallery_nfts)): ?>
+                <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
+                <?php endif; ?>
+            </div>
+            <?php if ($show_nfts && !empty($gallery_nfts)): ?>
+            <div class="nft-mosaic">
+                <?php foreach ($gallery_nfts as $nft): ?>
+                <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
+                    <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php else: ?>
+            <div class="visibility-notice">
+                &#128274;&nbsp; This user's collection is private.
+                <?php if ($is_own_profile): ?>
+                &nbsp;<a href="wallets.php" style="color:#00c8a0;text-decoration:none">Change in Wallets &rarr;</a>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
-        <?php endif; ?>
-    </div>
+
+    </div><!-- /.bottom-col-nfts -->
 
 </div><!-- /.bottom-cols -->
 
@@ -1178,18 +1177,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Footer year
     const yr = document.getElementById('year');
     if (yr) yr.textContent = new Date().getFullYear();
-
-    // Match NFT column height to points column
-    function matchNftHeight() {
-        const pts = document.getElementById('currency-list');
-        const col = document.getElementById('nft-col');
-        if (pts && col) {
-            col.style.maxHeight = Math.max(pts.offsetHeight + 70, 200) + 'px';
-            col.style.overflow  = 'hidden';
-        }
-    }
-    matchNftHeight();
-    window.addEventListener('resize', matchNftHeight);
 
     // Stat number count-up
     const stats = document.querySelectorAll('.stat-number[data-count]');
