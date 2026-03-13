@@ -390,10 +390,12 @@ include 'header.php';
 /* ── Stat grid ── */
 .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(var(--stat-cols, 6), 1fr);
     gap: 12px;
     margin-top: 18px;
 }
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 500px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .stat-card {
     background: rgba(22,87,119,0.25);
@@ -717,7 +719,7 @@ include 'header.php';
 </div>
 
 <!-- ── Summary Stats ─────────────────────────────────────────────────── -->
-<div class="stat-grid">
+<div class="stat-grid" style="--stat-cols:<?php echo $swap_best_score > 0 ? 7 : 6; ?>">
     <div class="stat-card">
         <span class="stat-number gold" data-count="<?php echo $total_points; ?>"><?php echo number_format($total_points); ?></span>
         <span class="stat-label">Total Points</span>
