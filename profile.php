@@ -58,14 +58,16 @@ $missions_progress  = (int)($mis['in_progress'] ?? 0);
 $missions_failed    = (int)($mis['failed'] ?? 0);
 $missions_rate      = $missions_total > 0 ? round(($missions_completed / $missions_total) * 100) : 0;
 
-// Recent missions
+// Recent missions — one row per quest (deduplicated), ordered by most recent activity
 $recent_missions = [];
-$rm_result = $conn->query("SELECT q.title, q.extension, p.name as project_name, m.status
+$rm_result = $conn->query("SELECT q.title, q.extension, p.name as project_name,
+    SUBSTRING_INDEX(GROUP_CONCAT(m.status ORDER BY m.id DESC), ',', 1) as status
     FROM missions m
     INNER JOIN quests q ON m.quest_id = q.id
     INNER JOIN projects p ON p.id = q.project_id
     WHERE m.user_id='$tid'
-    ORDER BY m.id DESC LIMIT 16");
+    GROUP BY m.quest_id
+    ORDER BY MAX(m.id) DESC LIMIT 16");
 if ($rm_result && $rm_result->num_rows > 0) {
     while ($row = $rm_result->fetch_assoc()) {
         $ext  = ($row['extension'] === 'mp4') ? 'gif' : $row['extension'];
@@ -165,13 +167,15 @@ $campaign_config = [
 ];
 $campaign_opponents = [];
 for ($i = 0; $i < $mono_best_level && $i < count($campaign_config); $i++) {
-    $n    = $campaign_config[$i];
-    $slug = strtolower(str_replace(' ', '-', $n));
+    $n         = $campaign_config[$i];
+    $slug      = strtolower(str_replace(' ', '-', $n));
+    $type      = ($i >= 14) ? 'Leader' : 'Base';
+    $subfolder = ($i >= 14) ? 'leader' : 'base';
     $campaign_opponents[] = [
         'level' => $i + 1,
         'name'  => $n,
-        'type'  => ($i >= 14) ? 'Leader' : 'Base',
-        'image' => "images/monstrocity/monstrocity/{$slug}.png",
+        'type'  => $type,
+        'image' => "images/monstrocity/monstrocity/{$subfolder}/{$slug}.png",
     ];
 }
 
@@ -386,12 +390,10 @@ include 'header.php';
 /* ── Stat grid ── */
 .stat-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px;
     margin-top: 18px;
 }
-@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 500px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .stat-card {
     background: rgba(22,87,119,0.25);
@@ -740,6 +742,12 @@ include 'header.php';
         <span class="stat-number teal" data-count="<?php echo $streak_days; ?>"><?php echo number_format($streak_days); ?></span>
         <span class="stat-label">Daily Rewards Claimed</span>
     </div>
+    <?php if ($swap_best_score > 0): ?>
+    <div class="stat-card">
+        <span class="stat-number gold" data-count="<?php echo $swap_best_score; ?>"><?php echo number_format($swap_best_score); ?></span>
+        <span class="stat-label">Best Skull Swap Score</span>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- ── Missions ──────────────────────────────────────────────────────── -->
