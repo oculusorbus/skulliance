@@ -851,7 +851,7 @@ include 'header.php';
 
 <!-- ── Boss Battles ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title">&#128296; Boss Battles</div>
+    <div class="section-title">&#9876; Boss Battles</div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($boss_total); ?></span>
