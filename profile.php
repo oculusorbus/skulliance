@@ -166,16 +166,20 @@ $campaign_config = [
     'Katastrophy','Ouchie','Drake',
 ];
 $campaign_opponents = [];
-for ($i = 0; $i < $mono_monthly_level && $i < count($campaign_config); $i++) {
+for ($i = 0; $i < count($campaign_config); $i++) {
     $n         = $campaign_config[$i];
     $slug      = strtolower(str_replace(' ', '-', $n));
     $type      = ($i >= 14) ? 'Leader' : 'Base';
     $subfolder = ($i >= 14) ? 'leader' : 'base';
+    $defeated  = ($i < $mono_monthly_level);
     $campaign_opponents[] = [
-        'level' => $i + 1,
-        'name'  => $n,
-        'type'  => $type,
-        'image' => "images/monstrocity/monstrocity/{$subfolder}/{$slug}.png",
+        'level'    => $i + 1,
+        'name'     => $n,
+        'type'     => $type,
+        'defeated' => $defeated,
+        'image'    => $defeated
+                        ? "images/monstrocity/monstrocity/{$subfolder}/{$slug}.png"
+                        : "icons/padlock.png",
     ];
 }
 
@@ -505,6 +509,7 @@ include 'header.php';
 .badge-fail    { background: rgba(255,80,80,0.18);  color: #ff7f7f; }
 .badge-going   { background: rgba(245,197,24,0.18); color: #f5c518; }
 .badge-leader  { background: rgba(138,86,255,0.18); color: #c79fff; }
+.badge-base    { background: rgba(0,200,160,0.12);  color: #00c8a0; }
 
 /* Wider strip cards for campaign (more levels = more breathing room) */
 .strip-wide .strip-card {
@@ -921,25 +926,23 @@ include 'header.php';
             <span class="act-stat-lbl">Completions</span>
         </div>
     </div>
-    <?php if ($mono_monthly_level > 0): ?>
     <div class="image-strip-section-label">
         <?php echo date('F'); ?> Campaign — Level <?php echo $mono_monthly_level; ?> / <?php echo count($campaign_config); ?>
     </div>
     <div class="image-strip strip-wide">
         <?php foreach ($campaign_opponents as $opp): ?>
-        <div class="strip-card">
-            <img src="<?php echo htmlspecialchars($opp['image']); ?>" alt="<?php echo htmlspecialchars($opp['name']); ?>" loading="lazy" onerror="this.style.background='#122030'">
+        <div class="strip-card" style="<?php echo !$opp['defeated'] ? 'opacity:0.45;filter:grayscale(60%)' : ''; ?>">
+            <img src="<?php echo htmlspecialchars($opp['image']); ?>" alt="<?php echo htmlspecialchars($opp['name']); ?>" loading="lazy" onerror="this.style.background='#122030'" style="<?php echo !$opp['defeated'] ? 'object-fit:contain;padding:10px;background:#0a1929' : ''; ?>">
             <div class="strip-card-body">
-                <span class="strip-card-sub" style="color:#3a6070;font-size:0.55rem">LVL <?php echo $opp['level']; ?></span>
-                <span class="strip-card-title"><?php echo htmlspecialchars($opp['name']); ?></span>
-                <?php if ($opp['type'] === 'Leader'): ?>
-                <span class="strip-card-badge badge-leader">Leader</span>
-                <?php endif; ?>
+                <span class="strip-card-sub" style="color:<?php echo $opp['defeated'] ? '#3a6070' : '#2a4050'; ?>;font-size:0.55rem">LVL <?php echo $opp['level']; ?></span>
+                <span class="strip-card-title"><?php echo $opp['defeated'] ? htmlspecialchars($opp['name']) : '???'; ?></span>
+                <span class="strip-card-badge <?php echo $opp['type'] === 'Leader' ? 'badge-leader' : 'badge-base'; ?>">
+                    <?php echo $opp['type']; ?>
+                </span>
             </div>
         </div>
         <?php endforeach; ?>
     </div>
-    <?php endif; ?>
     <div style="margin-top:14px;text-align:right">
         <a href="leaderboards.php?filterbybosses=monstrocity" style="font-size:0.75rem;color:#00c8a0;text-decoration:none">View Monstrocity Leaderboard &rarr;</a>
     </div>
