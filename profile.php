@@ -58,6 +58,27 @@ $missions_progress  = (int)($mis['in_progress'] ?? 0);
 $missions_failed    = (int)($mis['failed'] ?? 0);
 $missions_rate      = $missions_total > 0 ? round(($missions_completed / $missions_total) * 100) : 0;
 
+// Recent missions
+$recent_missions = [];
+$rm_result = $conn->query("SELECT q.title, q.extension, p.name as project_name, m.status
+    FROM missions m
+    INNER JOIN quests q ON m.quest_id = q.id
+    INNER JOIN projects p ON p.id = q.project_id
+    WHERE m.user_id='$tid'
+    ORDER BY m.id DESC LIMIT 16");
+if ($rm_result && $rm_result->num_rows > 0) {
+    while ($row = $rm_result->fetch_assoc()) {
+        $ext  = ($row['extension'] === 'mp4') ? 'gif' : $row['extension'];
+        $slug = strtolower(str_replace(' ', '-', $row['title']));
+        $recent_missions[] = [
+            'title'   => htmlspecialchars($row['title']),
+            'project' => htmlspecialchars($row['project_name']),
+            'status'  => (int)$row['status'],
+            'image'   => "images/missions/{$slug}.{$ext}",
+        ];
+    }
+}
+
 // ── Raids ──────────────────────────────────────────────────────────────────
 
 $raid_sql = "SELECT COUNT(*) as total,
@@ -88,6 +109,28 @@ $boss_dealt     = (int)($boss_s['dealt'] ?? 0);
 $boss_taken     = (int)($boss_s['taken'] ?? 0);
 $boss_victories = (int)($boss_s['victories'] ?? 0);
 
+// Recent boss encounters
+$recent_bosses = [];
+$rb_result = $conn->query("SELECT b.name AS boss_name, b.extension, p.name AS project_name, e.damage_dealt
+    FROM encounters e
+    INNER JOIN bosses b ON b.id = e.boss_id
+    INNER JOIN projects p ON p.id = b.project_id
+    WHERE e.user_id='$tid'
+    ORDER BY e.date_created DESC LIMIT 16");
+if ($rb_result && $rb_result->num_rows > 0) {
+    while ($row = $rb_result->fetch_assoc()) {
+        $slug = strtolower($row['boss_name']);
+        $slug = preg_replace(["/\s+/", "/'/", "/[^a-z0-9\-]+/", "/-+/"], ["-", "", "-", "-"], $slug);
+        $slug = trim($slug, '-');
+        $recent_bosses[] = [
+            'name'    => htmlspecialchars($row['boss_name']),
+            'project' => htmlspecialchars($row['project_name']),
+            'damage'  => (int)$row['damage_dealt'],
+            'image'   => "images/monstrocity/bosses/{$slug}.{$row['extension']}",
+        ];
+    }
+}
+
 // ── Monstrocity — matches leaderboard: project_id='36', AVG for all-time ──
 
 $mono_r = $conn->query("SELECT
@@ -103,6 +146,46 @@ $mono_avg_level  = (int)($mono['avg_level'] ?? 0);
 $mono_best_score = (int)($mono['best_score'] ?? 0);
 $mono_best_level = (int)($mono['best_level'] ?? 0);
 $mono_completions= (int)($mono['completions'] ?? 0);
+
+// Monthly Monstrocity (unrewarded = current period)
+$mono_monthly_r = $conn->query("SELECT COALESCE(MAX(level),0) as m_level, COALESCE(MAX(score),0) as m_score
+    FROM scores WHERE user_id='$tid' AND project_id='36' AND reward='0'");
+$mono_monthly = $mono_monthly_r ? $mono_monthly_r->fetch_assoc() : ['m_level'=>0,'m_score'=>0];
+$mono_monthly_level = (int)($mono_monthly['m_level'] ?? 0);
+$mono_monthly_score = (int)($mono_monthly['m_score'] ?? 0);
+
+// Campaign opponents config (mirrors monstrocity.php opponentsConfig)
+$campaign_config = [
+    'Craig','Merdock','Goblin Ganger','Texby','Mandiblus','Koipon',
+    'Slime Mind','Billandar and Ted','Dankle','Jarhead','Spydrax',
+    'Katastrophy','Ouchie','Drake',
+    'Craig','Merdock','Goblin Ganger','Texby','Mandiblus','Koipon',
+    'Slime Mind','Billandar and Ted','Dankle','Jarhead','Spydrax',
+    'Katastrophy','Ouchie','Drake',
+];
+$campaign_opponents = [];
+for ($i = 0; $i < $mono_best_level && $i < count($campaign_config); $i++) {
+    $n    = $campaign_config[$i];
+    $slug = strtolower(str_replace(' ', '-', $n));
+    $campaign_opponents[] = [
+        'level' => $i + 1,
+        'name'  => $n,
+        'type'  => ($i >= 14) ? 'Leader' : 'Base',
+        'image' => "images/monstrocity/monstrocity/{$slug}.png",
+    ];
+}
+
+// ── Skull Swap ─────────────────────────────────────────────────────────────
+
+$swap_r = $conn->query("SELECT
+    COALESCE(ROUND(AVG(score)),0) as avg_score,
+    COALESCE(MAX(score),0) as best_score,
+    COALESCE(SUM(attempts),0) as total_attempts
+    FROM scores WHERE user_id='$tid' AND project_id='0'");
+$swap = $swap_r ? $swap_r->fetch_assoc() : ['avg_score'=>0,'best_score'=>0,'total_attempts'=>0];
+$swap_avg_score   = (int)($swap['avg_score'] ?? 0);
+$swap_best_score  = (int)($swap['best_score'] ?? 0);
+$swap_total_swaps = (int)($swap['total_attempts'] ?? 0);
 
 // ── Total Points ───────────────────────────────────────────────────────────
 
@@ -189,6 +272,35 @@ $has_diamond = in_array(7, $held_core);
 $core_count  = count(array_filter($held_core, fn($p) => $p < 7));
 $is_elite    = $core_count >= 6;
 $is_member   = $core_count >= 3;
+
+// ── Open Graph / Twitter Card meta tags ───────────────────────────────────
+
+$og_title = "{$display_name}'s Skulliance Profile";
+$og_parts = [];
+if ($missions_completed > 0) $og_parts[] = "⚔️ {$missions_completed} missions";
+if ($raid_wins > 0)          $og_parts[] = "🏰 {$raid_wins} raid wins";
+if ($boss_dealt > 0)         $og_parts[] = "☠️ " . number_format($boss_dealt) . " boss dmg";
+if ($mono_best_score > 0)    $og_parts[] = "🎮 " . number_format($mono_best_score) . " Match 3";
+if ($swap_best_score > 0)    $og_parts[] = "💀 " . number_format($swap_best_score) . " Skull Swap";
+$og_description = implode(' · ', $og_parts) ?: "Skulliance community player profile.";
+$og_image = $profile_avatar;
+if ($realm_theme_id) {
+    $og_image = "https://www.skulliance.io/staking/images/themes/{$realm_theme_id}.jpg";
+}
+$og_url = "https://www.skulliance.io/staking/profile.php?username=" . urlencode($profile_user['username']);
+
+$extra_head = "
+<meta property='og:type'        content='profile' />
+<meta property='og:site_name'   content='Skulliance' />
+<meta property='og:title'       content='" . htmlspecialchars($og_title, ENT_QUOTES) . "' />
+<meta property='og:description' content='" . htmlspecialchars($og_description, ENT_QUOTES) . "' />
+<meta property='og:image'       content='" . htmlspecialchars($og_image, ENT_QUOTES) . "' />
+<meta property='og:url'         content='" . htmlspecialchars($og_url, ENT_QUOTES) . "' />
+<meta name='twitter:card'        content='summary_large_image' />
+<meta name='twitter:title'       content='" . htmlspecialchars($og_title, ENT_QUOTES) . "' />
+<meta name='twitter:description' content='" . htmlspecialchars($og_description, ENT_QUOTES) . "' />
+<meta name='twitter:image'       content='" . htmlspecialchars($og_image, ENT_QUOTES) . "' />
+";
 
 include 'header.php';
 ?>
@@ -336,6 +448,67 @@ include 'header.php';
     font-size: 0.7rem; color: #5a7888; text-align: right;
 }
 
+/* ── Image strip (horizontal scroll) ── */
+.image-strip-section-label {
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #3a6070; margin: 20px 0 10px;
+}
+.image-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #2a4050 transparent;
+}
+.image-strip::-webkit-scrollbar { height: 4px; }
+.image-strip::-webkit-scrollbar-track { background: transparent; }
+.image-strip::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
+.strip-card {
+    flex: 1 1 110px;
+    min-width: 100px;
+    max-width: 140px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0a1929;
+    border: 1px solid rgba(0,200,160,0.10);
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: default;
+}
+.strip-card:hover { border-color: rgba(0,200,160,0.35); transform: translateY(-2px); }
+.strip-card img {
+    width: 100%; aspect-ratio: 1; object-fit: cover; display: block;
+    background: #122030;
+}
+.strip-card-body { padding: 6px 8px 8px; }
+.strip-card-title {
+    font-size: 0.68rem; font-weight: bold; color: #e0e8f0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
+}
+.strip-card-sub {
+    font-size: 0.6rem; color: #5a7888;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block; margin-top: 2px;
+}
+.strip-card-badge {
+    display: inline-block; font-size: 0.55rem; font-weight: bold;
+    letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px;
+    margin-top: 3px; text-transform: uppercase;
+}
+.badge-done    { background: rgba(0,200,160,0.18); color: #00c8a0; }
+.badge-fail    { background: rgba(255,80,80,0.18);  color: #ff7f7f; }
+.badge-going   { background: rgba(245,197,24,0.18); color: #f5c518; }
+.badge-leader  { background: rgba(138,86,255,0.18); color: #c79fff; }
+
+/* Wider strip cards for campaign (more levels = more breathing room) */
+.strip-wide .strip-card {
+    flex: 1 1 96px;
+    min-width: 88px;
+    max-width: 120px;
+}
+
 /* ── Opponents grid ── */
 .opponents-grid {
     display: grid;
@@ -359,9 +532,7 @@ include 'header.php';
     background-size: cover; background-position: center;
     background-color: #122030;
 }
-.opponent-info {
-    padding: 8px 10px 10px;
-}
+.opponent-info { padding: 8px 10px 10px; }
 .opponent-avatar {
     width: 36px; height: 36px; border-radius: 50%;
     border: 2px solid #00c8a0;
@@ -562,7 +733,7 @@ include 'header.php';
         <span class="stat-label">Boss Damage</span>
     </div>
     <div class="stat-card">
-        <span class="stat-number purple" data-count="<?php echo $mono_avg_score; ?>"><?php echo number_format($mono_avg_score); ?></span>
+        <span class="stat-number purple" data-count="<?php echo $mono_best_score; ?>"><?php echo number_format($mono_best_score); ?></span>
         <span class="stat-label">Best Match 3 RPG Score</span>
     </div>
     <div class="stat-card">
@@ -598,6 +769,24 @@ include 'header.php';
     </div>
     <div class="progress-bar-label">Success rate: <?php echo $missions_rate; ?>%</div>
     <?php endif; ?>
+    <?php if (!empty($recent_missions)): ?>
+    <div class="image-strip-section-label">Recent Missions</div>
+    <div class="image-strip">
+        <?php foreach ($recent_missions as $m):
+            $status_class = $m['status'] === 1 ? 'badge-done' : ($m['status'] === 2 ? 'badge-fail' : 'badge-going');
+            $status_label = $m['status'] === 1 ? 'Done' : ($m['status'] === 2 ? 'Failed' : 'Active');
+        ?>
+        <div class="strip-card">
+            <img src="<?php echo htmlspecialchars($m['image']); ?>" alt="<?php echo $m['title']; ?>" loading="lazy" onerror="this.style.background='#122030'">
+            <div class="strip-card-body">
+                <span class="strip-card-title"><?php echo $m['title']; ?></span>
+                <span class="strip-card-sub"><?php echo $m['project']; ?></span>
+                <span class="strip-card-badge <?php echo $status_class; ?>"><?php echo $status_label; ?></span>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- ── Raids ─────────────────────────────────────────────────────────── -->
@@ -628,26 +817,24 @@ include 'header.php';
     <div class="progress-bar-label">Win rate: <?php echo $raid_rate; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($opponents)): ?>
-    <div style="margin-top:18px">
-        <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:#3a6070;margin-bottom:10px">Recent Opponents</div>
-        <div class="opponents-grid">
-            <?php foreach ($opponents as $opp):
-                $opp_av  = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
-                $opp_tid = (int)$opp['opp_theme_id'];
-                $opp_bg  = $opp_tid ? "background-image:url('images/themes/{$opp_tid}.jpg')" : "background-color:#122030";
-            ?>
-            <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card">
-                <div class="opponent-theme-bg" style="<?php echo $opp_bg; ?>"></div>
-                <div class="opponent-info">
-                    <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" onerror="this.src='icons/skull.png'">
-                    <span class="opponent-name"><?php echo htmlspecialchars($opp['username']); ?></span>
-                    <?php if (!empty($opp['opp_realm_name'])): ?>
-                    <span class="opponent-realm">&#9956; <?php echo htmlspecialchars($opp['opp_realm_name']); ?></span>
-                    <?php endif; ?>
-                </div>
-            </a>
-            <?php endforeach; ?>
-        </div>
+    <div class="image-strip-section-label">Recent Opponents</div>
+    <div class="opponents-grid">
+        <?php foreach ($opponents as $opp):
+            $opp_av  = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
+            $opp_tid = (int)$opp['opp_theme_id'];
+            $opp_bg  = $opp_tid ? "background-image:url('images/themes/{$opp_tid}.jpg')" : "background-color:#122030";
+        ?>
+        <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card">
+            <div class="opponent-theme-bg" style="<?php echo $opp_bg; ?>"></div>
+            <div class="opponent-info">
+                <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" onerror="this.src='icons/skull.png'">
+                <span class="opponent-name"><?php echo htmlspecialchars($opp['username']); ?></span>
+                <?php if (!empty($opp['opp_realm_name'])): ?>
+                <span class="opponent-realm">&#9956; <?php echo htmlspecialchars($opp['opp_realm_name']); ?></span>
+                <?php endif; ?>
+            </div>
+        </a>
+        <?php endforeach; ?>
     </div>
     <?php endif; ?>
 </div>
@@ -680,6 +867,23 @@ include 'header.php';
     </div>
     <div class="progress-bar-label">Damage dealt vs. taken: <?php echo $dmg_ratio; ?>%</div>
     <?php endif; ?>
+    <?php if (!empty($recent_bosses)): ?>
+    <div class="image-strip-section-label">Recent Encounters</div>
+    <div class="image-strip">
+        <?php foreach ($recent_bosses as $b): ?>
+        <div class="strip-card">
+            <img src="<?php echo htmlspecialchars($b['image']); ?>" alt="<?php echo $b['name']; ?>" loading="lazy" onerror="this.style.background='#122030'">
+            <div class="strip-card-body">
+                <span class="strip-card-title"><?php echo $b['name']; ?></span>
+                <span class="strip-card-sub"><?php echo $b['project']; ?></span>
+                <?php if ($b['damage'] > 0): ?>
+                <span class="strip-card-sub" style="color:#ff9090">&#128293; <?php echo number_format($b['damage']); ?> dmg</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- ── Monstrocity ───────────────────────────────────────────────────── -->
@@ -707,10 +911,65 @@ include 'header.php';
             <span class="act-stat-lbl">Completions</span>
         </div>
     </div>
-    <div style="margin-top:10px;text-align:right">
+    <?php if ($mono_monthly_level > 0 || $mono_monthly_score > 0): ?>
+    <div style="display:flex;gap:12px;margin-bottom:18px">
+        <div class="act-stat" style="flex:1;text-align:center">
+            <span class="act-stat-num" style="color:#f5c518;font-size:1.2rem"><?php echo $mono_monthly_level; ?></span>
+            <span class="act-stat-lbl">This Month's Level</span>
+        </div>
+        <div class="act-stat" style="flex:1;text-align:center">
+            <span class="act-stat-num" style="color:#c79fff;font-size:1.2rem"><?php echo number_format($mono_monthly_score); ?></span>
+            <span class="act-stat-lbl">This Month's Score</span>
+        </div>
+    </div>
+    <?php endif; ?>
+    <?php if (!empty($campaign_opponents)): ?>
+    <div class="image-strip-section-label">
+        Campaign Progress — Level <?php echo $mono_best_level; ?> / <?php echo count($campaign_config); ?>
+    </div>
+    <div class="image-strip strip-wide">
+        <?php foreach ($campaign_opponents as $opp): ?>
+        <div class="strip-card">
+            <img src="<?php echo htmlspecialchars($opp['image']); ?>" alt="<?php echo htmlspecialchars($opp['name']); ?>" loading="lazy" onerror="this.style.background='#122030'">
+            <div class="strip-card-body">
+                <span class="strip-card-sub" style="color:#3a6070;font-size:0.55rem">LVL <?php echo $opp['level']; ?></span>
+                <span class="strip-card-title"><?php echo htmlspecialchars($opp['name']); ?></span>
+                <?php if ($opp['type'] === 'Leader'): ?>
+                <span class="strip-card-badge badge-leader">Leader</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <div style="margin-top:14px;text-align:right">
         <a href="leaderboards.php?filterbybosses=monstrocity" style="font-size:0.75rem;color:#00c8a0;text-decoration:none">View Monstrocity Leaderboard &rarr;</a>
     </div>
 </div>
+
+<!-- ── Skull Swap ─────────────────────────────────────────────────────── -->
+<?php if ($swap_total_swaps > 0 || $swap_best_score > 0): ?>
+<div class="profile-section">
+    <div class="section-title">&#128128; Skull Swap</div>
+    <div class="activity-stats-row" style="grid-template-columns: repeat(3, 1fr)">
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($swap_best_score); ?></span>
+            <span class="act-stat-lbl">Best Score</span>
+        </div>
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($swap_avg_score); ?></span>
+            <span class="act-stat-lbl">Avg Score</span>
+        </div>
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#00c8a0"><?php echo number_format($swap_total_swaps); ?></span>
+            <span class="act-stat-lbl">Total Swaps</span>
+        </div>
+    </div>
+    <div style="text-align:right">
+        <a href="leaderboards.php?filterbyswaps=swaps" style="font-size:0.75rem;color:#00c8a0;text-decoration:none">View Skull Swap Leaderboard &rarr;</a>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- ── Daily Rewards Calendar ────────────────────────────────────────── -->
 <div class="profile-section">

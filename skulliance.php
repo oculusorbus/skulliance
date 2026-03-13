@@ -456,7 +456,7 @@ function renderVisibility($page){
 		echo '
 		<div class="visibility">
 		<li class="role">
-			<strong>NFT Collection Visibility from Leaderboards</strong>
+			<strong>Visibility of Public Profile and NFT Collection from Leaderboards</strong>
 		</li>
 		<li class="role">
 			<form id="privacyForm" action="'.$page.'.php" method="post">
