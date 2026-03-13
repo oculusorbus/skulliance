@@ -933,7 +933,7 @@ include 'header.php';
     </div>
     <div class="image-strip strip-wide">
         <?php foreach ($campaign_opponents as $opp): ?>
-        <div class="strip-card" style="<?php echo !$opp['defeated'] ? 'opacity:0.45;filter:grayscale(60%)' : ''; ?>">
+        <div class="strip-card" style="<?php echo !$opp['defeated'] ? 'opacity:0.50;filter:grayscale(60%)' : ''; ?>">
             <img src="<?php echo htmlspecialchars($opp['image']); ?>" alt="<?php echo htmlspecialchars($opp['name']); ?>" loading="lazy" onerror="this.style.background='#122030'" style="<?php echo !$opp['defeated'] ? 'object-fit:contain;padding:10px;background:#0a1929' : ''; ?>">
             <div class="strip-card-body">
                 <span class="strip-card-sub" style="color:<?php echo $opp['defeated'] ? '#3a6070' : '#2a4050'; ?>;font-size:0.55rem">LVL <?php echo $opp['level']; ?></span>
