@@ -108,23 +108,16 @@ if ($cal_result && $cal_result->num_rows > 0) {
     while ($row = $cal_result->fetch_assoc()) { $claim_days[$row['day']] = true; }
 }
 
-// ── Realm ──────────────────────────────────────────────────────────────────
+// ── Realm (fetch theme_id for hero background) ────────────────────────────
 
 $realm = null;
-$realm_sql = "SELECT r.name as realm_name, p.name as project_name, p.currency FROM realms r
+$realm_theme_id = null;
+$realm_sql = "SELECT r.name as realm_name, r.theme_id, p.name as project_name, p.currency FROM realms r
     INNER JOIN projects p ON p.id = r.project_id WHERE r.user_id='$tid' AND r.active='1' LIMIT 1";
 $realm_result = $conn->query($realm_sql);
-if ($realm_result && $realm_result->num_rows > 0) { $realm = $realm_result->fetch_assoc(); }
-
-// ── Hero Background NFTs (random sample) ──────────────────────────────────
-
-$hero_nfts = [];
-$hero_sql  = "SELECT ipfs, nfts.name as nft_name, collection_id FROM nfts WHERE user_id='$tid' ORDER BY RAND() LIMIT 9";
-$hero_r    = $conn->query($hero_sql);
-if ($hero_r && $hero_r->num_rows > 0) {
-    while ($row = $hero_r->fetch_assoc()) {
-        $hero_nfts[] = ['url' => getIPFS($row['ipfs'], $row['collection_id']), 'name' => htmlspecialchars($row['nft_name'])];
-    }
+if ($realm_result && $realm_result->num_rows > 0) {
+    $realm = $realm_result->fetch_assoc();
+    $realm_theme_id = (int)$realm['theme_id'];
 }
 
 // ── NFT Gallery ────────────────────────────────────────────────────────────
@@ -133,7 +126,7 @@ $gallery_nfts = [];
 if ($show_nfts) {
     $gal_sql = "SELECT ipfs, nfts.name as nft_name, collection_id, p.name as project_name, p.currency
         FROM nfts INNER JOIN collections c ON c.id = nfts.collection_id INNER JOIN projects p ON p.id = c.project_id
-        WHERE nfts.user_id='$tid' ORDER BY c.project_id LIMIT 24";
+        WHERE nfts.user_id='$tid' ORDER BY RAND() LIMIT 24";
     $gal_result = $conn->query($gal_sql);
     if ($gal_result && $gal_result->num_rows > 0) {
         while ($row = $gal_result->fetch_assoc()) {
@@ -182,10 +175,9 @@ include 'header.php';
 /* ── Profile Page Styles ─────────────────────────────────────────────────── */
 
 .profile-wrap {
+    flex: 100%;
     width: 100%;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 16px 60px;
+    padding: 20px 20px 60px;
     box-sizing: border-box;
     color: #e8eaed;
     font-family: Arial, sans-serif;
@@ -199,31 +191,15 @@ include 'header.php';
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 0;
-    background: #0a1929;
-}
-
-.hero-mosaic {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    gap: 2px;
-    opacity: 0.22;
-    filter: blur(1px);
-    transform: scale(1.04);
-}
-
-.hero-mosaic img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    display: block;
+    background-color: #0a1929;
+    background-size: cover;
+    background-position: center;
 }
 
 .hero-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(160deg, rgba(0,47,68,0.70) 0%, rgba(13,20,30,0.92) 100%);
+    background: linear-gradient(160deg, rgba(0,47,68,0.72) 0%, rgba(13,20,30,0.94) 100%);
 }
 
 .hero-content {
@@ -666,15 +642,7 @@ include 'header.php';
 <?php endif; ?>
 
 <!-- ── Hero ─────────────────────────────────────────────────────────── -->
-<div class="profile-hero">
-    <div class="hero-mosaic">
-        <?php foreach ($hero_nfts as $hn): ?>
-            <img src="<?php echo htmlspecialchars($hn['url']); ?>" alt="" loading="lazy" onerror="this.style.display='none'">
-        <?php endforeach; ?>
-        <?php for ($i = count($hero_nfts); $i < 9; $i++): ?>
-            <div style="background:#0a1929;"></div>
-        <?php endfor; ?>
-    </div>
+<div class="profile-hero"<?php if ($realm_theme_id): ?> style="background-image:url('images/themes/<?php echo $realm_theme_id; ?>.jpg')"<?php endif; ?>>
     <div class="hero-overlay"></div>
     <div class="hero-content">
         <div class="hero-avatar-wrap">
@@ -734,13 +702,13 @@ include 'header.php';
 
     <!-- Currencies -->
     <div class="profile-section">
-        <div class="section-title">Currencies</div>
+        <div class="section-title">Points</div>
         <?php if (!empty($balances)): ?>
         <div class="currency-list">
             <?php foreach ($balances as $b): ?>
             <div class="currency-row">
                 <img class="currency-icon" src="icons/<?php echo strtolower(htmlspecialchars($b['currency'])); ?>.png" alt="" onerror="this.style.visibility='hidden'">
-                <span class="currency-name"><?php echo htmlspecialchars($b['project_name']); ?></span>
+                <span class="currency-name"><?php echo strtoupper(htmlspecialchars($b['currency'])); ?> &ndash; <?php echo htmlspecialchars($b['project_name']); ?></span>
                 <span class="currency-amount"><?php echo number_format((int)$b['balance']); ?></span>
             </div>
             <?php endforeach; ?>
