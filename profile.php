@@ -263,7 +263,8 @@ $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     INNER JOIN realms o ON o.id = r.offense_id
     INNER JOIN realms d ON d.id = r.defense_id
     INNER JOIN users u ON u.id = IF(o.user_id='$tid', d.user_id, o.user_id)
-    WHERE o.user_id='$tid' OR d.user_id='$tid'
+    WHERE (o.user_id='$tid' OR d.user_id='$tid')
+    AND DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
     GROUP BY u.id
     ORDER BY MAX(r.created_date) DESC LIMIT 8");
 if ($opp_result && $opp_result->num_rows > 0) {
@@ -833,7 +834,7 @@ include 'header.php';
     <div class="progress-bar-label">Win rate: <?php echo $raid_rate; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($opponents)): ?>
-    <div class="image-strip-section-label">Recent Opponents</div>
+    <div class="image-strip-section-label"><?php echo date('F'); ?> Opponents</div>
     <div class="opponents-grid">
         <?php foreach ($opponents as $opp):
             $opp_av  = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
