@@ -287,7 +287,7 @@ if ($boss_dealt > 0)         $og_parts[] = "☠️ " . number_format($boss_dealt
 if ($mono_best_score > 0)    $og_parts[] = "🎮 " . number_format($mono_best_score) . " Match 3";
 if ($swap_best_score > 0)    $og_parts[] = "💀 " . number_format($swap_best_score) . " Skull Swap";
 $og_description = implode(' · ', $og_parts) ?: "Skulliance community player profile.";
-$og_image = $profile_avatar;
+$og_image = "https://www.skulliance.io/staking/images/og.jpg";
 if ($realm_theme_id) {
     $og_image = "https://www.skulliance.io/staking/images/themes/{$realm_theme_id}.jpg";
 }
