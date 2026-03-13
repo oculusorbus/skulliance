@@ -692,6 +692,15 @@ include 'header.php';
 }
 .share-btn:hover { background: rgba(0,200,160,0.22); color: #00c8a0; }
 .share-btn.copied { color: #f5c518; border-color: #f5c518; }
+
+/* ── Leaderboard link-button ── */
+.lb-form { display:inline; margin:0; padding:0; }
+.lb-btn {
+    background: none; border: none; padding: 0; cursor: pointer;
+    font-size: 0.75rem; color: #00c8a0; text-decoration: none;
+    font-family: Arial, sans-serif;
+}
+.lb-btn:hover { text-decoration: underline; }
 </style>
 
 <div class="row" id="row1">
@@ -715,7 +724,7 @@ include 'header.php';
             <div class="hero-username"><?php echo $display_name; ?></div>
             <div class="hero-meta">
                 <?php if ($has_diamond): ?><span class="badge badge-diamond">&#9670; Diamond Skull</span><?php endif; ?>
-                <?php if ($is_elite): ?><span class="badge badge-elite">&#9733; Elite</span>
+                <?php if ($is_elite): ?><span class="badge badge-elite">&#9733; Elite</span><span class="badge badge-member">&#9670; Member</span>
                 <?php elseif ($is_member): ?><span class="badge badge-member">&#9670; Member</span><?php endif; ?>
                 <?php if ($realm): ?><span class="badge badge-realm">&#9956; <?php echo htmlspecialchars($realm['realm_name']); ?></span><?php endif; ?>
                 <span class="badge badge-since">Since <?php echo $member_since; ?></span>
@@ -784,7 +793,13 @@ include 'header.php';
     <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:<?php echo $missions_rate; ?>%"></div>
     </div>
-    <div class="progress-bar-label">Success rate: <?php echo $missions_rate; ?>%</div>
+    <div class="progress-bar-label" style="display:flex;justify-content:space-between;align-items:center">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterby" value="monthly">
+            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Missions Leaderboard &rarr;</button>
+        </form>
+        <span>Success rate: <?php echo $missions_rate; ?>%</span>
+    </div>
     <?php endif; ?>
     <?php if (!empty($recent_missions)): ?>
     <div class="image-strip-section-label"><?php echo date('F'); ?> Missions</div>
@@ -831,7 +846,13 @@ include 'header.php';
     <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:<?php echo $raid_rate; ?>%"></div>
     </div>
-    <div class="progress-bar-label">Win rate: <?php echo $raid_rate; ?>%</div>
+    <div class="progress-bar-label" style="display:flex;justify-content:space-between;align-items:center">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterby" value="monthly-raids">
+            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Raids Leaderboard &rarr;</button>
+        </form>
+        <span>Win rate: <?php echo $raid_rate; ?>%</span>
+    </div>
     <?php endif; ?>
     <?php if (!empty($opponents)): ?>
     <div class="image-strip-section-label"><?php echo date('F'); ?> Opponents</div>
@@ -882,7 +903,13 @@ include 'header.php';
     <div class="progress-bar-wrap">
         <div class="progress-bar-fill" style="width:<?php echo $dmg_ratio; ?>%;background:linear-gradient(90deg,#ff7f7f,#c8003f)"></div>
     </div>
-    <div class="progress-bar-label">Damage dealt vs. taken: <?php echo $dmg_ratio; ?>%</div>
+    <div class="progress-bar-label" style="display:flex;justify-content:space-between;align-items:center">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterbybosses" value="weekly-bosses">
+            <button class="lb-btn" type="submit">Weekly Boss Battles Leaderboard &rarr;</button>
+        </form>
+        <span>Damage dealt vs. taken: <?php echo $dmg_ratio; ?>%</span>
+    </div>
     <?php endif; ?>
     <?php if (!empty($recent_bosses)): ?>
     <div class="image-strip-section-label">This Week's Encounters</div>
@@ -946,7 +973,10 @@ include 'header.php';
         <?php endforeach; ?>
     </div>
     <div style="margin-top:14px;text-align:right">
-        <a href="leaderboards.php?filterbybosses=monstrocity" style="font-size:0.75rem;color:#00c8a0;text-decoration:none">View Monstrocity Leaderboard &rarr;</a>
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterbybosses" value="monthly-monstrocity">
+            <button class="lb-btn" type="submit"><?php echo date('F'); ?> Monstrocity Leaderboard &rarr;</button>
+        </form>
     </div>
 </div>
 
@@ -968,8 +998,11 @@ include 'header.php';
             <span class="act-stat-lbl">Total Swaps</span>
         </div>
     </div>
-    <div style="text-align:right">
-        <a href="leaderboards.php?filterbyswaps=swaps" style="font-size:0.75rem;color:#00c8a0;text-decoration:none">View Skull Swap Leaderboard &rarr;</a>
+    <div style="margin-top:14px;text-align:right">
+        <form class="lb-form" action="leaderboards.php" method="post">
+            <input type="hidden" name="filterbyswaps" value="weekly-swaps">
+            <button class="lb-btn" type="submit">Weekly Skull Swap Leaderboard &rarr;</button>
+        </form>
     </div>
 </div>
 <?php endif; ?>
@@ -981,6 +1014,11 @@ include 'header.php';
         <span style="font-size:0.78rem;color:#5a7888">
             <?php echo number_format($streak_days); ?> total claims
             <?php if (!empty($claim_days)): ?>&nbsp;·&nbsp; <?php echo count($claim_days); ?> in last 91 days<?php endif; ?>
+            &nbsp;·&nbsp;
+            <form class="lb-form" action="leaderboards.php" method="post">
+                <input type="hidden" name="filterbystreak" value="monthly-streaks">
+                <button class="lb-btn" type="submit"><?php echo date('F'); ?> Streaks Leaderboard &rarr;</button>
+            </form>
         </span>
         <div class="cal-legend">
             <div class="legend-swatch" style="background:#152230"></div> Missed
