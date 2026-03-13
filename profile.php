@@ -58,7 +58,7 @@ $missions_progress  = (int)($mis['in_progress'] ?? 0);
 $missions_failed    = (int)($mis['failed'] ?? 0);
 $missions_rate      = $missions_total > 0 ? round(($missions_completed / $missions_total) * 100) : 0;
 
-// Recent missions — one row per quest (deduplicated), ordered by most recent activity
+// Recent missions — this month only, one row per quest, ordered by most recent activity
 $recent_missions = [];
 $rm_result = $conn->query("SELECT q.title, q.extension, p.name as project_name,
     SUBSTRING_INDEX(GROUP_CONCAT(m.status ORDER BY m.id DESC), ',', 1) as status
@@ -66,6 +66,7 @@ $rm_result = $conn->query("SELECT q.title, q.extension, p.name as project_name,
     INNER JOIN quests q ON m.quest_id = q.id
     INNER JOIN projects p ON p.id = q.project_id
     WHERE m.user_id='$tid'
+    AND DATE(m.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
     GROUP BY m.quest_id
     ORDER BY MAX(m.id) DESC LIMIT 16");
 if ($rm_result && $rm_result->num_rows > 0) {
@@ -111,13 +112,13 @@ $boss_dealt     = (int)($boss_s['dealt'] ?? 0);
 $boss_taken     = (int)($boss_s['taken'] ?? 0);
 $boss_victories = (int)($boss_s['victories'] ?? 0);
 
-// Recent boss encounters
+// Recent boss encounters — this week only (reward='0' matches weekly leaderboard window)
 $recent_bosses = [];
 $rb_result = $conn->query("SELECT b.name AS boss_name, b.extension, p.name AS project_name, e.damage_dealt
     FROM encounters e
     INNER JOIN bosses b ON b.id = e.boss_id
     INNER JOIN projects p ON p.id = b.project_id
-    WHERE e.user_id='$tid'
+    WHERE e.user_id='$tid' AND e.reward='0'
     ORDER BY e.date_created DESC LIMIT 16");
 if ($rb_result && $rb_result->num_rows > 0) {
     while ($row = $rb_result->fetch_assoc()) {
@@ -785,7 +786,7 @@ include 'header.php';
     <div class="progress-bar-label">Success rate: <?php echo $missions_rate; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($recent_missions)): ?>
-    <div class="image-strip-section-label">Recent Missions</div>
+    <div class="image-strip-section-label"><?php echo date('F'); ?> Missions</div>
     <div class="image-strip">
         <?php foreach ($recent_missions as $m):
             $status_class = $m['status'] === 1 ? 'badge-done' : ($m['status'] === 2 ? 'badge-fail' : 'badge-going');
@@ -883,7 +884,7 @@ include 'header.php';
     <div class="progress-bar-label">Damage dealt vs. taken: <?php echo $dmg_ratio; ?>%</div>
     <?php endif; ?>
     <?php if (!empty($recent_bosses)): ?>
-    <div class="image-strip-section-label">Recent Encounters</div>
+    <div class="image-strip-section-label">This Week's Encounters</div>
     <div class="image-strip">
         <?php foreach ($recent_bosses as $b): ?>
         <div class="strip-card">
