@@ -76,7 +76,14 @@
 		    </div>
 		  </div>
 
-		  <a href="leaderboards.php">Leaderboards</a>
+		  <!-- Stats -->
+		  <div class="nav-dropdown">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Stats &#9660;</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>">Profile</a>
+		      <a href="leaderboards.php">Leaderboards</a>
+		    </div>
+		  </div>
 
 		  <!-- Account -->
 		  <div class="nav-dropdown">
