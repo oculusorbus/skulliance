@@ -950,7 +950,7 @@ include 'header.php';
 
 <!-- ── Raids ─────────────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title"><span>&#9876; Raids</span><a href="realms.php" class="section-title-link">Start Raid &rarr;</a></div>
+    <div class="section-title"><span>&#9876; Raids</span><a href="realms.php" class="section-title-link">Raid Realms &rarr;</a></div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($raid_total); ?></span>
@@ -1009,7 +1009,7 @@ include 'header.php';
 
 <!-- ── Boss Battles ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title"><span>&#9876; Boss Battles</span><a href="monstrocity.php" target="_blank" class="section-title-link">Start Boss Battle &rarr;</a></div>
+    <div class="section-title"><span>&#9876; Boss Battles</span><a href="monstrocity.php" target="_blank" class="section-title-link">Begin Boss Battle &rarr;</a></div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($boss_total); ?></span>
