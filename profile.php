@@ -435,6 +435,7 @@ include 'header.php';
     margin-bottom: 18px;
 }
 @media (max-width: 700px) { .activity-stats-row { grid-template-columns: repeat(2, 1fr); } }
+.activity-stats-row-5 { grid-template-columns: repeat(5, 1fr); }
 @media (max-width: 700px) { .activity-stats-row-5 { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 420px) { .activity-stats-row-5 { grid-template-columns: repeat(2, 1fr); } }
 
@@ -579,21 +580,21 @@ include 'header.php';
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding-top: 22px;
+    padding-top: 18px;
     flex-shrink: 0;
 }
 .cal-day-label {
     font-size: 0.6rem;
     color: #3a5060;
-    height: 13px;
-    line-height: 13px;
+    height: 14px;
+    line-height: 14px;
     text-align: right;
     width: 24px;
 }
-.cal-weeks-wrap { flex: 1; min-width: 0; }
+.cal-weeks-wrap { flex-shrink: 0; }
 .cal-month-row {
     display: grid;
-    grid-template-columns: repeat(13, 1fr);
+    grid-template-columns: repeat(13, 14px);
     gap: 4px;
     margin-bottom: 4px;
 }
@@ -601,15 +602,16 @@ include 'header.php';
     font-size: 0.58rem; color: #3a7060;
     white-space: nowrap; overflow: hidden;
     text-overflow: clip;
+    height: 14px; line-height: 14px;
 }
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(13, 1fr);
+    grid-template-columns: repeat(13, 14px);
     gap: 4px;
 }
 .calendar-week { display: flex; flex-direction: column; gap: 4px; }
 .calendar-day {
-    width: 100%; aspect-ratio: 1; border-radius: 3px;
+    width: 14px; height: 14px; border-radius: 3px;
     cursor: default; transition: transform 0.1s; position: relative;
 }
 .calendar-day:hover { transform: scale(1.4); z-index: 2; }
@@ -632,6 +634,7 @@ include 'header.php';
 .bottom-col-points {
     flex: 1;
     min-width: 0;
+    order: 2;
 }
 .bottom-col-nfts {
     flex: 1;
@@ -639,6 +642,7 @@ include 'header.php';
     display: flex;
     flex-direction: column;
     gap: 18px;
+    order: 1;
 }
 @media (max-width: 680px) {
     .bottom-cols { flex-direction: column; }
@@ -941,7 +945,7 @@ include 'header.php';
 <!-- ── Monstrocity ───────────────────────────────────────────────────── -->
 <div class="profile-section">
     <div class="section-title">&#9670; Monstrocity — Match 3 RPG</div>
-    <div class="activity-stats-row activity-stats-row-5" style="grid-template-columns: repeat(5, 1fr)">
+    <div class="activity-stats-row activity-stats-row-5">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($mono_avg_score); ?></span>
             <span class="act-stat-lbl">Avg Score</span>
