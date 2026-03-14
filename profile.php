@@ -316,11 +316,15 @@ if ($items_result && $items_result->num_rows > 0) {
 $opponents = [];
 $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     IF(o.user_id='$tid', d.name, o.name) as opp_realm_name,
-    IF(o.user_id='$tid', d.theme_id, o.theme_id) as opp_theme_id
+    IF(o.user_id='$tid', d.theme_id, o.theme_id) as opp_theme_id,
+    IF(o.user_id='$tid', pd.name, po.name) as opp_project_name,
+    IF(o.user_id='$tid', pd.currency, po.currency) as opp_currency
     FROM raids r
     INNER JOIN realms o ON o.id = r.offense_id
     INNER JOIN realms d ON d.id = r.defense_id
     INNER JOIN users u ON u.id = IF(o.user_id='$tid', d.user_id, o.user_id)
+    INNER JOIN projects po ON po.id = o.project_id
+    INNER JOIN projects pd ON pd.id = d.project_id
     WHERE (o.user_id='$tid' OR d.user_id='$tid')
     AND DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
     GROUP BY u.id
@@ -974,6 +978,9 @@ include 'header.php';
                 <span class="opponent-name"><?php echo htmlspecialchars($opp['username']); ?></span>
                 <?php if (!empty($opp['opp_realm_name'])): ?>
                 <span class="opponent-realm">&#9956; <?php echo htmlspecialchars($opp['opp_realm_name']); ?></span>
+                <?php endif; ?>
+                <?php if (!empty($opp['opp_project_name'])): ?>
+                <span class="opponent-realm"><img src="icons/<?php echo strtolower(htmlspecialchars($opp['opp_currency'])); ?>.png" style="height:11px;vertical-align:middle;margin-right:3px" onerror="this.style.display='none'"><?php echo htmlspecialchars($opp['opp_project_name']); ?></span>
                 <?php endif; ?>
             </div>
         </a>
