@@ -72,6 +72,8 @@ a{
   display: flex;
   background-color: #040c16;
   font-family: arial;
+  position: relative;
+  z-index: 200;
   /*-webkit-filter: drop-shadow(5px 5px 5px #202225);
   filter: drop-shadow(5px 5px 5px #202225);*/
 }
