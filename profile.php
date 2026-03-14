@@ -1015,6 +1015,10 @@ include 'header.php';
             <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($boss_taken); ?></span>
             <span class="act-stat-lbl">Damage Taken</span>
         </div>
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($boss_avg_dealt); ?></span>
+            <span class="act-stat-lbl">Avg Damage</span>
+        </div>
     </div>
     <?php if ($boss_total > 0 && ($boss_dealt + $boss_taken) > 0): ?>
     <?php $dmg_ratio = round(($boss_dealt / ($boss_dealt + $boss_taken)) * 100); ?>
