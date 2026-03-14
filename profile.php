@@ -401,7 +401,7 @@ include 'header.php';
     overflow: hidden;
     background-color: #0a1929;
     background-size: cover;
-    background-position: center;
+    background-position: center center;
     background-attachment: fixed;
 }
 .hero-overlay {
