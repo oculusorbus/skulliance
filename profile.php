@@ -289,7 +289,7 @@ $og_title = "{$display_name}'s Skulliance Profile";
 $og_parts = [];
 if ($missions_completed > 0) $og_parts[] = "⚔️ {$missions_completed} missions";
 if ($raid_wins > 0)          $og_parts[] = "🏰 {$raid_wins} raid wins";
-if ($boss_dealt > 0)         $og_parts[] = "☠️ " . number_format($boss_dealt) . " boss dmg";
+if ($boss_dealt > 0)         $og_parts[] = "☠️ " . number_format($boss_dealt) . " boss damage";
 if ($mono_best_score > 0)    $og_parts[] = "🎮 " . number_format($mono_best_score) . " Match 3";
 if ($swap_best_score > 0)    $og_parts[] = "💀 " . number_format($swap_best_score) . " Skull Swap";
 $og_description = implode(' · ', $og_parts) ?: "Skulliance community player profile.";
@@ -926,7 +926,7 @@ include 'header.php';
                 <span class="strip-card-title"><?php echo $b['name']; ?></span>
                 <span class="strip-card-sub"><?php echo $b['project']; ?></span>
                 <?php if ($b['damage'] > 0): ?>
-                <span class="strip-card-sub" style="color:#ff9090">&#128293; <?php echo number_format($b['damage']); ?> dmg</span>
+                <span class="strip-card-sub" style="color:#ff9090">&#128293; <?php echo number_format($b['damage']); ?> damage</span>
                 <?php endif; ?>
             </div>
         </div>
