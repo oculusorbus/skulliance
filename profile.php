@@ -1102,7 +1102,7 @@ include 'header.php';
     <div class="image-strip">
         <?php foreach ($redeemed_items as $item): ?>
         <div class="reward-strip-card">
-            <img src="<?php echo $item['image']; ?>" alt="<?php echo $item['name']; ?>" loading="lazy" onerror="this.style.opacity='0.3'">
+            <img src="<?php echo $item['image']; ?>" alt="<?php echo $item['name']; ?>" loading="lazy" onerror="this.src='/staking/icons/skull.png'">
             <div class="reward-strip-card-body">
                 <span class="reward-strip-card-name"><?php echo $item['name']; ?></span>
                 <span class="reward-strip-card-project"><?php echo $item['project']; ?></span>
