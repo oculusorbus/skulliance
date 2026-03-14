@@ -1068,7 +1068,7 @@ include 'header.php';
         </div>
         <div class="act-stat">
             <span class="act-stat-num" style="color:#00c8a0"><?php echo number_format($swap_total_swaps); ?></span>
-            <span class="act-stat-lbl">All Time Attempts</span>
+            <span class="act-stat-lbl">Total Attempts</span>
         </div>
     </div>
     <div style="margin-top:14px;text-align:right">
