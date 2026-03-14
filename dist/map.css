@@ -3,7 +3,7 @@ html, body {
     padding: 0;
     height: 100vh;
     overflow: auto;
-    background-color: #1a1a1a;
+    background-color: #07111d;
     font-family: Arial, sans-serif;
 	background-size: cover;
 }
@@ -98,7 +98,7 @@ html, body {
 }
 .popup-content {
     position: relative;
-    background: #2F2F2F;
+    background: #0d1e2e;
     padding: 20px;
     border-radius: 5px;
     text-align: center;
