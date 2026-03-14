@@ -80,6 +80,7 @@ if ($rm_result && $rm_result->num_rows > 0) {
             'image'   => "images/missions/{$slug}.{$ext}",
         ];
     }
+    shuffle($recent_missions);
 }
 
 // ── Raids ──────────────────────────────────────────────────────────────────
