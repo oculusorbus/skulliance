@@ -1062,7 +1062,7 @@ include 'header.php';
 
 <!-- ── Monstrocity ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title"><span>&#9670; Monstrocity — Match 3 RPG</span><a href="monstrocity.php" target="_blank" class="section-title-link">Play Match 3 RPG Campaign &rarr;</a></div>
+    <div class="section-title"><span>&#9670; Monstrocity — Match 3 RPG</span><a href="monstrocity.php" target="_blank" class="section-title-link">Play Match 3 RPG &rarr;</a></div>
     <div class="activity-stats-row activity-stats-row-5">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($mono_avg_score); ?></span>
