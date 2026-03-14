@@ -977,7 +977,7 @@ include 'header.php';
                 <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" onerror="this.src='icons/skull.png'">
                 <span class="opponent-name"><?php echo htmlspecialchars($opp['username']); ?></span>
                 <?php if (!empty($opp['opp_realm_name'])): ?>
-                <span class="opponent-realm">&#9956; <?php echo htmlspecialchars($opp['opp_realm_name']); ?></span>
+                <span class="opponent-realm"><?php echo htmlspecialchars($opp['opp_realm_name']); ?></span>
                 <?php endif; ?>
                 <?php if (!empty($opp['opp_project_name'])): ?>
                 <span class="opponent-realm"><img src="icons/<?php echo strtolower(htmlspecialchars($opp['opp_currency'])); ?>.png" style="height:11px;vertical-align:middle;margin-right:3px" onerror="this.style.display='none'"><?php echo htmlspecialchars($opp['opp_project_name']); ?></span>
