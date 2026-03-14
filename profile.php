@@ -241,7 +241,7 @@ $gallery_nfts = [];
 if ($show_nfts) {
     $gal_result = $conn->query("SELECT ipfs, nfts.name as nft_name, collection_id, p.name as project_name
         FROM nfts INNER JOIN collections c ON c.id = nfts.collection_id INNER JOIN projects p ON p.id = c.project_id
-        WHERE nfts.user_id='$tid' ORDER BY RAND() LIMIT 60");
+        WHERE nfts.user_id='$tid' ORDER BY RAND() LIMIT 12");
     if ($gal_result && $gal_result->num_rows > 0) {
         while ($row = $gal_result->fetch_assoc()) {
             $gallery_nfts[] = [
@@ -250,6 +250,26 @@ if ($show_nfts) {
                 'project' => htmlspecialchars($row['project_name']),
             ];
         }
+    }
+}
+
+// ── Redeemed Store Items ────────────────────────────────────────────────────
+
+$redeemed_items = [];
+$items_result = $conn->query("SELECT DISTINCT i.id, i.name AS item_name, i.image_url, i.quantity, p.name AS project_name
+    FROM transactions t
+    INNER JOIN items i ON i.id = t.item_id
+    INNER JOIN projects p ON p.id = i.project_id
+    WHERE t.user_id='$tid' AND t.item_id > 0 AND t.type='debit'
+    ORDER BY RAND()");
+if ($items_result && $items_result->num_rows > 0) {
+    while ($row = $items_result->fetch_assoc()) {
+        $redeemed_items[] = [
+            'name'     => htmlspecialchars($row['item_name']),
+            'image'    => htmlspecialchars($row['image_url']),
+            'project'  => htmlspecialchars($row['project_name']),
+            'quantity' => (int)$row['quantity'],
+        ];
     }
 }
 
@@ -633,7 +653,6 @@ include 'header.php';
 .bottom-col-points {
     flex: 1;
     min-width: 0;
-    order: 2;
 }
 .bottom-col-nfts {
     flex: 1;
@@ -641,7 +660,6 @@ include 'header.php';
     display: flex;
     flex-direction: column;
     gap: 18px;
-    order: 1;
 }
 @media (max-width: 680px) {
     .bottom-cols { flex-direction: column; }
@@ -660,21 +678,54 @@ include 'header.php';
 .currency-amount { font-weight: bold; font-size: 0.9rem; color: #e8eaed; white-space: nowrap; }
 
 .nft-mosaic {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 6px;
-    height: 100%;
-    overflow: hidden;
-    align-content: start;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #2a4050 transparent;
 }
+.nft-mosaic::-webkit-scrollbar { height: 4px; }
+.nft-mosaic::-webkit-scrollbar-track { background: transparent; }
+.nft-mosaic::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
 .nft-thumb {
-    border-radius: 6px; overflow: hidden;
+    flex-shrink: 0;
+    width: 130px; height: 130px;
+    border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(0,200,160,0.12);
+    transition: border-color 0.2s, transform 0.15s;
+}
+.nft-thumb:hover { border-color: #00c8a0; transform: translateY(-2px); }
+.nft-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── Rewards strip ── */
+.reward-strip-card {
+    flex-shrink: 0;
+    width: 120px;
+    border-radius: 8px; overflow: hidden;
+    background: #0a1929;
     border: 1px solid rgba(0,200,160,0.10);
     transition: border-color 0.2s, transform 0.15s;
-    aspect-ratio: 1;
 }
-.nft-thumb:hover { border-color: #00c8a0; transform: scale(1.04); }
-.nft-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.reward-strip-card:hover { border-color: rgba(0,200,160,0.35); transform: translateY(-2px); }
+.reward-strip-card img { width: 100%; height: 110px; object-fit: cover; display: block; background: #122030; }
+.reward-strip-card-body { padding: 6px 8px 8px; }
+.reward-strip-card-name {
+    font-size: 0.65rem; font-weight: bold; color: #e0e8f0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+}
+.reward-strip-card-project {
+    font-size: 0.58rem; color: #5a7888; display: block; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reward-strip-card-badge {
+    display: inline-block; font-size: 0.52rem; font-weight: bold;
+    padding: 1px 5px; border-radius: 3px; margin-top: 3px;
+    text-transform: uppercase;
+}
+.badge-soldout { background: rgba(255,80,80,0.15); color: #ff7f7f; }
+.badge-available { background: rgba(0,200,160,0.12); color: #00c8a0; }
 
 /* ── Misc ── */
 .no-data { color: #3a5060; font-size: 0.82rem; font-style: italic; padding: 10px 0; }
@@ -1039,7 +1090,7 @@ include 'header.php';
         <?php endif; ?>
     </div>
 
-    <!-- Right column: Daily Rewards + NFT Collection -->
+    <!-- Right column: Daily Rewards -->
     <div class="bottom-col-nfts">
 
         <!-- Daily Rewards Calendar -->
@@ -1124,35 +1175,58 @@ include 'header.php';
             </div>
         </div>
 
-        <!-- NFT Collection -->
-        <div class="profile-section" style="margin-top:0" id="nft-col">
-            <div class="section-title">
-                NFT Collection
-                <?php if ($show_nfts && !empty($gallery_nfts)): ?>
-                <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
-                <?php endif; ?>
-            </div>
-            <?php if ($show_nfts && !empty($gallery_nfts)): ?>
-            <div class="nft-mosaic">
-                <?php foreach ($gallery_nfts as $nft): ?>
-                <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
-                    <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php else: ?>
-            <div class="visibility-notice">
-                &#128274;&nbsp; This user's collection is private.
-                <?php if ($is_own_profile): ?>
-                &nbsp;<a href="wallets.php" style="color:#00c8a0;text-decoration:none">Change in Wallets &rarr;</a>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-        </div>
-
     </div><!-- /.bottom-col-nfts -->
 
 </div><!-- /.bottom-cols -->
+
+<!-- ── NFT Collection (full-width horizontal strip) ─────────────────────── -->
+<?php if ($show_nfts): ?>
+<div class="profile-section" id="nft-col">
+    <div class="section-title">
+        NFT Collection
+        <?php if (!empty($gallery_nfts)): ?>
+        <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
+        <?php endif; ?>
+    </div>
+    <?php if (!empty($gallery_nfts)): ?>
+    <div class="nft-mosaic">
+        <?php foreach ($gallery_nfts as $nft): ?>
+        <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
+            <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+    <div class="visibility-notice">
+        &#128274;&nbsp; This user's collection is private.
+        <?php if ($is_own_profile): ?>
+        &nbsp;<a href="wallets.php" style="color:#00c8a0;text-decoration:none">Change in Wallets &rarr;</a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<!-- ── Rewards (redeemed store items, horizontal strip) ─────────────────── -->
+<?php if (!empty($redeemed_items)): ?>
+<div class="profile-section">
+    <div class="section-title">Rewards</div>
+    <div class="image-strip">
+        <?php foreach ($redeemed_items as $item): ?>
+        <div class="reward-strip-card">
+            <img src="<?php echo $item['image']; ?>" alt="<?php echo $item['name']; ?>" loading="lazy" onerror="this.style.opacity='0.3'">
+            <div class="reward-strip-card-body">
+                <span class="reward-strip-card-name"><?php echo $item['name']; ?></span>
+                <span class="reward-strip-card-project"><?php echo $item['project']; ?></span>
+                <span class="reward-strip-card-badge <?php echo $item['quantity'] === 0 ? 'badge-soldout' : 'badge-available'; ?>">
+                    <?php echo $item['quantity'] === 0 ? 'Sold Out' : 'Available'; ?>
+                </span>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 </div><!-- /.profile-wrap -->
 </div><!-- /.row -->
