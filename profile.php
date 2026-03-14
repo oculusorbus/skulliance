@@ -1082,12 +1082,7 @@ include 'header.php';
 
 <!-- ── NFT Collection (full-width horizontal strip) ─────────────────────── -->
 <div class="profile-section" id="nft-col">
-    <div class="section-title">
-        NFT Collection
-        <?php if ($show_nfts && !empty($gallery_nfts)): ?>
-        <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
-        <?php endif; ?>
-    </div>
+    <div class="section-title">NFT Collection</div>
     <?php if ($show_nfts && !empty($gallery_nfts)): ?>
     <div class="nft-mosaic">
         <?php foreach ($gallery_nfts as $nft): ?>
@@ -1100,6 +1095,9 @@ include 'header.php';
             </div>
         </div>
         <?php endforeach; ?>
+    </div>
+    <div style="margin-top:14px;text-align:right">
+        <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" class="lb-btn">View All NFTs &rarr;</a>
     </div>
     <?php else: ?>
     <div class="visibility-notice">
@@ -1132,6 +1130,9 @@ include 'header.php';
     <?php else: ?>
     <p class="no-data">No store items redeemed yet.</p>
     <?php endif; ?>
+    <div style="margin-top:14px;text-align:right">
+        <a href="store.php" class="lb-btn">View Store Items &rarr;</a>
+    </div>
 </div>
 
 <!-- ── Points | Daily Rewards ────────────────────────────────────────────── -->
