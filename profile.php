@@ -198,6 +198,17 @@ $swap_avg_score   = (int)($swap['avg_score'] ?? 0);
 $swap_best_score  = (int)($swap['best_score'] ?? 0);
 $swap_total_swaps = (int)($swap['total_attempts'] ?? 0);
 
+// Weekly Skull Swap (unrewarded = current period)
+$swap_weekly_r = $conn->query("SELECT
+    COALESCE(ROUND(AVG(score)),0) as avg_score,
+    COALESCE(MAX(score),0) as best_score,
+    COALESCE(SUM(attempts),0) as week_attempts
+    FROM scores WHERE user_id='$tid' AND project_id='0' AND reward='0'");
+$swap_weekly = $swap_weekly_r ? $swap_weekly_r->fetch_assoc() : ['avg_score'=>0,'best_score'=>0,'week_attempts'=>0];
+$swap_weekly_avg   = (int)($swap_weekly['avg_score'] ?? 0);
+$swap_weekly_best  = (int)($swap_weekly['best_score'] ?? 0);
+$swap_weekly_attempts = (int)($swap_weekly['week_attempts'] ?? 0);
+
 // ── Total Points ───────────────────────────────────────────────────────────
 
 $pts_r        = $conn->query("SELECT COALESCE(SUM(balance),0) as total FROM balances WHERE user_id='$tid'");
@@ -1096,6 +1107,21 @@ include 'header.php';
         <div class="act-stat">
             <span class="act-stat-num" style="color:#00c8a0"><?php echo number_format($swap_total_swaps); ?></span>
             <span class="act-stat-lbl">Total Attempts</span>
+        </div>
+    </div>
+    <div class="image-strip-section-label">Weekly Skull Swap</div>
+    <div class="activity-stats-row" style="grid-template-columns: repeat(3, 1fr)">
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($swap_weekly_best); ?></span>
+            <span class="act-stat-lbl">Best Score</span>
+        </div>
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($swap_weekly_avg); ?></span>
+            <span class="act-stat-lbl">Avg Score</span>
+        </div>
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#00c8a0"><?php echo number_format($swap_weekly_attempts); ?></span>
+            <span class="act-stat-lbl">Attempts</span>
         </div>
     </div>
     <div style="margin-top:14px;text-align:right">
