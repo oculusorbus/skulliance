@@ -107,13 +107,13 @@ $raid_rate     = $raid_total > 0 ? round(($raid_wins / $raid_total) * 100) : 0;
 $boss_r    = $conn->query("SELECT COUNT(*) as total,
     COALESCE(SUM(damage_dealt),0) as dealt,
     COALESCE(SUM(damage_taken),0) as taken,
-    SUM(CASE WHEN reward='1' THEN 1 ELSE 0 END) as victories
+    COALESCE(ROUND(AVG(damage_dealt)),0) as avg_dealt
     FROM encounters WHERE user_id='$tid'");
-$boss_s    = $boss_r ? $boss_r->fetch_assoc() : ['total'=>0,'dealt'=>0,'taken'=>0,'victories'=>0];
+$boss_s    = $boss_r ? $boss_r->fetch_assoc() : ['total'=>0,'dealt'=>0,'taken'=>0,'avg_dealt'=>0];
 $boss_total     = (int)($boss_s['total'] ?? 0);
 $boss_dealt     = (int)($boss_s['dealt'] ?? 0);
 $boss_taken     = (int)($boss_s['taken'] ?? 0);
-$boss_victories = (int)($boss_s['victories'] ?? 0);
+$boss_avg_dealt = (int)($boss_s['avg_dealt'] ?? 0);
 
 // Recent boss encounters — this week only (reward='0' matches weekly leaderboard window)
 $recent_bosses = [];
@@ -1014,10 +1014,6 @@ include 'header.php';
         <div class="act-stat">
             <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($boss_taken); ?></span>
             <span class="act-stat-lbl">Damage Taken</span>
-        </div>
-        <div class="act-stat">
-            <span class="act-stat-num" style="color:#00c8a0"><?php echo number_format($boss_victories); ?></span>
-            <span class="act-stat-lbl">Victories</span>
         </div>
     </div>
     <?php if ($boss_total > 0 && ($boss_dealt + $boss_taken) > 0): ?>
