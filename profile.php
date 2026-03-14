@@ -1097,7 +1097,7 @@ include 'header.php';
 
 <!-- ── Rewards (redeemed store items, horizontal strip) ─────────────────── -->
 <div class="profile-section">
-    <div class="section-title">Rewards</div>
+    <div class="section-title">Rewards Claimed</div>
     <?php if (!empty($redeemed_items)): ?>
     <div class="image-strip">
         <?php foreach ($redeemed_items as $item): ?>
