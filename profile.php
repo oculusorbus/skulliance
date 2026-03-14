@@ -352,6 +352,10 @@ include 'header.php';
     padding: 36px 28px 0;
 }
 .hero-avatar-wrap { flex-shrink: 0; position: relative; bottom: -28px; }
+@media (max-width: 500px) {
+    .hero-content { align-items: flex-start; padding: 20px 18px 16px; }
+    .hero-avatar-wrap { bottom: 0; }
+}
 .hero-avatar {
     width: 100px; height: 100px; border-radius: 50%;
     border: 4px solid #00c8a0;
@@ -431,6 +435,8 @@ include 'header.php';
     margin-bottom: 18px;
 }
 @media (max-width: 700px) { .activity-stats-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) { .activity-stats-row-5 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 420px) { .activity-stats-row-5 { grid-template-columns: repeat(2, 1fr); } }
 
 .act-stat {
     background: rgba(22,87,119,0.22);
@@ -758,16 +764,16 @@ include 'header.php';
         <span class="stat-number purple" data-count="<?php echo $mono_best_score; ?>"><?php echo number_format($mono_best_score); ?></span>
         <span class="stat-label">Best Match 3 RPG Score</span>
     </div>
-    <div class="stat-card">
-        <span class="stat-number teal" data-count="<?php echo $streak_days; ?>"><?php echo number_format($streak_days); ?></span>
-        <span class="stat-label">Daily Rewards Claimed</span>
-    </div>
     <?php if ($swap_best_score > 0): ?>
     <div class="stat-card">
         <span class="stat-number gold" data-count="<?php echo $swap_best_score; ?>"><?php echo number_format($swap_best_score); ?></span>
         <span class="stat-label">Best Skull Swap Score</span>
     </div>
     <?php endif; ?>
+    <div class="stat-card">
+        <span class="stat-number teal" data-count="<?php echo $streak_days; ?>"><?php echo number_format($streak_days); ?></span>
+        <span class="stat-label">Daily Rewards Claimed</span>
+    </div>
 </div>
 
 <!-- ── Missions ──────────────────────────────────────────────────────── -->
@@ -935,7 +941,7 @@ include 'header.php';
 <!-- ── Monstrocity ───────────────────────────────────────────────────── -->
 <div class="profile-section">
     <div class="section-title">&#9670; Monstrocity — Match 3 RPG</div>
-    <div class="activity-stats-row" style="grid-template-columns: repeat(5, 1fr)">
+    <div class="activity-stats-row activity-stats-row-5" style="grid-template-columns: repeat(5, 1fr)">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($mono_avg_score); ?></span>
             <span class="act-stat-lbl">Avg Score</span>
