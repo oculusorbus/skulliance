@@ -1081,7 +1081,7 @@ include 'header.php';
     <div class="nft-mosaic">
         <?php foreach ($gallery_nfts as $nft): ?>
         <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
-            <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
+            <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.src='/staking/icons/skull.png';this.style.objectFit='contain';this.style.padding='20px';this.style.opacity='0.3'">
         </div>
         <?php endforeach; ?>
     </div>
