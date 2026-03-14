@@ -580,21 +580,21 @@ include 'header.php';
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding-top: 18px;
+    padding-top: 22px;
     flex-shrink: 0;
 }
 .cal-day-label {
     font-size: 0.6rem;
     color: #3a5060;
-    height: 14px;
-    line-height: 14px;
+    height: 13px;
+    line-height: 13px;
     text-align: right;
     width: 24px;
 }
-.cal-weeks-wrap { flex-shrink: 0; }
+.cal-weeks-wrap { flex: 1; min-width: 0; }
 .cal-month-row {
     display: grid;
-    grid-template-columns: repeat(13, 14px);
+    grid-template-columns: repeat(13, 1fr);
     gap: 4px;
     margin-bottom: 4px;
 }
@@ -602,16 +602,15 @@ include 'header.php';
     font-size: 0.58rem; color: #3a7060;
     white-space: nowrap; overflow: hidden;
     text-overflow: clip;
-    height: 14px; line-height: 14px;
 }
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(13, 14px);
+    grid-template-columns: repeat(13, 1fr);
     gap: 4px;
 }
 .calendar-week { display: flex; flex-direction: column; gap: 4px; }
 .calendar-day {
-    width: 14px; height: 14px; border-radius: 3px;
+    width: 100%; aspect-ratio: 1; border-radius: 3px;
     cursor: default; transition: transform 0.1s; position: relative;
 }
 .calendar-day:hover { transform: scale(1.4); z-index: 2; }
