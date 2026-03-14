@@ -226,6 +226,30 @@ if ($cal_result && $cal_result->num_rows > 0) {
     while ($row = $cal_result->fetch_assoc()) { $claim_days[$row['day']] = true; }
 }
 
+// ── Mission Calendar (13 weeks) ────────────────────────────────────────────
+
+$mission_days = [];
+$mis_cal_result = $conn->query("SELECT DATE(created_date) as day FROM missions WHERE user_id='$tid' AND created_date >= DATE_SUB(CURDATE(), INTERVAL 91 DAY) GROUP BY DATE(created_date)");
+if ($mis_cal_result && $mis_cal_result->num_rows > 0) {
+    while ($row = $mis_cal_result->fetch_assoc()) { $mission_days[$row['day']] = true; }
+}
+$mission_cal_total = count($mission_days);
+
+// ── Raid Calendar (13 weeks) ────────────────────────────────────────────────
+
+$raid_days = [];
+$raid_cal_result = $conn->query("SELECT DATE(r.created_date) as day
+    FROM raids r
+    INNER JOIN realms o ON o.id = r.offense_id
+    INNER JOIN realms d ON d.id = r.defense_id
+    WHERE (o.user_id='$tid' OR d.user_id='$tid')
+    AND r.created_date >= DATE_SUB(CURDATE(), INTERVAL 91 DAY)
+    GROUP BY DATE(r.created_date)");
+if ($raid_cal_result && $raid_cal_result->num_rows > 0) {
+    while ($row = $raid_cal_result->fetch_assoc()) { $raid_days[$row['day']] = true; }
+}
+$raid_cal_total = count($raid_days);
+
 // ── Realm with theme ───────────────────────────────────────────────────────
 
 $realm = null;
@@ -1241,6 +1265,118 @@ include 'header.php';
                     <input type="hidden" name="filterbystreak" value="monthly-streaks">
                     <button class="lb-btn" type="submit"><?php echo date('F'); ?> Streaks Leaderboard &rarr;</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Missions Calendar -->
+        <div class="profile-section">
+            <div class="section-title" style="margin-bottom:10px">Missions — Last 13 Weeks</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+                <span style="font-size:0.78rem;color:#5a7888">
+                    <?php echo number_format($mission_cal_total); ?> active day<?php echo $mission_cal_total !== 1 ? 's' : ''; ?> in last 91 days
+                </span>
+                <div class="cal-legend">
+                    <div class="legend-swatch" style="background:#152230"></div> None
+                    <div class="legend-swatch" style="background:#2a7fff"></div> Active
+                </div>
+            </div>
+            <div class="calendar-outer">
+                <div class="cal-day-labels">
+                    <?php foreach ($dow_labels as $lbl): ?>
+                    <div class="cal-day-label"><?php echo $lbl; ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="cal-weeks-wrap">
+                    <div class="cal-month-row">
+                        <?php for ($w = 0; $w < 13; $w++): ?>
+                        <div class="cal-month-label"><?php echo isset($month_labels[$w]) ? $month_labels[$w] : ''; ?></div>
+                        <?php endfor; ?>
+                    </div>
+                    <div class="calendar-grid">
+                        <?php for ($week = 0; $week < 13; $week++): ?>
+                        <div class="calendar-week">
+                            <?php for ($day = 0; $day < 7; $day++):
+                                $d   = clone $start;
+                                $d->modify("+{$week} weeks +{$day} days");
+                                $key = $d->format('Y-m-d');
+                                $dname = $dow_labels[$day];
+                                $ddate = $d->format('M j, Y');
+                                if ($d > $today) {
+                                    $cls   = 'calendar-day future';
+                                    $title = '';
+                                } elseif (isset($mission_days[$key])) {
+                                    $cls   = 'calendar-day';
+                                    $title = "&#10003; Mission day — {$dname}, {$ddate}";
+                                } else {
+                                    $cls   = 'calendar-day missed';
+                                    $title = "No mission — {$dname}, {$ddate}";
+                                }
+                            ?>
+                            <div class="<?php echo $cls; ?>" style="<?php echo (isset($mission_days[$key]) && !($d > $today)) ? 'background:#2a7fff' : ''; ?>" title="<?php echo $title; ?>"></div>
+                            <?php endfor; ?>
+                        </div>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:14px;text-align:right">
+                <a href="missions.php" class="lb-btn">Go to Missions &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Raids Calendar -->
+        <div class="profile-section">
+            <div class="section-title" style="margin-bottom:10px">Raids — Last 13 Weeks</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+                <span style="font-size:0.78rem;color:#5a7888">
+                    <?php echo number_format($raid_cal_total); ?> raid day<?php echo $raid_cal_total !== 1 ? 's' : ''; ?> in last 91 days
+                </span>
+                <div class="cal-legend">
+                    <div class="legend-swatch" style="background:#152230"></div> None
+                    <div class="legend-swatch" style="background:#e05050"></div> Raided
+                </div>
+            </div>
+            <div class="calendar-outer">
+                <div class="cal-day-labels">
+                    <?php foreach ($dow_labels as $lbl): ?>
+                    <div class="cal-day-label"><?php echo $lbl; ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="cal-weeks-wrap">
+                    <div class="cal-month-row">
+                        <?php for ($w = 0; $w < 13; $w++): ?>
+                        <div class="cal-month-label"><?php echo isset($month_labels[$w]) ? $month_labels[$w] : ''; ?></div>
+                        <?php endfor; ?>
+                    </div>
+                    <div class="calendar-grid">
+                        <?php for ($week = 0; $week < 13; $week++): ?>
+                        <div class="calendar-week">
+                            <?php for ($day = 0; $day < 7; $day++):
+                                $d   = clone $start;
+                                $d->modify("+{$week} weeks +{$day} days");
+                                $key = $d->format('Y-m-d');
+                                $dname = $dow_labels[$day];
+                                $ddate = $d->format('M j, Y');
+                                if ($d > $today) {
+                                    $cls   = 'calendar-day future';
+                                    $title = '';
+                                } elseif (isset($raid_days[$key])) {
+                                    $cls   = 'calendar-day';
+                                    $title = "&#9876; Raid day — {$dname}, {$ddate}";
+                                } else {
+                                    $cls   = 'calendar-day missed';
+                                    $title = "No raid — {$dname}, {$ddate}";
+                                }
+                            ?>
+                            <div class="<?php echo $cls; ?>" style="<?php echo (isset($raid_days[$key]) && !($d > $today)) ? 'background:#e05050' : ''; ?>" title="<?php echo $title; ?>"></div>
+                            <?php endfor; ?>
+                        </div>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:14px;text-align:right">
+                <a href="realms.php" class="lb-btn">Go to Realms &rarr;</a>
             </div>
         </div>
 
