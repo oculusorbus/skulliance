@@ -1017,7 +1017,7 @@ include 'header.php';
         </div>
         <div class="act-stat">
             <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($boss_avg_dealt); ?></span>
-            <span class="act-stat-lbl">Avg Damage</span>
+            <span class="act-stat-lbl">Avg Damage Dealt</span>
         </div>
     </div>
     <?php if ($boss_total > 0 && ($boss_dealt + $boss_taken) > 0): ?>
