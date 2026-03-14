@@ -990,7 +990,7 @@ li form {
 	border-radius: 0;
 	/*-webkit-filter: drop-shadow(5px 5px 5px #020a12);
     filter: drop-shadow(5px 5px 5px #020a12);*/
-	min-height: 215px;
+	min-height: 320px;
 	text-align: right;
 }
 
@@ -1133,7 +1133,7 @@ li form {
 }
 
 .store-item .nft-data {
-	min-height: 250px;
+	min-height: 380px;
 }
 
 .nft-image{
