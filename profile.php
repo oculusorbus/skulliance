@@ -1166,7 +1166,7 @@ include 'header.php';
 <div class="bottom-cols">
 
     <!-- Points -->
-    <div class="bottom-col-points profile-section" style="margin-top:0">
+    <div class="bottom-col-points profile-section" style="margin-top:0;order:2">
         <div class="section-title">Points</div>
         <?php if (!empty($balances)): ?>
         <div class="currency-list" id="currency-list">
@@ -1183,8 +1183,8 @@ include 'header.php';
         <?php endif; ?>
     </div>
 
-    <!-- Right column: Daily Rewards -->
-    <div class="bottom-col-nfts">
+    <!-- Left column: Calendars -->
+    <div class="bottom-col-nfts" style="order:1">
 
         <!-- Daily Rewards Calendar -->
         <div class="profile-section" style="margin-top:0">
