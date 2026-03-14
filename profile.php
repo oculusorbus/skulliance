@@ -462,7 +462,14 @@ include 'header.php';
     text-transform: uppercase; color: #00c8a0;
     margin: 0 0 16px; padding-bottom: 8px;
     border-bottom: 1px solid rgba(0,200,160,0.15);
+    display: flex; align-items: center; justify-content: space-between;
 }
+.section-title-link {
+    font-size: 0.68rem; font-weight: normal; letter-spacing: 0.04em;
+    text-transform: none; color: #5a7888; text-decoration: none;
+    transition: color 0.2s;
+}
+.section-title-link:hover { color: #00c8a0; }
 
 /* ── Stat grid ── */
 .stat-grid {
@@ -889,7 +896,7 @@ include 'header.php';
 
 <!-- ── Missions ──────────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title">&#9876; Missions</div>
+    <div class="section-title"><span>&#9876; Missions</span><a href="missions.php" class="section-title-link">Start Mission &rarr;</a></div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($missions_total); ?></span>
@@ -942,7 +949,7 @@ include 'header.php';
 
 <!-- ── Raids ─────────────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title">&#9876; Raids</div>
+    <div class="section-title"><span>&#9876; Raids</span><a href="realms.php" class="section-title-link">Start Raid &rarr;</a></div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($raid_total); ?></span>
@@ -1001,7 +1008,7 @@ include 'header.php';
 
 <!-- ── Boss Battles ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title">&#9876; Boss Battles</div>
+    <div class="section-title"><span>&#9876; Boss Battles</span><a href="monstrocity.php" target="_blank" class="section-title-link">Start Boss Battle &rarr;</a></div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($boss_total); ?></span>
@@ -1054,7 +1061,7 @@ include 'header.php';
 
 <!-- ── Monstrocity ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title">&#9670; Monstrocity — Match 3 RPG</div>
+    <div class="section-title"><span>&#9670; Monstrocity — Match 3 RPG</span><a href="monstrocity.php" target="_blank" class="section-title-link">Play Match 3 RPG Campaign &rarr;</a></div>
     <div class="activity-stats-row activity-stats-row-5">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#c79fff"><?php echo number_format($mono_avg_score); ?></span>
@@ -1105,7 +1112,7 @@ include 'header.php';
 <!-- ── Skull Swap ─────────────────────────────────────────────────────── -->
 <?php if ($swap_total_swaps > 0 || $swap_best_score > 0): ?>
 <div class="profile-section">
-    <div class="section-title">&#128128; Skull Swap</div>
+    <div class="section-title"><span>&#128128; Skull Swap</span><a href="skullswap.php" class="section-title-link">Play Skull Swap &rarr;</a></div>
     <div class="activity-stats-row" style="grid-template-columns: repeat(3, 1fr)">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($swap_best_score); ?></span>
