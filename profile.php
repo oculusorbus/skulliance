@@ -88,17 +88,19 @@ if ($rm_result && $rm_result->num_rows > 0) {
 $raid_sql = "SELECT COUNT(*) as total,
     SUM(CASE WHEN outcome='1' AND o_r.user_id='$tid' THEN 1
              WHEN outcome='0' AND d_r.user_id='$tid' THEN 1
-             ELSE 0 END) as wins
+             ELSE 0 END) as wins,
+    SUM(CASE WHEN outcome IS NULL THEN 1 ELSE 0 END) as in_progress
     FROM raids
     INNER JOIN realms AS o_r ON o_r.id = raids.offense_id
     INNER JOIN realms AS d_r ON d_r.id = raids.defense_id
     WHERE o_r.user_id='$tid' OR d_r.user_id='$tid'";
-$raid_r     = $conn->query($raid_sql);
-$raid_stats = $raid_r ? $raid_r->fetch_assoc() : ['total'=>0,'wins'=>0];
-$raid_total = (int)($raid_stats['total'] ?? 0);
-$raid_wins  = (int)($raid_stats['wins'] ?? 0);
-$raid_losses= max(0, $raid_total - $raid_wins);
-$raid_rate  = $raid_total > 0 ? round(($raid_wins / $raid_total) * 100) : 0;
+$raid_r        = $conn->query($raid_sql);
+$raid_stats    = $raid_r ? $raid_r->fetch_assoc() : ['total'=>0,'wins'=>0,'in_progress'=>0];
+$raid_total    = (int)($raid_stats['total'] ?? 0);
+$raid_wins     = (int)($raid_stats['wins'] ?? 0);
+$raid_losses   = max(0, $raid_total - $raid_wins);
+$raid_progress = (int)($raid_stats['in_progress'] ?? 0);
+$raid_rate     = $raid_total > 0 ? round(($raid_wins / $raid_total) * 100) : 0;
 
 // ── Boss Battles ───────────────────────────────────────────────────────────
 
@@ -898,12 +900,12 @@ include 'header.php';
             <span class="act-stat-lbl">Completed</span>
         </div>
         <div class="act-stat">
-            <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($missions_progress); ?></span>
-            <span class="act-stat-lbl">In Progress</span>
-        </div>
-        <div class="act-stat">
             <span class="act-stat-num" style="color:#ff7f7f"><?php echo number_format($missions_failed); ?></span>
             <span class="act-stat-lbl">Failed</span>
+        </div>
+        <div class="act-stat">
+            <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($missions_progress); ?></span>
+            <span class="act-stat-lbl">In Progress</span>
         </div>
     </div>
     <?php if ($missions_total > 0): ?>
@@ -955,8 +957,8 @@ include 'header.php';
             <span class="act-stat-lbl">Defeats</span>
         </div>
         <div class="act-stat">
-            <span class="act-stat-num" style="color:#f5c518"><?php echo $raid_rate; ?>%</span>
-            <span class="act-stat-lbl">Win Rate</span>
+            <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($raid_progress); ?></span>
+            <span class="act-stat-lbl">In Progress</span>
         </div>
     </div>
     <?php if ($raid_total > 0): ?>
