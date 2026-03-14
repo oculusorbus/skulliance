@@ -401,8 +401,8 @@ include 'header.php';
     overflow: hidden;
     background-color: #0a1929;
     background-size: cover;
-    background-position: center 40%;
-    will-change: background-position;
+    background-position: center;
+    background-attachment: fixed;
 }
 .hero-overlay {
     position: absolute;
@@ -1457,18 +1457,6 @@ function copyProfileLink() {
     });
 }
 
-// Parallax hero
-(function() {
-    const hero = document.querySelector('.profile-hero');
-    if (!hero || !hero.style.backgroundImage) return;
-    function onScroll() {
-        const scrollY = window.scrollY || window.pageYOffset;
-        const offset = 40 - scrollY * 0.15;
-        const clamped = Math.max(20, Math.min(70, offset));
-        hero.style.backgroundPositionY = clamped + '%';
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-})();
 
 // Count-up animation
 document.addEventListener('DOMContentLoaded', () => {
