@@ -837,7 +837,7 @@ include 'header.php';
                 <?php if ($has_diamond): ?><span class="badge badge-diamond">&#9670; Diamond Skull</span><?php endif; ?>
                 <?php if ($is_elite): ?><span class="badge badge-elite">&#9733; Elite</span><span class="badge badge-member">&#9670; Member</span>
                 <?php elseif ($is_member): ?><span class="badge badge-member">&#9670; Member</span><?php endif; ?>
-                <?php if ($realm): ?><span class="badge badge-realm">&#9956; <?php echo htmlspecialchars($realm['realm_name']); ?></span><?php endif; ?>
+                <?php if ($realm): ?><span class="badge badge-realm">&#9956; <?php echo htmlspecialchars($realm['realm_name']); ?></span><span class="badge badge-realm"><img src="icons/<?php echo strtolower(htmlspecialchars($realm['currency'])); ?>.png" style="height:13px;vertical-align:middle;margin-right:4px" onerror="this.style.display='none'"><?php echo htmlspecialchars($realm['project_name']); ?></span><?php endif; ?>
                 <span class="badge badge-since">Since <?php echo $member_since; ?></span>
                 <button class="share-btn" id="share-btn" onclick="copyProfileLink()">&#128279; Share</button>
             </div>
