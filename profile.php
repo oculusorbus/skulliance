@@ -465,11 +465,12 @@ include 'header.php';
     display: flex; align-items: center; justify-content: space-between;
 }
 .section-title-link {
-    font-size: 0.68rem; font-weight: normal; letter-spacing: 0.04em;
-    text-transform: none; color: #5a7888; text-decoration: none;
-    transition: color 0.2s;
+    font-size: 0.68rem; font-weight: bold; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #07111d; text-decoration: none;
+    background: #00c8a0; border-radius: 20px; padding: 4px 12px;
+    transition: background 0.2s, color 0.2s; white-space: nowrap;
 }
-.section-title-link:hover { color: #00c8a0; }
+.section-title-link:hover { background: #00a882; color: #07111d; }
 
 /* ── Stat grid ── */
 .stat-grid {
