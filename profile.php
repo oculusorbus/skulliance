@@ -239,15 +239,16 @@ if ($realm_result && $realm_result->num_rows > 0) {
 
 $gallery_nfts = [];
 if ($show_nfts) {
-    $gal_result = $conn->query("SELECT ipfs, nfts.name as nft_name, collection_id, p.name as project_name
+    $gal_result = $conn->query("SELECT ipfs, nfts.name as nft_name, collection_id, p.name as project_name, c.name as collection_name
         FROM nfts INNER JOIN collections c ON c.id = nfts.collection_id INNER JOIN projects p ON p.id = c.project_id
         WHERE nfts.user_id='$tid' ORDER BY RAND() LIMIT 12");
     if ($gal_result && $gal_result->num_rows > 0) {
         while ($row = $gal_result->fetch_assoc()) {
             $gallery_nfts[] = [
-                'url'     => getIPFS($row['ipfs'], $row['collection_id']),
-                'name'    => htmlspecialchars($row['nft_name']),
-                'project' => htmlspecialchars($row['project_name']),
+                'url'        => getIPFS($row['ipfs'], $row['collection_id']),
+                'name'       => htmlspecialchars($row['nft_name']),
+                'project'    => htmlspecialchars($row['project_name']),
+                'collection' => htmlspecialchars($row['collection_name']),
             ];
         }
     }
@@ -691,13 +692,23 @@ include 'header.php';
 .nft-mosaic::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
 .nft-thumb {
     flex-shrink: 0;
-    width: 130px; height: 130px;
+    width: 130px;
     border-radius: 8px; overflow: hidden;
     border: 1px solid rgba(0,200,160,0.12);
+    background: #0a1929;
     transition: border-color 0.2s, transform 0.15s;
 }
 .nft-thumb:hover { border-color: #00c8a0; transform: translateY(-2px); }
-.nft-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nft-thumb img { width: 100%; height: 120px; object-fit: cover; display: block; }
+.nft-thumb-body { padding: 6px 8px 8px; }
+.nft-thumb-name {
+    font-size: 0.65rem; font-weight: bold; color: #e0e8f0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+}
+.nft-thumb-sub {
+    font-size: 0.58rem; color: #5a7888; display: block; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── Rewards strip ── */
 .reward-strip-card {
@@ -1080,8 +1091,13 @@ include 'header.php';
     <?php if ($show_nfts && !empty($gallery_nfts)): ?>
     <div class="nft-mosaic">
         <?php foreach ($gallery_nfts as $nft): ?>
-        <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
+        <div class="nft-thumb">
             <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
+            <div class="nft-thumb-body">
+                <span class="nft-thumb-name"><?php echo $nft['name']; ?></span>
+                <span class="nft-thumb-sub"><?php echo $nft['project']; ?></span>
+                <span class="nft-thumb-sub"><?php echo $nft['collection']; ?></span>
+            </div>
         </div>
         <?php endforeach; ?>
     </div>
