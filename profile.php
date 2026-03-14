@@ -1069,7 +1069,56 @@ include 'header.php';
 </div>
 <?php endif; ?>
 
-<!-- ── Points | (Daily Rewards + NFT Collection) ─────────────────────── -->
+<!-- ── NFT Collection (full-width horizontal strip) ─────────────────────── -->
+<div class="profile-section" id="nft-col">
+    <div class="section-title">
+        NFT Collection
+        <?php if ($show_nfts && !empty($gallery_nfts)): ?>
+        <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
+        <?php endif; ?>
+    </div>
+    <?php if ($show_nfts && !empty($gallery_nfts)): ?>
+    <div class="nft-mosaic">
+        <?php foreach ($gallery_nfts as $nft): ?>
+        <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
+            <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+    <div class="visibility-notice">
+        &#128274;&nbsp; This user's collection is private.
+        <?php if ($is_own_profile): ?>
+        &nbsp;<a href="wallets.php" style="color:#00c8a0;text-decoration:none">Change in Wallets &rarr;</a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+</div>
+
+<!-- ── Rewards (redeemed store items, horizontal strip) ─────────────────── -->
+<div class="profile-section">
+    <div class="section-title">Rewards</div>
+    <?php if (!empty($redeemed_items)): ?>
+    <div class="image-strip">
+        <?php foreach ($redeemed_items as $item): ?>
+        <div class="reward-strip-card">
+            <img src="<?php echo $item['image']; ?>" alt="<?php echo $item['name']; ?>" loading="lazy" onerror="this.style.opacity='0.3'">
+            <div class="reward-strip-card-body">
+                <span class="reward-strip-card-name"><?php echo $item['name']; ?></span>
+                <span class="reward-strip-card-project"><?php echo $item['project']; ?></span>
+                <span class="reward-strip-card-badge <?php echo $item['quantity'] === 0 ? 'badge-soldout' : 'badge-available'; ?>">
+                    <?php echo $item['quantity'] === 0 ? 'Sold Out' : 'Available'; ?>
+                </span>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php else: ?>
+    <p class="no-data">No store items redeemed yet.</p>
+    <?php endif; ?>
+</div>
+
+<!-- ── Points | Daily Rewards ────────────────────────────────────────────── -->
 <div class="bottom-cols">
 
     <!-- Points -->
@@ -1178,55 +1227,6 @@ include 'header.php';
     </div><!-- /.bottom-col-nfts -->
 
 </div><!-- /.bottom-cols -->
-
-<!-- ── NFT Collection (full-width horizontal strip) ─────────────────────── -->
-<?php if ($show_nfts): ?>
-<div class="profile-section" id="nft-col">
-    <div class="section-title">
-        NFT Collection
-        <?php if (!empty($gallery_nfts)): ?>
-        <a href="showcase.php?username=<?php echo urlencode($profile_user['username']); ?>" style="float:right;font-size:0.7rem;font-weight:normal;color:#00c8a0;text-decoration:none;text-transform:none;letter-spacing:0">View All &rarr;</a>
-        <?php endif; ?>
-    </div>
-    <?php if (!empty($gallery_nfts)): ?>
-    <div class="nft-mosaic">
-        <?php foreach ($gallery_nfts as $nft): ?>
-        <div class="nft-thumb" title="<?php echo $nft['name']; ?> — <?php echo $nft['project']; ?>">
-            <img src="<?php echo htmlspecialchars($nft['url']); ?>" alt="<?php echo $nft['name']; ?>" loading="lazy" onerror="this.closest('.nft-thumb').style.display='none'">
-        </div>
-        <?php endforeach; ?>
-    </div>
-    <?php else: ?>
-    <div class="visibility-notice">
-        &#128274;&nbsp; This user's collection is private.
-        <?php if ($is_own_profile): ?>
-        &nbsp;<a href="wallets.php" style="color:#00c8a0;text-decoration:none">Change in Wallets &rarr;</a>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
-</div>
-<?php endif; ?>
-
-<!-- ── Rewards (redeemed store items, horizontal strip) ─────────────────── -->
-<?php if (!empty($redeemed_items)): ?>
-<div class="profile-section">
-    <div class="section-title">Rewards</div>
-    <div class="image-strip">
-        <?php foreach ($redeemed_items as $item): ?>
-        <div class="reward-strip-card">
-            <img src="<?php echo $item['image']; ?>" alt="<?php echo $item['name']; ?>" loading="lazy" onerror="this.style.opacity='0.3'">
-            <div class="reward-strip-card-body">
-                <span class="reward-strip-card-name"><?php echo $item['name']; ?></span>
-                <span class="reward-strip-card-project"><?php echo $item['project']; ?></span>
-                <span class="reward-strip-card-badge <?php echo $item['quantity'] === 0 ? 'badge-soldout' : 'badge-available'; ?>">
-                    <?php echo $item['quantity'] === 0 ? 'Sold Out' : 'Available'; ?>
-                </span>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    </div>
-</div>
-<?php endif; ?>
 
 </div><!-- /.profile-wrap -->
 </div><!-- /.row -->
