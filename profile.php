@@ -133,6 +133,7 @@ if ($rb_result && $rb_result->num_rows > 0) {
             'image'   => "images/monstrocity/bosses/{$slug}.{$row['extension']}",
         ];
     }
+    shuffle($recent_bosses);
 }
 
 // ── Monstrocity — matches leaderboard: project_id='36', AVG for all-time ──
@@ -291,6 +292,7 @@ $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     ORDER BY MAX(r.created_date) DESC LIMIT 8");
 if ($opp_result && $opp_result->num_rows > 0) {
     while ($row = $opp_result->fetch_assoc()) { $opponents[] = $row; }
+    shuffle($opponents);
 }
 
 // ── Membership badges ──────────────────────────────────────────────────────
