@@ -2246,3 +2246,16 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .diamond-skull-data {
     min-height: 500px;
 }
+
+/* ── CRITICAL REVERT: restore .nfts float grid & .nft float ─────────────── */
+/* Switching .nfts to flexbox broke missions (float-clear removed) and       */
+/* diamond delegation (inline-block grid). Float-based grid works correctly  */
+/* everywhere — image uniformity is handled by object-fit, not flex layout.  */
+.nfts {
+    display: block;
+    clear: both;
+    min-height: 0;
+}
+.nft {
+    float: left;
+}

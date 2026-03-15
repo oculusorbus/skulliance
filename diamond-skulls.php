@@ -117,8 +117,6 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 	</div>
 </div>
 </div>
-<?php
-
 <div class="row" id="row1">
   <div class="main">
 	<h2>NFTs</h2>
