@@ -168,4 +168,10 @@ if($filterby != ""){
 }?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<?php if($is_mobile): ?>
+<script type="text/javascript">
+if(typeof revealObserver !== 'undefined'){ revealObserver.disconnect(); }
+document.querySelectorAll('section.reveal').forEach(function(el){ el.classList.add('active'); });
+</script>
+<?php endif; ?>
 </html>
