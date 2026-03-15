@@ -36,10 +36,10 @@ if($mr) while($row = $mr->fetch_assoc()) $missions_map[$row['nft_id']] = $row['t
 
 // ── Flat lookup: diamond skull delegations ─────────────────────────────────
 $skull_map = [];
-$sr = $conn->query("SELECT ds.nft_id, n.name
+$sr = $conn->query("SELECT ds.nft_id, n.id AS skull_id, n.name
                     FROM diamond_skulls ds
                     INNER JOIN nfts n ON n.id = ds.diamond_skull_id");
-if($sr) while($row = $sr->fetch_assoc()) $skull_map[$row['nft_id']] = $row['name'];
+if($sr) while($row = $sr->fetch_assoc()) $skull_map[$row['nft_id']] = ['name' => $row['name'], 'skull_id' => (int)$row['skull_id']];
 
 // ── Build NFT array ────────────────────────────────────────────────────────
 function build_nft_row($row, $missions_map, $skull_map){
@@ -62,8 +62,9 @@ function build_nft_row($row, $missions_map, $skull_map){
         'collection_policy' => $row['collection_policy'],
         'jpg_asset_id'      => $jpg_asset_id,
         'rate'              => (int)$row['rate'],
-        'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
-        'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
+        'mission'          => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id],              ENT_QUOTES) : null,
+        'diamond_skull'    => isset($skull_map[$id])   ? htmlspecialchars($skull_map[$id]['name'],          ENT_QUOTES) : null,
+        'diamond_skull_id' => isset($skull_map[$id])   ? $skull_map[$id]['skull_id']                                    : null,
     ];
 }
 
@@ -500,6 +501,13 @@ $my_user_json = json_encode($my_user_id);
   </div>
   <div id="p-collection"><a id="p-coll-link" href="#" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a></div>
   <div id="p-badges"></div>
+  <form id="nav-mission-form" action="missions.php#holdings" method="post" style="display:none"></form>
+  <form id="nav-skull-form" action="diamond-skulls.php#diamond-skull" method="post" style="display:none">
+    <input type="hidden" id="nav-skull-id" name="diamond_skull_id" value="">
+  </form>
+  <form id="nav-collections-form" action="collections.php" method="post" style="display:none">
+    <input type="hidden" id="nav-collections-filterby" name="filterby" value="">
+  </form>
   <div id="p-actions">
     <a id="p-pool-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://pool.pm/pool.pm.svg" alt="pool.pm" />View on pool.pm</a>
     <a id="p-offer-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://static.jpgstoreapis.com/icons/jpg-nav-logo-dark.svg" alt="jpg.store" />Make Offer</a>
@@ -711,9 +719,9 @@ function renderSlide(n, nft){
     pIcon.src             = iconUrl;
     pRateVal.textContent  = nft.rate + ' ' + nft.currency.toUpperCase();
     pProject.textContent  = nft.project_name;
-    pProject.removeAttribute('href');
-    pProject.style.cursor = 'default';
-    pProject.style.textDecoration = 'none';
+    pProject.style.cursor = 'pointer';
+    pProject.style.textDecoration = 'underline dotted';
+    pProject.onclick = (function(pid){ return function(e){ e.preventDefault(); document.getElementById('nav-collections-filterby').value = pid; document.getElementById('nav-collections-form').submit(); }; })(nft.project_id);
     pCollLink.textContent = nft.collection_name;
     pCollLink.href        = 'https://www.jpg.store/collection/' + (nft.collection_policy || '');
     pPoolBtn.href         = poolUrl;
@@ -725,13 +733,22 @@ function renderSlide(n, nft){
     if(nft.mission){
       const b = document.createElement('span');
       b.className = 'badge badge-mission';
+      b.style.cursor = 'pointer';
+      b.title = 'Go to Missions';
       b.textContent = '⚔ ' + nft.mission;
+      b.onclick = function(){ document.getElementById('nav-mission-form').submit(); };
       pBadges.appendChild(b);
     }
     if(nft.diamond_skull){
       const b = document.createElement('span');
       b.className = 'badge badge-skull';
+      b.style.cursor = 'pointer';
+      b.title = 'Go to Diamond Skulls';
       b.textContent = '💎 ' + nft.diamond_skull;
+      b.onclick = function(){
+        document.getElementById('nav-skull-id').value = nft.diamond_skull_id;
+        document.getElementById('nav-skull-form').submit();
+      };
       pBadges.appendChild(b);
     }
 
