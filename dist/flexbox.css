@@ -438,10 +438,16 @@ a{
 	overflow: scroll;
 }*/
 
+.content {
+	border-radius: 10px;
+}
+
 #transactions {
 	max-height: 500px;
 	overflow: scroll;
 	width: 100%;
+	border-radius: 10px;
+	overflow: hidden;
 	border-bottom: 1px;
 	border-top: 1px;
 	border-left: 1px;
@@ -693,6 +699,7 @@ input {
   border: none;
   color: white;
   padding: 3px 10px;
+  border-radius: 20px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
