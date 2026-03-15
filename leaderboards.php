@@ -5,6 +5,10 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <style>
+@keyframes podium-user-glow {
+  0%, 100% { box-shadow: 0 0 4px 2px rgba(0,200,160,0.15); }
+  50%       { box-shadow: 0 0 22px 7px rgba(0,200,160,0.75); }
+}
 @keyframes podium-rise {
   from { transform: scaleY(0); transform-origin: bottom; }
   to   { transform: scaleY(1); transform-origin: bottom; }
@@ -75,8 +79,9 @@ function renderPodium($top3){
   if(!$top3 || count($top3) < 2) return;
   $medals  = ['🥇','🥈','🥉'];
   $ranks   = [1,2,3];
-  // rise delays: 3rd rises first, then 2nd, then 1st (builds excitement)
-  $delays  = [0.5, 0.8, 0.2]; // indexed by $pos (1st=0, 2nd=1, 3rd=2)
+  // rise delays: gold first, silver second, bronze third
+  $delays  = [0.1, 0.4, 0.7]; // indexed by $pos (1st=0, 2nd=1, 3rd=2)
+  $me = isset($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : '';
   // Display order: 2nd (left), 1st (center), 3rd (right)
   $display = [1, 0, 2];
   echo '<div class="podium-wrap">';
@@ -89,12 +94,17 @@ function renderPodium($top3){
            ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
            : 'icons/skull.png';
     $prof  = 'profile.php?username='.urlencode($u['username']);
-    $above_style = 'animation: podium-fade-in 0.5s ease '.($delay + 0.3).'s both;';
+    $fade_in     = 'podium-fade-in 0.5s ease '.($delay + 0.3).'s both';
+    $above_style = 'animation: '.$fade_in.';';
     $platform_style = 'animation: podium-rise 0.6s cubic-bezier(0.34,1.56,0.64,1) '.$delay.'s both;';
+    $is_me = ($me !== '' && $u['username'] === $me);
+    $avatar_style = $is_me
+      ? 'animation: '.$fade_in.', podium-user-glow 1.4s ease-in-out '.($delay + 0.9).'s infinite;'
+      : $above_style;
     echo '<div class="podium-slot podium-rank-'.$rank.'">';
     echo   '<div class="podium-medal" style="'.$above_style.'">'.$medals[$pos].'</div>';
     echo   '<a href="'.$prof.'" style="'.$above_style.'">';
-    echo     '<img class="podium-avatar" src="'.htmlspecialchars($av).'" onerror="this.src=\'icons/skull.png\'" alt="">';
+    echo     '<img class="podium-avatar" src="'.htmlspecialchars($av).'" onerror="this.src=\'icons/skull.png\'" alt="" style="'.$avatar_style.'">';
     echo   '</a>';
     echo   '<a href="'.$prof.'" class="podium-name" style="'.$above_style.'">'.htmlspecialchars($u['username']).'</a>';
     echo   '<span class="podium-score" style="'.$above_style.'">'.htmlspecialchars($u['score']).'</span>';
