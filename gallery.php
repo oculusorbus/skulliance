@@ -431,6 +431,28 @@ $my_user_json = json_encode($my_user_id);
       #nft-main, .nft-layer { max-width: 88vw; max-height: 52vh; }
       #placard { min-width: 92vw; padding: 10px 14px; }
       #p-meta { gap: 8px; }
+
+      /* Settings: full-width overlay with backdrop on mobile */
+      #settings {
+        width: 100vw;
+        border-left: none;
+        border-bottom: 1px solid rgba(0,200,160,0.14);
+        padding: 52px 20px 28px;
+      }
+      /* Settings backdrop — tapping outside closes the panel */
+      #settings-backdrop {
+        display: none;
+        position: fixed; inset: 0;
+        z-index: 19;
+        background: rgba(0,0,0,0.5);
+      }
+      #settings-backdrop.open { display: block; }
+
+      /* Hide Spotify on mobile — too fiddly */
+      .s-group-spotify { display: none !important; }
+
+      /* Prevent iOS from zooming in on input focus */
+      input, select, textarea { font-size: 16px !important; }
     }
   </style>
 </head>
@@ -493,6 +515,7 @@ $my_user_json = json_encode($my_user_id);
   </div>
 </div>
 
+<div id="settings-backdrop"></div>
 <div id="settings">
   <div class="s-head">Gallery Settings</div>
 
@@ -525,7 +548,7 @@ $my_user_json = json_encode($my_user_id);
     <div class="s-stat" id="stats-display"></div>
   </div>
 
-  <div class="s-group">
+  <div class="s-group s-group-spotify">
     <span class="s-label">Music (Spotify)</span>
     <input type="text" id="spotify-url" placeholder="Paste playlist or album link…" autocomplete="off"
       style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e8eaed;padding:6px 8px;font-size:0.75rem;margin-top:6px;">
@@ -796,17 +819,28 @@ btnPP.onclick = function(){
 };
 
 // ── Settings toggle — gear icon becomes × when panel is open ──────────────
-const btnCfg = document.getElementById('btn-cfg');
-btnCfg.onclick = function(e){
+const btnCfg   = document.getElementById('btn-cfg');
+const backdrop = document.getElementById('settings-backdrop');
+
+function openSettings(){
+  settingsEl.classList.add('open');
+  backdrop.classList.add('open');
+  btnCfg.innerHTML = '&times;';
+}
+function closeSettings(){
+  settingsEl.classList.remove('open');
+  backdrop.classList.remove('open');
+  btnCfg.innerHTML = '&#9881;';
+}
+
+btnCfg.addEventListener('click', function(e){
   e.stopPropagation();
-  const isOpen = settingsEl.classList.toggle('open');
-  btnCfg.innerHTML = isOpen ? '&times;' : '&#9881;';
-};
+  settingsEl.classList.contains('open') ? closeSettings() : openSettings();
+});
+backdrop.addEventListener('click', closeSettings);
+backdrop.addEventListener('touchstart', closeSettings);
 document.addEventListener('click', function(e){
-  if(!settingsEl.contains(e.target) && e.target !== btnCfg){
-    settingsEl.classList.remove('open');
-    btnCfg.innerHTML = '&#9881;';
-  }
+  if(!settingsEl.contains(e.target) && e.target !== btnCfg) closeSettings();
 });
 
 // ── Effect pills ───────────────────────────────────────────────────────────
@@ -880,7 +914,7 @@ document.addEventListener('keydown', function(e){
   if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); document.getElementById('btn-next').click(); }
   else if(e.key==='ArrowLeft')         { document.getElementById('btn-prev').click(); }
   else if(e.key==='p'||e.key==='P')    { btnPP.click(); }
-  else if(e.key==='Escape')            { settingsEl.classList.remove('open'); }
+  else if(e.key==='Escape')            { closeSettings(); }
 });
 
 // ── Spotify player ─────────────────────────────────────────────────────────
