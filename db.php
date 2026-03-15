@@ -2868,7 +2868,8 @@ function getBalance($conn, $project_id){
 
 // Render JS alert message
 function alert($message){
-	echo "<script type='text/javascript'>window.onload = function(event) {alert('".$message."');};</script>";
+	$safe = json_encode($message);
+	echo "<script type='text/javascript'>window.onload = function(){ openNotify(".$safe."); };</script>";
 }
 
 // Zero out all currency upon user creation

@@ -1876,6 +1876,37 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     border: 2px solid #07111d;
 }
 
+/* ── Notification Modal ── */
+#notify-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 1100;
+}
+#notify-modal {
+    position: fixed;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #0d1e2e; border: 1px solid rgba(0,200,160,0.25);
+    border-radius: 12px; z-index: 1101; width: 380px; max-width: 92vw;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+.notify-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid rgba(0,200,160,0.15);
+    font-size: 0.75rem; font-weight: bold; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #00c8a0;
+}
+.notify-close {
+    background: none; border: none; color: #5a7888; font-size: 1.4rem;
+    cursor: pointer; line-height: 1; padding: 0 2px; transition: color 0.2s;
+}
+.notify-close:hover { color: #fff; }
+.notify-body {
+    padding: 24px 20px; color: #e8eaed; font-size: 0.9rem; line-height: 1.6;
+}
+.notify-footer {
+    padding: 0 20px 20px; display: flex; justify-content: flex-end;
+}
+
 /* ── Wallet Modal ── */
 #wallet-modal-overlay {
     display: none; position: fixed; inset: 0;

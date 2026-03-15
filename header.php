@@ -102,6 +102,30 @@
 		<div id="revealPoint"></div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
 
+		<!-- Notification Modal -->
+		<div id="notify-overlay" onclick="closeNotify()" style="display:none"></div>
+		<div id="notify-modal" role="dialog" aria-modal="true" style="display:none">
+			<div class="notify-header">
+				<span>Notification</span>
+				<button class="notify-close" onclick="closeNotify()">&times;</button>
+			</div>
+			<div id="notify-body" class="notify-body"></div>
+			<div class="notify-footer">
+				<button onclick="closeNotify()" class="small-button">OK</button>
+			</div>
+		</div>
+		<script>
+			function openNotify(message) {
+				document.getElementById('notify-body').innerHTML = message;
+				document.getElementById('notify-overlay').style.display = 'block';
+				document.getElementById('notify-modal').style.display = 'flex';
+			}
+			function closeNotify() {
+				document.getElementById('notify-overlay').style.display = 'none';
+				document.getElementById('notify-modal').style.display = 'none';
+			}
+		</script>
+
 		<!-- Wallet Connect Modal -->
 		<div id="wallet-modal-overlay" onclick="closeWalletModal()" style="display:none"></div>
 		<div id="wallet-modal" role="dialog" aria-modal="true" style="display:none">
