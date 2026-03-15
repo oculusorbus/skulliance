@@ -102,6 +102,38 @@
 		<div id="revealPoint"></div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
 
+		<!-- Confirm Modal -->
+		<div id="confirm-overlay" style="display:none"></div>
+		<div id="confirm-modal" role="dialog" aria-modal="true" style="display:none">
+			<div class="notify-header">
+				<span>Confirm</span>
+				<button class="notify-close" onclick="closeConfirm()">&times;</button>
+			</div>
+			<div id="confirm-body" class="notify-body"></div>
+			<div class="notify-footer" style="gap:10px;">
+				<button onclick="closeConfirm()" class="small-button" style="background:rgba(255,255,255,0.08);color:#e8eaed;">Cancel</button>
+				<button id="confirm-ok" class="small-button">Confirm</button>
+			</div>
+		</div>
+		<script>
+			function openConfirm(message, onConfirm) {
+				document.getElementById('confirm-body').innerHTML = message.replace(/\r?\n/g, '<br>');
+				document.getElementById('confirm-overlay').style.display = 'block';
+				document.getElementById('confirm-modal').style.display = 'flex';
+				document.getElementById('confirm-ok').onclick = function() {
+					closeConfirm();
+					onConfirm();
+				};
+			}
+			function closeConfirm() {
+				document.getElementById('confirm-overlay').style.display = 'none';
+				document.getElementById('confirm-modal').style.display = 'none';
+			}
+			function confirmForm(form, message) {
+				openConfirm(message, function() { form.submit(); });
+			}
+		</script>
+
 		<!-- Notification Modal -->
 		<div id="notify-overlay" onclick="closeNotify()" style="display:none"></div>
 		<div id="notify-modal" role="dialog" aria-modal="true" style="display:none">

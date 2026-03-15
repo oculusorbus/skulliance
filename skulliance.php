@@ -663,7 +663,7 @@ function renderCrafting($conn, $page){
 		}else{
 			?>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to convert ' + document.getElementById('balance-display').textContent + ' of each core currency to ' + document.getElementById('balance-diamond-display').textContent + ' DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return false;" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 			  <strong>Convert Core Points to DIAMOND</strong><br><br>
 			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
 			    <?php echo $core_icons; ?>
@@ -675,7 +675,7 @@ function renderCrafting($conn, $page){
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="balance" id="balance" min="1" max="<?php echo min($balances); ?>" step="1" value="<?php echo min($balances); ?>" style="flex:1;"
 			      oninput="document.getElementById('balance-display').textContent=Number(this.value).toLocaleString();document.getElementById('balance-diamond-display').textContent=Number(this.value).toLocaleString();">
-			    <input type="submit" value="Convert" class="small-button" style="flex-shrink:0;">
+			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Convert ' + document.getElementById('balance-display').textContent + ' of each core currency to ' + document.getElementById('balance-diamond-display').textContent + ' DIAMOND?')">Convert</button>
 			  </div>
 			</form>
 			</li>
@@ -684,7 +684,7 @@ function renderCrafting($conn, $page){
 		if($diamond > 0){
 			?>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to shatter ' + document.getElementById('diamond-display').textContent + ' DIAMOND back to core points?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return false;" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 			  <br><strong>Shatter DIAMOND to Core Points</strong><br><br>
 			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
 			    <img class="icon" src="icons/diamond.png" style="flex-shrink:0;">
@@ -696,7 +696,7 @@ function renderCrafting($conn, $page){
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="diamond" id="diamond" min="1" max="<?php echo $diamond; ?>" step="1" value="<?php echo $diamond; ?>" style="flex:1;"
 			      oninput="document.getElementById('diamond-display').textContent=Number(this.value).toLocaleString();document.getElementById('diamond-core-display').textContent=Number(this.value).toLocaleString();">
-			    <input type="submit" value="Shatter" class="small-button" style="flex-shrink:0;">
+			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Shatter ' + document.getElementById('diamond-display').textContent + ' DIAMOND back to core points?')">Shatter</button>
 			  </div>
 			</form>
 			</li>
@@ -706,7 +706,7 @@ function renderCrafting($conn, $page){
 			$carbon_max = floor($carbon/1000)*1000;
 			?>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to burn ' + document.getElementById('carbon-display').textContent + ' CARBON to form ' + document.getElementById('diamond-display').textContent + ' DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return false;" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
 			  <br><strong>Burn CARBON to Form DIAMOND</strong><br><br>
 			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
 			    <img class="icon" src="icons/carbon.png" style="flex-shrink:0;">
@@ -718,7 +718,7 @@ function renderCrafting($conn, $page){
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="carbon" id="carbon" min="1000" max="<?php echo $carbon_max; ?>" step="1000" value="<?php echo $carbon_max; ?>" style="flex:1;"
 			      oninput="document.getElementById('carbon-display').textContent=Number(this.value).toLocaleString();document.getElementById('diamond-display').textContent=Number(this.value/100).toLocaleString();">
-			    <input type="submit" value="Burn" class="small-button" style="flex-shrink:0;">
+			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Burn ' + document.getElementById('carbon-display').textContent + ' CARBON to form ' + document.getElementById('diamond-display').textContent + ' DIAMOND?')">Burn</button>
 			  </div>
 			</form>
 			</li>
