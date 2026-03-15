@@ -4,6 +4,7 @@ include 'message.php';
 // Verify includes Webhooks
 include 'verify.php';
 include 'skulliance.php';
+$is_mobile = preg_match('/(android|iphone|ipad|ipod|mobile)/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
 include 'header.php';
 ?>
 
@@ -46,10 +47,14 @@ include 'header.php';
 					$_SESSION['userData']['diamond_skull_id'] = "";
 				}
 				$diamond_skull_totals = getDiamondSkullTotals($conn);
-				getNFTs($conn, 7, $advanced_filter, $diamond_skull=true, $_SESSION['userData']['diamond_skull_id'], false, $diamond_skull_totals); 
+				if(!$is_mobile){
+					getNFTs($conn, 7, $advanced_filter, $diamond_skull=true, $_SESSION['userData']['diamond_skull_id'], false, $diamond_skull_totals);
+				}else{
+					echo "<p>Diamond Skull images are not displayed on mobile. Please use a desktop browser to view and manage delegations.</p>";
+				}
 			}else{
 				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
-			} 
+			}
 			?>
 		</div>
     </div>
@@ -58,7 +63,7 @@ include 'header.php';
 <?php
 
 
-if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
+if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
 <a name="diamond-skull" id="diamond-skull"></a>
 <h2>Diamond Skull Delegation</h2>
 <div class="diamond-container">
@@ -117,6 +122,7 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 	</div>
 </div>
 </div>
+<?php if(!$is_mobile): ?>
 <div class="row" id="row1">
   <div class="main">
 	<h2>NFTs</h2>
@@ -135,6 +141,7 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
     </div>
   </div>
 </div>
+<?php endif; ?>
 
 <?php } ?>
 
