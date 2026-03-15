@@ -328,7 +328,7 @@ $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     INNER JOIN projects po ON po.id = o.project_id
     INNER JOIN projects pd ON pd.id = d.project_id
     WHERE (o.user_id='$tid' OR d.user_id='$tid')
-    AND DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
+    AND (r.outcome IS NULL OR DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))
     GROUP BY u.id
     ORDER BY MAX(r.created_date) DESC LIMIT 8");
 if ($opp_result && $opp_result->num_rows > 0) {
