@@ -9,6 +9,7 @@ $nft_cols = "nfts.id, asset_id, asset_name, nfts.name AS nft_display_name, ipfs,
                users.id AS user_id, users.username, users.discord_id, users.avatar,
                projects.id AS project_id, projects.name AS project_name, projects.currency,
                collections.id AS collection_id, collections.name AS collection_name,
+               collections.policy AS collection_policy,
                collections.rate AS rate";
 $nft_joins = "FROM nfts
         INNER JOIN users       ON users.id = nfts.user_id
@@ -56,8 +57,9 @@ function build_nft_row($row, $missions_map, $skull_map){
         'project_name'    => htmlspecialchars($row['project_name'], ENT_QUOTES),
         'currency'        => strtolower(htmlspecialchars($row['currency'], ENT_QUOTES)),
         'collection_id'   => (int)$row['collection_id'],
-        'collection_name' => htmlspecialchars($row['collection_name'], ENT_QUOTES),
-        'rate'            => (int)$row['rate'],
+        'collection_name'   => htmlspecialchars($row['collection_name'], ENT_QUOTES),
+        'collection_policy' => $row['collection_policy'],
+        'rate'              => (int)$row['rate'],
         'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
         'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
     ];
@@ -564,10 +566,6 @@ $my_user_json = json_encode($my_user_id);
   </div>
 </div>
 
-<!-- Hidden form for POST navigation to collections.php -->
-<form id="collections-nav-form" action="collections.php" method="post" style="display:none">
-  <input type="hidden" id="collections-filterby" name="filterby" value="">
-</form>
 
 <!-- Spotify mini player (fixed bottom-left) — iframe injected dynamically to avoid src="" state issues -->
 <div id="spotify-player" style="opacity:0;pointer-events:none;position:fixed;bottom:4px;left:0;z-index:9999;width:300px;user-select:auto;transition:opacity 0.2s;"></div>
@@ -625,13 +623,6 @@ const pColl     = document.getElementById('p-collection');
 const pBadges   = document.getElementById('p-badges');
 const pPoolBtn  = document.getElementById('p-pool-btn');
 const pCollLink = document.getElementById('p-coll-link');
-const collNavForm     = document.getElementById('collections-nav-form');
-const collNavFilterby = document.getElementById('collections-filterby');
-
-function goCollections(projectId){
-  collNavFilterby.value = projectId;
-  collNavForm.submit();
-}
 const progress  = document.getElementById('progress');
 const controls  = document.getElementById('controls');
 const slideCtrl = document.getElementById('slide-ctr');
@@ -716,9 +707,11 @@ function renderSlide(n, nft){
     pIcon.src             = iconUrl;
     pRateVal.textContent  = nft.rate + ' ' + nft.currency.toUpperCase();
     pProject.textContent  = nft.project_name;
-    pProject.onclick      = function(e){ e.preventDefault(); goCollections(nft.project_id); };
+    pProject.removeAttribute('href');
+    pProject.style.cursor = 'default';
+    pProject.style.textDecoration = 'none';
     pCollLink.textContent = nft.collection_name;
-    pCollLink.onclick     = function(e){ e.preventDefault(); goCollections(nft.project_id); };
+    pCollLink.href        = 'https://www.jpg.store/collection/' + (nft.collection_policy || '');
     pPoolBtn.href         = poolUrl;
     slideCtrl.textContent = (n+1) + ' / ' + playlist.length;
 
