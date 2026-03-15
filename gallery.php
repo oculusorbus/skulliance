@@ -517,7 +517,10 @@ $my_user_json = json_encode($my_user_id);
 
 <div id="settings-backdrop"></div>
 <div id="settings">
-  <div class="s-head">Gallery Settings</div>
+  <div class="s-head" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>Gallery Settings</span>
+    <button onclick="closeSettings()" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.3rem;cursor:pointer;padding:0;line-height:1;" title="Close">&times;</button>
+  </div>
 
   <div class="s-group">
     <span class="s-label">Transition</span>
