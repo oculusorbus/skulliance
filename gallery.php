@@ -428,9 +428,10 @@ $my_user_json = json_encode($my_user_id);
 
     /* ── Mobile ── */
     @media (max-width: 600px) {
-      #nft-main, .nft-layer { max-width: 88vw; max-height: 52vh; }
+      #nft-main, .nft-layer { max-width: 88vw; max-height: 48vh; }
       #placard { min-width: 92vw; padding: 10px 14px; }
       #p-meta { gap: 8px; }
+      #stage { align-items: flex-start; padding-top: 8vh; }
 
       /* Settings: full-width overlay with backdrop on mobile */
       #settings {
