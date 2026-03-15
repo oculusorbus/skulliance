@@ -1120,8 +1120,7 @@ var revealObserver = new IntersectionObserver(function(entries) {
 	entries.forEach(function(entry) {
 		if (entry.isIntersecting) {
 			entry.target.classList.add("active");
-		} else {
-			entry.target.classList.remove("active");
+			revealObserver.unobserve(entry.target);
 		}
 	});
 }, { rootMargin: "0px 0px -150px 0px" });
