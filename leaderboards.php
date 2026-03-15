@@ -77,10 +77,8 @@ include 'header.php';
   padding: 16px 10px 0;
   margin-bottom: 20px;
   border-radius: 0;
-  overflow: hidden;
-  width: 100vw;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
   border-top: 1px solid #00c8a0;
   border-bottom: 1px solid #00c8a0;
 }
