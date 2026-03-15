@@ -891,22 +891,23 @@ document.addEventListener('keydown', function(e){
     raw = raw.trim();
     // Handle spotify:type:id URI
     let m = raw.match(/^spotify:(track|album|artist|playlist|episode):([A-Za-z0-9]+)$/);
-    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0&autoplay=1';
+    if(m) return { url: 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0&autoplay=1', type: m[1] };
     // Handle open.spotify.com URLs (including /embed/ already)
     m = raw.match(/open\.spotify\.com\/(?:embed\/)?(track|album|artist|playlist|episode)\/([A-Za-z0-9]+)/);
-    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0&autoplay=1';
+    if(m) return { url: 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0&autoplay=1', type: m[1] };
     return null;
   }
 
   btnLoad.onclick = function(){
-    const url = parseSpotifyEmbed(spotifyInput.value);
-    if(!url){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
+    const result = parseSpotifyEmbed(spotifyInput.value);
+    if(!result){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
     // Remove any existing iframe and create fresh — avoids src-change state issues
     spotifyPlayer.innerHTML = '';
     const iframe = document.createElement('iframe');
-    iframe.src    = url;
+    iframe.src    = result.url;
     iframe.width  = '300';
-    iframe.height = '232';
+    // Track = compact; artist/album/playlist = full height so track rows are fully interactive
+    iframe.height = (result.type === 'track') ? '152' : '352';
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('allow', 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
     iframe.style.cssText = 'display:block;border-radius:0 12px 0 0;user-select:auto;pointer-events:all;';
