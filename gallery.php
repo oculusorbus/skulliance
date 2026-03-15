@@ -527,8 +527,11 @@ $my_user_json = json_encode($my_user_id);
 
   <div class="s-group">
     <span class="s-label">Music (Spotify)</span>
-    <input type="text" id="spotify-url" placeholder="Paste Spotify link…" autocomplete="off"
+    <input type="text" id="spotify-url" placeholder="Paste playlist or album link…" autocomplete="off"
       style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e8eaed;padding:6px 8px;font-size:0.75rem;margin-top:6px;">
+    <div style="font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:5px;line-height:1.4;">
+      Paste a <strong style="color:rgba(255,255,255,0.5);">playlist</strong> or <strong style="color:rgba(255,255,255,0.5);">album</strong> link for continuous playback. Artist links require Spotify Premium.
+    </div>
     <button class="pill" id="btn-spotify-load" style="margin-top:8px;width:100%;">▶ Load Player</button>
     <button class="pill" id="btn-spotify-hide" style="margin-top:6px;width:100%;display:none;">✕ Hide Player</button>
   </div>
@@ -898,10 +901,9 @@ document.addEventListener('keydown', function(e){
     return null;
   }
 
-  btnLoad.onclick = function(){
-    const result = parseSpotifyEmbed(spotifyInput.value);
-    if(!result){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
-    // Remove any existing iframe and create fresh — avoids src-change state issues
+  let currentResult = null;
+
+  function loadIframe(result){
     spotifyPlayer.innerHTML = '';
     const iframe = document.createElement('iframe');
     iframe.src    = result.url;
@@ -914,12 +916,28 @@ document.addEventListener('keydown', function(e){
     spotifyPlayer.appendChild(iframe);
     spotifyPlayer.style.display = 'block';
     btnHide.style.display = 'block';
+    // For single tracks: show a replay button since the embed won't auto-advance
+    if(result.type === 'track'){
+      const replayBtn = document.createElement('button');
+      replayBtn.textContent = '↺ Replay';
+      replayBtn.style.cssText = 'display:block;width:100%;padding:5px;background:rgba(255,255,255,0.08);border:none;color:#e8eaed;cursor:pointer;font-size:0.72rem;user-select:auto;';
+      replayBtn.onclick = function(){ loadIframe(result); };
+      spotifyPlayer.appendChild(replayBtn);
+    }
+  }
+
+  btnLoad.onclick = function(){
+    const result = parseSpotifyEmbed(spotifyInput.value);
+    if(!result){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
+    currentResult = result;
+    loadIframe(result);
   };
 
   btnHide.onclick = function(){
     spotifyPlayer.innerHTML = '';
     spotifyPlayer.style.display = 'none';
     btnHide.style.display = 'none';
+    currentResult = null;
   };
 })();
 
