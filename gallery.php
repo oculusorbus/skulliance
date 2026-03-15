@@ -1002,7 +1002,7 @@ function _hoverResume(){
     startProgress();
   }, 80);
 }
-[document.getElementById('stage'), placard].forEach(function(el){
+[document.getElementById('nft-wrap'), placard].forEach(function(el){
   el.addEventListener('mouseenter', _hoverPause);
   el.addEventListener('mouseleave', _hoverResume);
 });
