@@ -603,7 +603,7 @@ let playlist  = buildPlaylist();
 let idx       = 0;
 let playing   = true;
 let intervalMs = 8000;
-let fx        = 'fade';
+let fxSet     = new Set(['fade']); // active effects — multiple can be on at once
 let hideTimer;
 let bgActive  = 'a'; // which bg layer is on top
 
@@ -740,13 +740,13 @@ function renderSlide(n, nft){
     // Apply effect + show (image already preloaded so it's instant)
     nftMain.style.removeProperty('animation');
     void nftMain.offsetWidth;
-    if(fx === 'kenburns') nftMain.style.setProperty('--kb-dur', (intervalMs/1000)+'s');
+    if(fxSet.has('kenburns')) nftMain.style.setProperty('--kb-dur', (intervalMs/1000)+'s');
     nftMain.src = nft.image;
     nftMain.classList.add('visible');
-    if(fx === 'kenburns') nftMain.classList.add('kenburns');
+    if(fxSet.has('kenburns')) nftMain.classList.add('kenburns');
     placard.classList.add('visible');
 
-    if(fx === 'glitch'){
+    if(fxSet.has('glitch')){
       if(glitchR) { glitchR.src = nft.image; glitchB.src = nft.image; }
       setTimeout(function(){
         glitchR.classList.add('active'); glitchB.classList.add('active');
@@ -766,7 +766,7 @@ function renderSlide(n, nft){
       ldr.classList.add('fade-out');
       setTimeout(function(){ ldr.style.display='none'; }, 700);
     }
-  }, fx === 'glitch' ? 0 : 400);
+  }, fxSet.has('fade') ? 400 : 0);
 }
 
 // ── Progress bar ───────────────────────────────────────────────────────────
@@ -847,12 +847,12 @@ document.addEventListener('click', function(e){
   if(!settingsEl.contains(e.target) && e.target !== btnCfg) closeSettings();
 });
 
-// ── Effect pills ───────────────────────────────────────────────────────────
+// ── Effect pills (toggle independently — effects stack) ────────────────────
 document.querySelectorAll('#fx-pills .pill').forEach(function(p){
   p.onclick = function(){
-    document.querySelectorAll('#fx-pills .pill').forEach(function(x){ x.classList.remove('on'); });
-    p.classList.add('on');
-    fx = p.dataset.fx;
+    const name = p.dataset.fx;
+    if(fxSet.has(name)){ fxSet.delete(name); p.classList.remove('on'); }
+    else               { fxSet.add(name);    p.classList.add('on');    }
   };
 });
 
