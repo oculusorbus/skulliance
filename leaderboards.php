@@ -81,6 +81,8 @@ include 'header.php';
   width: 100vw;
   left: 50%;
   transform: translateX(-50%);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
 }
 .podium-section.has-theme {
   background-size: cover;
