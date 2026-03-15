@@ -2,36 +2,44 @@
 include_once 'db.php';
 session_start();
 
-// Public page — no auth required, but session used for "My NFTs" mode
 $my_user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 
-// Fetch all staked NFTs with owner, project, collection, rate, mission, and delegation info
+// ── Main NFT query (no correlated subqueries) ──────────────────────────────
+$vis_clause = $my_user_id ? "(users.visibility = 2 OR users.id = $my_user_id)" : "users.visibility = 2";
 $sql = "SELECT nfts.id, asset_id, asset_name, nfts.name AS nft_display_name, ipfs,
                users.id AS user_id, users.username, users.discord_id, users.avatar,
                projects.id AS project_id, projects.name AS project_name, projects.currency,
                collections.id AS collection_id, collections.name AS collection_name,
-               collections.rate AS rate,
-               (SELECT quests.title FROM missions_nfts
-                INNER JOIN missions ON missions.id = missions_nfts.mission_id
-                INNER JOIN quests   ON quests.id   = missions.quest_id
-                WHERE missions_nfts.nft_id = nfts.id AND missions.status = '0'
-                LIMIT 1) AS mission_title,
-               (SELECT ds_nft.name FROM diamond_skulls
-                INNER JOIN nfts ds_nft ON ds_nft.id = diamond_skulls.diamond_skull_id
-                WHERE diamond_skulls.nft_id = nfts.id
-                LIMIT 1) AS diamond_skull_name
+               collections.rate AS rate
         FROM nfts
         INNER JOIN users       ON users.id = nfts.user_id
         INNER JOIN collections ON nfts.collection_id = collections.id
         INNER JOIN projects    ON projects.id = collections.project_id
         WHERE nfts.user_id != 0 AND nfts.ipfs IS NOT NULL AND nfts.ipfs != ''
-          AND (users.visibility = 2 OR users.id = ".$my_user_id.")
+          AND $vis_clause
         ORDER BY project_id, collection_id";
 
-$result = $conn->query($sql);
+// ── Flat lookup: active missions (one query, build map) ────────────────────
+$missions_map = [];
+$mr = $conn->query("SELECT mn.nft_id, q.title
+                    FROM missions_nfts mn
+                    INNER JOIN missions m ON m.id = mn.mission_id AND m.status = '0'
+                    INNER JOIN quests   q ON q.id = m.quest_id");
+if($mr) while($row = $mr->fetch_assoc()) $missions_map[$row['nft_id']] = $row['title'];
+
+// ── Flat lookup: diamond skull delegations ─────────────────────────────────
+$skull_map = [];
+$sr = $conn->query("SELECT ds.nft_id, n.name
+                    FROM diamond_skulls ds
+                    INNER JOIN nfts n ON n.id = ds.diamond_skull_id");
+if($sr) while($row = $sr->fetch_assoc()) $skull_map[$row['nft_id']] = $row['name'];
+
+// ── Build NFT array ────────────────────────────────────────────────────────
+$result    = $conn->query($sql);
 $nfts_data = [];
 if($result && $result->num_rows > 0){
     while($row = $result->fetch_assoc()){
+        $id   = $row['id'];
         $name = !empty($row['nft_display_name']) ? $row['nft_display_name'] : $row['asset_name'];
         $nfts_data[] = [
             'asset_id'        => $row['asset_id'],
@@ -47,13 +55,13 @@ if($result && $result->num_rows > 0){
             'collection_id'   => (int)$row['collection_id'],
             'collection_name' => htmlspecialchars($row['collection_name'], ENT_QUOTES),
             'rate'            => (int)$row['rate'],
-            'mission'         => $row['mission_title'] ? htmlspecialchars($row['mission_title'], ENT_QUOTES) : null,
-            'diamond_skull'   => $row['diamond_skull_name'] ? htmlspecialchars($row['diamond_skull_name'], ENT_QUOTES) : null,
+            'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
+            'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
         ];
     }
 }
 $conn->close();
-$nfts_json   = json_encode($nfts_data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
+$nfts_json    = json_encode($nfts_data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
 $my_user_json = json_encode($my_user_id);
 ?>
 <!doctype html>
@@ -372,6 +380,23 @@ $my_user_json = json_encode($my_user_id);
     }
     .s-stat strong { color: rgba(255,255,255,0.6); }
 
+    /* ── Loading overlay ── */
+    #loader {
+      position: fixed; inset: 0;
+      background: #07111d;
+      z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      transition: opacity 0.6s ease;
+    }
+    #loader.fade-out { opacity: 0; pointer-events: none; }
+    .loader-skull { font-size: 3rem; animation: lp 1.2s ease-in-out infinite; }
+    @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
+    .loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden; }
+    .loader-bar { height:100%;background:#00c8a0;width:0%;animation:lb 9s ease-out forwards; }
+    @keyframes lb { to { width:90%; } }
+    .loader-text { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
+
     /* ── Mobile ── */
     @media (max-width: 600px) {
       #nft-main, .nft-layer { max-width: 88vw; max-height: 52vh; }
@@ -381,6 +406,12 @@ $my_user_json = json_encode($my_user_id);
   </style>
 </head>
 <body>
+
+<div id="loader">
+  <div class="loader-skull">💀</div>
+  <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+  <div class="loader-text">Loading Gallery</div>
+</div>
 
 <div id="bg-a"></div>
 <div id="bg-b"></div>
@@ -522,102 +553,127 @@ const ivSlider  = document.getElementById('iv-slider');
 const settingsEl= document.getElementById('settings');
 const statsEl   = document.getElementById('stats-display');
 
+// ── Preloader: load image in background, callback on success or skip ───────
+const preloader = new Image();
+let   preloaded = {};   // cache: url -> true/false
+
+function preloadImage(url, cb){
+  if(preloaded[url] === true)  { cb(true);  return; }
+  if(preloaded[url] === false) { cb(false); return; }
+  const img = new Image();
+  img.onload  = function(){ preloaded[url] = true;  cb(true);  };
+  img.onerror = function(){ preloaded[url] = false; cb(false); };
+  img.src = url;
+}
+
 // ── Cross-fade background ──────────────────────────────────────────────────
 function setBg(url){
   if(bgActive === 'a'){
     bgB.style.backgroundImage = "url('"+url+"')";
-    bgB.style.opacity = '1';
-    bgA.style.opacity = '0';
-    bgActive = 'b';
+    bgB.style.opacity = '1'; bgA.style.opacity = '0'; bgActive = 'b';
   } else {
     bgA.style.backgroundImage = "url('"+url+"')";
-    bgA.style.opacity = '1';
-    bgB.style.opacity = '0';
-    bgActive = 'a';
+    bgA.style.opacity = '1'; bgB.style.opacity = '0'; bgActive = 'a';
   }
 }
 
-// ── Show slide ─────────────────────────────────────────────────────────────
-function showSlide(n){
+// ── Show slide — waits for image, skips broken ones ────────────────────────
+let loadingSlide = false;
+
+function showSlide(n, skipBadImages){
+  if(loadingSlide) return;
   const nft = playlist[n];
   if(!nft) return;
+  loadingSlide = true;
 
+  preloadImage(nft.image, function(ok){
+    loadingSlide = false;
+    if(!ok){
+      // Skip this NFT and move to next
+      idx++;
+      if(idx >= playlist.length){ playlist = buildPlaylist(); idx = 0; }
+      showSlide(idx);
+      return;
+    }
+    renderSlide(n, nft);
+  });
+}
+
+function renderSlide(n, nft){
   const poolUrl   = 'https://pool.pm/' + nft.asset_id;
   const avatarUrl = (nft.discord_id && nft.avatar)
     ? 'https://cdn.discordapp.com/avatars/'+nft.discord_id+'/'+nft.avatar+'.png'
     : 'icons/skull.png';
+  const iconUrl = 'icons/' + nft.currency + '.png';
 
-  // Hide NFT + placard
+  // Fade out current
   nftMain.classList.remove('visible','kenburns');
   glitchR.classList.remove('active');
   glitchB.classList.remove('active');
   placard.classList.remove('visible');
 
-  const doReveal = function(){
+  setTimeout(function(){
+    // Background
     setBg(nft.image);
-    nftLink.href   = poolUrl;
-    pTitle.href    = poolUrl;
+
+    // Links + text
+    nftLink.href          = poolUrl;
+    pTitle.href           = poolUrl;
     pTitle.textContent    = nft.name;
     pAvatar.src           = avatarUrl;
-    // Owner links to their public profile
     pUsername.innerHTML   = '<a href="profile.php?username='+encodeURIComponent(nft.username)+'" target="_blank" style="color:#00c8a0;text-decoration:none;">'+nft.username+'</a>';
-    pIcon.src             = 'icons/' + nft.currency + '.png';
+    pIcon.src             = iconUrl;
     pRateVal.textContent  = nft.rate + ' ' + nft.currency.toUpperCase() + '/night';
     pProject.textContent  = nft.project_name;
     pColl.textContent     = nft.collection_name;
     slideCtrl.textContent = (n+1) + ' / ' + playlist.length;
-    // Status badges
+
+    // Badges
     pBadges.innerHTML = '';
     if(nft.mission){
       const b = document.createElement('span');
       b.className = 'badge badge-mission';
-      b.textContent = '⚔ On Mission: ' + nft.mission;
+      b.textContent = '⚔ ' + nft.mission;
       pBadges.appendChild(b);
     }
     if(nft.diamond_skull){
       const b = document.createElement('span');
       b.className = 'badge badge-skull';
-      b.textContent = '💎 Delegated: ' + nft.diamond_skull;
+      b.textContent = '💎 ' + nft.diamond_skull;
       pBadges.appendChild(b);
     }
 
+    // Apply effect + show (image already preloaded so it's instant)
     nftMain.style.removeProperty('animation');
-    void nftMain.offsetWidth; // reflow to restart animation
-
-    if(fx === 'kenburns'){
-      nftMain.style.setProperty('--kb-dur', (intervalMs/1000)+'s');
-    }
-
-    nftMain.onload = reveal;
+    void nftMain.offsetWidth;
+    if(fx === 'kenburns') nftMain.style.setProperty('--kb-dur', (intervalMs/1000)+'s');
     nftMain.src = nft.image;
-    if(nftMain.complete && nftMain.naturalWidth > 0) reveal();
-
-    if(fx === 'glitch'){
-      glitchR.src = nft.image;
-      glitchB.src = nft.image;
-    }
-  };
-
-  function reveal(){
     nftMain.classList.add('visible');
     if(fx === 'kenburns') nftMain.classList.add('kenburns');
     placard.classList.add('visible');
-    if(fx === 'glitch'){
-      setTimeout(function(){
-        glitchR.classList.add('active');
-        glitchB.classList.add('active');
-        setTimeout(function(){
-          glitchR.classList.remove('active');
-          glitchB.classList.remove('active');
-        }, 450);
-      }, 150);
-    }
-    startProgress();
-  }
 
-  // Brief dark gap between slides (skip for glitch — glitch IS the transition)
-  if(fx === 'glitch') doReveal();
-  else setTimeout(doReveal, 500);
+    if(fx === 'glitch'){
+      if(glitchR) { glitchR.src = nft.image; glitchB.src = nft.image; }
+      setTimeout(function(){
+        glitchR.classList.add('active'); glitchB.classList.add('active');
+        setTimeout(function(){ glitchR.classList.remove('active'); glitchB.classList.remove('active'); }, 450);
+      }, 120);
+    }
+
+    startProgress();
+    scheduleNext();
+
+    // Preload next image in background
+    const nextNft = playlist[(n+1) % playlist.length];
+    if(nextNft) preloadImage(nextNft.image, function(){});
+
+    // Dismiss loader on first successful slide
+    const ldr = document.getElementById('loader');
+    if(ldr && !ldr.classList.contains('fade-out')){
+      ldr.classList.add('fade-out');
+      setTimeout(function(){ ldr.style.display='none'; }, 700);
+    }
+  }, fx === 'glitch' ? 0 : 400);
 }
 
 // ── Progress bar ───────────────────────────────────────────────────────────
@@ -709,7 +765,6 @@ if(MY_USER_ID > 0){
       idx = 0;
       clearTimeout(slideTimer);
       showSlide(idx);
-      scheduleNext();
       updateStats();
     };
   });
@@ -721,7 +776,6 @@ document.getElementById('btn-reshuffle').onclick = function(){
   idx = 0;
   clearTimeout(slideTimer);
   showSlide(idx);
-  scheduleNext();
   updateStats();
 };
 
@@ -758,7 +812,6 @@ document.addEventListener('keydown', function(e){
 // ── Boot ───────────────────────────────────────────────────────────────────
 if(NFTS.length > 0){
   showSlide(idx);
-  scheduleNext();
 }else{
   document.getElementById('stage').innerHTML =
     '<p style="color:rgba(255,255,255,0.4);font-size:1.2rem">No staked NFTs found.</p>';
