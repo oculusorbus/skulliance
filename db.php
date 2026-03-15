@@ -4671,6 +4671,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 // Check Monstrocity Leaderboard
 function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 	$claw = 30000;
+	$carbon = 30000;
 	$where = "WHERE project_id = '36'";
 	$attempts = "SUM(attempts) AS completions";
 	if($monthly || $rewards){
@@ -4777,7 +4778,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			if($monthly){
 				echo "<td align='center'>";
-				echo number_format(round($claw/$leaderboardCounter))." CLAW";
+				echo number_format(round($claw/$leaderboardCounter))." CLAW/CARBON";
 				echo "</td>";
 			}
 			echo "</tr>";
@@ -4785,11 +4786,13 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 			if($rewards){
 				updateBalance($conn, $row["user_id"], 36, round($claw/$leaderboardCounter));
 				logCredit($conn, $row["user_id"], round($claw/$leaderboardCounter), 36);
-				
+				updateBalance($conn, $row["user_id"], 15, round($carbon/$leaderboardCounter));
+				logCredit($conn, $row["user_id"], round($carbon/$leaderboardCounter), 15);
+
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
 					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Level: ".$row["max_level"].", Score: ".$row["max_score"].", Attempts: ".$row["attempts"]."\r\n";
-					$description .= "        ".number_format(round($claw/$leaderboardCounter))." CLAW\r\n";
+					$description .= "        ".number_format(round($claw/$leaderboardCounter))." CLAW/CARBON\r\n";
 				}
 			}
 		}
