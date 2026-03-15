@@ -8,7 +8,8 @@ html {
 
 /* Style the body */
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
+  color: #e8eaed;
   margin: 0;
   background-color: #07111d;
   height:100%;
@@ -61,17 +62,18 @@ form {
   color: white;
 }
 
-a{
-  color: white;
-  text-decoration: underline;
+a {
+  color: #00c8a0;
+  text-decoration: none;
   text-align: center;
 }
+a:hover { color: #00a882; }
 
 /* Style the top navigation bar */
 .navbar {
   display: flex;
   background-color: #040c16;
-  font-family: arial;
+  font-family: Arial, sans-serif;
   position: relative;
   z-index: 200;
   /*-webkit-filter: drop-shadow(5px 5px 5px #202225);
@@ -326,12 +328,12 @@ a{
 }
 
 #filter-nfts {
-	color: #D6DDDE;
+	color: #e8eaed;
 	text-align: right;
 	position: relative;
     top: -35px;
 	font-size: 20px;
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 }
 
 #filterNFTs {
@@ -344,7 +346,7 @@ a{
     text-align: left;
     font-size: 20px;
     border: 1px solid rgba(0,200,160,0.18);
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 }
 
 #filterRealms {
@@ -357,7 +359,7 @@ a{
     text-align: left;
     font-size: 20px;
     border: 1px solid rgba(0,200,160,0.18);
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 }
 
 #filterLeaderboard {
@@ -370,7 +372,7 @@ a{
     text-align: left;
     font-size: 20px;
     border: 1px solid rgba(0,200,160,0.18);
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 }
 
 .dropdown{
@@ -383,7 +385,7 @@ a{
     text-align: left;
     font-size: 20px;
     border: 1px solid rgba(0,200,160,0.18);
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 }
 
 #armory-icons {
@@ -454,12 +456,12 @@ a{
 	border-right: 1px;
 	border-style: solid;
 	border-color: rgba(0,200,160,0.12) !important;
-	font-family: arial;
+	font-family: Arial, sans-serif;
 	background-color: #0a1929;
 }
 
 #transactions th, #transactions td {
-	color: #D6DDDE;
+	color: #e8eaed;
 	padding: 10px;
 	border-bottom: 1px;
 	border-top: 1px;
@@ -507,7 +509,7 @@ a{
 }*/
 
 .main h3 {
-	color: #D6DDDE;
+	color: #e8eaed;
 }
 
 #results {
@@ -517,7 +519,7 @@ a{
 	width: 100%;
 	min-height: 898px;
 	max-height: 898px;
-	color: #D6DDDE;
+	color: #e8eaed;
 	margin: 0 auto;
 	overflow: hidden;
 
@@ -554,7 +556,7 @@ a{
 
 .leaderboard li {
 	font-size: 20px;
-	font-family: arial;
+	font-family: Arial, sans-serif;
 }
 
 .highlight {
@@ -654,7 +656,7 @@ input {
   font-size: 2rem;
   box-shadow: 0 6px #003040;
   width: 100%;
-  font-family: Courier;
+  font-family: Arial, sans-serif;
 }
 
 .button:hover {
@@ -681,7 +683,7 @@ input {
   border-radius: 20px;
   font-weight: bold;
   box-shadow: 0 4px #020a12;
-  font-family: Courier;
+  font-family: Arial, sans-serif;
 }
 
 .small-button:hover {
@@ -708,7 +710,7 @@ input {
   border-radius: 0;
   font-weight: bold;
   box-shadow: 0 4px #003040;
-  font-family: Courier;
+  font-family: Arial, sans-serif;
 }
 
 .raid-button:hover {
@@ -731,29 +733,31 @@ input {
 }*/
 
 h1 {
-	color: white;
-	font-family: Courier;
+	color: #e8eaed;
+	font-family: Arial, sans-serif;
 	text-align: left;
 }
 
 h2 {
 	font-weight: bold;
-	font-size: 2rem;
-	color: #D6DDDE;
-	padding-bottom: 15px;
+	font-size: 1.6rem;
+	color: #e8eaed;
+	padding-bottom: 12px;
 	border-bottom: 1px solid rgba(0,200,160,0.20);
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 	text-align: left;
+	letter-spacing: 0.02em;
 }
 
-h3{
-	font-size: 1.5rem;
-	font-family: Courier;
+h3 {
+	font-size: 1.2rem;
+	font-family: Arial, sans-serif;
+	color: #c8d8e8;
 	text-align: left;
 }
 
 p {
-	color: #D6DDDE;
+	color: #c8d0d8;
 }
 
 ul {
@@ -762,7 +766,7 @@ ul {
 }
 
 li {
-	color: #D6DDDE;
+	color: #c8d0d8;
 	padding: 10px;
 	border-bottom: 1px;
 	border-top: 0px;
@@ -817,7 +821,7 @@ li form {
 }
 
 .achievements{
-	font-family: arial;
+	font-family: Arial, sans-serif;
 }
 
 .achievement{
@@ -928,7 +932,7 @@ li form {
 }
 
 .projects-container h3{
-	color: #D6DDDE;
+	color: #e8eaed;
 }
 
 .project img{
@@ -970,13 +974,13 @@ li form {
 }
 
 .nfts {
-	color: #D6DDDE;
+	color: #e8eaed;
 	clear: both;
 	min-height: 1000px;
 }
 
 .nfts label {
-	color: #D6DDDE;
+	color: #e8eaed;
 	font-weight: bold;
 }
 
@@ -1121,7 +1125,7 @@ li form {
 }
 
 .diamond-skull-data table{
-	color: #D6DDDE;
+	color: #e8eaed;
 	font-size: 12px;
 }
 
@@ -1209,7 +1213,7 @@ li form {
 	font-size: 0.85rem;
 	font-weight: bold;
 	padding-top: 20px;
-	font-family: Courier;
+	font-family: Arial, sans-serif;
 	text-align: left;
 }
 
@@ -1237,7 +1241,7 @@ li form {
 }
 
 #wagerForm label{
-	color: #D6DDDE;
+	color: #e8eaed;
 	font-weight: bold;
 }
 
@@ -1515,7 +1519,7 @@ section.active {
 }
 
 .location-wrapper {
-	color: #D6DDDE;
+	color: #e8eaed;
     font-size: 20px;
     font-weight: bold;
     width: 100%;
@@ -1566,7 +1570,7 @@ section.active {
 	.missions .nft-name {
 		padding-right: 5px !important;
 		font-size: 1.5rem !important;
-		font-family: Courier;
+		font-family: Arial, sans-serif;
 		text-align: right;
 	}
 	.missions .nft-level {
