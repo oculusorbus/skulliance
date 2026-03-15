@@ -45,8 +45,7 @@ if($sr) while($row = $sr->fetch_assoc()) $skull_map[$row['nft_id']] = $row['name
 function build_nft_row($row, $missions_map, $skull_map){
     $id   = $row['id'];
     $name = !empty($row['nft_display_name']) ? $row['nft_display_name'] : $row['asset_name'];
-    $aid_parts = explode('.', $row['asset_id'], 2);
-    $jpg_asset_id = (count($aid_parts) === 2) ? ($aid_parts[0] . bin2hex($aid_parts[1])) : $row['asset_id'];
+    $jpg_asset_id = $row['collection_policy'] . bin2hex($row['asset_name']);
     return [
         'asset_id'        => $row['asset_id'],
         'name'            => htmlspecialchars($name, ENT_QUOTES),
