@@ -123,8 +123,6 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 	<a name="holdings" id="holdings"></a>
     <div class="content" id="filtered-content">
 		<?php filterCoreNFTs("diamond-skulls"); ?>
-		<button type="button" class="small-button" id="load-nfts-btn" onclick="document.getElementById('nft-grid-wrap').style.display='block';this.style.display='none';">Show NFTs</button>
-		<div id="nft-grid-wrap" style="display:none">
 		<div id="nfts" class="nfts">
 			<?php
 			if(isset($_SESSION['userData']['user_id'])){
@@ -133,7 +131,6 @@ if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
 			}
 			?>
-		</div>
 		</div>
     </div>
   </div>
