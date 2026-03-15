@@ -59,6 +59,7 @@ function build_nft_row($row, $missions_map, $skull_map){
         'collection_id'   => (int)$row['collection_id'],
         'collection_name'   => htmlspecialchars($row['collection_name'], ENT_QUOTES),
         'collection_policy' => $row['collection_policy'],
+        'jpg_asset_id'      => (function($aid){ $p = explode('.', $aid, 2); return count($p) === 2 ? $p[0].bin2hex($p[1]) : $aid; })($row['asset_id']),
         'rate'              => (int)$row['rate'],
         'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
         'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
@@ -500,7 +501,7 @@ $my_user_json = json_encode($my_user_id);
   <div id="p-badges"></div>
   <div id="p-actions">
     <a id="p-pool-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://pool.pm/pool.pm.svg" alt="pool.pm" />View on pool.pm</a>
-    <a id="p-offer-btn" href="#" target="_blank" rel="noopener" class="p-action-btn">Make Offer</a>
+    <a id="p-offer-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://static.jpgstoreapis.com/icons/jpg-nav-logo-dark.svg" alt="jpg.store" />Make Offer</a>
   </div>
 </div>
 
@@ -715,7 +716,7 @@ function renderSlide(n, nft){
     pCollLink.textContent = nft.collection_name;
     pCollLink.href        = 'https://www.jpg.store/collection/' + (nft.collection_policy || '');
     pPoolBtn.href         = poolUrl;
-    pOfferBtn.href        = 'https://www.jpg.store/asset/' + nft.asset_id;
+    pOfferBtn.href        = 'https://www.jpg.store/asset/' + nft.jpg_asset_id;
     slideCtrl.textContent = (n+1) + ' / ' + playlist.length;
 
     // Badges
