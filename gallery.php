@@ -506,9 +506,10 @@ $my_user_json = json_encode($my_user_id);
   </div>
   <div id="p-collection"><a id="p-coll-link" href="#" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a></div>
   <div id="p-badges"></div>
-  <form id="nav-mission-form" action="missions.php#holdings" method="post" target="_blank" style="display:none">
+  <form id="nav-mission-form" action="missions.php#missions" method="post" target="_blank" style="display:none">
     <input type="hidden" name="filterby" value="core">
     <input type="hidden" name="reset_mission" value="1">
+    <input type="hidden" id="nav-mission-project-id" name="nft_project_id" value="">
   </form>
   <form id="nav-skull-form" action="diamond-skulls.php#diamond-skull" method="post" target="_blank" style="display:none">
     <input type="hidden" id="nav-skull-id" name="diamond_skull_id" value="">
@@ -744,7 +745,7 @@ function renderSlide(n, nft){
       b.style.cursor = 'pointer';
       b.title = 'Go to Missions';
       b.textContent = '⚔ ' + nft.mission;
-      b.onclick = function(){ document.getElementById('nav-mission-form').submit(); };
+      b.onclick = (function(pid){ return function(){ document.getElementById('nav-mission-project-id').value = pid; document.getElementById('nav-mission-form').submit(); }; })(nft.project_id);
       pBadges.appendChild(b);
     }
     if(nft.diamond_skull){

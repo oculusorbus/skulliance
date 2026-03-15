@@ -14,8 +14,12 @@ if(isset($_POST["start_all"])){
 	startAllFreeEligibleMissions($conn);
 }
 if(isset($_POST["reset_mission"])){
-	unset($_SESSION['userData']['project_id']);
 	unset($_SESSION['userData']['mission']);
+	if(isset($_POST['nft_project_id']) && (int)$_POST['nft_project_id'] > 0){
+		$_SESSION['userData']['project_id'] = (int)$_POST['nft_project_id'];
+	}else{
+		unset($_SESSION['userData']['project_id']);
+	}
 }
 ?>
 <!-- The flexible grid (content) -->
