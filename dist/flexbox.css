@@ -2130,28 +2130,26 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     flex: 1;
     height: 100%;
 }
-/* Push buy buttons to bottom of every card */
-.store-nfts .nft-data form:last-of-type { margin-top: auto; }
+/* Push button group to bottom, but don't space individual buttons apart */
+.store-nfts .nft-data .nft-level:last-of-type { flex: 1; }
+.store-nfts .nft-data .nft-level { flex-shrink: 0; }
 /* ── Store items: image above text ─────────────────────────────────────── */
 .store-item { width: 33%; }
 .store-item .nft-data { text-align: left; }
 .store-item .nft-name { text-align: left; padding-top: 10px; }
 .store-item .nft-image {
-    height: 120px;
+    height: 180px;
     border-radius: 8px;
 }
 .store-item .nft-image img {
-    height: 120px;
+    height: 180px;
     object-fit: contain;
 }
-.store-item .small-button {
-    display: block;
-    width: 100%;
-    text-align: center;
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 0.85rem;
-}
+/* Store buy buttons: inline, compact, no extra gaps between multiple buttons */
+.store-nfts .nft-data form { margin: 0; padding: 0; display: inline-block; }
+.store-nfts .nft-data .small-button { margin-top: 4px !important; margin-right: 4px; }
+/* Buttons area sits at bottom of card */
+.store-nfts .nft-data .buttons-area { margin-top: auto; padding-top: 8px; }
 
 /* ── Diamond skull section: keep tall data card ─────────────────────────── */
 .diamond-skull-data { min-height: 0; }
