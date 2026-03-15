@@ -3468,12 +3468,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$delegated = " Delegated";
 						$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
 					}
-					$username = "";
-					if($row["visibility"] == "2"){
-						$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-					}else{
-						$username = $row["username"];
-					}
+					$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 					echo "<tr class='".$highlight."'>";
 			    	echo "<td align='center'><strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong></td><td align='center'>".$avatar."</td><td><strong style='font-size:20px'>".$username."</strong></td><td align='center'>".$row["total"].$delegated."</td><td align='center'>".(($project_id != 0)?" ".number_format($current_balance)." ".$row["currency"]."":number_format($current_balance)).$diamond_skull_count."</td>";
 					echo "</tr>";
@@ -3826,11 +3821,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
-			if($row["visibility"] == "2"){
-				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-			}else{
-				$username = $row["username"];
-			}
+			$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
@@ -4000,11 +3991,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
-			if($row["visibility"] == "2"){
-				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-			}else{
-				$username = $row["username"];
-			}
+			$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
@@ -4337,11 +4324,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
-			if($row["visibility"] == "2"){
-				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-			}else{
-				$username = $row["username"];
-			}
+			$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
@@ -4478,11 +4461,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
-			if($row["visibility"] == "2"){
-				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-			}else{
-				$username = $row["username"];
-			}
+			$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
@@ -4619,11 +4598,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
-			if($row["visibility"] == "2"){
-				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-			}else{
-				$username = $row["username"];
-			}
+			$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
@@ -4772,11 +4747,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "</td>";
 			echo "<td align='left'>";
 			$username = "";
-			if($row["visibility"] == "2"){
-				$username = "<a href='showcase.php?username=".$row["username"]."'>".$row["username"]. "</a>";
-			}else{
-				$username = $row["username"];
-			}
+			$username = "<a href='profile.php?username=".urlencode($row["username"])."'>".$row["username"]."</a>";
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
