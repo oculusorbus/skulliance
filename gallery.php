@@ -45,6 +45,8 @@ if($sr) while($row = $sr->fetch_assoc()) $skull_map[$row['nft_id']] = $row['name
 function build_nft_row($row, $missions_map, $skull_map){
     $id   = $row['id'];
     $name = !empty($row['nft_display_name']) ? $row['nft_display_name'] : $row['asset_name'];
+    $aid_parts = explode('.', $row['asset_id'], 2);
+    $jpg_asset_id = (count($aid_parts) === 2) ? ($aid_parts[0] . bin2hex($aid_parts[1])) : $row['asset_id'];
     return [
         'asset_id'        => $row['asset_id'],
         'name'            => htmlspecialchars($name, ENT_QUOTES),
@@ -59,7 +61,7 @@ function build_nft_row($row, $missions_map, $skull_map){
         'collection_id'   => (int)$row['collection_id'],
         'collection_name'   => htmlspecialchars($row['collection_name'], ENT_QUOTES),
         'collection_policy' => $row['collection_policy'],
-        'jpg_asset_id'      => (function($aid){ $p = explode('.', $aid, 2); return count($p) === 2 ? $p[0].bin2hex($p[1]) : $aid; })($row['asset_id']),
+        'jpg_asset_id'      => $jpg_asset_id,
         'rate'              => (int)$row['rate'],
         'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
         'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
@@ -508,7 +510,7 @@ $my_user_json = json_encode($my_user_id);
 <div id="progress"></div>
 
 <div id="controls">
-  <a class="ctrl-logo" href="profile.php" target="_blank" rel="noopener">← Skulliance</a>
+  <a class="ctrl-logo" href="profile.php">← Skulliance</a>
   <div id="ctrl-mid">
     <button class="cbtn" id="btn-prev" title="Previous (←)">&#9664;</button>
     <button class="cbtn" id="btn-pp"   title="Pause/Play (P)">&#9646;&#9646;</button>
