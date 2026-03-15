@@ -5,6 +5,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <style>
+html, body { overflow-x: hidden; }
 @keyframes podium-user-glow {
   0%, 100% { box-shadow: 0 0 4px 2px rgba(0,200,160,0.15); }
   50%       { box-shadow: 0 0 22px 7px rgba(0,200,160,0.75); }
