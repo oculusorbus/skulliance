@@ -2620,6 +2620,13 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				echo "<span class='nft-level'><strong>Reward Rate</strong><br>".$row["rate"]." ".$row["currency"]."</span>";
 			}else if($diamond_skull == true){
 				echo "<span class='nft-level'><strong>Owner</strong><br>".$row["username"]."</span>";
+				global $skull_ranks;
+				if(!empty($skull_ranks) && preg_match('/#(\d+)/', $row["nfts_name"], $skm)){
+					$skn = (int)$skm[1];
+					if(isset($skull_ranks[$skn])){
+						echo "<span class='nft-level'><strong>Rarity Rank</strong><br>#".$skull_ranks[$skn]." of 100</span>";
+					}
+				}
 				if($diamond_skull_id == ""){
 				?>
 				<form id="diamondSkullsForm" action="diamond-skulls.php" method="post">
