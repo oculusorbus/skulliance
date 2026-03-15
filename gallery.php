@@ -102,6 +102,7 @@ $my_user_json = json_encode($my_user_id);
       color: #fff;
       font-family: Arial, sans-serif;
       overflow: hidden;
+      transition: background-color 1.8s ease;
       width: 100vw;
       height: 100vh;
       user-select: none;
@@ -779,10 +780,13 @@ function renderSlide(n, nft){
     }
 
     startProgress();
+    sampleAmbient(nft.image);
 
-    // Preload next image in background
-    const nextNft = playlist[(n+1) % playlist.length];
-    if(nextNft) preloadImage(nextNft.image, function(){});
+    // Preload next 2 images in background
+    [1, 2].forEach(function(offset){
+      const ahead = playlist[(n + offset) % playlist.length];
+      if(ahead) preloadImage(ahead.image, function(){});
+    });
 
     // Dismiss loader on first successful slide
     const ldr = document.getElementById('loader');
@@ -948,6 +952,59 @@ document.addEventListener('keydown', function(e){
   else if(e.key==='ArrowLeft')         { document.getElementById('btn-prev').click(); }
   else if(e.key==='p'||e.key==='P')    { btnPP.click(); }
   else if(e.key==='Escape')            { closeSettings(); }
+});
+
+// ── Ambient background color ───────────────────────────────────────────────
+(function(){
+  const cv  = document.createElement('canvas');
+  cv.width = cv.height = 16;
+  const ctx = cv.getContext('2d');
+  window.sampleAmbient = function(url){
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function(){
+      try {
+        ctx.drawImage(img, 0, 0, 16, 16);
+        const d = ctx.getImageData(0, 0, 16, 16).data;
+        let r=0, g=0, b=0, n=0;
+        for(let i=0; i<d.length; i+=4){
+          const lum = (d[i]+d[i+1]+d[i+2]) / 3;
+          if(lum > 30 && lum < 230){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+        }
+        if(!n) return;
+        document.body.style.backgroundColor =
+          'rgb('+Math.round(r/n*.13)+','+Math.round(g/n*.13)+','+Math.round(b/n*.13)+')';
+      } catch(e) { /* CORS blocked — skip */ }
+    };
+    img.src = url;
+  };
+})();
+
+// ── Auto-pause on hover ────────────────────────────────────────────────────
+let hoverPaused = false;
+let _hoverTimer  = null;
+
+function _hoverPause(){
+  clearTimeout(_hoverTimer);
+  if(!playing || hoverPaused) return;
+  stopHeartbeat();
+  progress.classList.remove('waiting');
+  const w = getComputedStyle(progress).width;
+  progress.style.transition = 'none';
+  progress.style.width = w;
+  hoverPaused = true;
+}
+function _hoverResume(){
+  _hoverTimer = setTimeout(function(){
+    if(!hoverPaused || !playing) return;
+    hoverPaused = false;
+    startHeartbeat();
+    startProgress();
+  }, 80);
+}
+[document.getElementById('stage'), placard].forEach(function(el){
+  el.addEventListener('mouseenter', _hoverPause);
+  el.addEventListener('mouseleave', _hoverResume);
 });
 
 // ── Spotify player ─────────────────────────────────────────────────────────
