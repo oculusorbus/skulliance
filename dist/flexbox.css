@@ -646,9 +646,10 @@ input {
 }
 
 .small-button {
-  background-color: #0d1e2e;
+  background-color: #00c8a0;
   border: none;
-  color: white;
+  color: #07111d;
+  font-weight: bold;
   padding: 3px 10px;
   text-align: center;
   text-decoration: none;
@@ -662,12 +663,12 @@ input {
 }
 
 .small-button:hover {
-	background-color: #1a3a52;
+	background-color: #00a882;
 }
 
 .small-button:active {
-  background-color: #1a3a52;
-  box-shadow: 0 2px #020a12;
+  background-color: #00a882;
+  box-shadow: 0 2px #003828;
   transform: translateY(2px);
 }
 
