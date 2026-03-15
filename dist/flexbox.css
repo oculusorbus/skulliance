@@ -1521,7 +1521,7 @@ section.active {
 	}
 	.missions .nft-data {
 		min-height: 170px !important;
-		background-color: #2F3136;
+		background-color: #1d1d1d;
 		background-blend-mode: multiply;
 	    background-size: cover;
 		background-position: center;
