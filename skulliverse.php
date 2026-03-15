@@ -367,6 +367,48 @@ if($filterby != ""){
 	// Initial measure after paddingTop settles
 	requestAnimationFrame(function(){ measure(); startTs = null; requestAnimationFrame(tick); });
 	window.addEventListener('resize', onResize);
+
+	// === Background: slow organic drift + mouse parallax (desktop only) ===
+	(function(){
+		var row = document.querySelector('.row#row1');
+		if(!row) return;
+
+		var mouseNX = 0, mouseNY = 0; // normalised cursor position -1..1
+		var smoothX = 0, smoothY = 0; // smoothed parallax offset in px
+		var driftT = 0, bgLast = null;
+
+		var PARALLAX = 12; // max px of mouse parallax (opposite to cursor = depth illusion)
+		var DRIFT_A  = 8;  // max px horizontal drift
+		var DRIFT_B  = 5;  // max px vertical drift
+
+		document.addEventListener('mousemove', function(e){
+			mouseNX = (e.clientX / window.innerWidth  - 0.5) * 2;
+			mouseNY = (e.clientY / window.innerHeight - 0.5) * 2;
+		});
+
+		function bgTick(ts){
+			if(!bgLast) bgLast = ts;
+			var dt = Math.min((ts - bgLast) / 1000, 0.1);
+			bgLast = ts;
+			driftT += dt;
+
+			// Frame-rate-independent lerp toward mouse target (~6% per frame at 60fps)
+			var factor = 1 - Math.pow(0.94, dt * 60);
+			smoothX += (mouseNX * -PARALLAX - smoothX) * factor;
+			smoothY += (mouseNY * -PARALLAX - smoothY) * factor;
+
+			// Two overlapping sine waves per axis for organic, non-repeating feel
+			var driftX = Math.sin(driftT / 55)  * DRIFT_A + Math.sin(driftT / 130) * (DRIFT_A * 0.35);
+			var driftY = Math.cos(driftT / 70)  * DRIFT_B + Math.cos(driftT / 100) * (DRIFT_B * 0.40);
+
+			var tx = (smoothX + driftX).toFixed(1);
+			var ty = (smoothY + driftY).toFixed(1);
+			row.style.backgroundPosition = 'calc(50% + ' + tx + 'px) calc(50% + ' + ty + 'px)';
+
+			requestAnimationFrame(bgTick);
+		}
+		requestAnimationFrame(bgTick);
+	})();
 })();
 	
 	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, currency, population){
