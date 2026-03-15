@@ -74,6 +74,7 @@
 		      <a href="collections.php">Collections</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
 		      <a href="skulliverse.php">Skulliverse</a>
+		      <a href="gallery.php">Gallery</a>
 		    </div>
 		  </div>
 
