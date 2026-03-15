@@ -182,6 +182,11 @@ $my_user_json = json_encode($my_user_id);
       border-radius: 10px;
     }
     #nft-wrap.hover-paused #pause-overlay { opacity: 1; }
+    @keyframes nft-glow {
+      0%, 100% { box-shadow: none; }
+      50%       { box-shadow: 0 0 32px 8px rgba(0,200,160,0.45); }
+    }
+    #nft-wrap.waiting { animation: nft-glow 1.2s ease-in-out infinite; }
     #nft-wrap.hover-paused {
       cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect x='8' y='7' width='5' height='18' rx='2.5' fill='white'/%3E%3Crect x='19' y='7' width='5' height='18' rx='2.5' fill='white'/%3E%3C/svg%3E") 16 16, default;
     }
@@ -815,11 +820,15 @@ function renderSlide(n, nft){
 
 // ── Progress bar ───────────────────────────────────────────────────────────
 progress.addEventListener('transitionend', function(e){
-  if(e.propertyName === 'width' && playing) progress.classList.add('waiting');
+  if(e.propertyName === 'width' && playing){
+    progress.classList.add('waiting');
+    nftWrap.classList.add('waiting');
+  }
 });
 
 function startProgress(){
   progress.classList.remove('waiting');
+  nftWrap.classList.remove('waiting');
   progress.style.transition = 'none';
   progress.style.width = '0%';
   if(!playing) return;
@@ -1007,6 +1016,7 @@ function _hoverPause(){
   if(!playing || hoverPaused) return;
   stopHeartbeat();
   progress.classList.remove('waiting');
+  nftWrap.classList.remove('waiting');
   const w = getComputedStyle(progress).width;
   progress.style.transition = 'none';
   progress.style.width = w;
