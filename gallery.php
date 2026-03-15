@@ -171,25 +171,11 @@ $my_user_json = json_encode($my_user_id);
     }
     #nft-main.visible { opacity: 1; }
 
-    /* Pause overlay */
-    #pause-overlay {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2.5rem; color: rgba(255,255,255,0.85);
-      text-shadow: 0 0 24px rgba(0,0,0,0.9);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.25s;
-      border-radius: 10px;
-    }
-    #nft-wrap.hover-paused #pause-overlay { opacity: 1; }
     @keyframes nft-glow {
       0%, 100% { box-shadow: none; }
       50%       { box-shadow: 0 0 32px 8px rgba(0,200,160,0.45); }
     }
     #nft-wrap.waiting { animation: nft-glow 1.2s ease-in-out infinite; }
-    #nft-wrap.hover-paused {
-      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect x='8' y='7' width='5' height='18' rx='2.5' fill='white'/%3E%3Crect x='19' y='7' width='5' height='18' rx='2.5' fill='white'/%3E%3C/svg%3E") 16 16, default;
-    }
 
     /* Ken Burns */
     @keyframes kb {
@@ -507,7 +493,6 @@ $my_user_json = json_encode($my_user_id);
       <img id="glitch-r" class="nft-layer" src="" alt="" />
       <img id="glitch-b" class="nft-layer" src="" alt="" />
     </a>
-    <div id="pause-overlay">&#9646;&#9646;</div>
   </div>
 </div>
 
