@@ -2223,3 +2223,26 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .store-item { width: 100%; }
     table { min-width: 360px; }
 }
+
+/* ── REVERT: Missions card layout (float-based, must not be flex column) ── */
+/* .nft-data flex column breaks the image-left / stats-right float layout   */
+.missions .nft-data,
+.inventory .nft-data {
+    display: block;
+    min-height: 215px;
+}
+
+/* ── REVERT: Diamond skull delegation cards (inline-block grid) ──────────── */
+/* getDiamondSkullNFTs() outputs .diamond cards using inline-block layout.   */
+/* The global .nfts flex container breaks this — restore block context.      */
+.diamond-container .nfts {
+    display: block;
+}
+.diamond-container .diamond {
+    display: inline-block;
+    vertical-align: top;
+}
+/* Restore diamond-skull-data card height — it holds delegation slot tables  */
+.diamond-skull-data {
+    min-height: 500px;
+}
