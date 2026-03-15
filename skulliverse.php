@@ -22,14 +22,16 @@ include 'header.php';
 }
 
 .planets{
-	
+	position: relative;
+	width: 100%;
+	min-height: 600px;
 }
 
 .planet{
 	width: 12%;
 	margin: 0 auto;
 	position: absolute;
-	padding-top: 300px;
+	padding-top: 0;
 }
 
 .planet img{
@@ -46,36 +48,13 @@ include 'header.php';
 	left: 45%;
 	top: 21%;
 }
-.crypties{
-	width: 5%;
-	left: 36%;
-	top: 7%;
-}
-.kimo{
-	width: 6%;
-	left: 6%;
-	top: 19%;
-}
-.sinder{
-	width: 7%;
-	left: 68%;
-	top: 31%;
-}
-.hype{
-	width: 8%;
-	left: 85%;
-	top: 44%;
-}
-.meed{
-	width: 9%;
-	left: 53%;
-	top: 53%;
-}
-.galactico{
-	width: 10%;
-	left: 16%;
-	top: 43%;
-}
+/* orbit planets: left/top set by JS */
+.crypties{ width: 5%; }
+.kimo{     width: 6%; }
+.sinder{   width: 7%; }
+.hype{     width: 8%; }
+.meed{     width: 9%; }
+.galactico{width: 10%; }
 
 .percentage {
 	color: white;
@@ -270,18 +249,83 @@ if($filterby != ""){
 }?>
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
-	var planets = document.getElementsByClassName("planet");
-	var pixels = "";
-    pixels = (window.innerHeight*0.20)+"px";
-    //alert(pixels);
-	for (var i = 0; i < planets.length; i++) {
-		if(window.innerWidth <= 700){
-			//planets.item(i).style.paddingTop = (window.innerHeight*1.3)+"px";
-			planets.item(i).style.paddingTop = pixels;
-		}else{
-	   	 	planets.item(i).style.paddingTop = pixels;
-   		}
+(function(){
+	var planetsEl  = document.querySelector('.planets');
+	var diamondEl  = document.querySelector('.planet.diamond');
+	var diamondImg = diamondEl.querySelector('img');
+
+	// Tilt -30deg: upper-left = far background, lower-right = near foreground
+	var TILT    = -Math.PI / 6;
+	var cosTilt = Math.cos(TILT), sinTilt = Math.sin(TILT);
+
+	// aFrac/bFrac as fraction of container width. b/a ≈ 0.36 gives visible perspective compression.
+	// phase staggers planets so they don't bunch up at start.
+	// Orbits ordered smallest to largest so rings don't visually cross.
+	var configs = [
+		{ cls:'crypties',   aFrac:0.13, bFrac:0.047, period:20, phase:0.7  },
+		{ cls:'meed',       aFrac:0.19, bFrac:0.068, period:26, phase:2.2  },
+		{ cls:'galactico',  aFrac:0.26, bFrac:0.094, period:33, phase:4.0  },
+		{ cls:'sinder',     aFrac:0.32, bFrac:0.115, period:39, phase:5.5  },
+		{ cls:'kimo',       aFrac:0.38, bFrac:0.137, period:46, phase:1.5  },
+		{ cls:'hype',       aFrac:0.44, bFrac:0.158, period:54, phase:3.3  },
+	];
+
+	var orbiters = configs.map(function(c){
+		var el = document.querySelector('.planet.' + c.cls);
+		return { el: el, cfg: c };
+	}).filter(function(o){ return !!o.el; });
+
+	var cx = 0, cy = 0, cw = 0;
+
+	function measure(){
+		var pr  = planetsEl.getBoundingClientRect();
+		var dir = diamondImg.getBoundingClientRect();
+		if(!pr.width) return;
+		cw = pr.width;
+		cx = dir.left - pr.left + dir.width  / 2;
+		cy = dir.top  - pr.top  + dir.height / 2;
 	}
+
+	var startTs = null;
+	function tick(ts){
+		if(!startTs) startTs = ts;
+		var t = (ts - startTs) / 1000;
+
+		orbiters.forEach(function(o){
+			var c = o.cfg, el = o.el;
+			var a = c.aFrac * cw;
+			var b = c.bFrac * cw;
+			var angle = (t / c.period) * Math.PI * 2 + c.phase;
+
+			// Ellipse point then rotate to match background tilt
+			var ex = Math.cos(angle) * a;
+			var ey = Math.sin(angle) * b;
+			var rx = ex * cosTilt - ey * sinTilt;
+			var ry = ex * sinTilt + ey * cosTilt;
+
+			// depth: -1 = background (upper-left), +1 = foreground (lower-right)
+			// Use untilted sin so scale transitions smoothly around the orbit
+			var depth = Math.sin(angle);
+			// Scale relative to CSS-defined planet size: neutral at sides, ±30% at extremes
+			var scale = 1.0 + 0.30 * depth;
+
+			var pw = el.offsetWidth;
+			var ph = el.offsetHeight;
+			el.style.left            = (cx + rx - pw / 2) + 'px';
+			el.style.top             = (cy + ry - ph / 2) + 'px';
+			el.style.transform       = 'scale(' + scale.toFixed(3) + ')';
+			el.style.transformOrigin = 'center center';
+			el.style.zIndex          = depth > 0 ? 12 : 8;
+		});
+
+		diamondEl.style.zIndex = 10;
+		requestAnimationFrame(tick);
+	}
+
+	measure();
+	window.addEventListener('resize', measure);
+	requestAnimationFrame(tick);
+})();
 	
 	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, currency, population){
 		 modal.style.display = "block";
