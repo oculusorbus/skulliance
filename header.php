@@ -95,8 +95,8 @@
 		    </div>
 		  </div>
 
-		  <button id="wallet-nav-btn" onclick="openWalletModal()" title="Connect Wallet"><img src="icons/wallet.png" class="wallet-nav-icon" alt="Wallet"/></button>
 		  <a href="logout.php">Logout</a>
+		  <button id="wallet-nav-btn" onclick="openWalletModal()" title="Connect Wallet"><img src="icons/wallet.png" class="wallet-nav-icon" alt="Wallet"/></button>
 		  <?php } ?>
 		</div>
 		<div id="revealPoint"></div>
