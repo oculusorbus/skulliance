@@ -288,21 +288,21 @@ if($filterby != ""){
 	// Restore paddingTop on diamond skull so it sits at its original visual position
 	diamondEl.style.paddingTop = paddingPx;
 
-	// Tilt +30deg: lower-left = near foreground, upper-right = far background
-	// (flip sign from previous attempt per user correction)
-	var TILT    = Math.PI / 6;
+	// Tilt +20deg: lower-left = near foreground, upper-right = far background
+	// Reduced from 30° — sin(20°)≈0.34 vs sin(30°)=0.5, much less vertical bleed from horizontal axis
+	var TILT    = Math.PI / 9;
 	var cosTilt = Math.cos(TILT), sinTilt = Math.sin(TILT);
 
 	// Orbits ordered smallest → largest radius.
 	// aFrac/bFrac as fractions of viewport width. b/a ≈ 0.36 gives perspective compression.
-	// Phases stagger planets so they don't start bunched together.
+	// Scaled down ~25% from previous to keep planets within the background image bounds.
 	var configs = [
-		{ cls:'crypties',   aFrac:0.13, bFrac:0.047, period:20, phase:0.7  },
-		{ cls:'meed',       aFrac:0.19, bFrac:0.068, period:26, phase:2.2  },
-		{ cls:'galactico',  aFrac:0.26, bFrac:0.094, period:33, phase:4.0  },
-		{ cls:'sinder',     aFrac:0.32, bFrac:0.115, period:39, phase:5.5  },
-		{ cls:'kimo',       aFrac:0.38, bFrac:0.137, period:46, phase:1.5  },
-		{ cls:'hype',       aFrac:0.44, bFrac:0.158, period:54, phase:3.3  },
+		{ cls:'crypties',   aFrac:0.10, bFrac:0.036, period:20, phase:0.7  },
+		{ cls:'meed',       aFrac:0.15, bFrac:0.054, period:26, phase:2.2  },
+		{ cls:'galactico',  aFrac:0.20, bFrac:0.072, period:33, phase:4.0  },
+		{ cls:'sinder',     aFrac:0.25, bFrac:0.090, period:39, phase:5.5  },
+		{ cls:'kimo',       aFrac:0.30, bFrac:0.108, period:46, phase:1.5  },
+		{ cls:'hype',       aFrac:0.35, bFrac:0.126, period:54, phase:3.3  },
 	];
 
 	var orbiters = configs.map(function(c){
