@@ -2006,3 +2006,220 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     display: inline-block; margin-top: 4px; text-align: center;
     text-decoration: none;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v2  —  Layout, Card, NFT Grid & Mobile Upgrades
+   ─────────────────────────────────────────────────────────────────────────
+   All rules here are additive / targeted overrides. Existing IDs & classes
+   are preserved so JS interactions are unaffected.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Content card baseline ─────────────────────────────────────────────── */
+/* .content had only border-radius:10px — give it the #player-stats card look */
+.content {
+    background-color: #0a1929;
+    border: 1px solid rgba(0,200,160,0.13);
+    padding: 18px;
+    margin-bottom: 16px;
+}
+/* Don't double-border the sub-cards that already have #player-stats */
+#player-stats { border: 1px solid rgba(0,200,160,0.20); }
+
+/* ── Side panel subtle separation ──────────────────────────────────────── */
+.side { border-right: 1px solid rgba(0,200,160,0.07); }
+
+/* ── Page-section header strip (used on all pages) ─────────────────────── */
+.page-banner {
+    padding: 18px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.page-banner h2 { margin: 0; }
+
+/* ── NFT grid: flexbox (replaces legacy float grid) ────────────────────── */
+.nfts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-height: unset;   /* was 1000px – caused huge empty space */
+    gap: 0;
+    clear: unset;
+}
+.nft {
+    float: none;         /* flex parent ignores float anyway; explicit clear */
+    box-sizing: border-box;
+}
+
+/* ── NFT card data panel: flex column so button always sits at bottom ───── */
+.nft-data {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+/* Give the name / meta stretch so button is pushed down */
+.nft-data .nft-name,
+.nft-data .nft-level,
+.nft-data .nft-owner { flex-shrink: 0; }
+.nft-data .small-button,
+.nft-data .button { margin-top: auto; }
+
+/* ── NFT image: uniform square crop ────────────────────────────────────── */
+.nft-image {
+    display: block;
+    float: none;
+    width: 100%;
+    height: 160px;
+    min-height: unset;
+    max-height: unset;
+    overflow: hidden;
+    margin-right: 0;
+    border-radius: 8px 8px 0 0;
+}
+.nft-image img {
+    width: 100%;
+    height: 160px;
+    object-fit: contain;
+    background-color: #06101c;
+    display: block;
+    max-width: unset;
+    max-height: unset;
+    border-radius: 8px 8px 0 0;
+}
+
+/* ── Mission cards keep side-by-side image layout ──────────────────────── */
+/* (image floats left with stats to the right — intentional for dense info) */
+.missions .nft-image,
+.inventory .nft-image {
+    float: left;
+    width: auto;
+    height: 165px;
+    min-height: unset;
+    max-height: unset;
+    border-radius: 6px;
+    margin-right: 8px;
+}
+.missions .nft-image img,
+.inventory .nft-image img {
+    width: auto;
+    height: 165px;
+    max-width: 160px;
+    object-fit: contain;
+    background-color: transparent;
+    border-radius: 6px;
+}
+
+/* ── Store items: image full-width above text ───────────────────────────── */
+.store-item { width: 33%; }
+.store-item .nft-data { text-align: left; }
+.store-item .nft-name { text-align: left; padding-top: 10px; }
+.store-item .nft-image {
+    height: 180px;
+    border-radius: 8px;
+}
+.store-item .nft-image img {
+    height: 180px;
+    object-fit: contain;
+}
+.store-item .small-button {
+    display: block;
+    width: 100%;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+}
+
+/* ── Diamond skull section: keep tall data card ─────────────────────────── */
+.diamond-skull-data { min-height: 0; }
+
+/* ── Diamond skull project section header ───────────────────────────────── */
+.skull-section {
+    border: 1px solid rgba(0,200,160,0.13);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    background: #060e17;
+}
+.skull-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #0a1929;
+    border-bottom: 1px solid rgba(0,200,160,0.10);
+}
+.skull-acc-icon {
+    width: 22px; height: 22px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.skull-acc-label {
+    color: #00c8a0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Leaderboard: full-width centered instead of 33% column ─────────────── */
+.col1of3 {
+    flex: 1 1 100%;
+    min-width: unset;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* ── Realm location items: flex rows (replaces <table> in sidebar) ─────── */
+.location-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,200,160,0.08);
+}
+.location-row:last-child { border-bottom: none; }
+.location-icon-wrap {
+    flex-shrink: 0;
+    width: 52px;
+    text-align: center;
+}
+.location-icon-wrap img { width: 44px; opacity: 0.85; }
+.location-info { flex: 1; min-width: 0; }
+.location-info strong { display: block; font-size: 0.82rem; color: #00c8a0; text-transform: uppercase; letter-spacing: 0.04em; }
+.location-meta { font-size: 0.78rem; color: #7a9eb0; line-height: 1.7; }
+.location-action { flex-shrink: 0; text-align: right; }
+
+/* ── Responsive tables: scroll instead of tiny font ─────────────────────── */
+@media screen and (max-width: 700px) {
+    /* Scrollable containers */
+    .content, #filtered-content {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Restore transactions from 7px */
+    #transactions { font-size: 0.78rem; }
+    #transactions th, #transactions td {
+        padding: 6px 5px;
+        width: auto;
+    }
+    #transactions .icon { width: 16px; }
+    /* Restore td from 0.85rem to readable size */
+    td { font-size: 0.82rem; }
+    /* NFT grid: 2 per row on mobile */
+    .nft { width: 50%; }
+    /* Store items: 2 per row */
+    .store-item { width: 50%; }
+    .side { border-right: none; }
+    /* Ensure tables inside content can scroll */
+    table { min-width: 420px; }
+    /* But mission/inventory cards are not tables — don't force min-width there */
+    .nft table, .inventory table, .diamond-skull-data table,
+    .diamond-data table, #itemForm table { min-width: unset; }
+}
+@media screen and (max-width: 480px) {
+    .nft { width: 100%; }
+    .store-item { width: 100%; }
+    table { min-width: 360px; }
+}

@@ -6,7 +6,7 @@ include 'header.php';
 ?>
 		<a name="leaderboards" id="leaderboards"></a>
 		<div class="row" id="row1">
-			<div class="col1of3">
+			<div class="col1of3" style="max-width:900px;margin:0 auto;flex:1 1 100%;">
 				<?php
 				switch (true) {
 				    case ($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && 

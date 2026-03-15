@@ -804,7 +804,7 @@ include 'header.php';
 }
 .own-profile-bar {
     display: flex; justify-content: flex-end; align-items: center;
-    gap: 12px; margin-bottom: 4px; font-size: 0.78rem; color: #4a6070;
+    gap: 12px; margin-bottom: 0; margin-top: -8px; font-size: 0.78rem; color: #4a6070;
 }
 .own-profile-bar a {
     color: #00c8a0; text-decoration: none;
@@ -987,7 +987,7 @@ include 'header.php';
         <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card">
             <div class="opponent-theme-bg" style="<?php echo $opp_bg; ?>"></div>
             <div class="opponent-info">
-                <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" onerror="this.src='icons/skull.png'">
+                <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
                 <span class="opponent-name"><?php echo htmlspecialchars($opp['username']); ?></span>
                 <?php if (!empty($opp['opp_realm_name'])): ?>
                 <span class="opponent-realm"><?php echo htmlspecialchars($opp['opp_realm_name']); ?></span>

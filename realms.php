@@ -51,19 +51,18 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					$realm_id = getRealmID($conn);
 					$levels = getRealmLocationLevels($conn);
 					?>
-					<li class="role">
-						<table>
-						<tr> 
-							<td width="40%">
-								<img src="images/realms-logo.png" width="80%" style="position:relative;top:10px"/>
-							</td>
-							<td width="60%" valign="bottom">
-								<?php echo '<input class="small-button" type="button" value="Deactivate Realm" onclick="deactivateRealm('.$realm_id.');">';?>
-								<br><br>
-								<strong>Locations</strong>
-							</td>
-						</tr>
-						</table>
+					<li class="role" style="display:block;padding:8px 0 12px;">
+						<div class="location-row" style="border-bottom:1px solid rgba(0,200,160,0.15);padding-bottom:14px;margin-bottom:6px;">
+							<div class="location-icon-wrap">
+								<img src="images/realms-logo.png" style="width:52px;opacity:0.9;"/>
+							</div>
+							<div class="location-info">
+								<strong style="font-size:0.9rem;letter-spacing:0.06em;">Locations</strong>
+							</div>
+							<div class="location-action">
+								<?php echo '<input class="small-button" type="button" value="Deactivate" onclick="deactivateRealm('.$realm_id.');">';?>
+							</div>
+						</div>
 					</li>
 					<?php
 					$previous_type = "";
@@ -76,55 +75,39 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						}
 						?>
 						<li class="role">
-							<table>
-								<tr>	
-									<td width="40%">
-										<img style="opacity:0.85" title="<?php echo $location['description'];?>" width="75%" src="icons/locations/<?php echo $location['name']; ?>.png"><br>
-									</td>
-									<td width="60%">
-										<strong><?php echo strtoupper($location['name']); ?></strong><br>
-										<strong>Current Level:</strong> <?php echo $levels[$location_id]; ?><br>
-										<?php 
-										if(!isset($status[$location_id])){  
-											if($levels[$location_id] > 10){
-												// Safety precaution to prevent leveling above 10
-												$duration = 10;
-											}else if($levels[$location_id] == 10){
-												// Maintain max level of 10 for all max uprgrades
-												$duration = $levels[$location_id];
-											}else{
-												$duration = $levels[$location_id]+1;
-											}
-											$cost = $duration*100; ?>
-											<strong>Cost:</strong> <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?><br>
-											<strong>Duration:</strong> <?php echo $duration; ?> <?php echo ($duration == 1)?"Day":"Days"; ?><br>
-										<?php 
-											$balance = getBalance($conn, $location_id);
-											if($balance >= $cost){ 
-												$upgrade_verbiage = "";
-												if($levels[$location_id] >= 10){
-													$upgrade_verbiage = "Maintain";
-												}else{
-													$upgrade_verbiage = "Upgrade to";
-												}
-												?>
-												
-												<input id='upgrade-button-<?php echo $location_id; ?>' class='small-button' type='button' value='<?php echo $upgrade_verbiage; ?> Level <?php echo ($duration); ?>' onclick='upgradeRealmLocation(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost;?>, <?php echo $location_id; ?>)'>
-										<?php
-											}else{
-												echo "<span id='upgrade-message-".$location_id."'>Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency']."</span>";
-											?>
-											<br>
-											<input id="points-button-<?php echo $location_id; ?>" class="small-button" type="button" value="<?php echo $points_multiplier; ?>x Points Upgrade" onclick="togglePointsButtons('disable');pointsOption(this, <?php echo $realm_id;?>, <?php echo $location_id;?>, <?php echo $duration;?>, <?php echo $cost; ?>)">
-											<?php
-											}
-									    }else{ 
-											echo $status[$location_id];
-										}
-									?>
-									</td>
-								</tr>
-								</table>
+							<div class="location-row">
+								<div class="location-icon-wrap">
+									<img style="opacity:0.85;width:44px;" title="<?php echo $location['description'];?>" src="icons/locations/<?php echo $location['name']; ?>.png">
+								</div>
+								<div class="location-info">
+									<strong><?php echo strtoupper($location['name']); ?></strong>
+									<div class="location-meta">Level <?php echo $levels[$location_id]; ?>
+									<?php 
+									if(!isset($status[$location_id])){  
+										if($levels[$location_id] > 10){ $duration = 10;
+										}else if($levels[$location_id] == 10){ $duration = $levels[$location_id];
+										}else{ $duration = $levels[$location_id]+1; }
+										$cost = $duration*100; ?>
+										&bull; <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?>
+										&bull; <?php echo $duration." ".($duration == 1 ? "Day" : "Days"); ?>
+									<?php } ?>
+									</div>
+								</div>
+								<div class="location-action">
+								<?php 
+								if(!isset($status[$location_id])){
+									$balance = getBalance($conn, $location_id);
+									if($balance >= $cost){ 
+										$upgrade_verbiage = ($levels[$location_id] >= 10) ? "Maintain" : "Upgrade";
+										echo "<input id='upgrade-button-".$location_id."' class='small-button' type='button' value='".$upgrade_verbiage." Lv".$duration."' onclick='upgradeRealmLocation(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.", ".$location_id.")'>";
+									}else{
+										echo "<span id='upgrade-message-".$location_id."' class='location-meta'>Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency']."</span><br>";
+									echo "<input id='points-button-".$location_id."' class='small-button' type='button' value='".$points_multiplier."x Pts' onclick=\"togglePointsButtons('disable');pointsOption(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.")\"".">";
+									}
+								}else{ echo $status[$location_id]; }
+								?>
+								</div>
+							</div>
 							</li>
 					<?php
 					$previous_type = $location['type'];
