@@ -501,11 +501,13 @@ $my_user_json = json_encode($my_user_id);
   </div>
   <div id="p-collection"><a id="p-coll-link" href="#" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a></div>
   <div id="p-badges"></div>
-  <form id="nav-mission-form" action="missions.php#holdings" method="post" style="display:none"></form>
-  <form id="nav-skull-form" action="diamond-skulls.php#diamond-skull" method="post" style="display:none">
+  <form id="nav-mission-form" action="missions.php#holdings" method="post" target="_blank" style="display:none">
+    <input type="hidden" name="filterby" value="core">
+  </form>
+  <form id="nav-skull-form" action="diamond-skulls.php#diamond-skull" method="post" target="_blank" style="display:none">
     <input type="hidden" id="nav-skull-id" name="diamond_skull_id" value="">
   </form>
-  <form id="nav-collections-form" action="collections.php" method="post" style="display:none">
+  <form id="nav-collections-form" action="collections.php" method="post" target="_blank" style="display:none">
     <input type="hidden" id="nav-collections-filterby" name="filterby" value="">
   </form>
   <div id="p-actions">
