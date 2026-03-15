@@ -300,6 +300,11 @@ $my_user_json = json_encode($my_user_id);
       z-index: 6;
       transition: none;
     }
+    @keyframes progress-glow {
+      0%, 100% { box-shadow: none; opacity: 1; }
+      50%       { box-shadow: 0 0 8px 3px #00c8a0; opacity: 0.5; }
+    }
+    #progress.waiting { animation: progress-glow 1.2s ease-in-out infinite; }
 
     /* ── Controls ── */
     #controls {
@@ -787,7 +792,12 @@ function renderSlide(n, nft){
 }
 
 // ── Progress bar ───────────────────────────────────────────────────────────
+progress.addEventListener('transitionend', function(e){
+  if(e.propertyName === 'width' && playing) progress.classList.add('waiting');
+});
+
 function startProgress(){
+  progress.classList.remove('waiting');
   progress.style.transition = 'none';
   progress.style.width = '0%';
   if(!playing) return;
