@@ -683,13 +683,15 @@ function renderCrafting($conn, $page){
 			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
 			  <br><strong>Burn CARBON to Form DIAMOND</strong><br><br>
 			  <img class="icon" src="icons/carbon.png">
-		      <select name="carbon" id="carbon">
+		  <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+		      <select name="carbon" id="carbon" style="flex:1; min-width:0;">
 			  <?php
 			  for ($x = 1; $x <= $carbon_index; $x++) {?>
 				    <option <?php if($carbon_index == $x){echo "selected";} ?> value="<?php echo $x*1000; ?>"><?php echo $x*1000; ?> CARBON to <?php echo $x*10; ?> DIAMOND</option>
 			  <?php } ?>
 			  </select>
-			  <input type="submit" value="Burn" class="small-button">
+			  <input type="submit" value="Burn" class="small-button" style="flex-shrink:0;">
+		  </div>
 			</form>
 			</li>
 			<?php
