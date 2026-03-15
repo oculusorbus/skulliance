@@ -17,7 +17,7 @@ $sql = "SELECT nfts.id, asset_id, asset_name, nfts.name AS nft_display_name, ipf
         INNER JOIN projects    ON projects.id = collections.project_id
         WHERE nfts.user_id != 0 AND nfts.ipfs IS NOT NULL AND nfts.ipfs != ''
           AND $vis_clause
-        ORDER BY project_id, collection_id";
+        ORDER BY RAND() LIMIT 400";
 
 // ── Flat lookup: active missions (one query, build map) ────────────────────
 $missions_map = [];
@@ -446,7 +446,7 @@ $my_user_json = json_encode($my_user_id);
     </div>
     <span class="p-sep">|</span>
     <div class="p-rate">
-      <img id="p-icon" src="" onerror="this.style.display='none'" alt="" />
+      <img id="p-icon" alt="" style="display:none" />
       <span id="p-rate-val"></span>
     </div>
     <span class="p-sep">|</span>
@@ -475,10 +475,7 @@ $my_user_json = json_encode($my_user_id);
 </div>
 
 <div id="settings">
-  <div class="s-head" style="display:flex;align-items:center;justify-content:space-between;">
-    <span>Gallery Settings</span>
-    <button id="btn-settings-close" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.1rem;cursor:pointer;padding:0;line-height:1;" title="Close">&times;</button>
-  </div>
+  <div class="s-head">Gallery Settings</div>
 
   <div class="s-group">
     <span class="s-label">Transition</span>
@@ -530,7 +527,6 @@ $my_user_json = json_encode($my_user_id);
     width="260" height="152"
     frameborder="0"
     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-    loading="lazy"
     style="display:block;border-radius:0 12px 0 0;"></iframe>
 </div>
 
@@ -566,7 +562,7 @@ let idx       = 0;
 let playing   = true;
 let intervalMs = 8000;
 let fx        = 'fade';
-let slideTimer, hideTimer;
+let hideTimer;
 let bgActive  = 'a'; // which bg layer is on top
 
 // ── DOM ────────────────────────────────────────────────────────────────────
@@ -673,6 +669,8 @@ function renderSlide(n, nft){
     pTitle.textContent    = nft.name;
     pAvatar.src           = avatarUrl;
     pUsername.innerHTML   = '<a href="profile.php?username='+encodeURIComponent(nft.username)+'" target="_blank" style="color:#00c8a0;text-decoration:none;">'+nft.username+'</a>';
+    pIcon.style.display = '';
+    pIcon.onerror = function(){ this.style.display = 'none'; };
     pIcon.src             = iconUrl;
     pRateVal.textContent  = nft.rate + ' ' + nft.currency.toUpperCase();
     pProject.textContent  = nft.project_name;
@@ -715,7 +713,6 @@ function renderSlide(n, nft){
     }
 
     startProgress();
-    scheduleNext();
 
     // Preload next image in background
     const nextNft = playlist[(n+1) % playlist.length];
@@ -743,54 +740,58 @@ function startProgress(){
   });
 }
 
-// ── Timer ──────────────────────────────────────────────────────────────────
-function scheduleNext(){
-  clearTimeout(slideTimer);
-  if(playing) slideTimer = setTimeout(advance, intervalMs);
+// ── Heartbeat timer (setInterval — reliable, independent of image loading) ─
+let heartbeat = null;
+
+function startHeartbeat(){
+  clearInterval(heartbeat);
+  if(!playing) return;
+  heartbeat = setInterval(function(){
+    idx = (idx + 1) % playlist.length;
+    if(idx === 0) playlist = buildPlaylist();
+    showSlide(idx);
+  }, intervalMs);
 }
 
-function advance(){
-  idx++;
-  if(idx >= playlist.length){
-    playlist = buildPlaylist();
-    idx = 0;
-  }
-  showSlide(idx);
-  // scheduleNext is called by renderSlide when the image finishes loading
+function stopHeartbeat(){
+  clearInterval(heartbeat);
+  heartbeat = null;
 }
 
 // ── Controls ───────────────────────────────────────────────────────────────
 document.getElementById('btn-next').onclick = function(){
-  clearTimeout(slideTimer);
-  advance();
+  idx = (idx + 1) % playlist.length;
+  if(idx === 0) playlist = buildPlaylist();
+  showSlide(idx);
+  if(playing){ startHeartbeat(); startProgress(); }
 };
 
 document.getElementById('btn-prev').onclick = function(){
-  clearTimeout(slideTimer);
   idx = (idx - 1 + playlist.length) % playlist.length;
   showSlide(idx);
-  // scheduleNext is called by renderSlide when image finishes loading
+  if(playing){ startHeartbeat(); startProgress(); }
 };
 
 const btnPP = document.getElementById('btn-pp');
 btnPP.onclick = function(){
   playing = !playing;
   btnPP.innerHTML = playing ? '&#9646;&#9646;' : '&#9654;';
-  if(playing){ scheduleNext(); startProgress(); }
-  else { clearTimeout(slideTimer); progress.style.transition='none'; }
+  if(playing){ startHeartbeat(); startProgress(); }
+  else { stopHeartbeat(); progress.style.transition='none'; }
 };
 
-// ── Settings toggle ────────────────────────────────────────────────────────
-document.getElementById('btn-cfg').onclick = function(e){
+// ── Settings toggle — gear icon becomes × when panel is open ──────────────
+const btnCfg = document.getElementById('btn-cfg');
+btnCfg.onclick = function(e){
   e.stopPropagation();
-  settingsEl.classList.toggle('open');
-};
-document.getElementById('btn-settings-close').onclick = function(e){
-  e.stopPropagation();
-  settingsEl.classList.remove('open');
+  const isOpen = settingsEl.classList.toggle('open');
+  btnCfg.innerHTML = isOpen ? '&times;' : '&#9881;';
 };
 document.addEventListener('click', function(e){
-  if(!settingsEl.contains(e.target)) settingsEl.classList.remove('open');
+  if(!settingsEl.contains(e.target) && e.target !== btnCfg){
+    settingsEl.classList.remove('open');
+    btnCfg.innerHTML = '&#9881;';
+  }
 });
 
 // ── Effect pills ───────────────────────────────────────────────────────────
@@ -806,7 +807,7 @@ document.querySelectorAll('#fx-pills .pill').forEach(function(p){
 ivSlider.oninput = function(){
   intervalMs = parseInt(this.value) * 1000;
   ivVal.textContent = this.value + 's';
-  if(playing){ clearTimeout(slideTimer); scheduleNext(); startProgress(); }
+  if(playing){ startHeartbeat(); startProgress(); }
 };
 
 // ── My NFTs filter ─────────────────────────────────────────────────────────
@@ -821,8 +822,8 @@ if(MY_USER_ID > 0){
       if(!sourceNfts.length) sourceNfts = NFTS; // fallback if no owned NFTs
       playlist = buildPlaylist();
       idx = 0;
-      clearTimeout(slideTimer);
       showSlide(idx);
+      if(playing){ startHeartbeat(); startProgress(); }
       updateStats();
     };
   });
@@ -832,8 +833,8 @@ if(MY_USER_ID > 0){
 document.getElementById('btn-reshuffle').onclick = function(){
   playlist = buildPlaylist();
   idx = 0;
-  clearTimeout(slideTimer);
   showSlide(idx);
+  if(playing){ startHeartbeat(); startProgress(); }
   updateStats();
 };
 
@@ -904,6 +905,7 @@ document.addEventListener('keydown', function(e){
 // ── Boot ───────────────────────────────────────────────────────────────────
 if(NFTS.length > 0){
   showSlide(idx);
+  startHeartbeat();
 }else{
   document.getElementById('stage').innerHTML =
     '<p style="color:rgba(255,255,255,0.4);font-size:1.2rem">No staked NFTs found.</p>';
