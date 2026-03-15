@@ -89,7 +89,7 @@ $raid_sql = "SELECT COUNT(*) as total,
     SUM(CASE WHEN outcome='1' AND o_r.user_id='$tid' THEN 1
              WHEN outcome='2' AND d_r.user_id='$tid' THEN 1
              ELSE 0 END) as wins,
-    SUM(CASE WHEN outcome='0' THEN 1 ELSE 0 END) as in_progress
+    SUM(CASE WHEN outcome='0' AND o_r.user_id='$tid' THEN 1 ELSE 0 END) as in_progress
     FROM raids
     INNER JOIN realms AS o_r ON o_r.id = raids.offense_id
     INNER JOIN realms AS d_r ON d_r.id = raids.defense_id
