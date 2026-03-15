@@ -677,21 +677,23 @@ function renderCrafting($conn, $page){
 			<?php
 		}
 		if($carbon >= 1000){
-			$carbon_index = floor($carbon/1000);
+			$carbon_max = floor($carbon/1000)*1000;
 			?>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to convert CARBON to DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return confirm('Do you really want to burn ' + document.getElementById('carbon-display').textContent + ' CARBON to form ' + document.getElementById('diamond-display').textContent + ' DIAMOND?');" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
 			  <br><strong>Burn CARBON to Form DIAMOND</strong><br><br>
-			  <img class="icon" src="icons/carbon.png">
-		  <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-		      <select name="carbon" id="carbon" style="flex:1; min-width:0;">
-			  <?php
-			  for ($x = 1; $x <= $carbon_index; $x++) {?>
-				    <option <?php if($carbon_index == $x){echo "selected";} ?> value="<?php echo $x*1000; ?>"><?php echo $x*1000; ?> CARBON to <?php echo $x*10; ?> DIAMOND</option>
-			  <?php } ?>
-			  </select>
-			  <input type="submit" value="Burn" class="small-button" style="flex-shrink:0;">
-		  </div>
+			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+			    <img class="icon" src="icons/carbon.png" style="flex-shrink:0;">
+			    <span id="carbon-display" style="font-weight:bold;"><?php echo number_format($carbon_max); ?></span>
+			    <span style="color:#888;">→</span>
+			    <img class="icon" src="icons/diamond.png" style="flex-shrink:0;">
+			    <span id="diamond-display" style="font-weight:bold;color:#00c8a0;"><?php echo number_format($carbon_max/100); ?></span>
+			  </div>
+			  <div style="display:flex; align-items:center; gap:8px;">
+			    <input type="range" name="carbon" id="carbon" min="1000" max="<?php echo $carbon_max; ?>" step="1000" value="<?php echo $carbon_max; ?>" style="flex:1;"
+			      oninput="document.getElementById('carbon-display').textContent=Number(this.value).toLocaleString();document.getElementById('diamond-display').textContent=Number(this.value/100).toLocaleString();">
+			    <input type="submit" value="Burn" class="small-button" style="flex-shrink:0;">
+			  </div>
 			</form>
 			</li>
 			<?php
