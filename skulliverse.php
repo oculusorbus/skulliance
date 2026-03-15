@@ -336,8 +336,10 @@ if($filterby != ""){
 			var rx = ex * cosTilt - ey * sinTilt;
 			var ry = ex * sinTilt + ey * cosTilt;
 
-			// depth via untilted sin: -1 = background, +1 = foreground
-			var depth = Math.sin(angle);
+			// depth from actual screen y-position: positive = below diamond skull = foreground
+			// ryMax = amplitude of ry over the orbit cycle
+			var ryMax = Math.sqrt(a * sinTilt * a * sinTilt + b * cosTilt * b * cosTilt);
+			var depth = ryMax > 0 ? ry / ryMax : 0;
 			// Scale ±30% relative to each planet's CSS-defined size
 			var scale = 1.0 + 0.30 * depth;
 
