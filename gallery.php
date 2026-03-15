@@ -496,17 +496,18 @@ $my_user_json = json_encode($my_user_id);
     <span class="p-sep">|</span>
     <a id="p-project" href="#" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a>
   </div>
-  <div id="p-collection"><a id="p-coll-link" href="#" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a></div>
+  <div id="p-collection"><a id="p-coll-link" href="#" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a></div>
   <div id="p-badges"></div>
   <div id="p-actions">
     <a id="p-pool-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://pool.pm/pool.pm.svg" alt="pool.pm" />View on pool.pm</a>
+    <a id="p-offer-btn" href="#" target="_blank" rel="noopener" class="p-action-btn">Make Offer</a>
   </div>
 </div>
 
 <div id="progress"></div>
 
 <div id="controls">
-  <a class="ctrl-logo" href="profile.php">← Skulliance</a>
+  <a class="ctrl-logo" href="profile.php" target="_blank" rel="noopener">← Skulliance</a>
   <div id="ctrl-mid">
     <button class="cbtn" id="btn-prev" title="Previous (←)">&#9664;</button>
     <button class="cbtn" id="btn-pp"   title="Pause/Play (P)">&#9646;&#9646;</button>
@@ -622,6 +623,7 @@ const pProject  = document.getElementById('p-project');
 const pColl     = document.getElementById('p-collection');
 const pBadges   = document.getElementById('p-badges');
 const pPoolBtn  = document.getElementById('p-pool-btn');
+const pOfferBtn = document.getElementById('p-offer-btn');
 const pCollLink = document.getElementById('p-coll-link');
 const progress  = document.getElementById('progress');
 const controls  = document.getElementById('controls');
@@ -713,6 +715,7 @@ function renderSlide(n, nft){
     pCollLink.textContent = nft.collection_name;
     pCollLink.href        = 'https://www.jpg.store/collection/' + (nft.collection_policy || '');
     pPoolBtn.href         = poolUrl;
+    pOfferBtn.href        = 'https://www.jpg.store/asset/' + nft.asset_id;
     slideCtrl.textContent = (n+1) + ' / ' + playlist.length;
 
     // Badges
