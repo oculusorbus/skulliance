@@ -246,6 +246,16 @@ $my_user_json = json_encode($my_user_id);
     }
 
     #p-badges { margin-top: 7px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    #p-actions { margin-top: 8px; display: flex; justify-content: center; }
+    .p-action-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 20px;
+      background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
+      color: #e8eaed; text-decoration: none; font-size: 0.75rem;
+      transition: background 0.2s;
+    }
+    .p-action-btn:hover { background: rgba(255,255,255,0.20); }
+    .p-action-btn img { height: 14px; width: auto; filter: brightness(0) invert(1); }
     .badge {
       font-size: 0.68rem;
       padding: 3px 9px;
@@ -440,16 +450,19 @@ $my_user_json = json_encode($my_user_id);
       <span id="p-rate-val"></span>
     </div>
     <span class="p-sep">|</span>
-    <span id="p-project"></span>
+    <a id="p-project" href="#" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a>
   </div>
-  <div id="p-collection"></div>
+  <div id="p-collection"><a id="p-coll-link" href="#" style="color:inherit;text-decoration:underline dotted;cursor:pointer;"></a></div>
   <div id="p-badges"></div>
+  <div id="p-actions">
+    <a id="p-pool-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://pool.pm/pool.pm.svg" alt="pool.pm" />View on pool.pm</a>
+  </div>
 </div>
 
 <div id="progress"></div>
 
 <div id="controls">
-  <a class="ctrl-logo" href="dashboard.php">← Skulliance</a>
+  <a class="ctrl-logo" href="profile.php">← Skulliance</a>
   <div id="ctrl-mid">
     <button class="cbtn" id="btn-prev" title="Previous (←)">&#9664;</button>
     <button class="cbtn" id="btn-pp"   title="Pause/Play (P)">&#9646;&#9646;</button>
@@ -462,7 +475,10 @@ $my_user_json = json_encode($my_user_id);
 </div>
 
 <div id="settings">
-  <div class="s-head">Gallery Settings</div>
+  <div class="s-head" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>Gallery Settings</span>
+    <button id="btn-settings-close" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.1rem;cursor:pointer;padding:0;line-height:1;" title="Close">&times;</button>
+  </div>
 
   <div class="s-group">
     <span class="s-label">Transition</span>
@@ -492,6 +508,30 @@ $my_user_json = json_encode($my_user_id);
     <button class="pill" id="btn-reshuffle">↺ Reshuffle</button>
     <div class="s-stat" id="stats-display"></div>
   </div>
+
+  <div class="s-group">
+    <span class="s-label">Music (Spotify)</span>
+    <input type="text" id="spotify-url" placeholder="Paste Spotify link…" autocomplete="off"
+      style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e8eaed;padding:6px 8px;font-size:0.75rem;margin-top:6px;">
+    <button class="pill" id="btn-spotify-load" style="margin-top:8px;width:100%;">▶ Load Player</button>
+    <button class="pill" id="btn-spotify-hide" style="margin-top:6px;width:100%;display:none;">✕ Hide Player</button>
+  </div>
+</div>
+
+<!-- Hidden form for POST navigation to collections.php -->
+<form id="collections-nav-form" action="collections.php" method="post" style="display:none">
+  <input type="hidden" id="collections-filterby" name="filterby" value="">
+</form>
+
+<!-- Spotify mini player (fixed bottom-left) -->
+<div id="spotify-player" style="display:none;position:fixed;bottom:0;left:0;z-index:50;width:260px;">
+  <iframe id="spotify-iframe"
+    src=""
+    width="260" height="152"
+    frameborder="0"
+    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+    loading="lazy"
+    style="display:block;border-radius:0 12px 0 0;"></iframe>
 </div>
 
 <script>
@@ -545,6 +585,15 @@ const pRateVal  = document.getElementById('p-rate-val');
 const pProject  = document.getElementById('p-project');
 const pColl     = document.getElementById('p-collection');
 const pBadges   = document.getElementById('p-badges');
+const pPoolBtn  = document.getElementById('p-pool-btn');
+const pCollLink = document.getElementById('p-coll-link');
+const collNavForm     = document.getElementById('collections-nav-form');
+const collNavFilterby = document.getElementById('collections-filterby');
+
+function goCollections(projectId){
+  collNavFilterby.value = projectId;
+  collNavForm.submit();
+}
 const progress  = document.getElementById('progress');
 const controls  = document.getElementById('controls');
 const slideCtrl = document.getElementById('slide-ctr');
@@ -578,23 +627,25 @@ function setBg(url){
 }
 
 // ── Show slide — waits for image, skips broken ones ────────────────────────
-let loadingSlide = false;
+let pendingSlide = null;
 
-function showSlide(n, skipBadImages){
-  if(loadingSlide) return;
+function showSlide(n){
   const nft = playlist[n];
   if(!nft) return;
-  loadingSlide = true;
+  pendingSlide = n;
 
   preloadImage(nft.image, function(ok){
-    loadingSlide = false;
+    // If a newer slide was requested while we were loading, discard this one
+    if(pendingSlide !== n) return;
     if(!ok){
       // Skip this NFT and move to next
       idx++;
       if(idx >= playlist.length){ playlist = buildPlaylist(); idx = 0; }
+      pendingSlide = null;
       showSlide(idx);
       return;
     }
+    pendingSlide = null;
     renderSlide(n, nft);
   });
 }
@@ -623,9 +674,12 @@ function renderSlide(n, nft){
     pAvatar.src           = avatarUrl;
     pUsername.innerHTML   = '<a href="profile.php?username='+encodeURIComponent(nft.username)+'" target="_blank" style="color:#00c8a0;text-decoration:none;">'+nft.username+'</a>';
     pIcon.src             = iconUrl;
-    pRateVal.textContent  = nft.rate + ' ' + nft.currency.toUpperCase() + '/night';
+    pRateVal.textContent  = nft.rate + ' ' + nft.currency.toUpperCase();
     pProject.textContent  = nft.project_name;
-    pColl.textContent     = nft.collection_name;
+    pProject.onclick      = function(e){ e.preventDefault(); goCollections(nft.project_id); };
+    pCollLink.textContent = nft.collection_name;
+    pCollLink.onclick     = function(e){ e.preventDefault(); goCollections(nft.project_id); };
+    pPoolBtn.href         = poolUrl;
     slideCtrl.textContent = (n+1) + ' / ' + playlist.length;
 
     // Badges
@@ -702,7 +756,7 @@ function advance(){
     idx = 0;
   }
   showSlide(idx);
-  scheduleNext();
+  // scheduleNext is called by renderSlide when the image finishes loading
 }
 
 // ── Controls ───────────────────────────────────────────────────────────────
@@ -715,7 +769,7 @@ document.getElementById('btn-prev').onclick = function(){
   clearTimeout(slideTimer);
   idx = (idx - 1 + playlist.length) % playlist.length;
   showSlide(idx);
-  scheduleNext();
+  // scheduleNext is called by renderSlide when image finishes loading
 };
 
 const btnPP = document.getElementById('btn-pp');
@@ -730,6 +784,10 @@ btnPP.onclick = function(){
 document.getElementById('btn-cfg').onclick = function(e){
   e.stopPropagation();
   settingsEl.classList.toggle('open');
+};
+document.getElementById('btn-settings-close').onclick = function(e){
+  e.stopPropagation();
+  settingsEl.classList.remove('open');
 };
 document.addEventListener('click', function(e){
   if(!settingsEl.contains(e.target)) settingsEl.classList.remove('open');
@@ -808,6 +866,40 @@ document.addEventListener('keydown', function(e){
   else if(e.key==='p'||e.key==='P')    { btnPP.click(); }
   else if(e.key==='Escape')            { settingsEl.classList.remove('open'); }
 });
+
+// ── Spotify player ─────────────────────────────────────────────────────────
+(function(){
+  const spotifyInput  = document.getElementById('spotify-url');
+  const spotifyPlayer = document.getElementById('spotify-player');
+  const spotifyIframe = document.getElementById('spotify-iframe');
+  const btnLoad       = document.getElementById('btn-spotify-load');
+  const btnHide       = document.getElementById('btn-spotify-hide');
+
+  function parseSpotifyEmbed(raw){
+    raw = raw.trim();
+    // Handle spotify:type:id URI
+    let m = raw.match(/^spotify:(track|album|artist|playlist|episode):([A-Za-z0-9]+)$/);
+    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0';
+    // Handle open.spotify.com URLs (including /embed/ already)
+    m = raw.match(/open\.spotify\.com\/(?:embed\/)?(track|album|artist|playlist|episode)\/([A-Za-z0-9]+)/);
+    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0';
+    return null;
+  }
+
+  btnLoad.onclick = function(){
+    const url = parseSpotifyEmbed(spotifyInput.value);
+    if(!url){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
+    spotifyIframe.src = url;
+    spotifyPlayer.style.display = 'block';
+    btnHide.style.display = 'block';
+  };
+
+  btnHide.onclick = function(){
+    spotifyIframe.src = '';
+    spotifyPlayer.style.display = 'none';
+    btnHide.style.display = 'none';
+  };
+})();
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 if(NFTS.length > 0){
