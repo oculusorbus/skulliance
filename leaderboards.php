@@ -5,7 +5,7 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <style>
-html, body { overflow-x: hidden; }
+.podium-bleed-clip { overflow-x: clip; }
 @keyframes podium-user-glow {
   0%, 100% { box-shadow: 0 0 4px 2px rgba(0,200,160,0.15); }
   50%       { box-shadow: 0 0 22px 7px rgba(0,200,160,0.75); }
@@ -308,7 +308,9 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $pt = intval($filterby);
 				        if(file_exists('images/themes/'.$pt.'.jpg')) $project_theme_override = $pt;
 				    }
+				    echo '<div class="podium-bleed-clip">';
 				    renderPodium($leaderboard_top3, $conn, $project_theme_override);
+				    echo '</div>';
 				    echo $table_html;
 				    ?>
 				</div>
