@@ -269,7 +269,7 @@ a{
 
 .wallet-connect select {
 	width: 148px;
-    border-radius: 0;
+    border-radius: 8px;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -286,7 +286,7 @@ a{
 
 #player-stats {
 	background-color: #0a1929;
-    border-radius: 0;
+    border-radius: 10px;
     padding: 10px;
     border: 1px solid rgba(0,200,160,0.18);
 	/*-webkit-filter: drop-shadow(5px 5px 5px #202225);
@@ -336,7 +336,7 @@ a{
 
 #filterNFTs {
     width: 190px;
-    border-radius: 0;
+    border-radius: 8px;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -349,7 +349,7 @@ a{
 
 #filterRealms {
     width: 190px;
-    border-radius: 0;
+    border-radius: 8px;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -362,7 +362,7 @@ a{
 
 #filterLeaderboard {
     width: 190px;
-    border-radius: 0;
+    border-radius: 8px;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -375,7 +375,7 @@ a{
 
 .dropdown{
     width: 300px !important;
-    border-radius: 0;
+    border-radius: 8px;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -672,7 +672,7 @@ input {
   display: inline-block;
   font-size: 12px;
   cursor:pointer;
-  border-radius: 0;
+  border-radius: 20px;
   font-weight: bold;
   box-shadow: 0 4px #020a12;
   font-family: Courier;
@@ -1004,7 +1004,7 @@ li form {
 	border: 1px solid rgba(0,200,160,0.15);
 	padding: 10px;
 	margin: 10px;
-	border-radius: 0;
+	border-radius: 10px;
 	/*-webkit-filter: drop-shadow(5px 5px 5px #020a12);
     filter: drop-shadow(5px 5px 5px #020a12);*/
 	min-height: 320px;
@@ -1107,7 +1107,7 @@ li form {
 	border: 1px solid rgba(0,200,160,0.15);
 	padding: 10px;
 	margin: 10px;
-	border-radius: 0;
+	border-radius: 10px;
 	/*-webkit-filter: drop-shadow(5px 5px 5px #020a12);
     filter: drop-shadow(5px 5px 5px #020a12);*/
 	min-height: 500px;
@@ -1127,7 +1127,7 @@ li form {
 	border: 1px solid rgba(0,200,160,0.15);
 	padding: 10px;
 	margin: 10px;
-	border-radius: 0;
+	border-radius: 10px;
 	/*-webkit-filter: drop-shadow(5px 5px 5px #020a12);
     filter: drop-shadow(5px 5px 5px #020a12);*/
 	min-height: 150px;
