@@ -746,7 +746,7 @@ h1 {
 h2 {
 	font-weight: bold;
 	font-size: 1.6rem;
-	color: #e8eaed;
+	color: #00c8a0;
 	padding-bottom: 12px;
 	border-bottom: 1px solid rgba(0,200,160,0.20);
 	font-family: Arial, sans-serif;
@@ -757,7 +757,7 @@ h2 {
 h3 {
 	font-size: 1.2rem;
 	font-family: Arial, sans-serif;
-	color: #c8d8e8;
+	color: #00a882;
 	text-align: left;
 }
 
@@ -1841,6 +1841,11 @@ section.active {
     transition: opacity 0.2s;
 }
 #wallet-nav-btn:hover .wallet-nav-icon { opacity: 1; }
+
+td {
+	color: #aac0cc;
+	font-size: 0.85rem;
+}
 
 /* ── Carbon Slider ── */
 input[type="range"]#carbon, input[type="range"]#balance, input[type="range"]#diamond {
