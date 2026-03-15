@@ -22,16 +22,14 @@ include 'header.php';
 }
 
 .planets{
-	position: relative;
-	width: 100%;
-	min-height: 600px;
+
 }
 
 .planet{
 	width: 12%;
 	margin: 0 auto;
 	position: absolute;
-	padding-top: 0;
+	padding-top: 300px;
 }
 
 .planet img{
@@ -48,13 +46,36 @@ include 'header.php';
 	left: 45%;
 	top: 21%;
 }
-/* orbit planets: left/top set by JS */
-.crypties{ width: 5%; }
-.kimo{     width: 6%; }
-.sinder{   width: 7%; }
-.hype{     width: 8%; }
-.meed{     width: 9%; }
-.galactico{width: 10%; }
+.crypties{
+	width: 5%;
+	left: 36%;
+	top: 7%;
+}
+.kimo{
+	width: 6%;
+	left: 6%;
+	top: 19%;
+}
+.sinder{
+	width: 7%;
+	left: 68%;
+	top: 31%;
+}
+.hype{
+	width: 8%;
+	left: 85%;
+	top: 44%;
+}
+.meed{
+	width: 9%;
+	left: 53%;
+	top: 53%;
+}
+.galactico{
+	width: 10%;
+	left: 16%;
+	top: 43%;
+}
 
 .percentage {
 	color: white;
@@ -250,17 +271,31 @@ if($filterby != ""){
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
 (function(){
-	var planetsEl  = document.querySelector('.planets');
+	var paddingPx = Math.round(window.innerHeight * 0.20) + 'px';
+	var allPlanets = document.getElementsByClassName('planet');
+
+	// Mobile: restore original static layout and exit
+	if(window.innerWidth <= 700){
+		for(var i = 0; i < allPlanets.length; i++){
+			allPlanets[i].style.paddingTop = paddingPx;
+		}
+		return;
+	}
+
 	var diamondEl  = document.querySelector('.planet.diamond');
 	var diamondImg = diamondEl.querySelector('img');
 
-	// Tilt -30deg: upper-left = far background, lower-right = near foreground
-	var TILT    = -Math.PI / 6;
+	// Restore paddingTop on diamond skull so it sits at its original visual position
+	diamondEl.style.paddingTop = paddingPx;
+
+	// Tilt +30deg: lower-left = near foreground, upper-right = far background
+	// (flip sign from previous attempt per user correction)
+	var TILT    = Math.PI / 6;
 	var cosTilt = Math.cos(TILT), sinTilt = Math.sin(TILT);
 
-	// aFrac/bFrac as fraction of container width. b/a ≈ 0.36 gives visible perspective compression.
-	// phase staggers planets so they don't bunch up at start.
-	// Orbits ordered smallest to largest so rings don't visually cross.
+	// Orbits ordered smallest → largest radius.
+	// aFrac/bFrac as fractions of viewport width. b/a ≈ 0.36 gives perspective compression.
+	// Phases stagger planets so they don't start bunched together.
 	var configs = [
 		{ cls:'crypties',   aFrac:0.13, bFrac:0.047, period:20, phase:0.7  },
 		{ cls:'meed',       aFrac:0.19, bFrac:0.068, period:26, phase:2.2  },
@@ -275,15 +310,14 @@ if($filterby != ""){
 		return { el: el, cfg: c };
 	}).filter(function(o){ return !!o.el; });
 
-	var cx = 0, cy = 0, cw = 0;
+	// cx/cy in page coordinates (viewport coords = page coords on non-scrolling page)
+	var cx = 0, cy = 0, vw = 0;
 
 	function measure(){
-		var pr  = planetsEl.getBoundingClientRect();
 		var dir = diamondImg.getBoundingClientRect();
-		if(!pr.width) return;
-		cw = pr.width;
-		cx = dir.left - pr.left + dir.width  / 2;
-		cy = dir.top  - pr.top  + dir.height / 2;
+		vw = window.innerWidth;
+		cx = dir.left + window.scrollX + dir.width  / 2;
+		cy = dir.top  + window.scrollY + dir.height / 2;
 	}
 
 	var startTs = null;
@@ -293,26 +327,25 @@ if($filterby != ""){
 
 		orbiters.forEach(function(o){
 			var c = o.cfg, el = o.el;
-			var a = c.aFrac * cw;
-			var b = c.bFrac * cw;
+			var a = c.aFrac * vw;
+			var b = c.bFrac * vw;
 			var angle = (t / c.period) * Math.PI * 2 + c.phase;
 
-			// Ellipse point then rotate to match background tilt
 			var ex = Math.cos(angle) * a;
 			var ey = Math.sin(angle) * b;
 			var rx = ex * cosTilt - ey * sinTilt;
 			var ry = ex * sinTilt + ey * cosTilt;
 
-			// depth: -1 = background (upper-left), +1 = foreground (lower-right)
-			// Use untilted sin so scale transitions smoothly around the orbit
+			// depth via untilted sin: -1 = background, +1 = foreground
 			var depth = Math.sin(angle);
-			// Scale relative to CSS-defined planet size: neutral at sides, ±30% at extremes
+			// Scale ±30% relative to each planet's CSS-defined size
 			var scale = 1.0 + 0.30 * depth;
 
 			var pw = el.offsetWidth;
 			var ph = el.offsetHeight;
 			el.style.left            = (cx + rx - pw / 2) + 'px';
 			el.style.top             = (cy + ry - ph / 2) + 'px';
+			el.style.paddingTop      = '0';
 			el.style.transform       = 'scale(' + scale.toFixed(3) + ')';
 			el.style.transformOrigin = 'center center';
 			el.style.zIndex          = depth > 0 ? 12 : 8;
@@ -322,9 +355,16 @@ if($filterby != ""){
 		requestAnimationFrame(tick);
 	}
 
-	measure();
-	window.addEventListener('resize', measure);
-	requestAnimationFrame(tick);
+	function onResize(){
+		var newPad = Math.round(window.innerHeight * 0.20) + 'px';
+		diamondEl.style.paddingTop = newPad;
+		// Re-measure after paddingTop has been applied (next frame)
+		requestAnimationFrame(measure);
+	}
+
+	// Initial measure after paddingTop settles
+	requestAnimationFrame(function(){ measure(); startTs = null; requestAnimationFrame(tick); });
+	window.addEventListener('resize', onResize);
 })();
 	
 	function openModal(project_id, status, percentage, delegations, delegators, category, inhabitants, currency, population){
