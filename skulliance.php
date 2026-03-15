@@ -655,11 +655,19 @@ function renderCrafting($conn, $page){
 		}else{
 			?>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to convert all currency to DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return confirm('Do you really want to convert ' + document.getElementById('balance-display').textContent + ' of each core currency to ' + document.getElementById('balance-diamond-display').textContent + ' DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 			  <strong>Convert Core Points to DIAMOND</strong><br><br>
-			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
-			  <input type="number" size="10" id="balance" name="balance" min="1" max="<?php echo min($balances);?>" value="<?php echo min($balances);?>">	
-			  <input type="submit" value="Convert" class="small-button">
+			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+			    <span id="balance-display" style="font-weight:bold;"><?php echo number_format(min($balances)); ?></span>
+			    <span style="color:#888;">each →</span>
+			    <img class="icon" src="icons/diamond.png" style="flex-shrink:0;">
+			    <span id="balance-diamond-display" style="font-weight:bold;color:#00c8a0;"><?php echo number_format(min($balances)); ?></span>
+			  </div>
+			  <div style="display:flex; align-items:center; gap:8px;">
+			    <input type="range" name="balance" id="balance" min="1" max="<?php echo min($balances); ?>" step="1" value="<?php echo min($balances); ?>" style="flex:1;"
+			      oninput="document.getElementById('balance-display').textContent=Number(this.value).toLocaleString();document.getElementById('balance-diamond-display').textContent=Number(this.value).toLocaleString();">
+			    <input type="submit" value="Convert" class="small-button" style="flex-shrink:0;">
+			  </div>
 			</form>
 			</li>
 			<?php
@@ -667,11 +675,20 @@ function renderCrafting($conn, $page){
 		if($diamond > 0){
 			?>
 			<li class="role">
-			<form onsubmit="return confirm('Do you really want to shatter this DIAMOND?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
+			<form onsubmit="return confirm('Do you really want to shatter ' + document.getElementById('diamond-display').textContent + ' DIAMOND back to core points?');" id="diamondForm" action="<?php echo $page; ?>.php" method="post">
 			  <br><strong>Shatter DIAMOND to Core Points</strong><br><br>
-			  <img class="icon" src="icons/diamond.png">MAX&nbsp;
-			  <input type="number" size="10" id="diamond" name="diamond" min="1" max="<?php echo $diamond;?>" value="<?php echo $diamond;?>">	
-			  <input type="submit" value="Shatter" class="small-button">
+			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+			    <img class="icon" src="icons/diamond.png" style="flex-shrink:0;">
+			    <span id="diamond-display" style="font-weight:bold;color:#00c8a0;"><?php echo number_format($diamond); ?></span>
+			    <span style="color:#888;">→</span>
+			    <span id="diamond-core-display" style="font-weight:bold;"><?php echo number_format($diamond); ?></span>
+			    <span style="color:#888;">each</span>
+			  </div>
+			  <div style="display:flex; align-items:center; gap:8px;">
+			    <input type="range" name="diamond" id="diamond" min="1" max="<?php echo $diamond; ?>" step="1" value="<?php echo $diamond; ?>" style="flex:1;"
+			      oninput="document.getElementById('diamond-display').textContent=Number(this.value).toLocaleString();document.getElementById('diamond-core-display').textContent=Number(this.value).toLocaleString();">
+			    <input type="submit" value="Shatter" class="small-button" style="flex-shrink:0;">
+			  </div>
 			</form>
 			</li>
 			<?php
