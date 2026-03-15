@@ -5,6 +5,16 @@ include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
 $is_mobile = preg_match('/(android|iphone|ipad|ipod|mobile)/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
+// Strip <span class='nft-image'>...</span> blocks so images are never sent to mobile
+function strip_nft_images($html){
+	return preg_replace("/<span class='nft-image'>.*?<\\/span>/s", '', $html);
+}
+function render($callable, $is_mobile){
+	ob_start();
+	$callable();
+	$html = ob_get_clean();
+	echo $is_mobile ? strip_nft_images($html) : $html;
+}
 include 'header.php';
 ?>
 
@@ -27,8 +37,8 @@ include 'header.php';
     <div class="content" id="filtered-content">
 		<?php filterDiamondSkulls("diamond-skulls"); ?>
 		<div id="nfts" class="nfts">
-			<?php 			
-			if(isset($_SESSION['userData']['user_id'])){ 
+			<?php
+			if(isset($_SESSION['userData']['user_id'])){
 				if($filterbydiamond == "MY"){
 					$advanced_filter = "my";
 				}else if($filterbydiamond == "ALL" || $filterbydiamond == ""){
@@ -47,11 +57,9 @@ include 'header.php';
 					$_SESSION['userData']['diamond_skull_id'] = "";
 				}
 				$diamond_skull_totals = getDiamondSkullTotals($conn);
-				if(!$is_mobile){
+				render(function() use ($conn, $advanced_filter, $diamond_skull_totals){
 					getNFTs($conn, 7, $advanced_filter, $diamond_skull=true, $_SESSION['userData']['diamond_skull_id'], false, $diamond_skull_totals);
-				}else{
-					echo "<p>Diamond Skull images are not displayed on mobile. Please use a desktop browser to view and manage delegations.</p>";
-				}
+				}, $is_mobile);
 			}else{
 				echo "<p>You do not own a Diamond Skull NFT.<br><br>Please connect a Cardano wallet with a Diamond Skull NFT.</p>";
 			}
@@ -63,7 +71,7 @@ include 'header.php';
 <?php
 
 
-if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
+if($_SESSION['userData']['diamond_skull_id'] != ""){ ?>
 <a name="diamond-skull" id="diamond-skull"></a>
 <h2>Diamond Skull Delegation</h2>
 <div class="diamond-container">
@@ -71,7 +79,7 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 5, $projects, $project_names); ?>
+			<?php render(function() use ($conn, $projects, $project_names){ getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 5, $projects, $project_names); }, $is_mobile); ?>
 		</div>
 	</div>
 	</div>
@@ -80,7 +88,7 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 6, $projects, $project_names); ?>
+			<?php render(function() use ($conn, $projects, $project_names){ getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 6, $projects, $project_names); }, $is_mobile); ?>
 		</div>
 	</div>
 	</div>
@@ -89,7 +97,7 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 4, $projects, $project_names); ?>
+			<?php render(function() use ($conn, $projects, $project_names){ getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 4, $projects, $project_names); }, $is_mobile); ?>
 		</div>
 	</div>
 	</div>
@@ -98,7 +106,7 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 3, $projects, $project_names); ?>
+			<?php render(function() use ($conn, $projects, $project_names){ getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 3, $projects, $project_names); }, $is_mobile); ?>
 		</div>
 	</div>
 	</div>
@@ -107,7 +115,7 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 2, $projects, $project_names); ?>
+			<?php render(function() use ($conn, $projects, $project_names){ getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 2, $projects, $project_names); }, $is_mobile); ?>
 		</div>
 	</div>
 	</div>
@@ -116,13 +124,12 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     <div class="main-diamond">
     <div class="content">
 		<div id="nfts" class="nfts">
-			<?php getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 1, $projects, $project_names); ?>
+			<?php render(function() use ($conn, $projects, $project_names){ getDiamondSkullNFTs($conn, $_SESSION['userData']['diamond_skull_id'], 1, $projects, $project_names); }, $is_mobile); ?>
 		</div>
 	</div>
 	</div>
 </div>
 </div>
-<?php if(!$is_mobile): ?>
 <div class="row" id="row1">
   <div class="main">
 	<h2>NFTs</h2>
@@ -132,7 +139,9 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
 		<div id="nfts" class="nfts">
 			<?php
 			if(isset($_SESSION['userData']['user_id'])){
-				getNFTs($conn, $_SESSION['userData']['filterby'], $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=true);
+				render(function() use ($conn){
+					getNFTs($conn, $_SESSION['userData']['filterby'], $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=true);
+				}, $is_mobile);
 			}else{
 				echo "<p>You do not own any qualifying NFTs.<br><br>Please connect a Cardano wallet to view your NFTs.</p>";
 			}
@@ -141,7 +150,6 @@ if($_SESSION['userData']['diamond_skull_id'] != "" && !$is_mobile){ ?>
     </div>
   </div>
 </div>
-<?php endif; ?>
 
 <?php } ?>
 
