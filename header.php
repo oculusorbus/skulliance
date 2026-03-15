@@ -37,6 +37,7 @@
 	  	if(!isOpen) menu.classList.add('open');
 	  }
   </script>
+  <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
   <?php if(isset($extra_head)) echo $extra_head; ?>
 </head>
 <body>
@@ -94,8 +95,37 @@
 		    </div>
 		  </div>
 
+		  <button id="wallet-nav-btn" onclick="openWalletModal()" title="Connect Wallet"><img src="icons/wallet.png" class="wallet-nav-icon" alt="Wallet"/></button>
 		  <a href="logout.php">Logout</a>
 		  <?php } ?>
 		</div>
 		<div id="revealPoint"></div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
+
+		<!-- Wallet Connect Modal -->
+		<div id="wallet-modal-overlay" onclick="closeWalletModal()"></div>
+		<div id="wallet-modal" role="dialog" aria-modal="true">
+			<div class="wallet-modal-header">
+				<span>Connect Wallet</span>
+				<button class="wallet-modal-close" onclick="closeWalletModal()">&times;</button>
+			</div>
+			<div id="wallet-grid" class="wallet-grid">
+				<div class="wallet-panel-empty">Detecting wallets&hellip;</div>
+			</div>
+			<?php if(isset($_SESSION['userData']['user_id'])): ?>
+			<div class="wallet-modal-refresh">
+				<form id="refreshWallet" action="<?php echo basename($_SERVER['PHP_SELF']); ?>" method="post">
+					<input type="hidden" name="refresh" value="refresh">
+					<button type="submit" class="wallet-refresh-btn">&#8635; Refresh Connected Wallet</button>
+				</form>
+			</div>
+			<?php endif; ?>
+		</div>
+
+		<!-- Hidden address form for wallet submission -->
+		<form id="addressForm" action="<?php echo basename($_SERVER['PHP_SELF']); ?>" method="post" style="display:none">
+			<input type="hidden" id="wallet" name="wallet" value="">
+			<input type="hidden" id="address" name="address" value="">
+			<input type="hidden" id="stakeaddress" name="stakeaddress" value="">
+			<input type="submit" value="Submit" style="display:none;">
+		</form>

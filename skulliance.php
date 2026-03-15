@@ -475,28 +475,7 @@ function renderVisibility($page){
 }
 
 function renderWalletConnection($page){
-	echo '<ul>
-	<div class="wallet-connect">
-	<li class="role"><img class="icon" src="icons/wallet.png"/>
-		<label for="wallets"><strong>Connect</strong>&nbsp;</label>
-		<select onchange="javascript:connectWallet(this.options[this.selectedIndex].value);" name="wallets" id="wallets">
-			<option value="none">Wallet</option>
-		</select>
-		<form id="addressForm" action="'.$page.'.php" method="post">
-		  <input type="hidden" id="wallet" name="wallet" value="">	
-		  <input type="hidden" id="address" name="address" value="">
-		  <input type="hidden" id="stakeaddress" name="stakeaddress" value="">
-		  <input type="submit" value="Submit" style="display:none;">
-		</form>';
-		// Check if already a user before allowing wallet refreshes
-		if(isset($_SESSION['userData']['user_id'])){ 
-			echo '&nbsp;<form id="refreshWallet" action="'.$page.'.php" method="post">
-			  <input type="hidden" id="refresh" name="refresh" value="refresh">
-			  <input type="submit" value="Refresh" class="small-button">
-			</form>';
-		}
-	echo '</li>
-	</div>';
+	// Wallet connection is now handled via the global modal in header.php
 }
 
 function renderCurrency($conn, $skulliance=true){
