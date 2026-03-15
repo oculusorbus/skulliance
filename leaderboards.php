@@ -76,8 +76,11 @@ include 'header.php';
   position: relative;
   padding: 16px 10px 0;
   margin-bottom: 20px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
   overflow: hidden;
+  width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .podium-section.has-theme {
   background-size: cover;
@@ -89,7 +92,6 @@ include 'header.php';
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.65);
-  border-radius: 8px 8px 0 0;
   pointer-events: none;
   z-index: 0;
 }
