@@ -171,6 +171,21 @@ $my_user_json = json_encode($my_user_id);
     }
     #nft-main.visible { opacity: 1; }
 
+    /* Pause overlay */
+    #pause-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem; color: rgba(255,255,255,0.85);
+      text-shadow: 0 0 24px rgba(0,0,0,0.9);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+      border-radius: 10px;
+    }
+    #nft-wrap.hover-paused #pause-overlay { opacity: 1; }
+    #nft-wrap.hover-paused {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect x='8' y='7' width='5' height='18' rx='2.5' fill='white'/%3E%3Crect x='19' y='7' width='5' height='18' rx='2.5' fill='white'/%3E%3C/svg%3E") 16 16, default;
+    }
+
     /* Ken Burns */
     @keyframes kb {
       from { transform: scale(1.00) translate( 0%,  0%); }
@@ -487,6 +502,7 @@ $my_user_json = json_encode($my_user_id);
       <img id="glitch-r" class="nft-layer" src="" alt="" />
       <img id="glitch-b" class="nft-layer" src="" alt="" />
     </a>
+    <div id="pause-overlay">&#9646;&#9646;</div>
   </div>
 </div>
 
@@ -984,6 +1000,8 @@ document.addEventListener('keydown', function(e){
 let hoverPaused = false;
 let _hoverTimer  = null;
 
+const nftWrap = document.getElementById('nft-wrap');
+
 function _hoverPause(){
   clearTimeout(_hoverTimer);
   if(!playing || hoverPaused) return;
@@ -992,17 +1010,21 @@ function _hoverPause(){
   const w = getComputedStyle(progress).width;
   progress.style.transition = 'none';
   progress.style.width = w;
+  nftMain.style.animationPlayState = 'paused';
+  nftWrap.classList.add('hover-paused');
   hoverPaused = true;
 }
 function _hoverResume(){
   _hoverTimer = setTimeout(function(){
     if(!hoverPaused || !playing) return;
     hoverPaused = false;
+    nftMain.style.animationPlayState = 'running';
+    nftWrap.classList.remove('hover-paused');
     startHeartbeat();
     startProgress();
   }, 80);
 }
-[document.getElementById('nft-wrap'), placard].forEach(function(el){
+[nftWrap, placard].forEach(function(el){
   el.addEventListener('mouseenter', _hoverPause);
   el.addEventListener('mouseleave', _hoverResume);
 });
