@@ -2110,16 +2110,38 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     border-radius: 6px;
 }
 
-/* ── Store items: image full-width above text ───────────────────────────── */
+/* ── Store grid: flexbox so rows stay equal height ──────────────────────── */
+/* Float grid staircases when cards have different numbers of buy buttons.   */
+/* Scoped to .store-nfts so missions/diamond float layout is unaffected.     */
+.store-nfts {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: stretch;
+    clear: both;
+}
+.store-nfts .nft {
+    float: none !important;
+    display: flex;
+    flex-direction: column;
+}
+.store-nfts .nft-data {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+}
+/* Push buy buttons to bottom of every card */
+.store-nfts .nft-data form:last-of-type { margin-top: auto; }
+/* ── Store items: image above text ─────────────────────────────────────── */
 .store-item { width: 33%; }
 .store-item .nft-data { text-align: left; }
 .store-item .nft-name { text-align: left; padding-top: 10px; }
 .store-item .nft-image {
-    height: 180px;
+    height: 120px;
     border-radius: 8px;
 }
 .store-item .nft-image img {
-    height: 180px;
+    height: 120px;
     object-fit: contain;
 }
 .store-item .small-button {
@@ -2211,11 +2233,13 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .nft { width: 50%; }
     /* Store items: 2 per row */
     .store-item { width: 50%; }
+    .store-nfts .nft.store-item { width: 50%; }
     .side { border-right: none; }
 }
 @media screen and (max-width: 480px) {
     .nft { width: 100%; }
     .store-item { width: 100%; }
+    .store-nfts .nft.store-item { width: 100%; }
 }
 
 /* ── REVERT: Missions card layout (float-based, must not be flex column) ── */
@@ -2305,4 +2329,25 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 .diamond-container .row {
     padding: 0;
+}
+
+/* ── Aeoniumsky puzzle: zero padding on container, block layout on cards ─── */
+@media screen and (min-width: 2005px) {
+    /* .content padding shrinks the grid container and breaks full-bleed fit */
+    .missions .content {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    /* flex column breaks the precise margin-top:-2px row-overlap trick */
+    .aeoniumsky .nft-data {
+        display: block !important;
+    }
+    /* .nft border-radius clips tile corners — remove for seamless puzzle */
+    .aeoniumsky {
+        border-radius: 0 !important;
+    }
+    .aeoniumsky .nft-data {
+        border-radius: 0 !important;
+    }
 }
