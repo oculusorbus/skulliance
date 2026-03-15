@@ -744,7 +744,7 @@ h1 {
 }
 
 h2 {
-	font-weight: bold;
+	font-weight: 300;
 	font-size: 1.6rem;
 	color: #00c8a0;
 	padding-bottom: 12px;
@@ -756,6 +756,7 @@ h2 {
 }
 
 h3 {
+	font-weight: 300;
 	font-size: 1.2rem;
 	font-family: Arial, sans-serif;
 	color: #00a882;
