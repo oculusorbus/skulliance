@@ -1837,6 +1837,26 @@ section.active {
 }
 #wallet-nav-btn:hover .wallet-nav-icon { opacity: 1; }
 
+/* ── Carbon Slider ── */
+input[type="range"]#carbon {
+    -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, #00c8a0 0%, #00c8a0 100%, #2a3a4a 100%);
+    outline: none; cursor: pointer;
+}
+input[type="range"]#carbon::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #00c8a0; cursor: pointer;
+    border: 2px solid #07111d;
+    box-shadow: 0 0 4px rgba(0,200,160,0.5);
+}
+input[type="range"]#carbon::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #00c8a0; cursor: pointer;
+    border: 2px solid #07111d;
+}
+
 /* ── Wallet Modal ── */
 #wallet-modal-overlay {
     display: none; position: fixed; inset: 0;
