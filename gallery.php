@@ -530,7 +530,7 @@ $my_user_json = json_encode($my_user_id);
     <input type="text" id="spotify-url" placeholder="Paste playlist or album link…" autocomplete="off"
       style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#e8eaed;padding:6px 8px;font-size:0.75rem;margin-top:6px;">
     <div style="font-size:0.65rem;color:rgba(255,255,255,0.35);margin-top:5px;line-height:1.4;">
-      Paste a <strong style="color:rgba(255,255,255,0.5);">playlist</strong> or <strong style="color:rgba(255,255,255,0.5);">album</strong> link for continuous playback. Artist links require Spotify Premium.
+      Use a <strong style="color:rgba(255,255,255,0.5);">playlist</strong>, <strong style="color:rgba(255,255,255,0.5);">album</strong>, or <strong style="color:rgba(255,255,255,0.5);">track</strong> link. Artist links require Spotify Premium.
     </div>
     <button class="pill" id="btn-spotify-load" style="margin-top:8px;width:100%;">▶ Load Player</button>
     <button class="pill" id="btn-spotify-hide" style="margin-top:6px;width:100%;display:none;">✕ Hide Player</button>
@@ -543,7 +543,7 @@ $my_user_json = json_encode($my_user_id);
 </form>
 
 <!-- Spotify mini player (fixed bottom-left) — iframe injected dynamically to avoid src="" state issues -->
-<div id="spotify-player" style="display:none;position:fixed;bottom:0;left:0;z-index:9999;width:300px;user-select:auto;pointer-events:all;"></div>
+<div id="spotify-player" style="opacity:0;pointer-events:none;position:fixed;bottom:4px;left:0;z-index:9999;width:300px;user-select:auto;transition:opacity 0.2s;"></div>
 
 <script>
 const NFTS       = <?php echo $nfts_json; ?>;
@@ -901,22 +901,21 @@ document.addEventListener('keydown', function(e){
     return null;
   }
 
-  let currentResult = null;
+  let playerLoaded = false;
+
+  function showPlayer(){ spotifyPlayer.style.opacity='1'; spotifyPlayer.style.pointerEvents='all'; btnHide.textContent='Hide Player'; }
+  function hidePlayer(){ spotifyPlayer.style.opacity='0'; spotifyPlayer.style.pointerEvents='none'; btnHide.textContent='Show Player'; }
 
   function loadIframe(result){
     spotifyPlayer.innerHTML = '';
     const iframe = document.createElement('iframe');
     iframe.src    = result.url;
     iframe.width  = '300';
-    // Track = compact; artist/album/playlist = full height so track rows are fully interactive
     iframe.height = (result.type === 'track') ? '152' : '352';
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('allow', 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
     iframe.style.cssText = 'display:block;border-radius:0 12px 0 0;user-select:auto;pointer-events:all;';
     spotifyPlayer.appendChild(iframe);
-    spotifyPlayer.style.display = 'block';
-    btnHide.style.display = 'block';
-    // For single tracks: show a replay button since the embed won't auto-advance
     if(result.type === 'track'){
       const replayBtn = document.createElement('button');
       replayBtn.textContent = '↺ Replay';
@@ -924,20 +923,24 @@ document.addEventListener('keydown', function(e){
       replayBtn.onclick = function(){ loadIframe(result); };
       spotifyPlayer.appendChild(replayBtn);
     }
+    playerLoaded = true;
+    showPlayer();
+    btnHide.style.display = 'block';
   }
 
   btnLoad.onclick = function(){
     const result = parseSpotifyEmbed(spotifyInput.value);
     if(!result){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
-    currentResult = result;
+    if(result.type === 'artist'){
+      alert('Artist embeds require Spotify Premium to play. Paste a playlist or album link instead for free playback.');
+      return;
+    }
     loadIframe(result);
   };
 
   btnHide.onclick = function(){
-    spotifyPlayer.innerHTML = '';
-    spotifyPlayer.style.display = 'none';
-    btnHide.style.display = 'none';
-    currentResult = null;
+    if(spotifyPlayer.style.opacity === '0'){ showPlayer(); }
+    else { hidePlayer(); }
   };
 })();
 
