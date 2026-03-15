@@ -22,7 +22,7 @@ include 'header.php';
   justify-content: center;
   align-items: flex-end;
   gap: 6px;
-  margin: 20px 0 30px;
+  margin: 20px 0 0;
 }
 @media (max-width: 600px) {
   .podium-wrap { justify-content: flex-start; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
@@ -75,8 +75,8 @@ include 'header.php';
 .podium-section {
   position: relative;
   padding: 16px 10px 0;
-  margin-bottom: 10px;
-  border-radius: 8px;
+  margin-bottom: 20px;
+  border-radius: 8px 8px 0 0;
   overflow: hidden;
 }
 .podium-section.has-theme {
@@ -89,7 +89,7 @@ include 'header.php';
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.65);
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
   pointer-events: none;
   z-index: 0;
 }
