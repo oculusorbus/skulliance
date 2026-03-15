@@ -2259,3 +2259,43 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .nft {
     float: left;
 }
+
+/* ── REVERT: Inventory images — intentionally tiny (many items to scan) ─── */
+.inventory .nft-image {
+    height: 45px !important;
+    min-height: 45px !important;
+    max-height: 45px !important;
+    overflow: hidden !important;
+    overflow-y: clip !important;
+    width: auto;
+    float: left;
+    margin-right: 5px;
+    border-radius: 4px;
+}
+.inventory .nft-image img {
+    height: 45px !important;
+    width: auto;
+    max-width: none;
+    object-fit: cover;
+    background: transparent;
+}
+
+/* ── REVERT: Aeoniumsky puzzle layout (min-width: 2005px) ───────────────── */
+/* At large enough screens, aeoniumsky mission images fill the card edge-to- */
+/* edge to form a giant meta-image puzzle. height:auto must win over 160px.  */
+@media screen and (min-width: 2005px) {
+    .aeoniumsky .nft-image {
+        height: auto !important;
+        min-height: unset !important;
+        max-height: none !important;
+        width: 100%;
+        overflow: visible;
+    }
+    .aeoniumsky .nft-image img,
+    .aeoniumsky img {
+        width: 100% !important;
+        max-width: 487px !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+}
