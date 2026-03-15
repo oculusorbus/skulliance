@@ -1851,6 +1851,12 @@ td {
 	font-size: 0.85rem;
 }
 
+.container strong {
+	color: #00c8a0;
+	font-weight: normal;
+	text-transform: uppercase;
+}
+
 /* ── Carbon Slider ── */
 input[type="range"]#carbon, input[type="range"]#balance, input[type="range"]#diamond {
     -webkit-appearance: none; appearance: none;
