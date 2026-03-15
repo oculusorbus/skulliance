@@ -5,12 +5,26 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <style>
+@keyframes podium-rise {
+  from { transform: scaleY(0); transform-origin: bottom; }
+  to   { transform: scaleY(1); transform-origin: bottom; }
+}
+@keyframes podium-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .podium-wrap {
   display: flex;
   justify-content: center;
   align-items: flex-end;
   gap: 6px;
   margin: 20px 0 30px;
+}
+@media (max-width: 600px) {
+  .podium-wrap { justify-content: flex-start; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
+  .podium-slot { width: 100px; }
+  .podium-rank-1 .podium-avatar { width: 68px; height: 68px; }
+  .podium-avatar { width: 56px; height: 56px; }
 }
 .podium-slot {
   display: flex;
@@ -61,25 +75,30 @@ function renderPodium($top3){
   if(!$top3 || count($top3) < 2) return;
   $medals  = ['🥇','🥈','🥉'];
   $ranks   = [1,2,3];
+  // rise delays: 3rd rises first, then 2nd, then 1st (builds excitement)
+  $delays  = [0.5, 0.8, 0.2]; // indexed by $pos (1st=0, 2nd=1, 3rd=2)
   // Display order: 2nd (left), 1st (center), 3rd (right)
   $display = [1, 0, 2];
   echo '<div class="podium-wrap">';
   foreach($display as $pos){
     if(!isset($top3[$pos])) continue;
-    $u    = $top3[$pos];
-    $rank = $ranks[$pos];
-    $av   = ($u['avatar'] && $u['discord_id'])
-          ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
-          : 'icons/skull.png';
-    $prof = 'profile.php?username='.urlencode($u['username']);
+    $u     = $top3[$pos];
+    $rank  = $ranks[$pos];
+    $delay = $delays[$pos];
+    $av    = ($u['avatar'] && $u['discord_id'])
+           ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
+           : 'icons/skull.png';
+    $prof  = 'profile.php?username='.urlencode($u['username']);
+    $above_style = 'animation: podium-fade-in 0.5s ease '.($delay + 0.3).'s both;';
+    $platform_style = 'animation: podium-rise 0.6s cubic-bezier(0.34,1.56,0.64,1) '.$delay.'s both;';
     echo '<div class="podium-slot podium-rank-'.$rank.'">';
-    echo   '<div class="podium-medal">'.$medals[$pos].'</div>';
-    echo   '<a href="'.$prof.'">';
+    echo   '<div class="podium-medal" style="'.$above_style.'">'.$medals[$pos].'</div>';
+    echo   '<a href="'.$prof.'" style="'.$above_style.'">';
     echo     '<img class="podium-avatar" src="'.htmlspecialchars($av).'" onerror="this.src=\'icons/skull.png\'" alt="">';
     echo   '</a>';
-    echo   '<a href="'.$prof.'" class="podium-name">'.htmlspecialchars($u['username']).'</a>';
-    echo   '<span class="podium-score">'.htmlspecialchars($u['score']).'</span>';
-    echo   '<div class="podium-platform"><span class="podium-rank-num">#'.$rank.'</span></div>';
+    echo   '<a href="'.$prof.'" class="podium-name" style="'.$above_style.'">'.htmlspecialchars($u['username']).'</a>';
+    echo   '<span class="podium-score" style="'.$above_style.'">'.htmlspecialchars($u['score']).'</span>';
+    echo   '<div class="podium-platform" style="'.$platform_style.'"><span class="podium-rank-num">#'.$rank.'</span></div>';
     echo '</div>';
   }
   echo '</div>';
@@ -161,13 +180,13 @@ function renderPodium($top3){
 				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
-				renderPodium(getLeaderboardTop3($conn, $filterby));
 				?>
 
 				<div class="content" id="filtered-content">
 				    <?php
 				    filterLeaderboard("leaderboards");
-    
+				    $leaderboard_top3 = [];
+				    ob_start();
 				    switch (true) {
 				        case ($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && 
 				              $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && 
@@ -220,6 +239,9 @@ function renderPodium($top3){
 				            checkMonstrocityLeaderboard($conn, true);
 				            break;
 				    }
+				    $table_html = ob_get_clean();
+				    renderPodium($leaderboard_top3);
+				    echo $table_html;
 				    ?>
 				</div>
 			</div>

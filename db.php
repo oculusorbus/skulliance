@@ -3406,6 +3406,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					// Do not generate row for project owners unless Oculus Orbus and filter out Kimosabe
 				}else{
 					$leaderboardCounter++;
+					if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($row['total']).' NFTs']; }
 					$width = 40;
 					$trophy = "";
 					if($leaderboardCounter == 1){
@@ -3766,6 +3767,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 		foreach($missions AS $index => $row){
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($row['score']).' pts']; }
 			$trophy = "";
 			if($leaderboardCounter == 1){
 				//$width = 50;
@@ -3936,6 +3938,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 		foreach($raids AS $index => $row){
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($row['score']).' pts']; }
 			$trophy = "";
 			if($leaderboardCounter == 1){
 				//$width = 50;
@@ -4268,6 +4271,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($row['streak_total']).' streaks']; }
 			$trophy = "";
 			$score = $row["streak_total"].$row["streak"];
 			if($leaderboardCounter == 1){
@@ -4405,6 +4409,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($row['max_score']).' pts']; }
 			$trophy = "";
 			$score = $row["max_score"];
 			if($leaderboardCounter == 1){
@@ -4542,6 +4547,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($row['damage_dealt_total']).' dmg']; }
 			$trophy = "";
 			$score = $row["damage_dealt_total"];
 			if($leaderboardCounter == 1){
@@ -4690,6 +4696,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>'Lvl '.$row['max_level']]; }
 			$trophy = "";
 			$level = $row["max_level"];
 			$score = $row["max_score"];
