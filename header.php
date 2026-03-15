@@ -55,7 +55,7 @@
 
 		  <!-- Play -->
 		  <div class="nav-dropdown navbar-first">
-		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Play &#9660;</span>
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Play</span>
 		    <div class="nav-dropdown-menu">
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
@@ -67,7 +67,7 @@
 
 		  <!-- NFTs -->
 		  <div class="nav-dropdown">
-		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">NFTs &#9660;</span>
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">NFTs</span>
 		    <div class="nav-dropdown-menu">
 		      <a href="dashboard.php">Dashboard</a>
 		      <a href="store.php">Store</a>
@@ -79,7 +79,7 @@
 
 		  <!-- Stats -->
 		  <div class="nav-dropdown">
-		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Stats &#9660;</span>
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Stats</span>
 		    <div class="nav-dropdown-menu">
 		      <a href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>">Profile</a>
 		      <a href="leaderboards.php">Leaderboards</a>
@@ -88,7 +88,7 @@
 
 		  <!-- Account -->
 		  <div class="nav-dropdown">
-		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Account &#9660;</span>
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Account</span>
 		    <div class="nav-dropdown-menu">
 		      <a href="transactions.php">Transactions</a>
 		      <a href="wallets.php">Wallets</a>
