@@ -648,6 +648,14 @@ function renderCrafting($conn, $page){
 				$zero = true;
 			}
 		}
+		$core_icons = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;width:36px;flex-shrink:0;">
+			<img src="icons/star.png"   style="width:10px;height:10px;object-fit:contain;" title="STAR">
+			<img src="icons/dread.png"  style="width:10px;height:10px;object-fit:contain;" title="DREAD">
+			<img src="icons/hype.png"   style="width:10px;height:10px;object-fit:contain;" title="HYPE">
+			<img src="icons/sinder.png" style="width:10px;height:10px;object-fit:contain;" title="SINDER">
+			<img src="icons/cyber.png"  style="width:10px;height:10px;object-fit:contain;" title="CYBER">
+			<img src="icons/crypt.png"  style="width:10px;height:10px;object-fit:contain;" title="CRYPT">
+		</div>';
 		if($zero){
 			echo "<li class='role'>";
 			echo "You do not have balances for all core currency listed above to craft.<br><br>Purchase NFTs from every core project in the Skulliance in order to craft DIAMOND.";
@@ -658,8 +666,9 @@ function renderCrafting($conn, $page){
 			<form onsubmit="return confirm('Do you really want to convert ' + document.getElementById('balance-display').textContent + ' of each core currency to ' + document.getElementById('balance-diamond-display').textContent + ' DIAMOND?');" id="craftingForm" action="<?php echo $page; ?>.php" method="post">
 			  <strong>Convert Core Points to DIAMOND</strong><br><br>
 			  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+			    <?php echo $core_icons; ?>
 			    <span id="balance-display" style="font-weight:bold;"><?php echo number_format(min($balances)); ?></span>
-			    <span style="color:#888;">each →</span>
+			    <span style="color:#888;">→</span>
 			    <img class="icon" src="icons/diamond.png" style="flex-shrink:0;">
 			    <span id="balance-diamond-display" style="font-weight:bold;color:#00c8a0;"><?php echo number_format(min($balances)); ?></span>
 			  </div>
@@ -682,7 +691,7 @@ function renderCrafting($conn, $page){
 			    <span id="diamond-display" style="font-weight:bold;color:#00c8a0;"><?php echo number_format($diamond); ?></span>
 			    <span style="color:#888;">→</span>
 			    <span id="diamond-core-display" style="font-weight:bold;"><?php echo number_format($diamond); ?></span>
-			    <span style="color:#888;">each</span>
+			    <?php echo $core_icons; ?>
 			  </div>
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="diamond" id="diamond" min="1" max="<?php echo $diamond; ?>" step="1" value="<?php echo $diamond; ?>" style="flex:1;"
