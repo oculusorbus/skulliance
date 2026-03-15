@@ -80,8 +80,6 @@ include 'header.php';
   border-radius: 0;
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
-  border-top: 1px solid #00c8a0;
-  border-bottom: 1px solid #00c8a0;
 }
 .podium-section.has-theme {
   background-size: cover;
