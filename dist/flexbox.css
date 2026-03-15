@@ -1803,7 +1803,7 @@ section.active {
     padding: 10px 14px; display: flex; align-items: center;
 }
 .wallet-nav-icon {
-    width: 20px; height: 20px; opacity: 0.75;
+    width: 20px !important; height: 20px !important; opacity: 0.75;
     transition: opacity 0.2s;
 }
 #wallet-nav-btn:hover .wallet-nav-icon { opacity: 1; }
