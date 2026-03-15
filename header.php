@@ -103,8 +103,8 @@
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
 
 		<!-- Wallet Connect Modal -->
-		<div id="wallet-modal-overlay" onclick="closeWalletModal()"></div>
-		<div id="wallet-modal" role="dialog" aria-modal="true">
+		<div id="wallet-modal-overlay" onclick="closeWalletModal()" style="display:none"></div>
+		<div id="wallet-modal" role="dialog" aria-modal="true" style="display:none">
 			<div class="wallet-modal-header">
 				<span>Connect Wallet</span>
 				<button class="wallet-modal-close" onclick="closeWalletModal()">&times;</button>
