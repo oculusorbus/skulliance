@@ -744,25 +744,21 @@ h1 {
 }
 
 h2 {
-	font-size: 0.75rem;
 	font-weight: bold;
-	color: #00c8a0;
-	text-transform: uppercase;
-	letter-spacing: 0.12em;
-	padding-bottom: 8px;
-	border-bottom: 1px solid rgba(0,200,160,0.15);
+	font-size: 1.6rem;
+	color: #e8eaed;
+	padding-bottom: 12px;
+	border-bottom: 1px solid rgba(0,200,160,0.20);
 	font-family: Arial, sans-serif;
-	margin: 0 0 16px;
+	text-align: left;
+	letter-spacing: 0.02em;
 }
 
 h3 {
-	font-size: 0.68rem;
+	font-size: 1.2rem;
 	font-family: Arial, sans-serif;
-	color: #5a7888;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	font-weight: bold;
-	margin: 0 0 10px;
+	color: #c8d8e8;
+	text-align: left;
 }
 
 p {
@@ -1845,22 +1841,6 @@ section.active {
     transition: opacity 0.2s;
 }
 #wallet-nav-btn:hover .wallet-nav-icon { opacity: 1; }
-
-/* ── Global Table Styling ── */
-th {
-	font-size: 0.65rem;
-	font-weight: bold;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color: #5a7888;
-	background: #050d16;
-	padding: 10px;
-}
-td {
-	color: #e8eaed;
-	font-size: 0.85rem;
-	padding: 8px 10px;
-}
 
 /* ── Carbon Slider ── */
 input[type="range"]#carbon, input[type="range"]#balance, input[type="range"]#diamond {
