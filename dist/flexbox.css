@@ -135,7 +135,7 @@ a{
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   white-space: nowrap;
   user-select: none;
 }
@@ -1818,6 +1818,7 @@ section.active {
 #wallet-nav-btn {
     background: none; border: none; cursor: pointer;
     padding: 10px 14px; display: flex; align-items: center;
+    position: relative; top: -2px; right: 6px;
 }
 .wallet-nav-icon {
     width: 20px !important; height: 20px !important; opacity: 0.75;
