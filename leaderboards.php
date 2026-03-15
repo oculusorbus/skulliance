@@ -75,13 +75,25 @@ include 'header.php';
 </style>
 
 <?php
-function renderPodium($top3){
+function renderPodium($top3, $conn=null){
   if(!$top3 || count($top3) < 2) return;
   $medals  = ['🥇','🥈','🥉'];
   $ranks   = [1,2,3];
   // rise delays: gold first, silver second, bronze third
   $delays  = [0.1, 0.4, 0.7]; // indexed by $pos (1st=0, 2nd=1, 3rd=2)
   $me = isset($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : '';
+
+  $is_faction = !empty($top3[0]['faction']);
+
+  // Gold background: faction uses project theme directly; user uses their realm theme
+  $gold_theme_id = null;
+  if($is_faction){
+    $gold_theme_id = $top3[0]['project_id'];
+  } else if($conn && !empty($top3[0]['username'])){
+    $gn = mysqli_real_escape_string($conn, $top3[0]['username']);
+    $tr = $conn->query("SELECT theme_id FROM realms INNER JOIN users ON users.id = realms.user_id WHERE users.username = '".$gn."' AND realms.active = 1 LIMIT 1");
+    if($tr && $tr->num_rows > 0) $gold_theme_id = $tr->fetch_assoc()['theme_id'];
+  }
   // Display order: 2nd (left), 1st (center), 3rd (right)
   $display = [1, 0, 2];
   echo '<div class="podium-wrap">';
@@ -90,23 +102,32 @@ function renderPodium($top3){
     $u     = $top3[$pos];
     $rank  = $ranks[$pos];
     $delay = $delays[$pos];
-    $av    = ($u['avatar'] && $u['discord_id'])
-           ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
-           : 'icons/skull.png';
-    $prof  = 'profile.php?username='.urlencode($u['username']);
     $fade_in     = 'podium-fade-in 0.5s ease '.($delay + 0.3).'s both';
     $above_style = 'animation: '.$fade_in.';';
     $platform_style = 'animation: podium-rise 0.6s cubic-bezier(0.34,1.56,0.64,1) '.$delay.'s both;';
-    $is_me = ($me !== '' && $u['username'] === $me);
-    $avatar_style = $is_me
-      ? 'animation: '.$fade_in.', podium-user-glow 1.4s ease-in-out '.($delay + 0.9).'s infinite;'
-      : $above_style;
-    echo '<div class="podium-slot podium-rank-'.$rank.'">';
+    $slot_style = '';
+    if($pos === 0 && $gold_theme_id){
+      $slot_style = 'background-image:url(\'images/themes/'.intval($gold_theme_id).'.jpg\');background-size:cover;background-position:center;background-attachment:fixed;border-radius:8px 8px 0 0;box-shadow:inset 0 0 0 1000px rgba(0,0,0,0.5);padding:8px 4px 0;';
+    }
+    echo '<div class="podium-slot podium-rank-'.$rank.'"'.($slot_style ? ' style="'.$slot_style.'"' : '').'>';
     echo   '<div class="podium-medal" style="'.$above_style.'">'.$medals[$pos].'</div>';
-    echo   '<a href="'.$prof.'" style="'.$above_style.'">';
-    echo     '<img class="podium-avatar" src="'.htmlspecialchars($av).'" onerror="this.src=\'icons/skull.png\'" alt="" style="'.$avatar_style.'">';
-    echo   '</a>';
-    echo   '<a href="'.$prof.'" class="podium-name" style="'.$above_style.'">'.htmlspecialchars($u['username']).'</a>';
+    if($is_faction){
+      echo '<img class="podium-avatar" src="icons/'.strtolower(htmlspecialchars($u['currency'])).'.png" onerror="this.src=\'icons/skull.png\'" alt="" style="'.$above_style.';border-radius:0;border:none;box-shadow:none;background:none;">';
+      echo '<span class="podium-name" style="'.$above_style.'">'.htmlspecialchars($u['project_name']).'</span>';
+    } else {
+      $prof = 'profile.php?username='.urlencode($u['username']);
+      $av   = ($u['avatar'] && $u['discord_id'])
+            ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
+            : 'icons/skull.png';
+      $is_me = ($me !== '' && $u['username'] === $me);
+      $avatar_style = $is_me
+        ? 'animation: '.$fade_in.', podium-user-glow 1.4s ease-in-out '.($delay + 0.9).'s infinite;'
+        : $above_style;
+      echo '<a href="'.$prof.'" style="'.$above_style.'">';
+      echo   '<img class="podium-avatar" src="'.htmlspecialchars($av).'" onerror="this.src=\'icons/skull.png\'" alt="" style="'.$avatar_style.'">';
+      echo '</a>';
+      echo '<a href="'.$prof.'" class="podium-name" style="'.$above_style.'">'.htmlspecialchars($u['username']).'</a>';
+    }
     echo   '<span class="podium-score" style="'.$above_style.'">'.htmlspecialchars($u['score']).'</span>';
     echo   '<div class="podium-platform" style="'.$platform_style.'"><span class="podium-rank-num">#'.$rank.'</span></div>';
     echo '</div>';
@@ -250,7 +271,7 @@ function renderPodium($top3){
 				            break;
 				    }
 				    $table_html = ob_get_clean();
-				    renderPodium($leaderboard_top3);
+				    renderPodium($leaderboard_top3, $conn);
 				    echo $table_html;
 				    ?>
 				</div>

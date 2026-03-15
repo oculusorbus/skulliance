@@ -4118,6 +4118,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 		foreach($raids AS $index => $row){
 			$leaderboardCounter++;
 			$counter++;
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['faction'=>true,'project_id'=>$row['project_id'],'project_name'=>$row['project_name'],'currency'=>$row['currency'],'score'=>number_format($row['score']).' pts']; }
 			$trophy = "";
 			$realm = getRealmInfo($conn);
 			$project_id = $realm["project_id"];
