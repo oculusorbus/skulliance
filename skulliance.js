@@ -805,8 +805,7 @@ function completeMissions(mission_ids, quest_ids) {
 }
 
 function retreat(mission_id, quest_id){
-	var result = confirm( "Are you sure you want to retreat?\r\n\r\nThe cost of your mission will be refunded.\r\n\r\nAll items used will be restored.");    
-    if ( result ) {
+	openConfirm("Are you sure you want to retreat?\r\n\r\nThe cost of your mission will be refunded.\r\n\r\nAll items used will be restored.", function() {
 		// Immediately hide button upon confirmation to prevent double retreats
 		document.getElementById("retreat-button-"+mission_id).style.display = "none";
 		var xhttp = new XMLHttpRequest();
@@ -842,9 +841,7 @@ function retreat(mission_id, quest_id){
 		    }
 		  }
 		};
-    } else {
-        // the user clicked cancel or closed the confirm dialog.
-    }
+	});
 }
 
 function getQuests(projectID){
@@ -1052,27 +1049,20 @@ function editRealmName(editIcon){
 }
 
 function deactivateRealm(realmID){
-    if (confirm("Are you sure you want to deactivate your realm?\r\n\r\nYou will not be able to reactivate it until after 30 days have passed.\r\n\r\nDeactivating your realm prevents other realms from raiding you, damaging your locations, and looting your points.")) {
+	openConfirm("Are you sure you want to deactivate your realm?\r\n\r\nYou will not be able to reactivate it until after 30 days have passed.\r\n\r\nDeactivating your realm prevents other realms from raiding you, damaging your locations, and looting your points.", function() {
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/toggle-realm-state.php?type=deactivate&realm_id='+realmID, true);
 		xhttp.send();
 		xhttp.onreadystatechange = function() {
 		  if (xhttp.readyState == XMLHttpRequest.DONE) {
-		    // Check the status of the response
 		    if (xhttp.status == 200) {
-		      // Access the data returned by the server
 		      var data = xhttp.responseText;
-		      // Do something with the data
 			  alert(data);
 			  window.location.href = "realms.php";
-		    } else {
-		      // Handle error
 		    }
 		  }
 		};
-    } else {
-
-    }
+	});
 }
 
 function reactivateRealm(realmID){
