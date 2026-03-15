@@ -90,9 +90,14 @@ include 'header.php';
          .selected {
              transform: scale(1.05);
              border: 0.25vh solid white;
+             border-radius: 0;
              z-index: 10;
              pointer-events: none;
              padding: 0;
+         }
+         .tile:hover {
+             outline: 2px solid rgba(255,255,255,0.7);
+             outline-offset: -2px;
          }
          .matched {
              animation: matchAnimation 0.3s ease forwards;
