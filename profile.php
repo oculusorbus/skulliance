@@ -87,9 +87,9 @@ if ($rm_result && $rm_result->num_rows > 0) {
 
 $raid_sql = "SELECT COUNT(*) as total,
     SUM(CASE WHEN outcome='1' AND o_r.user_id='$tid' THEN 1
-             WHEN outcome='0' AND d_r.user_id='$tid' THEN 1
+             WHEN outcome='2' AND d_r.user_id='$tid' THEN 1
              ELSE 0 END) as wins,
-    SUM(CASE WHEN outcome IS NULL THEN 1 ELSE 0 END) as in_progress
+    SUM(CASE WHEN outcome='0' THEN 1 ELSE 0 END) as in_progress
     FROM raids
     INNER JOIN realms AS o_r ON o_r.id = raids.offense_id
     INNER JOIN realms AS d_r ON d_r.id = raids.defense_id
@@ -328,7 +328,7 @@ $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     INNER JOIN projects po ON po.id = o.project_id
     INNER JOIN projects pd ON pd.id = d.project_id
     WHERE (o.user_id='$tid' OR d.user_id='$tid')
-    AND (r.outcome IS NULL OR DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))
+    AND (r.outcome = '0' OR DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))
     GROUP BY u.id
     ORDER BY MAX(r.created_date) DESC LIMIT 8");
 if ($opp_result && $opp_result->num_rows > 0) {
