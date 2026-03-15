@@ -1843,7 +1843,7 @@ section.active {
 #wallet-nav-btn:hover .wallet-nav-icon { opacity: 1; }
 
 td {
-	color: #aac0cc;
+	color: #aac0cc !important;
 	font-size: 0.85rem;
 }
 
