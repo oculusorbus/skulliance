@@ -2145,13 +2145,13 @@ function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
 	if($collection_id == 4 || $collection_id == 23){
 		// Resource intensive IPFS code, disabled to save server resources, swapped for fallback skull icon
 		// onError='this.src=\"image.php?ipfs=".$ipfs."\";'
-		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		return "<span class='nft-image'><img ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		return "<span class='nft-image'><img ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else if($collection_id == 260){
-		return "<span class='nft-image'><img style='min-height:165px' ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		return "<span class='nft-image'><img style='min-height:165px' ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}else{
-		return "<span class='nft-image'><img ".$class." onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
+		return "<span class='nft-image'><img ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
 	}
 }
 
@@ -2743,7 +2743,7 @@ function getItems($conn, $page, $filterby=""){
 		$nftcounter++;
 	    echo "<div class='nft ".$class."'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
-		echo "<span class='nft-image'><img onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
+		echo "<span class='nft-image'><img loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
 		/* Listing price is redundant when buy buttons list price
 		if($row["project_id"] != 7){
 			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." ".$row["currency"]."<br>or<br>".number_format($row["price"]/$row["divider"])." DIAMOND</span>";
@@ -3449,7 +3449,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 					//$level = floor($row["xp"]/100);
 					$avatar = "";
 					if($row["avatar"] != ""){
-						$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+						$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 					}
 					$highlight = "";
 					if(isset($_SESSION['userData']['user_id'])){
@@ -3816,7 +3816,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -3986,7 +3986,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -3995,7 +3995,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong style='font-size:20px'>".$username."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$faction = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
+			$faction = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
 			echo $faction;
 			echo "</td>";
 			echo "<td align='center'>";
@@ -4167,7 +4167,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -4319,7 +4319,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -4456,7 +4456,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -4593,7 +4593,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -4742,7 +4742,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 			echo "<strong>".(($trophy == "")?(($leaderboardCounter<10)?"0":"").$leaderboardCounter.".":$trophy)."</strong>";
 			echo "</td>";
 			echo "<td align='center'>";
-			$avatar = "<img style='width:".$width."px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+			$avatar = "<img style='width:".$width."px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 			echo $avatar;
 			echo "</td>";
 			echo "<td align='left'>";
@@ -5334,7 +5334,7 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td align='right' width='50%'>";
 					if($row["avatar"] != ""){
-						$output[$key] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+						$output[$key] .= "<img style='width:50px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 					}
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='50%'>".$row["username"]."</td>";
@@ -5840,13 +5840,13 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<tr>";
 				$rows[$decimal] .= "<td valign='top'>";
-				$rows[$decimal] .= "<img style='width:50px;padding-top:10px;' onError='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg' class='icon'/>";
+				$rows[$decimal] .= "<img style='width:50px;padding-top:10px;' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg' class='icon'/>";
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $row["realm_name"];
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "<td valign='top'>";
-				$rows[$decimal] .= "<img style='width:50px' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+				$rows[$decimal] .= "<img style='width:50px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
 				$rows[$decimal] .= "</td>";
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $row["username"];
