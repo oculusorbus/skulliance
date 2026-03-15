@@ -81,8 +81,8 @@ include 'header.php';
   width: 100vw;
   left: 50%;
   transform: translateX(-50%);
-  border-top: 1px solid rgba(255,255,255,0.12);
-  border-bottom: 1px solid rgba(255,255,255,0.12);
+  border-top: 1px solid #00c8a0;
+  border-bottom: 1px solid #00c8a0;
 }
 .podium-section.has-theme {
   background-size: cover;
@@ -106,7 +106,7 @@ include 'header.php';
 </style>
 
 <?php
-function renderPodium($top3, $conn=null){
+function renderPodium($top3, $conn=null, $override_theme_id=null){
   if(!$top3 || count($top3) < 2) return;
   $medals  = ['🥇','🥈','🥉'];
   $ranks   = [1,2,3];
@@ -116,14 +116,16 @@ function renderPodium($top3, $conn=null){
 
   $is_faction = !empty($top3[0]['faction']);
 
-  // Gold background: faction uses project theme directly; user uses their realm theme
-  $gold_theme_id = null;
-  if($is_faction){
-    $gold_theme_id = $top3[0]['project_id'];
-  } else if($conn && !empty($top3[0]['username'])){
-    $gn = mysqli_real_escape_string($conn, $top3[0]['username']);
-    $tr = $conn->query("SELECT theme_id FROM realms INNER JOIN users ON users.id = realms.user_id WHERE users.username = '".$gn."' AND realms.active = 1 LIMIT 1");
-    if($tr && $tr->num_rows > 0) $gold_theme_id = $tr->fetch_assoc()['theme_id'];
+  // Background: project override first, then faction project, then gold user's realm theme
+  $gold_theme_id = $override_theme_id;
+  if(!$gold_theme_id){
+    if($is_faction){
+      $gold_theme_id = $top3[0]['project_id'];
+    } else if($conn && !empty($top3[0]['username'])){
+      $gn = mysqli_real_escape_string($conn, $top3[0]['username']);
+      $tr = $conn->query("SELECT theme_id FROM realms INNER JOIN users ON users.id = realms.user_id WHERE users.username = '".$gn."' AND realms.active = 1 LIMIT 1");
+      if($tr && $tr->num_rows > 0) $gold_theme_id = $tr->fetch_assoc()['theme_id'];
+    }
   }
   // Display order: 2nd (left), 1st (center), 3rd (right)
   $display = [1, 0, 2];
@@ -302,7 +304,12 @@ function renderPodium($top3, $conn=null){
 				            break;
 				    }
 				    $table_html = ob_get_clean();
-				    renderPodium($leaderboard_top3, $conn);
+				    $project_theme_override = null;
+				    if(is_numeric($filterby) && $filterby > 0){
+				        $pt = intval($filterby);
+				        if(file_exists('images/themes/'.$pt.'.jpg')) $project_theme_override = $pt;
+				    }
+				    renderPodium($leaderboard_top3, $conn, $project_theme_override);
 				    echo $table_html;
 				    ?>
 				</div>
