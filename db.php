@@ -4807,6 +4807,63 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 	}
 }
 
+// Return top 3 users for podium display (separate slim query, does not touch existing render functions)
+function getLeaderboardTop3($conn, $filterby){
+	$rows = [];
+	$score_suffix = '';
+
+	if($filterby === 'factions' || $filterby === 'monthly-factions'){
+		return null; // No per-user podium for factions
+	} else if($filterby === 'missions' || $filterby === 'monthly'){
+		$df = ($filterby === 'monthly') ? " AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')" : "";
+		$sql = "SELECT COUNT(missions.id) AS total, users.id AS user_id, users.discord_id, users.username, users.avatar, users.visibility FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE 1=1".$df." GROUP BY users.id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' missions';
+	} else if($filterby === 'streaks' || $filterby === 'monthly-streaks'){
+		$df = ($filterby === 'monthly-streaks') ? " AND DATE(transactions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')" : "";
+		$sql = "SELECT COUNT(transactions.id) AS total, transactions.user_id, users.discord_id, users.avatar, users.visibility, users.username FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus='1' AND amount='30'".$df." GROUP BY transactions.user_id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' streaks';
+	} else if($filterby === 'raids' || $filterby === 'monthly-raids'){
+		$df = ($filterby === 'monthly-raids') ? " AND DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')" : "";
+		$sql = "SELECT COUNT(raids.id) AS total, users.id AS user_id, users.discord_id, users.username, users.avatar, users.visibility FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE 1=1".$df." GROUP BY users.id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' raids';
+	} else if($filterby === 'swaps' || $filterby === 'weekly-swaps'){
+		$rf = ($filterby === 'weekly-swaps') ? " AND reward='0'" : "";
+		$sql = "SELECT MAX(score) AS total, user_id, users.discord_id, users.avatar, users.visibility, users.username FROM scores INNER JOIN users ON users.id = scores.user_id WHERE project_id='0'".$rf." GROUP BY user_id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' pts';
+	} else if($filterby === 'bosses' || $filterby === 'weekly-bosses'){
+		$rf = ($filterby === 'weekly-bosses') ? " WHERE reward='0'" : "";
+		$sql = "SELECT SUM(damage_dealt) AS total, user_id, users.discord_id, users.avatar, users.visibility, users.username FROM encounters INNER JOIN users ON users.id = encounters.user_id".$rf." GROUP BY user_id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' dmg';
+	} else if($filterby === 'monstrocity' || $filterby === 'monthly-monstrocity'){
+		$rf = ($filterby === 'monthly-monstrocity') ? " AND reward='0'" : "";
+		$sql = "SELECT MAX(level) AS total, user_id, users.discord_id, users.avatar, users.visibility, users.username FROM scores INNER JOIN users ON users.id = scores.user_id WHERE project_id='36'".$rf." GROUP BY user_id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' lvl';
+	} else {
+		// NFT count (all projects or specific project)
+		$where = "nfts.user_id != 0";
+		if($filterby && $filterby != 0){
+			$where .= " AND collections.project_id = '".intval($filterby)."'";
+		} else {
+			$where .= " AND collections.project_id IN(1,2,3,4,5,6)";
+		}
+		$sql = "SELECT COUNT(nfts.id) AS total, nfts.user_id, users.discord_id, users.avatar, users.visibility, users.username FROM nfts INNER JOIN users ON nfts.user_id=users.id INNER JOIN collections ON collections.id=nfts.collection_id INNER JOIN projects ON projects.id=collections.project_id WHERE ".$where." GROUP BY nfts.user_id ORDER BY total DESC LIMIT 3";
+		$score_suffix = ' NFTs';
+	}
+
+	$result = $conn->query($sql);
+	if(!$result) return null;
+	while($row = $result->fetch_assoc()){
+		$rows[] = [
+			'username'   => $row['username'],
+			'discord_id' => $row['discord_id'],
+			'avatar'     => $row['avatar'],
+			'visibility' => $row['visibility'],
+			'score'      => number_format((int)$row['total']).$score_suffix,
+		];
+	}
+	return count($rows) >= 2 ? $rows : null;
+}
+
 function deleteMonstrocityProgress($conn){
 	// Clear saved progress for all users
 	$stmt = $conn->prepare("DELETE FROM progress WHERE project_id = 36");

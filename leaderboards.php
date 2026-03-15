@@ -4,6 +4,88 @@ include 'webhooks.php';
 include 'skulliance.php';
 include 'header.php';
 ?>
+<style>
+.podium-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
+  margin: 20px 0 30px;
+}
+.podium-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 130px;
+}
+.podium-medal { font-size: 1.6rem; margin-bottom: 4px; line-height: 1; }
+.podium-avatar {
+  width: 68px; height: 68px;
+  border-radius: 50%;
+  border: 3px solid #888;
+  object-fit: cover;
+  margin-bottom: 7px;
+  transition: transform 0.2s;
+}
+.podium-avatar:hover { transform: scale(1.08); }
+.podium-rank-1 .podium-avatar { width: 84px; height: 84px; border-color: #FFD700; box-shadow: 0 0 18px rgba(255,215,0,0.45); }
+.podium-rank-2 .podium-avatar { border-color: #C0C0C0; box-shadow: 0 0 10px rgba(192,192,192,0.3); }
+.podium-rank-3 .podium-avatar { border-color: #CD7F32; box-shadow: 0 0 10px rgba(205,127,50,0.3); }
+.podium-name {
+  font-size: 0.82rem; font-weight: bold;
+  text-decoration: none;
+  margin-bottom: 3px; text-align: center;
+  max-width: 120px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: block;
+}
+.podium-rank-1 .podium-name { color: #FFD700; font-size: 0.92rem; }
+.podium-rank-2 .podium-name { color: #C0C0C0; }
+.podium-rank-3 .podium-name { color: #CD7F32; }
+.podium-score { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-bottom: 8px; text-align: center; }
+.podium-platform {
+  width: 100%; border-radius: 4px 4px 0 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.podium-rank-1 .podium-platform { height: 100px; background: linear-gradient(180deg,rgba(255,215,0,0.22) 0%,rgba(255,215,0,0.06) 100%); border-top: 3px solid #FFD700; }
+.podium-rank-2 .podium-platform { height: 70px;  background: linear-gradient(180deg,rgba(192,192,192,0.22) 0%,rgba(192,192,192,0.06) 100%); border-top: 3px solid #C0C0C0; }
+.podium-rank-3 .podium-platform { height: 50px;  background: linear-gradient(180deg,rgba(205,127,50,0.22) 0%,rgba(205,127,50,0.06) 100%); border-top: 3px solid #CD7F32; }
+.podium-rank-num { font-size: 1.3rem; font-weight: bold; opacity: 0.45; }
+.podium-rank-1 .podium-rank-num { color: #FFD700; opacity: 0.6; }
+.podium-rank-2 .podium-rank-num { color: #C0C0C0; }
+.podium-rank-3 .podium-rank-num { color: #CD7F32; }
+</style>
+
+<?php
+function renderPodium($top3){
+  if(!$top3 || count($top3) < 2) return;
+  $medals  = ['🥇','🥈','🥉'];
+  $ranks   = [1,2,3];
+  // Display order: 2nd (left), 1st (center), 3rd (right)
+  $display = [1, 0, 2];
+  echo '<div class="podium-wrap">';
+  foreach($display as $pos){
+    if(!isset($top3[$pos])) continue;
+    $u    = $top3[$pos];
+    $rank = $ranks[$pos];
+    $av   = ($u['avatar'] && $u['discord_id'])
+          ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
+          : 'icons/skull.png';
+    $prof = 'profile.php?username='.urlencode($u['username']);
+    echo '<div class="podium-slot podium-rank-'.$rank.'">';
+    echo   '<div class="podium-medal">'.$medals[$pos].'</div>';
+    echo   '<a href="'.$prof.'">';
+    echo     '<img class="podium-avatar" src="'.htmlspecialchars($av).'" onerror="this.src=\'icons/skull.png\'" alt="">';
+    echo   '</a>';
+    echo   '<a href="'.$prof.'" class="podium-name">'.htmlspecialchars($u['username']).'</a>';
+    echo   '<span class="podium-score">'.htmlspecialchars($u['score']).'</span>';
+    echo   '<div class="podium-platform"><span class="podium-rank-num">#'.$rank.'</span></div>';
+    echo '</div>';
+  }
+  echo '</div>';
+}
+?>
+
 		<a name="leaderboards" id="leaderboards"></a>
 		<div class="row" id="row1">
 			<div class="col1of3" style="max-width:900px;margin:0 auto;flex:1 1 100%;">
@@ -79,6 +161,7 @@ include 'header.php';
 				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
+				renderPodium(getLeaderboardTop3($conn, $filterby));
 				?>
 
 				<div class="content" id="filtered-content">
