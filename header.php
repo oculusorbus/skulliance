@@ -116,7 +116,7 @@
 			<div class="wallet-modal-refresh">
 				<form id="refreshWallet" action="<?php echo basename($_SERVER['PHP_SELF']); ?>" method="post">
 					<input type="hidden" name="refresh" value="refresh">
-					<button type="submit" class="wallet-refresh-btn">&#8635; Refresh Connected Wallet</button>
+					<button type="submit" class="wallet-refresh-btn">&#8635; Refresh Connected Wallet(s)</button>
 				</form>
 			</div>
 			<?php endif; ?>
