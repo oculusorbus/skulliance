@@ -990,39 +990,7 @@ document.addEventListener('keydown', function(e){
   };
 })();
 
-// ── Auto-pause on hover ────────────────────────────────────────────────────
-let hoverPaused = false;
-let _hoverTimer  = null;
-
 const nftWrap = document.getElementById('nft-wrap');
-
-function _hoverPause(){
-  clearTimeout(_hoverTimer);
-  if(!playing || hoverPaused) return;
-  stopHeartbeat();
-  progress.classList.remove('waiting');
-  nftWrap.classList.remove('waiting');
-  const w = getComputedStyle(progress).width;
-  progress.style.transition = 'none';
-  progress.style.width = w;
-  nftMain.style.animationPlayState = 'paused';
-  nftWrap.classList.add('hover-paused');
-  hoverPaused = true;
-}
-function _hoverResume(){
-  _hoverTimer = setTimeout(function(){
-    if(!hoverPaused || !playing) return;
-    hoverPaused = false;
-    nftMain.style.animationPlayState = 'running';
-    nftWrap.classList.remove('hover-paused');
-    startHeartbeat();
-    startProgress();
-  }, 80);
-}
-[nftWrap, placard].forEach(function(el){
-  el.addEventListener('mouseenter', _hoverPause);
-  el.addEventListener('mouseleave', _hoverResume);
-});
 
 // ── Spotify player ─────────────────────────────────────────────────────────
 (function(){
