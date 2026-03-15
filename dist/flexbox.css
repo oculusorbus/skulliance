@@ -1896,3 +1896,29 @@ section.active {
     transition: background 0.2s;
 }
 .wallet-refresh-btn:hover { background: rgba(0,200,160,0.18); }
+#wallet-status {
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 30px 20px; min-height: 140px; gap: 14px; text-align: center;
+}
+.wallet-spinner {
+    width: 42px; height: 42px;
+    border: 3px solid rgba(0,200,160,0.15);
+    border-top-color: #00c8a0;
+    border-radius: 50%;
+    animation: wallet-spin 0.75s linear infinite;
+    flex-shrink: 0;
+}
+@keyframes wallet-spin { to { transform: rotate(360deg); } }
+.wallet-status-text {
+    color: #e8eaed; font-size: 0.88rem; margin: 0; line-height: 1.5;
+}
+.wallet-status-text small { color: #5a7888; font-size: 0.8em; }
+.wallet-result-icon {
+    font-size: 2.2rem; font-weight: bold; line-height: 1;
+}
+.wallet-result-icon.success { color: #00c8a0; }
+.wallet-result-icon.error   { color: #e05050; }
+.wallet-result-action {
+    display: inline-block; margin-top: 4px; text-align: center;
+    text-decoration: none;
+}

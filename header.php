@@ -112,6 +112,7 @@
 			<div id="wallet-grid" class="wallet-grid">
 				<div class="wallet-panel-empty">Detecting wallets&hellip;</div>
 			</div>
+			<div id="wallet-status" style="display:none"></div>
 			<?php if(isset($_SESSION['userData']['user_id'])): ?>
 			<div class="wallet-modal-refresh">
 				<form id="refreshWallet" action="<?php echo basename($_SERVER['PHP_SELF']); ?>" method="post">

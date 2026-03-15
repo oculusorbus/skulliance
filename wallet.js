@@ -21,10 +21,18 @@ async function connectWallet(wallet) {
 window.connectWallet = connectWallet;
 
 function sendAddress(address, stakeaddress, wallet) {
-	document.getElementById('wallet').value = wallet;
-	document.getElementById('address').value = address;
-	document.getElementById('stakeaddress').value = stakeaddress;
-	document.getElementById("addressForm").submit();
+	const formData = new FormData();
+	formData.append('wallet', wallet);
+	formData.append('address', address);
+	formData.append('stakeaddress', stakeaddress);
+
+	openWalletModal();
+	showWalletLoading();
+
+	fetch('wallet-ajax.php', { method: 'POST', body: formData })
+		.then(r => r.json())
+		.then(data => showWalletResult(data.success, data.message, data.redirect || null))
+		.catch(() => showWalletResult(false, 'Connection error. Please try again.'));
 }
 
 window.openWalletModal = function() {
@@ -35,6 +43,41 @@ window.openWalletModal = function() {
 window.closeWalletModal = function() {
 	document.getElementById('wallet-modal-overlay').style.display = 'none';
 	document.getElementById('wallet-modal').style.display = 'none';
+	resetWalletModal();
+};
+
+function showWalletLoading() {
+	document.getElementById('wallet-grid').style.display = 'none';
+	const refresh = document.querySelector('.wallet-modal-refresh');
+	if (refresh) refresh.style.display = 'none';
+	const status = document.getElementById('wallet-status');
+	status.innerHTML = '<div class="wallet-spinner"></div><p class="wallet-status-text">Verifying NFTs&hellip;<br><small>This may take a moment.</small></p>';
+	status.style.display = 'flex';
+}
+
+function showWalletResult(success, message, redirect) {
+	const status = document.getElementById('wallet-status');
+	const iconClass = success ? 'wallet-result-icon success' : 'wallet-result-icon error';
+	const icon = success ? '&#10003;' : '&#10007;';
+	let actions = '';
+	if (success && redirect) {
+		actions = '<a href="' + redirect + '" class="wallet-refresh-btn wallet-result-action">Go to Dashboard &rarr;</a>';
+	} else if (!success) {
+		actions = '<button class="wallet-refresh-btn wallet-result-action" onclick="resetWalletModal()">Try Again</button>';
+	}
+	status.innerHTML =
+		'<span class="' + iconClass + '">' + icon + '</span>' +
+		'<p class="wallet-status-text">' + message + '</p>' +
+		actions;
+}
+
+window.resetWalletModal = function() {
+	document.getElementById('wallet-grid').style.display = '';
+	const refresh = document.querySelector('.wallet-modal-refresh');
+	if (refresh) refresh.style.display = '';
+	const status = document.getElementById('wallet-status');
+	status.style.display = 'none';
+	status.innerHTML = '';
 };
 
 function capitalizeFirstLetter(string) {
@@ -116,5 +159,17 @@ function capitalizeFirstLetter(string) {
 
 	$(document).ready(() => {
 		loop = setInterval(findWallets, 200);
+
+		const refreshForm = document.getElementById('refreshWallet');
+		if (refreshForm) {
+			refreshForm.addEventListener('submit', function(e) {
+				e.preventDefault();
+				showWalletLoading();
+				fetch('wallet-ajax.php', { method: 'POST', body: new FormData(this) })
+					.then(r => r.json())
+					.then(data => showWalletResult(data.success, data.message, data.redirect || null))
+					.catch(() => showWalletResult(false, 'Connection error. Please try again.'));
+			});
+		}
 	});
 })(jQuery);
