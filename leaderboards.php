@@ -72,6 +72,33 @@ include 'header.php';
 .podium-rank-1 .podium-rank-num { color: #FFD700; opacity: 0.6; }
 .podium-rank-2 .podium-rank-num { color: #C0C0C0; }
 .podium-rank-3 .podium-rank-num { color: #CD7F32; }
+.podium-section {
+  position: relative;
+  padding: 16px 10px 0;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.podium-section.has-theme {
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+.podium-section.has-theme::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 0;
+}
+.podium-section > * { position: relative; z-index: 1; }
+.podium-slot {
+  background: #1a1a1a;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 4px 0;
+}
 </style>
 
 <?php
@@ -96,6 +123,9 @@ function renderPodium($top3, $conn=null){
   }
   // Display order: 2nd (left), 1st (center), 3rd (right)
   $display = [1, 0, 2];
+  $section_class = 'podium-section' . ($gold_theme_id ? ' has-theme' : '');
+  $section_style = $gold_theme_id ? ' style="background-image:url(\'images/themes/'.intval($gold_theme_id).'.jpg\')"' : '';
+  echo '<div class="'.$section_class.'"'.$section_style.'>';
   echo '<div class="podium-wrap">';
   foreach($display as $pos){
     if(!isset($top3[$pos])) continue;
@@ -105,11 +135,7 @@ function renderPodium($top3, $conn=null){
     $fade_in     = 'podium-fade-in 0.5s ease '.($delay + 0.3).'s both';
     $above_style = 'animation: '.$fade_in.';';
     $platform_style = 'animation: podium-rise 0.6s cubic-bezier(0.34,1.56,0.64,1) '.$delay.'s both;';
-    $slot_style = '';
-    if($pos === 0 && $gold_theme_id){
-      $slot_style = 'background-image:url(\'images/themes/'.intval($gold_theme_id).'.jpg\');background-size:cover;background-position:center;background-attachment:fixed;border-radius:8px 8px 0 0;box-shadow:inset 0 0 0 1000px rgba(0,0,0,0.5);padding:8px 4px 0;';
-    }
-    echo '<div class="podium-slot podium-rank-'.$rank.'"'.($slot_style ? ' style="'.$slot_style.'"' : '').'>';
+    echo '<div class="podium-slot podium-rank-'.$rank.'">';
     echo   '<div class="podium-medal" style="'.$above_style.'">'.$medals[$pos].'</div>';
     if($is_faction){
       echo '<img class="podium-avatar" src="icons/'.strtolower(htmlspecialchars($u['currency'])).'.png" onerror="this.src=\'icons/skull.png\'" alt="" style="'.$above_style.';border-radius:0;border:none;box-shadow:none;background:none;">';
@@ -132,7 +158,8 @@ function renderPodium($top3, $conn=null){
     echo   '<div class="podium-platform" style="'.$platform_style.'"><span class="podium-rank-num">#'.$rank.'</span></div>';
     echo '</div>';
   }
-  echo '</div>';
+  echo '</div>'; // podium-wrap
+  echo '</div>'; // podium-section
 }
 ?>
 
