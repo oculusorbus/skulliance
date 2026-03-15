@@ -4,20 +4,26 @@ session_start();
 
 $my_user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 
-// ── Main NFT query (no correlated subqueries) ──────────────────────────────
-$vis_clause = $my_user_id ? "(users.visibility = 2 OR users.id = $my_user_id)" : "users.visibility = 2";
-$sql = "SELECT nfts.id, asset_id, asset_name, nfts.name AS nft_display_name, ipfs,
+// ── NFT select columns (reused for both queries) ───────────────────────────
+$nft_cols = "nfts.id, asset_id, asset_name, nfts.name AS nft_display_name, ipfs,
                users.id AS user_id, users.username, users.discord_id, users.avatar,
                projects.id AS project_id, projects.name AS project_name, projects.currency,
                collections.id AS collection_id, collections.name AS collection_name,
-               collections.rate AS rate
-        FROM nfts
+               collections.rate AS rate";
+$nft_joins = "FROM nfts
         INNER JOIN users       ON users.id = nfts.user_id
         INNER JOIN collections ON nfts.collection_id = collections.id
-        INNER JOIN projects    ON projects.id = collections.project_id
-        WHERE nfts.user_id != 0 AND nfts.ipfs IS NOT NULL AND nfts.ipfs != ''
-          AND $vis_clause
-        ORDER BY RAND() LIMIT 400";
+        INNER JOIN projects    ON projects.id = collections.project_id";
+$nft_where = "WHERE nfts.user_id != 0 AND nfts.ipfs IS NOT NULL AND nfts.ipfs != ''";
+
+// ── Main NFT query: random 400 from visible users ─────────────────────────
+$vis_clause = "users.visibility = 2" . ($my_user_id ? " AND nfts.user_id != $my_user_id" : "");
+$sql = "SELECT $nft_cols $nft_joins $nft_where AND $vis_clause ORDER BY RAND() LIMIT 400";
+
+// ── Logged-in user: always fetch ALL their own NFTs ────────────────────────
+$sql_mine = $my_user_id
+    ? "SELECT $nft_cols $nft_joins $nft_where AND nfts.user_id = $my_user_id"
+    : null;
 
 // ── Flat lookup: active missions (one query, build map) ────────────────────
 $missions_map = [];
@@ -35,30 +41,43 @@ $sr = $conn->query("SELECT ds.nft_id, n.name
 if($sr) while($row = $sr->fetch_assoc()) $skull_map[$row['nft_id']] = $row['name'];
 
 // ── Build NFT array ────────────────────────────────────────────────────────
-$result    = $conn->query($sql);
+function build_nft_row($row, $missions_map, $skull_map){
+    $id   = $row['id'];
+    $name = !empty($row['nft_display_name']) ? $row['nft_display_name'] : $row['asset_name'];
+    return [
+        'asset_id'        => $row['asset_id'],
+        'name'            => htmlspecialchars($name, ENT_QUOTES),
+        'image'           => getIPFS($row['ipfs'], $row['collection_id']),
+        'user_id'         => (int)$row['user_id'],
+        'username'        => htmlspecialchars($row['username'] ?? 'Unknown', ENT_QUOTES),
+        'discord_id'      => $row['discord_id'],
+        'avatar'          => $row['avatar'],
+        'project_id'      => (int)$row['project_id'],
+        'project_name'    => htmlspecialchars($row['project_name'], ENT_QUOTES),
+        'currency'        => strtolower(htmlspecialchars($row['currency'], ENT_QUOTES)),
+        'collection_id'   => (int)$row['collection_id'],
+        'collection_name' => htmlspecialchars($row['collection_name'], ENT_QUOTES),
+        'rate'            => (int)$row['rate'],
+        'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
+        'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
+    ];
+}
+
 $nfts_data = [];
+$result = $conn->query($sql);
 if($result && $result->num_rows > 0){
-    while($row = $result->fetch_assoc()){
-        $id   = $row['id'];
-        $name = !empty($row['nft_display_name']) ? $row['nft_display_name'] : $row['asset_name'];
-        $nfts_data[] = [
-            'asset_id'        => $row['asset_id'],
-            'name'            => htmlspecialchars($name, ENT_QUOTES),
-            'image'           => getIPFS($row['ipfs'], $row['collection_id']),
-            'user_id'         => (int)$row['user_id'],
-            'username'        => htmlspecialchars($row['username'] ?? 'Unknown', ENT_QUOTES),
-            'discord_id'      => $row['discord_id'],
-            'avatar'          => $row['avatar'],
-            'project_id'      => (int)$row['project_id'],
-            'project_name'    => htmlspecialchars($row['project_name'], ENT_QUOTES),
-            'currency'        => strtolower(htmlspecialchars($row['currency'], ENT_QUOTES)),
-            'collection_id'   => (int)$row['collection_id'],
-            'collection_name' => htmlspecialchars($row['collection_name'], ENT_QUOTES),
-            'rate'            => (int)$row['rate'],
-            'mission'         => isset($missions_map[$id]) ? htmlspecialchars($missions_map[$id], ENT_QUOTES) : null,
-            'diamond_skull'   => isset($skull_map[$id])    ? htmlspecialchars($skull_map[$id],    ENT_QUOTES) : null,
-        ];
+    while($row = $result->fetch_assoc()) $nfts_data[] = build_nft_row($row, $missions_map, $skull_map);
+}
+
+// Append all of the logged-in user's own NFTs (not already in the set)
+$mine_data = [];
+if($sql_mine){
+    $result_mine = $conn->query($sql_mine);
+    if($result_mine && $result_mine->num_rows > 0){
+        while($row = $result_mine->fetch_assoc()) $mine_data[] = build_nft_row($row, $missions_map, $skull_map);
     }
+    // Merge into main array (dedup by asset_id not needed since we excluded them above)
+    $nfts_data = array_merge($nfts_data, $mine_data);
 }
 $conn->close();
 $nfts_json    = json_encode($nfts_data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
@@ -520,15 +539,8 @@ $my_user_json = json_encode($my_user_id);
   <input type="hidden" id="collections-filterby" name="filterby" value="">
 </form>
 
-<!-- Spotify mini player (fixed bottom-left) -->
-<div id="spotify-player" style="display:none;position:fixed;bottom:0;left:0;z-index:50;width:260px;">
-  <iframe id="spotify-iframe"
-    src=""
-    width="260" height="152"
-    frameborder="0"
-    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-    style="display:block;border-radius:0 12px 0 0;"></iframe>
-</div>
+<!-- Spotify mini player (fixed bottom-left) — iframe injected dynamically to avoid src="" state issues -->
+<div id="spotify-player" style="display:none;position:fixed;bottom:0;left:0;z-index:9999;width:300px;user-select:auto;pointer-events:all;"></div>
 
 <script>
 const NFTS       = <?php echo $nfts_json; ?>;
@@ -872,31 +884,39 @@ document.addEventListener('keydown', function(e){
 (function(){
   const spotifyInput  = document.getElementById('spotify-url');
   const spotifyPlayer = document.getElementById('spotify-player');
-  const spotifyIframe = document.getElementById('spotify-iframe');
-  const btnLoad       = document.getElementById('btn-spotify-load');
-  const btnHide       = document.getElementById('btn-spotify-hide');
+  const btnLoad = document.getElementById('btn-spotify-load');
+  const btnHide = document.getElementById('btn-spotify-hide');
 
   function parseSpotifyEmbed(raw){
     raw = raw.trim();
     // Handle spotify:type:id URI
     let m = raw.match(/^spotify:(track|album|artist|playlist|episode):([A-Za-z0-9]+)$/);
-    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0';
+    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0&autoplay=1';
     // Handle open.spotify.com URLs (including /embed/ already)
     m = raw.match(/open\.spotify\.com\/(?:embed\/)?(track|album|artist|playlist|episode)\/([A-Za-z0-9]+)/);
-    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0';
+    if(m) return 'https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator&theme=0&autoplay=1';
     return null;
   }
 
   btnLoad.onclick = function(){
     const url = parseSpotifyEmbed(spotifyInput.value);
     if(!url){ alert('Paste a valid Spotify link or URI (track, album, artist, playlist).'); return; }
-    spotifyIframe.src = url;
+    // Remove any existing iframe and create fresh — avoids src-change state issues
+    spotifyPlayer.innerHTML = '';
+    const iframe = document.createElement('iframe');
+    iframe.src    = url;
+    iframe.width  = '300';
+    iframe.height = '232';
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allow', 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
+    iframe.style.cssText = 'display:block;border-radius:0 12px 0 0;user-select:auto;pointer-events:all;';
+    spotifyPlayer.appendChild(iframe);
     spotifyPlayer.style.display = 'block';
     btnHide.style.display = 'block';
   };
 
   btnHide.onclick = function(){
-    spotifyIframe.src = '';
+    spotifyPlayer.innerHTML = '';
     spotifyPlayer.style.display = 'none';
     btnHide.style.display = 'none';
   };
