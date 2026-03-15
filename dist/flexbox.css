@@ -2212,16 +2212,10 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     /* Store items: 2 per row */
     .store-item { width: 50%; }
     .side { border-right: none; }
-    /* Ensure tables inside content can scroll */
-    table { min-width: 420px; }
-    /* But mission/inventory cards are not tables — don't force min-width there */
-    .nft table, .inventory table, .diamond-skull-data table,
-    .diamond-data table, #itemForm table { min-width: unset; }
 }
 @media screen and (max-width: 480px) {
     .nft { width: 100%; }
     .store-item { width: 100%; }
-    table { min-width: 360px; }
 }
 
 /* ── REVERT: Missions card layout (float-based, must not be flex column) ── */
@@ -2298,4 +2292,17 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
         max-height: none !important;
         height: auto !important;
     }
+}
+
+/* ── Diamond skull delegation: transparent panels tight to background ────── */
+/* The diamond background image shows through the delegation sections.        */
+/* .content card styling must not apply — keep backgrounds and borders off.  */
+.diamond-container .content {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+.diamond-container .row {
+    padding: 0;
 }

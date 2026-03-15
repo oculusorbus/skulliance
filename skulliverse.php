@@ -97,10 +97,20 @@ include 'header.php';
 
 
 
+/* Skulliverse: .content wraps the planet layout — must be invisible */
+.content {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+}
+
 #myProgress {
   width: 100%;
   background-color: gray;
   margin-bottom: 40px;
+  overflow: hidden;
 }
 
 #myBar {
@@ -109,6 +119,8 @@ include 'header.php';
   background-color: #D6DDDE;
   padding: 6px;
   text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
 }
 </style>
 		<div class="row" id="row1">
