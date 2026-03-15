@@ -508,6 +508,7 @@ $my_user_json = json_encode($my_user_id);
   <div id="p-badges"></div>
   <form id="nav-mission-form" action="missions.php#holdings" method="post" target="_blank" style="display:none">
     <input type="hidden" name="filterby" value="core">
+    <input type="hidden" name="reset_mission" value="1">
   </form>
   <form id="nav-skull-form" action="diamond-skulls.php#diamond-skull" method="post" target="_blank" style="display:none">
     <input type="hidden" id="nav-skull-id" name="diamond_skull_id" value="">

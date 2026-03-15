@@ -13,6 +13,10 @@ if(isset($_GET['username'])){
 if(isset($_POST["start_all"])){
 	startAllFreeEligibleMissions($conn);
 }
+if(isset($_POST["reset_mission"])){
+	unset($_SESSION['userData']['project_id']);
+	unset($_SESSION['userData']['mission']);
+}
 ?>
 <!-- The flexible grid (content) -->
 <?php if(isset($_SESSION['userData']['user_id'])){ ?>
