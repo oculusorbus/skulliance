@@ -114,6 +114,23 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 										&bull; <?php echo $duration." ".($duration == 1 ? "Day" : "Days"); ?>
 									<?php } ?>
 									</div>
+									<?php
+									$loc_eq = isset($loc_consumables[$location_id]) ? $loc_consumables[$location_id] : array();
+									$s_boost = 0;
+									if(isset($loc_eq[1])) $s_boost += 4;
+									if(isset($loc_eq[2])) $s_boost += 3;
+									if(isset($loc_eq[3])) $s_boost += 2;
+									if(isset($loc_eq[4])) $s_boost += 1;
+									$s_boost = min(10, $s_boost);
+									$tags = array();
+									if($s_boost > 0)      $tags[] = '+'.$s_boost.'% Success';
+									if(isset($loc_eq[5])) $tags[] = 'Fast Forward';
+									if(isset($loc_eq[6])) $tags[] = 'Shield';
+									if(isset($loc_eq[7])) $tags[] = 'Random Reward';
+									?>
+									<div id="loc-status-<?php echo $location_id; ?>" class="loc-status-labels">
+										<?php foreach($tags as $tag): ?><span class="loc-status-tag"><?php echo $tag; ?></span><?php endforeach; ?>
+									</div>
 								</div>
 								<div class="location-action">
 								<?php 

@@ -1231,7 +1231,24 @@ function _syncLocConsumableSlots(equippedMap){
 				if(badge) badge.remove();
 			}
 		}
+		_updateLocationStatusLabels(lid, equippedMap[lid]);
 	}
+}
+
+function _updateLocationStatusLabels(lid, equippedRow){
+	var el = document.getElementById('loc-status-'+lid);
+	if(!el) return;
+	equippedRow = equippedRow || {};
+	var boostMap = {1:4, 2:3, 3:2, 4:1};
+	var boost = 0;
+	for(var cid in boostMap){ if(equippedRow[cid]) boost += boostMap[cid]; }
+	boost = Math.min(10, boost);
+	var tags = [];
+	if(boost > 0)      tags.push('+'+boost+'% Success');
+	if(equippedRow[5]) tags.push('Fast Forward');
+	if(equippedRow[6]) tags.push('Shield');
+	if(equippedRow[7]) tags.push('Random Reward');
+	el.innerHTML = tags.map(function(t){ return '<span class="loc-status-tag">'+t+'</span>'; }).join('');
 }
 
 function editRealmName(editIcon){
