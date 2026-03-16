@@ -5491,9 +5491,26 @@ function removeLocationConsumable($conn, $realm_id, $location_id, $consumable_id
 }
 
 // Burn all consumables from a location when it takes real damage (no refund)
+// If FF was equipped, restore the upgrade duration before burning
 function burnLocationConsumables($conn, $realm_id, $location_id){
+	$realm_id    = intval($realm_id);
+	$location_id = intval($location_id);
 	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
 	if(!$rl_id) return;
+	// Check if FF is stocked — if so, restore upgrade duration
+	$ff_check = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='5'");
+	if($ff_check && $ff_check->num_rows > 0){
+		$upg = $conn->query("SELECT duration, created_date FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+		if($upg && $upg->num_rows > 0){
+			$upg_row    = $upg->fetch_assoc();
+			$completion = strtotime('+'.$upg_row['duration'].' day', strtotime($upg_row['created_date']));
+			if($completion > time()){
+				$remaining_days = (int)ceil(($completion - time()) / 86400);
+				$new_duration   = $upg_row['duration'] + $remaining_days;
+				$conn->query("UPDATE upgrades SET duration='".$new_duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+			}
+		}
+	}
 	$conn->query("DELETE FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."'");
 }
 
