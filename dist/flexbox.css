@@ -2289,6 +2289,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Stock Location button row */
 .loc-stock-row {
     display: flex; justify-content: flex-end;
+    width: 100%;
     padding: 2px 0 10px;
 }
 
