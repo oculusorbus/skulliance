@@ -5542,7 +5542,7 @@ function getLocationSuccessRateBoost($conn, $realm_id, $type){
 		$boosts[] = min(10, $loc_boost);
 	}
 	if(empty($boosts)) return 0;
-	return round(array_sum($boosts) / count($boosts), 2);
+	return (int)ceil(array_sum($boosts) / count($boosts));
 }
 
 // Returns true if ALL locations of the given type have Random Reward (consumable_id=7)
@@ -6215,6 +6215,9 @@ function getRaids($conn, $type, $status="pending", $history=false){
 						if($cid == 7) $_off_tags[] = 'Random Reward';
 					}
 					$_off_s_boost = min(10, $_off_s_boost);
+					// FF is burned at inception and never stored in raids_consumables -- infer from duration
+					$_expected_duration = max(2, (int)ceil($defense/$offense));
+					if(intval($row['duration']) < $_expected_duration) array_unshift($_off_tags, 'Fast Forward');
 					if($_off_s_boost > 0) array_unshift($_off_tags, '+'.$_off_s_boost.'% Success');
 					if(!empty($_off_tags)){
 						$offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
@@ -6223,7 +6226,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					}
 					// Build defense status tags from defender's location boost
 					$_def_tags = array();
-					if($defender_boost > 0) $_def_tags[] = '+'.round($defender_boost).'% Defense';
+					if($defender_boost > 0) $_def_tags[] = '+'.$defender_boost.'% Defense';
 					if(!empty($_def_tags)){
 						$defense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
 						foreach($_def_tags as $_t) $defense_results .= "<span class='loc-status-tag'>".$_t."</span>";
