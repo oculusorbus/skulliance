@@ -5574,6 +5574,29 @@ function selectRandomLocationIDAny(){
 }
 
 // Get array of consumable_ids used for a specific raid
+function retreatRaid($conn, $raid_id){
+	if(!isset($_SESSION['userData']['user_id'])) return array('error'=>'Not logged in');
+	$user_id = $_SESSION['userData']['user_id'];
+	$raid_id = intval($raid_id);
+	// Verify user owns the offense realm and raid is still pending
+	$check = $conn->query("SELECT r.id, r.duration, r.created_date FROM raids r INNER JOIN realms rl ON rl.id = r.offense_id WHERE r.id='".$raid_id."' AND r.outcome='0' AND rl.user_id='".$user_id."'");
+	if(!$check || $check->num_rows == 0) return array('error'=>'Not authorized or raid not pending');
+	$raid = $check->fetch_assoc();
+	// Verify raid has not yet completed
+	$completion = strtotime('+'.$raid['duration'].' day', strtotime($raid['created_date']));
+	if($completion <= time()) return array('error'=>'Raid has already completed');
+	// Refund raid consumables to attacker inventory
+	$cons = $conn->query("SELECT consumable_id FROM raids_consumables WHERE raid_id='".$raid_id."'");
+	if($cons){
+		while($con = $cons->fetch_assoc()){
+			updateAmount($conn, $user_id, intval($con['consumable_id']), 1);
+		}
+	}
+	$conn->query("DELETE FROM raids_consumables WHERE raid_id='".$raid_id."'");
+	$conn->query("DELETE FROM raids WHERE id='".$raid_id."'");
+	return array('success'=>true);
+}
+
 function getRaidConsumablesList($conn, $raid_id){
 	$raid_id = intval($raid_id);
 	$result  = $conn->query("SELECT consumable_id FROM raids_consumables WHERE raid_id='".$raid_id."'");
@@ -6141,6 +6164,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			$status = "";
 			$final_output .= "<table id='transactions'>";
 			$final_output .=  "<th width='6%'>Icon</th><th width='20%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='20%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
+			if($type == 'outgoing') $final_output .= "<th width='8%'></th>";
 			$rows = array();
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
@@ -6216,7 +6240,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
 				}
 				$rows[$decimal] = "";
-				$rows[$decimal] .= "<tr>";
+				$rows[$decimal] .= "<tr id='raid-row-".$row['raid_id']."'>";
 				$rows[$decimal] .= "<td valign='top'>";
 				$rows[$decimal] .= "<img style='width:50px;padding-top:10px;' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg' class='icon'/>";
 				$rows[$decimal] .= "</td>";
@@ -6238,6 +6262,11 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= "<td valign='top' align='left'><br>";
 				$rows[$decimal] .= $defense_results;
 				$rows[$decimal] .= "<br><br></td>";
+				if($type == 'outgoing' && $date > time()){
+					$rows[$decimal] .= "<td valign='middle' align='center'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></td>";
+				}else if($type == 'outgoing'){
+					$rows[$decimal] .= "<td></td>";
+				}
 				$rows[$decimal] .= "</tr>";
 				$rows[$decimal] .= "<tr id='raid-progress-".$row["raid_id"]."'>";
 				$rows[$decimal] .= "<td colspan='7' style='padding:0px;'>";
