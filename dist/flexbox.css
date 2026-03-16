@@ -2211,6 +2211,108 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .location-meta { font-size: 0.78rem; color: #7a9eb0; line-height: 1.7; }
 .location-action { flex-shrink: 0; text-align: right; }
 
+/* ── Location consumable system ─────────────────────────────────────────── */
+/* Override role flex-direction for location list items */
+.location-wrapper li.role { flex-direction: column; align-items: stretch; }
+
+/* Central inventory strip */
+.loc-inventory-strip {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 10px 0 14px;
+    border-bottom: 1px solid rgba(0,200,160,0.15);
+    margin-bottom: 4px;
+}
+.loc-inventory-strip-header {
+    width: 100%; font-size: 0.72rem; color: #7a9eb0;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.loc-inv-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.loc-inv-slot img { width: 26px; height: 26px; }
+.loc-inv-qty { font-size: 0.68rem; color: #7a9eb0; min-width: 20px; text-align: center; }
+.loc-inv-slot.empty img { opacity: 0.22; }
+.loc-inv-slot.empty .loc-inv-qty { opacity: 0.3; }
+
+/* Per-location consumable strip */
+.loc-consumable-strip {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 8px 0 4px;
+    margin-left: 56px;
+}
+.loc-con-slot {
+    position: relative; width: 34px; height: 34px;
+    border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+}
+.loc-con-slot img { width: 22px; height: 22px; pointer-events: none; }
+.loc-con-slot.equipped {
+    border-color: #00c8a0;
+    background: rgba(0,200,160,0.12);
+    box-shadow: 0 0 7px rgba(0,200,160,0.28);
+}
+.loc-con-slot.available:hover {
+    border-color: rgba(0,200,160,0.45);
+    background: rgba(0,200,160,0.07);
+}
+.loc-con-slot.unavailable { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
+.loc-con-badge {
+    position: absolute; top: -5px; right: -5px;
+    background: #00c8a0; color: #000;
+    font-size: 0.55rem; font-weight: bold;
+    border-radius: 9999px; width: 14px; height: 14px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+}
+
+/* Stock Location button row */
+.loc-stock-row {
+    display: flex; justify-content: flex-end;
+    padding: 2px 0 10px;
+}
+
+/* Raid consumable row (below raid button) */
+.raid-con-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 0 0;
+    font-size: 0.78rem; color: #7a9eb0;
+}
+.raid-all-label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.raid-all-label input[type=checkbox] { cursor: pointer; }
+
+/* Raid consumables modal grid */
+.raid-con-item {
+    display: grid;
+    grid-template-columns: 20px 32px 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center; gap: 0 8px;
+    padding: 8px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer;
+}
+.raid-con-item:last-child { border-bottom: none; }
+.raid-con-item input[type=checkbox] { grid-row: 1/3; }
+.raid-con-item img { grid-row: 1/3; width: 28px; height: 28px; }
+.raid-con-item.raid-con-item-empty { opacity: 0.38; }
+.raid-con-name { font-size: 0.82rem; font-weight: bold; color: #fff; }
+.raid-con-qty { font-size: 0.75rem; color: #00c8a0; font-weight: bold; text-align: right; }
+.raid-con-preview { font-size: 0.72rem; color: #00c8a0; grid-column: 3; }
+.raid-con-desc { font-size: 0.7rem; color: #7a9eb0; grid-column: 3/5; }
+.raid-con-summary {
+    margin-top: 10px; padding: 8px 10px;
+    background: rgba(0,200,160,0.08); border-radius: 6px;
+    font-size: 0.78rem; color: #00c8a0; min-height: 32px;
+}
+
+/* Raid consumable icons in raid rows */
+.raid-active-cons { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.raid-active-cons img { width: 18px; height: 18px; opacity: 0.85; }
+
+@media (max-width: 400px) {
+    .loc-consumable-strip { margin-left: 0; }
+}
+
 /* ── Responsive tables: scroll instead of tiny font ─────────────────────── */
 @media screen and (max-width: 700px) {
     /* Scrollable containers */

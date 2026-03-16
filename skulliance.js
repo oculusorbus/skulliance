@@ -1018,26 +1018,207 @@ function togglePointsButtons(status){
 	}
 }
 
+// Global state for raid consumables modal
+var _raidModalDefenseId = null;
+var _raidModalDuration  = null;
+
 function startRaid(raidButton, defenseID, duration){
+	var allAvailableEl = document.getElementById('raid-all-items-'+defenseID);
+	var consumablesParam = '';
+	if(allAvailableEl){
+		consumablesParam = allAvailableEl.checked ? '&consumables=all' : '';
+	} else {
+		consumablesParam = '&consumables=all';
+	}
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration, true);
+	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration+consumablesParam, true);
 	xhttp.send();
 	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
-	    // Check the status of the response
 	    if (xhttp.status == 200) {
-	      // Access the data returned by the server
 	      var data = xhttp.responseText;
+		  var conRow = document.getElementById('raid-con-row-'+defenseID);
+		  if(conRow) conRow.style.display = 'none';
 		  if(data != ""){
 		  	raidButton.outerHTML = data;
 		  }
 		  console.log(data);
-	      // Do something with the data
-	    } else {
-	      // Handle error
 	    }
 	  }
 	};
+}
+
+function updateRaidAllLabel(checkbox, realmId){
+	// Visual update when All Available checkbox changes
+}
+
+function openRaidConsumablesModal(realmId, duration){
+	_raidModalDefenseId = realmId;
+	_raidModalDuration  = duration;
+	var modal    = document.getElementById('raid-consumables-modal');
+	var itemsEl  = document.getElementById('raid-con-modal-items');
+	var sumEl    = document.getElementById('raid-con-modal-summary');
+	itemsEl.innerHTML = '<p style="opacity:0.5">Loading...</p>';
+	sumEl.innerHTML   = '';
+	modal.style.display = 'block';
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/get-raid-consumables.php', true);
+	xhttp.send();
+	xhttp.onreadystatechange = function(){
+		if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200){
+			try{ _renderRaidConsumablesModal(JSON.parse(xhttp.responseText).consumables); }
+			catch(e){ itemsEl.innerHTML = '<p style="color:#f55">Error loading consumables.</p>'; }
+		}
+	};
+}
+
+function _renderRaidConsumablesModal(consumables){
+	var itemsEl = document.getElementById('raid-con-modal-items');
+	var html = '';
+	consumables.forEach(function(c){
+		var has = c.qty > 0;
+		html += '<div class="raid-con-item'+(has?'':' unavailable')+'">';
+		html += '<label>';
+		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?' checked':' disabled')+'>';
+		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src='icons/skull.png'" title="'+c.name+'"/>';
+		html += '<span class="raid-con-name">'+c.name+'</span>';
+		html += '</label>';
+		html += '<span class="raid-con-qty">'+(has?'x'+c.qty:'None')+'</span>';
+		html += '<p class="raid-con-desc">'+c.desc+'</p>';
+		html += '</div>';
+	});
+	itemsEl.innerHTML = html;
+	itemsEl.querySelectorAll('.raid-con-check').forEach(function(ch){
+		ch.addEventListener('change', updateRaidModalSummary);
+	});
+	updateRaidModalSummary();
+}
+
+function _consumableBoost(cid){
+	return {1:4, 2:3, 3:2, 4:1}[cid] || 0;
+}
+
+function updateRaidModalSummary(){
+	var sumEl = document.getElementById('raid-con-modal-summary');
+	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:checked');
+	var totalBoost = 0, hasFF = false, hasDR = false, hasRR = false;
+	checks.forEach(function(ch){
+		var cid = parseInt(ch.getAttribute('data-id'));
+		totalBoost += parseInt(ch.getAttribute('data-boost') || 0);
+		if(cid == 5) hasFF = true;
+		if(cid == 6) hasDR = true;
+		if(cid == 7) hasRR = true;
+	});
+	var parts = [];
+	var boostCapped = Math.min(10, totalBoost);
+	if(boostCapped > 0) parts.push('+'+boostCapped+'% Success Rate');
+	if(hasFF) parts.push('Duration Halved');
+	if(hasDR) parts.push('Loot Cap 1000');
+	if(hasRR) parts.push('+1 Random Project Loot');
+	sumEl.innerHTML = parts.length > 0 ? '<strong>Raid Bonuses:</strong> '+parts.join(' &bull; ') : 'No bonuses selected.';
+}
+
+function closeRaidConsumablesModal(){
+	document.getElementById('raid-consumables-modal').style.display = 'none';
+	_raidModalDefenseId = null;
+	_raidModalDuration  = null;
+}
+
+function startRaidFromModal(){
+	var defenseID = _raidModalDefenseId;
+	var duration  = _raidModalDuration;
+	if(!defenseID) return;
+	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:checked');
+	var consumablesParam = '';
+	checks.forEach(function(ch){ consumablesParam += '&consumables[]='+ch.getAttribute('data-id'); });
+	closeRaidConsumablesModal();
+	var raidButton = document.getElementById('raid-btn-'+defenseID);
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration+consumablesParam, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function(){
+		if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200){
+			var data = xhttp.responseText;
+			var conRow = document.getElementById('raid-con-row-'+defenseID);
+			if(conRow) conRow.style.display = 'none';
+			if(data != '' && raidButton) raidButton.outerHTML = data;
+			console.log(data);
+		}
+	};
+}
+
+function applyLocationConsumable(locationId, consumableId){
+	_locConAjax('ajax/apply-location-consumable.php?location_id='+locationId+'&consumable_id='+consumableId);
+}
+
+function removeLocationConsumable(locationId, consumableId){
+	_locConAjax('ajax/remove-location-consumable.php?location_id='+locationId+'&consumable_id='+consumableId);
+}
+
+function stockLocation(locationId){
+	_locConAjax('ajax/apply-location-consumable.php?location_id='+locationId+'&consumable_id=all');
+}
+
+function stockAllLocations(){
+	_locConAjax('ajax/apply-location-consumable.php?location_id=all&consumable_id=all');
+}
+
+function _locConAjax(url){
+	var xhttp = new XMLHttpRequest();
+	xhttp.open('GET', url, true);
+	xhttp.send();
+	xhttp.onreadystatechange = function(){
+		if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200){
+			try{
+				var resp = JSON.parse(xhttp.responseText);
+				if(resp.error){ console.log(resp.error); return; }
+				updateInventoryStrip(resp.inventory);
+				if(resp.equipped) _syncLocConsumableSlots(resp.equipped);
+			} catch(e){ console.log('Consumable AJAX error', e); }
+		}
+	};
+}
+
+function updateInventoryStrip(inventory){
+	for(var cid in inventory){
+		var qty = parseInt(inventory[cid]);
+		var qtyEl = document.getElementById('inv-qty-'+cid);
+		if(qtyEl) qtyEl.textContent = qty;
+		var slotEl = document.getElementById('inv-slot-'+cid);
+		if(slotEl){
+			slotEl.classList.remove('available','unavailable');
+			slotEl.classList.add(qty > 0 ? 'available' : 'unavailable');
+		}
+	}
+}
+
+function _syncLocConsumableSlots(equippedMap){
+	for(var lid = 1; lid <= 7; lid++){
+		for(var cid = 1; cid <= 7; cid++){
+			var slotEl = document.getElementById('loc-con-'+lid+'-'+cid);
+			if(!slotEl) continue;
+			var isEquipped = equippedMap[lid] && equippedMap[lid][cid];
+			var invQtyEl = document.getElementById('inv-qty-'+cid);
+			var qty = invQtyEl ? parseInt(invQtyEl.textContent) : 0;
+			slotEl.classList.remove('equipped','available','unavailable');
+			var badge = slotEl.querySelector('.loc-con-badge');
+			if(isEquipped){
+				slotEl.classList.add('equipped');
+				slotEl.setAttribute('onclick','removeLocationConsumable('+lid+','+cid+')');
+				if(badge){ badge.classList.add('equipped'); badge.textContent = '\u2713'; }
+				else{ var nb=document.createElement('span'); nb.className='loc-con-badge equipped'; nb.textContent='\u2713'; slotEl.appendChild(nb); }
+			} else if(qty > 0){
+				slotEl.classList.add('available');
+				slotEl.setAttribute('onclick','applyLocationConsumable('+lid+','+cid+')');
+				if(badge){ badge.classList.remove('equipped'); badge.textContent = qty; }
+				else{ var nb2=document.createElement('span'); nb2.className='loc-con-badge'; nb2.textContent=qty; slotEl.appendChild(nb2); }
+			} else {
+				slotEl.classList.add('unavailable');
+				slotEl.setAttribute('onclick','');
+				if(badge) badge.remove();
+			}
+		}
+	}
 }
 
 function editRealmName(editIcon){
@@ -1138,5 +1319,9 @@ if (typeof span !== 'undefined') {
 window.onclick = function(event) {
   if (event.target == modal) {
     modal.style.display = "none";
+  }
+  var raidModal = document.getElementById('raid-consumables-modal');
+  if (raidModal && event.target == raidModal) {
+    closeRaidConsumablesModal();
   }
 }

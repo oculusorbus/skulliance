@@ -5216,6 +5216,16 @@ function getRealmLocationNamesLevels($conn, $realm_id){
 
 function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, $project_id){
 	if(isset($_SESSION['userData']['user_id'])){
+		$realm_id    = intval($realm_id);
+		$location_id = intval($location_id);
+		$duration    = intval($duration);
+		$cost        = intval($cost);
+		$project_id  = intval($project_id);
+		// Fast Forward: halve duration (rounded up, min 1) if equipped on this location
+		$ff_check = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_id='".$realm_id."' AND location_id='".$location_id."' AND consumable_id='5'");
+		if($ff_check && $ff_check->num_rows > 0){
+			$duration = max(1, (int)ceil($duration / 2));
+		}
 		$sql = "INSERT INTO upgrades (realm_id, location_id, duration)
 		VALUES ('".$realm_id."', '".$location_id."', '".$duration."')";
 
@@ -5287,6 +5297,8 @@ function getRealmLocationsUpgrades($conn){
 					upgradeRealmLocationLevel($conn, $realm_id, $row['location_id'], $row["duration"]);
 					deleteRealmLocationUpgrade($conn, $realm_id, $row['location_id']);
 					//$time_message = "0d 0h 0m";
+					// Burn Fast Forward consumable when upgrade completes
+					$conn->query("DELETE FROM realms_locations_consumables WHERE realm_id='".$realm_id."' AND location_id='".$row['location_id']."' AND consumable_id='5'");
 				}
 			}
 		} else {
@@ -5355,6 +5367,169 @@ function deleteRealmLocationUpgrade($conn, $realm_id, $location_id){
 	} else {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+}
+
+// ── Realm Location Consumables ─────────────────────────────────────────────
+// Note: realms_locations_consumables.realm_location_id = realms_locations.id
+
+// Look up the realms_locations.id for a given realm+location pair
+function getRealmLocationID($conn, $realm_id, $location_id){
+	$realm_id    = intval($realm_id);
+	$location_id = intval($location_id);
+	$result = $conn->query("SELECT id FROM realms_locations WHERE realm_id='".$realm_id."' AND location_id='".$location_id."' LIMIT 1");
+	if($result && $result->num_rows > 0){ $row = $result->fetch_assoc(); return $row['id']; }
+	return null;
+}
+
+// Returns array[location_id][consumable_id] = true for all equipped consumables on a realm
+function getRealmLocationConsumables($conn, $realm_id){
+	$realm_id = intval($realm_id);
+	$sql = "SELECT rl.location_id, rlc.consumable_id
+	        FROM realms_locations_consumables rlc
+	        INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id
+	        WHERE rl.realm_id = '".$realm_id."'";
+	$result = $conn->query($sql);
+	$equipped = array();
+	if($result && $result->num_rows > 0){
+		while($row = $result->fetch_assoc()){
+			$equipped[$row['location_id']][$row['consumable_id']] = true;
+		}
+	}
+	return $equipped;
+}
+
+// Apply a consumable to a location (deducts from inventory, inserts row)
+function applyLocationConsumable($conn, $realm_id, $location_id, $consumable_id){
+	if(!isset($_SESSION['userData']['user_id'])) return array('error'=>'Not logged in');
+	$user_id       = $_SESSION['userData']['user_id'];
+	$realm_id      = intval($realm_id);
+	$location_id   = intval($location_id);
+	$consumable_id = intval($consumable_id);
+	$qty = getCurrentAmount($conn, $user_id, $consumable_id);
+	if($qty === "false" || $qty <= 0) return array('error'=>'No inventory');
+	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
+	if(!$rl_id) return array('error'=>'Location not found');
+	$check = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='".$consumable_id."'");
+	if($check && $check->num_rows > 0) return array('error'=>'Already equipped');
+	updateAmount($conn, $user_id, $consumable_id, -1);
+	$conn->query("INSERT INTO realms_locations_consumables (realm_location_id, consumable_id) VALUES ('".$rl_id."', '".$consumable_id."')");
+	$new_qty = getCurrentAmount($conn, $user_id, $consumable_id);
+	if($new_qty === "false") $new_qty = 0;
+	return array('success'=>true, 'qty'=>intval($new_qty));
+}
+
+// Remove a consumable from a location and refund to inventory (UI unequip)
+function removeLocationConsumableRefund($conn, $realm_id, $location_id, $consumable_id){
+	if(!isset($_SESSION['userData']['user_id'])) return array('error'=>'Not logged in');
+	$user_id       = $_SESSION['userData']['user_id'];
+	$consumable_id = intval($consumable_id);
+	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
+	if(!$rl_id) return array('error'=>'Location not found');
+	$sql = "DELETE FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='".$consumable_id."'";
+	if($conn->query($sql) === TRUE && $conn->affected_rows > 0){
+		updateAmount($conn, $user_id, $consumable_id, 1);
+		$new_qty = getCurrentAmount($conn, $user_id, $consumable_id);
+		if($new_qty === "false") $new_qty = 1;
+		return array('success'=>true, 'qty'=>intval($new_qty));
+	}
+	return array('error'=>'Not equipped');
+}
+
+// Remove a single consumable from a location without refund (internal raid use)
+function removeLocationConsumable($conn, $realm_id, $location_id, $consumable_id){
+	$consumable_id = intval($consumable_id);
+	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
+	if(!$rl_id) return;
+	$conn->query("DELETE FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='".$consumable_id."'");
+}
+
+// Burn all consumables from a location when it takes real damage (no refund)
+function burnLocationConsumables($conn, $realm_id, $location_id){
+	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
+	if(!$rl_id) return;
+	$conn->query("DELETE FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."'");
+}
+
+// Returns true if location has Double Rewards shield (consumable_id=6)
+function hasDoubleRewardsShield($conn, $realm_id, $location_id){
+	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
+	if(!$rl_id) return false;
+	$result = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='6'");
+	return ($result && $result->num_rows > 0);
+}
+
+// Average success rate boost across locations of a type
+// type 'defense' = locations 3,5,7 | type 'offense' = locations 1,2,4,6 (portal+offense)
+function getLocationSuccessRateBoost($conn, $realm_id, $type){
+	$realm_id     = intval($realm_id);
+	$boost_map    = array(1=>4, 2=>3, 3=>2, 4=>1);
+	$location_ids = ($type == 'defense') ? array(3,5,7) : array(1,2,4,6);
+	$boosts = array();
+	foreach($location_ids as $lid){
+		$loc_boost = 0;
+		$sql = "SELECT rlc.consumable_id
+		        FROM realms_locations_consumables rlc
+		        INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id
+		        WHERE rl.realm_id='".$realm_id."' AND rl.location_id='".$lid."' AND rlc.consumable_id IN (1,2,3,4)";
+		$result = $conn->query($sql);
+		if($result && $result->num_rows > 0){
+			while($row = $result->fetch_assoc()) $loc_boost += $boost_map[intval($row['consumable_id'])];
+		}
+		$boosts[] = min(10, $loc_boost);
+	}
+	if(empty($boosts)) return 0;
+	return round(array_sum($boosts) / count($boosts), 2);
+}
+
+// Returns true if ALL locations of the given type have Random Reward (consumable_id=7)
+function hasRandomReward($conn, $realm_id, $type){
+	$realm_id     = intval($realm_id);
+	$location_ids = ($type == 'defense') ? array(3,5,7) : array(1,2,4,6);
+	foreach($location_ids as $lid){
+		$rl_id = getRealmLocationID($conn, $realm_id, $lid);
+		if(!$rl_id) return false;
+		$result = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='7'");
+		if(!$result || $result->num_rows == 0) return false;
+	}
+	return true;
+}
+
+// Delete Random Reward from all locations of a type (no refund — game mechanic)
+function consumeRandomRewards($conn, $realm_id, $type){
+	$realm_id     = intval($realm_id);
+	$location_ids = ($type == 'defense') ? array(3,5,7) : array(1,2,4,6);
+	foreach($location_ids as $lid){
+		$rl_id = getRealmLocationID($conn, $realm_id, $lid);
+		if($rl_id) $conn->query("DELETE FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='7'");
+	}
+}
+
+// Select a random location ID from all 7 locations
+function selectRandomLocationIDAny(){
+	return array_rand(array(1=>1, 2=>2, 3=>3, 4=>4, 5=>5, 6=>6, 7=>7), 1);
+}
+
+// Get array of consumable_ids used for a specific raid
+function getRaidConsumablesList($conn, $raid_id){
+	$raid_id = intval($raid_id);
+	$result  = $conn->query("SELECT consumable_id FROM raids_consumables WHERE raid_id='".$raid_id."'");
+	$list = array();
+	if($result && $result->num_rows > 0){
+		while($row = $result->fetch_assoc()) $list[] = intval($row['consumable_id']);
+	}
+	return $list;
+}
+
+// Get total success rate boost from raid consumables (items 1-4, cap 10)
+function getRaidSuccessRateBoost($conn, $raid_id){
+	$raid_id   = intval($raid_id);
+	$boost_map = array(1=>4, 2=>3, 3=>2, 4=>1);
+	$result    = $conn->query("SELECT consumable_id FROM raids_consumables WHERE raid_id='".$raid_id."' AND consumable_id IN (1,2,3,4)");
+	$boost = 0;
+	if($result && $result->num_rows > 0){
+		while($row = $result->fetch_assoc()) $boost += $boost_map[intval($row['consumable_id'])];
+	}
+	return min(10, $boost);
 }
 
 function getRealms($conn, $sort, $group){
@@ -5477,7 +5652,11 @@ function getRealms($conn, $sort, $group){
 						$unset = true;
 					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn)) || $raiding){
 						if(checkMaxRaids($conn, $offense_id)){
-							$output[$key] .= "<input type='button' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+							$output[$key] .= "<div id='raid-con-row-".$row['realm_id']."' class='raid-con-row'>";
+					$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' checked onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> All Available</label>";
+					$output[$key] .= "<span class='raid-gear-icon' onclick='openRaidConsumablesModal(".$row['realm_id'].", ".$duration.")' title='Customize consumables'>&#9881;</span>";
+					$output[$key] .= "</div>";
+					$output[$key] .= "<input type='button' id='raid-btn-".$row['realm_id']."' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
 						}else{
 							$output[$key] .= "<strong>Max Raids Reached</strong><br><br>";
 						}
@@ -5753,16 +5932,58 @@ function getLocationBalances($conn, $user_id){
 	return $balances;
 }
 
-function startRaid($conn, $defense_id, $duration){
+function startRaid($conn, $defense_id, $duration, $consumables = array()){
 	if(isset($_SESSION['userData']['user_id'])){
+		$user_id    = $_SESSION['userData']['user_id'];
 		$offense_id = getRealmID($conn);
+		$defense_id = intval($defense_id);
+		$duration   = intval($duration);
+
+		// Resolve which consumable IDs to apply
+		$consumable_ids = array();
+		if($consumables === 'all'){
+			$inventory = getCurrentAmounts($conn);
+			foreach($inventory as $cid => $data){
+				if($data['amount'] > 0) $consumable_ids[] = intval($cid);
+			}
+		} else if(is_array($consumables) && !empty($consumables)){
+			foreach($consumables as $cid) $consumable_ids[] = intval($cid);
+		}
+
+		// Fast Forward (id=5): apply at inception, never stored in raids_consumables
+		if(in_array(5, $consumable_ids)){
+			$ff_qty = getCurrentAmount($conn, $user_id, 5);
+			if($ff_qty !== "false" && $ff_qty > 0){
+				$portal_level = getRealmLocationLevel($conn, $offense_id, 1);
+				if($portal_level === null) $portal_level = 0;
+				if($portal_level <= 1){
+					// Portal bump instead of duration cut
+					updateRealmLocationLevel($conn, $offense_id, 1, 1, 'credit');
+				} else {
+					// Halve duration, round up, minimum 1
+					$duration = max(1, (int)ceil($duration / 2));
+				}
+				updateAmount($conn, $user_id, 5, -1);
+			}
+		}
+
 		$sql = "INSERT INTO raids (offense_id, defense_id, duration)
 		VALUES ('".$offense_id."', '".$defense_id."', '".$duration."')";
 
 		if ($conn->query($sql) === TRUE) {
-		  echo "<strong>Raid Started</strong>";
+			$raid_id = $conn->insert_id;
+			// Store remaining consumables (not FF) and deduct from inventory
+			foreach($consumable_ids as $cid){
+				if($cid == 5) continue; // FF already handled above
+				$qty = getCurrentAmount($conn, $user_id, $cid);
+				if($qty !== "false" && $qty > 0){
+					updateAmount($conn, $user_id, $cid, -1);
+					$conn->query("INSERT INTO raids_consumables (raid_id, consumable_id) VALUES ('".$raid_id."', '".$cid."')");
+				}
+			}
+			echo "<strong>Raid Started</strong>";
 		} else {
-		  echo "Error: " . $sql . "<br>" . $conn->error;
+			echo "Error: " . $conn->error;
 		}
 	}
 }
@@ -5884,6 +6105,23 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$offense_threshold = $percentage * $offense;
 					$defense_results = round($defense_threshold,2)."%";
 					$offense_results = round($offense_threshold,2)."%";
+					// Show active raid consumable icons on offense side
+					$con_names = array(1=>'100% Success',2=>'75% Success',3=>'50% Success',4=>'25% Success',5=>'Fast Forward',6=>'Double Rewards',7=>'Random Reward');
+					$raid_cons = getRaidConsumablesList($conn, $row['raid_id']);
+					if(!empty($raid_cons)){
+						$con_icons = '';
+						foreach($raid_cons as $cid){
+							$cname = isset($con_names[$cid]) ? $con_names[$cid] : '';
+							$cfile = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
+							$con_icons .= "<img title='".$cname."' class='icon consumable raid-active-cons' src='icons/".$cfile."'/>";
+						}
+						$offense_results .= "<br>".$con_icons;
+					}
+					// Show active defense location boost on defense side
+					$def_boost = getLocationSuccessRateBoost($conn, $defense_id, 'defense');
+					if($def_boost > 0){
+						$defense_results .= "<br><small>+".$def_boost."% Def Boost</small>";
+					}
 				}else{
 					$time_message = "0d 0h 0m";
 					$status = "Completed";
@@ -6417,7 +6655,7 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 }
 
 function endRaid($conn, $raid_id){
-	// Get raid faction realm ID
+	// Get raid faction realm IDs
 	$defense_id = getRaidRealmID($conn, $raid_id, "defense");
 	$offense_id = getRaidRealmID($conn, $raid_id, "offense");
 	
@@ -6433,12 +6671,23 @@ function endRaid($conn, $raid_id){
 	$defense_threshold = $percentage * $defense;
 	$offense_threshold = $percentage * $offense;
 	
+	// Apply consumable success rate boosts
+	$defender_boost     = getLocationSuccessRateBoost($conn, $defense_id, 'defense');
+	$attacker_loc_boost = getLocationSuccessRateBoost($conn, $offense_id, 'offense');
+	$raid_boost         = getRaidSuccessRateBoost($conn, $raid_id);
+	$attacker_boost     = $attacker_loc_boost + $raid_boost; // 0-20
+	
+	// Adjusted threshold: defender boost raises it (harder for attacker), attacker boost lowers it
+	$adjusted_threshold = $defense_threshold + $defender_boost - $attacker_boost;
+	if($adjusted_threshold < 1)  $adjusted_threshold = 1;
+	if($adjusted_threshold > 99) $adjusted_threshold = 99;
+	
 	// Failure = 2, Success = 1
 	$outcome = rand(1, 100);
 	
-	// Determine faction winner based on threshold
+	// Determine faction winner based on adjusted threshold
 	$winner = "";
-	if($outcome < $defense_threshold){
+	if($outcome < $adjusted_threshold){
 		$winner = "defense";
 	}else{
 		$winner = "offense";
@@ -6458,17 +6707,30 @@ function endRaid($conn, $raid_id){
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 	
-	// Based on pure outcome of raid, determine location leveling and project rewards (if any), update cross reference tables, update balances, and record transactions accordingly
+	// Raid consumables for this raid
+	$raid_consumables    = getRaidConsumablesList($conn, $raid_id);
+	$raid_double_rewards = in_array(6, $raid_consumables);
+	$raid_random_reward  = in_array(7, $raid_consumables);
+	
+	// Based on outcome, determine location leveling and project rewards
 	if($outcome == 1){
-		// If Defense Offense is above level 10, damage a random offense location to help maintain gamification balance and prevent runaway offenses
+		// If Defense Offense is above level 10, damage a random offense location to maintain gamification balance
 		$defense_offense = calculateRaidOffense($conn, $defense_id);
 		if($defense_offense > 10){
-			alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "offense"), 1, "debit");
+			$dmg_loc = selectRandomLocationID($conn, "offense");
 		}else{
-			// Damage random defense location for defense
-			alterRealmLocationLevel($conn, $raid_id, "defense", selectRandomLocationID($conn, "defense"), 1, "debit");
+			$dmg_loc = selectRandomLocationID($conn, "defense");
 		}
-		// Reward random points to offense from defense, credit offense and debit defense the same project points
+		// Check for Double Rewards shield on the damaged location (defense realm)
+		if(hasDoubleRewardsShield($conn, $defense_id, $dmg_loc)){
+			// Shield absorbs the hit — consume DR only, all other consumables survive
+			removeLocationConsumable($conn, $defense_id, $dmg_loc, 6);
+		}else{
+			// Real damage: level down and burn all consumables on that location
+			alterRealmLocationLevel($conn, $raid_id, "defense", $dmg_loc, 1, "debit");
+			burnLocationConsumables($conn, $defense_id, $dmg_loc);
+		}
+		// Reward random points to offense from defense
 		$project = selectRandomProjectID($conn, $defense_id);
 		$project_balance = 0;
 		foreach($project AS $id => $balance){
@@ -6479,23 +6741,54 @@ function endRaid($conn, $raid_id){
 		if($difference == 0){
 			$difference = 1;
 		}
-		// Divide balance by 100 and multiply by the absolute value of the difference between offense and defense level, this ensures that a weaker realm successfully raiding a stronger realm is rewarded for their risk taking by extracting the absolute value of the negative result
+		// Divide balance by 100 and multiply by absolute value of difference
 		$amount = round(($balance/100)*$difference);
-		// Restrict percentage of loot awarded to no more than 500 points to prevent players from getting too many points taken away and discouraging them from participating
-		if($amount > 500){
-			$amount = 500;
+		// Cap loot — Double Rewards raid consumable doubles cap from 500 to 1000
+		$loot_cap = $raid_double_rewards ? 1000 : 500;
+		if($amount > $loot_cap){
+			$amount = $loot_cap;
 		}
 		assignRealmProjectRewards($conn, $raid_id, $project_id, $amount);
+		// Random Reward raid consumable: award a second random project from defense
+		if($raid_random_reward){
+			$rr_project = selectRandomProjectID($conn, $defense_id);
+			foreach($rr_project AS $rr_proj_id => $rr_bal){}
+			$rr_amount = round(($rr_bal/100)*$difference);
+			if($rr_amount > $loot_cap) $rr_amount = $loot_cap;
+			if($rr_amount > 0) assignRealmProjectRewards($conn, $raid_id, $rr_proj_id, $rr_amount);
+		}
+		// Location Random Reward: if offense has all offense/portal locations stocked with RR, credit a random location
+		if(hasRandomReward($conn, $offense_id, 'offense')){
+			$rr_loc = selectRandomLocationIDAny();
+			alterRealmLocationLevel($conn, $raid_id, "offense", $rr_loc, 1, "credit");
+			consumeRandomRewards($conn, $offense_id, 'offense');
+		}
 	}else if($outcome == 2){
 		// Damage to random offense location for offense
-		$offense_id = selectRandomLocationID($conn, "offense");
-		alterRealmLocationLevel($conn, $raid_id, "offense", $offense_id, 1, "debit");
+		$offense_loc = selectRandomLocationID($conn, "offense");
+		if(hasDoubleRewardsShield($conn, $offense_id, $offense_loc)){
+			removeLocationConsumable($conn, $offense_id, $offense_loc, 6);
+		}else{
+			alterRealmLocationLevel($conn, $raid_id, "offense", $offense_loc, 1, "debit");
+			burnLocationConsumables($conn, $offense_id, $offense_loc);
+		}
 		// Improve same offense location for defense
-		alterRealmLocationLevel($conn, $raid_id, "defense", $offense_id, 1, "credit");
+		alterRealmLocationLevel($conn, $raid_id, "defense", $offense_loc, 1, "credit");
 		// 1 in 3 chance of damage to offense portal
 		if(rand(1, 3) == 2){
 			$portal_id = 1;
-			alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
+			if(hasDoubleRewardsShield($conn, $offense_id, $portal_id)){
+				removeLocationConsumable($conn, $offense_id, $portal_id, 6);
+			}else{
+				alterRealmLocationLevel($conn, $raid_id, "offense", $portal_id, 1, "debit");
+				burnLocationConsumables($conn, $offense_id, $portal_id);
+			}
+		}
+		// Location Random Reward: if defense has all defense locations stocked with RR, credit a random location
+		if(hasRandomReward($conn, $defense_id, 'defense')){
+			$rr_loc = selectRandomLocationIDAny();
+			alterRealmLocationLevel($conn, $raid_id, "defense", $rr_loc, 1, "credit");
+			consumeRandomRewards($conn, $defense_id, 'defense');
 		}
 	}
 	return $outcome;

@@ -50,6 +50,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					<?php
 					$realm_id = getRealmID($conn);
 					$levels = getRealmLocationLevels($conn);
+					$loc_consumables = getRealmLocationConsumables($conn, $realm_id);
+					$amounts_data = getCurrentAmounts($conn);
+					$con_names = array(1=>'100% Success',2=>'75% Success',3=>'50% Success',4=>'25% Success',5=>'Fast Forward',6=>'Double Rewards',7=>'Random Reward');
 					?>
 					<li class="role" style="display:block;padding:8px 0 12px;">
 						<div class="location-row" style="border-bottom:1px solid rgba(0,200,160,0.15);padding-bottom:14px;margin-bottom:6px;">
@@ -62,6 +65,25 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<div class="location-action">
 								<?php echo '<input class="small-button" type="button" value="Deactivate" onclick="deactivateRealm('.$realm_id.');">';?>
 							</div>
+						</div>
+					</li>
+					<li class="role" style="display:block;padding:4px 0 8px;">
+						<div class="loc-inventory-strip">
+							<div class="loc-stock-row">
+								<span style="font-size:0.75rem;opacity:0.55;">Inventory</span>
+								<button class="small-button" onclick="stockAllLocations()">Stock All Realm</button>
+							</div>
+							<?php foreach($con_names as $cid => $cname):
+								$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
+								$icon = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
+							?>
+							<div class="loc-inv-slot <?php echo $qty > 0 ? 'available' : 'unavailable'; ?>"
+							     id="inv-slot-<?php echo $cid; ?>"
+							     title="<?php echo htmlspecialchars($cname); ?>">
+								<img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
+								<span class="loc-con-badge" id="inv-qty-<?php echo $cid; ?>"><?php echo $qty; ?></span>
+							</div>
+							<?php endforeach; ?>
 						</div>
 					</li>
 					<?php
@@ -107,6 +129,32 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								}else{ echo $status[$location_id]; }
 								?>
 								</div>
+							</div>
+							<!-- Consumable strip for this location -->
+							<div class="loc-consumable-strip" id="loc-consumables-<?php echo $location_id; ?>">
+								<div class="loc-stock-row">
+									<button class="small-button" onclick="stockLocation(<?php echo $location_id; ?>)">Stock Location</button>
+								</div>
+								<?php foreach($con_names as $cid => $cname):
+									$equipped = isset($loc_consumables[$location_id][$cid]);
+									$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
+									$icon = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
+									$slot_class = $equipped ? 'equipped' : ($qty > 0 ? 'available' : 'unavailable');
+									$slot_title = htmlspecialchars($cname).($equipped?' (Equipped - click to unequip)':($qty>0?' (Click to equip)':' (None in inventory)'));
+									$slot_onclick = $equipped ? 'removeLocationConsumable('.$location_id.','.$cid.')' : ($qty>0 ? 'applyLocationConsumable('.$location_id.','.$cid.')' : '');
+								?>
+								<div class="loc-con-slot <?php echo $slot_class; ?>"
+								     id="loc-con-<?php echo $location_id.'-'.$cid; ?>"
+								     title="<?php echo $slot_title; ?>"
+								     onclick="<?php echo $slot_onclick; ?>">
+									<img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
+									<?php if($equipped): ?>
+									<span class="loc-con-badge equipped">&#10003;</span>
+									<?php elseif($qty > 0): ?>
+									<span class="loc-con-badge" id="loc-inv-<?php echo $location_id.'-'.$cid; ?>"><?php echo $qty; ?></span>
+									<?php endif; ?>
+								</div>
+								<?php endforeach; ?>
 							</div>
 							</li>
 					<?php
@@ -414,6 +462,25 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<img id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
 <?php } ?>
+	<!-- Raid Consumables Modal -->
+	<div id="raid-consumables-modal" class="modal" style="display:none;">
+		<div class="modal-content" style="min-height:auto;">
+			<div class="modal-header">
+				<span class="close" onclick="closeRaidConsumablesModal()">&times;</span>
+				<h2 style="margin:8px 0;">Customize Raid Consumables</h2>
+			</div>
+			<div class="modal-body" style="padding:12px 16px;">
+				<p style="font-size:0.8rem;opacity:0.6;margin:0 0 10px;">Select which consumables to use for this raid. Checked items will be consumed on launch.</p>
+				<div id="raid-con-modal-items" class="raid-con-item-grid"></div>
+				<div id="raid-con-modal-summary" class="raid-con-summary"></div>
+			</div>
+			<div class="modal-footer" style="display:flex;gap:10px;padding:10px 16px;">
+				<input type="button" class="button" id="raid-con-modal-start-btn" value="Start Raid" onclick="startRaidFromModal()"/>
+				<input type="button" class="small-button" value="Cancel" onclick="closeRaidConsumablesModal()"/>
+			</div>
+		</div>
+	</div>
+
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
