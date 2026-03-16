@@ -5414,6 +5414,7 @@ function applyLocationConsumable($conn, $realm_id, $location_id, $consumable_id)
 	updateAmount($conn, $user_id, $consumable_id, -1);
 	$conn->query("INSERT INTO realms_locations_consumables (realm_location_id, consumable_id) VALUES ('".$rl_id."', '".$consumable_id."')");
 	// FF applied to existing upgrade: halve remaining duration
+	$upgrade_info = null;
 	if($consumable_id == 5){
 		$upg = $conn->query("SELECT duration, created_date FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
 		if($upg && $upg->num_rows > 0){
@@ -5424,12 +5425,21 @@ function applyLocationConsumable($conn, $realm_id, $location_id, $consumable_id)
 				$halve          = (int)ceil($remaining_days / 2);
 				$new_duration   = max(0, $upg_row['duration'] - $halve);
 				$conn->query("UPDATE upgrades SET duration='".$new_duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+				// Re-query for accurate remaining seconds after update
+				$upg2 = $conn->query("SELECT duration, created_date FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+				if($upg2 && $upg2->num_rows > 0){
+					$row2 = $upg2->fetch_assoc();
+					$comp2 = strtotime('+'.$row2['duration'].' day', strtotime($row2['created_date']));
+					$upgrade_info = array('duration'=>intval($row2['duration']), 'remaining_seconds'=>max(0, $comp2 - time()));
+				}
 			}
 		}
 	}
 	$new_qty = getCurrentAmount($conn, $user_id, $consumable_id);
 	if($new_qty === "false") $new_qty = 0;
-	return array('success'=>true, 'qty'=>intval($new_qty));
+	$ret = array('success'=>true, 'qty'=>intval($new_qty));
+	if($upgrade_info !== null) $ret['upgrade'] = $upgrade_info;
+	return $ret;
 }
 
 // Remove a consumable from a location and refund to inventory (UI unequip)
@@ -5443,6 +5453,7 @@ function removeLocationConsumableRefund($conn, $realm_id, $location_id, $consuma
 	if($conn->query($sql) === TRUE && $conn->affected_rows > 0){
 		updateAmount($conn, $user_id, $consumable_id, 1);
 		// FF removed mid-upgrade: restore remaining duration
+		$upgrade_info = null;
 		if($consumable_id == 5){
 			$upg = $conn->query("SELECT duration, created_date FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
 			if($upg && $upg->num_rows > 0){
@@ -5452,12 +5463,21 @@ function removeLocationConsumableRefund($conn, $realm_id, $location_id, $consuma
 					$remaining_days = (int)ceil(($completion - time()) / 86400);
 					$new_duration   = $upg_row['duration'] + $remaining_days;
 					$conn->query("UPDATE upgrades SET duration='".$new_duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+					// Re-query for accurate remaining seconds after update
+					$upg2 = $conn->query("SELECT duration, created_date FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+					if($upg2 && $upg2->num_rows > 0){
+						$row2 = $upg2->fetch_assoc();
+						$comp2 = strtotime('+'.$row2['duration'].' day', strtotime($row2['created_date']));
+						$upgrade_info = array('duration'=>intval($row2['duration']), 'remaining_seconds'=>max(0, $comp2 - time()));
+					}
 				}
 			}
 		}
 		$new_qty = getCurrentAmount($conn, $user_id, $consumable_id);
 		if($new_qty === "false") $new_qty = 1;
-		return array('success'=>true, 'qty'=>intval($new_qty));
+		$ret = array('success'=>true, 'qty'=>intval($new_qty));
+		if($upgrade_info !== null) $ret['upgrade'] = $upgrade_info;
+		return $ret;
 	}
 	return array('error'=>'Not equipped');
 }

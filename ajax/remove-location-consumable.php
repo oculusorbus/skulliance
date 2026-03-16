@@ -20,7 +20,7 @@ if(!$realm_id || !$location_id || !$consumable_id){
 	exit;
 }
 
-removeLocationConsumableRefund($conn, $realm_id, $location_id, $consumable_id);
+$result = removeLocationConsumableRefund($conn, $realm_id, $location_id, $consumable_id);
 
 // Return updated inventory
 $inventory = array();
@@ -29,11 +29,13 @@ foreach($amounts as $cid => $data){
 	$inventory[$cid] = $data['amount'];
 }
 
-echo json_encode(array(
+$out = array(
 	'success'   => true,
 	'inventory' => $inventory,
 	'equipped'  => getRealmLocationConsumables($conn, $realm_id)
-));
+);
+if(isset($result['upgrade'])) $out['upgrades'] = array($location_id => $result['upgrade']);
+echo json_encode($out);
 
 $conn->close();
 ?>

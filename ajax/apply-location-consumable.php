@@ -22,6 +22,7 @@ if(!$realm_id){
 
 $applied  = array();
 $skipped  = array();
+$upgrades = array();
 
 // stock-realm: all locations, all consumable types
 if($location_id === 'all' && $consumable_id === 'all'){
@@ -31,9 +32,9 @@ if($location_id === 'all' && $consumable_id === 'all'){
 			$result = applyLocationConsumable($conn, $realm_id, $lid, $cid);
 			if(isset($result['success'])){
 				$applied[] = array('location_id' => $lid, 'consumable_id' => $cid);
+				if(isset($result['upgrade'])) $upgrades[$lid] = $result['upgrade'];
 			}else{
 				$skipped[] = array('location_id' => $lid, 'consumable_id' => $cid, 'reason' => $result['error']);
-				// If out of stock, stop trying this consumable type
 				if($result['error'] === 'Out of stock') break;
 			}
 		}
@@ -45,6 +46,7 @@ if($location_id === 'all' && $consumable_id === 'all'){
 		$result = applyLocationConsumable($conn, $realm_id, $lid, $cid);
 		if(isset($result['success'])){
 			$applied[] = array('location_id' => $lid, 'consumable_id' => $cid);
+			if(isset($result['upgrade'])) $upgrades[$lid] = $result['upgrade'];
 		}else{
 			$skipped[] = array('location_id' => $lid, 'consumable_id' => $cid, 'reason' => $result['error']);
 		}
@@ -56,6 +58,7 @@ if($location_id === 'all' && $consumable_id === 'all'){
 	$result = applyLocationConsumable($conn, $realm_id, $lid, $cid);
 	if(isset($result['success'])){
 		$applied[] = array('location_id' => $lid, 'consumable_id' => $cid);
+		if(isset($result['upgrade'])) $upgrades[$lid] = $result['upgrade'];
 	}else{
 		$skipped[] = array('location_id' => $lid, 'consumable_id' => $cid, 'reason' => $result['error']);
 	}
@@ -72,12 +75,14 @@ foreach($amounts as $cid => $data){
 	$inventory[$cid] = $data['amount'];
 }
 
-echo json_encode(array(
+$out = array(
 	'applied'   => $applied,
 	'skipped'   => $skipped,
 	'inventory' => $inventory,
 	'equipped'  => getRealmLocationConsumables($conn, $realm_id)
-));
+);
+if(!empty($upgrades)) $out['upgrades'] = $upgrades;
+echo json_encode($out);
 
 $conn->close();
 ?>

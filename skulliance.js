@@ -1187,6 +1187,7 @@ function _locConAjax(url){
 				if(resp.error){ console.log(resp.error); return; }
 				updateInventoryStrip(resp.inventory);
 				if(resp.equipped) _syncLocConsumableSlots(resp.equipped);
+				if(resp.upgrades) _updateUpgradeDisplays(resp.upgrades);
 			} catch(e){ console.log('Consumable AJAX error', e); }
 		}
 	};
@@ -1249,6 +1250,21 @@ function _updateLocationStatusLabels(lid, equippedRow){
 	if(equippedRow[6]) tags.push('Shield');
 	if(equippedRow[7]) tags.push('Random Reward');
 	el.innerHTML = tags.map(function(t){ return '<span class="loc-status-tag">'+t+'</span>'; }).join('');
+}
+
+function _updateUpgradeDisplays(upgrades){
+	for(var lid in upgrades){
+		var el = document.getElementById('loc-action-'+lid);
+		if(!el) continue;
+		var upg = upgrades[lid];
+		var dur = upg.duration;
+		var rem = upg.remaining_seconds;
+		if(rem <= 0){ el.innerHTML = ''; continue; }
+		var d = Math.floor(rem / 86400);
+		var h = Math.floor((rem % 86400) / 3600);
+		var m = Math.floor((rem % 3600) / 60);
+		el.innerHTML = "<div class='location-meta' style='font-weight:normal;text-align:right;'>Lv"+dur+" upgrade &bull; "+dur+" "+(dur===1?"day":"days")+"<br>"+d+"d "+h+"h "+m+"m left</div>";
+	}
 }
 
 function editRealmName(editIcon){

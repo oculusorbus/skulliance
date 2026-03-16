@@ -132,7 +132,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 										<?php foreach($tags as $tag): ?><span class="loc-status-tag"><?php echo $tag; ?></span><?php endforeach; ?>
 									</div>
 								</div>
-								<div class="location-action">
+								<div class="location-action" id="loc-action-<?php echo $location_id; ?>">
 								<?php 
 								if(!isset($status[$location_id])){
 									$balance = getBalance($conn, $location_id);
