@@ -6188,27 +6188,29 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$total = $defense + $offense;
 					$percentage = (100/$total);
 	
-					// Calculate thresholds for random number generation
-					$defense_threshold = $percentage * $defense;
-					$offense_threshold = $percentage * $offense;
-					$defense_results = round($defense_threshold,2)."%";
-					$offense_results = round($offense_threshold,2)."%";
+					// Calculate adjusted win chances including consumable and location boosts
+					$defense_threshold  = $percentage * $defense;
+					$defender_boost     = getLocationSuccessRateBoost($conn, $defense_id, 'defense');
+					$attacker_loc_boost = getLocationSuccessRateBoost($conn, $offense_id, 'offense');
+					$raid_boost         = getRaidSuccessRateBoost($conn, $row['raid_id']);
+					$attacker_boost     = $attacker_loc_boost + $raid_boost;
+					$adj_threshold      = $defense_threshold + $defender_boost - $attacker_boost;
+					if($adj_threshold < 1)  $adj_threshold = 1;
+					if($adj_threshold > 99) $adj_threshold = 99;
+					$defense_results = round($adj_threshold, 2)."%";
+					$offense_results = round(100 - $adj_threshold, 2)."%";
 					// Show active raid consumable icons on offense side
-					$con_names = array(1=>'100% Success',2=>'75% Success',3=>'50% Success',4=>'25% Success',5=>'Fast Forward',6=>'Double Rewards',7=>'Random Reward');
+					$con_names = array(1=>'+4% Success',2=>'+3% Success',3=>'+2% Success',4=>'+1% Success',5=>'Fast Forward',6=>'Double Rewards',7=>'Random Reward');
+					$icon_names = array(1=>'100-success',2=>'75-success',3=>'50-success',4=>'25-success',5=>'fast-forward',6=>'double-rewards',7=>'random-reward');
 					$raid_cons = getRaidConsumablesList($conn, $row['raid_id']);
 					if(!empty($raid_cons)){
 						$con_icons = '';
 						foreach($raid_cons as $cid){
 							$cname = isset($con_names[$cid]) ? $con_names[$cid] : '';
-							$cfile = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
+							$cfile = isset($icon_names[$cid]) ? $icon_names[$cid].'.png' : 'skull.png';
 							$con_icons .= "<img title='".$cname."' class='icon consumable raid-active-cons' src='icons/".$cfile."'/>";
 						}
 						$offense_results .= "<br>".$con_icons;
-					}
-					// Show active defense location boost on defense side
-					$def_boost = getLocationSuccessRateBoost($conn, $defense_id, 'defense');
-					if($def_boost > 0){
-						$defense_results .= "<br><small>+".$def_boost."% Def Boost</small>";
 					}
 				}else{
 					$time_message = "0d 0h 0m";
