@@ -5685,10 +5685,10 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td align='right' width='50%'>";
 					if($row["avatar"] != ""){
-						$output[$key] .= "<img style='width:50px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
+						$output[$key] .= "<a href='/staking/profile.php?username=".urlencode($row["username"])."'><img style='width:50px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/></a>";
 					}
 				$output[$key] .= "</td>";
-				$output[$key] .= "<td width='50%'>".$row["username"]."</td>";
+				$output[$key] .= "<td width='50%'><a href='/staking/profile.php?username=".urlencode($row["username"])."'  style='color:inherit;text-decoration:none;'>".$row["username"]."</a></td>";
 				$output[$key] .= "</tr>";
 				$output[$key] .= "<tr>";
 				$output[$key] .= "<td align='right' width='50%'>";
