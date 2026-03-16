@@ -1150,6 +1150,16 @@ function startRaidFromModal(){
 	};
 }
 
+function openInventoryInfoModal(){
+	var m = document.getElementById('inventory-info-modal');
+	if(m) m.style.display = 'block';
+}
+
+function closeInventoryInfoModal(){
+	var m = document.getElementById('inventory-info-modal');
+	if(m) m.style.display = 'none';
+}
+
 function applyLocationConsumable(locationId, consumableId){
 	_locConAjax('ajax/apply-location-consumable.php?location_id='+locationId+'&consumable_id='+consumableId);
 }
@@ -1326,5 +1336,9 @@ window.onclick = function(event) {
   var raidModal = document.getElementById('raid-consumables-modal');
   if (raidModal && event.target == raidModal) {
     closeRaidConsumablesModal();
+  }
+  var infoModal = document.getElementById('inventory-info-modal');
+  if (infoModal && event.target == infoModal) {
+    closeInventoryInfoModal();
   }
 }

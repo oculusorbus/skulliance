@@ -83,6 +83,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<?php endforeach; ?>
 							<div class="loc-stock-row" style="margin-top:6px;">
 								<button class="small-button" onclick="stockAllLocations()">Stock All Locations</button>
+								<button class="small-button" onclick="openInventoryInfoModal()">Inventory Info</button>
 							</div>
 						</div>
 					</li>
@@ -462,6 +463,71 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<img id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
 <?php } ?>
+	<!-- Inventory Info Modal -->
+	<div id="inventory-info-modal" class="modal" style="display:none;">
+		<div class="raid-modal-content" style="max-width:560px;max-height:80vh;overflow-y:auto;">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Location Consumables Guide</h2>
+				<button class="raid-modal-close" onclick="closeInventoryInfoModal()" aria-label="Close">&times;</button>
+			</div>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 14px;">Each location holds one of each consumable type. Effects apply to both offense and defense locations unless noted.</p>
+			<div class="inv-info-grid">
+				<div class="inv-info-item">
+					<img class="icon" src="icons/100-success.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>+4% Success</strong>
+						<p>Adds 4% to the success chance calculation for that location type. The boost is averaged across all locations of the same type (offense or defense), contributing up to 10% total. Survives until the location takes real damage.</p>
+					</div>
+				</div>
+				<div class="inv-info-item">
+					<img class="icon" src="icons/75-success.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>+3% Success</strong>
+						<p>Adds 3% to the success chance for that location type. Averaged across all same-type locations, up to 10% total. Survives until the location takes real damage.</p>
+					</div>
+				</div>
+				<div class="inv-info-item">
+					<img class="icon" src="icons/50-success.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>+2% Success</strong>
+						<p>Adds 2% to the success chance for that location type. Averaged across all same-type locations, up to 10% total. Survives until the location takes real damage.</p>
+					</div>
+				</div>
+				<div class="inv-info-item">
+					<img class="icon" src="icons/25-success.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>+1% Success</strong>
+						<p>Adds 1% to the success chance for that location type. Averaged across all same-type locations, up to 10% total. Survives until the location takes real damage.</p>
+					</div>
+				</div>
+				<div class="inv-info-item">
+					<img class="icon" src="icons/fast-forward.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>Fast Forward</strong>
+						<p>Halves the upgrade duration for this location (rounded up, minimum 1 day). Burns when the upgrade completes or if the location takes real damage before it does.</p>
+					</div>
+				</div>
+				<div class="inv-info-item">
+					<img class="icon" src="icons/double-rewards.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>Double Rewards</strong>
+						<p>Acts as a damage shield. When this location would take a hit, the shield absorbs it — only Double Rewards is consumed and all other consumables on this location survive intact. Burns on use.</p>
+					</div>
+				</div>
+				<div class="inv-info-item">
+					<img class="icon" src="icons/random-reward.png" onerror="this.src='icons/skull.png'"/>
+					<div>
+						<strong>Random Reward</strong>
+						<p>When all locations of the same type (all 3 offense or all 3 defense) are stocked with this item, a successful raid or successful defense triggers a free level credit to a random location. All Random Rewards for that type are consumed when triggered.</p>
+					</div>
+				</div>
+			</div>
+			<div class="raid-modal-footer">
+				<input type="button" class="small-button" value="Close" onclick="closeInventoryInfoModal()"/>
+			</div>
+		</div>
+	</div>
+
 	<!-- Raid Consumables Modal -->
 	<div id="raid-consumables-modal" class="modal" style="display:none;">
 		<div class="raid-modal-content">

@@ -2370,6 +2370,18 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     margin-top: 14px;
 }
 
+/* Inventory info modal grid */
+.inv-info-grid { display: flex; flex-direction: column; gap: 14px; }
+.inv-info-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(0,200,160,0.09);
+}
+.inv-info-item:last-child { border-bottom: none; padding-bottom: 0; }
+.inv-info-item .icon { width: 32px; height: 32px; flex-shrink: 0; margin-right: 0; margin-top: 2px; }
+.inv-info-item strong { display: block; font-size: 0.85rem; color: #00c8a0; margin-bottom: 3px; }
+.inv-info-item p { margin: 0; font-size: 0.75rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
+
 @media (max-width: 400px) {
     .loc-consumable-strip { margin-left: 0; }
 }
