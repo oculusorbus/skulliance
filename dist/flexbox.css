@@ -2328,6 +2328,48 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .raid-active-cons { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
 .raid-active-cons img { width: 18px; height: 18px; opacity: 0.85; }
 
+/* Raid consumables modal — card-style matching site theme */
+.raid-modal-content {
+    position: relative;
+    background: #0a1929;
+    border: 1px solid rgba(0,200,160,0.25);
+    border-radius: 12px;
+    margin: 8% auto;
+    padding: 20px 22px 18px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,200,160,0.08);
+    animation-name: animatetop;
+    animation-duration: 0.3s;
+}
+.raid-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,200,160,0.13);
+}
+.raid-modal-header h2 { color: #fff; }
+.raid-modal-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+    transition: color 0.15s;
+}
+.raid-modal-close:hover { color: #fff; }
+.raid-modal-footer {
+    display: flex;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0,200,160,0.1);
+    margin-top: 14px;
+}
+
 @media (max-width: 400px) {
     .loc-consumable-strip { margin-left: 0; }
 }

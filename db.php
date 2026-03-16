@@ -6749,13 +6749,14 @@ function endRaid($conn, $raid_id){
 			$amount = $loot_cap;
 		}
 		assignRealmProjectRewards($conn, $raid_id, $project_id, $amount);
-		// Random Reward raid consumable: award a second random project from defense
+		// Random Reward raid consumable: select a random project from defense and
+		// award its loot only if it exceeds the original loot amount
 		if($raid_random_reward){
 			$rr_project = selectRandomProjectID($conn, $defense_id);
 			foreach($rr_project AS $rr_proj_id => $rr_bal){}
 			$rr_amount = round(($rr_bal/100)*$difference);
 			if($rr_amount > $loot_cap) $rr_amount = $loot_cap;
-			if($rr_amount > 0) assignRealmProjectRewards($conn, $raid_id, $rr_proj_id, $rr_amount);
+			if($rr_amount > $amount) assignRealmProjectRewards($conn, $raid_id, $rr_proj_id, $rr_amount);
 		}
 		// Location Random Reward: if offense has all offense/portal locations stocked with RR, credit a random location
 		if(hasRandomReward($conn, $offense_id, 'offense')){

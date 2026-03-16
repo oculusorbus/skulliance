@@ -1049,7 +1049,10 @@ function startRaid(raidButton, defenseID, duration){
 }
 
 function updateRaidAllLabel(checkbox, realmId){
-	// Visual update when All Available checkbox changes
+	// When All Available is unchecked, deselect all items in the modal if it's open
+	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:not(:disabled)');
+	checks.forEach(function(ch){ ch.checked = checkbox.checked; });
+	updateRaidModalSummary();
 }
 
 function openRaidConsumablesModal(realmId, duration){
@@ -1115,7 +1118,7 @@ function updateRaidModalSummary(){
 	if(hasFF) parts.push('Duration Halved');
 	if(hasDR) parts.push('Loot Cap 1000');
 	if(hasRR) parts.push('+1 Random Project Loot');
-	sumEl.innerHTML = parts.length > 0 ? '<strong>Raid Bonuses:</strong> '+parts.join(' &bull; ') : 'No bonuses selected.';
+	sumEl.innerHTML = parts.length > 0 ? '<strong>Bonuses:</strong> '+parts.join(' &bull; ') : 'No consumables selected.';
 }
 
 function closeRaidConsumablesModal(){

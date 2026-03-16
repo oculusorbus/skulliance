@@ -11,13 +11,13 @@ if(!isset($_SESSION['userData']['user_id'])){
 }
 
 $con_info = array(
-	1 => array('name'=>'100% Success', 'desc'=>'Guarantees raid success. Burns on use.'),
-	2 => array('name'=>'75% Success',  'desc'=>'+75% to your offense success rate. Burns on use.'),
-	3 => array('name'=>'50% Success',  'desc'=>'+50% to your offense success rate. Burns on use.'),
-	4 => array('name'=>'25% Success',  'desc'=>'+25% to your offense success rate. Burns on use.'),
-	5 => array('name'=>'Fast Forward', 'desc'=>'Halves raid duration (or bumps portal +1 level if portal is level 0-1). Burns on use.'),
-	6 => array('name'=>'Double Rewards','desc'=>'Doubles loot cap from 500 to 1000 points on a successful raid. Burns on use.'),
-	7 => array('name'=>'Random Reward', 'desc'=>'Awards a second random project\'s loot on successful raid. Burns on use.'),
+	1 => array('name'=>'+4% Success', 'desc'=>'Adds 4% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
+	2 => array('name'=>'+3% Success', 'desc'=>'Adds 3% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
+	3 => array('name'=>'+2% Success', 'desc'=>'Adds 2% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
+	4 => array('name'=>'+1% Success', 'desc'=>'Adds 1% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
+	5 => array('name'=>'Fast Forward', 'desc'=>'Halves raid duration. Portals at level 0-1 gain +1 portal level instead. Burns on use.'),
+	6 => array('name'=>'Double Rewards','desc'=>'Doubles the loot cap from 500 to 1000 points on a successful raid. Burns on use.'),
+	7 => array('name'=>'Random Reward', 'desc'=>'Selects a random project from the defender and awards its loot if greater than the original loot. Burns on use.'),
 );
 
 $amounts = getCurrentAmounts($conn);
@@ -26,7 +26,10 @@ $items = array();
 foreach($con_info as $cid => $info){
 	$qty = 0;
 	if(isset($amounts[$cid])) $qty = intval($amounts[$cid]['amount']);
-	$icon = strtolower(str_replace('%','',str_replace(' ','-',$info['name']))).'.png';
+	$icon = strtolower(str_replace(array('%','+',' '),array('','+','-'),$info['name'])).'.png';
+	// Fall back to original consumable names for icon lookup (DB names are still "100% Success" etc.)
+	$icon_names = array(1=>'100-success',2=>'75-success',3=>'50-success',4=>'25-success',5=>'fast-forward',6=>'double-rewards',7=>'random-reward');
+	$icon = $icon_names[$cid].'.png';
 	$items[] = array(
 		'id'   => $cid,
 		'name' => $info['name'],

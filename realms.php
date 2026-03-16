@@ -464,17 +464,15 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <?php } ?>
 	<!-- Raid Consumables Modal -->
 	<div id="raid-consumables-modal" class="modal" style="display:none;">
-		<div class="modal-content" style="min-height:auto;">
-			<div class="modal-header">
-				<span class="close" onclick="closeRaidConsumablesModal()">&times;</span>
-				<h2 style="margin:8px 0;">Customize Raid Consumables</h2>
+		<div class="raid-modal-content">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Customize Raid Consumables</h2>
+				<button class="raid-modal-close" onclick="closeRaidConsumablesModal()" aria-label="Close">&times;</button>
 			</div>
-			<div class="modal-body" style="padding:12px 16px;">
-				<p style="font-size:0.8rem;opacity:0.6;margin:0 0 10px;">Select which consumables to use for this raid. Checked items will be consumed on launch.</p>
-				<div id="raid-con-modal-items" class="raid-con-item-grid"></div>
-				<div id="raid-con-modal-summary" class="raid-con-summary"></div>
-			</div>
-			<div class="modal-footer" style="display:flex;gap:10px;padding:10px 16px;">
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 14px;">Select which consumables to use. Checked items will be consumed on launch.</p>
+			<div id="raid-con-modal-items" class="raid-con-item-grid"></div>
+			<div id="raid-con-modal-summary" class="raid-con-summary"></div>
+			<div class="raid-modal-footer">
 				<input type="button" class="button" id="raid-con-modal-start-btn" value="Start Raid" onclick="startRaidFromModal()"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeRaidConsumablesModal()"/>
 			</div>
