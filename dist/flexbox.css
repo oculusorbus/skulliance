@@ -2245,7 +2245,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .loc-consumable-strip {
     display: flex; flex-wrap: wrap; gap: 6px;
     padding: 8px 0 4px;
-    margin-left: 56px;
+    margin-left: 9px;
 }
 .loc-con-slot {
     position: relative; width: 34px; height: 34px;
