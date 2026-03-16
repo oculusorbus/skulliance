@@ -1059,6 +1059,7 @@ function _updateRaidStats(realmId, selectedCids){
 	raidBoost = Math.min(10, raidBoost);
 	var adjWin = offensePct - defBoost + attLocBoost + raidBoost;
 	adjWin = Math.max(1, Math.min(99, adjWin));
+	console.log('[raidStats] realm='+realmId+' cids='+JSON.stringify(selectedCids)+' offensePct='+offensePct+' defBoost='+defBoost+' attLocBoost='+attLocBoost+' raidBoost='+raidBoost+' adjWin='+adjWin);
 	sEl.textContent = Math.round(adjWin) + '%';
 	var dur = hasFF ? Math.ceil(baseDuration / 2) : baseDuration;
 	dEl.textContent = dur + ' ' + (dur === 1 ? 'day' : 'days');
