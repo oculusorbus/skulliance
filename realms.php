@@ -83,6 +83,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							<?php endforeach; ?>
 							<div class="loc-stock-row" style="margin-top:6px;">
 								<button class="small-button" onclick="stockAllLocations()">Stock All Locations</button>
+								&nbsp;
 								<button class="small-button" onclick="openInventoryInfoModal()">Inventory Info</button>
 							</div>
 						</div>
