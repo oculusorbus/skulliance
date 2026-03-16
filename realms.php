@@ -476,28 +476,28 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					<img class="icon" src="icons/100-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+4% Success</strong>
-						<p>Adds 4% to the success chance calculation for that location type. The boost is averaged across all locations of the same type (offense or defense), contributing up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 4% to the success chance for this location's type. Offense locations (Armory, Barracks, Crypt) and the Portal (Transport) are grouped together; defense locations (Tower, Factory, Mine) are grouped separately. The boost is averaged across all locations in the group, contributing up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
 					<img class="icon" src="icons/75-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+3% Success</strong>
-						<p>Adds 3% to the success chance for that location type. Averaged across all same-type locations, up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 3% to the success chance for this location's type (offense/Portal or defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
 					<img class="icon" src="icons/50-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+2% Success</strong>
-						<p>Adds 2% to the success chance for that location type. Averaged across all same-type locations, up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 2% to the success chance for this location's type (offense/Portal or defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
 					<img class="icon" src="icons/25-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+1% Success</strong>
-						<p>Adds 1% to the success chance for that location type. Averaged across all same-type locations, up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 1% to the success chance for this location's type (offense/Portal or defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
@@ -518,7 +518,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					<img class="icon" src="icons/random-reward.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>Random Reward</strong>
-						<p>When all locations of the same type (all 3 offense or all 3 defense) are stocked with this item, a successful raid or successful defense triggers a free level credit to a random location. All Random Rewards for that type are consumed when triggered.</p>
+						<p>When all locations of the same type are stocked with this item — offense/Portal (Armory, Barracks, Crypt, Portal) for raiders, defense (Tower, Factory, Mine) for defenders — a successful raid or defense triggers a free level credit to a random location. All Random Rewards in that group are consumed when triggered.</p>
 					</div>
 				</div>
 			</div>
