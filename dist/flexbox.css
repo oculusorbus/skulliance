@@ -711,9 +711,9 @@ input {
 }
 
 .raid-button {
-  background-color: #015870;
+  background-color: #00c8a0;
   border: none;
-  color: white;
+  color: #07111d;
   padding: 3px 10px;
   border-radius: 20px;
   text-align: center;
@@ -721,19 +721,18 @@ input {
   display: inline-block;
   font-size: 12px;
   cursor:pointer;
-  border-radius: 0;
   font-weight: bold;
-  box-shadow: 0 4px #003040;
+  box-shadow: 0 4px #020a12;
   font-family: Arial, sans-serif;
 }
 
 .raid-button:hover {
-	background-color: #01748e;
+	background-color: #00a882;
 }
 
 .raid-button:active {
-  background-color: #01748e;
-  box-shadow: 0 2px #001a22;
+  background-color: #00a882;
+  box-shadow: 0 2px #003828;
   transform: translateY(2px);
 }
 
