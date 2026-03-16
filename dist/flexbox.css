@@ -438,6 +438,7 @@ a:hover { color: #00a882; }
 /* Realms page: widen locations column, narrow realm image column */
 #row0 .side {
 	flex: 40%;
+	max-width: none;
 }
 #row0 .main {
 	flex: 60%;
