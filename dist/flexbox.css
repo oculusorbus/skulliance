@@ -2315,7 +2315,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Raid consumables modal grid */
 .raid-con-item {
     display: grid;
-    grid-template-columns: 20px 32px 1fr auto;
+    grid-template-columns: 20px 40px 1fr auto;
     grid-template-rows: auto auto;
     align-items: center; gap: 0 8px;
     padding: 8px 4px;
@@ -2349,7 +2349,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     margin: 8% auto;
     padding: 20px 22px 18px;
     width: 90%;
-    max-width: 500px;
+    max-width: 600px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,200,160,0.08);
     animation-name: animatetop;
     animation-duration: 0.3s;
