@@ -2253,7 +2253,8 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     cursor: pointer; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     flex-shrink: 0;
 }
-.loc-con-slot img { width: 22px; height: 22px; pointer-events: none; }
+.loc-con-slot img { width: 22px; height: 22px; pointer-events: none; margin-right: 0; }
+.loc-inv-slot img { margin-right: 0; }
 .loc-con-slot.equipped {
     border-color: #00c8a0;
     background: rgba(0,200,160,0.12);
