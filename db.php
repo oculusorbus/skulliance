@@ -5653,7 +5653,7 @@ function getRealms($conn, $sort, $group){
 				$percentage = (100/$total);
 				$defense_threshold   = $percentage * $defense;
 				$offense_threshold   = $percentage * $offense;
-				$duration            = ceil($defense/$offense);
+				$duration            = max(2, ceil($defense/$offense));
 				$defender_loc_boost  = getLocationSuccessRateBoost($conn, $row['realm_id'], 'defense');
 				$init_adj_win = $offense_threshold - $defender_loc_boost + $attacker_loc_boost + $all_avail_raid_boost;
 				if($init_adj_win < 1)  $init_adj_win = 1;
@@ -5678,9 +5678,7 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "<img src='images/themes/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
 				$output[$key] .= "</td></tr>";
 				$output[$key] .= "</table>";
-				if($duration <= 0){
-					$duration = 1;
-				}
+				if($duration < 2) $duration = 2;
 				$output[$key] .= "</td>";
 				$output[$key] .= "<td width='25%' valign='top' align='left'>";
 				$output[$key] .= "<table id='transactions' style='border-style:none'>";
@@ -6039,7 +6037,7 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 		$user_id    = $_SESSION['userData']['user_id'];
 		$offense_id = getRealmID($conn);
 		$defense_id = intval($defense_id);
-		$duration   = intval($duration);
+		$duration   = max(2, intval($duration));
 
 		// Resolve which consumable IDs to apply
 		$consumable_ids = array();
