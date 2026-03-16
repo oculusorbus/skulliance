@@ -69,10 +69,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					</li>
 					<li class="role" style="display:block;padding:4px 0 8px;">
 						<div class="loc-inventory-strip">
-							<div class="loc-stock-row">
-								<span style="font-size:0.75rem;opacity:0.55;">Inventory</span>
-								<button class="small-button" onclick="stockAllLocations()">Stock All Realm</button>
-							</div>
+							<span style="font-size:0.75rem;opacity:0.55;display:block;margin-bottom:4px;">Inventory</span>
 							<?php foreach($con_names as $cid => $cname):
 								$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
 								$icon = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
@@ -84,6 +81,9 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								<span class="loc-con-badge" id="inv-qty-<?php echo $cid; ?>"><?php echo $qty; ?></span>
 							</div>
 							<?php endforeach; ?>
+							<div class="loc-stock-row" style="margin-top:6px;">
+								<button class="small-button" onclick="stockAllLocations()">Stock All Locations</button>
+							</div>
 						</div>
 					</li>
 					<?php
@@ -132,9 +132,6 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							</div>
 							<!-- Consumable strip for this location -->
 							<div class="loc-consumable-strip" id="loc-consumables-<?php echo $location_id; ?>">
-								<div class="loc-stock-row">
-									<button class="small-button" onclick="stockLocation(<?php echo $location_id; ?>)">Stock Location</button>
-								</div>
 								<?php foreach($con_names as $cid => $cname):
 									$equipped = isset($loc_consumables[$location_id][$cid]);
 									$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
@@ -150,11 +147,12 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									<img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
 									<?php if($equipped): ?>
 									<span class="loc-con-badge equipped">&#10003;</span>
-									<?php elseif($qty > 0): ?>
-									<span class="loc-con-badge" id="loc-inv-<?php echo $location_id.'-'.$cid; ?>"><?php echo $qty; ?></span>
 									<?php endif; ?>
 								</div>
 								<?php endforeach; ?>
+								<div class="loc-stock-row">
+									<button class="small-button" onclick="stockLocation(<?php echo $location_id; ?>)">Stock Location</button>
+								</div>
 							</div>
 							</li>
 					<?php

@@ -1080,7 +1080,7 @@ function _renderRaidConsumablesModal(consumables){
 		html += '<div class="raid-con-item'+(has?'':' unavailable')+'">';
 		html += '<label>';
 		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?' checked':' disabled')+'>';
-		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src='icons/skull.png'" title="'+c.name+'"/>';
+		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src=\'icons/skull.png\'" title="'+c.name+'"/>';
 		html += '<span class="raid-con-name">'+c.name+'</span>';
 		html += '</label>';
 		html += '<span class="raid-con-qty">'+(has?'x'+c.qty:'None')+'</span>';
