@@ -2208,7 +2208,10 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .location-icon-wrap img { width: 44px; opacity: 0.85; }
 .location-info { flex: 1; min-width: 0; }
 .location-info strong { display: block; font-size: 0.82rem; color: #00c8a0; text-transform: uppercase; letter-spacing: 0.04em; }
-.location-meta { font-size: 0.78rem; color: #7a9eb0; line-height: 1.7; }
+.location-meta { font-size: 0.75rem; color: #7a9eb0; line-height: 1.6; }
+.loc-upgrade-status { display: flex; flex-direction: column; gap: 1px; }
+.loc-status-row { font-size: 0.75rem; color: #7a9eb0; line-height: 1.6; }
+.loc-status-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.55; margin-right: 3px; }
 .location-action { flex-shrink: 0; text-align: right; }
 
 /* ── Location consumable system ─────────────────────────────────────────── */

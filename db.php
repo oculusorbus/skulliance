@@ -5252,9 +5252,11 @@ function getRealmLocationUpgrade($conn, $realm_id, $location_id){
 			$hours_remaining = floor(($remaining % 86400) / 3600);
 			$minutes_remaining = floor(($remaining % 3600) / 60);
 			if($date > time()){
-				$time_message = "<strong>Upgrade Level:</strong> ".$row["duration"]."<br>";
-				$time_message .= "<strong>Duration:</strong> ".$row["duration"]." ".(($row["duration"]==1)?"Day":"Days")."<br>";
-				$time_message .= "<strong>Remaining:</strong> ".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+				$time_message  = "<div class='loc-upgrade-status'>";
+				$time_message .= "<span class='loc-status-row'><span class='loc-status-label'>Upgrading to</span> Lv".$row["duration"]."</span>";
+				$time_message .= "<span class='loc-status-row'><span class='loc-status-label'>Duration</span> ".$row["duration"]." ".(($row["duration"]==1)?"Day":"Days")."</span>";
+				$time_message .= "<span class='loc-status-row'><span class='loc-status-label'>Remaining</span> ".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m</span>";
+				$time_message .= "</div>";
 				$status[$row['location_id']] = $time_message;
 			}
 		}
