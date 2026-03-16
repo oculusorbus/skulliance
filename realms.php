@@ -68,8 +68,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 						</div>
 					</li>
 					<li class="role" style="display:block;padding:4px 0 8px;">
+						<strong class="loc-inventory-header">Inventory</strong>
 						<div class="loc-inventory-strip">
-							<span style="font-size:0.75rem;opacity:0.55;display:block;margin-bottom:4px;">Inventory</span>
 							<?php foreach($con_names as $cid => $cname):
 								$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
 								$icon = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';

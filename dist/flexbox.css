@@ -2227,6 +2227,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
     display: flex; justify-content: space-between; align-items: center;
 }
+.loc-inventory-header { display: block; font-size: 0.82rem; color: #00c8a0; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
 .loc-inventory-strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding: 4px 0; }
 .loc-inv-slot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .loc-inv-slot img { width: 26px; height: 26px; }
