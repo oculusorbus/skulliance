@@ -5222,7 +5222,7 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, 
 		$cost        = intval($cost);
 		$project_id  = intval($project_id);
 		// Fast Forward: halve duration (rounded up, min 1) if equipped on this location
-		$ff_check = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_id='".$realm_id."' AND location_id='".$location_id."' AND consumable_id='5'");
+		$ff_check = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id='".$realm_id."' AND rl.location_id='".$location_id."' AND rlc.consumable_id='5'");
 		if($ff_check && $ff_check->num_rows > 0){
 			$duration = max(1, (int)ceil($duration / 2));
 		}
@@ -5298,7 +5298,7 @@ function getRealmLocationsUpgrades($conn){
 					deleteRealmLocationUpgrade($conn, $realm_id, $row['location_id']);
 					//$time_message = "0d 0h 0m";
 					// Burn Fast Forward consumable when upgrade completes
-					$conn->query("DELETE FROM realms_locations_consumables WHERE realm_id='".$realm_id."' AND location_id='".$row['location_id']."' AND consumable_id='5'");
+					$conn->query("DELETE rlc FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id='".$realm_id."' AND rl.location_id='".$row['location_id']."' AND rlc.consumable_id='5'");
 				}
 			}
 		} else {
