@@ -79,9 +79,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								<span class="loc-con-badge" id="inv-qty-<?php echo $cid; ?>"><?php echo $qty; ?></span>
 							</div>
 							<?php endforeach; ?>
-							<div class="loc-stock-row" style="margin-top:6px;">
-								<button class="small-button" onclick="stockAllLocations()">Stock All Locations</button>
-								&nbsp;
+							<div class="loc-stock-row" style="margin-top:6px;gap:6px;">
+								<button class="small-button" id="stock-all-btn" onclick="stockAllLocations()">Stock All Locations</button>
 								<button class="small-button" onclick="openInventoryInfoModal()">Inventory Info</button>
 							</div>
 						</div>
@@ -170,7 +169,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								</div>
 								<?php endforeach; ?>
 								<div class="loc-stock-row">
-									<button class="small-button" onclick="stockLocation(<?php echo $location_id; ?>)">Stock Location</button>
+									<button class="small-button" id="stock-btn-<?php echo $location_id; ?>" onclick="stockLocation(<?php echo $location_id; ?>)">Stock Location</button>
 								</div>
 							</div>
 							</li>
@@ -674,6 +673,7 @@ $conn->close();
 			}
 			//}
 	}
+	_checkStockButtonStates();
 </script>
 <?php } ?>
 </html>

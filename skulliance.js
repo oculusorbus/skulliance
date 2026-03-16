@@ -1221,6 +1221,48 @@ function stockAllLocations(){
 	_locConAjax('ajax/apply-location-consumable.php?location_id=all&consumable_id=all');
 }
 
+function unstockLocation(locationId){
+	_locConAjax('ajax/remove-location-consumable.php?location_id='+locationId+'&consumable_id=all');
+}
+
+function unstockAllLocations(){
+	_locConAjax('ajax/remove-location-consumable.php?location_id=all&consumable_id=all');
+}
+
+function _checkStockButtonStates(){
+	var globalAnyAvailable = false;
+	var globalAnyEquipped  = false;
+	for(var lid = 1; lid <= 7; lid++){
+		var hasAvailable = false, hasEquipped = false;
+		for(var cid = 1; cid <= 7; cid++){
+			var slot = document.getElementById('loc-con-'+lid+'-'+cid);
+			if(!slot) continue;
+			if(slot.classList.contains('available')) hasAvailable = true;
+			if(slot.classList.contains('equipped'))  hasEquipped  = true;
+		}
+		if(hasAvailable) globalAnyAvailable = true;
+		if(hasEquipped)  globalAnyEquipped  = true;
+		var btn = document.getElementById('stock-btn-'+lid);
+		if(!btn) continue;
+		if(!hasAvailable && hasEquipped){
+			btn.textContent = 'Unstock Location';
+			btn.onclick = (function(l){ return function(){ unstockLocation(l); }; })(lid);
+		} else {
+			btn.textContent = 'Stock Location';
+			btn.onclick = (function(l){ return function(){ stockLocation(l); }; })(lid);
+		}
+	}
+	var allBtn = document.getElementById('stock-all-btn');
+	if(!allBtn) return;
+	if(!globalAnyAvailable && globalAnyEquipped){
+		allBtn.textContent = 'Unstock All Locations';
+		allBtn.onclick = unstockAllLocations;
+	} else {
+		allBtn.textContent = 'Stock All Locations';
+		allBtn.onclick = stockAllLocations;
+	}
+}
+
 function _locConAjax(url){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', url, true);
@@ -1279,6 +1321,7 @@ function _syncLocConsumableSlots(equippedMap){
 		}
 		_updateLocationStatusLabels(lid, equippedMap[lid]);
 	}
+	_checkStockButtonStates();
 }
 
 function _updateLocationStatusLabels(lid, equippedRow){
