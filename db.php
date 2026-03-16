@@ -6204,18 +6204,30 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					if($adj_threshold > 99) $adj_threshold = 99;
 					$defense_results = round($adj_threshold, 2)."%";
 					$offense_results = round(100 - $adj_threshold, 2)."%";
-					// Show active raid consumable icons on offense side
-					$con_names = array(1=>'+4% Success',2=>'+3% Success',3=>'+2% Success',4=>'+1% Success',5=>'Fast Forward',6=>'Double Rewards',7=>'Random Reward');
-					$icon_names = array(1=>'100-success',2=>'75-success',3=>'50-success',4=>'25-success',5=>'fast-forward',6=>'double-rewards',7=>'random-reward');
+					// Build offense status tags from raid consumables
 					$raid_cons = getRaidConsumablesList($conn, $row['raid_id']);
-					if(!empty($raid_cons)){
-						$con_icons = '';
-						foreach($raid_cons as $cid){
-							$cname = isset($con_names[$cid]) ? $con_names[$cid] : '';
-							$cfile = isset($icon_names[$cid]) ? $icon_names[$cid].'.png' : 'skull.png';
-							$con_icons .= "<img title='".$cname."' class='icon consumable raid-active-cons' src='icons/".$cfile."'/>";
-						}
-						$offense_results .= "<br>".$con_icons;
+					$_boost_map = array(1=>4, 2=>3, 3=>2, 4=>1);
+					$_off_s_boost = 0; $_off_tags = array();
+					foreach($raid_cons as $cid){
+						if(isset($_boost_map[$cid])) $_off_s_boost += $_boost_map[$cid];
+						if($cid == 5) $_off_tags[] = 'Fast Forward';
+						if($cid == 6) $_off_tags[] = 'Double Rewards';
+						if($cid == 7) $_off_tags[] = 'Random Reward';
+					}
+					$_off_s_boost = min(10, $_off_s_boost);
+					if($_off_s_boost > 0) array_unshift($_off_tags, '+'.$_off_s_boost.'% Success');
+					if(!empty($_off_tags)){
+						$offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
+						foreach($_off_tags as $_t) $offense_results .= "<span class='loc-status-tag'>".$_t."</span>";
+						$offense_results .= "</div>";
+					}
+					// Build defense status tags from defender's location boost
+					$_def_tags = array();
+					if($defender_boost > 0) $_def_tags[] = '+'.round($defender_boost).'% Defense';
+					if(!empty($_def_tags)){
+						$defense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
+						foreach($_def_tags as $_t) $defense_results .= "<span class='loc-status-tag'>".$_t."</span>";
+						$defense_results .= "</div>";
 					}
 				}else{
 					$time_message = "0d 0h 0m";
