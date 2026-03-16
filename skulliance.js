@@ -1022,6 +1022,48 @@ function togglePointsButtons(status){
 var _raidModalDefenseId = null;
 var _raidModalDuration  = null;
 
+function _getModalSelectedCids(){
+	var cids = [];
+	document.querySelectorAll('#raid-con-modal-items .raid-con-check:checked').forEach(function(ch){
+		cids.push(parseInt(ch.getAttribute('data-id')));
+	});
+	return cids;
+}
+
+function _getRaidSelectedCids(realmId){
+	var allEl = document.getElementById('raid-all-items-'+realmId);
+	if(allEl && !allEl.checked) return _getModalSelectedCids();
+	// All Available: use everything with qty > 0
+	var cids = [];
+	for(var cid = 1; cid <= 7; cid++){
+		var qtyEl = document.getElementById('inv-qty-'+cid);
+		if(qtyEl && parseInt(qtyEl.textContent) > 0) cids.push(cid);
+	}
+	return cids;
+}
+
+function _updateRaidStats(realmId, selectedCids){
+	var sEl = document.getElementById('raid-success-'+realmId);
+	var dEl = document.getElementById('raid-duration-'+realmId);
+	if(!sEl || !dEl) return;
+	var offensePct   = parseFloat(sEl.dataset.offensePct);
+	var defBoost     = parseFloat(sEl.dataset.defenderBoost);
+	var attLocBoost  = parseFloat(sEl.dataset.attackerLocBoost);
+	var baseDuration = parseInt(dEl.dataset.baseDuration);
+	var boostMap = {1:4, 2:3, 3:2, 4:1};
+	var raidBoost = 0, hasFF = false;
+	selectedCids.forEach(function(cid){
+		raidBoost += boostMap[cid] || 0;
+		if(cid == 5) hasFF = true;
+	});
+	raidBoost = Math.min(10, raidBoost);
+	var adjWin = offensePct - defBoost + attLocBoost + raidBoost;
+	adjWin = Math.max(1, Math.min(99, adjWin));
+	sEl.textContent = Math.round(adjWin) + '%';
+	var dur = hasFF ? Math.ceil(baseDuration / 2) : baseDuration;
+	dEl.textContent = dur + ' ' + (dur === 1 ? 'day' : 'days');
+}
+
 function startRaid(raidButton, defenseID, duration){
 	var allAvailableEl = document.getElementById('raid-all-items-'+defenseID);
 	var consumablesParam = '';
@@ -1053,6 +1095,7 @@ function updateRaidAllLabel(checkbox, realmId){
 	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:not(:disabled)');
 	checks.forEach(function(ch){ ch.checked = checkbox.checked; });
 	updateRaidModalSummary();
+	_updateRaidStats(realmId, _getRaidSelectedCids(realmId));
 }
 
 function openRaidConsumablesModal(realmId, duration){
@@ -1119,6 +1162,7 @@ function updateRaidModalSummary(){
 	if(hasDR) parts.push('Loot Cap 1000');
 	if(hasRR) parts.push('+1 Random Project Loot');
 	sumEl.innerHTML = parts.length > 0 ? '<strong>Bonuses:</strong> '+parts.join(' &bull; ') : 'No consumables selected.';
+	if(_raidModalDefenseId) _updateRaidStats(_raidModalDefenseId, _getModalSelectedCids());
 }
 
 function closeRaidConsumablesModal(){

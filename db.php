@@ -5632,6 +5632,16 @@ function getRealms($conn, $sort, $group){
 		$last_realm_id = 0;
 		$balances_display = "";
 		$output = array();
+		// Pre-compute attacker fixed values (constant across all raid targets)
+		$attacker_loc_boost  = getLocationSuccessRateBoost($conn, $offense_id, 'offense');
+		$amounts             = getCurrentAmounts($conn);
+		$inv_boost_map       = array(1=>4, 2=>3, 3=>2, 4=>1);
+		$all_avail_raid_boost = 0;
+		foreach($inv_boost_map as $_cid => $_pts){
+			if(isset($amounts[$_cid]) && intval($amounts[$_cid]['amount']) > 0) $all_avail_raid_boost += $_pts;
+		}
+		$all_avail_raid_boost = min(10, $all_avail_raid_boost);
+		$all_avail_ff = (isset($amounts[5]) && intval($amounts[5]['amount']) > 0);
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
 				$raw_offense = calculateRawRaidOffense($conn, $offense_id);
@@ -5641,9 +5651,14 @@ function getRealms($conn, $sort, $group){
 				$defense = calculateRaidDefense($conn, $row['realm_id']);
 				$total = $defense + $offense;
 				$percentage = (100/$total);
-				$defense_threshold = $percentage * $defense;
-				$offense_threshold = $percentage * $offense;
-				$duration = ceil($defense/$offense);
+				$defense_threshold   = $percentage * $defense;
+				$offense_threshold   = $percentage * $offense;
+				$duration            = ceil($defense/$offense);
+				$defender_loc_boost  = getLocationSuccessRateBoost($conn, $row['realm_id'], 'defense');
+				$init_adj_win = $offense_threshold - $defender_loc_boost + $attacker_loc_boost + $all_avail_raid_boost;
+				if($init_adj_win < 1)  $init_adj_win = 1;
+				if($init_adj_win > 99) $init_adj_win = 99;
+				$init_duration = $all_avail_ff ? max(1, (int)ceil($duration / 2)) : $duration;
 				$balances = getRealmBalances($conn, $row['user_id']);
 				
 				$key = "";
@@ -5695,11 +5710,11 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "<td>Their Defense</td>";
 				$output[$key] .= "</tr>";
 				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'>".$duration." ".(($duration == 1)?"day":"days")."</td>";
+				$output[$key] .= "<td align='right' width='50%' id='raid-duration-".$row['realm_id']."' data-base-duration='".$duration."'>".$init_duration." ".(($init_duration == 1)?"day":"days")."</td>";
 				$output[$key] .= "<td width='50%'>Raid Duration</td>";
 				$output[$key] .= "</tr>";
 				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right'>".round($offense_threshold)."%"."</td>";
+				$output[$key] .= "<td align='right' id='raid-success-".$row['realm_id']."' data-offense-pct='".round($offense_threshold,4)."' data-defender-boost='".$defender_loc_boost."' data-attacker-loc-boost='".$attacker_loc_boost."'>".round($init_adj_win)."%</td>";
 				$output[$key] .= "<td>Success Chance</td>";
 				$output[$key] .= "</tr>";
 				$output[$key] .= "<tr>";
