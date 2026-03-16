@@ -15,7 +15,7 @@ $con_info = array(
 	2 => array('name'=>'+3% Success', 'desc'=>'Adds 3% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
 	3 => array('name'=>'+2% Success', 'desc'=>'Adds 2% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
 	4 => array('name'=>'+1% Success', 'desc'=>'Adds 1% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
-	5 => array('name'=>'Fast Forward', 'desc'=>'Halves raid duration. Portals at level 0-1 gain +1 portal level instead. Burns on use.'),
+	5 => array('name'=>'Fast Forward', 'desc'=>'Halves raid duration, rounded up. Burns on use.'),
 	6 => array('name'=>'Double Rewards','desc'=>'Doubles the loot cap from 500 to 1000 points on a successful raid. Burns on use.'),
 	7 => array('name'=>'Random Reward', 'desc'=>'Selects a random project from the defender and awards its loot if greater than the original loot. Burns on use.'),
 );

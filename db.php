@@ -6054,15 +6054,7 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 		if(in_array(5, $consumable_ids)){
 			$ff_qty = getCurrentAmount($conn, $user_id, 5);
 			if($ff_qty !== "false" && $ff_qty > 0){
-				$portal_level = getRealmLocationLevel($conn, $offense_id, 1);
-				if($portal_level === null) $portal_level = 0;
-				if($portal_level <= 1){
-					// Portal bump instead of duration cut
-					updateRealmLocationLevel($conn, $offense_id, 1, 1, 'credit');
-				} else {
-					// Halve duration, round up, minimum 1
-					$duration = max(1, (int)ceil($duration / 2));
-				}
+				$duration = max(1, (int)ceil($duration / 2));
 				updateAmount($conn, $user_id, 5, -1);
 			}
 		}
