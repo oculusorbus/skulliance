@@ -434,6 +434,14 @@ a:hover { color: #00a882; }
 #row4 .main {
 	text-align: left;
 }
+
+/* Realms page: widen locations column, narrow realm image column */
+#row0 .side {
+	flex: 40%;
+}
+#row0 .main {
+	flex: 60%;
+}
 /*
 #transactions-pane {
 	max-height: 750px;
