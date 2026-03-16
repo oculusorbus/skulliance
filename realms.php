@@ -470,34 +470,34 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Location Consumables Guide</h2>
 				<button class="raid-modal-close" onclick="closeInventoryInfoModal()" aria-label="Close">&times;</button>
 			</div>
-			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 14px;">Each location holds one of each consumable type. Effects apply to both offense and defense locations unless noted.</p>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 14px;">Each location holds one of each consumable type. Offense locations: Armory, Barracks, Crypt, and Portal (Transport). Defense locations: Tower, Factory, and Mine.</p>
 			<div class="inv-info-grid">
 				<div class="inv-info-item">
 					<img class="icon" src="icons/100-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+4% Success</strong>
-						<p>Adds 4% to the success chance for this location's type. Offense locations (Armory, Barracks, Crypt) and the Portal (Transport) are grouped together; defense locations (Tower, Factory, Mine) are grouped separately. The boost is averaged across all locations in the group, contributing up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 4% to the success chance for this location's type (offense/defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
 					<img class="icon" src="icons/75-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+3% Success</strong>
-						<p>Adds 3% to the success chance for this location's type (offense/Portal or defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 3% to the success chance for this location's type (offense/defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
 					<img class="icon" src="icons/50-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+2% Success</strong>
-						<p>Adds 2% to the success chance for this location's type (offense/Portal or defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 2% to the success chance for this location's type (offense/defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
 					<img class="icon" src="icons/25-success.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>+1% Success</strong>
-						<p>Adds 1% to the success chance for this location's type (offense/Portal or defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
+						<p>Adds 1% to the success chance for this location's type (offense/defense). Averaged across all locations in the group, up to 10% total. Survives until the location takes real damage.</p>
 					</div>
 				</div>
 				<div class="inv-info-item">
@@ -518,7 +518,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 					<img class="icon" src="icons/random-reward.png" onerror="this.src='icons/skull.png'"/>
 					<div>
 						<strong>Random Reward</strong>
-						<p>When all locations of the same type are stocked with this item — offense/Portal (Armory, Barracks, Crypt, Portal) for raiders, defense (Tower, Factory, Mine) for defenders — a successful raid or defense triggers a free level credit to a random location. All Random Rewards in that group are consumed when triggered.</p>
+						<p>When all locations of the same type (offense/defense) are stocked, a successful raid or defense triggers a free level credit to a random location. All Random Rewards in that group are consumed when triggered.</p>
 					</div>
 				</div>
 			</div>
