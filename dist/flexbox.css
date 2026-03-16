@@ -2227,11 +2227,18 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
     display: flex; justify-content: space-between; align-items: center;
 }
-.loc-inv-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.loc-inventory-strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding: 4px 0; }
+.loc-inv-slot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .loc-inv-slot img { width: 26px; height: 26px; }
-.loc-inv-qty { font-size: 0.68rem; color: #7a9eb0; min-width: 20px; text-align: center; }
-.loc-inv-slot.empty img { opacity: 0.22; }
-.loc-inv-slot.empty .loc-inv-qty { opacity: 0.3; }
+.loc-inv-slot.unavailable img { opacity: 0.25; }
+.loc-inv-slot .loc-con-badge {
+    position: static;
+    font-size: 0.65rem; font-weight: bold;
+    background: none; color: #7a9eb0;
+    width: auto; height: auto; border-radius: 0;
+    padding: 0;
+}
+.loc-inv-slot.available .loc-con-badge { color: #00c8a0; }
 
 /* Per-location consumable strip */
 .loc-consumable-strip {

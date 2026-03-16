@@ -147,6 +147,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									<img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
 									<?php if($equipped): ?>
 									<span class="loc-con-badge equipped">&#10003;</span>
+									<?php elseif($qty > 0): ?>
+									<span class="loc-con-badge" id="loc-inv-<?php echo $location_id.'-'.$cid; ?>"><?php echo $qty; ?></span>
 									<?php endif; ?>
 								</div>
 								<?php endforeach; ?>
