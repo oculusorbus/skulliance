@@ -293,26 +293,6 @@ function renderMap() {
         }
     }
 
-    // ── Layer 2: faction name watermarks ──────────────────────────────────────
-    for (const {faction, poly} of placedWithPoly) {
-        const c = centroid(poly);
-        const lbl = svgEl('text', {
-            x: c.x, y: c.y,
-            'text-anchor': 'middle',
-            'dominant-baseline': 'middle',
-            'font-size': '16',
-            'font-family': 'Georgia, "Times New Roman", serif',
-            'font-weight': 'bold',
-            'letter-spacing': '3',
-            fill: faction.color,
-            opacity: '0.22',
-            'pointer-events': 'none',
-            'user-select': 'none'
-        });
-        lbl.textContent = faction.name.toUpperCase();
-        svg.appendChild(lbl);
-    }
-
     // ── Layer 3: realm markers ────────────────────────────────────────────────
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
         const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R);
