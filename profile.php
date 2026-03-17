@@ -935,7 +935,9 @@ include 'header.php';
 }
 .realm-faction-label img { height: 13px; }
 .faction-members-list {
-    display: flex; flex-wrap: wrap; gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
 }
 .realm-profile-img {
     width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
