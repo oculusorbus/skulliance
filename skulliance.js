@@ -1485,3 +1485,9 @@ window.onclick = function(event) {
     closeInventoryInfoModal();
   }
 }
+
+// Shared loading state for intensive submit buttons (Start All Free, Start All Auto)
+function skullSubmitBtn(btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+}

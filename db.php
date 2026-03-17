@@ -1482,8 +1482,8 @@ function renderStartAllFreeEligibleMissionsButton($conn){
   	  }
 	}
 	echo "<form style='display:".$display."' id='startFreeMissionsForm' action='missions.php' method='post'>
-	<input type='hidden' id='start_all' name='start_all' value='true'>	
-	<input type='submit' value='Start All Free' class='button'>
+	<input type='hidden' id='start_all' name='start_all' value='true'>
+	<button type='submit' class='button' onclick='skullSubmitBtn(this)'>Start All Free</button>
 	</form><br>";
 	return $projects;
 }
@@ -1737,7 +1737,7 @@ function renderStartAutoMissionsButton($conn) {
 
 	echo "<form style='display:$display' id='startAutoMissionsForm' action='missions.php' method='post'>
 	<input type='hidden' name='auto_start' value='true'>
-	<input type='submit' value='Start All Auto' class='button'>
+	<button type='submit' class='button' onclick='skullSubmitBtn(this)'>Start All Auto</button>
 	</form><br>";
 }
 
