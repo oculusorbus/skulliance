@@ -408,8 +408,7 @@ if ($items_result && $items_result->num_rows > 0) {
 
 // ── Raid Opponents with realm info ─────────────────────────────────────────
 
-$opponents   = [];
-$arch_nemesis = null;
+$opponents = [];
 $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     MAX(IF(o.user_id='$tid', d.name, o.name)) as opp_realm_name,
     MAX(IF(o.user_id='$tid', d.theme_id, o.theme_id)) as opp_theme_id,
@@ -436,9 +435,9 @@ if ($opp_result && $opp_result->num_rows > 0) {
     }
     if ($nemesis_idx !== null) {
         $nemesis_arr = array_splice($opponents, $nemesis_idx, 1);
+        $nemesis_arr[0]['is_nemesis'] = true;
         shuffle($opponents);
         array_unshift($opponents, $nemesis_arr[0]);
-        $arch_nemesis = $opponents[0]['username'];
     } else {
         shuffle($opponents);
     }
@@ -1394,7 +1393,7 @@ $realm_con_info = [
             $opp_av    = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
             $opp_tid   = (int)$opp['opp_theme_id'];
             $opp_bg    = $opp_tid ? "background-image:url('images/themes/{$opp_tid}.jpg')" : "background-color:#122030";
-            $is_nemesis = ($arch_nemesis !== null && $opp['username'] === $arch_nemesis);
+            $is_nemesis = !empty($opp['is_nemesis']);
             $out = (int)$opp['outgoing'];
             $in  = (int)$opp['incoming'];
         ?>
