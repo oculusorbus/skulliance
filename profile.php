@@ -805,7 +805,9 @@ include 'header.php';
 
 /* ── Item Inventory ── */
 .inv-grid {
-    display: flex; flex-wrap: wrap; gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 12px;
 }
 .inv-card {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -960,8 +962,6 @@ include 'header.php';
 .realm-loc-name { font-size: 0.82rem; font-weight: bold; color: #c8d8e4; }
 .realm-loc-level { font-size: 0.7rem; color: #00c8a0; font-weight: bold; margin-left: auto; white-space: nowrap; }
 .realm-loc-type { font-size: 0.65rem; color: #5a7888; text-transform: capitalize; }
-.realm-loc-cons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.realm-loc-con-icon { width: 20px; height: 20px; }
 
 /* ── Faction members ── */
 .faction-members-grid {
@@ -1161,15 +1161,20 @@ $realm_con_info = [
                 <span class="realm-loc-level">Lv <?php echo $level; ?></span>
             </div>
             <span class="realm-loc-type"><?php echo ucfirst($type); ?></span>
-            <?php if (!empty($equipped)): ?>
-            <div class="realm-loc-cons">
-                <?php foreach ($realm_con_info as $cid => $cinfo):
-                    if (!isset($equipped[$cid])) continue;
-                ?>
-                <img src="icons/<?php echo $cinfo['icon']; ?>.png"
-                     title="<?php echo htmlspecialchars($cinfo['name']); ?>"
-                     onerror="this.src='icons/skull.png'"
-                     class="realm-loc-con-icon">
+            <?php
+            $boost_map = [1=>4, 2=>3, 3=>2, 4=>1];
+            $loc_tags = [];
+            $boost_total = 0;
+            foreach ($boost_map as $cid => $pct) { if (isset($equipped[$cid])) $boost_total += $pct; }
+            if ($boost_total > 0) $loc_tags[] = '+' . $boost_total . '% Success';
+            if (isset($equipped[5])) $loc_tags[] = 'Fast Forward';
+            if (isset($equipped[6])) $loc_tags[] = 'Shield';
+            if (isset($equipped[7])) $loc_tags[] = 'Random Reward';
+            ?>
+            <?php if (!empty($loc_tags)): ?>
+            <div class="loc-status-labels">
+                <?php foreach ($loc_tags as $tag): ?>
+                <span class="loc-status-tag"><?php echo $tag; ?></span>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
