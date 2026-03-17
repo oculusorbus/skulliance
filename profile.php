@@ -104,6 +104,7 @@ if ($cc_result && $cc_result->num_rows > 0) {
             'total'     => (int)$row['total_quests'],
         ];
     }
+    shuffle($completed_campaigns);
 }
 
 // ── Raids ──────────────────────────────────────────────────────────────────
