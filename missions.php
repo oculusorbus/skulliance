@@ -13,6 +13,9 @@ if(isset($_GET['username'])){
 if(isset($_POST["start_all"])){
 	startAllFreeEligibleMissions($conn);
 }
+if(isset($_POST["auto_start"])){
+	startAutoMissions($conn);
+}
 if(isset($_POST["reset_mission"])){
 	unset($_SESSION['userData']['mission']);
 	if(isset($_POST['nft_project_id']) && (int)$_POST['nft_project_id'] > 0){

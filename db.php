@@ -921,6 +921,7 @@ function getCurrentMissions($conn){
 
 	if ($result->num_rows > 0) {
    	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
+	  renderStartAutoMissionsButton($conn);
  	  echo "<table cellspacing='0' id='transactions'>";
 	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Duration</th><th align='left'>Time Left</th><th align='center'>Status</th>";
 	  // output data of each row
@@ -1485,6 +1486,259 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 	<input type='submit' value='Start All Free' class='button'>
 	</form><br>";
 	return $projects;
+}
+
+// ── Auto Missions ─────────────────────────────────────────────────────────────
+
+// Find the best NFT + item loadout targeting 100% combined success rate.
+// Tries all subsets of available 25/50/75% items, packs NFTs greedily into the
+// remaining budget, and picks the combo with the highest combined rate.
+// Never produces an item-only loadout (always requires at least 1 NFT).
+// Returns ['nfts' => [nft_id => rate, ...], 'items' => [consumable_id, ...], 'rate' => int]
+function findBestMissionLoadout($available_nfts, $consumable_amounts) {
+	// Success consumable IDs → their rate contribution (excludes 100% item id=1)
+	$success_items = [4 => 25, 3 => 50, 2 => 75];
+
+	// Only consider items the user actually has in stock
+	$in_stock = [];
+	foreach ($success_items as $id => $rate) {
+		if (isset($consumable_amounts[$id]) && (int)$consumable_amounts[$id]['amount'] > 0) {
+			$in_stock[$id] = $rate;
+		}
+	}
+
+	// Generate every subset of in-stock success items (including empty = no items)
+	$item_ids = array_keys($in_stock);
+	$n        = count($item_ids);
+	$combos   = [];
+	for ($mask = 0; $mask < (1 << $n); $mask++) {
+		$combo_ids  = [];
+		$combo_rate = 0;
+		for ($bit = 0; $bit < $n; $bit++) {
+			if ($mask & (1 << $bit)) {
+				$combo_ids[] = $item_ids[$bit];
+				$combo_rate += $in_stock[$item_ids[$bit]];
+			}
+		}
+		// Skip combos that hit 100% on their own — no room for NFTs
+		if ($combo_rate < 100) {
+			$combos[] = ['ids' => $combo_ids, 'rate' => $combo_rate];
+		}
+	}
+
+	// Sort highest item coverage first so we try the most-filling combos first
+	usort($combos, function($a, $b) { return $b['rate'] - $a['rate']; });
+
+	$best = ['nfts' => [], 'items' => [], 'rate' => 0, 'nft_count' => 0];
+
+	foreach ($combos as $combo) {
+		$nft_budget = 100 - $combo['rate'];
+
+		// Pack NFTs highest-rate-first up to the remaining budget
+		$assigned = [];
+		$nft_sum  = 0;
+		foreach ($available_nfts as $nft) {
+			if ($nft_sum + $nft['rate'] <= $nft_budget) {
+				$assigned[$nft['id']] = $nft['rate'];
+				$nft_sum += $nft['rate'];
+			}
+		}
+
+		// Never send items without at least one NFT
+		if (empty($assigned)) continue;
+
+		$combined  = $nft_sum + $combo['rate'];
+		$nft_count = count($assigned);
+
+		// Prefer higher combined rate; on a tie prefer the loadout that uses more NFTs
+		if ($combined > $best['rate'] ||
+			($combined === $best['rate'] && $nft_count > $best['nft_count'])) {
+			$best = [
+				'nfts'      => $assigned,
+				'items'     => $combo['ids'],
+				'rate'      => $combined,
+				'nft_count' => $nft_count,
+			];
+		}
+	}
+
+	return $best;
+}
+
+// Insert one mission row and link NFTs + consumables. Returns mission_id or 0.
+function _launchAutoMission($conn, $user_id, $quest_id, $cost, $project_id, $loadout, $extra_items) {
+	$sql = "INSERT INTO missions (quest_id, user_id) VALUES ('$quest_id', '$user_id')";
+	if (!$conn->query($sql)) return 0;
+
+	$id_result  = $conn->query("SELECT MAX(id) AS mid FROM missions WHERE user_id='$user_id' AND quest_id='$quest_id'");
+	$mission_id = 0;
+	if ($id_result && $id_result->num_rows > 0) {
+		$mission_id = (int)$id_result->fetch_assoc()['mid'];
+	}
+	if (!$mission_id) return 0;
+
+	if ($cost > 0) {
+		updateBalance($conn, $user_id, $project_id, -$cost);
+		logDebit($conn, $user_id, 0, $cost, $project_id, 0, $mission_id);
+	}
+
+	foreach ($loadout['nfts'] as $nft_id => $rate) {
+		$conn->query("INSERT INTO missions_nfts (mission_id, nft_id) VALUES ('$mission_id', '$nft_id')");
+	}
+
+	$all_consumables = array_merge($loadout['items'], $extra_items);
+	foreach ($all_consumables as $consumable_id) {
+		if ($conn->query("INSERT INTO missions_consumables (mission_id, consumable_id) VALUES ('$mission_id', '$consumable_id')")) {
+			updateAmount($conn, $user_id, $consumable_id, -1);
+		}
+	}
+
+	return $mission_id;
+}
+
+// Main entry point: loops over every project, builds optimal loadouts, and
+// launches missions until NFTs or balance run out.
+function startAutoMissions($conn) {
+	if (!isset($_SESSION['userData']['user_id'])) return;
+	$user_id = $_SESSION['userData']['user_id'];
+
+	// Max quest level per project
+	$max_quest_levels = [];
+	$mlr = $conn->query("SELECT project_id, MAX(level) AS max_level FROM quests GROUP BY project_id");
+	if ($mlr) {
+		while ($row = $mlr->fetch_assoc()) {
+			$max_quest_levels[(int)$row['project_id']] = (int)$row['max_level'];
+		}
+	}
+	if (empty($max_quest_levels)) return;
+
+	// User's max successfully completed level per project
+	$completed_levels = getMissionLevels($conn);
+
+	foreach (array_keys($max_quest_levels) as $project_id) {
+		$max_completed      = isset($completed_levels[$project_id]) ? (int)$completed_levels[$project_id] : 0;
+		$max_unlocked_level = $max_completed + 1;
+		$max_quest_level    = $max_quest_levels[$project_id];
+		$has_locked         = ($max_unlocked_level < $max_quest_level);
+
+		while (true) {
+			// Re-query available NFTs each iteration so newly-locked ones are excluded
+			$nft_sql = "SELECT nfts.id, collections.rate AS rate
+			            FROM nfts
+			            INNER JOIN collections ON collections.id = nfts.collection_id
+			            WHERE collections.project_id = '$project_id'
+			              AND nfts.user_id = '$user_id'
+			              AND nfts.asset_id NOT IN (
+			                  SELECT n2.asset_id
+			                  FROM missions_nfts
+			                  INNER JOIN nfts n2 ON n2.id = missions_nfts.nft_id
+			                  INNER JOIN missions m ON m.id = missions_nfts.mission_id
+			                  WHERE m.status = '0' AND m.user_id = '$user_id'
+			              )
+			            ORDER BY collections.rate DESC";
+			$nft_result     = $conn->query($nft_sql);
+			$available_nfts = [];
+			if ($nft_result && $nft_result->num_rows > 0) {
+				while ($row = $nft_result->fetch_assoc()) {
+					$available_nfts[] = ['id' => (int)$row['id'], 'rate' => (int)$row['rate']];
+				}
+			}
+			if (empty($available_nfts)) break;
+
+			$balance = (int)getBalance($conn, $project_id);
+
+			// Highest affordable unlocked quest
+			$quest_result = $conn->query(
+				"SELECT id, cost, level FROM quests
+				 WHERE project_id = '$project_id' AND level <= '$max_unlocked_level'
+				 ORDER BY level DESC"
+			);
+			$target_quest = null;
+			if ($quest_result) {
+				while ($qrow = $quest_result->fetch_assoc()) {
+					if ($balance >= (int)$qrow['cost']) {
+						$target_quest = $qrow;
+						break;
+					}
+				}
+			}
+			if (!$target_quest) break;
+
+			$is_max_mission   = ((int)$target_quest['level'] === $max_quest_level);
+			$consumable_amounts = getCurrentAmounts($conn);
+			$loadout          = findBestMissionLoadout($available_nfts, $consumable_amounts);
+
+			if (empty($loadout['nfts'])) break;
+
+			$quest_id     = (int)$target_quest['id'];
+			$cost         = (int)$target_quest['cost'];
+			$use_fallback = false;
+
+			if ($loadout['rate'] < 90) {
+				// Fall back to level 1 — free gamble with remaining NFTs
+				$l1r = $conn->query(
+					"SELECT id, cost FROM quests WHERE project_id = '$project_id' AND level = '1' LIMIT 1"
+				);
+				if ($l1r && $l1r->num_rows > 0) {
+					$l1row = $l1r->fetch_assoc();
+					if ($balance >= (int)$l1row['cost']) {
+						$quest_id     = (int)$l1row['id'];
+						$cost         = (int)$l1row['cost'];
+						$use_fallback = true;
+					} else {
+						break;
+					}
+				} else {
+					break;
+				}
+			}
+
+			// Fast Forward + Double Reward only when missions remain to unlock,
+			// not on the max quest, and not on a level-1 fallback
+			$extra_items = [];
+			if ($has_locked && !$is_max_mission && !$use_fallback) {
+				if (isset($consumable_amounts[5]) && (int)$consumable_amounts[5]['amount'] > 0) {
+					$extra_items[] = 5; // Fast Forward
+				}
+				if (isset($consumable_amounts[6]) && (int)$consumable_amounts[6]['amount'] > 0) {
+					$extra_items[] = 6; // Double Reward
+				}
+			}
+
+			$mission_id = _launchAutoMission($conn, $user_id, $quest_id, $cost, $project_id, $loadout, $extra_items);
+			if (!$mission_id) break;
+		}
+	}
+}
+
+// Render the Start All Auto button. Visible only when the user has available NFTs.
+function renderStartAutoMissionsButton($conn) {
+	if (!isset($_SESSION['userData']['user_id'])) return;
+	$user_id = $_SESSION['userData']['user_id'];
+	$display = 'none';
+
+	$sql = "SELECT COUNT(*) AS cnt
+	        FROM nfts
+	        INNER JOIN collections ON collections.id = nfts.collection_id
+	        INNER JOIN quests ON quests.project_id = collections.project_id
+	        WHERE nfts.user_id = '$user_id'
+	          AND nfts.asset_id NOT IN (
+	              SELECT n2.asset_id
+	              FROM missions_nfts
+	              INNER JOIN nfts n2 ON n2.id = missions_nfts.nft_id
+	              INNER JOIN missions m ON m.id = missions_nfts.mission_id
+	              WHERE m.status = '0' AND m.user_id = '$user_id'
+	          )";
+	$result = $conn->query($sql);
+	if ($result) {
+		$row = $result->fetch_assoc();
+		if ((int)$row['cnt'] > 0) $display = 'block';
+	}
+
+	echo "<form style='display:$display' id='startAutoMissionsForm' action='missions.php' method='post'>
+	<input type='hidden' name='auto_start' value='true'>
+	<input type='submit' value='Start All Auto' class='button'>
+	</form><br>";
 }
 
 function completeMission($conn, $mission_id, $quest_id){
