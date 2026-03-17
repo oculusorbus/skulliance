@@ -347,11 +347,12 @@ function renderMap() {
 
             if (realm.realm_id) {
                 realmPositions[realm.realm_id] = {x: pos.x, y: pos.y, color: faction.color};
-                markerGroups[realm.realm_id] = g;
             }
 
             const g = document.createElementNS(NS, 'g');
             g.style.cursor = 'pointer';
+
+            if (realm.realm_id) markerGroups[realm.realm_id] = g;
 
             // Soft glow halo
             g.appendChild(svgEl('circle', {
