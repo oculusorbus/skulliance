@@ -941,7 +941,7 @@ include 'header.php';
 
 .realm-loc-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 10px;
     margin-bottom: 18px;
 }
@@ -952,10 +952,13 @@ include 'header.php';
 .realm-loc-offense { border-color: rgba(255,127,127,0.22); }
 .realm-loc-defense { border-color: rgba(0,200,160,0.22); }
 .realm-loc-top {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; align-items: center; gap: 6px;
+}
+.realm-loc-icon {
+    width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; opacity: 0.85;
 }
 .realm-loc-name { font-size: 0.82rem; font-weight: bold; color: #c8d8e4; }
-.realm-loc-level { font-size: 0.7rem; color: #00c8a0; font-weight: bold; }
+.realm-loc-level { font-size: 0.7rem; color: #00c8a0; font-weight: bold; margin-left: auto; white-space: nowrap; }
 .realm-loc-type { font-size: 0.65rem; color: #5a7888; text-transform: capitalize; }
 .realm-loc-cons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .realm-loc-con-icon { width: 20px; height: 20px; }
@@ -963,7 +966,7 @@ include 'header.php';
 /* ── Faction members ── */
 .faction-members-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 10px;
     margin-top: 6px;
 }
@@ -1151,6 +1154,9 @@ $realm_con_info = [
         ?>
         <div class="realm-loc-card realm-loc-<?php echo htmlspecialchars($type); ?>">
             <div class="realm-loc-top">
+                <img src="icons/locations/<?php echo htmlspecialchars($loc['name']); ?>.png"
+                     class="realm-loc-icon" alt=""
+                     onerror="this.style.display='none'">
                 <span class="realm-loc-name"><?php echo htmlspecialchars(ucfirst($loc['name'])); ?></span>
                 <span class="realm-loc-level">Lv <?php echo $level; ?></span>
             </div>
