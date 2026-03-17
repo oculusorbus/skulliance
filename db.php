@@ -5106,7 +5106,7 @@ function getFactionUserIDs($conn, $faction){
 
 function getRealmID($conn){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."'";
+		$sql = "SELECT id FROM realms WHERE user_id='".$_SESSION['userData']['user_id']."' AND active='1'";
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
