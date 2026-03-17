@@ -311,6 +311,9 @@ function renderMap() {
                 'clip-path': `url(#ac${idx})`,
                 preserveAspectRatio: 'xMidYMid slice'
             });
+            img.addEventListener('error', function() {
+                this.setAttribute('href', 'icons/skull.png');
+            });
             g.appendChild(img);
 
             // Faction-colored border ring
@@ -342,29 +345,51 @@ function renderMap() {
             g.addEventListener('click', () => showPopup(realm.realm_image, realm.realm_name + ' - ' + realm.user_name));
 
             // Swap avatar ↔ realm image on hover
-            g.addEventListener('mouseenter', () => img.setAttribute('href', realm.realm_image));
-            g.addEventListener('mouseleave', () => img.setAttribute('href', realm.user_image));
+            g.addEventListener('mouseenter', () => {
+                img.setAttribute('href', realm.realm_image);
+                img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
+            });
+            g.addEventListener('mouseleave', () => {
+                img.setAttribute('href', realm.user_image);
+                img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
+            });
 
             svg.appendChild(g);
         }
     }
 
-    // ── Layer 4: faction name labels (top edge of territory, readable) ────────
+    // ── Layer 4: faction name labels (pill badge at top of territory) ────────
     for (const {faction, x, y, w, poly} of placedWithPoly) {
         const c = centroid(poly);
+        const fontSize = 12;
+        const padX = 10, padY = 4;
+        const approxTextW = faction.name.length * fontSize * 0.6;
+        const pillW = approxTextW + padX * 2;
+        const pillH = fontSize + padY * 2;
+        const pillX = c.x - pillW / 2;
+        const pillY = y + 8;
+
+        // Dark pill background
+        svg.appendChild(svgEl('rect', {
+            x: pillX, y: pillY,
+            width: pillW, height: pillH,
+            rx: '5', ry: '5',
+            fill: 'rgba(0,0,0,0.72)',
+            stroke: faction.color,
+            'stroke-width': '1.2',
+            opacity: '0.95',
+            'pointer-events': 'none'
+        }));
+
+        // Label text
         const lbl = svgEl('text', {
-            x: c.x, y: y + 20,
+            x: c.x, y: pillY + padY + fontSize - 2,
             'text-anchor': 'middle',
-            'font-size': '12',
+            'font-size': fontSize,
             'font-family': 'Georgia, "Times New Roman", serif',
             'font-weight': 'bold',
-            'letter-spacing': '1.5',
+            'letter-spacing': '1',
             fill: faction.color,
-            'paint-order': 'stroke',
-            stroke: 'rgba(0,0,0,0.85)',
-            'stroke-width': '3',
-            'stroke-linejoin': 'round',
-            opacity: '0.9',
             'pointer-events': 'none'
         });
         lbl.textContent = faction.name;
