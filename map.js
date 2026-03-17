@@ -441,7 +441,7 @@ function renderMap() {
                     // Dim unconnected lines; switch connected lines to marching animation
                     for (const ln of linesGroup.children) {
                         const involved = ln.dataset.offense === realm.realm_id || ln.dataset.defense === realm.realm_id;
-                        ln.style.opacity = involved ? '1' : '0.05';
+                        ln.style.opacity = involved ? '1' : '0';
                         ln.style.strokeWidth = involved ? '3' : '1';
                         ln.classList.toggle('raid-line-active', involved);
                         ln.classList.toggle('raid-line', !involved);
