@@ -921,7 +921,7 @@ include 'header.php';
 
 /* ── Realm panel ── */
 .realm-profile-header {
-    display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px;
+    display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px; flex-wrap: wrap;
 }
 .realm-profile-left {
     display: flex; align-items: center; gap: 14px; flex-shrink: 0;
@@ -954,6 +954,9 @@ include 'header.php';
     font-size: 0.75rem; color: #aac0cc;
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
     border-radius: 4px; padding: 3px 8px;
+}
+@media (max-width: 600px) {
+    .realm-profile-faction { width: 100%; }
 }
 .realm-faction-badge img { height: 14px; vertical-align: middle; }
 
