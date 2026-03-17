@@ -2541,21 +2541,3 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
         border-radius: 0 !important;
     }
 }
-
-/* ── Realms table horizontal scroll ────────────────────────────────────── */
-#total-missions-container,
-#total-factions-container,
-.content.raids,
-#realms-list {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-#total-missions-container table,
-#total-factions-container table,
-.content.raids table,
-#realms-list table {
-    min-width: 500px;
-}
-#realms-list table {
-    width: auto !important;
-}
