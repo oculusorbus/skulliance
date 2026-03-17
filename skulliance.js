@@ -1488,12 +1488,14 @@ window.onclick = function(event) {
 
 // Shared loading state for intensive submit buttons (Start All Free, Start All Auto)
 function skullSubmitBtn(btn) {
-  ['startFreeMissionsForm', 'startAutoMissionsForm'].forEach(function(id) {
-    var form = document.getElementById(id);
-    if (form) {
-      var b = form.querySelector('button[type="submit"]');
-      if (b) b.disabled = true;
-    }
-  });
   btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+  setTimeout(function() {
+    ['startFreeMissionsForm', 'startAutoMissionsForm'].forEach(function(id) {
+      var form = document.getElementById(id);
+      if (form) {
+        var b = form.querySelector('button[type="submit"]');
+        if (b) b.disabled = true;
+      }
+    });
+  }, 0);
 }
