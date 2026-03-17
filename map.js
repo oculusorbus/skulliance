@@ -2,9 +2,9 @@
 if (!window.csvData) { console.warn('map.js: no csvData'); }
 const rows = (window.csvData || '').split('\n').slice(1);
 const data = rows.map(row => {
-    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency] =
+    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id] =
         row.split('","').map(v => v.replace(/^"|"$/g, ''));
-    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency };
+    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id };
 });
 
 const factions = Object.values(data.reduce((acc, d) => {
@@ -12,6 +12,9 @@ const factions = Object.values(data.reduce((acc, d) => {
     acc[d.faction_name].realms.push(d);
     return acc;
 }, {}));
+
+// Sort realms within each faction by realm_id for stable marker placement
+factions.forEach(f => f.realms.sort((a, b) => parseInt(a.realm_id) - parseInt(b.realm_id)));
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 const palette = [
@@ -30,6 +33,21 @@ function getColor() {
 function hexToRgba(hex, a) {
     const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${a})`;
+}
+
+// ── Seeded PRNG ───────────────────────────────────────────────────────────────
+function mulberry32(seed) {
+    return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+function hashStr(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+    return Math.abs(h);
 }
 
 // ── Popup ─────────────────────────────────────────────────────────────────────
@@ -53,17 +71,18 @@ popupOverlay.addEventListener('click', e => { if (e.target === popupOverlay) hid
 popupClose.addEventListener('click', hidePopup);
 
 // ── Territory geometry ────────────────────────────────────────────────────────
-function jitterRect(x, y, w, h, j) {
+function jitterRect(x, y, w, h, j, rng) {
+    rng = rng || Math.random.bind(Math);
     const corners = [{x: x, y: y}, {x: x+w, y: y}, {x: x+w, y: y+h}, {x: x, y: y+h}];
     const pts = [];
     for (let i = 0; i < 4; i++) {
         const a = corners[i], b = corners[(i+1)%4];
         const horiz = (i === 0 || i === 2);
-        pts.push({ x: a.x + (Math.random()-.5)*j, y: a.y + (Math.random()-.5)*j });
+        pts.push({ x: a.x + (rng()-.5)*j, y: a.y + (rng()-.5)*j });
         for (const t of [0.33, 0.67]) {
             pts.push({
-                x: a.x + (b.x-a.x)*t + (horiz ? 0 : 1) * (Math.random()-.5)*j*1.8,
-                y: a.y + (b.y-a.y)*t + (horiz ? 1 : 0) * (Math.random()-.5)*j*1.8
+                x: a.x + (b.x-a.x)*t + (horiz ? 0 : 1) * (rng()-.5)*j*1.8,
+                y: a.y + (b.y-a.y)*t + (horiz ? 1 : 0) * (rng()-.5)*j*1.8
             });
         }
     }
@@ -105,7 +124,8 @@ function inPoly(px, py, poly) {
 }
 
 // ── Marker placement within territory ────────────────────────────────────────
-function placeMarkers(poly, count, bbox, R) {
+function placeMarkers(poly, count, bbox, R, rng) {
+    rng = rng || Math.random.bind(Math);
     const {x, y, w, h} = bbox;
     const minDist = R * 3;
     const cols = Math.ceil(Math.sqrt(count)) + 2;
@@ -114,15 +134,15 @@ function placeMarkers(poly, count, bbox, R) {
 
     for (let cy = y + R*2; cy < y+h-R*2; cy += step) {
         for (let cx = x + R*2; cx < x+w-R*2; cx += step) {
-            const jx = cx + (Math.random()-.5)*step*.5;
-            const jy = cy + (Math.random()-.5)*step*.5;
+            const jx = cx + (rng()-.5)*step*.5;
+            const jy = cy + (rng()-.5)*step*.5;
             if (inPoly(jx, jy, poly)) candidates.push({x:jx, y:jy});
         }
     }
 
     // Shuffle
     for (let i = candidates.length-1; i > 0; i--) {
-        const j = Math.floor(Math.random()*(i+1));
+        const j = Math.floor(rng()*(i+1));
         [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
 
@@ -252,11 +272,17 @@ function renderMap() {
     shadow.appendChild(svgEl('feDropShadow', {dx:'0', dy:'2', stdDeviation:'3', 'flood-color':'rgba(0,0,0,0.7)'}));
     defs.appendChild(shadow);
 
-    // Pre-compute polygon for each placed faction (one random shape per render)
+    // Arrowhead marker for raid lines
+    const arrowMarker = svgEl('marker', {id:'raid-arrow', markerWidth:'8', markerHeight:'6', refX:'7', refY:'3', orient:'auto'});
+    arrowMarker.appendChild(svgEl('path', {d:'M0,0 L0,6 L8,3 z', fill:'#ff6b35'}));
+    defs.appendChild(arrowMarker);
+
+    // Pre-compute polygon for each placed faction using seeded RNG for stable shapes
     const placedWithPoly = placed.map(p => {
+        const rng = mulberry32(hashStr(p.faction.name + '_territory'));
         const inset = PAD * 0.6;
         const jitter = Math.min(20, Math.min(p.w, p.h) * 0.09);
-        const poly = chaikin(jitterRect(p.x+inset, p.y+inset, p.w-inset*2, p.h-inset*2, jitter), 3);
+        const poly = chaikin(jitterRect(p.x+inset, p.y+inset, p.w-inset*2, p.h-inset*2, jitter, rng), 3);
         return Object.assign({}, p, { poly: poly });
     });
 
@@ -298,9 +324,15 @@ function renderMap() {
         }
     }
 
+    // ── Layer 2.5: raid lines group (populated after markers are placed) ────────
+    const linesGroup = document.createElementNS(NS, 'g');
+    svg.appendChild(linesGroup);
+
     // ── Layer 3: realm markers ────────────────────────────────────────────────
+    const realmPositions = {}; // realm_id → {x, y}
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
-        const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R);
+        const rng = mulberry32(hashStr(faction.name + '_markers'));
+        const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R, rng);
 
         for (let i = 0; i < faction.realms.length; i++) {
             const realm = faction.realms[i];
@@ -311,6 +343,8 @@ function renderMap() {
             const cp = svgEl('clipPath', {id:`ac${idx}`});
             cp.appendChild(svgEl('circle', {cx:pos.x, cy:pos.y, r:R}));
             defs.appendChild(cp);
+
+            if (realm.realm_id) realmPositions[realm.realm_id] = {x: pos.x, y: pos.y};
 
             const g = document.createElementNS(NS, 'g');
             g.style.cursor = 'pointer';
@@ -391,6 +425,37 @@ function renderMap() {
 
             svg.appendChild(g);
         }
+    }
+
+    // ── Layer 2.5 fill: draw active raid lines between realm markers ──────────
+    for (const pair of (window.raidPairs || [])) {
+        const A = realmPositions[String(pair[0])];
+        const B = realmPositions[String(pair[1])];
+        if (!A || !B) continue;
+        const mx = (A.x + B.x) / 2;
+        const my = (A.y + B.y) / 2;
+        const dx = B.x - A.x, dy = B.y - A.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const cx = mx - (dy / len) * 40;
+        const cy = my + (dx / len) * 40;
+        // Shorten endpoints so line doesn't overlap avatar circles
+        const t1 = R / len, t2 = 1 - R / len;
+        const sx = A.x + (cx - A.x) * t1 * 0.3;
+        const sy = A.y + (cy - A.y) * t1 * 0.3;
+        const ex = B.x + (cx - B.x) * t1 * 0.3;
+        const ey = B.y + (cy - B.y) * t1 * 0.3;
+        const line = svgEl('path', {
+            d: `M${(A.x*(1-t1)+cx*t1).toFixed(1)},${(A.y*(1-t1)+cy*t1).toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${(B.x*(1-t2)+cx*t2).toFixed(1)},${(B.y*(1-t2)+cy*t2).toFixed(1)}`,
+            fill: 'none',
+            stroke: '#ff6b35',
+            'stroke-width': '2',
+            'stroke-dasharray': '6,3',
+            'stroke-linecap': 'round',
+            opacity: '0.8',
+            'marker-end': 'url(#raid-arrow)',
+            class: 'raid-line'
+        });
+        linesGroup.appendChild(line);
     }
 
     // ── Layer 4: faction name labels (pill badge at top of territory) ────────

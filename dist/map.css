@@ -1,3 +1,14 @@
+@media (max-width: 768px) {
+    #map { display: none !important; }
+}
+
+@keyframes raid-march {
+    to { stroke-dashoffset: -18; }
+}
+.raid-line {
+    animation: raid-march 0.7s linear infinite;
+}
+
 #container-wrapper {
     display: flex;
     justify-content: center;

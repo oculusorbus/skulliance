@@ -7097,7 +7097,7 @@ function getFactionsRealmsMapData($conn){
 	if ($result->num_rows > 0) {
 	    echo "<script type='text/javascript'>";
 	    echo "window.csvData = `";
-	    echo '"user_name","user_image","realm_name","realm_image","faction_name","faction_currency"';
+	    echo '"user_name","user_image","realm_name","realm_image","faction_name","faction_currency","realm_id"';
 	    echo "\n";
     	
 		$realms = array();
@@ -7123,7 +7123,8 @@ function getFactionsRealmsMapData($conn){
 	        echo '"'.$realm['realm_name'].'",';
 	        echo '"'.$realm['realm_image'].'",';
 	        echo '"'.$realm['faction_name'].'",';
-	        echo '"'.$realm['faction_currency'].'"';
+	        echo '"'.$realm['faction_currency'].'",';
+	        echo '"'.$realm_id.'"';
 			if ($realm_count < $realm_total) {
 				echo "\n"; // Only add newline if not the last realm
 			}
@@ -7132,6 +7133,17 @@ function getFactionsRealmsMapData($conn){
 	    echo "`;";
 	    echo "</script>";
 	}
+}
+
+function getActiveRaidsMapData($conn){
+	$result = $conn->query("SELECT offense_id, defense_id FROM raids WHERE outcome='0'");
+	$pairs = [];
+	if ($result && $result->num_rows > 0) {
+		while ($row = $result->fetch_assoc()) {
+			$pairs[] = [(int)$row['offense_id'], (int)$row['defense_id']];
+		}
+	}
+	echo "<script type='text/javascript'>window.raidPairs=" . json_encode($pairs) . ";</script>";
 }
 
 /* END REALMS */
