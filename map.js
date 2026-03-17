@@ -1,312 +1,385 @@
+// ── Data parsing ─────────────────────────────────────────────────────────────
 const rows = window.csvData.split('\n').slice(1);
 const data = rows.map(row => {
-    const [user_name, user_image, realm_name, realm_image, faction_name] = row.split('","').map(val => val.replace(/^"|"$/g, ''));
+    const [user_name, user_image, realm_name, realm_image, faction_name] =
+        row.split('","').map(v => v.replace(/^"|"$/g, ''));
     return { user_name, user_image, realm_name, realm_image, faction_name };
 });
 
-const factions = Object.values(data.reduce((acc, { user_name, user_image, realm_name, realm_image, faction_name }) => {
-    if (!acc[faction_name]) {
-        acc[faction_name] = { name: faction_name, realms: [] };
-    }
-    acc[faction_name].realms.push({ user_name, user_image, realm_name, realm_image });
+const factions = Object.values(data.reduce((acc, d) => {
+    if (!acc[d.faction_name]) acc[d.faction_name] = { name: d.faction_name, realms: [] };
+    acc[d.faction_name].realms.push(d);
     return acc;
 }, {}));
 
-const container = document.getElementById('container');
-const tileSize = 100;
-const gap = 5;
-const borderWidth = 20;
-const minSpacing = 5;
+// ── Colors ────────────────────────────────────────────────────────────────────
+const palette = [
+    '#FF3366','#FA00FF','#00E6B3','#00FFFF','#FF8C33',
+    '#33CC99','#8C33FF','#0077FF','#FF66CC','#FF80FF',
+    '#8000FF','#00B3B3','#4D4DFF','#CC99FF','#009999'
+];
+let colorPool = [];
 
-const earthyColors = {
-    '#FF3366': { light: '#FF6386', dark: '#DF1346' }, // Bright Magenta (NFT grid)
-    '#FA00FF': { light: '#FF66FF', dark: '#C700CC' }, // Magenta (original)
-    '#00E6B3': { light: '#33FFD3', dark: '#00C693' }, // Aqua Green (NFT grid)
-    '#00FFFF': { light: '#66FFFF', dark: '#00CCCC' }, // Cyan (original)
-    '#FF8C33': { light: '#FFAC63', dark: '#DF6C13' }, // Vibrant Orange (NFT grid)
-    '#33CC99': { light: '#63ECB9', dark: '#13AC79' }, // Teal Green (NFT grid)
-    '#8C33FF': { light: '#AC63FF', dark: '#6C13DF' }, // Electric Purple (NFT grid)
-    '#0077FF': { light: '#66AAFF', dark: '#0059CC' }, // Deep Blue (original)
-    '#FF66CC': { light: '#FF99E6', dark: '#CC3399' }, // Hot Pink (original, kept for variety)
-    '#FF80FF': { light: '#FFB3FF', dark: '#CC66CC' }, // Light Magenta (original, kept for variety)
-    '#8000FF': { light: '#B366FF', dark: '#6600CC' }, // Bright Violet (original)
-    '#00B3B3': { light: '#66CCCC', dark: '#008080' }, // Dark Cyan (original)
-    '#4D4DFF': { light: '#8080FF', dark: '#3333CC' }, // Indigo (original)
-    '#CC99FF': { light: '#E6CCFF', dark: '#9966CC' }, // Light Violet (original)
-    '#009999': { light: '#66B3B3', dark: '#006666' }  // Cool Green (original)
-};
-
-// Track available colors globally
-let availableColors = Object.keys(earthyColors);
-
-// Function to get a unique color
-function getUniqueColor() {
-    if (availableColors.length === 0) {
-        availableColors = Object.keys(earthyColors); // Reset when all colors are used
-    }
-    const randomIndex = Math.floor(Math.random() * availableColors.length);
-    const selectedColor = availableColors[randomIndex];
-    availableColors.splice(randomIndex, 1); // Remove used color
-    return selectedColor;
+function getColor() {
+    if (!colorPool.length) colorPool = [...palette];
+    const i = Math.floor(Math.random() * colorPool.length);
+    return colorPool.splice(i, 1)[0];
 }
 
-const popupOverlay = document.getElementById('popup-overlay');
-const popupImage = document.getElementById('popup-image');
-const popupName = document.getElementById('popup-name');
-const popupClose = document.getElementById('popup-close');
+function hexToRgba(hex, a) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+}
 
-function showPopup(realmImage, realmName) {
-    popupImage.src = realmImage;
-    popupName.textContent = realmName;
+// ── Popup ─────────────────────────────────────────────────────────────────────
+const popupOverlay = document.getElementById('popup-overlay');
+const popupImage   = document.getElementById('popup-image');
+const popupName    = document.getElementById('popup-name');
+const popupClose   = document.getElementById('popup-close');
+
+function showPopup(src, name) {
+    popupImage.src = src;
+    popupName.textContent = name;
     popupOverlay.style.display = 'flex';
 }
-
-function hidePopup() {
-    popupOverlay.style.display = 'none';
-}
-
-popupOverlay.addEventListener('click', (e) => {
-    if (e.target === popupOverlay) hidePopup();
-});
-
+function hidePopup() { popupOverlay.style.display = 'none'; }
+popupOverlay.addEventListener('click', e => { if (e.target === popupOverlay) hidePopup(); });
 popupClose.addEventListener('click', hidePopup);
 
-const factionGrids = factions.map(faction => {
-    const realmCount = faction.realms.length;
-    if (realmCount === 0) return null;
-
-    let width, height;
-    const sqrtCount = Math.ceil(Math.sqrt(realmCount));
-    const totalTiles = sqrtCount * sqrtCount;
-    const emptyTiles = totalTiles - realmCount;
-    const viewportWidth = window.innerWidth;
-
-    const horizontalWidth = realmCount * tileSize + (realmCount - 1) * gap + 2 * borderWidth;
-
-    if (emptyTiles > 0) {
-        if (horizontalWidth <= viewportWidth * 0.5 && realmCount <= 3) {
-            width = realmCount;
-            height = 1;
-        } else {
-            width = 1;
-            height = realmCount;
+// ── Territory geometry ────────────────────────────────────────────────────────
+function jitterRect(x, y, w, h, j) {
+    const corners = [{x, y}, {x+w, y}, {x+w, y+h}, {x, y+h}];
+    const pts = [];
+    for (let i = 0; i < 4; i++) {
+        const a = corners[i], b = corners[(i+1)%4];
+        const horiz = (i === 0 || i === 2);
+        pts.push({ x: a.x + (Math.random()-.5)*j, y: a.y + (Math.random()-.5)*j });
+        for (const t of [0.33, 0.67]) {
+            pts.push({
+                x: a.x + (b.x-a.x)*t + (horiz ? 0 : 1) * (Math.random()-.5)*j*1.8,
+                y: a.y + (b.y-a.y)*t + (horiz ? 1 : 0) * (Math.random()-.5)*j*1.8
+            });
         }
-    } else {
-        width = sqrtCount;
-        height = sqrtCount;
     }
+    return pts;
+}
 
-    const totalTilesFinal = width * height;
-    // Replace random selection with getUniqueColor()
-    const baseColor = getUniqueColor();
-    const { light, dark } = earthyColors[baseColor];
-
-    const factionGrid = document.createElement('div');
-    factionGrid.classList.add('faction-grid');
-    factionGrid.style.setProperty('--border-color-light', light);
-    factionGrid.style.setProperty('--border-color-dark', dark);
-    factionGrid.setAttribute('data-faction-name', faction.name);
-
-    for (let i = 0; i < totalTilesFinal; i++) {
-        const tile = document.createElement('div');
-        tile.classList.add('tile');
-        if (i < realmCount) {
-            const { user_name, user_image, realm_name, realm_image } = faction.realms[i];
-            tile.style.backgroundImage = `url(${user_image})`;
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = user_name;
-            tile.appendChild(nameSpan);
-
-            tile.dataset.realmImage = realm_image;
-            tile.dataset.realmName = realm_name;
-            tile.dataset.userImage = user_image;
-            tile.dataset.userName = user_name;
-
-            const img = new Image();
-            img.src = user_image;
-            img.onerror = () => {
-                tile.style.backgroundImage = `url(https://skulliance.io/staking/icons/skull.png)`;
-                tile.dataset.userImage = 'https://skulliance.io/staking/icons/skull.png';
-            };
-
-            tile.addEventListener('mouseenter', () => {
-                tile.style.backgroundImage = `url(${realm_image})`;
-                nameSpan.textContent = realm_name;
-            });
-            tile.addEventListener('mouseleave', () => {
-                tile.style.backgroundImage = `url(${tile.dataset.userImage})`;
-                nameSpan.textContent = user_name;
-            });
-
-            tile.addEventListener('click', () => {
-                showPopup(realm_image, realm_name);
-            });
-        } else {
-            tile.classList.add('empty');
+function chaikin(pts, n=3) {
+    for (let i = 0; i < n; i++) {
+        const r = [];
+        for (let j = 0; j < pts.length; j++) {
+            const a = pts[j], b = pts[(j+1)%pts.length];
+            r.push({ x:.75*a.x+.25*b.x, y:.75*a.y+.25*b.y });
+            r.push({ x:.25*a.x+.75*b.x, y:.25*a.y+.75*b.y });
         }
-        factionGrid.appendChild(tile);
+        pts = r;
     }
+    return pts;
+}
 
-    const pixelWidth = width * tileSize + (width - 1) * gap + 2 * borderWidth;
-    const pixelHeight = height * tileSize + (height - 1) * gap + 2 * borderWidth;
+function toPath(pts) {
+    return pts.map((p,i) => `${i?'L':'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + 'Z';
+}
 
+function centroid(pts) {
     return {
-        element: factionGrid,
-        width: width,
-        height: height,
-        pixelWidth: pixelWidth,
-        pixelHeight: pixelHeight,
-        originalWidth: width,
-        originalHeight: height
+        x: pts.reduce((s,p)=>s+p.x,0)/pts.length,
+        y: pts.reduce((s,p)=>s+p.y,0)/pts.length
     };
-}).filter(grid => grid !== null);
+}
 
-function packGrids() {
+// ── Point in polygon ──────────────────────────────────────────────────────────
+function inPoly(px, py, poly) {
+    let inside = false;
+    for (let i=0, j=poly.length-1; i<poly.length; j=i++) {
+        const {x:xi,y:yi}=poly[i], {x:xj,y:yj}=poly[j];
+        if (((yi>py) !== (yj>py)) && px < (xj-xi)*(py-yi)/(yj-yi)+xi) inside=!inside;
+    }
+    return inside;
+}
+
+// ── Marker placement within territory ────────────────────────────────────────
+function placeMarkers(poly, count, bbox, R) {
+    const {x, y, w, h} = bbox;
+    const minDist = R * 3;
+    const cols = Math.ceil(Math.sqrt(count)) + 2;
+    const step = Math.max(minDist, Math.min(w, h) / cols);
+    const candidates = [];
+
+    for (let cy = y + R*2; cy < y+h-R*2; cy += step) {
+        for (let cx = x + R*2; cx < x+w-R*2; cx += step) {
+            const jx = cx + (Math.random()-.5)*step*.5;
+            const jy = cy + (Math.random()-.5)*step*.5;
+            if (inPoly(jx, jy, poly)) candidates.push({x:jx, y:jy});
+        }
+    }
+
+    // Shuffle
+    for (let i = candidates.length-1; i > 0; i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    const chosen = [];
+    for (const c of candidates) {
+        if (chosen.length >= count) break;
+        if (!chosen.some(p => Math.hypot(p.x-c.x, p.y-c.y) < minDist)) chosen.push(c);
+    }
+
+    // Fallback: spiral from centroid
+    if (chosen.length < count) {
+        const cen = centroid(poly);
+        const rad = Math.min(w, h) * 0.28;
+        for (let i = chosen.length; i < count; i++) {
+            const a = (i / count) * Math.PI * 2;
+            chosen.push({ x: cen.x + Math.cos(a)*rad, y: cen.y + Math.sin(a)*rad });
+        }
+    }
+
+    return chosen.slice(0, count);
+}
+
+// ── Packing ───────────────────────────────────────────────────────────────────
+const CELL = 170;
+const PAD  = 32;
+
+function buildFactionData() {
+    colorPool = [...palette];
+    return factions.map(f => {
+        const count = f.realms.length;
+        const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
+        const rows = Math.max(1, Math.ceil(count / cols));
+        return { ...f, count, w: cols*CELL, h: rows*CELL, color: getColor() };
+    });
+}
+
+function packFactions(fdata) {
+    const vw = window.innerWidth;
+    const totalArea = fdata.reduce((s,f) => s+f.w*f.h, 0);
+    const containerW = Math.max(Math.min(vw*.92, Math.sqrt(totalArea*2.2)), 320);
+
+    const sorted = [...fdata].sort((a,b) => b.w*b.h - a.w*a.h);
+    const placed = [], occupied = [];
+    let maxH = 0;
+
+    for (const f of sorted) {
+        let pos = null;
+        const orients = [{w:f.w, h:f.h}, {w:f.h, h:f.w}];
+
+        for (const o of orients) {
+            if (pos) break;
+            for (let y = 0; y <= maxH+o.h && !pos; y += 10) {
+                for (let x = 0; x <= containerW-o.w && !pos; x += 10) {
+                    const ok = occupied.every(s =>
+                        x+o.w+PAD <= s.x || x >= s.x+s.w+PAD ||
+                        y+o.h+PAD <= s.y || y >= s.y+s.h+PAD);
+                    if (ok) pos = {x, y, w:o.w, h:o.h, faction:f};
+                }
+            }
+        }
+
+        if (!pos) pos = {x:0, y:maxH+PAD, w:f.w, h:f.h, faction:f};
+
+        placed.push(pos);
+        occupied.push({x:pos.x, y:pos.y, w:pos.w, h:pos.h});
+        maxH = Math.max(maxH, pos.y+pos.h);
+    }
+
+    return placed;
+}
+
+// ── SVG helpers ───────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs={}) {
+    const e = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+    return e;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderMap() {
+    const container = document.getElementById('container');
+    const fdata = buildFactionData();
+    const placed = packFactions(fdata);
+
+    let svgW = 0, svgH = 0;
+    for (const p of placed) {
+        svgW = Math.max(svgW, p.x+p.w+PAD);
+        svgH = Math.max(svgH, p.y+p.h+PAD);
+    }
+
+    const svg = svgEl('svg', {width:svgW, height:svgH, viewBox:`0 0 ${svgW} ${svgH}`});
+    const defs = svgEl('defs');
+    svg.appendChild(defs);
+
+    // Glow filter for territory borders
+    const glow = svgEl('filter', {id:'glow', x:'-25%', y:'-25%', width:'150%', height:'150%'});
+    const glowBlur = svgEl('feGaussianBlur', {in:'SourceGraphic', stdDeviation:'3.5', result:'blur'});
+    const glowMerge = svgEl('feMerge');
+    glowMerge.appendChild(svgEl('feMergeNode', {in:'blur'}));
+    glowMerge.appendChild(svgEl('feMergeNode', {in:'SourceGraphic'}));
+    glow.appendChild(glowBlur);
+    glow.appendChild(glowMerge);
+    defs.appendChild(glow);
+
+    // Drop shadow filter for avatar rings
+    const shadow = svgEl('filter', {id:'dropshadow', x:'-30%', y:'-30%', width:'160%', height:'160%'});
+    shadow.appendChild(svgEl('feDropShadow', {dx:'0', dy:'2', stdDeviation:'3', 'flood-color':'rgba(0,0,0,0.7)'}));
+    defs.appendChild(shadow);
+
+    // Pre-compute polygon for each placed faction (one random shape per render)
+    const placedWithPoly = placed.map(p => {
+        const inset = PAD * 0.6;
+        const jitter = Math.min(20, Math.min(p.w, p.h) * 0.09);
+        const poly = chaikin(jitterRect(p.x+inset, p.y+inset, p.w-inset*2, p.h-inset*2, jitter), 3);
+        return { ...p, poly };
+    });
+
+    const R = 22;
+    let clipIdx = 0;
+
+    // ── Layer 1: territory fills ──────────────────────────────────────────────
+    for (const {faction, poly} of placedWithPoly) {
+        svg.appendChild(svgEl('path', {
+            d: toPath(poly),
+            fill: hexToRgba(faction.color, 0.13),
+            stroke: 'none'
+        }));
+        svg.appendChild(svgEl('path', {
+            d: toPath(poly),
+            fill: 'none',
+            stroke: faction.color,
+            'stroke-width': '2',
+            'stroke-dasharray': '10,6',
+            'stroke-linejoin': 'round',
+            'stroke-linecap': 'round',
+            filter: 'url(#glow)',
+            opacity: '0.85'
+        }));
+    }
+
+    // ── Layer 2: faction name watermarks ──────────────────────────────────────
+    for (const {faction, poly} of placedWithPoly) {
+        const c = centroid(poly);
+        const lbl = svgEl('text', {
+            x: c.x, y: c.y,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'middle',
+            'font-size': '16',
+            'font-family': 'Georgia, "Times New Roman", serif',
+            'font-weight': 'bold',
+            'letter-spacing': '3',
+            fill: faction.color,
+            opacity: '0.22',
+            'pointer-events': 'none',
+            'user-select': 'none'
+        });
+        lbl.textContent = faction.name.toUpperCase();
+        svg.appendChild(lbl);
+    }
+
+    // ── Layer 3: realm markers ────────────────────────────────────────────────
+    for (const {faction, x, y, w, h, poly} of placedWithPoly) {
+        const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R);
+
+        for (let i = 0; i < faction.realms.length; i++) {
+            const realm = faction.realms[i];
+            const pos = positions[i] || centroid(poly);
+            const idx = clipIdx++;
+
+            // Circular clip for avatar
+            const cp = svgEl('clipPath', {id:`ac${idx}`});
+            cp.appendChild(svgEl('circle', {cx:pos.x, cy:pos.y, r:R}));
+            defs.appendChild(cp);
+
+            const g = document.createElementNS(NS, 'g');
+            g.style.cursor = 'pointer';
+
+            // Soft glow halo
+            g.appendChild(svgEl('circle', {
+                cx:pos.x, cy:pos.y, r:R+5,
+                fill: hexToRgba(faction.color, 0.18),
+                stroke: 'none'
+            }));
+
+            // Avatar image
+            const img = svgEl('image', {
+                href: realm.user_image,
+                x: pos.x-R, y: pos.y-R,
+                width: R*2, height: R*2,
+                'clip-path': `url(#ac${idx})`,
+                preserveAspectRatio: 'xMidYMid slice'
+            });
+            g.appendChild(img);
+
+            // Faction-colored border ring
+            g.appendChild(svgEl('circle', {
+                cx:pos.x, cy:pos.y, r:R,
+                fill: 'none',
+                stroke: faction.color,
+                'stroke-width': '2.5',
+                filter: 'url(#dropshadow)'
+            }));
+
+            // Username label with dark stroke for readability
+            const txt = svgEl('text', {
+                x: pos.x, y: pos.y+R+14,
+                'text-anchor': 'middle',
+                'font-size': '10',
+                'font-family': 'Arial, sans-serif',
+                fill: '#e8eef4',
+                'paint-order': 'stroke',
+                stroke: 'rgba(0,0,0,0.9)',
+                'stroke-width': '3',
+                'stroke-linejoin': 'round',
+                'pointer-events': 'none'
+            });
+            txt.textContent = realm.user_name;
+            g.appendChild(txt);
+
+            // Popup on click
+            g.addEventListener('click', () => showPopup(realm.realm_image, `${realm.realm_name} — ${realm.user_name}`));
+
+            // Swap avatar ↔ realm image on hover
+            g.addEventListener('mouseenter', () => img.setAttribute('href', realm.realm_image));
+            g.addEventListener('mouseleave', () => img.setAttribute('href', realm.user_image));
+
+            svg.appendChild(g);
+        }
+    }
+
+    // ── Layer 4: faction name labels (top edge of territory, readable) ────────
+    for (const {faction, x, y, w, poly} of placedWithPoly) {
+        const c = centroid(poly);
+        const lbl = svgEl('text', {
+            x: c.x, y: y + 20,
+            'text-anchor': 'middle',
+            'font-size': '12',
+            'font-family': 'Georgia, "Times New Roman", serif',
+            'font-weight': 'bold',
+            'letter-spacing': '1.5',
+            fill: faction.color,
+            'paint-order': 'stroke',
+            stroke: 'rgba(0,0,0,0.85)',
+            'stroke-width': '3',
+            'stroke-linejoin': 'round',
+            opacity: '0.9',
+            'pointer-events': 'none'
+        });
+        lbl.textContent = faction.name;
+        svg.appendChild(lbl);
+    }
+
     container.innerHTML = '';
-
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    const totalArea = factionGrids.reduce((sum, grid) => sum + grid.pixelWidth * grid.pixelHeight, 0);
-    const maxWidth = Math.min(viewportWidth * 0.9, Math.sqrt(totalArea * 1.5));
-    const containerWidth = Math.max(Math.min(viewportWidth, viewportHeight), maxWidth);
-    let currentHeight = 0;
-
-    const sortedGrids = [...factionGrids].sort((a, b) => (b.pixelWidth * b.pixelHeight) - (a.pixelWidth * a.pixelHeight));
-    const placedGrids = [];
-    const occupiedSpaces = [];
-
-    sortedGrids.forEach(grid => {
-        let placed = false;
-        const orientations = [
-            { pixelWidth: grid.pixelWidth, pixelHeight: grid.pixelHeight, width: grid.width, height: grid.height },
-            { 
-                pixelWidth: grid.originalHeight * tileSize + (grid.originalHeight - 1) * gap + 2 * borderWidth, 
-                pixelHeight: grid.originalWidth * tileSize + (grid.originalWidth - 1) * gap + 2 * borderWidth,
-                width: grid.originalHeight,
-                height: grid.originalWidth
-            }
-        ];
-
-        for (let orientation of orientations) {
-            if (placed) break;
-
-            grid.pixelWidth = orientation.pixelWidth;
-            grid.pixelHeight = orientation.pixelHeight;
-            grid.width = orientation.width;
-            grid.height = orientation.height;
-            grid.element.style.gridTemplateColumns = `repeat(${grid.width}, ${tileSize}px)`;
-            grid.element.style.gridTemplateRows = `repeat(${grid.height}, ${tileSize}px)`;
-
-            for (let y = 0; y <= (currentHeight || viewportHeight) && !placed; y += minSpacing) {
-                for (let x = 0; x <= containerWidth - grid.pixelWidth && !placed; x += minSpacing) {
-                    let canPlace = true;
-                    const newRect = { x, y, width: grid.pixelWidth, height: grid.pixelHeight };
-
-                    for (let space of occupiedSpaces) {
-                        if (!(newRect.x + newRect.width + minSpacing <= space.x || 
-                              newRect.x >= space.x + space.width + minSpacing || 
-                              newRect.y + newRect.height + minSpacing <= space.y || 
-                              newRect.y >= space.y + space.height + minSpacing)) {
-                            canPlace = false;
-                            break;
-                        }
-                    }
-
-                    if (canPlace) {
-                        placedGrids.push({
-                            grid: grid.element,
-                            x: x,
-                            y: y,
-                            pixelWidth: grid.pixelWidth,
-                            pixelHeight: grid.pixelHeight
-                        });
-                        occupiedSpaces.push(newRect);
-                        currentHeight = Math.max(currentHeight, y + grid.pixelHeight);
-                        placed = true;
-                    }
-                }
-            }
-        }
-
-        if (!placed) {
-            let maxY = occupiedSpaces.length > 0 ? Math.max(...occupiedSpaces.map(s => s.y + s.height)) : 0;
-            let x = 0;
-            let y = maxY + minSpacing;
-
-            for (let orientation of orientations) {
-                grid.pixelWidth = orientation.pixelWidth;
-                grid.pixelHeight = orientation.pixelHeight;
-                grid.width = orientation.width;
-                grid.height = orientation.height;
-                grid.element.style.gridTemplateColumns = `repeat(${grid.width}, ${tileSize}px)`;
-                grid.element.style.gridTemplateRows = `repeat(${grid.height}, ${tileSize}px)`;
-
-                let canPlace = true;
-                const newRect = { x, y, width: grid.pixelWidth, height: grid.pixelHeight };
-
-                for (let space of occupiedSpaces) {
-                    if (!(newRect.x + newRect.width + minSpacing <= space.x || 
-                          newRect.x >= space.x + space.width + minSpacing || 
-                          newRect.y + newRect.height + minSpacing <= space.y || 
-                          newRect.y >= space.y + space.height + minSpacing)) {
-                        canPlace = false;
-                        break;
-                    }
-                }
-
-                if (canPlace) {
-                    placedGrids.push({
-                        grid: grid.element,
-                        x: x,
-                        y: y,
-                        pixelWidth: grid.pixelWidth,
-                        pixelHeight: grid.pixelHeight
-                    });
-                    occupiedSpaces.push(newRect);
-                    currentHeight = Math.max(currentHeight, y + grid.pixelHeight);
-                    placed = true;
-                    break;
-                }
-            }
-        }
-    });
-
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    placedGrids.forEach(g => {
-        minX = Math.min(minX, g.x);
-        maxX = Math.max(maxX, g.x + g.pixelWidth);
-        minY = Math.min(minY, g.y);
-        maxY = Math.max(maxY, g.y + g.pixelHeight);
-    });
-
-    const actualWidth = maxX + minSpacing;
-    const actualHeight = maxY + minSpacing;
-
-    container.style.width = `${actualWidth}px`;
-    container.style.height = `${actualHeight}px`;
-
-    placedGrids.forEach(g => {
-        g.grid.style.left = `${g.x}px`;
-        g.grid.style.top = `${g.y}px`;
-        g.grid.style.width = `${g.pixelWidth}px`;
-        g.grid.style.height = `${g.pixelHeight}px`;
-        container.appendChild(g.grid);
-    });
-
-    console.log("Packed grids:", placedGrids.length, "out of", factionGrids.length);
+    container.style.width  = `${svgW}px`;
+    container.style.height = `${svgH}px`;
+    container.appendChild(svg);
 }
 
-// Reset availableColors before packing grids to ensure fresh start on each pack
-function resetColorsAndPack() {
-    availableColors = Object.keys(earthyColors); // Reset color pool
-    packGrids();
-}
+renderMap();
 
-resetColorsAndPack(); // Initial pack
-
-let resizeTimeout;
+let resizeTimer;
 window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(resetColorsAndPack, 200); // Reset colors on resize
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderMap, 200);
 });
