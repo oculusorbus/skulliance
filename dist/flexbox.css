@@ -2541,3 +2541,18 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
         border-radius: 0 !important;
     }
 }
+
+/* ── Realms table horizontal scroll ────────────────────────────────────── */
+/* Wrap faction stats, raid stats, outgoing/incoming, and realms list tables
+   in their own scroll context so the page never scrolls horizontally */
+#stats,
+.content.raids,
+#realms-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+#stats table,
+.content.raids table,
+#realms-list table {
+    min-width: 500px;
+}
