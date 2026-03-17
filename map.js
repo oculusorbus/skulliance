@@ -2,13 +2,13 @@
 if (!window.csvData) { console.warn('map.js: no csvData'); }
 const rows = (window.csvData || '').split('\n').slice(1);
 const data = rows.map(row => {
-    const [user_name, user_image, realm_name, realm_image, faction_name] =
+    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency] =
         row.split('","').map(v => v.replace(/^"|"$/g, ''));
-    return { user_name, user_image, realm_name, realm_image, faction_name };
+    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency };
 });
 
 const factions = Object.values(data.reduce((acc, d) => {
-    if (!acc[d.faction_name]) acc[d.faction_name] = { name: d.faction_name, realms: [] };
+    if (!acc[d.faction_name]) acc[d.faction_name] = { name: d.faction_name, currency: d.faction_currency, realms: [] };
     acc[d.faction_name].realms.push(d);
     return acc;
 }, {}));
@@ -150,7 +150,8 @@ function buildFactionData() {
         const count = f.realms.length;
         const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
         const rows = Math.max(1, Math.ceil(count / cols));
-        return Object.assign({}, f, { count: count, w: cols*CELL, h: rows*CELL, color: getColor() });
+        const currency = (f.currency || '').toLowerCase();
+        return Object.assign({}, f, { count: count, w: cols*CELL, h: rows*CELL, color: getColor(), currency: currency });
     });
 }
 
@@ -240,6 +241,7 @@ function renderMap() {
     let clipIdx = 0;
 
     // ── Layer 1: territory fills ──────────────────────────────────────────────
+    const LOGO_MAX = 96; // max natural size cap in px
     for (const {faction, poly} of placedWithPoly) {
         svg.appendChild(svgEl('path', {
             d: toPath(poly),
@@ -257,6 +259,20 @@ function renderMap() {
             filter: 'url(#glow)',
             opacity: '0.85'
         }));
+
+        // Project logo watermark centered in territory
+        if (faction.currency) {
+            const c = centroid(poly);
+            const logoImg = svgEl('image', {
+                href: 'icons/' + faction.currency + '.png',
+                x: c.x - LOGO_MAX/2, y: c.y - LOGO_MAX/2,
+                width: LOGO_MAX, height: LOGO_MAX,
+                opacity: '0.13',
+                'pointer-events': 'none',
+                preserveAspectRatio: 'xMidYMid meet'
+            });
+            svg.appendChild(logoImg);
+        }
     }
 
     // ── Layer 2: faction name watermarks ──────────────────────────────────────
@@ -363,8 +379,10 @@ function renderMap() {
         const c = centroid(poly);
         const fontSize = 12;
         const padX = 10, padY = 4;
+        const iconSize = faction.currency ? 14 : 0;
+        const iconGap  = faction.currency ? 5  : 0;
         const approxTextW = faction.name.length * fontSize * 0.6;
-        const pillW = approxTextW + padX * 2;
+        const pillW = approxTextW + padX * 2 + iconSize + iconGap;
         const pillH = fontSize + padY * 2;
         const pillX = c.x - pillW / 2;
         const pillY = y + 8;
@@ -381,9 +399,24 @@ function renderMap() {
             'pointer-events': 'none'
         }));
 
-        // Label text
+        // Project logo icon (left side of pill)
+        if (faction.currency) {
+            const iconY = pillY + (pillH - iconSize) / 2;
+            svg.appendChild(svgEl('image', {
+                href: 'icons/' + faction.currency + '.png',
+                x: pillX + padX, y: iconY,
+                width: iconSize, height: iconSize,
+                'pointer-events': 'none',
+                preserveAspectRatio: 'xMidYMid meet'
+            }));
+        }
+
+        // Label text (offset right of icon)
+        const textX = faction.currency
+            ? pillX + padX + iconSize + iconGap + approxTextW / 2
+            : c.x;
         const lbl = svgEl('text', {
-            x: c.x, y: pillY + padY + fontSize - 2,
+            x: textX, y: pillY + padY + fontSize - 2,
             'text-anchor': 'middle',
             'font-size': fontSize,
             'font-family': 'Georgia, "Times New Roman", serif',
