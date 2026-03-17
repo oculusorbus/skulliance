@@ -375,6 +375,23 @@ function renderMap() {
             txt.textContent = realm.user_name;
             g.appendChild(txt);
 
+            // Realm name below username
+            const realmTxt = svgEl('text', {
+                x: pos.x, y: pos.y+R+26,
+                'text-anchor': 'middle',
+                'font-size': '9',
+                'font-family': 'Arial, sans-serif',
+                'font-style': 'italic',
+                fill: faction.color,
+                'paint-order': 'stroke',
+                stroke: 'rgba(0,0,0,0.9)',
+                'stroke-width': '3',
+                'stroke-linejoin': 'round',
+                'pointer-events': 'none'
+            });
+            realmTxt.textContent = realm.realm_name;
+            g.appendChild(realmTxt);
+
             // Popup on click
             g.addEventListener('click', () => showPopup(realm.realm_image, realm.realm_name + ' - ' + realm.user_name));
 
@@ -406,7 +423,7 @@ function renderMap() {
         const pillW = actualTextW + padX * 2 + iconSize + iconGap;
         const pillH = fontSize + padY * 2;
         const pillX = c.x - pillW / 2;
-        const pillY = y + 8;
+        const pillY = y - 17;
 
         // Dark pill background
         svg.appendChild(svgEl('rect', {
