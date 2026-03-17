@@ -7136,7 +7136,7 @@ function getFactionsRealmsMapData($conn){
 }
 
 function getActiveRaidsMapData($conn){
-	$result = $conn->query("SELECT offense_id, defense_id FROM raids WHERE outcome='0'");
+	$result = $conn->query("SELECT offense_id, defense_id FROM raids WHERE outcome='0' AND DATE(created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')");
 	$pairs = [];
 	if ($result && $result->num_rows > 0) {
 		while ($row = $result->fetch_assoc()) {
