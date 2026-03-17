@@ -32,13 +32,6 @@ function hexToRgba(hex, a) {
     return `rgba(${r},${g},${b},${a})`;
 }
 
-// Mix faction color with a dark base at 'amount' (0=all dark, 1=all color)
-function shadeColor(hex, amount) {
-    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-    const br = 10, bg = 18, bb = 28; // dark navy base
-    return 'rgb(' + Math.round(r*amount + br*(1-amount)) + ',' + Math.round(g*amount + bg*(1-amount)) + ',' + Math.round(b*amount + bb*(1-amount)) + ')';
-}
-
 // ── Popup ─────────────────────────────────────────────────────────────────────
 const popupOverlay = document.getElementById('popup-overlay');
 const popupImage   = document.getElementById('popup-image');
@@ -250,7 +243,7 @@ function renderMap() {
     for (const {faction, poly} of placedWithPoly) {
         svg.appendChild(svgEl('path', {
             d: toPath(poly),
-            fill: shadeColor(faction.color, 0.28),
+            fill: hexToRgba(faction.color, 0.13),
             stroke: 'none'
         }));
         svg.appendChild(svgEl('path', {
