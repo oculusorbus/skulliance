@@ -638,32 +638,35 @@ include 'header.php';
     font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
     color: #3a6070; margin: 20px 0 10px;
 }
-.campaign-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 8px;
+.campaign-strip {
+    display: flex; gap: 8px;
+    overflow-x: auto; padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin; scrollbar-color: #2a4050 transparent;
 }
+.campaign-strip::-webkit-scrollbar { height: 4px; }
+.campaign-strip::-webkit-scrollbar-track { background: transparent; }
+.campaign-strip::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
 .campaign-card {
     display: flex; align-items: center; gap: 10px;
     background: #0a1929; border: 1px solid rgba(0,200,160,0.12);
-    border-radius: 8px; padding: 10px 12px;
+    border-radius: 8px; padding: 10px 14px;
+    flex-shrink: 0; white-space: nowrap;
 }
 .campaign-card img {
-    width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;
+    width: 28px; height: 28px; object-fit: contain; flex-shrink: 0;
 }
 .campaign-info {
-    display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 2px;
 }
 .campaign-name {
     font-size: 0.85rem; font-weight: bold; color: #e8eaed;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .campaign-count {
     font-size: 0.72rem; color: #5a7888;
 }
 .campaign-badge {
-    font-size: 0.7rem; color: #00c8a0; font-weight: bold;
-    white-space: nowrap; flex-shrink: 0;
+    font-size: 0.7rem; color: #00c8a0; font-weight: bold; margin-left: 4px;
 }
 .image-strip {
     display: flex;
@@ -1171,7 +1174,7 @@ include 'header.php';
     </div>
     <?php if (!empty($completed_campaigns)): ?>
     <div class="image-strip-section-label">Completed Mission Campaigns</div>
-    <div class="campaign-grid">
+    <div class="campaign-strip">
         <?php foreach ($completed_campaigns as $c): ?>
         <div class="campaign-card">
             <img src="icons/<?php echo $c['currency']; ?>.png" onerror="this.src='icons/skull.png'" alt="<?php echo $c['name']; ?>">
@@ -1185,6 +1188,7 @@ include 'header.php';
     </div>
     <?php endif; ?>
     <?php if (!empty($recent_missions)): ?>
+
     <div class="image-strip-section-label"><?php echo date('F'); ?> Missions</div>
     <div class="image-strip">
         <?php foreach ($recent_missions as $m):
