@@ -1,5 +1,6 @@
 // ── Data parsing ─────────────────────────────────────────────────────────────
-const rows = window.csvData.split('\n').slice(1);
+if (!window.csvData) { console.warn('map.js: no csvData'); }
+const rows = (window.csvData || '').split('\n').slice(1);
 const data = rows.map(row => {
     const [user_name, user_image, realm_name, realm_image, faction_name] =
         row.split('","').map(v => v.replace(/^"|"$/g, ''));
@@ -149,7 +150,7 @@ function buildFactionData() {
         const count = f.realms.length;
         const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
         const rows = Math.max(1, Math.ceil(count / cols));
-        return { ...f, count, w: cols*CELL, h: rows*CELL, color: getColor() };
+        return Object.assign({}, f, { count: count, w: cols*CELL, h: rows*CELL, color: getColor() });
     });
 }
 
@@ -232,7 +233,7 @@ function renderMap() {
         const inset = PAD * 0.6;
         const jitter = Math.min(20, Math.min(p.w, p.h) * 0.09);
         const poly = chaikin(jitterRect(p.x+inset, p.y+inset, p.w-inset*2, p.h-inset*2, jitter), 3);
-        return { ...p, poly };
+        return Object.assign({}, p, { poly: poly });
     });
 
     const R = 22;
@@ -338,7 +339,7 @@ function renderMap() {
             g.appendChild(txt);
 
             // Popup on click
-            g.addEventListener('click', () => showPopup(realm.realm_image, `${realm.realm_name} — ${realm.user_name}`));
+            g.addEventListener('click', () => showPopup(realm.realm_image, realm.realm_name + ' - ' + realm.user_name));
 
             // Swap avatar ↔ realm image on hover
             g.addEventListener('mouseenter', () => img.setAttribute('href', realm.realm_image));
