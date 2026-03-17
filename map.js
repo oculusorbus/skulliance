@@ -253,7 +253,8 @@ function renderMap() {
         activeRaidRealms.add(String(pair[1]));
     }
     const activeFactions = factions
-        .filter(f => f.realms.some(r => activeRaidRealms.has(r.realm_id)));
+        .map(f => Object.assign({}, f, { realms: f.realms.filter(r => activeRaidRealms.has(r.realm_id)) }))
+        .filter(f => f.realms.length > 0);
 
     const fdata = buildFactionData(activeFactions);
     const placed = packFactions(fdata);
