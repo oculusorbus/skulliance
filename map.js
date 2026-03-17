@@ -272,9 +272,9 @@ function renderMap() {
     shadow.appendChild(svgEl('feDropShadow', {dx:'0', dy:'2', stdDeviation:'3', 'flood-color':'rgba(0,0,0,0.7)'}));
     defs.appendChild(shadow);
 
-    // Arrowhead marker for raid lines
-    const arrowMarker = svgEl('marker', {id:'raid-arrow', markerWidth:'8', markerHeight:'6', refX:'7', refY:'3', orient:'auto'});
-    arrowMarker.appendChild(svgEl('path', {d:'M0,0 L0,6 L8,3 z', fill:'#ff6b35'}));
+    // Arrowhead marker — fill:context-stroke inherits the line's stroke color
+    const arrowMarker = svgEl('marker', {id:'raid-arrow', markerWidth:'8', markerHeight:'6', refX:'8', refY:'3', orient:'auto'});
+    arrowMarker.appendChild(svgEl('path', {d:'M0,0 L0,6 L8,3 z', fill:'context-stroke'}));
     defs.appendChild(arrowMarker);
 
     // Pre-compute polygon for each placed faction using seeded RNG for stable shapes
@@ -344,7 +344,7 @@ function renderMap() {
             cp.appendChild(svgEl('circle', {cx:pos.x, cy:pos.y, r:R}));
             defs.appendChild(cp);
 
-            if (realm.realm_id) realmPositions[realm.realm_id] = {x: pos.x, y: pos.y};
+            if (realm.realm_id) realmPositions[realm.realm_id] = {x: pos.x, y: pos.y, color: faction.color};
 
             const g = document.createElementNS(NS, 'g');
             g.style.cursor = 'pointer';
@@ -432,26 +432,34 @@ function renderMap() {
         const A = realmPositions[String(pair[0])];
         const B = realmPositions[String(pair[1])];
         if (!A || !B) continue;
-        const mx = (A.x + B.x) / 2;
-        const my = (A.y + B.y) / 2;
-        const dx = B.x - A.x, dy = B.y - A.y;
+
+        // Control point: perpendicular to midpoint for a gentle arc
+        const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+        const dx = B.x - A.x,       dy = B.y - A.y;
         const len = Math.hypot(dx, dy) || 1;
-        const cx = mx - (dy / len) * 40;
-        const cy = my + (dx / len) * 40;
-        // Shorten endpoints so line doesn't overlap avatar circles
-        const t1 = R / len, t2 = 1 - R / len;
-        const sx = A.x + (cx - A.x) * t1 * 0.3;
-        const sy = A.y + (cy - A.y) * t1 * 0.3;
-        const ex = B.x + (cx - B.x) * t1 * 0.3;
-        const ey = B.y + (cy - B.y) * t1 * 0.3;
+        const ctrlX = mx - (dy / len) * 40;
+        const ctrlY = my + (dx / len) * 40;
+
+        // Tangent at A (t=0): direction from A toward ctrl
+        const tAx = ctrlX - A.x, tAy = ctrlY - A.y;
+        const tAlen = Math.hypot(tAx, tAy) || 1;
+        const startX = A.x + (tAx / tAlen) * R;
+        const startY = A.y + (tAy / tAlen) * R;
+
+        // Tangent at B (t=1): direction from ctrl toward B
+        const tBx = B.x - ctrlX, tBy = B.y - ctrlY;
+        const tBlen = Math.hypot(tBx, tBy) || 1;
+        const endX = B.x - (tBx / tBlen) * (R + 5); // +5 leaves room for arrowhead
+        const endY = B.y - (tBy / tBlen) * (R + 5);
+
         const line = svgEl('path', {
-            d: `M${(A.x*(1-t1)+cx*t1).toFixed(1)},${(A.y*(1-t1)+cy*t1).toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${(B.x*(1-t2)+cx*t2).toFixed(1)},${(B.y*(1-t2)+cy*t2).toFixed(1)}`,
+            d: `M${startX.toFixed(1)},${startY.toFixed(1)} Q${ctrlX.toFixed(1)},${ctrlY.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`,
             fill: 'none',
-            stroke: '#ff6b35',
+            stroke: A.color,
             'stroke-width': '2',
             'stroke-dasharray': '6,3',
             'stroke-linecap': 'round',
-            opacity: '0.8',
+            opacity: '0.85',
             'marker-end': 'url(#raid-arrow)',
             class: 'raid-line'
         });
