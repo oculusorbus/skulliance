@@ -379,13 +379,12 @@ function renderMap() {
             const realmTxt = svgEl('text', {
                 x: pos.x, y: pos.y+R+26,
                 'text-anchor': 'middle',
-                'font-size': '9',
+                'font-size': '10',
                 'font-family': 'Arial, sans-serif',
-                'font-style': 'italic',
                 fill: faction.color,
                 'paint-order': 'stroke',
-                stroke: 'rgba(0,0,0,0.9)',
-                'stroke-width': '3',
+                stroke: 'rgba(0,0,0,0.95)',
+                'stroke-width': '4',
                 'stroke-linejoin': 'round',
                 'pointer-events': 'none'
             });
