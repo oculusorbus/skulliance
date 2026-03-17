@@ -322,9 +322,9 @@ function renderMap() {
                 stroke: 'none'
             }));
 
-            // Avatar image
+            // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
-                href: realm.user_image,
+                href: realm.realm_image,
                 x: pos.x-R, y: pos.y-R,
                 width: R*2, height: R*2,
                 'clip-path': `url(#ac${idx})`,
@@ -379,13 +379,13 @@ function renderMap() {
             // Popup on click
             g.addEventListener('click', () => showPopup(realm.realm_image, realm.user_image, realm.user_name, realm.realm_name));
 
-            // Swap avatar ↔ realm image on hover
+            // Swap to avatar on hover, back to realm theme on leave
             g.addEventListener('mouseenter', () => {
-                img.setAttribute('href', realm.realm_image);
+                img.setAttribute('href', realm.user_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
             });
             g.addEventListener('mouseleave', () => {
-                img.setAttribute('href', realm.user_image);
+                img.setAttribute('href', realm.realm_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
             });
 
