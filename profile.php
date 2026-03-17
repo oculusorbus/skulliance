@@ -989,13 +989,13 @@ include 'header.php';
     opacity: 0.3;
 }
 .faction-member-group {
-    position: relative; z-index: 1; display: flex; flex-direction: column;
+    position: relative; z-index: 1; display: flex; flex-direction: row; flex-wrap: wrap;
 }
 .faction-member-row {
     display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-    text-decoration: none; transition: background 0.15s;
+    text-decoration: none; transition: background 0.15s; flex: 1; min-width: 0;
 }
-.faction-member-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.faction-member-row:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.05); }
 .faction-member-row:hover { background: rgba(0,200,160,0.07); }
 .faction-member-avatar {
     width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
