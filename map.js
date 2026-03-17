@@ -417,10 +417,23 @@ function renderMap() {
             g.addEventListener('mouseenter', () => {
                 img.setAttribute('href', realm.user_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
+                // Dim all raid lines except those involving this realm
+                if (realm.realm_id) {
+                    for (const ln of linesGroup.children) {
+                        const involved = ln.dataset.offense === realm.realm_id || ln.dataset.defense === realm.realm_id;
+                        ln.style.opacity = involved ? '1' : '0.08';
+                        ln.style.strokeWidth = involved ? '3' : '1';
+                    }
+                }
             });
             g.addEventListener('mouseleave', () => {
                 img.setAttribute('href', realm.realm_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
+                // Restore all raid lines
+                for (const ln of linesGroup.children) {
+                    ln.style.opacity = '0.85';
+                    ln.style.strokeWidth = '';
+                }
             });
 
             svg.appendChild(g);
@@ -461,6 +474,8 @@ function renderMap() {
             'stroke-linecap': 'round',
             opacity: '0.85',
             'marker-end': 'url(#raid-arrow)',
+            'data-offense': String(pair[0]),
+            'data-defense': String(pair[1]),
             class: 'raid-line'
         });
         linesGroup.appendChild(line);
