@@ -2,9 +2,9 @@
 if (!window.csvData) { console.warn('map.js: no csvData'); }
 const rows = (window.csvData || '').split('\n').slice(1);
 const data = rows.map(row => {
-    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id, avg_level] =
+    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id] =
         row.split('","').map(v => v.replace(/^"|"$/g, ''));
-    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id, avg_level: parseInt(avg_level) || 0 };
+    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id };
 });
 
 const factions = Object.values(data.reduce((acc, d) => {
@@ -346,15 +346,14 @@ function renderMap() {
             const realm = faction.realms[i];
             const pos = positions[i] || centroid(poly);
             const idx = clipIdx++;
-            const Rr = R + realm.avg_level; // grow marker by average location level
 
             // Circular clip for avatar
             const cp = svgEl('clipPath', {id:`ac${idx}`});
-            cp.appendChild(svgEl('circle', {cx:pos.x, cy:pos.y, r:Rr}));
+            cp.appendChild(svgEl('circle', {cx:pos.x, cy:pos.y, r:R}));
             defs.appendChild(cp);
 
             if (realm.realm_id) {
-                realmPositions[realm.realm_id] = {x: pos.x, y: pos.y, color: faction.color, r: Rr};
+                realmPositions[realm.realm_id] = {x: pos.x, y: pos.y, color: faction.color};
             }
 
             const g = document.createElementNS(NS, 'g');
@@ -364,7 +363,7 @@ function renderMap() {
 
             // Soft glow halo
             g.appendChild(svgEl('circle', {
-                cx:pos.x, cy:pos.y, r:Rr+5,
+                cx:pos.x, cy:pos.y, r:R+5,
                 fill: hexToRgba(faction.color, 0.18),
                 stroke: 'none'
             }));
@@ -372,8 +371,8 @@ function renderMap() {
             // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
                 href: (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png',
-                x: pos.x-Rr, y: pos.y-Rr,
-                width: Rr*2, height: Rr*2,
+                x: pos.x-R, y: pos.y-R,
+                width: R*2, height: R*2,
                 'clip-path': `url(#ac${idx})`,
                 preserveAspectRatio: 'xMidYMid slice'
             });
@@ -384,7 +383,7 @@ function renderMap() {
 
             // Faction-colored border ring
             g.appendChild(svgEl('circle', {
-                cx:pos.x, cy:pos.y, r:Rr,
+                cx:pos.x, cy:pos.y, r:R,
                 fill: 'none',
                 stroke: faction.color,
                 'stroke-width': '2.5',
@@ -393,7 +392,7 @@ function renderMap() {
 
             // Username label with dark stroke for readability
             const txt = svgEl('text', {
-                x: pos.x, y: pos.y+Rr+14,
+                x: pos.x, y: pos.y+R+14,
                 'text-anchor': 'middle',
                 'font-size': '10',
                 'font-family': 'Arial, sans-serif',
@@ -494,14 +493,14 @@ function renderMap() {
         // Tangent at A (t=0): direction from A toward ctrl
         const tAx = ctrlX - A.x, tAy = ctrlY - A.y;
         const tAlen = Math.hypot(tAx, tAy) || 1;
-        const startX = A.x + (tAx / tAlen) * A.r;
-        const startY = A.y + (tAy / tAlen) * A.r;
+        const startX = A.x + (tAx / tAlen) * R;
+        const startY = A.y + (tAy / tAlen) * R;
 
         // Tangent at B (t=1): direction from ctrl toward B
         const tBx = B.x - ctrlX, tBy = B.y - ctrlY;
         const tBlen = Math.hypot(tBx, tBy) || 1;
-        const endX = B.x - (tBx / tBlen) * (B.r + 5); // +5 leaves room for arrowhead
-        const endY = B.y - (tBy / tBlen) * (B.r + 5);
+        const endX = B.x - (tBx / tBlen) * (R + 5); // +5 leaves room for arrowhead
+        const endY = B.y - (tBy / tBlen) * (R + 5);
 
         const line = svgEl('path', {
             d: `M${startX.toFixed(1)},${startY.toFixed(1)} Q${ctrlX.toFixed(1)},${ctrlY.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`,

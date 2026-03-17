@@ -7351,23 +7351,20 @@ function getFactionsRealmsMapData($conn){
 	if ($result->num_rows > 0) {
 	    echo "<script type='text/javascript'>";
 	    echo "window.csvData = `";
-	    echo '"user_name","user_image","realm_name","realm_image","faction_name","faction_currency","realm_id","avg_level"';
+	    echo '"user_name","user_image","realm_name","realm_image","faction_name","faction_currency","realm_id"';
 	    echo "\n";
     	
 		$realms = array();
 	    while ($row = $result->fetch_assoc()) {
-			$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
-			$level = array_sum($levels);
+			$level = array_sum(getRealmLocationNamesLevels($conn, $row['realm_id']));
 			if($level != 0){
-				$avg_level = round($level / count($levels));
 				$realms[$row['realm_id']] = array();
 				$realms[$row['realm_id']]["user_name"] = $row['user_name'];
 				$realms[$row['realm_id']]["user_image"] = $row['user_image'];
 				$realms[$row['realm_id']]["realm_name"] = $row['realm_name'];
 				$realms[$row['realm_id']]["realm_image"] = $row['realm_image'];
 				$realms[$row['realm_id']]["faction_name"] = $row['faction_name'];
-				$realms[$row['realm_id']]["faction_currency"] = $row['faction_currency'];
-				$realms[$row['realm_id']]["avg_level"] = $avg_level;
+			$realms[$row['realm_id']]["faction_currency"] = $row['faction_currency'];
 			}
 	    }
 
@@ -7381,8 +7378,7 @@ function getFactionsRealmsMapData($conn){
 	        echo '"'.$realm['realm_image'].'",';
 	        echo '"'.$realm['faction_name'].'",';
 	        echo '"'.$realm['faction_currency'].'",';
-	        echo '"'.$realm_id.'",';
-	        echo '"'.$realm['avg_level'].'"';
+	        echo '"'.$realm_id.'"';
 			if ($realm_count < $realm_total) {
 				echo "\n"; // Only add newline if not the last realm
 			}
