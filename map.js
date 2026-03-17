@@ -169,10 +169,9 @@ function placeMarkers(poly, count, bbox, R, rng) {
 const CELL = 170;
 const PAD  = 32;
 
-function buildFactionData(factionList) {
-    factionList = factionList || factions;
+function buildFactionData() {
     colorPool = [...palette];
-    return factionList.map(f => {
+    return factions.map(f => {
         const count = f.realms.length;
         const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
         const rows = Math.max(1, Math.ceil(count / cols));
@@ -245,18 +244,7 @@ function measureTextWidth(text, fontSize, fontFamily, fontWeight, letterSpacing)
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderMap() {
     const container = document.getElementById('container');
-
-    // Build active realm/faction sets from this month's raid pairs
-    const activeRaidRealms = new Set();
-    for (const pair of (window.raidPairs || [])) {
-        activeRaidRealms.add(String(pair[0]));
-        activeRaidRealms.add(String(pair[1]));
-    }
-    const activeFactions = factions
-        .map(f => Object.assign({}, f, { realms: f.realms.filter(r => activeRaidRealms.has(r.realm_id)) }))
-        .filter(f => f.realms.length > 0);
-
-    const fdata = buildFactionData(activeFactions);
+    const fdata = buildFactionData();
     const placed = packFactions(fdata);
 
     let svgW = 0, svgH = 0;
@@ -344,6 +332,12 @@ function renderMap() {
     const realmPositions = {}; // realm_id → {x, y, color}
     const markerGroups   = {}; // realm_id → <g> element
 
+    // Build set of realm IDs active in raids this month
+    const activeRaidRealms = new Set();
+    for (const pair of (window.raidPairs || [])) {
+        activeRaidRealms.add(String(pair[0]));
+        activeRaidRealms.add(String(pair[1]));
+    }
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
         const rng = mulberry32(hashStr(faction.name + '_markers'));
         const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R, rng);
