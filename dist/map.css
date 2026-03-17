@@ -4,9 +4,10 @@
     align-items: flex-start;
     min-height: 79vh;
     padding: 20px;
-    background-image: url('../images/darkworld.png');
-    background-size: cover;
-    background-position: center;
+    /* background-image: url('../images/darkworld.png'); */
+    /* background-size: cover; */
+    /* background-position: center; */
+    background-color: #07111d;
     box-sizing: border-box;
 }
 
