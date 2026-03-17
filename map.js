@@ -438,11 +438,13 @@ function renderMap() {
                             connected.add(ln.dataset.defense);
                         }
                     }
-                    // Dim unconnected raid lines
+                    // Dim unconnected lines; switch connected lines to marching animation
                     for (const ln of linesGroup.children) {
                         const involved = ln.dataset.offense === realm.realm_id || ln.dataset.defense === realm.realm_id;
                         ln.style.opacity = involved ? '1' : '0.05';
                         ln.style.strokeWidth = involved ? '3' : '1';
+                        ln.classList.toggle('raid-line-active', involved);
+                        ln.classList.toggle('raid-line', !involved);
                     }
                     // Dim unconnected marker groups
                     for (const [rid, grp] of Object.entries(markerGroups)) {
@@ -455,8 +457,10 @@ function renderMap() {
                 img.setAttribute('href', defaultAvatar);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
                 for (const ln of linesGroup.children) {
-                    ln.style.opacity = '0.85';
+                    ln.style.opacity = '';
                     ln.style.strokeWidth = '';
+                    ln.classList.remove('raid-line-active');
+                    ln.classList.add('raid-line');
                 }
                 for (const grp of Object.values(markerGroups)) {
                     grp.style.opacity = '1';

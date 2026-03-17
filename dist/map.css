@@ -2,10 +2,17 @@
     #map { display: none !important; }
 }
 
+@keyframes raid-pulse {
+    from { opacity: 0.4; }
+    to   { opacity: 0.85; }
+}
 @keyframes raid-march {
     to { stroke-dashoffset: -18; }
 }
 .raid-line {
+    animation: raid-pulse 1.4s ease-in-out infinite alternate;
+}
+.raid-line-active {
     animation: raid-march 0.7s linear infinite;
 }
 
