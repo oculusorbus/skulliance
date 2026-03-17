@@ -274,6 +274,76 @@ if ($realm_result && $realm_result->num_rows > 0) {
     $realm_theme_id = (int)$realm['theme_id'];
 }
 
+// ── Realm ────────────────────────────────────────────────────────────────────
+
+$realm_data = null;
+$realm_locations = [];
+$realm_loc_consumables = [];
+
+$realm_r = $conn->query("SELECT r.id, r.name, r.theme_id, r.project_id, p.name as project_name, p.currency
+    FROM realms r INNER JOIN projects p ON p.id = r.project_id
+    WHERE r.user_id='$tid' AND r.active='1' LIMIT 1");
+if ($realm_r && $realm_r->num_rows > 0) {
+    $realm_data = $realm_r->fetch_assoc();
+    $realm_id_p = (int)$realm_data['id'];
+
+    // Location names, types, levels
+    $loc_r = $conn->query("SELECT l.id AS location_id, l.name, l.type, rl.level
+        FROM realms_locations rl
+        INNER JOIN locations l ON l.id = rl.location_id
+        WHERE rl.realm_id = '$realm_id_p'
+        ORDER BY l.type DESC, l.id ASC");
+    if ($loc_r) {
+        while ($row = $loc_r->fetch_assoc()) {
+            $realm_locations[(int)$row['location_id']] = $row;
+        }
+    }
+
+    // Active consumables per location (raid_id = 0 only)
+    $rlc_r = $conn->query("SELECT rl.location_id, rlc.consumable_id
+        FROM realms_locations_consumables rlc
+        INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id
+        WHERE rl.realm_id = '$realm_id_p' AND rlc.raid_id = 0");
+    if ($rlc_r) {
+        while ($row = $rlc_r->fetch_assoc()) {
+            $realm_loc_consumables[(int)$row['location_id']][(int)$row['consumable_id']] = true;
+        }
+    }
+
+    // Faction members — other users in the same project faction
+    $faction_project_id = intval($realm_data['project_id']);
+    $faction_members = [];
+    $faction_r = $conn->query("SELECT u.username, u.discord_id, u.avatar, r2.name as realm_name, r2.theme_id
+        FROM realms r2
+        INNER JOIN users u ON u.id = r2.user_id
+        WHERE r2.project_id = '$faction_project_id' AND r2.user_id != '$tid' AND r2.active = '1'
+        ORDER BY u.username ASC LIMIT 12");
+    if ($faction_r) {
+        while ($row = $faction_r->fetch_assoc()) {
+            $faction_members[] = $row;
+        }
+    }
+}
+
+// ── Item Inventory ──────────────────────────────────────────────────────────
+
+$inv_con_info = [
+    1 => ['name'=>'+4% Success',   'icon'=>'100-success'],
+    2 => ['name'=>'+3% Success',   'icon'=>'75-success'],
+    3 => ['name'=>'+2% Success',   'icon'=>'50-success'],
+    4 => ['name'=>'+1% Success',   'icon'=>'25-success'],
+    5 => ['name'=>'Fast Forward',  'icon'=>'fast-forward'],
+    6 => ['name'=>'Double Rewards','icon'=>'double-rewards'],
+    7 => ['name'=>'Random Reward', 'icon'=>'random-reward'],
+];
+$inv_amounts = [];
+$inv_r = $conn->query("SELECT amounts.consumable_id, amounts.amount FROM amounts WHERE amounts.user_id = '$tid' ORDER BY amounts.consumable_id ASC");
+if ($inv_r) {
+    while ($row = $inv_r->fetch_assoc()) {
+        $inv_amounts[(int)$row['consumable_id']] = (int)$row['amount'];
+    }
+}
+
 // ── NFT Gallery (random, for bottom column) ────────────────────────────────
 
 $gallery_nfts = [];
@@ -733,6 +803,23 @@ include 'header.php';
 .currency-label { flex: 1; font-size: 0.82rem; color: #aac0cc; }
 .currency-amount { font-weight: bold; font-size: 0.9rem; color: #e8eaed; white-space: nowrap; }
 
+/* ── Item Inventory ── */
+.inv-grid {
+    display: flex; flex-wrap: wrap; gap: 12px;
+}
+.inv-card {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    background: rgba(22,87,119,0.25); border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 8px; padding: 14px 12px 10px; min-width: 80px; text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+}
+.inv-card:hover { border-color: rgba(0,200,160,0.35); background: rgba(22,87,119,0.40); }
+.inv-card-empty { opacity: 0.38; }
+.inv-card img { width: 38px; height: 38px; }
+.inv-card-qty { font-size: 1.3rem; font-weight: bold; color: #aac0cc; line-height: 1; }
+.inv-card-qty.teal { color: #00c8a0; }
+.inv-card-name { font-size: 0.68rem; color: #7a9eb0; line-height: 1.3; }
+
 .nft-mosaic {
     display: flex;
     gap: 10px;
@@ -829,6 +916,85 @@ include 'header.php';
     font-family: Arial, sans-serif;
 }
 .lb-btn:hover { text-decoration: underline; }
+
+/* ── Realm panel ── */
+.realm-profile-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+}
+.realm-profile-img {
+    width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
+    border: 1px solid rgba(0,200,160,0.2); flex-shrink: 0;
+}
+.realm-profile-info {
+    display: flex; flex-direction: column; gap: 6px;
+}
+.realm-profile-name {
+    font-size: 1.1rem; font-weight: bold; color: #e8eaed;
+}
+.realm-faction-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; color: #aac0cc;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 4px; padding: 3px 8px;
+}
+.realm-faction-badge img { height: 14px; vertical-align: middle; }
+
+.realm-loc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.realm-loc-card {
+    background: rgba(22,87,119,0.22); border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 8px; padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 4px;
+}
+.realm-loc-offense { border-color: rgba(255,127,127,0.22); }
+.realm-loc-defense { border-color: rgba(0,200,160,0.22); }
+.realm-loc-top {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.realm-loc-name { font-size: 0.82rem; font-weight: bold; color: #c8d8e4; }
+.realm-loc-level { font-size: 0.7rem; color: #00c8a0; font-weight: bold; }
+.realm-loc-type { font-size: 0.65rem; color: #5a7888; text-transform: capitalize; }
+.realm-loc-cons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.realm-loc-con-icon { width: 20px; height: 20px; }
+
+/* ── Faction members ── */
+.faction-members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 6px;
+}
+.faction-member-card {
+    position: relative; border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(0,200,160,0.12); display: block;
+    text-decoration: none; transition: border-color 0.2s, transform 0.15s;
+    min-height: 60px;
+}
+.faction-member-card:hover { border-color: rgba(0,200,160,0.35); transform: translateY(-2px); }
+.faction-member-bg {
+    position: absolute; inset: 0; background-size: cover; background-position: center;
+    opacity: 0.3;
+}
+.faction-member-info {
+    position: relative; z-index: 1; display: flex; align-items: center;
+    gap: 10px; padding: 10px 12px;
+}
+.faction-member-avatar {
+    width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    border: 1px solid rgba(0,200,160,0.3); flex-shrink: 0;
+}
+.faction-member-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.faction-member-name {
+    font-size: 0.8rem; font-weight: bold; color: #e0e8f0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.faction-member-realm {
+    font-size: 0.65rem; color: #5a8898;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 </style>
 
 <div class="row" id="row1">
@@ -948,6 +1114,89 @@ include 'header.php';
         </form>
     </div>
 </div>
+
+<!-- ── Realm ─────────────────────────────────────────────────────────── -->
+<?php if ($realm_data): ?>
+<?php
+$realm_con_info = [
+    1 => ['name'=>'+4% Success',   'icon'=>'100-success'],
+    2 => ['name'=>'+3% Success',   'icon'=>'75-success'],
+    3 => ['name'=>'+2% Success',   'icon'=>'50-success'],
+    4 => ['name'=>'+1% Success',   'icon'=>'25-success'],
+    5 => ['name'=>'Fast Forward',  'icon'=>'fast-forward'],
+    6 => ['name'=>'Double Rewards','icon'=>'double-rewards'],
+    7 => ['name'=>'Random Reward', 'icon'=>'random-reward'],
+];
+?>
+<div class="profile-section">
+    <div class="section-title"><span>&#127963; Realm</span><a href="realms.php" class="section-title-link">View Realm &rarr;</a></div>
+    <div class="realm-profile-header">
+        <img src="images/themes/<?php echo (int)$realm_data['theme_id']; ?>.jpg" class="realm-profile-img" alt="Realm Image">
+        <div class="realm-profile-info">
+            <span class="realm-profile-name"><?php echo htmlspecialchars($realm_data['name']); ?></span>
+            <?php if (!empty($realm_data['project_name'])): ?>
+            <span class="realm-faction-badge">
+                <img src="icons/<?php echo strtolower(htmlspecialchars($realm_data['currency'])); ?>.png" onerror="this.style.display='none'">
+                <?php echo htmlspecialchars($realm_data['project_name']); ?>
+            </span>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php if (!empty($realm_locations)): ?>
+    <div class="realm-loc-grid">
+        <?php foreach ($realm_locations as $lid => $loc):
+            $level = (int)$loc['level'];
+            $type  = $loc['type'];
+            $equipped = $realm_loc_consumables[$lid] ?? [];
+        ?>
+        <div class="realm-loc-card realm-loc-<?php echo htmlspecialchars($type); ?>">
+            <div class="realm-loc-top">
+                <span class="realm-loc-name"><?php echo htmlspecialchars(ucfirst($loc['name'])); ?></span>
+                <span class="realm-loc-level">Lv <?php echo $level; ?></span>
+            </div>
+            <span class="realm-loc-type"><?php echo ucfirst($type); ?></span>
+            <?php if (!empty($equipped)): ?>
+            <div class="realm-loc-cons">
+                <?php foreach ($realm_con_info as $cid => $cinfo):
+                    if (!isset($equipped[$cid])) continue;
+                ?>
+                <img src="icons/<?php echo $cinfo['icon']; ?>.png"
+                     title="<?php echo htmlspecialchars($cinfo['name']); ?>"
+                     onerror="this.src='icons/skull.png'"
+                     class="realm-loc-con-icon">
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <?php if (!empty($faction_members)): ?>
+    <div class="image-strip-section-label">
+        <img src="icons/<?php echo strtolower(htmlspecialchars($realm_data['currency'])); ?>.png" style="height:13px;vertical-align:middle;margin-right:5px" onerror="this.style.display='none'">
+        <?php echo htmlspecialchars($realm_data['project_name']); ?> Faction
+    </div>
+    <div class="faction-members-grid">
+        <?php foreach ($faction_members as $fm):
+            $fm_av = "https://cdn.discordapp.com/avatars/{$fm['discord_id']}/{$fm['avatar']}.png";
+            $fm_tid = (int)$fm['theme_id'];
+            $fm_bg = $fm_tid ? "background-image:url('images/themes/{$fm_tid}.jpg')" : "background-color:#122030";
+        ?>
+        <a href="profile.php?username=<?php echo urlencode($fm['username']); ?>" class="faction-member-card">
+            <div class="faction-member-bg" style="<?php echo $fm_bg; ?>"></div>
+            <div class="faction-member-info">
+                <img class="faction-member-avatar" src="<?php echo $fm_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
+                <div class="faction-member-text">
+                    <span class="faction-member-name"><?php echo htmlspecialchars($fm['username']); ?></span>
+                    <span class="faction-member-realm"><?php echo htmlspecialchars($fm['realm_name']); ?></span>
+                </div>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <!-- ── Raids ─────────────────────────────────────────────────────────── -->
 <div class="profile-section">
@@ -1152,6 +1401,22 @@ include 'header.php';
     </div>
 </div>
 <?php endif; ?>
+
+<!-- ── Item Inventory ───────────────────────────────────────────────────── -->
+<div class="profile-section">
+    <div class="section-title"><span>&#127514; Item Inventory</span></div>
+    <div class="inv-grid">
+        <?php foreach ($inv_con_info as $cid => $info):
+            $qty = $inv_amounts[$cid] ?? 0;
+        ?>
+        <div class="inv-card <?php echo $qty > 0 ? '' : 'inv-card-empty'; ?>">
+            <img src="icons/<?php echo $info['icon']; ?>.png" onerror="this.src='icons/skull.png'" alt="<?php echo htmlspecialchars($info['name']); ?>">
+            <span class="inv-card-qty <?php echo $qty > 0 ? 'teal' : ''; ?>"><?php echo $qty; ?></span>
+            <span class="inv-card-name"><?php echo htmlspecialchars($info['name']); ?></span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
 
 <!-- ── NFT Collection (full-width horizontal strip) ─────────────────────── -->
 <div class="profile-section" id="nft-col">
