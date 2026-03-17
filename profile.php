@@ -436,7 +436,10 @@ if ($opp_result && $opp_result->num_rows > 0) {
     if ($nemesis_idx !== null) {
         $nemesis_arr = array_splice($opponents, $nemesis_idx, 1);
         $nemesis_arr[0]['is_nemesis'] = true;
+        shuffle($opponents);
         array_unshift($opponents, $nemesis_arr[0]);
+    } else {
+        shuffle($opponents);
     }
 }
 
@@ -1394,11 +1397,11 @@ $realm_con_info = [
             $out = (int)$opp['outgoing'];
             $in  = (int)$opp['incoming'];
         ?>
-        <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card" <?php if ($is_nemesis): ?>style="border:2px solid #00c8a0;box-shadow:0 0 16px rgba(0,200,160,0.45),0 0 32px rgba(0,200,160,0.15);"<?php endif; ?>>
-            <div class="opponent-theme-bg" style="<?php echo $opp_bg; ?>"></div>
+        <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card<?php echo $is_nemesis ? ' nemesis-card' : ''; ?>">
             <?php if ($is_nemesis): ?>
             <div class="nemesis-label">&#9876; Arch Nemesis</div>
             <?php endif; ?>
+            <div class="opponent-theme-bg" style="<?php echo $opp_bg; ?>"></div>
             <div class="opponent-info">
                 <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
                 <span class="opponent-name"><?php echo htmlspecialchars($opp['username']); ?></span>
