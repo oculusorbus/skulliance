@@ -426,7 +426,7 @@ $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     WHERE (o.user_id='$tid' OR d.user_id='$tid')
     AND (r.outcome = '0' OR DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))
     GROUP BY u.id, u.discord_id, u.avatar, u.username
-    ORDER BY (outgoing + incoming) DESC LIMIT 8");
+    ORDER BY (SUM(CASE WHEN o.user_id='$tid' THEN 1 ELSE 0 END) + SUM(CASE WHEN d.user_id='$tid' THEN 1 ELSE 0 END)) DESC LIMIT 8");
 if ($opp_result && $opp_result->num_rows > 0) {
     while ($row = $opp_result->fetch_assoc()) { $opponents[] = $row; }
     // Arch nemesis = most mutual raids (both attacked each other this month)
