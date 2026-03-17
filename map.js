@@ -409,7 +409,7 @@ function renderMap() {
 
             // Realm name below username
             const realmTxt = svgEl('text', {
-                x: pos.x, y: pos.y+R+26,
+                x: pos.x, y: pos.y+Rr+26,
                 'text-anchor': 'middle',
                 'font-size': '10',
                 'font-family': 'Arial, sans-serif',
