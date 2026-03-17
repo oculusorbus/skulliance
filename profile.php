@@ -408,12 +408,15 @@ if ($items_result && $items_result->num_rows > 0) {
 
 // ── Raid Opponents with realm info ─────────────────────────────────────────
 
-$opponents = [];
+$opponents   = [];
+$arch_nemesis = null;
 $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
-    IF(o.user_id='$tid', d.name, o.name) as opp_realm_name,
-    IF(o.user_id='$tid', d.theme_id, o.theme_id) as opp_theme_id,
-    IF(o.user_id='$tid', pd.name, po.name) as opp_project_name,
-    IF(o.user_id='$tid', pd.currency, po.currency) as opp_currency
+    MAX(IF(o.user_id='$tid', d.name, o.name)) as opp_realm_name,
+    MAX(IF(o.user_id='$tid', d.theme_id, o.theme_id)) as opp_theme_id,
+    MAX(IF(o.user_id='$tid', pd.name, po.name)) as opp_project_name,
+    MAX(IF(o.user_id='$tid', pd.currency, po.currency)) as opp_currency,
+    SUM(CASE WHEN o.user_id='$tid' THEN 1 ELSE 0 END) as outgoing,
+    SUM(CASE WHEN d.user_id='$tid' THEN 1 ELSE 0 END) as incoming
     FROM raids r
     INNER JOIN realms o ON o.id = r.offense_id
     INNER JOIN realms d ON d.id = r.defense_id
@@ -422,11 +425,23 @@ $opp_result = $conn->query("SELECT u.discord_id, u.avatar, u.username,
     INNER JOIN projects pd ON pd.id = d.project_id
     WHERE (o.user_id='$tid' OR d.user_id='$tid')
     AND (r.outcome = '0' OR DATE(r.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01'))
-    GROUP BY u.id
-    ORDER BY MAX(r.created_date) DESC LIMIT 8");
+    GROUP BY u.id, u.discord_id, u.avatar, u.username
+    ORDER BY (outgoing + incoming) DESC LIMIT 8");
 if ($opp_result && $opp_result->num_rows > 0) {
     while ($row = $opp_result->fetch_assoc()) { $opponents[] = $row; }
-    shuffle($opponents);
+    // Arch nemesis = most mutual raids (both attacked each other this month)
+    $nemesis_idx = null;
+    foreach ($opponents as $i => $opp) {
+        if ($opp['outgoing'] > 0 && $opp['incoming'] > 0) { $nemesis_idx = $i; break; }
+    }
+    if ($nemesis_idx !== null) {
+        $nemesis_arr = array_splice($opponents, $nemesis_idx, 1);
+        shuffle($opponents);
+        array_unshift($opponents, $nemesis_arr[0]);
+        $arch_nemesis = $opponents[0]['username'];
+    } else {
+        shuffle($opponents);
+    }
 }
 
 // ── Membership badges ──────────────────────────────────────────────────────
@@ -766,6 +781,30 @@ include 'header.php';
     font-size: 0.65rem; color: #5a7888;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     display: block; margin-top: 2px;
+}
+.opponent-raid-counts {
+    display: flex; gap: 6px; margin-top: 5px;
+}
+.raid-out {
+    font-size: 0.68rem; color: #f5a623; font-weight: bold;
+}
+.raid-in {
+    font-size: 0.68rem; color: #ff7f7f; font-weight: bold;
+}
+.nemesis-card {
+    border: 2px solid #00c8a0 !important;
+    box-shadow: 0 0 12px rgba(0,200,160,0.35), 0 0 24px rgba(0,200,160,0.12);
+}
+.nemesis-card .opponent-avatar {
+    border-color: #ff6b35;
+}
+.nemesis-label {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: linear-gradient(90deg, rgba(0,200,160,0.85), rgba(0,150,120,0.7));
+    color: #fff; font-size: 0.6rem; font-weight: bold;
+    text-align: center; letter-spacing: 0.08em;
+    padding: 3px 6px; z-index: 2;
+    text-transform: uppercase;
 }
 
 /* ── Streak Calendar ── */
@@ -1352,11 +1391,17 @@ $realm_con_info = [
     <div class="image-strip-section-label"><?php echo date('F'); ?> Opponents</div>
     <div class="opponents-grid">
         <?php foreach ($opponents as $opp):
-            $opp_av  = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
-            $opp_tid = (int)$opp['opp_theme_id'];
-            $opp_bg  = $opp_tid ? "background-image:url('images/themes/{$opp_tid}.jpg')" : "background-color:#122030";
+            $opp_av    = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
+            $opp_tid   = (int)$opp['opp_theme_id'];
+            $opp_bg    = $opp_tid ? "background-image:url('images/themes/{$opp_tid}.jpg')" : "background-color:#122030";
+            $is_nemesis = ($arch_nemesis !== null && $opp['username'] === $arch_nemesis);
+            $out = (int)$opp['outgoing'];
+            $in  = (int)$opp['incoming'];
         ?>
-        <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card">
+        <a href="profile.php?username=<?php echo urlencode($opp['username']); ?>" class="opponent-card<?php echo $is_nemesis ? ' nemesis-card' : ''; ?>">
+            <?php if ($is_nemesis): ?>
+            <div class="nemesis-label">&#9876; Arch Nemesis</div>
+            <?php endif; ?>
             <div class="opponent-theme-bg" style="<?php echo $opp_bg; ?>"></div>
             <div class="opponent-info">
                 <img class="opponent-avatar" src="<?php echo $opp_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
@@ -1367,6 +1412,10 @@ $realm_con_info = [
                 <?php if (!empty($opp['opp_project_name'])): ?>
                 <span class="opponent-realm"><img src="icons/<?php echo strtolower(htmlspecialchars($opp['opp_currency'])); ?>.png" style="height:11px;vertical-align:middle;margin-right:3px" onerror="this.style.display='none'"><?php echo htmlspecialchars($opp['opp_project_name']); ?></span>
                 <?php endif; ?>
+                <span class="opponent-raid-counts">
+                    <span class="raid-out" title="Outgoing raids">&#8593;<?php echo $out; ?></span>
+                    <span class="raid-in" title="Incoming raids">&#8595;<?php echo $in; ?></span>
+                </span>
             </div>
         </a>
         <?php endforeach; ?>
