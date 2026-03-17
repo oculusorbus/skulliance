@@ -1415,7 +1415,7 @@ $realm_con_info = [
 
 <!-- ── Item Inventory ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title"><span>&#127514; Item Inventory</span></div>
+    <div class="section-title"><span>&#127890; Item Inventory</span></div>
     <div class="inv-grid">
         <?php foreach ($inv_con_info as $cid => $info):
             $qty = $inv_amounts[$cid] ?? 0;
