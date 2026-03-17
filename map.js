@@ -378,11 +378,24 @@ function renderMap() {
     for (const {faction, x, y, w, poly} of placedWithPoly) {
         const c = centroid(poly);
         const fontSize = 12;
-        const padX = 10, padY = 4;
+        const padX = 10, padY = 5;
         const iconSize = faction.currency ? 14 : 0;
-        const iconGap  = faction.currency ? 5  : 0;
-        const approxTextW = faction.name.length * fontSize * 0.6;
-        const pillW = approxTextW + padX * 2 + iconSize + iconGap;
+        const iconGap  = faction.currency ? 6  : 0;
+
+        // Measure actual rendered text width to avoid inconsistent padding
+        const probe = svgEl('text', {
+            'font-size': fontSize,
+            'font-family': 'Georgia, "Times New Roman", serif',
+            'font-weight': 'bold',
+            'letter-spacing': '1',
+            visibility: 'hidden'
+        });
+        probe.textContent = faction.name;
+        svg.appendChild(probe);
+        const actualTextW = probe.getComputedTextLength();
+        svg.removeChild(probe);
+
+        const pillW = actualTextW + padX * 2 + iconSize + iconGap;
         const pillH = fontSize + padY * 2;
         const pillX = c.x - pillW / 2;
         const pillY = y + 8;
@@ -411,13 +424,11 @@ function renderMap() {
             }));
         }
 
-        // Label text (offset right of icon)
-        const textX = faction.currency
-            ? pillX + padX + iconSize + iconGap + approxTextW / 2
-            : c.x;
+        // Label text — anchored left-aligned after icon
+        const textX = pillX + padX + iconSize + iconGap;
         const lbl = svgEl('text', {
             x: textX, y: pillY + padY + fontSize - 2,
-            'text-anchor': 'middle',
+            'text-anchor': 'start',
             'font-size': fontSize,
             'font-family': 'Georgia, "Times New Roman", serif',
             'font-weight': 'bold',
