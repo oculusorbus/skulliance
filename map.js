@@ -49,7 +49,7 @@ popupClose.addEventListener('click', hidePopup);
 
 // ── Territory geometry ────────────────────────────────────────────────────────
 function jitterRect(x, y, w, h, j) {
-    const corners = [{x, y}, {x+w, y}, {x+w, y+h}, {x, y+h}];
+    const corners = [{x: x, y: y}, {x: x+w, y: y}, {x: x+w, y: y+h}, {x: x, y: y+h}];
     const pts = [];
     for (let i = 0; i < 4; i++) {
         const a = corners[i], b = corners[(i+1)%4];
