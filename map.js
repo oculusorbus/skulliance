@@ -331,6 +331,13 @@ function renderMap() {
     // ── Layer 3: realm markers ────────────────────────────────────────────────
     const realmPositions = {}; // realm_id → {x, y, color}
     const markerGroups   = {}; // realm_id → <g> element
+
+    // Build set of realm IDs active in raids this month
+    const activeRaidRealms = new Set();
+    for (const pair of (window.raidPairs || [])) {
+        activeRaidRealms.add(String(pair[0]));
+        activeRaidRealms.add(String(pair[1]));
+    }
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
         const rng = mulberry32(hashStr(faction.name + '_markers'));
         const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R, rng);
@@ -363,7 +370,7 @@ function renderMap() {
 
             // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
-                href: realm.user_image,
+                href: (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png',
                 x: pos.x-R, y: pos.y-R,
                 width: R*2, height: R*2,
                 'clip-path': `url(#ac${idx})`,
@@ -444,7 +451,8 @@ function renderMap() {
                 }
             });
             g.addEventListener('mouseleave', () => {
-                img.setAttribute('href', realm.user_image);
+                const defaultAvatar = (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png';
+                img.setAttribute('href', defaultAvatar);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
                 for (const ln of linesGroup.children) {
                     ln.style.opacity = '0.85';
