@@ -921,7 +921,7 @@ include 'header.php';
 
 /* ── Realm panel ── */
 .realm-profile-header {
-    display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px; flex-wrap: wrap;
+    display: flex; align-items: flex-start; gap: 20px; margin-bottom: 16px;
 }
 .realm-profile-left {
     display: flex; align-items: center; gap: 14px; flex-shrink: 0;
@@ -956,6 +956,7 @@ include 'header.php';
     border-radius: 4px; padding: 3px 8px;
 }
 @media (max-width: 600px) {
+    .realm-profile-header { flex-direction: column; }
     .realm-profile-faction { width: 100%; }
 }
 .realm-faction-badge img { height: 14px; vertical-align: middle; }
