@@ -405,9 +405,15 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	    </div>
 	    <div class="popup-overlay" id="popup-overlay">
 	        <div class="popup-content">
-	            <button class="popup-close" id="popup-close">X</button>
+	            <button class="popup-close" id="popup-close">&#x2715;</button>
 	            <img class="popup-image" id="popup-image" src="" alt="Realm Image">
-	            <p class="popup-name" id="popup-name"></p>
+	            <div class="popup-footer">
+	                <img class="popup-avatar" id="popup-avatar" src="" alt="Avatar">
+	                <div class="popup-info">
+	                    <p class="popup-user" id="popup-user"></p>
+	                    <p class="popup-realm" id="popup-realm"></p>
+	                </div>
+	            </div>
 	        </div>
 	    </div>
 	</div>

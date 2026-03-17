@@ -35,12 +35,17 @@ function hexToRgba(hex, a) {
 // ── Popup ─────────────────────────────────────────────────────────────────────
 const popupOverlay = document.getElementById('popup-overlay');
 const popupImage   = document.getElementById('popup-image');
-const popupName    = document.getElementById('popup-name');
+const popupAvatar  = document.getElementById('popup-avatar');
+const popupUser    = document.getElementById('popup-user');
+const popupRealm   = document.getElementById('popup-realm');
 const popupClose   = document.getElementById('popup-close');
 
-function showPopup(src, name) {
-    popupImage.src = src;
-    popupName.textContent = name;
+function showPopup(realmSrc, avatarSrc, userName, realmName) {
+    popupImage.src = realmSrc;
+    popupAvatar.src = avatarSrc;
+    popupAvatar.onerror = function() { this.src = 'icons/skull.png'; };
+    popupUser.textContent = userName;
+    popupRealm.textContent = realmName;
     popupOverlay.style.display = 'flex';
 }
 function hidePopup() { popupOverlay.style.display = 'none'; }
@@ -372,7 +377,7 @@ function renderMap() {
             g.appendChild(realmTxt);
 
             // Popup on click
-            g.addEventListener('click', () => showPopup(realm.realm_image, realm.realm_name + ' - ' + realm.user_name));
+            g.addEventListener('click', () => showPopup(realm.realm_image, realm.user_image, realm.user_name, realm.realm_name));
 
             // Swap avatar ↔ realm image on hover
             g.addEventListener('mouseenter', () => {
