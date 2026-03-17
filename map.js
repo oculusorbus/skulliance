@@ -169,9 +169,10 @@ function placeMarkers(poly, count, bbox, R, rng) {
 const CELL = 170;
 const PAD  = 32;
 
-function buildFactionData() {
+function buildFactionData(factionList) {
+    factionList = factionList || factions;
     colorPool = [...palette];
-    return factions.map(f => {
+    return factionList.map(f => {
         const count = f.realms.length;
         const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
         const rows = Math.max(1, Math.ceil(count / cols));
@@ -244,7 +245,7 @@ function measureTextWidth(text, fontSize, fontFamily, fontWeight, letterSpacing)
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderMap() {
     const container = document.getElementById('container');
-    const fdata = buildFactionData();
+    const fdata = buildFactionData(activeFactions);
     const placed = packFactions(fdata);
 
     let svgW = 0, svgH = 0;
@@ -338,6 +339,11 @@ function renderMap() {
         activeRaidRealms.add(String(pair[0]));
         activeRaidRealms.add(String(pair[1]));
     }
+
+    // Filter factions to only those with at least one active realm
+    const activeFactions = factions
+        .map(f => Object.assign({}, f, { realms: f.realms.filter(r => activeRaidRealms.has(r.realm_id)) }))
+        .filter(f => f.realms.length > 0);
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
         const rng = mulberry32(hashStr(faction.name + '_markers'));
         const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R, rng);
