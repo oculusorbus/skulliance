@@ -4154,7 +4154,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 				    WHERE progress_raids.outcome = '0' AND progress_users.id = users.id ".str_replace("WHERE", "AND", str_replace("raids", "progress_raids", $where)).") AS progress, 
 	        
 			COUNT(raids.id) AS total, SUM(raids.duration) AS total_duration, users.id AS user_id, users.discord_id AS discord_id, project_id, currency, username, avatar, visibility 
-		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".$where." GROUP BY users.id ORDER BY total DESC";
+		    FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN projects ON projects.id = realms.project_id INNER JOIN raids ON raids.offense_id = realms.id ".($where ? $where." AND realms.active = '1'" : "WHERE realms.active = '1'")." GROUP BY users.id ORDER BY total DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -5089,7 +5089,7 @@ function getLeaderboardTop3($conn, $filterby){
 		$score_suffix = ' streaks';
 	} else if($filterby === 'raids' || $filterby === 'monthly-raids'){
 		$df = ($filterby === 'monthly-raids') ? " AND DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')" : "";
-		$sql = "SELECT COUNT(raids.id) AS total, users.id AS user_id, users.discord_id, users.username, users.avatar, users.visibility FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE 1=1".$df." GROUP BY users.id ORDER BY total DESC LIMIT 3";
+		$sql = "SELECT COUNT(raids.id) AS total, users.id AS user_id, users.discord_id, users.username, users.avatar, users.visibility FROM users INNER JOIN realms ON users.id = realms.user_id INNER JOIN raids ON raids.offense_id = realms.id WHERE realms.active = '1'".$df." GROUP BY users.id ORDER BY total DESC LIMIT 3";
 		$score_suffix = ' raids';
 	} else if($filterby === 'swaps' || $filterby === 'weekly-swaps'){
 		$rf = ($filterby === 'weekly-swaps') ? " AND reward='0'" : "";
