@@ -1092,6 +1092,18 @@ include 'header.php';
     </div>
     <div class="progress-bar-label">Success rate: <?php echo $missions_rate; ?>%</div>
     <?php endif; ?>
+    <div class="image-strip-section-label">&#127890; Item Inventory</div>
+    <div class="inv-grid">
+        <?php foreach ($inv_con_info as $cid => $info):
+            $qty = $inv_amounts[$cid] ?? 0;
+        ?>
+        <div class="inv-card <?php echo $qty > 0 ? '' : 'inv-card-empty'; ?>">
+            <img src="icons/<?php echo $info['icon']; ?>.png" onerror="this.src='icons/skull.png'" alt="<?php echo htmlspecialchars($info['name']); ?>">
+            <span class="inv-card-qty <?php echo $qty > 0 ? 'teal' : ''; ?>"><?php echo $qty; ?></span>
+            <span class="inv-card-name"><?php echo htmlspecialchars($info['name']); ?></span>
+        </div>
+        <?php endforeach; ?>
+    </div>
     <?php if (!empty($recent_missions)): ?>
     <div class="image-strip-section-label"><?php echo date('F'); ?> Missions</div>
     <div class="image-strip">
@@ -1412,22 +1424,6 @@ $realm_con_info = [
     </div>
 </div>
 <?php endif; ?>
-
-<!-- ── Item Inventory ───────────────────────────────────────────────────── -->
-<div class="profile-section">
-    <div class="section-title"><span>&#127890; Item Inventory</span></div>
-    <div class="inv-grid">
-        <?php foreach ($inv_con_info as $cid => $info):
-            $qty = $inv_amounts[$cid] ?? 0;
-        ?>
-        <div class="inv-card <?php echo $qty > 0 ? '' : 'inv-card-empty'; ?>">
-            <img src="icons/<?php echo $info['icon']; ?>.png" onerror="this.src='icons/skull.png'" alt="<?php echo htmlspecialchars($info['name']); ?>">
-            <span class="inv-card-qty <?php echo $qty > 0 ? 'teal' : ''; ?>"><?php echo $qty; ?></span>
-            <span class="inv-card-name"><?php echo htmlspecialchars($info['name']); ?></span>
-        </div>
-        <?php endforeach; ?>
-    </div>
-</div>
 
 <!-- ── NFT Collection (full-width horizontal strip) ─────────────────────── -->
 <div class="profile-section" id="nft-col">
