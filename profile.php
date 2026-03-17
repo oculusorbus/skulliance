@@ -254,8 +254,7 @@ $raid_days = [];
 $raid_cal_result = $conn->query("SELECT DATE(r.created_date) as day
     FROM raids r
     INNER JOIN realms o ON o.id = r.offense_id
-    INNER JOIN realms d ON d.id = r.defense_id
-    WHERE (o.user_id='$tid' OR d.user_id='$tid')
+    WHERE o.user_id='$tid'
     AND r.created_date >= DATE_SUB(CURDATE(), INTERVAL 91 DAY)
     GROUP BY DATE(r.created_date)");
 if ($raid_cal_result && $raid_cal_result->num_rows > 0) {
