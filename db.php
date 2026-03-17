@@ -7090,14 +7090,14 @@ function checkRealmActivation($conn){
 }
 
 function getFactionsRealmsMapData($conn){
-	$sql = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
+	$sql = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency, realms.active AS realm_active FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active IN (0,1) ORDER BY faction_name';
 	
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
 	    echo "<script type='text/javascript'>";
 	    echo "window.csvData = `";
-	    echo '"user_name","user_image","realm_name","realm_image","faction_name","faction_currency","realm_id"';
+	    echo '"user_name","user_image","realm_name","realm_image","faction_name","faction_currency","realm_id","realm_active"';
 	    echo "\n";
     	
 		$realms = array();
@@ -7111,6 +7111,7 @@ function getFactionsRealmsMapData($conn){
 				$realms[$row['realm_id']]["realm_image"] = $row['realm_image'];
 				$realms[$row['realm_id']]["faction_name"] = $row['faction_name'];
 			$realms[$row['realm_id']]["faction_currency"] = $row['faction_currency'];
+			$realms[$row['realm_id']]["realm_active"] = $row['realm_active'];
 			}
 	    }
 
@@ -7124,7 +7125,8 @@ function getFactionsRealmsMapData($conn){
 	        echo '"'.$realm['realm_image'].'",';
 	        echo '"'.$realm['faction_name'].'",';
 	        echo '"'.$realm['faction_currency'].'",';
-	        echo '"'.$realm_id.'"';
+	        echo '"'.$realm_id.'",';
+	        echo '"'.$realm['realm_active'].'"';
 			if ($realm_count < $realm_total) {
 				echo "\n"; // Only add newline if not the last realm
 			}

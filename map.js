@@ -2,9 +2,9 @@
 if (!window.csvData) { console.warn('map.js: no csvData'); }
 const rows = (window.csvData || '').split('\n').slice(1);
 const data = rows.map(row => {
-    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id] =
+    const [user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id, realm_active] =
         row.split('","').map(v => v.replace(/^"|"$/g, ''));
-    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id };
+    return { user_name, user_image, realm_name, realm_image, faction_name, faction_currency, realm_id, realm_active };
 });
 
 const factions = Object.values(data.reduce((acc, d) => {
@@ -370,7 +370,7 @@ function renderMap() {
 
             // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
-                href: (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png',
+                href: (realm.realm_active === '1' && realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png',
                 x: pos.x-R, y: pos.y-R,
                 width: R*2, height: R*2,
                 'clip-path': `url(#ac${idx})`,
@@ -451,7 +451,7 @@ function renderMap() {
                 }
             });
             g.addEventListener('mouseleave', () => {
-                const defaultAvatar = (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png';
+                const defaultAvatar = (realm.realm_active === '1' && realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png';
                 img.setAttribute('href', defaultAvatar);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
                 for (const ln of linesGroup.children) {
