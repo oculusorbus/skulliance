@@ -329,7 +329,8 @@ function renderMap() {
     svg.appendChild(linesGroup);
 
     // ── Layer 3: realm markers ────────────────────────────────────────────────
-    const realmPositions = {}; // realm_id → {x, y}
+    const realmPositions = {}; // realm_id → {x, y, color}
+    const markerGroups   = {}; // realm_id → <g> element
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
         const rng = mulberry32(hashStr(faction.name + '_markers'));
         const positions = placeMarkers(poly, faction.count, {x, y, w, h}, R, rng);
@@ -344,7 +345,10 @@ function renderMap() {
             cp.appendChild(svgEl('circle', {cx:pos.x, cy:pos.y, r:R}));
             defs.appendChild(cp);
 
-            if (realm.realm_id) realmPositions[realm.realm_id] = {x: pos.x, y: pos.y, color: faction.color};
+            if (realm.realm_id) {
+                realmPositions[realm.realm_id] = {x: pos.x, y: pos.y, color: faction.color};
+                markerGroups[realm.realm_id] = g;
+            }
 
             const g = document.createElementNS(NS, 'g');
             g.style.cursor = 'pointer';
@@ -417,22 +421,36 @@ function renderMap() {
             g.addEventListener('mouseenter', () => {
                 img.setAttribute('href', realm.user_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
-                // Dim all raid lines except those involving this realm
                 if (realm.realm_id) {
+                    // Build set of realm_ids connected to this one via any raid line
+                    const connected = new Set([realm.realm_id]);
+                    for (const ln of linesGroup.children) {
+                        if (ln.dataset.offense === realm.realm_id || ln.dataset.defense === realm.realm_id) {
+                            connected.add(ln.dataset.offense);
+                            connected.add(ln.dataset.defense);
+                        }
+                    }
+                    // Dim unconnected raid lines
                     for (const ln of linesGroup.children) {
                         const involved = ln.dataset.offense === realm.realm_id || ln.dataset.defense === realm.realm_id;
-                        ln.style.opacity = involved ? '1' : '0.08';
+                        ln.style.opacity = involved ? '1' : '0.05';
                         ln.style.strokeWidth = involved ? '3' : '1';
+                    }
+                    // Dim unconnected marker groups
+                    for (const [rid, grp] of Object.entries(markerGroups)) {
+                        grp.style.opacity = connected.has(rid) ? '1' : '0.1';
                     }
                 }
             });
             g.addEventListener('mouseleave', () => {
                 img.setAttribute('href', realm.realm_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
-                // Restore all raid lines
                 for (const ln of linesGroup.children) {
                     ln.style.opacity = '0.85';
                     ln.style.strokeWidth = '';
+                }
+                for (const grp of Object.values(markerGroups)) {
+                    grp.style.opacity = '1';
                 }
             });
 
