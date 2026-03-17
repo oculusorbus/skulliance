@@ -83,6 +83,29 @@ if ($rm_result && $rm_result->num_rows > 0) {
     shuffle($recent_missions);
 }
 
+// ── Completed Mission Campaigns ─────────────────────────────────────────────
+$completed_campaigns = [];
+$cc_result = $conn->query("
+    SELECT p.name AS project_name, p.currency,
+        COUNT(DISTINCT q.id) AS total_quests,
+        COUNT(DISTINCT CASE WHEN m.status = '1' THEN q.id END) AS completed_quests
+    FROM quests q
+    INNER JOIN projects p ON p.id = q.project_id
+    LEFT JOIN missions m ON m.quest_id = q.id AND m.user_id = '$tid' AND m.status = '1'
+    GROUP BY p.id
+    HAVING completed_quests > 0 AND completed_quests = total_quests
+    ORDER BY p.name ASC");
+if ($cc_result && $cc_result->num_rows > 0) {
+    while ($row = $cc_result->fetch_assoc()) {
+        $completed_campaigns[] = [
+            'name'      => htmlspecialchars($row['project_name']),
+            'currency'  => strtolower($row['currency']),
+            'completed' => (int)$row['completed_quests'],
+            'total'     => (int)$row['total_quests'],
+        ];
+    }
+}
+
 // ── Raids ──────────────────────────────────────────────────────────────────
 
 $raid_sql = "SELECT COUNT(*) as total,
@@ -615,6 +638,33 @@ include 'header.php';
     font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
     color: #3a6070; margin: 20px 0 10px;
 }
+.campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+}
+.campaign-card {
+    display: flex; align-items: center; gap: 10px;
+    background: #0a1929; border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 8px; padding: 10px 12px;
+}
+.campaign-card img {
+    width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;
+}
+.campaign-info {
+    display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;
+}
+.campaign-name {
+    font-size: 0.85rem; font-weight: bold; color: #e8eaed;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.campaign-count {
+    font-size: 0.72rem; color: #5a7888;
+}
+.campaign-badge {
+    font-size: 0.7rem; color: #00c8a0; font-weight: bold;
+    white-space: nowrap; flex-shrink: 0;
+}
 .image-strip {
     display: flex;
     gap: 10px;
@@ -1119,6 +1169,21 @@ include 'header.php';
         </div>
         <?php endforeach; ?>
     </div>
+    <?php if (!empty($completed_campaigns)): ?>
+    <div class="image-strip-section-label">Completed Mission Campaigns</div>
+    <div class="campaign-grid">
+        <?php foreach ($completed_campaigns as $c): ?>
+        <div class="campaign-card">
+            <img src="icons/<?php echo $c['currency']; ?>.png" onerror="this.src='icons/skull.png'" alt="<?php echo $c['name']; ?>">
+            <div class="campaign-info">
+                <span class="campaign-name"><?php echo $c['name']; ?></span>
+                <span class="campaign-count"><?php echo $c['completed']; ?>/<?php echo $c['total']; ?> missions</span>
+            </div>
+            <span class="campaign-badge">&#10003; Complete</span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
     <?php if (!empty($recent_missions)): ?>
     <div class="image-strip-section-label"><?php echo date('F'); ?> Missions</div>
     <div class="image-strip">
