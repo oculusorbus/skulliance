@@ -982,21 +982,23 @@ include 'header.php';
 /* ── Faction members ── */
 .faction-member-card {
     position: relative; border-radius: 8px; overflow: hidden;
-    border: 1px solid rgba(0,200,160,0.12); display: block;
-    text-decoration: none; transition: border-color 0.2s, transform 0.15s;
-    min-height: 60px;
+    border: 1px solid rgba(0,200,160,0.12);
 }
-.faction-member-card:hover { border-color: rgba(0,200,160,0.35); transform: translateY(-2px); }
 .faction-member-bg {
     position: absolute; inset: 0; background-size: cover; background-position: center;
     opacity: 0.3;
 }
-.faction-member-info {
-    position: relative; z-index: 1; display: flex; align-items: center;
-    gap: 10px; padding: 10px 12px;
+.faction-member-group {
+    position: relative; z-index: 1; display: flex; flex-direction: column;
 }
+.faction-member-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    text-decoration: none; transition: background 0.15s;
+}
+.faction-member-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.faction-member-row:hover { background: rgba(0,200,160,0.07); }
 .faction-member-avatar {
-    width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
     border: 1px solid rgba(0,200,160,0.3); flex-shrink: 0;
 }
 .faction-member-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1174,22 +1176,33 @@ $realm_con_info = [
                 <img src="icons/<?php echo strtolower(htmlspecialchars($realm_data['currency'])); ?>.png" onerror="this.style.display='none'">
                 <?php echo htmlspecialchars($realm_data['project_name']); ?> Faction
             </div>
+            <?php
+            $fm_groups = [];
+            foreach ($faction_members as $fm) {
+                $key = (int)$fm['theme_id'];
+                $fm_groups[$key][] = $fm;
+            }
+            ?>
             <div class="faction-members-list">
-                <?php foreach ($faction_members as $fm):
-                    $fm_av = "https://cdn.discordapp.com/avatars/{$fm['discord_id']}/{$fm['avatar']}.png";
-                    $fm_tid = (int)$fm['theme_id'];
-                    $fm_bg = $fm_tid ? "background-image:url('images/themes/{$fm_tid}.jpg')" : "background-color:#122030";
+                <?php foreach ($fm_groups as $tid => $group):
+                    $fm_bg = $tid ? "background-image:url('images/themes/{$tid}.jpg')" : "background-color:#122030";
                 ?>
-                <a href="profile.php?username=<?php echo urlencode($fm['username']); ?>" class="faction-member-card">
+                <div class="faction-member-card">
                     <div class="faction-member-bg" style="<?php echo $fm_bg; ?>"></div>
-                    <div class="faction-member-info">
-                        <img class="faction-member-avatar" src="<?php echo $fm_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
-                        <div class="faction-member-text">
-                            <span class="faction-member-name"><?php echo htmlspecialchars($fm['username']); ?></span>
-                            <span class="faction-member-realm"><?php echo htmlspecialchars($fm['realm_name']); ?></span>
-                        </div>
+                    <div class="faction-member-group">
+                        <?php foreach ($group as $fm):
+                            $fm_av = "https://cdn.discordapp.com/avatars/{$fm['discord_id']}/{$fm['avatar']}.png";
+                        ?>
+                        <a href="profile.php?username=<?php echo urlencode($fm['username']); ?>" class="faction-member-row">
+                            <img class="faction-member-avatar" src="<?php echo $fm_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
+                            <div class="faction-member-text">
+                                <span class="faction-member-name"><?php echo htmlspecialchars($fm['username']); ?></span>
+                                <span class="faction-member-realm"><?php echo htmlspecialchars($fm['realm_name']); ?></span>
+                            </div>
+                        </a>
+                        <?php endforeach; ?>
                     </div>
-                </a>
+                </div>
                 <?php endforeach; ?>
             </div>
         </div>
