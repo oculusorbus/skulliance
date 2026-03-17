@@ -328,10 +328,10 @@ if ($realm_r && $realm_r->num_rows > 0) {
 // ── Item Inventory ──────────────────────────────────────────────────────────
 
 $inv_con_info = [
-    1 => ['name'=>'+4% Success',   'icon'=>'100-success'],
-    2 => ['name'=>'+3% Success',   'icon'=>'75-success'],
-    3 => ['name'=>'+2% Success',   'icon'=>'50-success'],
-    4 => ['name'=>'+1% Success',   'icon'=>'25-success'],
+    1 => ['name'=>'+100% Success', 'icon'=>'100-success'],
+    2 => ['name'=>'+75% Success',  'icon'=>'75-success'],
+    3 => ['name'=>'+50% Success',  'icon'=>'50-success'],
+    4 => ['name'=>'+25% Success',  'icon'=>'25-success'],
     5 => ['name'=>'Fast Forward',  'icon'=>'fast-forward'],
     6 => ['name'=>'Double Rewards','icon'=>'double-rewards'],
     7 => ['name'=>'Random Reward', 'icon'=>'random-reward'],
