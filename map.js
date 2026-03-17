@@ -198,6 +198,24 @@ function svgEl(tag, attrs={}) {
     return e;
 }
 
+// Persistent hidden SVG in the DOM used for text measurement
+const _measureSvg = document.createElementNS(NS, 'svg');
+_measureSvg.setAttribute('style', 'position:absolute;visibility:hidden;width:0;height:0;overflow:hidden');
+document.body.appendChild(_measureSvg);
+
+function measureTextWidth(text, fontSize, fontFamily, fontWeight, letterSpacing) {
+    const probe = document.createElementNS(NS, 'text');
+    probe.setAttribute('font-size', fontSize);
+    probe.setAttribute('font-family', fontFamily);
+    probe.setAttribute('font-weight', fontWeight);
+    probe.setAttribute('letter-spacing', letterSpacing);
+    probe.textContent = text;
+    _measureSvg.appendChild(probe);
+    const w = probe.getComputedTextLength();
+    _measureSvg.removeChild(probe);
+    return w;
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderMap() {
     const container = document.getElementById('container');
@@ -382,18 +400,8 @@ function renderMap() {
         const iconSize = faction.currency ? 14 : 0;
         const iconGap  = faction.currency ? 6  : 0;
 
-        // Measure actual rendered text width to avoid inconsistent padding
-        const probe = svgEl('text', {
-            'font-size': fontSize,
-            'font-family': 'Georgia, "Times New Roman", serif',
-            'font-weight': 'bold',
-            'letter-spacing': '1',
-            visibility: 'hidden'
-        });
-        probe.textContent = faction.name;
-        svg.appendChild(probe);
-        const actualTextW = probe.getComputedTextLength();
-        svg.removeChild(probe);
+        // Measure actual rendered text width via persistent DOM SVG
+        const actualTextW = measureTextWidth(faction.name, fontSize, 'Georgia, "Times New Roman", serif', 'bold', '1');
 
         const pillW = actualTextW + padX * 2 + iconSize + iconGap;
         const pillH = fontSize + padY * 2;
