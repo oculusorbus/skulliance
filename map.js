@@ -438,13 +438,19 @@ function renderMap() {
                             connected.add(ln.dataset.defense);
                         }
                     }
-                    // Dim unconnected lines; switch connected lines to marching animation
+                    // Hide unconnected lines; switch connected lines to marching animation
                     for (const ln of linesGroup.children) {
                         const involved = ln.dataset.offense === realm.realm_id || ln.dataset.defense === realm.realm_id;
-                        ln.style.opacity = involved ? '1' : '0';
-                        ln.style.strokeWidth = involved ? '3' : '1';
-                        ln.classList.toggle('raid-line-active', involved);
-                        ln.classList.toggle('raid-line', !involved);
+                        if (involved) {
+                            ln.classList.remove('raid-line');
+                            ln.classList.add('raid-line-active');
+                            ln.style.opacity = '1';
+                            ln.style.strokeWidth = '3';
+                        } else {
+                            ln.classList.remove('raid-line', 'raid-line-active');
+                            ln.style.opacity = '0';
+                            ln.style.strokeWidth = '';
+                        }
                     }
                     // Dim unconnected marker groups
                     for (const [rid, grp] of Object.entries(markerGroups)) {
