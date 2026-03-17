@@ -363,7 +363,7 @@ function renderMap() {
 
             // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
-                href: realm.realm_image,
+                href: realm.user_image,
                 x: pos.x-R, y: pos.y-R,
                 width: R*2, height: R*2,
                 'clip-path': `url(#ac${idx})`,
@@ -420,7 +420,7 @@ function renderMap() {
 
             // Swap to avatar on hover, back to realm theme on leave
             g.addEventListener('mouseenter', () => {
-                img.setAttribute('href', realm.user_image);
+                img.setAttribute('href', realm.realm_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
                 if (realm.realm_id) {
                     // Build set of realm_ids connected to this one via any raid line
@@ -444,7 +444,7 @@ function renderMap() {
                 }
             });
             g.addEventListener('mouseleave', () => {
-                img.setAttribute('href', realm.realm_image);
+                img.setAttribute('href', realm.user_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
                 for (const ln of linesGroup.children) {
                     ln.style.opacity = '0.85';
