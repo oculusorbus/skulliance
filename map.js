@@ -66,6 +66,10 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
     popupRealm.textContent = realmName;
 
     // Faction chip
+    const factionIcon = document.getElementById('popup-faction-icon');
+    factionIcon.src = 'icons/' + (factionCurrency || '').toLowerCase() + '.png';
+    factionIcon.onerror = function() { this.style.display = 'none'; };
+    factionIcon.style.display = '';
     document.getElementById('popup-faction-name').textContent = factionName || '';
 
     // Avg level chip

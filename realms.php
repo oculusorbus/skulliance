@@ -416,6 +416,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	            </div>
 	            <div class="popup-stats">
 	                <div class="popup-stat">
+	                    <img class="popup-stat-icon" id="popup-faction-icon" src="" alt="">
 	                    <span id="popup-faction-name"></span>
 	                </div>
 	                <div class="popup-stat">
