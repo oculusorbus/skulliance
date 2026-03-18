@@ -1510,10 +1510,10 @@ window.onclick = function(event) {
   }
   setInterval(tick, 1000);
   tick();
-})();
+}());
 
 // Pin user's own rank row to the top of leaderboard tables
-(function() {
+;(function() {
   var table = document.getElementById('transactions');
   if (!table) return;
   var highlighted = table.querySelector('tr.highlight');
