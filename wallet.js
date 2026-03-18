@@ -93,7 +93,6 @@ function capitalizeFirstLetter(string) {
 		'lace',
 		'eternl',
 		'vespr',
-		'flint',
 		'typhoncip30',
 		'tokeo',
 		'yoroi',
@@ -128,6 +127,10 @@ function capitalizeFirstLetter(string) {
 		'eternl':      'icons/eternl.png',
 		'vespr':       'icons/vespr.svg',
 		'typhoncip30': 'icons/typhon.svg',
+		'tokeo':       'icons/tokeo.png',
+		'yoroi':       'icons/yoroi.svg',
+		'gerowallet':  'icons/gero.svg',
+		'nufi':        'icons/nufi.svg',
 	};
 
 	function populateWalletGrid(wallets) {
@@ -137,14 +140,15 @@ function capitalizeFirstLetter(string) {
 		grid.innerHTML = '';
 
 		if (wallets.length === 0) {
-			grid.innerHTML = '<div class="wallet-panel-empty">No Cardano wallets detected.<br><small>Install Lace, Eternl, Vespr, or Flint to connect.</small></div>';
+			grid.innerHTML = '<div class="wallet-panel-empty">No Cardano wallets detected.<br><small>Install Lace, Eternl, Vespr, or Yoroi to connect.</small></div>';
 			return;
 		}
 
 		wallets.forEach((walletKey) => {
 			const info = window.cardano[walletKey];
 			const name = capitalizeFirstLetter(walletKey);
-			const icon = (info && info.icon) ? info.icon : (fallbackIcons[walletKey] || 'icons/wallet.png');
+			// Prefer local icons when defined (avoids bad data URIs from some extensions)
+			const icon = fallbackIcons[walletKey] || (info && info.icon) || 'icons/wallet.png';
 
 			const panel = document.createElement('div');
 			panel.className = 'wallet-panel';
