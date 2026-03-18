@@ -5475,13 +5475,14 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, 
 		$duration    = intval($duration);
 		$cost        = intval($cost);
 		$project_id  = intval($project_id);
-		// Fast Forward: halve duration (rounded up, min 1) if equipped on this location
+		// level = target level (always the full requested duration).
+		// duration = timer days: halved when Fast Forward is equipped, otherwise full.
 		$ff_check = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id='".$realm_id."' AND rl.location_id='".$location_id."' AND rlc.consumable_id='5' AND rlc.raid_id=0");
-		if($ff_check && $ff_check->num_rows > 0){
-			$duration = max(1, (int)ceil($duration / 2));
-		}
-		$sql = "INSERT INTO upgrades (realm_id, location_id, duration)
-		VALUES ('".$realm_id."', '".$location_id."', '".$duration."')";
+		$timer = ($ff_check && $ff_check->num_rows > 0)
+			? max(1, (int)ceil($duration / 2))
+			: $duration;
+		$sql = "INSERT INTO upgrades (realm_id, location_id, duration, level, created_date)
+		VALUES ('".$realm_id."', '".$location_id."', '".$timer."', '".$duration."', NOW())";
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
@@ -5529,12 +5530,13 @@ function checkRealmLocationUpgrade($conn, $realm_id, $location_id){
 function getRealmLocationsUpgrades($conn){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id = getRealmID($conn);
-		$sql = "SELECT id, location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."'";
+		$sql = "SELECT id, location_id, duration, level, created_date FROM upgrades WHERE realm_id = '".$realm_id."'";
 		$result = $conn->query($sql);
-		
+
 		$status = array();
 		if ($result->num_rows > 0) {
 			while($row = $result->fetch_assoc()) {
+				$target_level = ($row['level'] > 0) ? $row['level'] : $row['duration'];
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 				$remaining = $date - time();
 				$days_remaining = floor(($remaining / 86400));
@@ -5542,13 +5544,13 @@ function getRealmLocationsUpgrades($conn){
 				$minutes_remaining = floor(($remaining % 3600) / 60);
 				if($date > time()){
 					$time_message  = "<div class='location-meta' style='font-weight:normal;text-align:right;'>";
-					$time_message .= "Lv".$row["duration"]." upgrade";
-					$time_message .= " &bull; ".$row["duration"]." ".(($row["duration"]==1)?"day":"days");
+					$time_message .= "Lv".$target_level." upgrade";
+					$time_message .= " &bull; ".$target_level." ".(($target_level==1)?"day":"days");
 					$time_message .= "<br>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m left";
 					$time_message .= "</div>";
 					$status[$row['location_id']] = $time_message;
 				}else{
-					upgradeRealmLocationLevel($conn, $realm_id, $row['location_id'], $row["duration"]);
+					upgradeRealmLocationLevel($conn, $realm_id, $row['location_id'], $target_level);
 					deleteRealmLocationUpgrade($conn, $realm_id, $row['location_id']);
 					//$time_message = "0d 0h 0m";
 					// Burn Fast Forward consumable when upgrade completes
@@ -5757,18 +5759,13 @@ function burnLocationConsumables($conn, $realm_id, $location_id, $raid_id=0){
 	$raid_id     = intval($raid_id);
 	$rl_id = getRealmLocationID($conn, $realm_id, $location_id);
 	if(!$rl_id) return;
-	// Check if FF is stocked — if so, restore upgrade duration
+	// Check if FF is stocked — if so, un-accelerate the upgrade timer.
+	// Restore duration to the target level and reset created_date so the full timer runs from now.
 	$ff_check = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$rl_id."' AND consumable_id='5' AND raid_id=0");
 	if($ff_check && $ff_check->num_rows > 0){
-		$upg = $conn->query("SELECT duration, created_date FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
+		$upg = $conn->query("SELECT id FROM upgrades WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
 		if($upg && $upg->num_rows > 0){
-			$upg_row    = $upg->fetch_assoc();
-			$completion = strtotime('+'.$upg_row['duration'].' day', strtotime($upg_row['created_date']));
-			if($completion > time()){
-				$remaining_days = (int)ceil(($completion - time()) / 86400);
-				$new_duration   = $upg_row['duration'] + $remaining_days;
-				$conn->query("UPDATE upgrades SET duration='".$new_duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'");
-			}
+			$conn->query("UPDATE upgrades SET duration = level, created_date = NOW() WHERE realm_id='".$realm_id."' AND location_id='".$location_id."' AND level > 0");
 		}
 	}
 	if($raid_id > 0){
