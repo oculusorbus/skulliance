@@ -66,10 +66,6 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
     popupRealm.textContent = realmName;
 
     // Faction chip
-    const factionIcon = document.getElementById('popup-faction-icon');
-    factionIcon.src = 'icons/' + (factionCurrency || '').toLowerCase() + '.png';
-    factionIcon.onerror = function() { this.style.display = 'none'; };
-    factionIcon.style.display = '';
     document.getElementById('popup-faction-name').textContent = factionName || '';
 
     // Avg level chip
@@ -83,10 +79,10 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
     const chipsEl    = document.getElementById('popup-raid-chips');
     chipsEl.innerHTML = '';
     if (offenseCount > 0) {
-        chipsEl.innerHTML += '<span class="popup-stat popup-badge-attack">&#9876; Raiding <strong>' + offenseCount + '</strong></span>';
+        chipsEl.innerHTML += '<span class="popup-stat popup-badge-attack">Raiding <strong>' + offenseCount + '</strong></span>';
     }
     if (defenseCount > 0) {
-        chipsEl.innerHTML += '<span class="popup-stat popup-badge-defend">&#128737; Defending <strong>' + defenseCount + '</strong></span>';
+        chipsEl.innerHTML += '<span class="popup-stat popup-badge-defend">Defending <strong>' + defenseCount + '</strong></span>';
     }
     if (offenseCount === 0 && defenseCount === 0) {
         chipsEl.innerHTML = '<span class="popup-stat popup-badge-peace">Peaceful</span>';
