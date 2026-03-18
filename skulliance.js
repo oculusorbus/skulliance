@@ -763,8 +763,10 @@ function completeMissions(mission_ids, quest_ids) {
 
 			}*/
 			// Since missions are being claimed, automatically display start missions buttons.
-			document.getElementById('startFreeMissionsForm').style.display = "block";
-			document.getElementById('startAutoMissionsForm').style.display = "block";
+			var freeForm = document.getElementById('startFreeMissionsForm');
+			var autoForm = document.getElementById('startAutoMissionsForm');
+			if (freeForm) freeForm.style.display = "block";
+			if (autoForm) autoForm.style.display = "block";
 			const obj = JSON.parse(data);
 			//document.getElementById('consumable-header').style.display = 'block';
 			for(var i in obj){
@@ -1468,13 +1470,13 @@ var span = document.getElementsByClassName("close")[0];
 // When the user clicks on <span> (x), close the modal
 if (typeof span !== 'undefined') {
 	span.onclick = function() {
-	  modal.style.display = "none";
+	  if (modal) modal.style.display = "none";
 	}
 }
 
 // When the user clicks anywhere outside of the modal, close it
 window.onclick = function(event) {
-  if (event.target == modal) {
+  if (modal && event.target == modal) {
     modal.style.display = "none";
   }
   var raidModal = document.getElementById('raid-consumables-modal');
