@@ -394,6 +394,7 @@ function renderMap() {
 
             // Soft glow halo — pulsing ring for active raiders
             const isActiveRaider = realm.realm_id && activeAttackers.has(realm.realm_id);
+            const isOwnRealm     = window.myRealmId && realm.realm_id && parseInt(realm.realm_id) === window.myRealmId;
             const halo = svgEl('circle', {
                 cx:pos.x, cy:pos.y, r:Rr+5,
                 fill: hexToRgba(faction.color, isActiveRaider ? 0.35 : 0.18),
@@ -403,6 +404,18 @@ function renderMap() {
             });
             if (isActiveRaider) halo.classList.add('marker-active-glow');
             g.appendChild(halo);
+
+            // Gold pulsing outer ring for the logged-in user's own realm
+            if (isOwnRealm) {
+                const ownRing = svgEl('circle', {
+                    cx:pos.x, cy:pos.y, r:Rr+11,
+                    fill: 'none',
+                    stroke: '#FFD700',
+                    'stroke-width': '2.5',
+                });
+                ownRing.classList.add('marker-own-glow');
+                g.appendChild(ownRing);
+            }
 
             // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
@@ -417,12 +430,12 @@ function renderMap() {
             });
             g.appendChild(img);
 
-            // Faction-colored border ring
+            // Faction-colored border ring (gold + thicker for own realm)
             g.appendChild(svgEl('circle', {
                 cx:pos.x, cy:pos.y, r:Rr,
                 fill: 'none',
-                stroke: faction.color,
-                'stroke-width': '2.5',
+                stroke: isOwnRealm ? '#FFD700' : faction.color,
+                'stroke-width': isOwnRealm ? '3.5' : '2.5',
                 filter: 'url(#dropshadow)'
             }));
 

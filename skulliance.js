@@ -1487,6 +1487,45 @@ window.onclick = function(event) {
   }
 }
 
+// Real-time countdown ticker — updates all .countdown[data-deadline] spans every second
+(function() {
+  function tick() {
+    var now = Math.floor(Date.now() / 1000);
+    document.querySelectorAll('.countdown[data-deadline]').forEach(function(el) {
+      var deadline = parseInt(el.getAttribute('data-deadline'), 10);
+      var rem = deadline - now;
+      if (rem <= 0) {
+        el.textContent = '0d 0h 0m 0s';
+        el.removeAttribute('data-deadline');
+        return;
+      }
+      var d = Math.floor(rem / 86400);
+      var h = Math.floor((rem % 86400) / 3600);
+      var m = Math.floor((rem % 3600) / 60);
+      var s = rem % 60;
+      el.textContent = d + 'd ' + h + 'h ' + m + 'm ' + s + 's';
+    });
+  }
+  setInterval(tick, 1000);
+  tick();
+})();
+
+// Pin user's own rank row to the top of leaderboard tables
+(function() {
+  var table = document.getElementById('transactions');
+  if (!table) return;
+  var highlighted = table.querySelector('tr.highlight');
+  if (!highlighted) return;
+  var pinned = highlighted.cloneNode(true);
+  pinned.style.cssText = 'background:rgba(0,200,160,0.09);outline:1px solid rgba(0,200,160,0.35);';
+  var rankCell = pinned.cells[0];
+  if (rankCell) {
+    rankCell.innerHTML = '<span style="font-size:9px;opacity:0.55;display:block;letter-spacing:0.5px">YOU</span>' + rankCell.innerHTML;
+  }
+  var headerRow = table.querySelector('tr');
+  if (headerRow) table.insertBefore(pinned, headerRow.nextSibling);
+})();
+
 // Shared loading state for intensive submit buttons (Start All Free, Start All Auto)
 function skullSubmitBtn(btn) {
   btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';

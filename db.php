@@ -969,10 +969,10 @@ function getCurrentMissions($conn){
   		$hours_remaining = floor(($remaining % 86400) / 3600);
   		$minutes_remaining = floor(($remaining % 3600) / 60);
 		if($date > time()){
-			$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+			$time_message = "<span class='countdown' data-deadline='".$date."'>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m 0s</span>";
 			$completed = "In Progress";
 		}else{
-			$time_message = "0d 0h 0m";
+			$time_message = "0d 0h 0m 0s";
 			$completed = "Completed";
 			//$completed = "<input type='button' class='small-button' value='Claim' onclick='completeMission(".$row["mission_id"].", ".$row["quest_id"].");this.style.display=\"none\";'/>";
 			$completed_missions[$row["mission_id"]] = $row["quest_id"];
@@ -5546,7 +5546,7 @@ function getRealmLocationsUpgrades($conn){
 					$time_message  = "<div class='location-meta' style='font-weight:normal;text-align:right;'>";
 					$time_message .= "Lv".$target_level." upgrade";
 					$time_message .= " &bull; ".$row['duration']." ".(($row['duration']==1)?"day":"days");
-					$time_message .= "<br>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m left";
+					$time_message .= "<br><span class='countdown' data-deadline='".$date."'>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m 0s</span>";
 					$time_message .= "</div>";
 					$status[$row['location_id']] = $time_message;
 				}else{

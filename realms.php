@@ -587,6 +587,9 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <?php
 getFactionsRealmsMapData($conn);
 getActiveRaidsMapData($conn);
+if($realm_status && isset($_SESSION['userData']['user_id'])){
+	echo "<script>window.myRealmId = ".(int)getRealmID($conn).";</script>";
+}
 // Close DB Connection
 $conn->close();
 ?>
