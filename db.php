@@ -5545,7 +5545,7 @@ function getRealmLocationsUpgrades($conn){
 				if($date > time()){
 					$time_message  = "<div class='location-meta' style='font-weight:normal;text-align:right;'>";
 					$time_message .= "Lv".$target_level." upgrade";
-					$time_message .= " &bull; ".$target_level." ".(($target_level==1)?"day":"days");
+					$time_message .= " &bull; ".$row['duration']." ".(($row['duration']==1)?"day":"days");
 					$time_message .= "<br>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m left";
 					$time_message .= "</div>";
 					$status[$row['location_id']] = $time_message;
