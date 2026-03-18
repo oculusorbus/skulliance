@@ -132,3 +132,50 @@
 .popup-close:hover {
     background: rgba(0,200,160,0.12);
 }
+.popup-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 4px 2px;
+}
+.popup-stat {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(0,200,160,0.06);
+    border: 1px solid rgba(0,200,160,0.2);
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 12px;
+    color: #e8eef4;
+    white-space: nowrap;
+}
+.popup-stat-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.popup-stat-label {
+    opacity: 0.65;
+    font-size: 11px;
+}
+.popup-stat-value {
+    color: #00c8a0;
+    font-weight: bold;
+}
+.popup-badge-attack {
+    background: rgba(255,80,80,0.1);
+    border-color: rgba(255,100,100,0.35);
+    color: #ff7878;
+}
+.popup-badge-defend {
+    background: rgba(255,170,60,0.1);
+    border-color: rgba(255,180,60,0.3);
+    color: #ffa94d;
+}
+.popup-badge-peace {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+    color: rgba(232,238,244,0.4);
+}

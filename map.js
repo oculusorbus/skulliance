@@ -58,12 +58,40 @@ const popupUser    = document.getElementById('popup-user');
 const popupRealm   = document.getElementById('popup-realm');
 const popupClose   = document.getElementById('popup-close');
 
-function showPopup(realmSrc, avatarSrc, userName, realmName) {
+function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factionCurrency, avgLevel, realmId) {
     popupImage.src = realmSrc;
     popupAvatar.src = avatarSrc;
     popupAvatar.onerror = function() { this.src = 'icons/skull.png'; };
     popupUser.textContent = userName;
     popupRealm.textContent = realmName;
+
+    // Faction chip
+    const factionIcon = document.getElementById('popup-faction-icon');
+    factionIcon.src = 'icons/' + (factionCurrency || '').toLowerCase() + '.png';
+    factionIcon.onerror = function() { this.style.display = 'none'; };
+    factionIcon.style.display = '';
+    document.getElementById('popup-faction-name').textContent = factionName || '';
+
+    // Avg level chip
+    document.getElementById('popup-avg-level').textContent = avgLevel || 0;
+
+    // Raid status chips
+    const pairs      = window.raidPairs || [];
+    const rid        = String(realmId);
+    const offenseCount = pairs.filter(p => String(p[0]) === rid).length;
+    const defenseCount = pairs.filter(p => String(p[1]) === rid).length;
+    const chipsEl    = document.getElementById('popup-raid-chips');
+    chipsEl.innerHTML = '';
+    if (offenseCount > 0) {
+        chipsEl.innerHTML += '<span class="popup-stat popup-badge-attack">&#9876; Raiding <strong>' + offenseCount + '</strong></span>';
+    }
+    if (defenseCount > 0) {
+        chipsEl.innerHTML += '<span class="popup-stat popup-badge-defend">&#128737; Defending <strong>' + defenseCount + '</strong></span>';
+    }
+    if (offenseCount === 0 && defenseCount === 0) {
+        chipsEl.innerHTML = '<span class="popup-stat popup-badge-peace">Peaceful</span>';
+    }
+
     popupOverlay.style.display = 'flex';
 }
 function hidePopup() { popupOverlay.style.display = 'none'; }
@@ -431,7 +459,7 @@ function renderMap() {
             g.appendChild(realmTxt);
 
             // Popup on click
-            g.addEventListener('click', () => showPopup(realm.realm_image, realm.user_image, realm.user_name, realm.realm_name));
+            g.addEventListener('click', () => showPopup(realm.realm_image, realm.user_image, realm.user_name, realm.realm_name, faction.name, faction.currency, realm.avg_level, realm.realm_id));
 
             // Swap to avatar on hover, back to realm theme on leave
             g.addEventListener('mouseenter', () => {

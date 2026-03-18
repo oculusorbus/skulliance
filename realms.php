@@ -414,6 +414,17 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	                    <p class="popup-realm" id="popup-realm"></p>
 	                </div>
 	            </div>
+	            <div class="popup-stats">
+	                <div class="popup-stat">
+	                    <img class="popup-stat-icon" id="popup-faction-icon" src="" alt="">
+	                    <span id="popup-faction-name"></span>
+	                </div>
+	                <div class="popup-stat">
+	                    <span class="popup-stat-label">Avg Level</span>
+	                    <span class="popup-stat-value" id="popup-avg-level"></span>
+	                </div>
+	                <div id="popup-raid-chips"></div>
+	            </div>
 	        </div>
 	    </div>
 	</div>
