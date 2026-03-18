@@ -362,12 +362,17 @@ function renderMap() {
 
             if (realm.realm_id) markerGroups[realm.realm_id] = g;
 
-            // Soft glow halo
-            g.appendChild(svgEl('circle', {
+            // Soft glow halo — pulsing ring for active raiders
+            const isActiveRaider = realm.realm_id && activeRaidRealms.has(realm.realm_id);
+            const halo = svgEl('circle', {
                 cx:pos.x, cy:pos.y, r:Rr+5,
-                fill: hexToRgba(faction.color, 0.18),
-                stroke: 'none'
-            }));
+                fill: hexToRgba(faction.color, isActiveRaider ? 0.35 : 0.18),
+                stroke: isActiveRaider ? faction.color : 'none',
+                'stroke-width': isActiveRaider ? '2' : '0',
+                'stroke-opacity': '0.7'
+            });
+            if (isActiveRaider) halo.classList.add('marker-active-glow');
+            g.appendChild(halo);
 
             // Realm theme image (default), swaps to avatar on hover
             const img = svgEl('image', {
