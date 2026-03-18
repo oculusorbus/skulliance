@@ -332,11 +332,13 @@ function renderMap() {
     const realmPositions = {}; // realm_id → {x, y, color}
     const markerGroups   = {}; // realm_id → <g> element
 
-    // Build set of realm IDs active in raids this month
-    const activeRaidRealms = new Set();
+    // Build sets of realm IDs active in raids this month
+    const activeRaidRealms = new Set(); // attackers + defenders (used for avatar display)
+    const activeAttackers  = new Set(); // attackers only (used for glow)
     for (const pair of (window.raidPairs || [])) {
         activeRaidRealms.add(String(pair[0]));
         activeRaidRealms.add(String(pair[1]));
+        activeAttackers.add(String(pair[0]));
     }
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
         const rng = mulberry32(hashStr(faction.name + '_markers'));
@@ -363,7 +365,7 @@ function renderMap() {
             if (realm.realm_id) markerGroups[realm.realm_id] = g;
 
             // Soft glow halo — pulsing ring for active raiders
-            const isActiveRaider = realm.realm_id && activeRaidRealms.has(realm.realm_id);
+            const isActiveRaider = realm.realm_id && activeAttackers.has(realm.realm_id);
             const halo = svgEl('circle', {
                 cx:pos.x, cy:pos.y, r:Rr+5,
                 fill: hexToRgba(faction.color, isActiveRaider ? 0.35 : 0.18),
