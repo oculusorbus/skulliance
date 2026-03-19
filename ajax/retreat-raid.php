@@ -1,5 +1,6 @@
 <?php
 include '../db.php';
+include '../webhooks.php';
 include '../skulliance.php';
 
 header('Content-Type: application/json');

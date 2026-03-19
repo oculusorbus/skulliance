@@ -5861,8 +5861,23 @@ function retreatRaid($conn, $raid_id){
 			updateAmount($conn, $user_id, intval($con['consumable_id']), 1);
 		}
 	}
+	// Get realm/user info for webhook before deleting
+	$retreat_info_res = $conn->query("SELECT off_r.name AS off_name, off_r.theme_id AS off_theme_id, off_u.username AS off_username, off_u.discord_id AS off_discord, off_u.avatar AS off_avatar, def_r.name AS def_name, def_u.username AS def_username, def_u.discord_id AS def_discord FROM raids ra INNER JOIN realms off_r ON off_r.id = ra.offense_id INNER JOIN users off_u ON off_u.id = off_r.user_id INNER JOIN realms def_r ON def_r.id = ra.defense_id INNER JOIN users def_u ON def_u.id = def_r.user_id WHERE ra.id='".$raid_id."'");
+	$ri = $retreat_info_res ? $retreat_info_res->fetch_assoc() : null;
 	$conn->query("DELETE FROM raids_consumables WHERE raid_id='".$raid_id."'");
 	$conn->query("DELETE FROM raids WHERE id='".$raid_id."'");
+	if($ri){
+		$off_mention    = $ri['off_discord'] ? "<@".$ri['off_discord'].">" : $ri['off_username'];
+		$def_mention    = $ri['def_discord'] ? "<@".$ri['def_discord'].">" : $ri['def_username'];
+		$off_avatar_url = ($ri['off_discord'] && $ri['off_avatar']) ? "https://cdn.discordapp.com/avatars/".$ri['off_discord']."/".$ri['off_avatar'].".png" : "";
+		$def_image_url  = $ri['off_theme_id'] ? "https://skulliance.io/staking/images/themes/".$ri['off_theme_id'].".jpg" : "";
+		$retreat_desc   = $off_mention." has called off the attack.\n\n";
+		$retreat_desc  .= "🏳️ **Retreating:** ".$ri['off_username']." — ".$ri['off_name']."\n";
+		$retreat_desc  .= "🛡️ **Spared:** ".$def_mention." — ".$ri['def_name']."\n";
+		$retreat_desc  .= "♻️ Consumables have been refunded.";
+		$author = array("name" => $ri['off_username']." · ".$ri['off_name'], "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($ri['off_username']));
+		discordmsg("🏳️ Raid Retreated", $retreat_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "888888", $author);
+	}
 	return array('success'=>true);
 }
 
@@ -6359,18 +6374,35 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 					$conn->query("INSERT INTO raids_consumables (raid_id, consumable_id) VALUES ('".$raid_id."', '".$cid."')");
 				}
 			}
-			$off_name = getRealmName($conn);
-			$off_username = isset($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : 'Unknown';
-			$discord_mention = isset($_SESSION['userData']['discord_id']) ? "<@".$_SESSION['userData']['discord_id'].">" : $off_username;
-			$def_info_res = $conn->query("SELECT r.name, u.username FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
-			$def_info = $def_info_res ? $def_info_res->fetch_assoc() : null;
-			$def_name     = $def_info ? $def_info['name']     : 'Unknown Realm';
-			$def_username = $def_info ? $def_info['username'] : 'Unknown';
-			$raid_desc  = $discord_mention." has declared war!\n\n";
+			$off_name     = getRealmName($conn);
+			$off_username = isset($_SESSION['userData']['username'])  ? $_SESSION['userData']['username']  : 'Unknown';
+			$off_discord  = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+			$off_avatar   = isset($_SESSION['userData']['avatar'])     ? $_SESSION['userData']['avatar']     : '';
+			$off_mention  = $off_discord ? "<@".$off_discord.">" : $off_username;
+			$def_info_res = $conn->query("SELECT r.name, r.theme_id, u.username, u.discord_id FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
+			$def_info     = $def_info_res ? $def_info_res->fetch_assoc() : null;
+			$def_name     = $def_info ? $def_info['name']       : 'Unknown Realm';
+			$def_username = $def_info ? $def_info['username']   : 'Unknown';
+			$def_discord  = $def_info ? $def_info['discord_id'] : '';
+			$def_theme_id = $def_info ? $def_info['theme_id']   : '';
+			$def_mention  = $def_discord ? "<@".$def_discord.">" : $def_username;
+			// Consumables used
+			$con_names_res = $conn->query("SELECT id, name FROM consumables");
+			$con_names = array();
+			if($con_names_res) while($r = $con_names_res->fetch_assoc()) $con_names[$r['id']] = $r['name'];
+			$items_used = array();
+			foreach($consumable_ids as $cid){ if(isset($con_names[$cid])) $items_used[] = $con_names[$cid]; }
+			$items_line = !empty($items_used) ? "\n🧪 **Items:** ".implode(" · ", $items_used) : "";
+			// Build notification
+			$raid_desc  = $off_mention." has declared war!\n\n";
 			$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
-			$raid_desc .= "🛡️ **Target:** ".$def_username." — ".$def_name."\n";
+			$raid_desc .= "🛡️ **Target:** ".$def_mention." — ".$def_name."\n";
 			$raid_desc .= "⏱️ **Duration:** ".$duration." day(s)";
-			discordmsg("⚔️ Raid Launched", $raid_desc, "", "https://skulliance.io/staking/realms.php", "raids", "", "FF6B35");
+			$raid_desc .= $items_line;
+			$off_avatar_url = ($off_discord && $off_avatar) ? "https://cdn.discordapp.com/avatars/".$off_discord."/".$off_avatar.".png" : "";
+			$def_image_url  = $def_theme_id ? "https://skulliance.io/staking/images/themes/".$def_theme_id.".jpg" : "";
+			$raid_author = array("name" => $off_username." · ".$off_name, "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($off_username));
+			discordmsg("⚔️ Raid Launched", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "FF6B35", $raid_author);
 			echo "<strong>Raid Started</strong>";
 		} else {
 			echo "Error: " . $conn->error;
@@ -7231,29 +7263,49 @@ function endRaid($conn, $raid_id){
 			consumeRandomRewards($conn, $defense_id, 'defense', $raid_id);
 		}
 	}
-	$off_info_res = $conn->query("SELECT r.name, u.username FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$offense_id."'");
+	$off_info_res = $conn->query("SELECT r.name, r.theme_id, u.username, u.discord_id, u.avatar FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$offense_id."'");
 	$off_info     = $off_info_res ? $off_info_res->fetch_assoc() : null;
-	$off_name     = $off_info ? $off_info['name']     : 'Unknown Realm';
-	$off_username = $off_info ? $off_info['username'] : 'Unknown';
-	$def_info_res = $conn->query("SELECT r.name, u.username FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
+	$off_name     = $off_info ? $off_info['name']       : 'Unknown Realm';
+	$off_username = $off_info ? $off_info['username']   : 'Unknown';
+	$off_discord  = $off_info ? $off_info['discord_id'] : '';
+	$off_avatar   = $off_info ? $off_info['avatar']     : '';
+	$off_theme_id = $off_info ? $off_info['theme_id']   : '';
+	$def_info_res = $conn->query("SELECT r.name, r.theme_id, u.username, u.discord_id, u.avatar FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
 	$def_info     = $def_info_res ? $def_info_res->fetch_assoc() : null;
-	$def_name     = $def_info ? $def_info['name']     : 'Unknown Realm';
-	$def_username = $def_info ? $def_info['username'] : 'Unknown';
+	$def_name     = $def_info ? $def_info['name']       : 'Unknown Realm';
+	$def_username = $def_info ? $def_info['username']   : 'Unknown';
+	$def_discord  = $def_info ? $def_info['discord_id'] : '';
+	$def_avatar   = $def_info ? $def_info['avatar']     : '';
+	$def_theme_id = $def_info ? $def_info['theme_id']   : '';
+	$off_mention  = $off_discord ? "<@".$off_discord.">" : $off_username;
+	$def_mention  = $def_discord ? "<@".$def_discord.">" : $def_username;
+	$off_avatar_url = ($off_discord && $off_avatar) ? "https://cdn.discordapp.com/avatars/".$off_discord."/".$off_avatar.".png" : "";
+	$def_avatar_url = ($def_discord && $def_avatar) ? "https://cdn.discordapp.com/avatars/".$def_discord."/".$def_avatar.".png" : "";
+	$off_image_url  = $off_theme_id ? "https://skulliance.io/staking/images/themes/".$off_theme_id.".jpg" : "";
+	$def_image_url  = $def_theme_id ? "https://skulliance.io/staking/images/themes/".$def_theme_id.".jpg" : "";
+	// Consumables used in this raid
+	$con_used_res = $conn->query("SELECT c.name FROM raids_consumables rc INNER JOIN consumables c ON c.id = rc.consumable_id WHERE rc.raid_id='".$raid_id."'");
+	$con_used = array();
+	if($con_used_res) while($r = $con_used_res->fetch_assoc()) $con_used[] = $r['name'];
+	$items_line = !empty($con_used) ? "\n🧪 **Items used:** ".implode(" · ", $con_used) : "";
 	if($outcome == 1){
 		$loot_res = $conn->query("SELECT rp.amount, p.currency FROM raids_projects rp INNER JOIN projects p ON p.id = rp.project_id WHERE rp.raid_id='".$raid_id."' ORDER BY rp.id DESC LIMIT 1");
 		$loot_row = $loot_res ? $loot_res->fetch_assoc() : null;
 		$loot_line = $loot_row ? "\n💰 **Looted:** ".number_format($loot_row['amount'])." ".$loot_row['currency'] : "";
 		$raid_desc  = "The battle is over — the attacker prevails!\n\n";
-		$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
-		$raid_desc .= "🛡️ **Defender:** ".$def_username." — ".$def_name;
-		$raid_desc .= $loot_line;
-		discordmsg("💀 Attacker Victory", $raid_desc, "", "https://skulliance.io/staking/realms.php", "raids", "", "00C8A0");
+		$raid_desc .= "⚔️ **Attacker:** ".$off_mention." — ".$off_name."\n";
+		$raid_desc .= "🛡️ **Defender:** ".$def_mention." — ".$def_name;
+		$raid_desc .= $loot_line.$items_line;
+		$author = array("name" => $off_username." · ".$off_name, "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($off_username));
+		discordmsg("💀 Attacker Victory", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "00C8A0", $author);
 	} else {
 		$raid_desc  = "The battle is over — the defender holds their ground!\n\n";
-		$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
-		$raid_desc .= "🛡️ **Defender:** ".$def_username." — ".$def_name."\n";
+		$raid_desc .= "⚔️ **Attacker:** ".$off_mention." — ".$off_name."\n";
+		$raid_desc .= "🛡️ **Defender:** ".$def_mention." — ".$def_name."\n";
 		$raid_desc .= "🏹 The attacker's forces were repelled and took damage.";
-		discordmsg("🛡️ Defense Holds", $raid_desc, "", "https://skulliance.io/staking/realms.php", "raids", "", "4A90D9");
+		$raid_desc .= $items_line;
+		$author = array("name" => $def_username." · ".$def_name, "icon_url" => $def_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($def_username));
+		discordmsg("🛡️ Defense Holds", $raid_desc, $off_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "4A90D9", $author);
 	}
 	return $outcome;
 }

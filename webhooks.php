@@ -3,7 +3,7 @@ include('credentials/webhooks_credentials.php');
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000") {
+    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null) {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -27,88 +27,26 @@ include('credentials/webhooks_credentials.php');
 			$thumbnail = "https://skulliance.io/staking/icons/skulliance.png";
 		}
 	    $timestamp = date("c", strtotime("now"));
+
+	    $embed = [
+	        "title"       => $title,
+	        "type"        => "rich",
+	        "description" => $description,
+	        "url"         => $url,
+	        "timestamp"   => $timestamp,
+	        "color"       => hexdec( $color ?: "000000" ),
+	        "image"       => ["url" => $imageurl],
+	        "thumbnail"   => ["url" => $thumbnail],
+	    ];
+	    if($author) $embed["author"] = $author;
+
 	    $msg = json_encode([
-	    // Message
-	    //"content" => "",
-
-	    // Username
-	    "username" => "Skull Bot",
-
-	    // Avatar URL.
-	    // Uncomment to use custom avatar instead of bot's pic
-	    "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
-
-	    // text-to-speech
-	    "tts" => false,
-
-	    // file_upload
-	    // "file" => "",
-
-	    // Embeds Array
-	    "embeds" => [
-		        [
-		            // Title
-		            "title" => $title,
-
-		            // Embed Type, do not change.
-		            "type" => "rich",
-
-		            // Description
-		            "description" => $description,
-
-		            // Link in title
-		            "url" => $url,
-
-		            // Timestamp, only ISO8601
-		            "timestamp" => $timestamp,
-
-		            // Left border color, in HEX
-		            "color" => hexdec( $color ?: "000000" ),
-
-		            // Footer text
-					/*
-		            "footer" => [
-		                "text" => "Drop Ship",
-		                "icon_url" => "https://www.madballs.net/drop-ship/images/vip.gif"
-		            ],*/
-
-		            // Embed image
-		            "image" => [
-		                "url" => $imageurl
-		            ],
-
-		            // thumbnail
-		            "thumbnail" => [
-		                "url" => $thumbnail
-		            ],
-
-		            // Author name & url
-					/*
-		            "author" => [
-		                "name" => "Kill Bot",
-		                "url" => "https://www.madballs.net/dropship"
-		            ],*/
-
-		            // Custom fields
-					/*
-		            "fields" => [
-		                // Field 1
-		                [
-		                    "name" => "Field #1",
-		                    "value" => "Value #1",
-		                    "inline" => false
-		                ],
-		                // Field 2
-		                [
-		                    "name" => "Field #2",
-		                    "value" => "Value #2",
-		                    "inline" => true
-		                ]
-		                // etc
-		            ]*/
-		        ]
-		    ]
+	        "username"   => "Skull Bot",
+	        "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
+	        "tts"        => false,
+	        "embeds"     => [$embed],
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
         if($webhook != "") {
             $ch = curl_init( $webhook );
             curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -121,7 +59,7 @@ include('credentials/webhooks_credentials.php');
             curl_close( $ch );
         }
     }
- 
+
 //    discordmsg($msg, $webhook); // SENDS MESSAGE TO DISCORD
 //    echo "sent?";
 ?>
