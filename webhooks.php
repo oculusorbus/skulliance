@@ -24,6 +24,8 @@ include('credentials/webhooks_credentials.php');
 			$webhook = getDailyRewardsWebhook();
 		}else if($channel == "missions"){
 			$webhook = getMissionsWebhook();
+		}else if($channel == "skullswap"){
+			$webhook = getSkullSwapWebhook();
 		}else{
 			$webhook = getWebhook();
 		}

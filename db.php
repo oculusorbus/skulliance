@@ -1322,9 +1322,10 @@ function startMission($conn){
 	}else{
 		if(isset($_SESSION['userData']['mission']['quest_id']) && isset($_SESSION['userData']['user_id'])){
 		
-			$sql = "SELECT title, cost, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$_SESSION['userData']['mission']['quest_id']."';";
+			$sql = "SELECT title, cost, reward, duration, extension, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$_SESSION['userData']['mission']['quest_id']."';";
 			$result = $conn->query($sql);
-		
+
+			$reward = 0; $duration = 0; $extension = 'png';
 			if ($result->num_rows > 0) {
 			  // output data of each row
 			  while($row = $result->fetch_assoc()) {
@@ -1332,6 +1333,9 @@ function startMission($conn){
 				  $project_id = $row["project_id"];
 				  $cost = $row["cost"];
 				  $currency = $row["currency"];
+				  $reward = $row["reward"];
+				  $duration = $row["duration"];
+				  $extension = $row["extension"];
 			  }
 		    }
 		
@@ -1384,6 +1388,39 @@ function startMission($conn){
 								}
 							}
 						}
+						// Discord webhook — manual mission embark
+						$m_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+						$m_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+						$m_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+						$m_avatar_url = ($m_discord && $m_avatar) ? "https://cdn.discordapp.com/avatars/".$m_discord."/".$m_avatar.".png" : "";
+						$m_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($m_username);
+						$m_slug       = strtolower(str_replace("'", "", str_replace(" ", "-", $title)));
+						$m_image_url  = "https://skulliance.io/staking/images/missions/".$m_slug.".".$extension;
+						$m_nft_rate   = 0;
+						if(isset($_SESSION['userData']['mission']['nfts'])){
+							foreach($_SESSION['userData']['mission']['nfts'] AS $_nid => $_rate){ $m_nft_rate += $_rate; }
+						}
+						$m_boost_map  = array(1 => 100, 2 => 75, 3 => 50, 4 => 25);
+						$m_boost      = 0; $m_extras = array();
+						if(isset($_SESSION['userData']['mission']['consumables'])){
+							foreach($_SESSION['userData']['mission']['consumables'] AS $_slot => $_cid){
+								if(isset($m_boost_map[$_cid])){ $m_boost += $m_boost_map[$_cid]; }
+								else { $_en = $conn->query("SELECT name FROM consumables WHERE id='".$_cid."'"); if($_en && $_en->num_rows > 0) $m_extras[] = $_en->fetch_assoc()['name']; }
+							}
+						}
+						if($m_boost > 0) array_unshift($m_extras, "+".$m_boost."% Success");
+						$m_success    = min(100, $m_nft_rate + $m_boost);
+						$m_nft_count  = isset($_SESSION['userData']['mission']['nfts']) ? count($_SESSION['userData']['mission']['nfts']) : 0;
+						$m_mention    = $m_discord ? "<@".$m_discord.">" : $m_username;
+						$m_desc       = $m_mention." has embarked on a mission!\n\n";
+						$m_desc      .= "📜 **Quest:** ".$title."\n";
+						$m_desc      .= "💰 **Cost:** ".number_format($cost)." ".$currency."\u3000→\u3000**Reward:** ".number_format($reward)." ".$currency."\n";
+						$m_desc      .= "⏱️ **Duration:** ".$duration.($duration == 1 ? " day" : " days")."\n";
+						$m_desc      .= "🎯 **Success Rate:** ".$m_success."%\n";
+						$m_desc      .= "🦴 **NFTs Deployed:** ".$m_nft_count;
+						if(!empty($m_extras)) $m_desc .= "\n🎒 **Items:** ".implode(", ", $m_extras);
+						$m_author = array("name" => $m_username, "icon_url" => $m_avatar_url, "url" => $m_profile);
+						discordmsg("⚔️ Mission Embarked", $m_desc, $m_image_url, "https://skulliance.io/staking/missions.php", "missions", $m_avatar_url, "FF6B35", $m_author);
 					}
 				} else {
 				  //echo "Error: " . $sql . "<br>" . $conn->error;
@@ -1402,15 +1439,20 @@ function startMission($conn){
 }
 
 function startAllFreeEligibleMissions($conn){
+	static $sf_depth = 0;
+	static $sf_titles = array();
+	$sf_depth++;
+
 	$rate_flag = "false";
 	
 	// Get all level 1 quests
-	$sql = "SELECT id, cost, project_id FROM quests WHERE level = '1'";
+	$sql = "SELECT id, title, cost, project_id FROM quests WHERE level = '1'";
 	$result = $conn->query($sql);
 	
 	if ($result->num_rows > 0) {
 		// output data of each row
 		while($row = $result->fetch_assoc()) {
+			$sf_quest_title = $row['title'];
 			// Get all user NFTs for a specific project that aren't currently deployed in missions
 			$nft_sql = "SELECT nfts.id, asset_id, asset_name, ipfs, rate, collection_id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE project_id = '".$row['project_id']."' AND user_id = '".$_SESSION['userData']['user_id']."' AND asset_id
 				NOT IN(
@@ -1439,6 +1481,7 @@ function startAllFreeEligibleMissions($conn){
 	
 				    }
 					if($mission_id > 0){
+						$sf_titles[] = $sf_quest_title;
 						$rate_tally = 0;
 						while($nft_row = $nft_result->fetch_assoc()) {
 							$rate_tally += $nft_row["rate"];
@@ -1463,6 +1506,28 @@ function startAllFreeEligibleMissions($conn){
     } // End if
 	if($rate_flag == "true"){
 		startAllFreeEligibleMissions($conn);
+	}
+	$sf_depth--;
+	if($sf_depth === 0 && !empty($sf_titles)){
+		$sf_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+		$sf_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+		$sf_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+		$sf_avatar_url = ($sf_discord && $sf_avatar) ? "https://cdn.discordapp.com/avatars/".$sf_discord."/".$sf_avatar.".png" : "";
+		$sf_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($sf_username);
+		$sf_mention    = $sf_discord ? "<@".$sf_discord.">" : $sf_username;
+		$sf_count      = count($sf_titles);
+		$sf_desc       = $sf_mention." used **Start All Free** and launched **".$sf_count."** mission".($sf_count != 1 ? "s" : "")."!\n\n";
+		$sf_budget     = 1800 - strlen($sf_desc);
+		$sf_truncated  = false;
+		foreach($sf_titles as $sf_t){
+			$sf_line = "• ".$sf_t."\n";
+			if(strlen($sf_line) > $sf_budget){ $sf_truncated = true; break; }
+			$sf_desc .= $sf_line; $sf_budget -= strlen($sf_line);
+		}
+		if($sf_truncated) $sf_desc .= "*(and more...)*";
+		$sf_author = array("name" => $sf_username, "icon_url" => $sf_avatar_url, "url" => $sf_profile);
+		discordmsg("🚀 Start All Free", $sf_desc, "", "https://skulliance.io/staking/missions.php", "missions", $sf_avatar_url, "4A90D9", $sf_author);
+		$sf_titles = array();
 	}
 }
 
@@ -1625,6 +1690,7 @@ function _launchAutoMission($conn, $user_id, $quest_id, $cost, $project_id, $loa
 function startAutoMissions($conn) {
 	if (!isset($_SESSION['userData']['user_id'])) return;
 	$user_id = $_SESSION['userData']['user_id'];
+	$auto_launched = [];
 
 	// Max quest level per project
 	$max_quest_levels = [];
@@ -1673,7 +1739,7 @@ function startAutoMissions($conn) {
 
 			// Highest affordable unlocked quest
 			$quest_result = $conn->query(
-				"SELECT id, cost, level FROM quests
+				"SELECT id, cost, level, title FROM quests
 				 WHERE project_id = '$project_id' AND level <= '$max_unlocked_level'
 				 ORDER BY level DESC"
 			);
@@ -1695,18 +1761,20 @@ function startAutoMissions($conn) {
 			if (empty($loadout['nfts'])) break;
 
 			$quest_id     = (int)$target_quest['id'];
+			$quest_title  = $target_quest['title'];
 			$cost         = (int)$target_quest['cost'];
 			$use_fallback = false;
 
 			if ($loadout['rate'] < 90) {
 				// Fall back to level 1 — free gamble with remaining NFTs
 				$l1r = $conn->query(
-					"SELECT id, cost FROM quests WHERE project_id = '$project_id' AND level = '1' LIMIT 1"
+					"SELECT id, cost, title FROM quests WHERE project_id = '$project_id' AND level = '1' LIMIT 1"
 				);
 				if ($l1r && $l1r->num_rows > 0) {
 					$l1row = $l1r->fetch_assoc();
 					if ($balance >= (int)$l1row['cost']) {
 						$quest_id     = (int)$l1row['id'];
+						$quest_title  = $l1row['title'];
 						$cost         = (int)$l1row['cost'];
 						$use_fallback = true;
 					} else {
@@ -1731,7 +1799,30 @@ function startAutoMissions($conn) {
 
 			$mission_id = _launchAutoMission($conn, $user_id, $quest_id, $cost, $project_id, $loadout, $extra_items);
 			if (!$mission_id) break;
+			$auto_launched[] = $quest_title;
 		}
+	}
+
+	// Discord webhook — auto missions summary
+	if(!empty($auto_launched)){
+		$am_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+		$am_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+		$am_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+		$am_avatar_url = ($am_discord && $am_avatar) ? "https://cdn.discordapp.com/avatars/".$am_discord."/".$am_avatar.".png" : "";
+		$am_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($am_username);
+		$am_mention    = $am_discord ? "<@".$am_discord.">" : $am_username;
+		$am_count      = count($auto_launched);
+		$am_desc       = $am_mention." used **Start All Auto** and launched **".$am_count."** mission".($am_count != 1 ? "s" : "")."!\n\n";
+		$am_budget     = 1800 - strlen($am_desc);
+		$am_truncated  = false;
+		foreach($auto_launched as $am_t){
+			$am_line = "• ".$am_t."\n";
+			if(strlen($am_line) > $am_budget){ $am_truncated = true; break; }
+			$am_desc .= $am_line; $am_budget -= strlen($am_line);
+		}
+		if($am_truncated) $am_desc .= "*(and more...)*";
+		$am_author = array("name" => $am_username, "icon_url" => $am_avatar_url, "url" => $am_profile);
+		discordmsg("🤖 Start All Auto", $am_desc, "", "https://skulliance.io/staking/missions.php", "missions", $am_avatar_url, "9B59B6", $am_author);
 	}
 }
 
@@ -1926,7 +2017,8 @@ function retreatMission($conn, $mission_id, $quest_id){
 	  	}
 	
 	  	// Get quest cost, project id, and currency
-	  	$sql = "SELECT currency, cost, project_id FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id = '".$quest_id."'";
+	  	$sql = "SELECT title, extension, currency, cost, project_id FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id = '".$quest_id."'";
+	  	$rm_title = ""; $rm_ext = "png";
 	  	$result = $conn->query($sql);
 	  	if ($result->num_rows > 0) {
 	  	  // output data of each row
@@ -1934,6 +2026,8 @@ function retreatMission($conn, $mission_id, $quest_id){
 	  	    $cost = $row["cost"];
 	  		$project_id = $row["project_id"];
 	  		$currency = $row["currency"];
+	  		$rm_title = $row["title"];
+	  		$rm_ext   = $row["extension"];
 	  	  }
 	  	} else {
 	  	  //echo "0 results";
@@ -1946,18 +2040,36 @@ function retreatMission($conn, $mission_id, $quest_id){
 	  	}
 	
 	  	// Restore consumable items
+	  	$rm_restored_items = array();
 	  	$sql = "SELECT name, consumable_id FROM missions_consumables INNER JOIN consumables ON consumables.id = missions_consumables.consumable_id WHERE mission_id = '".$mission_id."'";
 	  	$result = $conn->query($sql);
 	  	if ($result->num_rows > 0) {
 	  	  // output data of each row
 	  	  while($row = $result->fetch_assoc()) {
 	  		echo $row["name"]." Restored\r\n";
+	  		$rm_restored_items[] = $row["name"];
 	  	    updateAmount($conn, $_SESSION['userData']['user_id'], $row["consumable_id"], 1);
 	  	  }
 	  	} else {
 	  	  //echo "0 results";
 	  	}
-	
+
+	  	// Discord webhook — mission retreat
+	  	$rm_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	  	$rm_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+	  	$rm_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+	  	$rm_avatar_url = ($rm_discord && $rm_avatar) ? "https://cdn.discordapp.com/avatars/".$rm_discord."/".$rm_avatar.".png" : "";
+	  	$rm_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($rm_username);
+	  	$rm_slug       = strtolower(str_replace("'", "", str_replace(" ", "-", $rm_title)));
+	  	$rm_image_url  = $rm_title ? "https://skulliance.io/staking/images/missions/".$rm_slug.".".$rm_ext : "";
+	  	$rm_mention    = $rm_discord ? "<@".$rm_discord.">" : $rm_username;
+	  	$rm_desc       = $rm_mention." has retreated from a mission.\n\n";
+	  	$rm_desc      .= "📜 **Quest:** ".$rm_title."\n";
+	  	if($cost > 0) $rm_desc .= "💰 **Refunded:** ".$cost." ".$currency."\n";
+	  	if(!empty($rm_restored_items)) $rm_desc .= "🎒 **Items Restored:** ".implode(", ", $rm_restored_items);
+	  	$rm_author = array("name" => $rm_username, "icon_url" => $rm_avatar_url, "url" => $rm_profile);
+	  	discordmsg("🏳️ Mission Retreated", $rm_desc, $rm_image_url, "https://skulliance.io/staking/missions.php", "missions", $rm_avatar_url, "888888", $rm_author);
+
 	  	// Delete Mission NFTs
     	$sql = "DELETE FROM missions_nfts WHERE mission_id = '".$mission_id."'";
     	if ($conn->query($sql) === TRUE) {
@@ -7536,20 +7648,23 @@ function getActiveRaidsMapData($conn){
 
 function saveSwapScore($conn, $score){
 	if(isset($_SESSION['userData']['user_id'])){
+		$ss_user_id = $_SESSION['userData']['user_id'];
 		// Check if unrewarded score exists.
 		// If it exists, check if new score is higher than existing score. If it is, update unrewarded score.
 		// If it doesn't exist, create a new score in the database
 		$current_score = getSwapScore($conn);
+		$ss_is_high = false;
 		if(isset($current_score)){
 			if($score > $current_score){
-				$sql = "UPDATE scores SET score = '".$score."', attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0' AND project_id = '0'";
+				$ss_is_high = true;
+				$sql = "UPDATE scores SET score = '".$score."', attempts = attempts + 1 WHERE user_id='".$ss_user_id."' AND reward = '0' AND project_id = '0'";
 				if ($conn->query($sql) === TRUE) {
 					echo "high";
 				} else {
 					echo "Error: " . $sql . "<br>" . $conn->error;
 				}
 			}else{
-				$sql = "UPDATE scores SET attempts = attempts + 1 WHERE user_id='".$_SESSION['userData']['user_id']."' AND reward = '0' AND project_id = '0'";
+				$sql = "UPDATE scores SET attempts = attempts + 1 WHERE user_id='".$ss_user_id."' AND reward = '0' AND project_id = '0'";
 				if ($conn->query($sql) === TRUE) {
 					echo "low";
 				} else {
@@ -7557,9 +7672,10 @@ function saveSwapScore($conn, $score){
 				}
 			}
 		}else{
+			$ss_is_high = true;
 			// Create new score
 			$sql = "INSERT INTO scores (user_id, score, attempts, reward, project_id) 
-			VALUES ('".$_SESSION['userData']['user_id']."', '".$score."', '1', '0', '0')";
+			VALUES ('".$ss_user_id."', '".$score."', '1', '0', '0')";
 
 			if ($conn->query($sql) === TRUE) {
 				echo "new";
@@ -7567,6 +7683,27 @@ function saveSwapScore($conn, $score){
 				echo "Error: " . $sql . "<br>" . $conn->error;
 			}
 		}
+		// Discord webhook — Skull Swap round completed
+		$ss_row_res = $conn->query("SELECT score, attempts FROM scores WHERE user_id='".$ss_user_id."' AND reward='0' AND project_id='0'");
+		$ss_best = $score; $ss_attempts = 1;
+		if($ss_row_res && $ss_row_res->num_rows > 0){ $ss_r = $ss_row_res->fetch_assoc(); $ss_best = $ss_r['score']; $ss_attempts = $ss_r['attempts']; }
+		$ss_rank_res = $conn->query("SELECT COUNT(*) + 1 AS rank FROM (SELECT MAX(score) AS best FROM scores WHERE project_id='0' AND reward='0' AND user_id != '".$ss_user_id."' GROUP BY user_id) AS ranked WHERE ranked.best > '".$ss_best."'");
+		$ss_rank = 1;
+		if($ss_rank_res && $ss_rank_res->num_rows > 0){ $ss_rank = (int)$ss_rank_res->fetch_assoc()['rank']; }
+		$ss_rank_sfx = ($ss_rank == 1 ? "st" : ($ss_rank == 2 ? "nd" : ($ss_rank == 3 ? "rd" : "th")));
+		$ss_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+		$ss_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+		$ss_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+		$ss_avatar_url = ($ss_discord && $ss_avatar) ? "https://cdn.discordapp.com/avatars/".$ss_discord."/".$ss_avatar.".png" : "";
+		$ss_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($ss_username);
+		$ss_mention    = $ss_discord ? "<@".$ss_discord.">" : $ss_username;
+		$ss_desc       = $ss_mention." completed a Skull Swap round!".($ss_is_high ? " 🆕 **New High Score!**" : "")."\n\n";
+		$ss_desc      .= "🎴 **Round Score:** ".number_format($score)."\n";
+		$ss_desc      .= "🏆 **Monthly Best:** ".number_format($ss_best)."\n";
+		$ss_desc      .= "🔢 **Attempts This Month:** ".$ss_attempts."\n";
+		$ss_desc      .= "📊 **Monthly Rank:** ".$ss_rank.$ss_rank_sfx;
+		$ss_author = array("name" => $ss_username, "icon_url" => $ss_avatar_url, "url" => $ss_profile);
+		discordmsg("🎴 Skull Swap", $ss_desc, "", "https://skulliance.io/staking/skullswap.php", "skullswap", $ss_avatar_url, "F39C12", $ss_author);
 	}else{
 		echo "User not logged in. Score cannot be saved.";
 	}
