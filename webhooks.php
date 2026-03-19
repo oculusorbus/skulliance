@@ -117,12 +117,40 @@ include('credentials/webhooks_credentials.php');
             curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
             curl_setopt( $ch, CURLOPT_HEADER, 0);
             curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
- 
+
             $response = curl_exec( $ch );
-            // If you need to debug, or find out why you can't send message uncomment line below, and execute script.
             echo $response;
             error_log("[webhook] channel=".$channel." response=".$response);
             curl_close( $ch );
+
+            // Debug: if a specific channel was targeted, mirror to notifications
+            if($channel != "") {
+                $notify_webhook = getWebhook();
+                $debug_title = "[debug:".$channel."] ".$title;
+                $debug_desc  = $description.($response ? "\n\n**Discord error:** ".$response : "");
+                $debug_msg = json_encode([
+                    "username"   => "Skull Bot",
+                    "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
+                    "tts"        => false,
+                    "embeds"     => [[
+                        "title"       => $debug_title,
+                        "type"        => "rich",
+                        "description" => $debug_desc,
+                        "url"         => $url,
+                        "timestamp"   => $timestamp,
+                        "color"       => hexdec("000000"),
+                    ]]
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                $ch2 = curl_init($notify_webhook);
+                curl_setopt($ch2, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+                curl_setopt($ch2, CURLOPT_POST, 1);
+                curl_setopt($ch2, CURLOPT_POSTFIELDS, $debug_msg);
+                curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, 1);
+                curl_setopt($ch2, CURLOPT_HEADER, 0);
+                curl_setopt($ch2, CURLOPT_RETURNTRANSFER, 1);
+                curl_exec($ch2);
+                curl_close($ch2);
+            }
         }
     }
  
