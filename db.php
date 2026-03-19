@@ -5862,7 +5862,7 @@ function retreatRaid($conn, $raid_id){
 		}
 	}
 	// Get realm/user info for webhook before deleting
-	$retreat_info_res = $conn->query("SELECT off_r.name AS off_name, off_r.theme_id AS off_theme_id, off_u.username AS off_username, off_u.discord_id AS off_discord, off_u.avatar AS off_avatar, def_r.name AS def_name, def_u.username AS def_username, def_u.discord_id AS def_discord FROM raids ra INNER JOIN realms off_r ON off_r.id = ra.offense_id INNER JOIN users off_u ON off_u.id = off_r.user_id INNER JOIN realms def_r ON def_r.id = ra.defense_id INNER JOIN users def_u ON def_u.id = def_r.user_id WHERE ra.id='".$raid_id."'");
+	$retreat_info_res = $conn->query("SELECT off_r.name AS off_name, off_u.username AS off_username, off_u.discord_id AS off_discord, off_u.avatar AS off_avatar, def_r.name AS def_name, def_r.theme_id AS def_theme_id, def_u.username AS def_username, def_u.discord_id AS def_discord FROM raids ra INNER JOIN realms off_r ON off_r.id = ra.offense_id INNER JOIN users off_u ON off_u.id = off_r.user_id INNER JOIN realms def_r ON def_r.id = ra.defense_id INNER JOIN users def_u ON def_u.id = def_r.user_id WHERE ra.id='".$raid_id."'");
 	$ri = $retreat_info_res ? $retreat_info_res->fetch_assoc() : null;
 	$conn->query("DELETE FROM raids_consumables WHERE raid_id='".$raid_id."'");
 	$conn->query("DELETE FROM raids WHERE id='".$raid_id."'");
@@ -5870,13 +5870,13 @@ function retreatRaid($conn, $raid_id){
 		$off_mention    = $ri['off_discord'] ? "<@".$ri['off_discord'].">" : $ri['off_username'];
 		$def_mention    = $ri['def_discord'] ? "<@".$ri['def_discord'].">" : $ri['def_username'];
 		$off_avatar_url = ($ri['off_discord'] && $ri['off_avatar']) ? "https://cdn.discordapp.com/avatars/".$ri['off_discord']."/".$ri['off_avatar'].".png" : "";
-		$def_image_url  = $ri['off_theme_id'] ? "https://skulliance.io/staking/images/themes/".$ri['off_theme_id'].".jpg" : "";
+		$def_image_url  = $ri['def_theme_id'] ? "https://skulliance.io/staking/images/themes/".$ri['def_theme_id'].".jpg" : "";
 		$retreat_desc   = $off_mention." has called off the attack.\n\n";
 		$retreat_desc  .= "🏳️ **Retreating:** ".$ri['off_username']." — ".$ri['off_name']."\n";
 		$retreat_desc  .= "🛡️ **Spared:** ".$def_mention." — ".$ri['def_name']."\n";
 		$retreat_desc  .= "♻️ Consumables have been refunded.";
 		$author = array("name" => $ri['off_username']." · ".$ri['off_name'], "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($ri['off_username']));
-		discordmsg("🏳️ Raid Retreated", $retreat_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "888888", $author);
+		discordmsg("🏳️ Raid Retreated", $retreat_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $off_avatar_url, "888888", $author);
 	}
 	return array('success'=>true);
 }
@@ -6394,15 +6394,18 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 			foreach($consumable_ids as $cid){ if(isset($con_names[$cid])) $items_used[] = $con_names[$cid]; }
 			$items_line = !empty($items_used) ? "\n🧪 **Items:** ".implode(" · ", $items_used) : "";
 			// Build notification
-			$raid_desc  = $off_mention." has declared war!\n\n";
-			$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
-			$raid_desc .= "🛡️ **Target:** ".$def_mention." — ".$def_name."\n";
-			$raid_desc .= "⏱️ **Duration:** ".$duration." day(s)";
-			$raid_desc .= $items_line;
+			$dur_res = $conn->query("SELECT duration FROM raids WHERE id='".$raid_id."'");
+			$dur_row = $dur_res ? $dur_res->fetch_assoc() : null;
+			$display_duration = $dur_row ? $dur_row['duration'] : $duration;
 			$off_avatar_url = ($off_discord && $off_avatar) ? "https://cdn.discordapp.com/avatars/".$off_discord."/".$off_avatar.".png" : "";
 			$def_image_url  = $def_theme_id ? "https://skulliance.io/staking/images/themes/".$def_theme_id.".jpg" : "";
 			$raid_author = array("name" => $off_username." · ".$off_name, "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($off_username));
-			discordmsg("⚔️ Raid Launched", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "FF6B35", $raid_author);
+			$raid_desc  = $off_mention." has declared war!\n\n";
+			$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
+			$raid_desc .= "🛡️ **Target:** ".$def_mention." — ".$def_name."\n";
+			$raid_desc .= "⏱️ **Duration:** ".$display_duration." day(s)";
+			$raid_desc .= $items_line;
+			discordmsg("⚔️ Raid Launched", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $off_avatar_url, "FF6B35", $raid_author);
 			echo "<strong>Raid Started</strong>";
 		} else {
 			echo "Error: " . $conn->error;
@@ -7297,7 +7300,7 @@ function endRaid($conn, $raid_id){
 		$raid_desc .= "🛡️ **Defender:** ".$def_mention." — ".$def_name;
 		$raid_desc .= $loot_line.$items_line;
 		$author = array("name" => $off_username." · ".$off_name, "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($off_username));
-		discordmsg("💀 Attacker Victory", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "00C8A0", $author);
+		discordmsg("💀 Attacker Victory", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $off_avatar_url, "00C8A0", $author);
 	} else {
 		$raid_desc  = "The battle is over — the defender holds their ground!\n\n";
 		$raid_desc .= "⚔️ **Attacker:** ".$off_mention." — ".$off_name."\n";
@@ -7305,7 +7308,7 @@ function endRaid($conn, $raid_id){
 		$raid_desc .= "🏹 The attacker's forces were repelled and took damage.";
 		$raid_desc .= $items_line;
 		$author = array("name" => $def_username." · ".$def_name, "icon_url" => $def_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($def_username));
-		discordmsg("🛡️ Defense Holds", $raid_desc, $off_image_url, "https://skulliance.io/staking/realms.php", "raids", "", "4A90D9", $author);
+		discordmsg("🛡️ Defense Holds", $raid_desc, $off_image_url, "https://skulliance.io/staking/realms.php", "raids", $def_avatar_url, "4A90D9", $author);
 	}
 	return $outcome;
 }
