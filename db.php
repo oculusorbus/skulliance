@@ -198,6 +198,7 @@ function getVisibility($conn){
 
 // Get NFT Collection Leaderboard Visibility by Username
 function getVisibilityByUsername($conn, $username){
+	$username = $conn->real_escape_string($username);
 	$sql = "SELECT visibility FROM users WHERE username = '".$username."'";
 	$result = $conn->query($sql);
 	
@@ -224,6 +225,8 @@ function updateVisibility($conn, $visibility){
 
 // Update Discord Message Status
 function updateDiscordMessageStatus($conn, $discord_id, $status){
+	$discord_id = preg_replace('/[^0-9]/', '', $discord_id);
+	$status = (int)$status;
 	$sql = "UPDATE users SET message='".$status."' WHERE discord_id='".$discord_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -234,6 +237,8 @@ function updateDiscordMessageStatus($conn, $discord_id, $status){
 
 // Update Discord Reaction Status
 function updateDiscordReactionStatus($conn, $discord_id, $status){
+	$discord_id = preg_replace('/[^0-9]/', '', $discord_id);
+	$status = (int)$status;
 	$sql = "UPDATE users SET reaction='".$status."' WHERE discord_id='".$discord_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -254,6 +259,7 @@ function resetDiscordStatus($conn){
 
 // Get Discord Message and Reaction Status
 function getDiscordStatus($conn, $discord_id){
+	$discord_id = preg_replace('/[^0-9]/', '', $discord_id);
 	$sql = "SELECT message, reaction FROM users WHERE discord_id='".$discord_id."'";
 	$result = $conn->query($sql);
 	
@@ -293,6 +299,7 @@ function getUsers($conn){
 
 // Get user ID by stake address for cron job verification
 function getUserId($conn, $address){
+	$address = $conn->real_escape_string($address);
 	$sql = "SELECT user_id FROM wallets WHERE stake_address='".$address."'";
 	$result = $conn->query($sql);
 
@@ -309,6 +316,7 @@ function getUserId($conn, $address){
 
 // Get user ID from discord id for Drop Ship rewards
 function getUserIdFromDiscordId($conn, $discord_id){
+	$discord_id = preg_replace('/[^0-9]/', '', $discord_id);
 	$sql = "SELECT id FROM users WHERE discord_id='".$discord_id."'";
 	$result = $conn->query($sql);
 
@@ -2228,8 +2236,11 @@ function checkUser($conn) {
 
 // Create a user that has visited the site for the first time.
 function createUser($conn) {
+	$cu_discord_id = preg_replace('/[^0-9]/', '', $_SESSION['userData']['discord_id']);
+	$cu_avatar     = $conn->real_escape_string($_SESSION['userData']['avatar']);
+	$cu_name       = $conn->real_escape_string($_SESSION['userData']['name']);
 	$sql = "INSERT INTO users (discord_id, avatar, username)
-	VALUES ('".$_SESSION['userData']['discord_id']."', '".$_SESSION['userData']['avatar']."', '".$_SESSION['userData']['name']."')";
+	VALUES ('".$cu_discord_id."', '".$cu_avatar."', '".$cu_name."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -2275,7 +2286,9 @@ function getDiscordID($conn) {
 
 // Update user to maintain current username
 function updateUser($conn) {
-	$sql = "UPDATE users SET username='".$_SESSION['userData']['name']."', avatar='".$_SESSION['userData']['avatar']."' WHERE id='".$_SESSION['userData']['user_id']."'";
+	$uu_name   = $conn->real_escape_string($_SESSION['userData']['name']);
+	$uu_avatar = $conn->real_escape_string($_SESSION['userData']['avatar']);
+	$sql = "UPDATE users SET username='".$uu_name."', avatar='".$uu_avatar."' WHERE id='".$_SESSION['userData']['user_id']."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
@@ -2285,6 +2298,8 @@ function updateUser($conn) {
 
 // Create address for user
 function createAddress($conn, $stake_address, $address) {
+	$stake_address = $conn->real_escape_string($stake_address);
+	$address       = $conn->real_escape_string($address);
 	$sql = "INSERT INTO wallets (stake_address, address, user_id)
 	VALUES ('".$stake_address."', '".$address."', '".$_SESSION['userData']['user_id']."')";
 	if ($conn->query($sql) === TRUE) {
@@ -2297,6 +2312,7 @@ function createAddress($conn, $stake_address, $address) {
 // Check user's Cardano address
 function checkAddress($conn, $stake_address, $address) {
 	if(isset($_SESSION['userData']['user_id'])){
+		$stake_address = $conn->real_escape_string($stake_address);
 		$sql = "SELECT stake_address FROM wallets WHERE stake_address='".$stake_address."'";
 		$result = $conn->query($sql);
 
@@ -2383,6 +2399,7 @@ function getPolicies($conn){
 
 // Get collection id
 function getCollectionId($conn, $policy){
+	$policy = $conn->real_escape_string($policy);
 	$sql = "SELECT id FROM collections WHERE policy='".$policy."'";
 	$result = $conn->query($sql);
 	
@@ -3095,7 +3112,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 // Create item
 function createItem($conn, $name, $image_url, $price, $quantity, $project_id, $override=0){
 	$sql = "INSERT INTO items (name, image_url, price, quantity, project_id, override)
-	VALUES ('".mysqli_real_escape_string($conn, $name)."', '".$image_url."', '".$price."', '".$quantity."', '".$project_id."', '".$override."')";
+	VALUES ('".mysqli_real_escape_string($conn, $name)."', '".mysqli_real_escape_string($conn, $image_url)."', '".$price."', '".$quantity."', '".$project_id."', '".$override."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -3106,7 +3123,7 @@ function createItem($conn, $name, $image_url, $price, $quantity, $project_id, $o
 
 // Update item
 function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $project_id){
-	$sql = "UPDATE items SET name='".mysqli_real_escape_string($conn, $name)."', image_url='".$image_url."', price='".$price."', quantity='".$quantity."' WHERE id='".$item_id."'";
+	$sql = "UPDATE items SET name='".mysqli_real_escape_string($conn, $name)."', image_url='".mysqli_real_escape_string($conn, $image_url)."', price='".$price."', quantity='".$quantity."' WHERE id='".$item_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
@@ -3118,7 +3135,7 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 function getItems($conn, $page, $filterby=""){
 	global $conn;
 	if($filterby != "0" && $filterby != "exclusive"){
-		$filterby = "AND project_id = '".$filterby."' ";
+		$filterby = is_numeric($filterby) ? "AND project_id = '".(int)$filterby."' " : "";
 	}else if($filterby == "exclusive"){
 		$filterby = "AND featured = '1' ";
 	}else{
@@ -5375,6 +5392,7 @@ function createRealm($conn, $realm, $faction){
 }
 
 function updateRealmTheme($conn, $realm_id, $theme_id){
+	$realm_id = (int)$realm_id; $theme_id = (int)$theme_id;
 	$sql = "UPDATE realms SET theme_id='".$theme_id."' WHERE id='".$realm_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -5384,6 +5402,7 @@ function updateRealmTheme($conn, $realm_id, $theme_id){
 }
 
 function updateRealmFaction($conn, $realm_id, $faction){
+	$realm_id = (int)$realm_id; $faction = (int)$faction;
 	$sql = "UPDATE realms SET project_id='".$faction."' WHERE id='".$realm_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -5482,6 +5501,7 @@ function getRealmInfo($conn){
 }
 
 function getFactionUserIDs($conn, $faction){
+	$faction = (int)$faction;
 	$sql = "SELECT user_id FROM realms WHERE project_id = '".$faction."' AND active = '1'";
 	$result = $conn->query($sql);
 	
