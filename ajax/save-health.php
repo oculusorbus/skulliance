@@ -114,7 +114,7 @@ if ($exists) {
                 $bbd_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
                 $bbd_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
                 $bbd_avatar_url = ($bbd_discord && $bbd_avatar) ? "https://cdn.discordapp.com/avatars/".$bbd_discord."/".$bbd_avatar.".png" : "";
-                $bbd_icon       = ($bbd_char_url && !preg_match('/\.gif$/i', $bbd_char_url)) ? $bbd_char_url : $bbd_avatar_url;
+                $bbd_icon       = $bbd_char_url ?: $bbd_avatar_url;
                 $bbd_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($bbd_username);
                 $bbd_mention    = $bbd_discord ? "<@".$bbd_discord.">" : $bbd_username;
                 $bbd_desc  = $bbd_mention." was **defeated by ".$bbd_row['name']."**!\n\n";

@@ -51,7 +51,7 @@ if (isset($_SESSION['userData']['user_id']) && isset($data['score']) && isset($d
     } else {
       $mn_char_url = false;
     }
-    $mn_icon = ($mn_char_url && !preg_match('/\.gif$/i', $mn_char_url)) ? $mn_char_url : $mn_avatar_url;
+    $mn_icon = $mn_char_url ?: $mn_avatar_url;
     $mn_author = array("name" => $mn_username, "icon_url" => $mn_icon, "url" => $mn_profile);
 
     if ($outcome !== 'loss') {
