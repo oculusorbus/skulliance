@@ -1512,20 +1512,20 @@ window.onclick = function(event) {
   tick();
 }());
 
-// Pin user's own rank row to the top of leaderboard tables
+// Pin user's own rank row to the top of each leaderboard table
 ;(function() {
-  var table = document.getElementById('transactions');
-  if (!table) return;
-  var highlighted = table.querySelector('tr.highlight');
-  if (!highlighted) return;
-  var pinned = highlighted.cloneNode(true);
-  pinned.style.cssText = 'background:rgba(0,200,160,0.09);outline:1px solid rgba(0,200,160,0.35);';
-  var rankCell = pinned.cells[0];
-  if (rankCell) {
-    rankCell.innerHTML = '<span style="font-size:9px;opacity:0.55;display:block;letter-spacing:0.5px">YOU</span>' + rankCell.innerHTML;
-  }
-  var headerRow = table.querySelector('tr');
-  if (headerRow) table.insertBefore(pinned, headerRow.nextSibling);
+  document.querySelectorAll('table[id="transactions"]').forEach(function(table) {
+    var highlighted = table.querySelector('tr.highlight');
+    if (!highlighted) return;
+    var pinned = highlighted.cloneNode(true);
+    pinned.style.cssText = 'background:rgba(0,200,160,0.09);outline:1px solid rgba(0,200,160,0.35);';
+    var rankCell = pinned.cells[0];
+    if (rankCell) {
+      rankCell.innerHTML = '<span style="font-size:9px;opacity:0.55;display:block;letter-spacing:0.5px">YOU</span>' + rankCell.innerHTML;
+    }
+    var headerRow = table.querySelector('tr');
+    if (headerRow) table.insertBefore(pinned, headerRow.nextSibling);
+  });
 })();
 
 // Shared loading state for intensive submit buttons (Start All Free, Start All Auto)
