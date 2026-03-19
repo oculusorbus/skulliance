@@ -7456,7 +7456,7 @@ function endRaid($conn, $raid_id){
 		$raid_desc .= "🏹 The attacker's forces were repelled and took damage.";
 		$raid_desc .= $items_line;
 		$author = array("name" => $def_username." · ".$def_name, "icon_url" => $def_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($def_username));
-		discordmsg("🛡️ Defense Holds", $raid_desc, $off_image_url, "https://skulliance.io/staking/realms.php", "raids", $def_avatar_url, "4A90D9", $author);
+		discordmsg("🛡️ Defense Holds", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $def_avatar_url, "4A90D9", $author);
 	}
 	return $outcome;
 }
