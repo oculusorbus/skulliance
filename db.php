@@ -4301,6 +4301,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			$last_month = date('F', strtotime('last month'));
 			$title = $last_month." Raids Leaderboard Results";
 			$imageurl = "";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "raids");
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		echo "</table>";
@@ -4485,6 +4486,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$last_month = date('F', strtotime('last month'));
 			$title = $last_month." Factions Leaderboard Results";
 			$imageurl = "";
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "realms");
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		echo "</table>";
@@ -5230,6 +5232,8 @@ function createRealm($conn, $realm, $faction){
 				// Log transactions
 				logCredit($conn, $_SESSION['userData']['user_id'], 1000, $project_id);
 			}
+			$discord_mention = isset($_SESSION['userData']['discord_id']) ? "<@".$_SESSION['userData']['discord_id'].">" : "A member";
+			discordmsg("New Realm Established", $discord_mention." has founded **".$realm."**", "", "https://skulliance.io/staking/realms.php", "realms");
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
@@ -6357,6 +6361,12 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 					$conn->query("INSERT INTO raids_consumables (raid_id, consumable_id) VALUES ('".$raid_id."', '".$cid."')");
 				}
 			}
+			$off_name = getRealmName($conn);
+			$def_res = $conn->query("SELECT name FROM realms WHERE id='".$defense_id."'");
+			$def_row = $def_res ? $def_res->fetch_assoc() : null;
+			$def_name = $def_row ? $def_row['name'] : 'Unknown Realm';
+			$discord_mention = isset($_SESSION['userData']['discord_id']) ? "<@".$_SESSION['userData']['discord_id'].">" : "A raider";
+			discordmsg("Raid Launched", $discord_mention." (**".$off_name."**) has launched a raid against **".$def_name."**", "", "https://skulliance.io/staking/realms.php", "raids");
 			echo "<strong>Raid Started</strong>";
 		} else {
 			echo "Error: " . $conn->error;
@@ -7217,6 +7227,14 @@ function endRaid($conn, $raid_id){
 			consumeRandomRewards($conn, $defense_id, 'defense', $raid_id);
 		}
 	}
+	$off_res = $conn->query("SELECT name FROM realms WHERE id='".$offense_id."'");
+	$off_row = $off_res ? $off_res->fetch_assoc() : null;
+	$off_name = $off_row ? $off_row['name'] : 'Unknown Realm';
+	$def_res = $conn->query("SELECT name FROM realms WHERE id='".$defense_id."'");
+	$def_row = $def_res ? $def_res->fetch_assoc() : null;
+	$def_name = $def_row ? $def_row['name'] : 'Unknown Realm';
+	$outcome_text = ($outcome == 1) ? "Attacker Victory" : "Defender Victory";
+	discordmsg("Raid Concluded", "**".$off_name."** raided **".$def_name."** — ".$outcome_text, "", "https://skulliance.io/staking/realms.php", "raids");
 	return $outcome;
 }
 
