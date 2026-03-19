@@ -35,19 +35,22 @@ if (isset($_SESSION['userData']['user_id']) && isset($data['score']) && isset($d
     $mn_mention    = $mn_discord ? "<@".$mn_discord.">" : $mn_username;
     $mn_opp_slug   = strtolower(str_replace(' ', '-', $mn_opponent));
     $mn_image_url  = "https://skulliance.io/staking/images/monstrocity/".$mn_theme."/".$mn_opp_slug.".png";
-    $mn_author     = array("name" => $mn_username, "icon_url" => $mn_avatar_url, "url" => $mn_profile);
+    // Player's selected character image (passed from game client)
+    $mn_char_url = isset($data['characterImageUrl']) ? filter_var(trim($data['characterImageUrl']), FILTER_VALIDATE_URL) : false;
+    $mn_icon     = $mn_char_url ?: $mn_avatar_url;
+    $mn_author = array("name" => $mn_username, "icon_url" => $mn_icon, "url" => $mn_profile);
 
     if ($outcome !== 'loss') {
       $mn_desc  = $mn_mention." vanquished **".$mn_opponent."** on Level ".$mn_level."!\n\n";
       $mn_desc .= "🏆 **Score:** ".number_format($mn_score)."\n";
       $mn_desc .= "📊 **Level:** ".$mn_level." of 28";
       if ($mn_level === 28) $mn_desc .= "\n🎉 **Campaign Complete!**";
-      discordmsg("⚔️ Level ".$mn_level." Victory", $mn_desc, $mn_image_url, "https://skulliance.io/staking/monstrocity.php", "monstrocity", $mn_avatar_url, "00C8A0", $mn_author);
+      discordmsg("⚔️ Level ".$mn_level." Victory", $mn_desc, $mn_image_url, "https://skulliance.io/staking/monstrocity.php", "monstrocity", $mn_icon, "00C8A0", $mn_author);
     } else {
       $mn_desc  = $mn_mention." was defeated by **".$mn_opponent."** on Level ".$mn_level."!\n\n";
       $mn_desc .= "📊 **Level Reached:** ".$mn_level." of 28\n";
       $mn_desc .= "🏆 **Score:** ".number_format($mn_score);
-      discordmsg("💀 Level ".$mn_level." Defeat", $mn_desc, $mn_image_url, "https://skulliance.io/staking/monstrocity.php", "monstrocity", $mn_avatar_url, "FF4444", $mn_author);
+      discordmsg("💀 Level ".$mn_level." Defeat", $mn_desc, $mn_image_url, "https://skulliance.io/staking/monstrocity.php", "monstrocity", $mn_icon, "FF4444", $mn_author);
     }
   }
 } else {

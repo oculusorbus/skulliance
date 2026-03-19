@@ -2424,7 +2424,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        headers: {
 		            'Content-Type': 'application/x-www-form-urlencoded'
 		        },
-		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}&characterImageUrl=${encodeURIComponent(this.selectedCharacter?.imageUrl || '')}&bossImageUrl=${encodeURIComponent('https://skulliance.io/staking/' + (this.selectedBoss?.imageUrl || ''))}`
 		    })
 		    .then(response => {
 		        console.log('savePlayerHealth: Response status:', response.status);
@@ -2461,7 +2461,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        headers: {
 		            'Content-Type': 'application/x-www-form-urlencoded'
 		        },
-		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}`
+		        body: `user_id=${encodeURIComponent(userId)}&boss_id=${encodeURIComponent(bossId)}&health=${encodeURIComponent(health)}&characterImageUrl=${encodeURIComponent(this.selectedCharacter?.imageUrl || '')}&bossImageUrl=${encodeURIComponent('https://skulliance.io/staking/' + (this.selectedBoss?.imageUrl || ''))}`
 		    })
 		    .then(response => {
 		        console.log('saveBossHealth: Response status:', response.status);
@@ -4472,7 +4472,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      score: Math.round(this.grandTotalScore),
 	                      outcome: 'loss',
 	                      opponentName: (typeof opponentsConfig !== 'undefined' && opponentsConfig[this.currentLevel - 1]) ? opponentsConfig[this.currentLevel - 1].name : '',
-	                      theme: this.theme || 'monstrocity'
+	                      theme: this.theme || 'monstrocity',
+	                      characterImageUrl: this.selectedCharacter?.imageUrl || ''
 	                  })
 	              }).catch(() => {});
 	          }
@@ -4658,7 +4659,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      score: this.grandTotalScore,
 	      outcome: 'win',
 	      opponentName: (typeof opponentsConfig !== 'undefined' && opponentsConfig[completedLevel - 1]) ? opponentsConfig[completedLevel - 1].name : '',
-	      theme: this.theme || 'monstrocity'
+	      theme: this.theme || 'monstrocity',
+	      characterImageUrl: this.selectedCharacter?.imageUrl || ''
 	    };
 	    console.log(`Saving score: level=${data.level}, score=${data.score}`);
 	    try {
