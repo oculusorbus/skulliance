@@ -992,7 +992,7 @@ function filterLeaderboard($page){
 			</optgroup>
 			<optgroup label="Monstrocity">
 				<option value="monstrocity">All Monstrocity</option>
-				<option value="monthly-monstrocity">Monthly Monstrocity</option>
+				<option value="monthly-monstrocity"><?php echo date("F"); ?> Monstrocity</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>

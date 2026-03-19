@@ -236,7 +236,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $filterby = "monstrocity";
 				        break;
 				    case ($filterby == "monthly-monstrocity"):
-				        $title = "Monthly Monstrocity";
+				        $title = date("F") . " Monstrocity";
 				        $filterby = "monthly-monstrocity";
 				        break;
 				}
