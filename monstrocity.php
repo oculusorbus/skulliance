@@ -4463,6 +4463,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameOver = true;
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Lose!";
+	          if (!this.selectedBoss) {
+	              fetch('ajax/save-monstrocity-score.php', {
+	                  method: 'POST',
+	                  headers: { 'Content-Type': 'application/json' },
+	                  body: JSON.stringify({
+	                      level: this.currentLevel,
+	                      score: Math.round(this.grandTotalScore),
+	                      outcome: 'loss',
+	                      opponentName: (typeof opponentsConfig !== 'undefined' && opponentsConfig[this.currentLevel - 1]) ? opponentsConfig[this.currentLevel - 1].name : '',
+	                      theme: this.theme || 'monstrocity'
+	                  })
+	              }).catch(() => {});
+	          }
 	          turnIndicator.textContent = "Game Over";
 
 	          // Replace try-again button to clear old event listeners
@@ -4642,7 +4655,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  async saveScoreToDatabase(completedLevel) {
 	    const data = {
 	      level: completedLevel,
-	      score: this.grandTotalScore
+	      score: this.grandTotalScore,
+	      outcome: 'win',
+	      opponentName: (typeof opponentsConfig !== 'undefined' && opponentsConfig[completedLevel - 1]) ? opponentsConfig[completedLevel - 1].name : '',
+	      theme: this.theme || 'monstrocity'
 	    };
 	    console.log(`Saving score: level=${data.level}, score=${data.score}`);
 	    try {

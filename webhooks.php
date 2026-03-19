@@ -26,6 +26,10 @@ include('credentials/webhooks_credentials.php');
 			$webhook = getMissionsWebhook();
 		}else if($channel == "skullswap"){
 			$webhook = getSkullSwapWebhook();
+		}else if($channel == "monstrocity"){
+			$webhook = getMonstrocityWebhook();
+		}else if($channel == "bossbattles"){
+			$webhook = getBossBattlesWebhook();
 		}else{
 			$webhook = getWebhook();
 		}
