@@ -1519,8 +1519,8 @@ function startAllFreeEligibleMissions($conn){
 		$sf_desc       = $sf_mention." used **Start All Free** and launched **".$sf_count."** mission".($sf_count != 1 ? "s" : "")."!\n\n";
 		$sf_budget     = 1800 - strlen($sf_desc);
 		$sf_truncated  = false;
-		foreach($sf_titles as $sf_t){
-			$sf_line = "• ".$sf_t."\n";
+		foreach(array_count_values($sf_titles) as $sf_t => $sf_n){
+			$sf_line = "• ".$sf_t.($sf_n > 1 ? " x".$sf_n : "")."\n";
 			if(strlen($sf_line) > $sf_budget){ $sf_truncated = true; break; }
 			$sf_desc .= $sf_line; $sf_budget -= strlen($sf_line);
 		}
@@ -1815,8 +1815,8 @@ function startAutoMissions($conn) {
 		$am_desc       = $am_mention." used **Start All Auto** and launched **".$am_count."** mission".($am_count != 1 ? "s" : "")."!\n\n";
 		$am_budget     = 1800 - strlen($am_desc);
 		$am_truncated  = false;
-		foreach($auto_launched as $am_t){
-			$am_line = "• ".$am_t."\n";
+		foreach(array_count_values($auto_launched) as $am_t => $am_n){
+			$am_line = "• ".$am_t.($am_n > 1 ? " x".$am_n : "")."\n";
 			if(strlen($am_line) > $am_budget){ $am_truncated = true; break; }
 			$am_desc .= $am_line; $am_budget -= strlen($am_line);
 		}
