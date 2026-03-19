@@ -7576,10 +7576,29 @@ function assignRealmProjectRewards($conn, $raid_id, $project_id, $amount){
 }
 
 function toggleRealmState($conn, $realm_id, $type){
+	$rs_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$rs_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+	$rs_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+	$rs_avatar_url = ($rs_discord && $rs_avatar) ? "https://cdn.discordapp.com/avatars/".$rs_discord."/".$rs_avatar.".png" : "";
+	$rs_mention    = $rs_discord ? "<@".$rs_discord.">" : $rs_username;
+	$rs_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($rs_username);
+	$rs_res        = $conn->query("SELECT r.name AS realm_name, r.theme_id, p.name AS faction_name FROM realms r INNER JOIN projects p ON p.id = r.project_id WHERE r.id='".$realm_id."'");
+	$rs_row        = ($rs_res && $rs_res->num_rows > 0) ? $rs_res->fetch_assoc() : null;
+	$rs_realm_name = $rs_row ? $rs_row['realm_name'] : 'Unknown Realm';
+	$rs_realm_img  = $rs_row ? "https://skulliance.io/staking/images/themes/".$rs_row['theme_id'].".jpg" : "";
+	$rs_author     = array("name" => $rs_username, "icon_url" => $rs_avatar_url, "url" => $rs_profile);
+
 	if($type == "deactivate"){
 		$sql = "UPDATE realms SET active = '0', created_date = '".date('Y-m-d H:i:s')."' WHERE id='".$realm_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 		if ($conn->query($sql) === TRUE) {
 			echo "Your Realm has been deactivated.\r\n\r\nYou will not be able to reactivate it for 30 days.";
+			if ($rs_row) {
+				$rs_desc  = $rs_mention." has **deactivated** their realm **".$rs_realm_name."**.\n\n";
+				$rs_desc .= "🏰 **Realm:** ".$rs_realm_name."\n";
+				$rs_desc .= "⚔️ **Faction:** ".$rs_row['faction_name']."\n";
+				$rs_desc .= "⏳ Cannot be reactivated for 30 days.";
+				discordmsg("💤 Realm Deactivated", $rs_desc, $rs_realm_img, "https://skulliance.io/staking/realms.php", "realms", $rs_avatar_url, "888888", $rs_author);
+			}
 		} else {
 			echo "Error: " . $sql . "<br>" . $conn->error;
 		}
@@ -7587,6 +7606,12 @@ function toggleRealmState($conn, $realm_id, $type){
 		$sql = "UPDATE realms SET active = '1' WHERE id='".$realm_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
 		if ($conn->query($sql) === TRUE) {
 			echo "Your Realm has been reactivated.";
+			if ($rs_row) {
+				$rs_desc  = $rs_mention." has **reactivated** their realm **".$rs_realm_name."**!\n\n";
+				$rs_desc .= "🏰 **Realm:** ".$rs_realm_name."\n";
+				$rs_desc .= "⚔️ **Faction:** ".$rs_row['faction_name'];
+				discordmsg("⚡ Realm Reactivated", $rs_desc, $rs_realm_img, "https://skulliance.io/staking/realms.php", "realms", $rs_avatar_url, "00C8A0", $rs_author);
+			}
 		} else {
 			echo "Error: " . $sql . "<br>" . $conn->error;
 		}
