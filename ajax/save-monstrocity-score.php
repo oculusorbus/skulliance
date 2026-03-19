@@ -34,7 +34,12 @@ if (isset($_SESSION['userData']['user_id']) && isset($data['score']) && isset($d
     $mn_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($mn_username);
     $mn_mention    = $mn_discord ? "<@".$mn_discord.">" : $mn_username;
     $mn_opp_slug   = strtolower(str_replace(' ', '-', $mn_opponent));
-    $mn_image_url  = "https://skulliance.io/staking/images/monstrocity/".$mn_theme."/".$mn_opp_slug.".png";
+    $mn_opp_raw    = isset($data['opponentImageUrl']) ? trim($data['opponentImageUrl']) : '';
+    if ($mn_opp_raw !== '' && strpos($mn_opp_raw, 'http') !== 0) {
+      $mn_opp_raw = "https://skulliance.io/staking/" . ltrim($mn_opp_raw, '/');
+    }
+    $mn_opp_url    = ($mn_opp_raw !== '') ? filter_var($mn_opp_raw, FILTER_VALIDATE_URL) : false;
+    $mn_image_url  = $mn_opp_url ?: "https://skulliance.io/staking/images/monstrocity/".$mn_theme."/".$mn_opp_slug.".png";
     // Player's selected character image (passed from game client)
     $mn_char_raw = isset($data['characterImageUrl']) ? trim($data['characterImageUrl']) : '';
     if ($mn_char_raw !== '') {
