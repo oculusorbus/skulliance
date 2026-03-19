@@ -99,7 +99,7 @@ if ($conn->affected_rows > 0) {
 
     // Discord webhook — Boss Battle victory (fires only when this hit kills the boss)
     if ($health === 0) {
-        $bb_res = $conn->query("SELECT b.name, b.max_health, b.strength, b.tactics, b.size, b.extension, b.theme, b.collection_id, p.currency, p.name AS project_name FROM bosses b INNER JOIN projects p ON p.id = b.project_id WHERE b.id='".$boss_id."'");
+        $bb_res = $conn->query("SELECT b.name, b.max_health, b.strength, b.speed, b.tactics, b.size, b.powerup, b.extension, b.theme, b.collection_id, p.currency, p.name AS project_name FROM bosses b INNER JOIN projects p ON p.id = b.project_id WHERE b.id='".$boss_id."'");
         if ($bb_res && ($bb_row = $bb_res->fetch_assoc())) {
             $bb_slug       = strtolower(preg_replace(['/\s+/', '/\'/', '/[^a-z0-9\-]+/', '/-+/'], ['-', '', '-', '-'], $bb_row['name']));
             $bb_slug       = trim($bb_slug, '-');
@@ -119,7 +119,8 @@ if ($conn->affected_rows > 0) {
             $bb_mention    = $bb_discord ? "<@".$bb_discord.">" : $bb_username;
             $bb_desc  = $bb_mention." **defeated ".$bb_row['name']."**!\n\n";
             $bb_desc .= "💥 **Damage Dealt:** ".number_format($bb_dmg)."\n";
-            $bb_desc .= "⚔️ **Strength:** ".$bb_row['strength']."　🧠 **Tactics:** ".$bb_row['tactics']."　📐 **Size:** ".$bb_row['size']."\n";
+            $bb_desc .= "⚔️ **Strength:** ".$bb_row['strength']."　💨 **Speed:** ".$bb_row['speed']."　🧠 **Tactics:** ".$bb_row['tactics']."　📐 **Size:** ".$bb_row['size']."\n";
+            $bb_desc .= "✨ **Power-Up:** ".$bb_row['powerup']."\n";
             $bb_desc .= "💰 **Bounty:** ".number_format($bb_row['max_health'])." ".$bb_row['currency']."\n";
             $bb_desc .= "🎮 **Project:** ".$bb_row['project_name'];
             $bb_author = array("name" => $bb_username, "icon_url" => $bb_icon, "url" => $bb_profile);

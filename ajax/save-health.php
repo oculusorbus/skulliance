@@ -100,7 +100,7 @@ if ($exists) {
 
         // Discord webhook — Boss Battle defeat (fires only when player health reaches 0)
         if ($health === 0) {
-            $bbd_res = $conn->query("SELECT b.name, b.max_health, b.strength, b.tactics, b.size, b.extension, b.theme, b.collection_id, p.currency, p.name AS project_name FROM bosses b INNER JOIN projects p ON p.id = b.project_id WHERE b.id='".$boss_id."'");
+            $bbd_res = $conn->query("SELECT b.name, b.max_health, b.strength, b.speed, b.tactics, b.size, b.powerup, b.extension, b.theme, b.collection_id, p.currency, p.name AS project_name FROM bosses b INNER JOIN projects p ON p.id = b.project_id WHERE b.id='".$boss_id."'");
             if ($bbd_res && ($bbd_row = $bbd_res->fetch_assoc())) {
                 $bbd_slug       = trim(strtolower(preg_replace(['/\s+/', '/\'/', '/[^a-z0-9\-]+/', '/-+/'], ['-', '', '-', '-'], $bbd_row['name'])), '-');
                 $bbd_boss_url   = isset($_POST['bossImageUrl']) ? filter_var(trim($_POST['bossImageUrl']), FILTER_VALIDATE_URL) : false;
@@ -120,7 +120,8 @@ if ($exists) {
                 $bbd_desc  = $bbd_mention." was **defeated by ".$bbd_row['name']."**!\n\n";
                 $bbd_desc .= "💥 **Damage Dealt:** ".number_format($bbd_dmg_dealt)."\n";
                 $bbd_desc .= "🩸 **Damage Taken:** ".number_format($bbd_dmg_taken)."\n";
-                $bbd_desc .= "⚔️ **Strength:** ".$bbd_row['strength']."　🧠 **Tactics:** ".$bbd_row['tactics']."　📐 **Size:** ".$bbd_row['size']."\n";
+                $bbd_desc .= "⚔️ **Strength:** ".$bbd_row['strength']."　💨 **Speed:** ".$bbd_row['speed']."　🧠 **Tactics:** ".$bbd_row['tactics']."　📐 **Size:** ".$bbd_row['size']."\n";
+                $bbd_desc .= "✨ **Power-Up:** ".$bbd_row['powerup']."\n";
                 $bbd_desc .= "💰 **Bounty:** ".number_format($bbd_row['max_health'])." ".$bbd_row['currency'];
                 $bbd_author = array("name" => $bbd_username, "icon_url" => $bbd_icon, "url" => $bbd_profile);
                 discordmsg("💀 Defeated by: ".$bbd_row['name'], $bbd_desc, $bbd_image_url, "https://skulliance.io/staking/monstrocity.php", "bossbattles", $bbd_icon, "FF4444", $bbd_author);
