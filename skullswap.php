@@ -227,45 +227,14 @@ include 'header.php';
          this.isDetonating = false;
          this.isGrandFinale = false;
 
-         this.allIcons = [
-             'https://www.skulliance.io/staking/icons/star.png',
-             'https://www.skulliance.io/staking/icons/dread.png',
-             'https://www.skulliance.io/staking/icons/hype.png',
-             'https://www.skulliance.io/staking/icons/sinder.png',
-             'https://www.skulliance.io/staking/icons/cyber.png',
-             'https://www.skulliance.io/staking/icons/crypt.png',
-             'https://www.skulliance.io/staking/icons/dark.png',
-             'https://www.skulliance.io/staking/icons/maxi.png',
-             'https://www.skulliance.io/staking/icons/dank.png',
-             'https://www.skulliance.io/staking/icons/mipa.png',
-             'https://www.skulliance.io/staking/icons/ustra.png',
-             'https://www.skulliance.io/staking/icons/nat.png',
-             'https://www.skulliance.io/staking/icons/fire.png',
-             'https://www.skulliance.io/staking/icons/eye.png',
-             'https://www.skulliance.io/staking/icons/sharon.png',
-             'https://www.skulliance.io/staking/icons/lens.png',
-             'https://www.skulliance.io/staking/icons/kala.png',
-             'https://www.skulliance.io/staking/icons/ass.png',
-             'https://www.skulliance.io/staking/icons/moon.png',
-             'https://www.skulliance.io/staking/icons/ritual.png',
-             'https://www.skulliance.io/staking/icons/wave.png',
-             'https://www.skulliance.io/staking/icons/soul.png',
-             'https://www.skulliance.io/staking/icons/stag.png',
-             'https://www.skulliance.io/staking/icons/skowl.png',
-             'https://www.skulliance.io/staking/icons/loot.png',
-             'https://www.skulliance.io/staking/icons/venus.png',
-             'https://www.skulliance.io/staking/icons/axion.png',
-             'https://www.skulliance.io/staking/icons/void.png',
-             'https://www.skulliance.io/staking/icons/muse.png',
-             'https://www.skulliance.io/staking/icons/dn.png',
-             'https://www.skulliance.io/staking/icons/tribe.png',
-             'https://www.skulliance.io/staking/icons/bung.png',
-			 'https://www.skulliance.io/staking/icons/havoc.png',
-			 'https://www.skulliance.io/staking/icons/claw.png',
-			 'https://www.skulliance.io/staking/icons/aeon.png',
-			 'https://www.skulliance.io/staking/icons/blood.png',
-			 'https://www.skulliance.io/staking/icons/trouble.png'
-         ];
+         this.allIcons = <?php
+            $icon_res = $conn->query("SELECT DISTINCT LOWER(currency) AS currency FROM projects WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != '' ORDER BY currency ASC");
+            $icons = [];
+            while ($icon_row = $icon_res->fetch_assoc()) {
+                $icons[] = 'https://www.skulliance.io/staking/icons/' . $icon_row['currency'] . '.png';
+            }
+            echo json_encode($icons);
+        ?>;
          this.specialIcons = {
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
              diamond: 'https://www.skulliance.io/staking/icons/diamond.png'
