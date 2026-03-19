@@ -60,6 +60,7 @@
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
 		      <a href="monstrocity.php" target="_blank">Match 3 RPG</a>
+		      <a href="monstrocity.php" target="_blank">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
 		      <a href="https://www.madballs.net/drop-ship" target="_blank">Drop Ship</a>
 		    </div>
