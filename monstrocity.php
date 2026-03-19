@@ -1776,6 +1776,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  
 	  function showBossSelect(game) {
 	      console.time('showBossSelect');
+	      const lastBossId = game.selectedBoss ? game.selectedBoss.id : null;
 	      const container = document.getElementById('boss-select-container');
 	      const themeContainer = document.getElementById('theme-select-container');
 	      const characterContainer = document.getElementById('character-select-container');
@@ -1828,6 +1829,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	                  const option = document.createElement('div');
 	                  option.className = `boss-option`;
+	                  option.dataset.bossId = boss.id;
 
 	                  const isPlayerDead = boss.playerHealth === 0;
 	                  const isBossDead = boss.health <= 0;
@@ -1931,6 +1933,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	              optionsDiv.appendChild(fragment);
 	              console.log(`showBossSelect: Rendered ${bosses.length} bosses`);
+	              if (lastBossId) {
+	                  requestAnimationFrame(() => {
+	                      const lastBossEl = optionsDiv.querySelector(`[data-boss-id="${lastBossId}"]`);
+	                      if (lastBossEl) lastBossEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	                  });
+	              }
 	          })
 	          .catch(error => {
 	              console.error('showBossSelect: Error fetching bosses:', error);
