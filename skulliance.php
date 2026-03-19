@@ -599,11 +599,13 @@ function renderDailyRewardsSection(){
 function getRewardTimeRemaining($conn){
 	$maxdate = getMaxDateCreated($conn);
 	if(isset($maxdate)){
-		$date = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', strtotime($maxdate))));
-		$remaining = $date - time();
-		$hours_remaining = floor(($remaining % 86400) / 3600);
-		$minutes_remaining = floor(($remaining % 3600) / 60);
-		return $hours_remaining." hours and ".$minutes_remaining." minutes until next reward";
+		$deadline = strtotime('+1 day', strtotime(date('Y-m-d 00:00:00', strtotime($maxdate))));
+		$remaining = max(0, $deadline - time());
+		$h = floor(($remaining % 86400) / 3600);
+		$m = floor(($remaining % 3600) / 60);
+		$s = $remaining % 60;
+		$hms = sprintf('%02d:%02d:%02d', $h, $m, $s);
+		return "<span class='daily-countdown' data-deadline='".$deadline."'>Next in <span class='cdtimer'>".$hms."</span></span>";
 	}else{
 		return "";
 	}
