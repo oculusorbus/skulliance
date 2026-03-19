@@ -1414,7 +1414,7 @@ function startMission($conn){
 						$m_mention    = $m_discord ? "<@".$m_discord.">" : $m_username;
 						$m_desc       = $m_mention." has embarked on a mission!\n\n";
 						$m_desc      .= "📜 **Quest:** ".$title."\n";
-						$m_desc      .= "💰 **Cost:** ".number_format($cost)." ".$currency."\u3000→\u3000**Reward:** ".number_format($reward)." ".$currency."\n";
+						$m_desc      .= "💰 **Cost:** ".number_format($cost)." ".$currency." → **Reward:** ".number_format($reward)." ".$currency."\n";
 						$m_desc      .= "⏱️ **Duration:** ".$duration.($duration == 1 ? " day" : " days")."\n";
 						$m_desc      .= "🎯 **Success Rate:** ".$m_success."%\n";
 						$m_desc      .= "🦴 **NFTs Deployed:** ".$m_nft_count;
