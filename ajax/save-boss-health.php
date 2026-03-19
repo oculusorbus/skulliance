@@ -99,17 +99,24 @@ if ($conn->affected_rows > 0) {
 
     // Discord webhook — Boss Battle victory (fires only when this hit kills the boss)
     if ($health === 0) {
-        $bb_res = $conn->query("SELECT b.name, b.max_health, b.strength, b.tactics, b.size, b.extension, b.theme, p.currency, p.name AS project_name FROM bosses b INNER JOIN projects p ON p.id = b.project_id WHERE b.id='".$boss_id."'");
+        $bb_res = $conn->query("SELECT b.name, b.max_health, b.strength, b.tactics, b.size, b.extension, b.theme, b.collection_id, p.currency, p.name AS project_name FROM bosses b INNER JOIN projects p ON p.id = b.project_id WHERE b.id='".$boss_id."'");
         if ($bb_res && ($bb_row = $bb_res->fetch_assoc())) {
             $bb_slug       = strtolower(preg_replace(['/\s+/', '/\'/', '/[^a-z0-9\-]+/', '/-+/'], ['-', '', '-', '-'], $bb_row['name']));
             $bb_image_url  = "https://skulliance.io/staking/images/monstrocity/bosses/".$bb_slug.".".$bb_row['extension'];
             $bb_enc_res    = $conn->query("SELECT damage_dealt FROM encounters WHERE user_id='".$user_id."' AND boss_id='".$boss_id."' AND reward=0 ORDER BY id DESC LIMIT 1");
             $bb_dmg        = 0;
             if ($bb_enc_res && ($bb_enc = $bb_enc_res->fetch_assoc())) $bb_dmg = (int)$bb_enc['damage_dealt'];
+            // Player's NFT character from the boss's collection
+            $bb_char_icon  = "";
+            $bb_nft_res    = $conn->query("SELECT n.ipfs, n.collection_id FROM nfts n WHERE n.user_id='".$user_id."' AND n.collection_id='".$bb_row['collection_id']."' ORDER BY n.id DESC LIMIT 1");
+            if ($bb_nft_res && ($bb_nft = $bb_nft_res->fetch_assoc())) {
+                $bb_char_icon = getIPFS($bb_nft['ipfs'], $bb_nft['collection_id']);
+            }
             $bb_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
             $bb_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
             $bb_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
             $bb_avatar_url = ($bb_discord && $bb_avatar) ? "https://cdn.discordapp.com/avatars/".$bb_discord."/".$bb_avatar.".png" : "";
+            $bb_icon       = $bb_char_icon ?: $bb_avatar_url;
             $bb_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($bb_username);
             $bb_mention    = $bb_discord ? "<@".$bb_discord.">" : $bb_username;
             $bb_desc  = $bb_mention." **defeated ".$bb_row['name']."**!\n\n";
@@ -117,8 +124,8 @@ if ($conn->affected_rows > 0) {
             $bb_desc .= "⚔️ **Strength:** ".$bb_row['strength']."　🧠 **Tactics:** ".$bb_row['tactics']."　📐 **Size:** ".$bb_row['size']."\n";
             $bb_desc .= "💰 **Bounty:** ".number_format($bb_row['max_health'])." ".$bb_row['currency']."\n";
             $bb_desc .= "🎮 **Project:** ".$bb_row['project_name'];
-            $bb_author = array("name" => $bb_username, "icon_url" => $bb_avatar_url, "url" => $bb_profile);
-            discordmsg("🏆 Boss Defeated: ".$bb_row['name'], $bb_desc, $bb_image_url, "https://skulliance.io/staking/monstrocity.php", "bossbattles", $bb_avatar_url, "00C8A0", $bb_author);
+            $bb_author = array("name" => $bb_username, "icon_url" => $bb_icon, "url" => $bb_profile);
+            discordmsg("🏆 Boss Defeated: ".$bb_row['name'], $bb_desc, $bb_image_url, "https://skulliance.io/staking/monstrocity.php", "bossbattles", $bb_icon, "00C8A0", $bb_author);
         }
     }
 } else {
