@@ -870,22 +870,6 @@ function getQuests(projectID){
 }
 
 
-(function() {
-	function updateDailyCountdowns() {
-		document.querySelectorAll('.daily-countdown').forEach(function(el) {
-			var deadline = parseInt(el.getAttribute('data-deadline'), 10) * 1000;
-			var diff = Math.max(0, deadline - Date.now());
-			var h = Math.floor(diff / 3600000);
-			var m = Math.floor((diff % 3600000) / 60000);
-			var s = Math.floor((diff % 60000) / 1000);
-			var timer = el.querySelector('.cdtimer');
-			if (timer) timer.textContent = (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
-		});
-	}
-	setInterval(updateDailyCountdowns, 1000);
-	updateDailyCountdowns();
-})();
-
 function dailyReward(){
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);

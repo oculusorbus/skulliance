@@ -604,8 +604,8 @@ function getRewardTimeRemaining($conn){
 		$h = floor(($remaining % 86400) / 3600);
 		$m = floor(($remaining % 3600) / 60);
 		$s = $remaining % 60;
-		$hms = sprintf('%02d:%02d:%02d', $h, $m, $s);
-		return "<span class='daily-countdown' data-deadline='".$deadline."'>Next in <span class='cdtimer'>".$hms."</span></span>";
+		$initial = "0d {$h}h {$m}m {$s}s";
+		return "<span class='countdown' data-deadline='".$deadline."'>".$initial."</span>";
 	}else{
 		return "";
 	}
