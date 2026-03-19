@@ -6375,7 +6375,7 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 				}
 			}
 			$off_name     = getRealmName($conn);
-			$off_username = isset($_SESSION['userData']['username'])  ? $_SESSION['userData']['username']  : 'Unknown';
+			$off_username = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 			$off_discord  = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 			$off_avatar   = isset($_SESSION['userData']['avatar'])     ? $_SESSION['userData']['avatar']     : '';
 			$off_mention  = $off_discord ? "<@".$off_discord.">" : $off_username;
