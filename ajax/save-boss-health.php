@@ -120,7 +120,7 @@ if ($conn->affected_rows > 0) {
             $bb_desc  = $bb_mention." **defeated ".$bb_row['name']."**!\n\n";
             $bb_desc .= "💥 **Damage Dealt:** ".number_format($bb_dmg)."\n";
             $bb_desc .= "⚔️ **Strength:** ".$bb_row['strength']."　💨 **Speed:** ".$bb_row['speed']."　🧠 **Tactics:** ".$bb_row['tactics']."　📐 **Size:** ".$bb_row['size']."\n";
-            $bb_desc .= "✨ **Power-Up:** ".$bb_row['powerup']."\n";
+            $bb_desc .= "✨ **Power-Up:** ".ucwords($bb_row['powerup'])."\n";
             $bb_desc .= "💰 **Bounty:** ".number_format($bb_row['max_health'])." ".$bb_row['currency']."\n";
             $bb_desc .= "🎮 **Project:** ".$bb_row['project_name'];
             $bb_author = array("name" => $bb_username, "icon_url" => $bb_icon, "url" => $bb_profile);

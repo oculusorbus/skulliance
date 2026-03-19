@@ -121,7 +121,7 @@ if ($exists) {
                 $bbd_desc .= "💥 **Damage Dealt:** ".number_format($bbd_dmg_dealt)."\n";
                 $bbd_desc .= "🩸 **Damage Taken:** ".number_format($bbd_dmg_taken)."\n";
                 $bbd_desc .= "⚔️ **Strength:** ".$bbd_row['strength']."　💨 **Speed:** ".$bbd_row['speed']."　🧠 **Tactics:** ".$bbd_row['tactics']."　📐 **Size:** ".$bbd_row['size']."\n";
-                $bbd_desc .= "✨ **Power-Up:** ".$bbd_row['powerup']."\n";
+                $bbd_desc .= "✨ **Power-Up:** ".ucwords($bbd_row['powerup'])."\n";
                 $bbd_desc .= "💰 **Bounty:** ".number_format($bbd_row['max_health'])." ".$bbd_row['currency'];
                 $bbd_author = array("name" => $bbd_username, "icon_url" => $bbd_icon, "url" => $bbd_profile);
                 discordmsg("💀 Defeated by: ".$bbd_row['name'], $bbd_desc, $bbd_image_url, "https://skulliance.io/staking/monstrocity.php", "bossbattles", $bbd_icon, "FF4444", $bbd_author);
