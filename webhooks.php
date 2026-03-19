@@ -20,6 +20,10 @@ include('credentials/webhooks_credentials.php');
 			$webhook = getRealmsWebhook();
 		}else if($channel == "raids"){
 			$webhook = getRaidsWebhook();
+		}else if($channel == "dailyrewards"){
+			$webhook = getDailyRewardsWebhook();
+		}else if($channel == "missions"){
+			$webhook = getMissionsWebhook();
 		}else{
 			$webhook = getWebhook();
 		}

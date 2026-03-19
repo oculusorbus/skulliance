@@ -543,6 +543,30 @@ function getRandomReward($conn){
 		updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $project["amount"]);
 		logCredit($conn, $_SESSION['userData']['user_id'], $project["amount"], $project_id, $crafting=0, $bonus=1);
 		getDailyConsumable($conn, $current_streak);
+		// Webhook notification
+		$day_consumables = array(1=>7, 2=>4, 3=>5, 4=>3, 5=>2, 6=>6, 7=>1);
+		$con_id  = $day_consumables[$current_streak];
+		$con_res = $conn->query("SELECT name FROM consumables WHERE id='".$con_id."'");
+		$con_row = $con_res ? $con_res->fetch_assoc() : null;
+		$con_name = $con_row ? $con_row['name'] : '';
+		$total_res = $conn->query("SELECT COUNT(id) AS total FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus='1'");
+		$total_row = $total_res ? $total_res->fetch_assoc() : null;
+		$total_claims = $total_row ? (int)$total_row['total'] : 0;
+		$dr_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+		$dr_discord_id = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+		$dr_avatar     = isset($_SESSION['userData']['avatar'])     ? $_SESSION['userData']['avatar']     : '';
+		$dr_avatar_url = ($dr_discord_id && $dr_avatar) ? "https://cdn.discordapp.com/avatars/".$dr_discord_id."/".$dr_avatar.".png" : "";
+		$dr_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($dr_username);
+		$dr_mention    = $dr_discord_id ? "<@".$dr_discord_id.">" : $dr_username;
+		$streak_bar    = str_repeat("🔥", $current_streak).str_repeat("⬜", 7 - $current_streak);
+		$currency_icon = "https://skulliance.io/staking/icons/".strtolower(str_replace("$", "", $project['currency'])).".png";
+		$dr_desc  = $dr_mention." claimed their [daily reward](".$dr_profile.")!\n\n";
+		$dr_desc .= "📅 **Streak:** Day ".$current_streak." of 7　".$streak_bar."\n";
+		$dr_desc .= "💰 **Reward:** ".$project['amount']." ".$project['currency']."\n";
+		$dr_desc .= "🎁 **Bonus Item:** ".$con_name."\n";
+		$dr_desc .= "🏆 **Total Claims:** ".$total_claims;
+		$dr_author = array("name" => $dr_username." · Day ".$current_streak." of 7", "icon_url" => $dr_avatar_url, "url" => $dr_profile);
+		discordmsg("🌟 Daily Reward Claimed", $dr_desc, $currency_icon, "https://skulliance.io/staking", "dailyrewards", $dr_avatar_url, "FFD700", $dr_author);
 		return $project;
 	}
 }
