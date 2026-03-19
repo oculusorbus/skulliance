@@ -4302,7 +4302,6 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			$title = $last_month." Raids Leaderboard Results";
 			$imageurl = "";
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "raids");
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		echo "</table>";
 		if($fireworks){
@@ -4487,7 +4486,6 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$title = $last_month." Factions Leaderboard Results";
 			$imageurl = "";
 			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "realms");
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		echo "</table>";
 		if($fireworks){
@@ -6362,11 +6360,17 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 				}
 			}
 			$off_name = getRealmName($conn);
-			$def_res = $conn->query("SELECT name FROM realms WHERE id='".$defense_id."'");
-			$def_row = $def_res ? $def_res->fetch_assoc() : null;
-			$def_name = $def_row ? $def_row['name'] : 'Unknown Realm';
-			$discord_mention = isset($_SESSION['userData']['discord_id']) ? "<@".$_SESSION['userData']['discord_id'].">" : "A raider";
-			discordmsg("Raid Launched", $discord_mention." (**".$off_name."**) has launched a raid against **".$def_name."**", "", "https://skulliance.io/staking/realms.php", "raids");
+			$off_username = isset($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : 'Unknown';
+			$discord_mention = isset($_SESSION['userData']['discord_id']) ? "<@".$_SESSION['userData']['discord_id'].">" : $off_username;
+			$def_info_res = $conn->query("SELECT r.name, u.username FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
+			$def_info = $def_info_res ? $def_info_res->fetch_assoc() : null;
+			$def_name     = $def_info ? $def_info['name']     : 'Unknown Realm';
+			$def_username = $def_info ? $def_info['username'] : 'Unknown';
+			$raid_desc  = $discord_mention." has declared war!\n\n";
+			$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
+			$raid_desc .= "🛡️ **Target:** ".$def_username." — ".$def_name."\n";
+			$raid_desc .= "⏱️ **Duration:** ".$duration." day(s)";
+			discordmsg("⚔️ Raid Launched", $raid_desc, "", "https://skulliance.io/staking/realms.php", "raids", "", "FF6B35");
 			echo "<strong>Raid Started</strong>";
 		} else {
 			echo "Error: " . $conn->error;
@@ -7227,14 +7231,30 @@ function endRaid($conn, $raid_id){
 			consumeRandomRewards($conn, $defense_id, 'defense', $raid_id);
 		}
 	}
-	$off_res = $conn->query("SELECT name FROM realms WHERE id='".$offense_id."'");
-	$off_row = $off_res ? $off_res->fetch_assoc() : null;
-	$off_name = $off_row ? $off_row['name'] : 'Unknown Realm';
-	$def_res = $conn->query("SELECT name FROM realms WHERE id='".$defense_id."'");
-	$def_row = $def_res ? $def_res->fetch_assoc() : null;
-	$def_name = $def_row ? $def_row['name'] : 'Unknown Realm';
-	$outcome_text = ($outcome == 1) ? "Attacker Victory" : "Defender Victory";
-	discordmsg("Raid Concluded", "**".$off_name."** raided **".$def_name."** — ".$outcome_text, "", "https://skulliance.io/staking/realms.php", "raids");
+	$off_info_res = $conn->query("SELECT r.name, u.username FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$offense_id."'");
+	$off_info     = $off_info_res ? $off_info_res->fetch_assoc() : null;
+	$off_name     = $off_info ? $off_info['name']     : 'Unknown Realm';
+	$off_username = $off_info ? $off_info['username'] : 'Unknown';
+	$def_info_res = $conn->query("SELECT r.name, u.username FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
+	$def_info     = $def_info_res ? $def_info_res->fetch_assoc() : null;
+	$def_name     = $def_info ? $def_info['name']     : 'Unknown Realm';
+	$def_username = $def_info ? $def_info['username'] : 'Unknown';
+	if($outcome == 1){
+		$loot_res = $conn->query("SELECT rp.amount, p.currency FROM raids_projects rp INNER JOIN projects p ON p.id = rp.project_id WHERE rp.raid_id='".$raid_id."' ORDER BY rp.id DESC LIMIT 1");
+		$loot_row = $loot_res ? $loot_res->fetch_assoc() : null;
+		$loot_line = $loot_row ? "\n💰 **Looted:** ".number_format($loot_row['amount'])." ".$loot_row['currency'] : "";
+		$raid_desc  = "The battle is over — the attacker prevails!\n\n";
+		$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
+		$raid_desc .= "🛡️ **Defender:** ".$def_username." — ".$def_name;
+		$raid_desc .= $loot_line;
+		discordmsg("💀 Attacker Victory", $raid_desc, "", "https://skulliance.io/staking/realms.php", "raids", "", "00C8A0");
+	} else {
+		$raid_desc  = "The battle is over — the defender holds their ground!\n\n";
+		$raid_desc .= "⚔️ **Attacker:** ".$off_username." — ".$off_name."\n";
+		$raid_desc .= "🛡️ **Defender:** ".$def_username." — ".$def_name."\n";
+		$raid_desc .= "🏹 The attacker's forces were repelled and took damage.";
+		discordmsg("🛡️ Defense Holds", $raid_desc, "", "https://skulliance.io/staking/realms.php", "raids", "", "4A90D9");
+	}
 	return $outcome;
 }
 

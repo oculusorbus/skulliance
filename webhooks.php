@@ -3,7 +3,7 @@ include('credentials/webhooks_credentials.php');
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="") {
+    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000") {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -63,7 +63,7 @@ include('credentials/webhooks_credentials.php');
 		            "timestamp" => $timestamp,
 
 		            // Left border color, in HEX
-		            "color" => hexdec( "000000" ),
+		            "color" => hexdec( $color ?: "000000" ),
 
 		            // Footer text
 					/*
@@ -109,7 +109,6 @@ include('credentials/webhooks_credentials.php');
 		        ]
 		    ]
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-        $response = "";
         if($webhook != "") {
             $ch = curl_init( $webhook );
             curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -119,37 +118,7 @@ include('credentials/webhooks_credentials.php');
             curl_setopt( $ch, CURLOPT_HEADER, 0);
             curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
             $response = curl_exec( $ch );
-            echo $response;
-            error_log("[webhook] channel=".$channel." response=".$response);
             curl_close( $ch );
-        }
-
-        // Debug: mirror all specific-channel calls to notifications, including errors and empty webhook issues
-        if($channel != "") {
-            $notify_webhook = getWebhook();
-            $debug_status = ($webhook == "") ? "**webhook empty/missing**" : ($response ? "**Discord error:** ".$response : "sent OK");
-            $debug_msg = json_encode([
-                "username"   => "Skull Bot",
-                "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
-                "tts"        => false,
-                "embeds"     => [[
-                    "title"       => "[debug:".$channel."] ".$title,
-                    "type"        => "rich",
-                    "description" => $description."\n\n".$debug_status,
-                    "url"         => $url,
-                    "timestamp"   => $timestamp,
-                    "color"       => hexdec("000000"),
-                ]]
-            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            $ch2 = curl_init($notify_webhook);
-            curl_setopt($ch2, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-            curl_setopt($ch2, CURLOPT_POST, 1);
-            curl_setopt($ch2, CURLOPT_POSTFIELDS, $debug_msg);
-            curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch2, CURLOPT_HEADER, 0);
-            curl_setopt($ch2, CURLOPT_RETURNTRANSFER, 1);
-            curl_exec($ch2);
-            curl_close($ch2);
         }
     }
  
