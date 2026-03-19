@@ -121,6 +121,7 @@ include('credentials/webhooks_credentials.php');
             $response = curl_exec( $ch );
             // If you need to debug, or find out why you can't send message uncomment line below, and execute script.
             echo $response;
+            error_log("[webhook] channel=".$channel." response=".$response);
             curl_close( $ch );
         }
     }
