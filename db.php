@@ -6462,9 +6462,9 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$hours_remaining = floor(($remaining % 86400) / 3600);
 				$minutes_remaining = floor(($remaining % 3600) / 60);
 				if($date > time()){
-					$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+					$time_message = "<span class='countdown' data-deadline='".$date."'>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m 0s</span>";
 					$status = "In Progress";
-					
+
 					// Get raid faction realm ID
 					$defense_id = getRaidRealmID($conn, $row['raid_id'], "defense");
 					$offense_id = getRaidRealmID($conn, $row['raid_id'], "offense");
@@ -6517,7 +6517,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 						$defense_results .= "</div>";
 					}
 				}else{
-					$time_message = "0d 0h 0m";
+					$time_message = "0d 0h 0m 0s";
 					$status = "Completed";
 					if($row["outcome"] == 0){
 						$outcome = endRaid($conn, $row['raid_id']);
