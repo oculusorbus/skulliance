@@ -6390,8 +6390,14 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 			$con_names_res = $conn->query("SELECT id, name FROM consumables");
 			$con_names = array();
 			if($con_names_res) while($r = $con_names_res->fetch_assoc()) $con_names[$r['id']] = $r['name'];
+			$success_boost_map = array(1 => 4, 2 => 3, 3 => 2, 4 => 1);
+			$total_success_boost = 0;
 			$items_used = array();
-			foreach($consumable_ids as $cid){ if(isset($con_names[$cid])) $items_used[] = $con_names[$cid]; }
+			foreach($consumable_ids as $cid){
+				if(isset($success_boost_map[$cid])) $total_success_boost += $success_boost_map[$cid];
+				elseif(isset($con_names[$cid])) $items_used[] = $con_names[$cid];
+			}
+			if($total_success_boost > 0) array_unshift($items_used, "+".$total_success_boost."% Success");
 			$items_line = !empty($items_used) ? "\n🧪 **Items:** ".implode(" · ", $items_used) : "";
 			// Build notification
 			$dur_res = $conn->query("SELECT duration FROM raids WHERE id='".$raid_id."'");
@@ -7287,9 +7293,15 @@ function endRaid($conn, $raid_id){
 	$off_image_url  = $off_theme_id ? "https://skulliance.io/staking/images/themes/".$off_theme_id.".jpg" : "";
 	$def_image_url  = $def_theme_id ? "https://skulliance.io/staking/images/themes/".$def_theme_id.".jpg" : "";
 	// Consumables used in this raid
-	$con_used_res = $conn->query("SELECT c.name FROM raids_consumables rc INNER JOIN consumables c ON c.id = rc.consumable_id WHERE rc.raid_id='".$raid_id."'");
+	$con_used_res = $conn->query("SELECT rc.consumable_id, c.name FROM raids_consumables rc INNER JOIN consumables c ON c.id = rc.consumable_id WHERE rc.raid_id='".$raid_id."'");
+	$success_boost_map = array(1 => 4, 2 => 3, 3 => 2, 4 => 1);
+	$total_success_boost = 0;
 	$con_used = array();
-	if($con_used_res) while($r = $con_used_res->fetch_assoc()) $con_used[] = $r['name'];
+	if($con_used_res) while($r = $con_used_res->fetch_assoc()){
+		if(isset($success_boost_map[$r['consumable_id']])) $total_success_boost += $success_boost_map[$r['consumable_id']];
+		else $con_used[] = $r['name'];
+	}
+	if($total_success_boost > 0) array_unshift($con_used, "+".$total_success_boost."% Success");
 	$items_line = !empty($con_used) ? "\n🧪 **Items used:** ".implode(" · ", $con_used) : "";
 	if($outcome == 1){
 		$loot_res = $conn->query("SELECT rp.amount, p.currency FROM raids_projects rp INNER JOIN projects p ON p.id = rp.project_id WHERE rp.raid_id='".$raid_id."' ORDER BY rp.id DESC LIMIT 1");
