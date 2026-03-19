@@ -36,8 +36,17 @@ if (isset($_SESSION['userData']['user_id']) && isset($data['score']) && isset($d
     $mn_opp_slug   = strtolower(str_replace(' ', '-', $mn_opponent));
     $mn_image_url  = "https://skulliance.io/staking/images/monstrocity/".$mn_theme."/".$mn_opp_slug.".png";
     // Player's selected character image (passed from game client)
-    $mn_char_url = isset($data['characterImageUrl']) ? filter_var(trim($data['characterImageUrl']), FILTER_VALIDATE_URL) : false;
-    $mn_icon     = $mn_char_url ?: $mn_avatar_url;
+    $mn_char_raw = isset($data['characterImageUrl']) ? trim($data['characterImageUrl']) : '';
+    if ($mn_char_raw !== '') {
+      // Prepend base URL if relative path (non-NFT themes use local images)
+      if (strpos($mn_char_raw, 'http') !== 0) {
+        $mn_char_raw = "https://skulliance.io/staking/" . ltrim($mn_char_raw, '/');
+      }
+      $mn_char_url = filter_var($mn_char_raw, FILTER_VALIDATE_URL) ?: false;
+    } else {
+      $mn_char_url = false;
+    }
+    $mn_icon = $mn_char_url ?: $mn_avatar_url;
     $mn_author = array("name" => $mn_username, "icon_url" => $mn_icon, "url" => $mn_profile);
 
     if ($outcome !== 'loss') {

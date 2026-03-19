@@ -4473,7 +4473,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      outcome: 'loss',
 	                      opponentName: (typeof opponentsConfig !== 'undefined' && opponentsConfig[this.currentLevel - 1]) ? opponentsConfig[this.currentLevel - 1].name : '',
 	                      theme: this.theme || 'monstrocity',
-	                      characterImageUrl: this.selectedCharacter?.imageUrl || ''
+	                      characterImageUrl: (this.selectedCharacter || this.player1)?.imageUrl || ''
 	                  })
 	              }).catch(() => {});
 	          }
@@ -4660,7 +4660,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      outcome: 'win',
 	      opponentName: (typeof opponentsConfig !== 'undefined' && opponentsConfig[completedLevel - 1]) ? opponentsConfig[completedLevel - 1].name : '',
 	      theme: this.theme || 'monstrocity',
-	      characterImageUrl: this.selectedCharacter?.imageUrl || ''
+	      characterImageUrl: (this.selectedCharacter || this.player1)?.imageUrl || ''
 	    };
 	    console.log(`Saving score: level=${data.level}, score=${data.score}`);
 	    try {
