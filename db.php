@@ -6546,22 +6546,22 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					};
 					// Offense Success
 					if($outcome == 1){
-						$offense_results = "<strong>Success</strong><br>";
+						$offense_results = "<strong style='color:#00c8a0'>Success</strong><br>";
 						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
 						if($_has_dr) $offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'><span class='loc-status-tag'>Double Rewards (1000 cap)</span></div>";
 						if($_has_rr) $offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'><span class='loc-status-tag'>Random Reward</span></div>";
 						$offense_results .= $_build_burned_tags(array(1,2,4,6));
-						$defense_results = "<strong>Failure</strong><br>";
+						$defense_results = "<strong style='color:#ff5c5c'>Failure</strong><br>";
 						$defense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= $_build_burned_tags(array(3,5,7));
 					}
 					// Defense Success
 					else if($outcome == 2){
-						$offense_results = "<strong>Failure</strong><br>";
+						$offense_results = "<strong style='color:#ff5c5c'>Failure</strong><br>";
 						$offense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
 						$offense_results .= $_build_burned_tags(array(1,2,4,6));
-						$defense_results = "<strong>Success</strong><br>";
+						$defense_results = "<strong style='color:#00c8a0'>Success</strong><br>";
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= $_build_burned_tags(array(3,5,7));
 					}
