@@ -1489,6 +1489,22 @@ window.onclick = function(event) {
   }
 };
 
+// Daily reward countdown — no days, just Xh Xm Xs
+(function() {
+	function tickDaily() {
+		var now = Math.floor(Date.now() / 1000);
+		document.querySelectorAll('.daily-reward-countdown[data-deadline]').forEach(function(el) {
+			var rem = Math.max(0, parseInt(el.getAttribute('data-deadline'), 10) - now);
+			var h = Math.floor(rem / 3600);
+			var m = Math.floor((rem % 3600) / 60);
+			var s = rem % 60;
+			el.textContent = h + 'h ' + m + 'm ' + s + 's';
+		});
+	}
+	setInterval(tickDaily, 1000);
+	tickDaily();
+}());
+
 // Real-time countdown ticker — updates all .countdown[data-deadline] spans every second
 (function() {
   function tick() {

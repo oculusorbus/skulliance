@@ -604,8 +604,8 @@ function getRewardTimeRemaining($conn){
 		$h = floor(($remaining % 86400) / 3600);
 		$m = floor(($remaining % 3600) / 60);
 		$s = $remaining % 60;
-		$initial = "0d {$h}h {$m}m {$s}s";
-		return "<span class='countdown' data-deadline='".$deadline."'>".$initial."</span>";
+		$initial = "{$h}h {$m}m {$s}s";
+		return "Next Reward in <span class='daily-reward-countdown' data-deadline='".$deadline."'>".$initial."</span>";
 	}else{
 		return "";
 	}
