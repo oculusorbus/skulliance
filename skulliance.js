@@ -1524,7 +1524,7 @@ window.onclick = function(event) {
       rankCell.innerHTML = '<span style="font-size:9px;opacity:0.55;display:block;letter-spacing:0.5px">YOU</span>' + rankCell.innerHTML;
     }
     var headerRow = table.querySelector('tr');
-    if (headerRow) table.insertBefore(pinned, headerRow.nextSibling);
+    if (headerRow) headerRow.parentNode.insertBefore(pinned, headerRow.nextSibling);
   });
 })();
 
