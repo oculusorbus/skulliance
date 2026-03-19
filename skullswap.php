@@ -1067,9 +1067,19 @@ include 'header.php';
          if (matchResult.hasMatches) {
              const { matches, bombType, bombX, bombY } = matchResult;
              if (matches.size >= 3) {
-                 const firstTile = this.board[bombY][bombX];
-                 if (firstTile && firstTile.special) {
-                     this.handleBombMatches(matches, firstTile.special, bombX, bombY);
+                 // Scan all matched tiles for an existing bomb — prefer diamond over carbon
+                 let bombTile = null, bombTileX, bombTileY;
+                 for (const pos of matches) {
+                     const [px, py] = pos.split(',').map(Number);
+                     const tile = this.board[py][px];
+                     if (tile && tile.special) {
+                         if (!bombTile || tile.special === 'diamond') {
+                             bombTile = tile; bombTileX = px; bombTileY = py;
+                         }
+                     }
+                 }
+                 if (bombTile) {
+                     this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY);
                  } else {
                      this.handleMatches(matches, bombType, bombX, bombY);
                  }
