@@ -253,7 +253,7 @@ if(isset($_POST['item_id'])) {
 					$title = $item["name"]." Purchased";
 					$description = $item["name"]." purchased for ".number_format($price)." $".$item["currency"]." by "."<@".getDiscordID($conn).">";
 					$imageurl = $item["image_url"];
-					discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+					discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "store");
 					if($item["override"] == "0"){
 						$discord_id = $project["discord_id"];
 					}else{
@@ -357,7 +357,7 @@ if(isset($_POST['name'])){
 		$project = getProjectInfo($conn, $_POST['project_id']);
 		$description = $_POST['name']." listed for ".number_format($_POST['price'])." $".$project["currency"]." by "."<@".getDiscordID($conn).">"."\r\nQuantity: ".$_POST['quantity'];
 		$imageurl = $_POST['image_url'];
-		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+		discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "store");
 	}else{
 		alert("Please fill out all the fields in the item submission form.");
 	}

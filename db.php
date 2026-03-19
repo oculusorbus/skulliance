@@ -2780,7 +2780,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 	}
 	// Defaulting to IPFS even though it doesn't work for animated GIFs
 	$imageurl = getIPFS($nft_image, $collection_id);
-	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
+	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "delegations");
 }
 
 // Get total delegations for Diamond Skulls

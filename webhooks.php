@@ -30,6 +30,10 @@ include('credentials/webhooks_credentials.php');
 			$webhook = getMonstrocityWebhook();
 		}else if($channel == "bossbattles"){
 			$webhook = getBossBattlesWebhook();
+		}else if($channel == "store"){
+			$webhook = getStoreWebhook();
+		}else if($channel == "delegations"){
+			$webhook = getDelegationsWebhook();
 		}else{
 			$webhook = getWebhook();
 		}
