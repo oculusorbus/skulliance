@@ -1487,7 +1487,7 @@ window.onclick = function(event) {
   if (infoModal && event.target == infoModal) {
     closeInventoryInfoModal();
   }
-}
+};
 
 // Real-time countdown ticker — updates all .countdown[data-deadline] spans every second
 (function() {
