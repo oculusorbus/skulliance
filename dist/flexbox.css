@@ -2518,6 +2518,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Outcome badge (completed) */
 .rc-outcome-badge {
     flex-shrink: 0;
+    margin-left: auto;
     padding: 5px 14px;
     border-radius: 20px;
     font-weight: 700;
