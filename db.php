@@ -6285,10 +6285,8 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "</div>"; // rtc-action
 				$output[$key] .= "</div>"; // raid-target-card
 				if($unset && $group == "Eligible"){
-				if($unset && $group == "Eligible"){
 					unset($output[$key]);
 				}
-			}
 			
 			if($sort == "random"){
 				// Do nothing
