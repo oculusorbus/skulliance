@@ -2542,6 +2542,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .rtc-loc-name { color: #7a9eb0; }
 .rtc-loc-shielded .rtc-loc-name { color: #f5a623; }
 .rtc-shield-badge { font-size: 0.68rem; line-height: 1; margin-left: 1px; }
+.rtc-loc-boost { font-size: 0.62rem; font-weight: bold; color: #e05252; margin-left: 2px; opacity: 0.9; }
 
 /* Wealth */
 .rtc-wealth {

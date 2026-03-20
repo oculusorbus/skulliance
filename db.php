@@ -5614,15 +5614,22 @@ function getRealmLocationLevels($conn){
 function getRealmLocationsWithShields($conn, $realm_id){
 	$sql = "SELECT l.name, rl.location_id, rl.id AS rl_id, rl.level, l.type AS location_type FROM realms_locations rl INNER JOIN locations l ON l.id = rl.location_id WHERE rl.realm_id = '".$realm_id."' ORDER BY l.type DESC, l.id ASC";
 	$result = $conn->query($sql);
+	$_boost_map = array(1=>4, 2=>3, 3=>2, 4=>1);
 	$locations = array();
 	if($result) while($row = $result->fetch_assoc()){
 		$shield_res = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$row['rl_id']."' AND consumable_id='6' AND raid_id='0' LIMIT 1");
+		$boost_res  = $conn->query("SELECT consumable_id FROM realms_locations_consumables WHERE realm_location_id='".$row['rl_id']."' AND consumable_id IN (1,2,3,4) AND raid_id='0'");
+		$_loc_boost = 0;
+		if($boost_res && $boost_res->num_rows > 0){
+			while($br = $boost_res->fetch_assoc()) $_loc_boost += $_boost_map[intval($br['consumable_id'])];
+		}
 		$locations[] = array(
 			'name'          => $row['name'],
 			'location_id'   => $row['location_id'],
 			'level'         => $row['level'],
 			'location_type' => $row['location_type'],
 			'has_shield'    => ($shield_res && $shield_res->num_rows > 0),
+			'success_boost' => min(10, $_loc_boost),
 		);
 	}
 	return $locations;
@@ -6218,6 +6225,7 @@ function getRealms($conn, $sort, $group){
 						$output[$key] .= "<span class='rtc-loc-level'>".$_loc['level']."</span>";
 						$output[$key] .= "<span class='rtc-loc-name'>".ucfirst($_loc['name'])."</span>";
 						if($_loc['has_shield']) $output[$key] .= "<span class='rtc-shield-badge' title='Shielded'>&#x1F6E1;</span>";
+						if($_loc['location_type'] == 'defense' && $_loc['success_boost'] > 0) $output[$key] .= "<span class='rtc-loc-boost' title='Success chance boost'>+".$_loc['success_boost']."%</span>";
 						$output[$key] .= "</div>";
 					}
 					$output[$key] .= "</div>";
