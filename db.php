@@ -6718,7 +6718,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			$final_output .= "<div class='rc-section-title' onclick='toggleRaids(this.querySelector(\".raid-arrow-icon\"), \"" . $type . "\", \"" . $status . "\")'>"
 				. "<span class='rc-section-label'>" . ucfirst($type) . " " . ucfirst($status) . "</span>"
 				. "<img class='raid-arrow-icon' id='" . $arrow . "' src='icons/" . $arrow . ".png'>"
-				. "</div>";
+				. "<span class='rc-section-label'>" . strtoupper($type) . " " . strtoupper($status) . "</span>"
 			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container" style="display:'.$display.'">';
 			$status = "";
 			$final_output .= "<div class='rc-list'>";
