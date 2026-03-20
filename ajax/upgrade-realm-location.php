@@ -1,5 +1,6 @@
 <?php
 include '../db.php';
+include '../webhooks.php';
 include '../skulliance.php';
 
 if(isset($_GET['realm_id']) && isset($_GET['location_id']) && isset($_GET['duration']) && isset($_GET['cost']) && isset($_GET['project_id'])){
