@@ -6287,7 +6287,7 @@ function getRealms($conn, $sort, $group){
 				if($unset && $group == "Eligible"){
 					unset($output[$key]);
 				}
-			
+			} // end while fetch_assoc
 			if($sort == "random"){
 				// Do nothing
 			}else if($sort == "weakness"){
