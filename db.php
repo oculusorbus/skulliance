@@ -6718,9 +6718,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			$final_output .= "<h2 class='raid-title'>".ucfirst($type)." ".ucfirst($status)."&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleRaids(this, \"".$type."\", \"".$status."\")'/></h2>";
 			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container" style="display:'.$display.'">';
 			$status = "";
-			$final_output .= "<table id='transactions'>";
-			$final_output .=  "<th width='6%'>Icon</th><th width='20%' align='left'>Realm</th><th width='6%'>Avatar</th><th width='20%' align='left'>Username</th><th width='12%' align='left'>Time Left</th><th width='12%' align='left'>".$results1." Results</th></th><th width='12%' align='left'>".$results2." Results</th>";
-			if($type == 'outgoing') $final_output .= "<th width='8%'></th>";
+			$final_output .= "<div class='rc-list'>";
 			$rows = array();
 			while($row = $result->fetch_assoc()) {
 				$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
