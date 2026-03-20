@@ -2052,6 +2052,34 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Raids pane containers: rc-cards handle their own spacing, strip wrapper padding */
 .content.raids { padding: 0; background: transparent; border: none; overflow-x: hidden; }
 
+/* Raid section toggle header */
+.rc-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 10px 4px;
+    border-bottom: 1px solid rgba(0,200,160,0.1);
+    margin-bottom: 10px;
+    user-select: none;
+    transition: opacity 0.15s;
+}
+.rc-section-title:hover { opacity: 0.8; }
+.rc-section-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+.raid-arrow-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+    cursor: pointer;
+    padding: 0 !important;
+}
+
 /* ── Side panel subtle separation ──────────────────────────────────────── */
 .side { border-right: 1px solid rgba(0,200,160,0.07); }
 
