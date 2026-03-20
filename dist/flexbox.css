@@ -2395,6 +2395,163 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     transition: color 0.15s;
 }
 .raid-modal-close:hover { color: #fff; }
+
+/* ── Raid Status Cards (outgoing/incoming pending/completed) ── */
+.rc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.rc-card {
+    background: #0d2333;
+    border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 10px;
+    overflow: hidden;
+}
+/* Progress bar */
+.rc-progress-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+}
+.rc-progress-fill {
+    height: 100%;
+    background: #00c8a0;
+    min-width: 2px;
+}
+/* Header */
+.rc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.rc-theme-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.rc-card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.rc-realm-name {
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rc-user-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: #7a9eb0;
+    font-size: 0.8rem;
+}
+.rc-user-row:hover { color: #00c8a0; }
+.rc-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+/* Countdown (pending) */
+.rc-countdown-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    gap: 2px;
+}
+.rc-countdown-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.45;
+    color: #7a9eb0;
+}
+.rc-countdown-block .countdown {
+    font-size: 0.8rem;
+    color: #00c8a0;
+    font-weight: 600;
+    white-space: nowrap;
+}
+/* Outcome badge (completed) */
+.rc-outcome-badge {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+}
+.rc-victory {
+    color: #00c8a0;
+    background: rgba(0,200,160,0.12);
+    border: 1px solid rgba(0,200,160,0.3);
+}
+.rc-defeat {
+    color: #ff5c5c;
+    background: rgba(255,92,92,0.1);
+    border: 1px solid rgba(255,92,92,0.28);
+}
+/* Card body: two columns */
+.rc-card-body {
+    display: flex;
+}
+.rc-col {
+    flex: 1;
+    padding: 12px 14px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    min-width: 0;
+}
+.rc-col:last-child { border-right: none; }
+.rc-col-label {
+    display: block;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #7a9eb0;
+    margin-bottom: 6px;
+}
+.rc-col-content {
+    font-size: 0.84rem;
+    color: #c8dce8;
+    line-height: 1.5;
+}
+.rc-col-content strong { font-size: 0.9rem; }
+/* Action row (retreat button) */
+.rc-action-row {
+    padding: 8px 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    justify-content: flex-end;
+}
+/* History link */
+.rc-history-link {
+    padding: 4px 2px 10px;
+    font-size: 0.82rem;
+}
+.rc-history-link a { color: #7a9eb0; text-decoration: none; }
+.rc-history-link a:hover { color: #00c8a0; }
+/* Mobile: stack columns */
+@media (max-width: 500px) {
+    .rc-card-body { flex-direction: column; }
+    .rc-col { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .rc-col:last-child { border-bottom: none; }
+    .rc-card-header { gap: 10px; }
+    .rc-theme-img { width: 40px; height: 40px; }
+}
+
 .raid-modal-footer {
     display: flex;
     flex-wrap: wrap;

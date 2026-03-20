@@ -6838,47 +6838,59 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				}else{
 					$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["raid_id"];
 				}
-				$rows[$decimal] = "";
-				$rows[$decimal] .= "<tr id='raid-row-".$row['raid_id']."'>";
-				$rows[$decimal] .= "<td valign='top'>";
-				$rows[$decimal] .= "<img style='width:50px;padding-top:10px;' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg' class='icon'/>";
-				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td valign='top' align='left'><br>";
-				$rows[$decimal] .= $row["realm_name"];
-				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td valign='top'>";
-				$rows[$decimal] .= "<img style='width:50px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/>";
-				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td valign='top' align='left'><br>";
-				$rows[$decimal] .= $row["username"];
-				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td valign='top' align='left'><br>";
-				$rows[$decimal] .= $time_message;
-				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "<td valign='top' align='left'><br>";
-				$rows[$decimal] .= $offense_results;
-				$rows[$decimal] .= "<br></td>";
-				$rows[$decimal] .= "<td valign='top' align='left'><br>";
-				$rows[$decimal] .= $defense_results;
-				$rows[$decimal] .= "<br><br></td>";
-				if($type == 'outgoing' && $date > time()){
-					$rows[$decimal] .= "<td valign='middle' align='center'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></td>";
-				}else if($type == 'outgoing'){
-					$rows[$decimal] .= "<td></td>";
-				}
-				$rows[$decimal] .= "</tr>";
-				$rows[$decimal] .= "<tr id='raid-progress-".$row["raid_id"]."'>";
-				$rows[$decimal] .= "<td colspan='7' style='padding:0px;'>";
-				$rows[$decimal] .= "<div class='w3-border'>";
+				// Compute progress percentage
 				if($status == "Completed"){
-					$percentage = 100;
+					$_rc_pct = 100;
 				}else{
-					$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
+					$_rc_pct = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 				}
-				$rows[$decimal] .= "<div class='w3-grey' style='width:".$percentage."%;opacity:0.3;'></div>";
+				// Outcome badge for completed cards
+				$_rc_outcome_class = '';
+				$_rc_outcome_badge = '';
+				if($status == "Completed"){
+					if($outcome == 1){
+						$_rc_outcome_class = ($type == 'outgoing') ? 'rc-victory' : 'rc-defeat';
+						$_rc_outcome_badge = ($type == 'outgoing') ? 'Victory' : 'Defeat';
+					}else{
+						$_rc_outcome_class = ($type == 'outgoing') ? 'rc-defeat' : 'rc-victory';
+						$_rc_outcome_badge = ($type == 'outgoing') ? 'Defeat' : 'Victory';
+					}
+				}
+				$rows[$decimal] = "";
+				$rows[$decimal] .= "<div class='rc-card' id='raid-row-".$row['raid_id']."'>";
+				// Progress bar
+				$rows[$decimal] .= "<div class='rc-progress-bar'><div class='rc-progress-fill' style='width:".$_rc_pct."%'></div></div>";
+				// Header
+				$rows[$decimal] .= "<div class='rc-card-header'>";
+				$rows[$decimal] .= "<img class='rc-theme-img' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg'>";
+				$rows[$decimal] .= "<div class='rc-card-info'>";
+				$rows[$decimal] .= "<span class='rc-realm-name'>".ucfirst($row['realm_name'])."</span>";
+				$rows[$decimal] .= "<a href='/staking/profile.php?username=".urlencode($row['username'])."'  class='rc-user-row'>";
+				if($row["avatar"] != "") $rows[$decimal] .= "<img class='rc-avatar' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg'>";
+				$rows[$decimal] .= "<span class='rc-username'>".$row['username']."</span></a>";
 				$rows[$decimal] .= "</div>";
-				$rows[$decimal] .= "</td>";
-				$rows[$decimal] .= "</tr>";
+				if($status == "Completed"){
+					$rows[$decimal] .= "<div class='rc-outcome-badge ".$_rc_outcome_class."'>".$_rc_outcome_badge."</div>";
+				}else{
+					$rows[$decimal] .= "<div class='rc-countdown-block'><span class='rc-countdown-label'>Time Left</span>".$time_message."</div>";
+				}
+				$rows[$decimal] .= "</div>"; // rc-card-header
+				// Body: two result columns
+				$rows[$decimal] .= "<div class='rc-card-body'>";
+				$rows[$decimal] .= "<div class='rc-col'>";
+				$rows[$decimal] .= "<span class='rc-col-label'>".$results1." Results</span>";
+				$rows[$decimal] .= "<div class='rc-col-content'>".$offense_results."</div>";
+				$rows[$decimal] .= "</div>";
+				$rows[$decimal] .= "<div class='rc-col'>";
+				$rows[$decimal] .= "<span class='rc-col-label'>".$results2." Results</span>";
+				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
+				$rows[$decimal] .= "</div>";
+				$rows[$decimal] .= "</div>"; // rc-card-body
+				// Retreat button (outgoing pending only)
+				if($type == 'outgoing' && $date > time()){
+					$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
+				}
+				$rows[$decimal] .= "</div>"; // rc-card
 			}
 			ksort($rows);
 			if(strtolower($status) == "completed"){
@@ -6887,9 +6899,9 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			foreach($rows AS $duration => $output){
 			    $final_output .= $output;
 			}
-			$final_output .= "</table>";
+			$final_output .= "</div>"; // rc-list
 			if(!$history && $status == "Completed"){
-				$final_output .= "<a href='raids.php'>View ".ucfirst($type)." Raids History</a>";
+				$final_output .= "<div class='rc-history-link'><a href='raids.php'>View ".ucfirst($type)." Raid History</a></div>";
 			}
 			$final_output .= "</div>";
 			return $final_output;
