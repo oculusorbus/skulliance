@@ -5684,16 +5684,17 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, 
 		    $ug_cons_res   = $conn->query("SELECT c.name FROM consumables c INNER JOIN realms_locations_consumables rlc ON rlc.consumable_id=c.id INNER JOIN realms_locations rl ON rl.id=rlc.realm_location_id WHERE rl.realm_id='".$realm_id."' AND rl.location_id='".$location_id."' AND rlc.raid_id=0");
 		    $ug_cons = [];
 		    if ($ug_cons_res) { while ($cr = $ug_cons_res->fetch_assoc()) $ug_cons[] = $cr['name']; }
-		    $ug_desc  = $ug_mention." initiated a **Level ".$duration."** upgrade on **".$ug_row['loc_name']."** in **".$ug_row['realm_name']."**!\n\n";
+		    $ug_loc_name = ucwords($ug_row['loc_name']);
+		    $ug_desc  = $ug_mention." initiated a **Level ".$duration."** upgrade on **".$ug_loc_name."** in **".$ug_row['realm_name']."**!\n\n";
 		    $ug_desc .= "🏰 **Realm:** ".$ug_row['realm_name']."\n";
-		    $ug_desc .= "📍 **Location:** ".$ug_row['loc_name']." (".ucfirst($ug_row['loc_type']).")\n";
+		    $ug_desc .= "📍 **Location:** ".$ug_loc_name." (".ucfirst($ug_row['loc_type']).")\n";
 		    $ug_desc .= "⬆️ **Target Level:** ".$duration."\n";
 		    $ug_desc .= "⏱️ **Duration:** ".$timer." ".($timer==1?"day":"days");
 		    if ($timer < $duration) $ug_desc .= " *(Fast Forward applied)*";
 		    $ug_desc .= "\n💰 **Cost:** ".number_format($cost)." ".$ug_row['currency'];
 		    if (!empty($ug_cons)) $ug_desc .= "\n🎒 **Items:** ".implode(", ", $ug_cons);
 		    $ug_author = array("name" => $ug_username, "icon_url" => $ug_loc_icon, "url" => $ug_profile);
-		    discordmsg("🔨 Upgrade Started: ".$ug_row['loc_name'], $ug_desc, $ug_realm_img, "https://skulliance.io/staking/realms.php", "realms", $ug_loc_icon, "FF9900", $ug_author);
+		    discordmsg("🔨 Upgrade Started: ".$ug_loc_name, $ug_desc, $ug_realm_img, "https://skulliance.io/staking/realms.php", "realms", $ug_loc_icon, "FF9900", $ug_author);
 		  }
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
@@ -5777,13 +5778,14 @@ function getRealmLocationsUpgrades($conn){
 					  $uc_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($uc_username);
 					  $uc_loc_icon   = "https://skulliance.io/staking/icons/locations/".$uc_row['loc_name'].".png";
 					  $uc_realm_img  = "https://skulliance.io/staking/images/themes/".$uc_row['theme_id'].".jpg";
-					  $uc_desc  = $uc_mention."'s **".$uc_row['loc_name']."** in **".$uc_row['realm_name']."** has reached **Level ".$target_level."**!\n\n";
+					  $uc_loc_name = ucwords($uc_row['loc_name']);
+					  $uc_desc  = $uc_mention."'s **".$uc_loc_name."** in **".$uc_row['realm_name']."** has reached **Level ".$target_level."**!\n\n";
 					  $uc_desc .= "🏰 **Realm:** ".$uc_row['realm_name']."\n";
-					  $uc_desc .= "📍 **Location:** ".$uc_row['loc_name']." (".ucfirst($uc_row['loc_type']).") \n";
+					  $uc_desc .= "📍 **Location:** ".$uc_loc_name." (".ucfirst($uc_row['loc_type']).") \n";
 					  $uc_desc .= "⬆️ **New Level:** ".$target_level."\n";
 					  $uc_desc .= "⏱️ **Duration:** ".$row['duration']." ".($row['duration']==1?"day":"days");
 					  $uc_author = array("name" => $uc_username, "icon_url" => $uc_loc_icon, "url" => $uc_profile);
-					  discordmsg("✅ Upgrade Complete: ".$uc_row['loc_name'], $uc_desc, $uc_realm_img, "https://skulliance.io/staking/realms.php", "realms", $uc_loc_icon, "00C8A0", $uc_author);
+					  discordmsg("✅ Upgrade Complete: ".$uc_loc_name, $uc_desc, $uc_realm_img, "https://skulliance.io/staking/realms.php", "realms", $uc_loc_icon, "00C8A0", $uc_author);
 					}
 				}
 			}
