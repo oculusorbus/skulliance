@@ -2072,12 +2072,13 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     letter-spacing: 0.02em;
 }
 .raid-arrow-icon {
-    width: 18px;
-    height: 18px;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-    cursor: pointer;
-    padding: 0 !important;
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    display: block;
 }
 
 /* ── Side panel subtle separation ──────────────────────────────────────── */
