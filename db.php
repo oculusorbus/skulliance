@@ -6215,20 +6215,42 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "<div class='rtc-stat rtc-stat-success'><span class='rtc-stat-label'>Success</span><span class='rtc-stat-value' id='raid-success-".$row['realm_id']."' data-offense-pct='".round($offense_threshold,4)."' data-defender-boost='".$defender_loc_boost."' data-attacker-loc-boost='".$attacker_loc_boost."'>".round($init_adj_win)."%</span></div>";
 				$output[$key] .= "</div></div></div>";
 
-				// Locations with shield indicators
+				// Locations grouped by category with per-category avg success boost
 				$_locs = getRealmLocationsWithShields($conn, $row['realm_id']);
 				if(!empty($_locs)){
-					$output[$key] .= "<div class='rtc-locations'>";
+					// Group by location_type
+					$_by_type = array();
 					foreach($_locs as $_loc){
-						$_sc = $_loc['has_shield'] ? ' rtc-loc-shielded' : '';
-						$output[$key] .= "<div class='rtc-loc-pill".$_sc."'>";
-						$output[$key] .= "<span class='rtc-loc-level'>".$_loc['level']."</span>";
-						$output[$key] .= "<span class='rtc-loc-name'>".ucfirst($_loc['name'])."</span>";
-						if($_loc['has_shield']) $output[$key] .= "<span class='rtc-shield-badge' title='Shielded'>&#x1F6E1;</span>";
-						if($_loc['location_type'] == 'defense' && $_loc['success_boost'] > 0) $output[$key] .= "<span class='rtc-loc-boost' title='Success chance boost'>+".$_loc['success_boost']."%</span>";
-						$output[$key] .= "</div>";
+						$_by_type[$_loc['location_type']][] = $_loc;
 					}
-					$output[$key] .= "</div>";
+					// Render defense first, then offense
+					$_type_order = array('defense', 'offense');
+					$output[$key] .= "<div class='rtc-locations'>";
+					foreach($_type_order as $_type){
+						if(empty($_by_type[$_type])) continue;
+						$_group = $_by_type[$_type];
+						// Compute average boost for this category (rounded)
+						$_total_boost = array_sum(array_column($_group, 'success_boost'));
+						$_avg_boost   = ($_total_boost > 0) ? (int)ceil($_total_boost / count($_group)) : 0;
+						$_cat_label   = ucfirst($_type);
+						$output[$key] .= "<div class='rtc-loc-category'>";
+						$output[$key] .= "<div class='rtc-loc-cat-header'>";
+						$output[$key] .= "<span class='rtc-loc-cat-name ".'rtc-cat-'.$_type."'>".$_cat_label."</span>";
+						if($_avg_boost > 0) $output[$key] .= "<span class='rtc-loc-cat-boost' title='Avg success chance boost across ".$_cat_label." locations'>+".$_avg_boost."% avg</span>";
+						$output[$key] .= "</div>";
+						$output[$key] .= "<div class='rtc-loc-pills'>";
+						foreach($_group as $_loc){
+							$_sc = $_loc['has_shield'] ? ' rtc-loc-shielded' : '';
+							$output[$key] .= "<div class='rtc-loc-pill".$_sc."'>";
+							$output[$key] .= "<span class='rtc-loc-level'>".$_loc['level']."</span>";
+							$output[$key] .= "<span class='rtc-loc-name'>".ucfirst($_loc['name'])."</span>";
+							if($_loc['has_shield']) $output[$key] .= "<span class='rtc-shield-badge' title='Shielded'>&#x1F6E1;</span>";
+							$output[$key] .= "</div>";
+						}
+						$output[$key] .= "</div>"; // rtc-loc-pills
+						$output[$key] .= "</div>"; // rtc-loc-category
+					}
+					$output[$key] .= "</div>"; // rtc-locations
 				}
 
 				// Wealth

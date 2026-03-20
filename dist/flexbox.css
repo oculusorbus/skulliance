@@ -2519,10 +2519,39 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Locations */
 .rtc-locations {
     display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
+    flex-direction: column;
+    gap: 8px;
     padding: 10px 14px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rtc-loc-category { display: flex; flex-direction: column; gap: 5px; }
+.rtc-loc-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.rtc-loc-cat-name {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.55;
+}
+.rtc-cat-defense { color: #e05252; }
+.rtc-cat-offense { color: #00c8a0; }
+.rtc-loc-cat-boost {
+    font-size: 0.62rem;
+    font-weight: bold;
+    color: #e05252;
+    background: rgba(224,82,82,0.12);
+    border: 1px solid rgba(224,82,82,0.25);
+    border-radius: 10px;
+    padding: 1px 6px;
+}
+.rtc-loc-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 .rtc-loc-pill {
     display: flex;
@@ -2542,7 +2571,6 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .rtc-loc-name { color: #7a9eb0; }
 .rtc-loc-shielded .rtc-loc-name { color: #f5a623; }
 .rtc-shield-badge { font-size: 0.68rem; line-height: 1; margin-left: 1px; }
-.rtc-loc-boost { font-size: 0.62rem; font-weight: bold; color: #e05252; margin-left: 2px; opacity: 0.9; }
 
 /* Wealth */
 .rtc-wealth {
