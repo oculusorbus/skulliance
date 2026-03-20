@@ -7401,13 +7401,32 @@ function endRaid($conn, $raid_id){
 			$dmg_loc = selectRandomLocationID($conn, "defense");
 		}
 		// Check for Double Rewards shield on the damaged location (defense realm)
-		if(hasDoubleRewardsShield($conn, $defense_id, $dmg_loc)){
+		$hit1_shielded = hasDoubleRewardsShield($conn, $defense_id, $dmg_loc);
+		if($hit1_shielded){
 			// Shield absorbs the hit — consume DR only, all other consumables survive
 			removeLocationConsumable($conn, $defense_id, $dmg_loc, 6, $raid_id);
 		}else{
 			// Real damage: level down and burn all consumables on that location
 			alterRealmLocationLevel($conn, $raid_id, "defense", $dmg_loc, 1, "debit");
 			burnLocationConsumables($conn, $defense_id, $dmg_loc, $raid_id);
+		}
+		// Double Rewards: second hit
+		if($raid_double_rewards){
+			if($hit1_shielded){
+				// Shield was stripped — hit the same location now unshielded
+				$dmg_loc2 = $dmg_loc;
+			}else{
+				// First location already damaged — pick a different defense location
+				// If hit 1 targeted an offense location (high-offense balance case), no exclusion needed
+				$exclude = in_array($dmg_loc, array(3,5,7)) ? $dmg_loc : null;
+				$dmg_loc2 = selectRandomLocationIDExcluding("defense", $exclude);
+			}
+			if(hasDoubleRewardsShield($conn, $defense_id, $dmg_loc2)){
+				removeLocationConsumable($conn, $defense_id, $dmg_loc2, 6, $raid_id);
+			}else{
+				alterRealmLocationLevel($conn, $raid_id, "defense", $dmg_loc2, 1, "debit");
+				burnLocationConsumables($conn, $defense_id, $dmg_loc2, $raid_id);
+			}
 		}
 		// Reward random points to offense from defense
 		$project = selectRandomProjectID($conn, $defense_id);
@@ -7506,10 +7525,11 @@ function endRaid($conn, $raid_id){
 		$loot_res = $conn->query("SELECT rp.amount, p.currency FROM raids_projects rp INNER JOIN projects p ON p.id = rp.project_id WHERE rp.raid_id='".$raid_id."' ORDER BY rp.id DESC LIMIT 1");
 		$loot_row = $loot_res ? $loot_res->fetch_assoc() : null;
 		$loot_line = $loot_row ? "\n💰 **Looted:** ".number_format($loot_row['amount'])." ".$loot_row['currency'] : "";
+		$double_dmg_line = $raid_double_rewards ? "\n💥 **Double Damage** — 2 defense locations targeted" : "";
 		$raid_desc  = "The battle is over — the attacker prevails!\n\n";
 		$raid_desc .= "⚔️ **Attacker:** ".$off_mention." — ".$off_name."\n";
 		$raid_desc .= "🛡️ **Defender:** ".$def_mention." — ".$def_name;
-		$raid_desc .= $loot_line.$items_line;
+		$raid_desc .= $loot_line.$double_dmg_line.$items_line;
 		$author = array("name" => $off_username." · ".$off_name, "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($off_username));
 		discordmsg("💀 Attacker Victory", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $off_avatar_url, "00C8A0", $author);
 	} else {
@@ -7533,6 +7553,15 @@ function selectRandomLocationID($conn, $faction){
 		$defense_id = array_rand(array(3=>3,5=>5,7=>7), 1);
 		return $defense_id;
 	}
+}
+
+// Like selectRandomLocationID but excludes a specific location_id from the pool.
+// Falls back to the excluded location if it's the only one available.
+function selectRandomLocationIDExcluding($faction, $exclude_id = null){
+	$pool = ($faction == "offense") ? array(2=>2,4=>4,6=>6) : array(3=>3,5=>5,7=>7);
+	if($exclude_id !== null && isset($pool[$exclude_id])) unset($pool[$exclude_id]);
+	if(empty($pool)) return $exclude_id;
+	return array_rand($pool, 1);
 }
 
 function alterRealmLocationLevel($conn, $raid_id, $faction, $location_id, $amount, $type){
