@@ -1071,8 +1071,9 @@ function _updateRaidStats(realmId, selectedCids){
 function startRaid(raidButton, defenseID, duration){
 	var allAvailableEl = document.getElementById('raid-all-items-'+defenseID);
 	var consumablesParam = '';
-	if(allAvailableEl){
-		consumablesParam = allAvailableEl.checked ? '&consumables=all' : '';
+	if(allAvailableEl && !allAvailableEl.checked){
+		var selectedCids = _getModalSelectedCids();
+		consumablesParam = selectedCids.map(function(cid){ return '&consumables[]=' + cid; }).join('');
 	} else {
 		consumablesParam = '&consumables=all';
 	}
@@ -1129,7 +1130,9 @@ function _renderRaidConsumablesModal(consumables){
 		var has = c.qty > 0;
 		html += '<div class="raid-con-item'+(has?'':' unavailable')+'">';
 		html += '<label>';
-		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?' checked':' disabled')+'>';
+		var allEl = document.getElementById('raid-all-items-'+_raidModalDefenseId);
+		var allChecked = allEl ? allEl.checked : false;
+		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?(allChecked?' checked':''):' disabled')+'>';
 		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src=\'icons/skull.png\'" title="'+c.name+'"/>';
 		html += '<span class="raid-con-name">'+c.name+'</span>';
 		html += '</label>';
