@@ -6253,7 +6253,7 @@ function getRealms($conn, $sort, $group){
 					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn)) || $raiding){
 						if(checkMaxRaids($conn, $offense_id)){
 							$output[$key] .= "<div id='raid-con-row-".$row['realm_id']."' class='raid-con-row'>";
-					$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> All Available</label>";
+					$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> All Items</label>";
 					$output[$key] .= "<span class='raid-gear-icon' onclick='openRaidConsumablesModal(".$row['realm_id'].", ".$duration.")' title='Customize consumables'>&#9881;</span>";
 					$output[$key] .= "</div>";
 					$output[$key] .= "<input type='button' id='raid-btn-".$row['realm_id']."' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
