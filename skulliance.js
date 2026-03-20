@@ -1197,15 +1197,39 @@ function closeRaidConsumablesModal(){
 	_raidModalDuration  = null;
 }
 
+function _updateAllRaidConfigCheckboxes(savedIds){
+	var savedIdsStr = savedIds.join(',');
+	var hasSaved = savedIds.length > 0;
+	document.querySelectorAll('[id^="raid-all-items-"]').forEach(function(el){
+		el.checked = hasSaved;
+		el.dataset.mode = hasSaved ? 'saved' : 'all';
+		el.dataset.savedIds = savedIdsStr;
+		var label = el.parentNode;
+		if(label){
+			for(var i = 0; i < label.childNodes.length; i++){
+				if(label.childNodes[i].nodeType === 3){
+					label.childNodes[i].nodeValue = hasSaved ? ' Saved Items' : ' All Items';
+					break;
+				}
+			}
+		}
+	});
+}
+
 function startRaidFromModal(){
 	var defenseID = _raidModalDefenseId;
 	var duration  = _raidModalDuration;
 	if(!defenseID) return;
 	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:checked');
 	var consumablesParam = '';
-	checks.forEach(function(ch){ consumablesParam += '&consumables[]='+ch.getAttribute('data-id'); });
+	var savedCids = [];
+	checks.forEach(function(ch){
+		consumablesParam += '&consumables[]='+ch.getAttribute('data-id');
+		savedCids.push(parseInt(ch.getAttribute('data-id')));
+	});
 	var saveEl = document.getElementById('raid-con-save-config');
 	var saveParam = (!saveEl || saveEl.checked) ? '&save_config=1' : '';
+	if(saveParam) _updateAllRaidConfigCheckboxes(savedCids);
 	closeRaidConsumablesModal();
 	var raidButton = document.getElementById('raid-btn-'+defenseID);
 	var xhttp = new XMLHttpRequest();
