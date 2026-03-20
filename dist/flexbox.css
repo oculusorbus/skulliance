@@ -2565,6 +2565,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     font-size: 0.84rem;
     color: #c8dce8;
     line-height: 1.5;
+    text-align: center;
 }
 .rc-col-content strong { font-size: 0.9rem; }
 /* Action row (retreat button) */
