@@ -16,7 +16,7 @@ $con_info = array(
 	3 => array('name'=>'+2% Success', 'desc'=>'Adds 2% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
 	4 => array('name'=>'+1% Success', 'desc'=>'Adds 1% to your raid success chance. Stacks with other boosts up to a 10% total increase. Burns on use.'),
 	5 => array('name'=>'Fast Forward', 'desc'=>'Halves raid duration, rounded up. Burns on use.'),
-	6 => array('name'=>'Double Rewards','desc'=>'On a successful raid: doubles the loot cap from 500 to 1000 points AND deals a second hit to a defense location. If the first location has a shield, the second hit damages that same location after the shield is stripped. Burns on use.'),
+	6 => array('name'=>'Double Rewards','desc'=>'On a successful raid: doubles your loot (roll is capped at 500 then doubled, max 1000) AND deals a second hit to a defense location. If the first location has a shield, the second hit damages that same location after the shield is stripped. Burns on use.'),
 	7 => array('name'=>'Random Reward', 'desc'=>'Selects a random project from the defender and awards its loot if greater than the original loot. Burns on use.'),
 );
 
