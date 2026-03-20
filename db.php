@@ -6854,13 +6854,26 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$rows[$decimal] .= "<div class='rc-countdown-block'><span class='rc-countdown-label'>Time Left</span>".$time_message."</div>";
 				}
 				$rows[$decimal] .= "</div>"; // rc-card-header
+				// Avatars per column: session user vs opponent, assigned by raid direction
+				$_sess_avatar_url = (isset($_SESSION['userData']['discord_id'], $_SESSION['userData']['avatar']) && $_SESSION['userData']['avatar'] != '')
+					? 'https://cdn.discordapp.com/avatars/'.$_SESSION['userData']['discord_id'].'/'.$_SESSION['userData']['avatar'].'.jpg'
+					: '/staking/icons/skull.png';
+				$_opp_avatar_url = ($row['avatar'] != '')
+					? 'https://cdn.discordapp.com/avatars/'.$row['discord_id'].'/'.$row['avatar'].'.jpg'
+					: '/staking/icons/skull.png';
+				// outgoing: col1=attacker(session), col2=defender(opponent)
+				// incoming: col1=attacker(opponent), col2=defender(session)
+				$_col1_avatar = ($type == 'outgoing') ? $_sess_avatar_url : $_opp_avatar_url;
+				$_col2_avatar = ($type == 'outgoing') ? $_opp_avatar_url : $_sess_avatar_url;
 				// Body: two result columns
 				$rows[$decimal] .= "<div class='rc-card-body'>";
 				$rows[$decimal] .= "<div class='rc-col'>";
+				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col1_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results1." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$offense_results."</div>";
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "<div class='rc-col'>";
+				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col2_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results2." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
 				$rows[$decimal] .= "</div>";
