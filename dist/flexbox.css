@@ -2520,7 +2520,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     flex-shrink: 0;
     margin-left: auto;
     padding: 5px 14px;
-    border-radius: 20px;
+    border-radius: 4px;
     font-weight: 700;
     font-size: 0.8rem;
     letter-spacing: 0.03em;
