@@ -6861,15 +6861,14 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= "<div class='rc-card' id='raid-row-".$row['raid_id']."'>";
 				// Progress bar
 				$rows[$decimal] .= "<div class='rc-progress-bar'><div class='rc-progress-fill' style='width:".$_rc_pct."%'></div></div>";
-				// Header
+				// Realm name — full-width centered row so it sits over the column divider
+				$rows[$decimal] .= "<div class='rc-card-realm'>".ucfirst($row['realm_name'])."</div>";
+				// Header: theme image, user info, countdown/badge
 				$rows[$decimal] .= "<div class='rc-card-header'>";
 				$rows[$decimal] .= "<img class='rc-theme-img' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg'>";
-				$rows[$decimal] .= "<div class='rc-card-info'>";
-				$rows[$decimal] .= "<span class='rc-realm-name'>".ucfirst($row['realm_name'])."</span>";
 				$rows[$decimal] .= "<a href='/staking/profile.php?username=".urlencode($row['username'])."'  class='rc-user-row'>";
 				if($row["avatar"] != "") $rows[$decimal] .= "<img class='rc-avatar' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg'>";
 				$rows[$decimal] .= "<span class='rc-username'>".$row['username']."</span></a>";
-				$rows[$decimal] .= "</div>";
 				if($status == "Completed"){
 					$rows[$decimal] .= "<div class='rc-outcome-badge ".$_rc_outcome_class."'>".$_rc_outcome_badge."</div>";
 				}else{

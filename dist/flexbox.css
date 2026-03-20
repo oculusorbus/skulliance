@@ -2467,17 +2467,13 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     object-fit: cover;
     flex-shrink: 0;
 }
-.rc-card-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.rc-realm-name {
+/* Realm name: full-width centered row above the header so it sits over the column divider */
+.rc-card-realm {
+    text-align: center;
     font-weight: 700;
     color: #fff;
     font-size: 0.92rem;
+    padding: 10px 14px 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
