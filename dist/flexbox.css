@@ -2268,6 +2268,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .location-meta { font-size: 0.75rem; color: #7a9eb0; line-height: 1.6; }
 .location-action { flex-shrink: 0; text-align: right; }
 .loc-status-labels { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; min-height: 0; }
+.rc-col-content .loc-status-labels { justify-content: center; }
 .loc-status-tag { font-size: 0.68rem; color: #00c8a0; background: rgba(0,200,160,0.1); border: 1px solid rgba(0,200,160,0.3); border-radius: 4px; padding: 1px 5px; line-height: 1.5; }
 
 /* ── Location consumable system ─────────────────────────────────────────── */
