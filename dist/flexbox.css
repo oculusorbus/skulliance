@@ -2419,6 +2419,179 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .loc-consumable-strip { margin-left: 0; }
 }
 
+/* ── Raid Target Cards ───────────────────────────────────────────────────── */
+.raid-target-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 10px;
+}
+.raid-target-card {
+    background: #0d2035;
+    border: 1px solid rgba(0,200,160,0.15);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.rtc-header {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rtc-theme {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.rtc-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.rtc-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.rtc-realm-name {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rtc-user {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    color: #7a9eb0;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+.rtc-user:hover { color: #00c8a0; }
+.rtc-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.rtc-faction {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.76rem;
+    color: #7a9eb0;
+}
+.rtc-faction-icon { width: 16px; height: 16px; object-fit: contain; }
+.rtc-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin-top: 2px;
+}
+.rtc-stat {
+    display: flex;
+    flex-direction: column;
+    min-width: 68px;
+}
+.rtc-stat-label {
+    font-size: 0.65rem;
+    color: #4a7a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+}
+.rtc-stat-value {
+    font-size: 0.88rem;
+    color: #c8dde8;
+    font-weight: 600;
+}
+.rtc-stat-success .rtc-stat-value { color: #00c8a0; font-size: 1rem; }
+
+/* Locations */
+.rtc-locations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rtc-loc-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 20px;
+    padding: 3px 9px;
+    font-size: 0.74rem;
+}
+.rtc-loc-shielded {
+    background: rgba(245,166,35,0.1);
+    border-color: rgba(245,166,35,0.4);
+}
+.rtc-loc-level { font-weight: bold; color: #fff; margin-right: 1px; }
+.rtc-loc-name { color: #7a9eb0; }
+.rtc-loc-shielded .rtc-loc-name { color: #f5a623; }
+.rtc-shield-badge { font-size: 0.68rem; line-height: 1; margin-left: 1px; }
+
+/* Wealth */
+.rtc-wealth {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rtc-total-pts {
+    font-size: 0.78rem;
+    color: #00c8a0;
+    font-weight: bold;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+.rtc-balances { display: flex; flex-wrap: wrap; gap: 4px; }
+.rtc-balance-pill {
+    font-size: 0.7rem;
+    background: rgba(0,200,160,0.07);
+    border: 1px solid rgba(0,200,160,0.18);
+    border-radius: 12px;
+    padding: 2px 8px;
+    color: #7a9eb0;
+}
+
+/* Action row */
+.rtc-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+}
+.rtc-status-msg {
+    font-size: 0.82rem;
+    color: #7a9eb0;
+    font-style: italic;
+}
+
+@media (max-width: 500px) {
+    .rtc-theme { width: 68px; height: 68px; }
+    .rtc-stats { gap: 4px 12px; }
+    .rtc-stat { min-width: 58px; }
+    .rtc-action { flex-direction: column; align-items: flex-start; }
+    .raid-button { width: 100%; }
+}
+
 /* ── Responsive tables: scroll instead of tiny font ─────────────────────── */
 @media screen and (max-width: 700px) {
     /* Scrollable containers */

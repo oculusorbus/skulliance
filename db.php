@@ -5611,6 +5611,23 @@ function getRealmLocationLevels($conn){
 	}
 }
 
+function getRealmLocationsWithShields($conn, $realm_id){
+	$sql = "SELECT l.name, rl.location_id, rl.id AS rl_id, rl.level, l.type AS location_type FROM realms_locations rl INNER JOIN locations l ON l.id = rl.location_id WHERE rl.realm_id = '".$realm_id."' ORDER BY l.type DESC, l.id ASC";
+	$result = $conn->query($sql);
+	$locations = array();
+	if($result) while($row = $result->fetch_assoc()){
+		$shield_res = $conn->query("SELECT id FROM realms_locations_consumables WHERE realm_location_id='".$row['rl_id']."' AND consumable_id='6' AND raid_id='0' LIMIT 1");
+		$locations[] = array(
+			'name'          => $row['name'],
+			'location_id'   => $row['location_id'],
+			'level'         => $row['level'],
+			'location_type' => $row['location_type'],
+			'has_shield'    => ($shield_res && $shield_res->num_rows > 0),
+		);
+	}
+	return $locations;
+}
+
 function getRealmLocationNamesLevels($conn, $realm_id){
 	$sql = "SELECT locations.name AS name, location_id, level, locations.type AS location_type FROM realms_locations INNER JOIN locations ON locations.id = realms_locations.location_id WHERE realm_id = '".$realm_id."' ORDER BY locations.type DESC, locations.id ASC";
 	$result = $conn->query($sql);
@@ -6169,57 +6186,55 @@ function getRealms($conn, $sort, $group){
 				}else if($sort == "wealth"){
 					$key = array_sum($balances).".".$row['realm_id'];
 				}
-				$output[$key] = "";
-				$output[$key] .= "<th>".ucfirst($row['realm_name'])."</th><th>Raid Details</th><th>Location Levels</th><th>Top Points Balances</th>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td width='25%' valign='top' align='left'>";
-				$output[$key] .= "<table id='transactions' style='border-style:none'>";
-				$output[$key] .= "<tr><td align='center'>";
-				$output[$key] .= "<img src='images/themes/".$row["theme_id"].".jpg' style='width:100%;max-width:358px'/>";
-				$output[$key] .= "</td></tr>";
-				$output[$key] .= "</table>";
 				if($duration < 2) $duration = 2;
-				$output[$key] .= "</td>";
-				$output[$key] .= "<td width='25%' valign='top' align='left'>";
-				$output[$key] .= "<table id='transactions' style='border-style:none'>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'>";
-					if($row["avatar"] != ""){
-						$output[$key] .= "<a href='/staking/profile.php?username=".urlencode($row["username"])."'><img style='width:50px' loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon'/></a>";
+				$output[$key] = "";
+				$output[$key] .= "<div class='raid-target-card'>";
+
+				// Header: theme image + key info
+				$output[$key] .= "<div class='rtc-header'>";
+				$output[$key] .= "<img class='rtc-theme' src='images/themes/".$row["theme_id"].".jpg' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\"'>";
+				$output[$key] .= "<div class='rtc-info'>";
+				$output[$key] .= "<div class='rtc-title-row'>";
+				$output[$key] .= "<span class='rtc-realm-name'>".ucfirst($row['realm_name'])."</span>";
+				$output[$key] .= "<a href='/staking/profile.php?username=".urlencode($row["username"])."' class='rtc-user'>";
+				if($row["avatar"] != "") $output[$key] .= "<img src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='rtc-avatar' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\"'>";
+				$output[$key] .= "<span>".$row["username"]."</span></a>";
+				$output[$key] .= "</div>";
+				if($row["currency"] != "") $output[$key] .= "<div class='rtc-faction'><img src='/staking/icons/".strtolower($row["currency"]).".png' class='rtc-faction-icon' onerror='this.src=\"/staking/icons/skull.png\"'><span>".$row["project_name"]."</span></div>";
+				$output[$key] .= "<div class='rtc-stats'>";
+				$output[$key] .= "<div class='rtc-stat'><span class='rtc-stat-label'>Your Offense</span><span class='rtc-stat-value'>Lv ".$offense."</span></div>";
+				$output[$key] .= "<div class='rtc-stat'><span class='rtc-stat-label'>Their Defense</span><span class='rtc-stat-value'>Lv ".$defense."</span></div>";
+				$output[$key] .= "<div class='rtc-stat'><span class='rtc-stat-label'>Duration</span><span class='rtc-stat-value' id='raid-duration-".$row['realm_id']."' data-base-duration='".$duration."'>".$init_duration." ".($init_duration==1?"day":"days")."</span></div>";
+				$output[$key] .= "<div class='rtc-stat rtc-stat-success'><span class='rtc-stat-label'>Success</span><span class='rtc-stat-value' id='raid-success-".$row['realm_id']."' data-offense-pct='".round($offense_threshold,4)."' data-defender-boost='".$defender_loc_boost."' data-attacker-loc-boost='".$attacker_loc_boost."'>".round($init_adj_win)."%</span></div>";
+				$output[$key] .= "</div></div></div>";
+
+				// Locations with shield indicators
+				$_locs = getRealmLocationsWithShields($conn, $row['realm_id']);
+				if(!empty($_locs)){
+					$output[$key] .= "<div class='rtc-locations'>";
+					foreach($_locs as $_loc){
+						$_sc = $_loc['has_shield'] ? ' rtc-loc-shielded' : '';
+						$output[$key] .= "<div class='rtc-loc-pill".$_sc."'>";
+						$output[$key] .= "<span class='rtc-loc-level'>".$_loc['level']."</span>";
+						$output[$key] .= "<span class='rtc-loc-name'>".ucfirst($_loc['name'])."</span>";
+						if($_loc['has_shield']) $output[$key] .= "<span class='rtc-shield-badge' title='Shielded'>&#x1F6E1;</span>";
+						$output[$key] .= "</div>";
 					}
-				$output[$key] .= "</td>";
-				$output[$key] .= "<td width='50%'><a href='/staking/profile.php?username=".urlencode($row["username"])."'  style='color:inherit;text-decoration:none;'>".$row["username"]."</a></td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'>";
-					if($row["currency"] != ""){
-						$output[$key] .= "<img style='width:50px' src='/staking/icons/".strtolower($row["currency"]).".png' class='icon'/>";
-					}
-				$output[$key] .= "</td>";
-				$output[$key] .= "<td width='50%'>".$row["project_name"]."</td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right'>Level ".$offense."</td>";
-				$output[$key] .= "<td>Your Offense</td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right'>Level ".$defense."</td>";
-				$output[$key] .= "<td>Their Defense</td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%' id='raid-duration-".$row['realm_id']."' data-base-duration='".$duration."'>".$init_duration." ".(($init_duration == 1)?"day":"days")."</td>";
-				$output[$key] .= "<td width='50%'>Raid Duration</td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' id='raid-success-".$row['realm_id']."' data-offense-pct='".round($offense_threshold,4)."' data-defender-boost='".$defender_loc_boost."' data-attacker-loc-boost='".$attacker_loc_boost."'>".round($init_adj_win)."%</td>";
-				$output[$key] .= "<td>Success Chance</td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right'>&nbsp;";
-				$output[$key] .= "</td>";
-				$output[$key] .= "<td>";
+					$output[$key] .= "</div>";
+				}
+
+				// Wealth
+				$output[$key] .= "<div class='rtc-wealth'>";
+				$output[$key] .= "<span class='rtc-total-pts'>".number_format(array_sum($balances))." pts</span>";
+				$output[$key] .= "<div class='rtc-balances'>";
+				foreach(array_slice($balances, 0, 7, true) as $_curr => $_bal){
+					$output[$key] .= "<span class='rtc-balance-pill'>".number_format($_bal)." ".$_curr."</span>";
+				}
+				$output[$key] .= "</div></div>";
+
+				// Action row
 				$unset = false;
+				$output[$key] .= "<div class='rtc-action'>";
 				if(checkRealmRaidStatus($conn, $row["realm_id"])){
 					$value = "START RAID";
 					$raiding = false;
@@ -6229,86 +6244,47 @@ function getRealms($conn, $sort, $group){
 					}
 					if($offense_id == $row["realm_id"] || $offense_faction == $row["project_id"]){
 						if(!$raiding){
-							if($offense_id == $row["realm_id"]){
-								$value = "SELF DESTRUCT";
-							}else{
-								$value = "FRIENDLY FIRE";
-							}
+							if($offense_id == $row["realm_id"]){ $value = "SELF DESTRUCT"; }
+							else { $value = "FRIENDLY FIRE"; }
 						}else{
-							if($offense_id == $row["realm_id"]){
-								$value = "SELF ANNIHILATE";
-							}else{
-								$value = "PUNISH TRAITOR";
-							}
+							if($offense_id == $row["realm_id"]){ $value = "SELF ANNIHILATE"; }
+							else { $value = "PUNISH TRAITOR"; }
 						}
 					}
-					// Prevents established realms from rading new realms, but allows for new realms to raid each other.
 					if(($raw_defense == 0 && $raw_offense != 0) && !$raiding){
-						$output[$key] .= "<strong>Establishing Realm</strong><br><br>";
+						$output[$key] .= "<span class='rtc-status-msg'>Establishing Realm</span>";
 						$unset = true;
 					}else if((($offense-$defense) > 3) && !$raiding){
 						$level_range = (($offense-$defense)-3);
-						$output[$key] .= "<strong>".$level_range." ".(($level_range == 1)?"Level":"Levels")." Out of Range</strong><br><br>";
+						$output[$key] .= "<span class='rtc-status-msg'>".$level_range." ".($level_range==1?"Level":"Levels")." Out of Range</span>";
 						$unset = true;
 					}else if(!in_array($row['realm_id'], getRecentRaidedRealms($conn)) || $raiding){
 						if(checkMaxRaids($conn, $offense_id)){
+							$_saved_config = isset($_SESSION['raid_consumable_config']) && !empty($_SESSION['raid_consumable_config']) ? $_SESSION['raid_consumable_config'] : null;
+							$_has_saved    = !empty($_saved_config);
+							$_cb_label     = $_has_saved ? 'Saved Items' : 'All Items';
+							$_cb_checked   = $_has_saved ? 'checked ' : '';
+							$_cb_mode      = $_has_saved ? 'saved' : 'all';
+							$_cb_ids       = $_has_saved ? implode(',', array_map('intval', $_saved_config)) : '';
 							$output[$key] .= "<div id='raid-con-row-".$row['realm_id']."' class='raid-con-row'>";
-					$_saved_config = isset($_SESSION['raid_consumable_config']) && !empty($_SESSION['raid_consumable_config']) ? $_SESSION['raid_consumable_config'] : null;
-				$_has_saved    = !empty($_saved_config);
-				$_cb_label     = $_has_saved ? 'Saved Items' : 'All Items';
-				$_cb_checked   = $_has_saved ? 'checked ' : '';
-				$_cb_mode      = $_has_saved ? 'saved' : 'all';
-				$_cb_ids       = $_has_saved ? implode(',', array_map('intval', $_saved_config)) : '';
-				$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' ".$_cb_checked."data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."' onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> ".$_cb_label."</label>";
-					$output[$key] .= "<span class='raid-gear-icon' onclick='openRaidConsumablesModal(".$row['realm_id'].", ".$duration.")' title='Customize consumables'>&#9881;</span>";
-					$output[$key] .= "</div>";
-					$output[$key] .= "<input type='button' id='raid-btn-".$row['realm_id']."' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'><br><br>";
+							$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' ".$_cb_checked."data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."' onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> ".$_cb_label."</label>";
+							$output[$key] .= "<span class='raid-gear-icon' onclick='openRaidConsumablesModal(".$row['realm_id'].", ".$duration.")' title='Customize consumables'>&#9881;</span>";
+							$output[$key] .= "</div>";
+							$output[$key] .= "<input type='button' id='raid-btn-".$row['realm_id']."' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
 						}else{
-							$output[$key] .= "<strong>Max Raids Reached</strong><br><br>";
+							$output[$key] .= "<span class='rtc-status-msg'>Max Raids Reached</span>";
 						}
 					}else{
-						$output[$key] .= "<strong>Recovering from Raid</strong><br><br>";
+						$output[$key] .= "<span class='rtc-status-msg'>Recovering from Raid</span>";
 						$unset = true;
 					}
 				}else{
-					$output[$key] .= "<strong>Raid in Progress</strong><br><br>";
+					$output[$key] .= "<span class='rtc-status-msg'>Raid in Progress</span>";
 					$unset = true;
 				}
-				$output[$key] .= "</td>";
-				$output[$key] .= "</tr>";
-				$output[$key] .= "</table>";
-				$output[$key] .= "</td>";
-				$output[$key] .= "<td width='25%' valign='top' align='left'>";
-				$output[$key] .= "<table id='transactions' style='border-style:none'>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'><strong>#</strong></td>";
-				$output[$key] .= "<td width='50%'><strong>Location</strong></td>";
-				$output[$key] .= "</tr>";
-				$levels = getRealmLocationNamesLevels($conn, $row['realm_id']);
-				foreach($levels AS $location_name => $level){
-					$output[$key] .= "<tr>";
-					$output[$key] .= "<td align='right' width='50%'>".$level."</td>";
-					$output[$key] .= "<td width='50%'>".ucfirst($location_name)."</td>";
-					$output[$key] .= "</tr>";
-				}
-				$output[$key] .= "</table>";
-				$output[$key] .= "</td>";
-				$output[$key] .= "<td width='25%' valign='top' align='right'>";
-				$output[$key] .= "<table id='transactions' style='border-style:none'>";
-				$output[$key] .= "<tr>";
-				$output[$key] .= "<td align='right' width='50%'>".number_format(array_sum($balances))."</td>";
-				$output[$key] .= "<td width='50%'>TOTAL POINTS</td>";
-				$output[$key] .= "</tr>";
-				$balances = array_slice($balances, 0, 7, true);
-				foreach($balances AS $currency => $balance){
-					$output[$key] .= "<tr>";
-					$output[$key] .= "<td align='right' width='50%'>".number_format($balance)."</td>";
-					$output[$key] .= "<td width='50%'>".$currency."</td>";
-					$output[$key] .= "</tr>";
-				}
-				$output[$key] .= "</table>";
-				$output[$key] .= "</td>";
-				$output[$key] .= "</tr>";
+				$output[$key] .= "</div>"; // rtc-action
+				$output[$key] .= "</div>"; // raid-target-card
+				if($unset && $group == "Eligible"){
 				if($unset && $group == "Eligible"){
 					unset($output[$key]);
 				}
@@ -6327,11 +6303,11 @@ function getRealms($conn, $sort, $group){
 			}
 			
 			if(!empty($output)){
-				echo "<table width='100%' id='transactions'>";
+				echo "<div class='raid-target-list'>";
 				foreach($output AS $key => $val){
 					echo $val;
 				}
-				echo "</table>";
+				echo "</div>";
 			}else{
 				echo "<p>There are no realms currently available for you to raid.<br><br>Please check back later as your location levels and those of your potential opponents can change as raids are completed.<br><br><img src='/staking/images/disappointed.gif'/></p>";
 			}
