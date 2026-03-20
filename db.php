@@ -5702,19 +5702,24 @@ function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, 
 }
 
 function getRealmLocationUpgrade($conn, $realm_id, $location_id){
-	$sql = "SELECT id, location_id, duration, created_date FROM upgrades WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
+	$sql = "SELECT id, location_id, duration, level, created_date FROM upgrades WHERE realm_id = '".$realm_id."' AND location_id = '".$location_id."'";
 	$result = $conn->query($sql);
-	
+
 	$status = array();
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
+			$target_level = ($row['level'] > 0) ? $row['level'] : $row['duration'];
 			$date = strtotime('+'.$row["duration"].' day', strtotime($row["created_date"]));
 			$remaining = $date - time();
 			$days_remaining = floor(($remaining / 86400));
 			$hours_remaining = floor(($remaining % 86400) / 3600);
 			$minutes_remaining = floor(($remaining % 3600) / 60);
 			if($date > time()){
-				$time_message = $days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m";
+				$time_message  = "<div class='location-meta' style='font-weight:normal;text-align:right;'>";
+				$time_message .= "Lv".$target_level." upgrade";
+				$time_message .= " &bull; ".$row['duration']." ".(($row['duration']==1)?"day":"days");
+				$time_message .= "<br><span class='countdown' data-deadline='".$date."'>".$days_remaining."d ".$hours_remaining."h ".$minutes_remaining."m 0s</span>";
+				$time_message .= "</div>";
 				$status[$row['location_id']] = $time_message;
 			}
 		}
