@@ -6218,10 +6218,11 @@ function getRealms($conn, $sort, $group){
 				// Locations grouped by category with per-category avg success boost
 				$_locs = getRealmLocationsWithShields($conn, $row['realm_id']);
 				if(!empty($_locs)){
-					// Group by location_type
+					// Group by location_type (portal lumped with offense, matching success rate logic)
 					$_by_type = array();
 					foreach($_locs as $_loc){
-						$_by_type[$_loc['location_type']][] = $_loc;
+						$_cat = ($_loc['location_type'] === 'portal') ? 'offense' : $_loc['location_type'];
+						$_by_type[$_cat][] = $_loc;
 					}
 					// Render defense first, then offense
 					$_type_order = array('defense', 'offense');
