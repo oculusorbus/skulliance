@@ -2549,7 +2549,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    margin-bottom: 8px;
+    margin: 0 auto 8px;
     border: 2px solid rgba(0,200,160,0.2);
 }
 .rc-col-label {
@@ -2559,6 +2559,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     letter-spacing: 0.06em;
     color: #7a9eb0;
     margin-bottom: 6px;
+    text-align: center;
 }
 .rc-col-content {
     font-size: 0.84rem;
