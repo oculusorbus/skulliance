@@ -21,6 +21,17 @@ if(isset($_GET['defense_id']) && isset($_GET['duration'])){
 			}
 		}
 		startRaid($conn, $_GET['defense_id'], $_GET['duration'], $consumables);
+		// Save consumable config to session if requested (only from modal start with save checkbox)
+		if(isset($_GET['save_config']) && $_GET['save_config'] == '1'){
+			$save_cids = array();
+			if(isset($_GET['consumables']) && is_array($_GET['consumables'])){
+				foreach($_GET['consumables'] as $c){
+					$c = intval($c);
+					if($c >= 1 && $c <= 7) $save_cids[] = $c;
+				}
+			}
+			$_SESSION['raid_consumable_config'] = $save_cids;
+		}
 	}else{
 		echo "Maximum Raids Reached.<br>Upgrade Portal to Increase Number of Raids.";
 	}

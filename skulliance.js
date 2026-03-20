@@ -1035,8 +1035,16 @@ function _getModalSelectedCids(){
 
 function _getRaidSelectedCids(realmId){
 	var allEl = document.getElementById('raid-all-items-'+realmId);
-	if(allEl && !allEl.checked) return _getModalSelectedCids();
-	// All Available: use everything with qty > 0
+	if(!allEl || !allEl.checked) return _getModalSelectedCids();
+	if(allEl.dataset.mode === 'saved'){
+		// Saved Items: use saved config filtered by current inventory
+		var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
+		return savedIds.filter(function(cid){
+			var qtyEl = document.getElementById('inv-qty-'+cid);
+			return qtyEl && parseInt(qtyEl.textContent) > 0;
+		});
+	}
+	// All Items: use everything with qty > 0
 	var cids = [];
 	for(var cid = 1; cid <= 7; cid++){
 		var qtyEl = document.getElementById('inv-qty-'+cid);
@@ -1071,11 +1079,13 @@ function _updateRaidStats(realmId, selectedCids){
 function startRaid(raidButton, defenseID, duration){
 	var allAvailableEl = document.getElementById('raid-all-items-'+defenseID);
 	var consumablesParam = '';
-	if(allAvailableEl && !allAvailableEl.checked){
-		var selectedCids = _getModalSelectedCids();
-		consumablesParam = selectedCids.map(function(cid){ return '&consumables[]=' + cid; }).join('');
-	} else {
+	// All Items mode (checked, no saved config) — use all, never saves session
+	if(allAvailableEl && allAvailableEl.checked && allAvailableEl.dataset.mode === 'all'){
 		consumablesParam = '&consumables=all';
+	} else {
+		// Saved Items or unchecked — use specific cids, never saves session (modal-only saves)
+		var selectedCids = _getRaidSelectedCids(defenseID);
+		consumablesParam = selectedCids.map(function(cid){ return '&consumables[]=' + cid; }).join('');
 	}
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration+consumablesParam, true);
@@ -1096,9 +1106,15 @@ function startRaid(raidButton, defenseID, duration){
 }
 
 function updateRaidAllLabel(checkbox, realmId){
-	// When All Available is unchecked, deselect all items in the modal if it's open
 	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:not(:disabled)');
-	checks.forEach(function(ch){ ch.checked = checkbox.checked; });
+	if(!checkbox.checked){
+		checks.forEach(function(ch){ ch.checked = false; });
+	} else if(checkbox.dataset.mode === 'saved'){
+		var savedIds = checkbox.dataset.savedIds ? checkbox.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
+		checks.forEach(function(ch){ ch.checked = savedIds.indexOf(parseInt(ch.getAttribute('data-id'))) !== -1; });
+	} else {
+		checks.forEach(function(ch){ ch.checked = true; });
+	}
 	updateRaidModalSummary();
 	_updateRaidStats(realmId, _getRaidSelectedCids(realmId));
 }
@@ -1132,7 +1148,10 @@ function _renderRaidConsumablesModal(consumables){
 		html += '<label>';
 		var allEl = document.getElementById('raid-all-items-'+_raidModalDefenseId);
 		var allChecked = allEl ? allEl.checked : false;
-		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?(allChecked?' checked':''):' disabled')+'>';
+		var allMode = allEl ? (allEl.dataset.mode || 'all') : 'all';
+		var savedIds = (allEl && allEl.dataset.savedIds) ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
+		var itemChecked = has && allChecked && (allMode === 'saved' ? savedIds.indexOf(c.id) !== -1 : true);
+		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?(itemChecked?' checked':''):' disabled')+'>';
 		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src=\'icons/skull.png\'" title="'+c.name+'"/>';
 		html += '<span class="raid-con-name">'+c.name+'</span>';
 		html += '</label>';
@@ -1185,10 +1204,12 @@ function startRaidFromModal(){
 	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:checked');
 	var consumablesParam = '';
 	checks.forEach(function(ch){ consumablesParam += '&consumables[]='+ch.getAttribute('data-id'); });
+	var saveEl = document.getElementById('raid-con-save-config');
+	var saveParam = (!saveEl || saveEl.checked) ? '&save_config=1' : '';
 	closeRaidConsumablesModal();
 	var raidButton = document.getElementById('raid-btn-'+defenseID);
 	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration+consumablesParam, true);
+	xhttp.open('GET', 'ajax/start_raid.php?defense_id='+defenseID+'&duration='+duration+consumablesParam+saveParam, true);
 	xhttp.send();
 	xhttp.onreadystatechange = function(){
 		if(xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200){

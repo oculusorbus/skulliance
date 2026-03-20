@@ -571,6 +571,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			<div id="raid-con-modal-items" class="raid-con-item-grid"></div>
 			<div id="raid-con-modal-summary" class="raid-con-summary"></div>
 			<div class="raid-modal-footer">
+				<label style="font-size:0.8rem;opacity:0.65;margin-right:auto;"><input type="checkbox" id="raid-con-save-config" checked> Save configuration</label>
 				<input type="button" class="button" id="raid-con-modal-start-btn" value="Start Raid" onclick="startRaidFromModal()"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeRaidConsumablesModal()"/>
 			</div>
