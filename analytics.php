@@ -33,7 +33,7 @@ function ana_pct($part, $total) {
     return round(intval($part) / intval($total) * 100);
 }
 
-$month_filter = "DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+$mf = "DATE_FORMAT(CURDATE(),'%Y-%m-01')";
 
 // ── Community ─────────────────────────────────────────────────────
 $stakers       = ana_stat($conn, "SELECT COUNT(*) FROM users");
@@ -44,21 +44,36 @@ $collections   = ana_stat($conn, "SELECT COUNT(*) FROM collections");
 
 // ── Raids ─────────────────────────────────────────────────────────
 $raids_all     = ana_stat($conn, "SELECT COUNT(*) FROM raids");
-$raids_month   = ana_stat($conn, "SELECT COUNT(*) FROM raids WHERE DATE(created_date) >= $month_filter");
+$raids_month   = ana_stat($conn, "SELECT COUNT(*) FROM raids WHERE DATE(created_date) >= $mf");
 $raids_active  = ana_stat($conn, "SELECT COUNT(*) FROM raids WHERE outcome = 0");
 $raids_success = ana_stat($conn, "SELECT COUNT(*) FROM raids WHERE outcome = 1");
 $raids_done    = ana_stat($conn, "SELECT COUNT(*) FROM raids WHERE outcome != 0");
 
 // ── Missions ──────────────────────────────────────────────────────
 $missions_all     = ana_stat($conn, "SELECT COUNT(*) FROM missions");
-$missions_month   = ana_stat($conn, "SELECT COUNT(*) FROM missions WHERE DATE(created_date) >= $month_filter");
+$missions_month   = ana_stat($conn, "SELECT COUNT(*) FROM missions WHERE DATE(created_date) >= $mf");
 $missions_active  = ana_stat($conn, "SELECT COUNT(*) FROM missions WHERE status = 0");
 $missions_success = ana_stat($conn, "SELECT COUNT(*) FROM missions WHERE status = 1");
 $missions_done    = ana_stat($conn, "SELECT COUNT(*) FROM missions WHERE status IN (1,2)");
 
 // ── Daily Rewards ─────────────────────────────────────────────────
 $claims_all   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE bonus = 1");
-$claims_month = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE bonus = 1 AND DATE(date_created) >= $month_filter");
+$claims_month = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE bonus = 1 AND DATE(date_created) >= $mf");
+$claims_pace_pct = ($claims_all > 0 && $claims_month > 0)
+    ? min(100, ana_pct($claims_month * 12, $claims_all)) : 0;
+
+// ── Factions ──────────────────────────────────────────────────────
+$factions_active = ana_stat($conn, "SELECT COUNT(DISTINCT project_id) FROM realms WHERE active = 1");
+$faction_res = $conn->query(
+    "SELECT p.name, p.currency, COUNT(r.id) AS realm_count
+     FROM realms r
+     INNER JOIN projects p ON p.id = r.project_id
+     WHERE r.active = 1
+     GROUP BY r.project_id
+     ORDER BY realm_count DESC"
+);
+$faction_rows = [];
+if ($faction_res) while ($fr = $faction_res->fetch_assoc()) $faction_rows[] = $fr;
 
 // ── Boss Battles ──────────────────────────────────────────────────
 $boss_all  = ana_stat($conn, "SELECT COUNT(*) FROM encounters");
@@ -69,9 +84,9 @@ $boss_dmg  = ana_stat($conn, "SELECT COALESCE(SUM(damage_dealt),0) FROM encounte
 $swap_all  = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 0");
 $swap_week = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 0 AND reward = 0");
 
-// ── Monstrocity ───────────────────────────────────────────────────
-$mono_all  = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36");
-$mono_week = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36 AND reward = 0");
+// ── Monstrocity (monthly via date_created) ────────────────────────
+$mono_all   = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36");
+$mono_month = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36 AND DATE(date_created) >= $mf");
 
 // ── Economy ───────────────────────────────────────────────────────
 $total_trans  = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
@@ -79,7 +94,7 @@ $items_bought = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id
 $diamonds     = ana_stat($conn, "SELECT COUNT(*) FROM diamond_skulls");
 
 // ── Projects breakdown ────────────────────────────────────────────
-// Core: id <= 7 (exclude 7=Diamond Skulls); Partner: id > 7 (exclude 15=Carbon/internal)
+// Core: id 1–6; Partner: id > 7 (exclude 7=Diamond Skulls, 15=Carbon/internal)
 $proj_res = $conn->query(
     "SELECT p.id, p.name, p.currency, COUNT(n.id) AS nft_count
      FROM projects p
@@ -97,14 +112,6 @@ if ($proj_res) {
         else                $partner_projs[] = $pr;
     }
 }
-
-// monthly pace vs historical average (computed purely from known counts)
-$claims_pace_pct = 0;
-if ($claims_all > 0 && $claims_month > 0) {
-    // rough: if this month's claims represent more than 1/12 of all time, pace > 100%
-    $claims_pace_pct = min(100, ana_pct($claims_month * 12, $claims_all));
-}
-
 $total_projects = count($core_projs) + count($partner_projs);
 
 $conn->close();
@@ -161,8 +168,8 @@ $conn->close();
 /* ── Grid rows ───────────────────────────────────────────────── */
 .ana-row { display: grid; gap: 11px; }
 .ana-row-5 { grid-template-columns: repeat(5, 1fr); }
+.ana-row-4 { grid-template-columns: repeat(4, 1fr); }
 .ana-row-3 { grid-template-columns: repeat(3, 1fr); }
-.ana-row-2 { grid-template-columns: 1fr 1fr; }
 
 /* ── Base card ───────────────────────────────────────────────── */
 .ana-card {
@@ -253,6 +260,34 @@ $conn->close();
 .ana-bar-fill { height: 100%; border-radius: 3px; background: #00c8a0; }
 .ana-bar-pct { font-size: 0.63rem; color: #00c8a0; white-space: nowrap; min-width: 28px; text-align: right; }
 
+/* ── Factions pill list ──────────────────────────────────────── */
+.ana-faction-count {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+.ana-faction-count span { font-size: 0.67rem; font-weight: 400; color: #7a9eb0; margin-left: 4px; }
+.ana-faction-pills { display: flex; flex-direction: column; gap: 5px; }
+.ana-faction-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.7rem;
+    color: #c8dce8;
+}
+.ana-faction-pill img { width: 14px; height: 14px; object-fit: contain; flex-shrink: 0; }
+.ana-faction-bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.ana-faction-bar-fill { height: 100%; border-radius: 3px; background: rgba(0,200,160,0.5); }
+.ana-faction-pill-count { font-size: 0.65rem; color: #00c8a0; white-space: nowrap; }
+
 /* ── Gaming card ─────────────────────────────────────────────── */
 .ana-game-title {
     font-size: 0.72rem;
@@ -295,11 +330,14 @@ $conn->close();
 }
 .ana-game-note strong { color: #c8dce8; }
 
-/* ── Economy grid ────────────────────────────────────────────── */
-.ana-econ-grid {
+/* ── Economy + Projects unified card ────────────────────────── */
+.ana-econ-strip {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,200,160,0.1);
 }
 .ana-econ-item {
     background: rgba(0,200,160,0.05);
@@ -310,10 +348,9 @@ $conn->close();
 }
 .ana-econ-value { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1; }
 .ana-econ-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7a9eb0; }
-
-/* ── Project pills ───────────────────────────────────────────── */
+.ana-proj-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .ana-proj-title {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: #00c8a0;
     text-transform: uppercase;
@@ -323,13 +360,7 @@ $conn->close();
     align-items: baseline;
     gap: 8px;
 }
-.ana-proj-title span {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0;
-    text-transform: none;
-}
+.ana-proj-title span { font-size: 1.2rem; font-weight: 700; color: #fff; letter-spacing: 0; text-transform: none; }
 .ana-proj-pills { display: flex; flex-wrap: wrap; gap: 5px; }
 .ana-proj-pill {
     display: flex;
@@ -347,14 +378,18 @@ $conn->close();
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1100px) {
-    .ana-row-5 { grid-template-columns: repeat(3, 1fr); }
-    .ana-econ-grid { grid-template-columns: repeat(2, 1fr); }
+    .ana-row-5, .ana-row-4 { grid-template-columns: repeat(3, 1fr); }
+    .ana-econ-strip { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 700px) {
-    .ana-row-5, .ana-row-3, .ana-row-2 { grid-template-columns: 1fr; }
+    .ana-row-5, .ana-row-4, .ana-row-3 { grid-template-columns: 1fr 1fr; }
     .ana-dual-grid, .ana-game-grid { grid-template-columns: 1fr 1fr; }
-    .ana-econ-grid { grid-template-columns: 1fr 1fr; }
+    .ana-econ-strip { grid-template-columns: 1fr 1fr; }
+    .ana-proj-cols { grid-template-columns: 1fr; }
     .ana-hero { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+@media (max-width: 480px) {
+    .ana-row-5, .ana-row-4, .ana-row-3 { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -407,27 +442,27 @@ $conn->close();
 
     <!-- ── Engagement ── -->
     <div class="ana-section-label">Engagement</div>
-    <div class="ana-row ana-row-3">
+    <div class="ana-row ana-row-4">
 
-        <!-- Raids -->
+        <!-- Daily Rewards -->
         <div class="ana-card">
-            <div class="ana-dual-title">⚔️ Raids</div>
+            <div class="ana-dual-title">🔥 Daily Reward Claims</div>
             <div class="ana-dual-grid">
                 <div class="ana-period">
                     <div class="ana-period-label">This Month</div>
-                    <div class="ana-period-value"><?php echo ana_fmt($raids_month); ?></div>
-                    <div class="ana-period-sub">launched</div>
+                    <div class="ana-period-value"><?php echo ana_fmt($claims_month); ?></div>
+                    <div class="ana-period-sub">claims</div>
                 </div>
                 <div class="ana-period">
                     <div class="ana-period-label">All Time</div>
-                    <div class="ana-period-value"><?php echo ana_fmt($raids_all); ?></div>
-                    <div class="ana-period-sub"><?php echo ana_fmt($raids_active); ?> in progress</div>
+                    <div class="ana-period-value"><?php echo ana_fmt($claims_all); ?></div>
+                    <div class="ana-period-sub">total claims</div>
                 </div>
             </div>
             <div class="ana-bar-row">
-                <span class="ana-bar-label">Offense win rate</span>
-                <div class="ana-bar-track"><div class="ana-bar-fill" style="width:<?php echo ana_pct($raids_success, $raids_done); ?>%"></div></div>
-                <span class="ana-bar-pct"><?php echo ana_pct($raids_success, $raids_done); ?>%</span>
+                <span class="ana-bar-label">Monthly vs historical avg</span>
+                <div class="ana-bar-track"><div class="ana-bar-fill" style="width:<?php echo $claims_pace_pct; ?>%"></div></div>
+                <span class="ana-bar-pct"><?php echo $claims_pace_pct; ?>%</span>
             </div>
         </div>
 
@@ -453,49 +488,53 @@ $conn->close();
             </div>
         </div>
 
-        <!-- Daily Rewards -->
+        <!-- Raids -->
         <div class="ana-card">
-            <div class="ana-dual-title">🔥 Daily Reward Claims</div>
+            <div class="ana-dual-title">⚔️ Raids</div>
             <div class="ana-dual-grid">
                 <div class="ana-period">
                     <div class="ana-period-label">This Month</div>
-                    <div class="ana-period-value"><?php echo ana_fmt($claims_month); ?></div>
-                    <div class="ana-period-sub">claims</div>
+                    <div class="ana-period-value"><?php echo ana_fmt($raids_month); ?></div>
+                    <div class="ana-period-sub">launched</div>
                 </div>
                 <div class="ana-period">
                     <div class="ana-period-label">All Time</div>
-                    <div class="ana-period-value"><?php echo ana_fmt($claims_all); ?></div>
-                    <div class="ana-period-sub">total claims</div>
+                    <div class="ana-period-value"><?php echo ana_fmt($raids_all); ?></div>
+                    <div class="ana-period-sub"><?php echo ana_fmt($raids_active); ?> in progress</div>
                 </div>
             </div>
             <div class="ana-bar-row">
-                <span class="ana-bar-label">Monthly vs historical avg</span>
-                <div class="ana-bar-track"><div class="ana-bar-fill" style="width:<?php echo $claims_pace_pct; ?>%"></div></div>
-                <span class="ana-bar-pct"><?php echo $claims_pace_pct; ?>%</span>
+                <span class="ana-bar-label">Offense win rate</span>
+                <div class="ana-bar-track"><div class="ana-bar-fill" style="width:<?php echo ana_pct($raids_success, $raids_done); ?>%"></div></div>
+                <span class="ana-bar-pct"><?php echo ana_pct($raids_success, $raids_done); ?>%</span>
+            </div>
+        </div>
+
+        <!-- Factions -->
+        <div class="ana-card">
+            <div class="ana-dual-title">🏴 Factions</div>
+            <div class="ana-faction-count"><?php echo ana_fmt($factions_active); ?> <span>active factions</span></div>
+            <div class="ana-faction-pills">
+                <?php
+                $max_realms = !empty($faction_rows) ? max(array_column($faction_rows, 'realm_count')) : 1;
+                foreach ($faction_rows as $fr):
+                    $bar_pct = $max_realms > 0 ? round($fr['realm_count'] / $max_realms * 100) : 0;
+                ?>
+                <div class="ana-faction-pill">
+                    <img src="icons/<?php echo strtolower($fr['currency']); ?>.png" onerror="this.style.display='none'">
+                    <span><?php echo htmlspecialchars($fr['name']); ?></span>
+                    <div class="ana-faction-bar-track"><div class="ana-faction-bar-fill" style="width:<?php echo $bar_pct; ?>%"></div></div>
+                    <span class="ana-faction-pill-count"><?php echo $fr['realm_count']; ?></span>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
 
     </div>
 
     <!-- ── Gaming ── -->
-    <div class="ana-section-label">Gaming  <span style="font-size:0.6rem;font-weight:400;color:#7a9eb0;letter-spacing:0;text-transform:none;">Weekly cycle resets Thursday 4pm CST</span></div>
+    <div class="ana-section-label">Gaming <span style="font-size:0.6rem;font-weight:400;color:#7a9eb0;letter-spacing:0;text-transform:none;">Skull Swap &amp; Boss Battles cycle resets Thursday 4pm CST · Monstrocity is monthly</span></div>
     <div class="ana-row ana-row-3">
-
-        <!-- Boss Battles -->
-        <div class="ana-card">
-            <div class="ana-game-title">💀 Boss Battles</div>
-            <div class="ana-game-grid">
-                <div class="ana-game-stat accent">
-                    <div class="ana-game-stat-label">This Week</div>
-                    <div class="ana-game-stat-value"><?php echo ana_fmt($boss_week); ?></div>
-                </div>
-                <div class="ana-game-stat">
-                    <div class="ana-game-stat-label">All Time</div>
-                    <div class="ana-game-stat-value"><?php echo ana_fmt($boss_all); ?></div>
-                </div>
-            </div>
-            <div class="ana-game-note">Total damage dealt: <strong><?php echo ana_fmt($boss_dmg); ?></strong></div>
-        </div>
 
         <!-- Skull Swap -->
         <div class="ana-card">
@@ -515,53 +554,62 @@ $conn->close();
 
         <!-- Monstrocity -->
         <div class="ana-card">
-            <div class="ana-game-title">🧟 Monstrocity</div>
+            <div class="ana-game-title">🧟 Monstrocity · Match 3 RPG</div>
             <div class="ana-game-grid">
                 <div class="ana-game-stat accent">
-                    <div class="ana-game-stat-label">This Week</div>
-                    <div class="ana-game-stat-value"><?php echo ana_fmt($mono_week); ?></div>
+                    <div class="ana-game-stat-label">This Month</div>
+                    <div class="ana-game-stat-value"><?php echo ana_fmt($mono_month); ?></div>
                 </div>
                 <div class="ana-game-stat">
                     <div class="ana-game-stat-label">All Time</div>
                     <div class="ana-game-stat-value"><?php echo ana_fmt($mono_all); ?></div>
                 </div>
             </div>
-            <div class="ana-game-note">Match-3 RPG sessions played</div>
+            <div class="ana-game-note">Sessions played</div>
+        </div>
+
+        <!-- Boss Battles -->
+        <div class="ana-card">
+            <div class="ana-game-title">💀 Boss Battles</div>
+            <div class="ana-game-grid">
+                <div class="ana-game-stat accent">
+                    <div class="ana-game-stat-label">This Week</div>
+                    <div class="ana-game-stat-value"><?php echo ana_fmt($boss_week); ?></div>
+                </div>
+                <div class="ana-game-stat">
+                    <div class="ana-game-stat-label">All Time</div>
+                    <div class="ana-game-stat-value"><?php echo ana_fmt($boss_all); ?></div>
+                </div>
+            </div>
+            <div class="ana-game-note">Total damage dealt: <strong><?php echo ana_fmt($boss_dmg); ?></strong></div>
         </div>
 
     </div>
 
-    <!-- ── Economy & Projects ── -->
+    <!-- ── Economy & Projects (unified) ── -->
     <div class="ana-section-label">Economy &amp; Projects</div>
-    <div class="ana-row ana-row-2">
+    <div class="ana-card">
 
-        <!-- Economy -->
-        <div class="ana-card">
-            <div class="ana-dual-title" style="margin-bottom:12px;">💰 Platform Economy</div>
-            <div class="ana-econ-grid">
-                <div class="ana-econ-item">
-                    <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
-                    <div class="ana-econ-label">Transactions</div>
-                </div>
-                <div class="ana-econ-item">
-                    <div class="ana-econ-value"><?php echo ana_fmt($items_bought); ?></div>
-                    <div class="ana-econ-label">Store Claims</div>
-                </div>
-                <div class="ana-econ-item">
-                    <div class="ana-econ-value"><?php echo ana_fmt($diamonds); ?></div>
-                    <div class="ana-econ-label">Diamond Delegations</div>
-                </div>
-                <div class="ana-econ-item">
-                    <div class="ana-econ-value"><?php echo ana_fmt($collections); ?></div>
-                    <div class="ana-econ-label">Collections</div>
-                </div>
+        <!-- Economy stats strip -->
+        <div class="ana-dual-title" style="margin-bottom:12px;">💰 Platform Economy</div>
+        <div class="ana-econ-strip">
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
+                <div class="ana-econ-label">Transactions</div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($items_bought); ?></div>
+                <div class="ana-econ-label">Store Claims</div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($diamonds); ?></div>
+                <div class="ana-econ-label">Diamond Delegations</div>
             </div>
         </div>
 
-        <!-- Projects -->
-        <div style="display:flex;flex-direction:column;gap:11px;">
-
-            <div class="ana-card" style="flex:1;">
+        <!-- Projects side by side -->
+        <div class="ana-proj-cols">
+            <div>
                 <div class="ana-proj-title">Core Projects <span><?php echo count($core_projs); ?></span></div>
                 <div class="ana-proj-pills">
                     <?php foreach ($core_projs as $p): ?>
@@ -573,9 +621,8 @@ $conn->close();
                     <?php endforeach; ?>
                 </div>
             </div>
-
             <?php if (!empty($partner_projs)): ?>
-            <div class="ana-card" style="flex:1;">
+            <div>
                 <div class="ana-proj-title">Partner Projects <span><?php echo count($partner_projs); ?></span></div>
                 <div class="ana-proj-pills">
                     <?php foreach ($partner_projs as $p): ?>
@@ -590,7 +637,6 @@ $conn->close();
                 </div>
             </div>
             <?php endif; ?>
-
         </div>
 
     </div>
