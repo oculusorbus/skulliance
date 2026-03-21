@@ -111,7 +111,7 @@ $proj_res = $conn->query(
      LEFT JOIN nfts n ON n.collection_id = c.id AND n.user_id != 0
      WHERE p.id NOT IN (7, 15)
      GROUP BY p.id
-     ORDER BY p.id"
+     ORDER BY nft_count DESC, p.id"
 );
 $core_projs    = [];
 $partner_projs = [];
@@ -453,7 +453,7 @@ $conn->close();
 
         <!-- Daily Rewards -->
         <div class="ana-card">
-            <div class="ana-dual-title">🔥 Daily Reward Claims</div>
+            <div class="ana-dual-title">🪙 Daily Reward Claims</div>
             <div class="ana-dual-grid">
                 <div class="ana-period">
                     <div class="ana-period-label">This Month</div>
@@ -475,7 +475,7 @@ $conn->close();
 
         <!-- Missions -->
         <div class="ana-card">
-            <div class="ana-dual-title">🗺️ Missions</div>
+            <div class="ana-dual-title">🎒 Missions</div>
             <div class="ana-dual-grid">
                 <div class="ana-period">
                     <div class="ana-period-label">This Month</div>
@@ -525,7 +525,7 @@ $conn->close();
 
         <!-- Skull Swap -->
         <div class="ana-card">
-            <div class="ana-game-title">💠 Skull Swap</div>
+            <div class="ana-game-title">💀 Skull Swap</div>
             <div class="ana-game-grid">
                 <div class="ana-game-stat accent">
                     <div class="ana-game-stat-label">This Week</div>
@@ -557,7 +557,7 @@ $conn->close();
 
         <!-- Boss Battles -->
         <div class="ana-card">
-            <div class="ana-game-title">💀 Boss Battles</div>
+            <div class="ana-game-title">⚔️ Boss Battles</div>
             <div class="ana-game-grid">
                 <div class="ana-game-stat accent">
                     <div class="ana-game-stat-label">This Week</div>
