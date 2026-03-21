@@ -2049,8 +2049,10 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 /* Don't double-border the sub-cards that already have #player-stats */
 #player-stats { border: 1px solid rgba(0,200,160,0.20); }
-/* Raids pane containers: rc-cards handle their own spacing, strip wrapper padding */
-.content.raids { padding: 0; background: transparent; border: none; overflow-x: hidden; }
+/* Raids pane containers: strip wrapper on mobile to avoid double-padding */
+@media screen and (max-width: 700px) {
+    .content.raids { padding: 0; background: transparent; border: none; overflow-x: hidden; }
+}
 
 /* Raid section toggle header */
 .rc-section-title {
