@@ -2586,6 +2586,102 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 .rc-history-link a { color: #7a9eb0; text-decoration: none; }
 .rc-history-link a:hover { color: #00c8a0; }
+
+/* ── Raid Stats & Faction Stats cards ─────────────────────── */
+.rs-grid {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.rs-card {
+    flex: 1 1 calc(50% - 7px);
+    min-width: 220px;
+    background: #0d2035;
+    border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 10px;
+    padding: 18px 16px 14px;
+    display: flex;
+    flex-direction: column;
+}
+.rs-card-period {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #00c8a0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+}
+.rs-score-label {
+    font-size: 0.68rem;
+    color: #7a9eb0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+}
+.rs-score {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 16px;
+}
+.rs-stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex: 1;
+}
+.rs-stat {
+    background: rgba(0,200,160,0.05);
+    border: 1px solid rgba(0,200,160,0.08);
+    border-radius: 6px;
+    padding: 10px 10px 8px;
+}
+.rs-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+.rs-stat-label {
+    font-size: 0.68rem;
+    color: #7a9eb0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 3px;
+}
+.rs-success .rs-stat-value { color: #00c8a0; }
+.rs-failure .rs-stat-value { color: #ff5c5c; }
+.rs-pct {
+    font-size: 0.72rem;
+    font-weight: 400;
+    opacity: 0.75;
+}
+.rs-lb-link { text-align: center; margin-top: auto; padding-top: 4px; }
+.rs-lb-link form { margin: 0; }
+.rs-faction-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #c8dce8;
+    margin-bottom: 14px;
+}
+.rs-faction-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+@media (max-width: 700px) {
+    .rs-card { flex: 1 1 100%; }
+}
+
 /* Mobile: stack columns */
 @media (max-width: 500px) {
     .rc-card-body { flex-direction: column; }
