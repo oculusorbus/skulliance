@@ -98,8 +98,12 @@ $mono_all   = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHER
 $mono_month = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36 AND DATE(date_created) >= $mf");
 
 // ── Economy ───────────────────────────────────────────────────────
-$total_trans  = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
-$items_bought = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id IS NOT NULL AND item_id > 0");
+$total_trans     = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
+$items_bought    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id IS NOT NULL AND item_id > 0");
+$crafting_trans  = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1");
+$mission_trans   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE mission_id IS NOT NULL AND mission_id > 0");
+$raid_trans      = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE raid_id IS NOT NULL AND raid_id > 0");
+$upgrade_trans   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE location_id IS NOT NULL AND location_id > 0");
 
 // ── Diamond Skull Delegations ─────────────────────────────────────
 $diamonds = ana_stat($conn, "SELECT COUNT(*) FROM diamond_skulls");
@@ -590,7 +594,7 @@ $conn->close();
     <!-- ── Economy ── -->
     <div class="ana-section-label">Economy</div>
     <div class="ana-card">
-        <div class="ana-econ-strip" style="margin-bottom:0;grid-template-columns:1fr 1fr;">
+        <div class="ana-econ-strip" style="margin-bottom:0;">
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
                 <div class="ana-econ-label">Transactions</div>
@@ -598,6 +602,22 @@ $conn->close();
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($items_bought); ?></div>
                 <div class="ana-econ-label">Store Claims</div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($crafting_trans); ?></div>
+                <div class="ana-econ-label">Crafting</div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($mission_trans); ?></div>
+                <div class="ana-econ-label">Mission Rewards</div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($raid_trans); ?></div>
+                <div class="ana-econ-label">Raid Rewards</div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-value"><?php echo ana_fmt($upgrade_trans); ?></div>
+                <div class="ana-econ-label">Location Upgrades</div>
             </div>
         </div>
     </div>
