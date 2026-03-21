@@ -1,5 +1,14 @@
 <?php
 include_once 'db.php';
+
+// Set up session variables for header.php without forcing a login redirect
+$name = "";
+$avatar_url = "";
+if (isset($_SESSION['userData'])) {
+    extract($_SESSION['userData']);
+    $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+}
+
 include 'header.php';
 
 // ── Week boundaries (Thursday 4pm CST) ───────────────────────────
@@ -335,9 +344,6 @@ $conn->close();
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(0,200,160,0.1);
 }
 .ana-econ-item {
     background: rgba(0,200,160,0.05);
@@ -348,7 +354,7 @@ $conn->close();
 }
 .ana-econ-value { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1; }
 .ana-econ-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7a9eb0; }
-.ana-proj-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ana-proj-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 .ana-proj-title {
     font-size: 0.7rem;
     font-weight: 700;
@@ -385,11 +391,12 @@ $conn->close();
     .ana-row-5, .ana-row-4, .ana-row-3 { grid-template-columns: 1fr 1fr; }
     .ana-dual-grid, .ana-game-grid { grid-template-columns: 1fr 1fr; }
     .ana-econ-strip { grid-template-columns: 1fr 1fr; }
-    .ana-proj-cols { grid-template-columns: 1fr; }
+    .ana-proj-cols { grid-template-columns: 1fr 1fr; }
     .ana-hero { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
 @media (max-width: 480px) {
     .ana-row-5, .ana-row-4, .ana-row-3 { grid-template-columns: 1fr; }
+    .ana-proj-cols { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -586,13 +593,10 @@ $conn->close();
 
     </div>
 
-    <!-- ── Economy & Projects (unified) ── -->
-    <div class="ana-section-label">Economy &amp; Projects</div>
+    <!-- ── Economy ── -->
+    <div class="ana-section-label">Economy</div>
     <div class="ana-card">
-
-        <!-- Economy stats strip -->
-        <div class="ana-dual-title" style="margin-bottom:12px;">💰 Platform Economy</div>
-        <div class="ana-econ-strip">
+        <div class="ana-econ-strip" style="margin-bottom:0;">
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
                 <div class="ana-econ-label">Transactions</div>
@@ -603,11 +607,14 @@ $conn->close();
             </div>
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($diamonds); ?></div>
-                <div class="ana-econ-label">Diamond Delegations</div>
+                <div class="ana-econ-label">Diamond Skull Delegations</div>
             </div>
         </div>
+    </div>
 
-        <!-- Projects side by side -->
+    <!-- ── Projects ── -->
+    <div class="ana-section-label">Projects</div>
+    <div class="ana-card">
         <div class="ana-proj-cols">
             <div>
                 <div class="ana-proj-title">Core Projects <span><?php echo count($core_projs); ?></span></div>
@@ -637,8 +644,19 @@ $conn->close();
                 </div>
             </div>
             <?php endif; ?>
+            <div>
+                <div class="ana-proj-title">Factions <span><?php echo $factions_active; ?></span></div>
+                <div class="ana-proj-pills">
+                    <?php foreach ($faction_rows as $fr): ?>
+                    <div class="ana-proj-pill">
+                        <img src="icons/<?php echo strtolower($fr['currency']); ?>.png" onerror="this.style.display='none'">
+                        <?php echo htmlspecialchars($fr['name']); ?>
+                        <strong><?php echo $fr['realm_count']; ?> realms</strong>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
         </div>
-
     </div>
 
 </div>
