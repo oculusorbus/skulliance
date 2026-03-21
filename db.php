@@ -6806,8 +6806,14 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					if($outcome == 1){
 						$offense_results = "<strong style='color:#00c8a0'>Success</strong><br>";
 						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
-						if($_has_dr) $offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'><span class='loc-status-tag'>Double Rewards (1000 cap)</span></div>";
-						if($_has_rr) $offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'><span class='loc-status-tag'>Random Reward</span></div>";
+						$_off_comp_tags = array();
+						if($_has_dr) $_off_comp_tags[] = 'Double Rewards (1000 cap)';
+						if($_has_rr) $_off_comp_tags[] = 'Random Reward';
+						if(!empty($_off_comp_tags)){
+							$offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
+							foreach($_off_comp_tags as $_t) $offense_results .= "<span class='loc-status-tag'>".$_t."</span>";
+							$offense_results .= "</div>";
+						}
 						$defense_results = "<strong style='color:#ff5c5c'>Failure</strong><br>";
 						$defense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
