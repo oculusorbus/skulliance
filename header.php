@@ -85,6 +85,7 @@
 		    <div class="nav-dropdown-menu">
 		      <a href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>">Profile</a>
 		      <a href="leaderboards.php">Leaderboards</a>
+      <a href="analytics.php">Analytics</a>
 		    </div>
 		  </div>
 
