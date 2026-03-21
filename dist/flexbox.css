@@ -2438,7 +2438,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     margin-bottom: 4px;
 }
 .rc-card {
-    background: #0d2333;
+    background: #0d2035;
     border: 1px solid rgba(0,200,160,0.12);
     border-radius: 10px;
     overflow: hidden;
