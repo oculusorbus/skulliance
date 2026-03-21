@@ -449,7 +449,7 @@ $conn->close();
 
     <!-- ── Engagement ── -->
     <div class="ana-section-label">Engagement</div>
-    <div class="ana-row ana-row-4">
+    <div class="ana-row ana-row-3">
 
         <!-- Daily Rewards -->
         <div class="ana-card">
@@ -514,26 +514,6 @@ $conn->close();
                 <span class="ana-bar-label">Offense win rate</span>
                 <div class="ana-bar-track"><div class="ana-bar-fill" style="width:<?php echo ana_pct($raids_success, $raids_done); ?>%"></div></div>
                 <span class="ana-bar-pct"><?php echo ana_pct($raids_success, $raids_done); ?>%</span>
-            </div>
-        </div>
-
-        <!-- Factions -->
-        <div class="ana-card">
-            <div class="ana-dual-title">🏴 Factions</div>
-            <div class="ana-faction-count"><?php echo ana_fmt($factions_active); ?> <span>active factions</span></div>
-            <div class="ana-faction-pills">
-                <?php
-                $max_realms = !empty($faction_rows) ? max(array_column($faction_rows, 'realm_count')) : 1;
-                foreach ($faction_rows as $fr):
-                    $bar_pct = $max_realms > 0 ? round($fr['realm_count'] / $max_realms * 100) : 0;
-                ?>
-                <div class="ana-faction-pill">
-                    <img src="icons/<?php echo strtolower($fr['currency']); ?>.png" onerror="this.style.display='none'">
-                    <span><?php echo htmlspecialchars($fr['name']); ?></span>
-                    <div class="ana-faction-bar-track"><div class="ana-faction-bar-fill" style="width:<?php echo $bar_pct; ?>%"></div></div>
-                    <span class="ana-faction-pill-count"><?php echo $fr['realm_count']; ?></span>
-                </div>
-                <?php endforeach; ?>
             </div>
         </div>
 
@@ -646,12 +626,17 @@ $conn->close();
             <?php endif; ?>
             <div>
                 <div class="ana-proj-title">Factions <span><?php echo $factions_active; ?></span></div>
-                <div class="ana-proj-pills">
-                    <?php foreach ($faction_rows as $fr): ?>
-                    <div class="ana-proj-pill">
+                <div class="ana-faction-pills">
+                    <?php
+                    $max_realms = !empty($faction_rows) ? max(array_column($faction_rows, 'realm_count')) : 1;
+                    foreach ($faction_rows as $fr):
+                        $bar_pct = $max_realms > 0 ? round($fr['realm_count'] / $max_realms * 100) : 0;
+                    ?>
+                    <div class="ana-faction-pill">
                         <img src="icons/<?php echo strtolower($fr['currency']); ?>.png" onerror="this.style.display='none'">
-                        <?php echo htmlspecialchars($fr['name']); ?>
-                        <strong><?php echo $fr['realm_count']; ?> realms</strong>
+                        <span><?php echo htmlspecialchars($fr['name']); ?></span>
+                        <div class="ana-faction-bar-track"><div class="ana-faction-bar-fill" style="width:<?php echo $bar_pct; ?>%"></div></div>
+                        <span class="ana-faction-pill-count"><?php echo $fr['realm_count']; ?></span>
                     </div>
                     <?php endforeach; ?>
                 </div>
