@@ -49,7 +49,7 @@
 		<div class="navbar" id="navbar">
 		  <?php if(isset($name)){?>
 		  <?php if(isset($avatar_url)){?>
-	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
+	      <img class="rounded-full" src="<?php echo $avatar_url?>" onerror="this.src='icons/skull.png'" />
 		  <?php } ?>
 		  <a href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>"><?php echo (isset($name))?$name:"";?></a>
 
