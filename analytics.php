@@ -100,7 +100,21 @@ $mono_month = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHER
 // ── Economy ───────────────────────────────────────────────────────
 $total_trans  = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
 $items_bought = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id IS NOT NULL AND item_id > 0");
-$diamonds     = ana_stat($conn, "SELECT COUNT(*) FROM diamond_skulls");
+
+// ── Diamond Skull Delegations ─────────────────────────────────────
+$diamonds = ana_stat($conn, "SELECT COUNT(*) FROM diamond_skulls");
+$diamond_proj_res = $conn->query(
+    "SELECT p.id, p.name, p.currency, COUNT(ds.id) AS delegation_count
+     FROM projects p
+     INNER JOIN collections c ON c.project_id = p.id
+     INNER JOIN nfts n ON n.collection_id = c.id
+     INNER JOIN diamond_skulls ds ON ds.nft_id = n.id
+     WHERE p.id <= 6
+     GROUP BY p.id
+     ORDER BY delegation_count DESC"
+);
+$diamond_projs = [];
+if ($diamond_proj_res) while ($dr = $diamond_proj_res->fetch_assoc()) $diamond_projs[] = $dr;
 
 // ── Projects breakdown ────────────────────────────────────────────
 // Core: id 1–6; Partner: id > 7 (exclude 7=Diamond Skulls, 15=Carbon/internal)
@@ -576,7 +590,7 @@ $conn->close();
     <!-- ── Economy ── -->
     <div class="ana-section-label">Economy</div>
     <div class="ana-card">
-        <div class="ana-econ-strip" style="margin-bottom:0;">
+        <div class="ana-econ-strip" style="margin-bottom:0;grid-template-columns:1fr 1fr;">
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
                 <div class="ana-econ-label">Transactions</div>
@@ -584,10 +598,6 @@ $conn->close();
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($items_bought); ?></div>
                 <div class="ana-econ-label">Store Claims</div>
-            </div>
-            <div class="ana-econ-item">
-                <div class="ana-econ-value"><?php echo ana_fmt($diamonds); ?></div>
-                <div class="ana-econ-label">Diamond Skull Delegations</div>
             </div>
         </div>
     </div>
@@ -604,6 +614,16 @@ $conn->close();
                         <img src="icons/<?php echo strtolower($p['currency']); ?>.png" onerror="this.style.display='none'">
                         <?php echo htmlspecialchars($p['name']); ?>
                         <strong><?php echo ana_fmt($p['nft_count']); ?> NFTs</strong>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="ana-proj-title" style="margin-top:14px;">💎 Diamond Skull Delegations <span><?php echo ana_fmt($diamonds); ?></span></div>
+                <div class="ana-proj-pills">
+                    <?php foreach ($diamond_projs as $dp): ?>
+                    <div class="ana-proj-pill">
+                        <img src="icons/<?php echo strtolower($dp['currency']); ?>.png" onerror="this.style.display='none'">
+                        <?php echo htmlspecialchars($dp['name']); ?>
+                        <strong><?php echo ana_fmt($dp['delegation_count']); ?> NFTs</strong>
                     </div>
                     <?php endforeach; ?>
                 </div>
