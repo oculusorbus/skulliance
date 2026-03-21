@@ -79,23 +79,22 @@ $items_bought = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id
 $diamonds     = ana_stat($conn, "SELECT COUNT(*) FROM diamond_skulls");
 
 // ── Projects breakdown ────────────────────────────────────────────
+// Core: id <= 7 (exclude 7=Diamond Skulls); Partner: id > 7 (exclude 15=Carbon/internal)
 $proj_res = $conn->query(
-    "SELECT p.id, p.name, p.currency, p.type, COUNT(n.id) AS nft_count
+    "SELECT p.id, p.name, p.currency, COUNT(n.id) AS nft_count
      FROM projects p
      LEFT JOIN collections c ON c.project_id = p.id
      LEFT JOIN nfts n ON n.collection_id = c.id AND n.user_id != 0
-     WHERE p.id != 7
-       AND p.name NOT LIKE '%Skulliance%'
-       AND p.name NOT LIKE '%Diamond Skull%'
+     WHERE p.id NOT IN (7, 15)
      GROUP BY p.id
-     ORDER BY FIELD(p.type,'core','partner'), p.name"
+     ORDER BY p.id"
 );
 $core_projs    = [];
 $partner_projs = [];
 if ($proj_res) {
     while ($pr = $proj_res->fetch_assoc()) {
-        if ($pr['type'] === 'core') $core_projs[]    = $pr;
-        else                        $partner_projs[] = $pr;
+        if ($pr['id'] <= 6) $core_projs[]    = $pr;
+        else                $partner_projs[] = $pr;
     }
 }
 
