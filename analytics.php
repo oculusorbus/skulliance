@@ -100,10 +100,19 @@ $mono_month = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHER
 // ── Economy ───────────────────────────────────────────────────────
 $total_trans     = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
 $items_bought    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id IS NOT NULL AND item_id > 0");
-$crafting_trans  = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1");
-$mission_trans   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE mission_id IS NOT NULL AND mission_id > 0");
-$raid_trans      = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE raid_id IS NOT NULL AND raid_id > 0");
-$upgrade_trans   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE location_id IS NOT NULL AND location_id > 0");
+$crafting_trans   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1");
+$crafting_credits = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1 AND type = 'credit'");
+$crafting_debits  = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1 AND type = 'debit'");
+
+$mission_trans    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE mission_id IS NOT NULL AND mission_id > 0");
+$mission_credits  = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE mission_id IS NOT NULL AND mission_id > 0 AND type = 'credit'");
+$mission_debits   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE mission_id IS NOT NULL AND mission_id > 0 AND type = 'debit'");
+
+$raid_trans       = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE raid_id IS NOT NULL AND raid_id > 0");
+$raid_credits     = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE raid_id IS NOT NULL AND raid_id > 0 AND type = 'credit'");
+$raid_debits      = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE raid_id IS NOT NULL AND raid_id > 0 AND type = 'debit'");
+
+$upgrade_trans    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE location_id IS NOT NULL AND location_id > 0");
 
 // ── Diamond Skull Delegations ─────────────────────────────────────
 $diamonds = ana_stat($conn, "SELECT COUNT(*) FROM diamond_skulls");
@@ -372,6 +381,10 @@ $conn->close();
 }
 .ana-econ-value { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1; }
 .ana-econ-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7a9eb0; }
+.ana-econ-sub { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.ana-econ-sub-item { font-size: 0.6rem; color: #7a9eb0; white-space: nowrap; }
+.ana-econ-sub-item.up { color: #00c8a0; }
+.ana-econ-sub-item.down { color: #ff7070; }
 .ana-proj-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 .ana-proj-title {
     font-size: 0.7rem;
@@ -606,18 +619,33 @@ $conn->close();
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($crafting_trans); ?></div>
                 <div class="ana-econ-label">Crafting</div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($crafting_credits); ?> credits</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($crafting_debits); ?> debits</span>
+                </div>
             </div>
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($mission_trans); ?></div>
-                <div class="ana-econ-label">Mission Rewards</div>
+                <div class="ana-econ-label">Missions</div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($mission_credits); ?> rewards</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($mission_debits); ?> costs</span>
+                </div>
             </div>
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($raid_trans); ?></div>
-                <div class="ana-econ-label">Raid Rewards</div>
+                <div class="ana-econ-label">Raids</div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($raid_credits); ?> won</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($raid_debits); ?> lost</span>
+                </div>
             </div>
             <div class="ana-econ-item">
                 <div class="ana-econ-value"><?php echo ana_fmt($upgrade_trans); ?></div>
                 <div class="ana-econ-label">Location Upgrades</div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item down">&#9660; costs only</span>
+                </div>
             </div>
         </div>
     </div>
