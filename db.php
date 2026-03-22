@@ -4811,7 +4811,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 			$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$stats = ['Dmg Dealt'=>number_format($row["damage_dealt_total"]),'Dmg Taken'=>number_format($row["damage_taken_total"]),'Encounters'=>number_format($row["encounters_total"])];
-			$reward_col = $weekly ? number_format(round($points/$leaderboardCounter))." pts" : '';
+			$reward_col = $weekly ? number_format(round($points/$leaderboardCounter))." CLAW/CARBON" : '';
 			$lb_rows[] = ['rank'=>$leaderboardCounter,'trophy'=>$trophy,'avatar_url'=>$avatar_url,'name'=>$name_html,'highlight'=>($highlight=="highlight"),'stats'=>$stats,'reward'=>$reward_col];
 			$last_total = $score;
 			if($rewards){
