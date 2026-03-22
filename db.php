@@ -1029,16 +1029,9 @@ function getCurrentMissions($conn){
 		$rows[$decimal] .= "<img class='mc-project-icon' title='".$row["currency"]."' src='icons/".strtolower($row["currency"]).".png'/>";
 		$rows[$decimal] .= "</div>";
 
-		// Title + consumable items
+		// Title only in body
 		$rows[$decimal] .= "<div class='mc-body'>";
 		$rows[$decimal] .= "<span class='mc-title'>".$row["title"]."</span>";
-		$rows[$decimal] .= "<div class='mc-consumables' id='consumable-".$row["mission_id"]."'>";
-		if(is_array($consumables)){
-			foreach($consumables AS $consumable_id => $consumable_name){
-				$rows[$decimal] .= "<img title='".$consumable_name."' class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
-			}
-		}
-		$rows[$decimal] .= "</div>";
 		$rows[$decimal] .= "</div>"; // mc-body
 
 		// Time left + retreat/claim button
@@ -1063,6 +1056,15 @@ function getCurrentMissions($conn){
 		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Success</div><div class='mc-stat-val'>".(($success_rate+$row["success_rate"]))."%</div></div>";
 		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Duration</div><div class='mc-stat-val'>".$row["duration"]."&nbsp;".(($row["duration"] == 1) ? "Day" : "Days")."</div></div>";
 		$rows[$decimal] .= "</div>"; // mc-stats
+
+		// Consumable items row (anchored to bottom, above progress bar)
+		$rows[$decimal] .= "<div class='mc-items' id='consumable-".$row["mission_id"]."'>";
+		if(is_array($consumables)){
+			foreach($consumables AS $consumable_id => $consumable_name){
+				$rows[$decimal] .= "<img title='".$consumable_name."' class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
+			}
+		}
+		$rows[$decimal] .= "</div>";
 
 		// Progress bar (separate ID for JS hide on retreat)
 		$rows[$decimal] .= "<div class='mc-progress' id='mission-progress-".$row["mission_id"]."'>";

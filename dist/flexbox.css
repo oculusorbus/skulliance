@@ -2782,6 +2782,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     display: flex;
     flex-direction: column;
     gap: 4px;
+    text-align: left;
 }
 .mc-title {
     font-size: 0.82rem;
@@ -2790,16 +2791,23 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: left;
 }
-.mc-consumables {
+/* Items row — sits between stats strip and progress bar */
+.mc-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 3px;
+    gap: 4px;
+    padding: 6px 12px;
+    border-top: 1px solid rgba(0,200,160,0.06);
+    min-height: 0;
 }
-.mc-consumables .icon {
+.mc-items:empty { display: none; }
+.mc-items .icon {
     width: 22px !important;
     height: 22px !important;
     border-radius: 4px;
+    border: 1px solid rgba(0,200,160,0.15) !important;
     margin: 0 !important;
 }
 .mc-aside {

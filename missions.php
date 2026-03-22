@@ -63,7 +63,10 @@ if(isset($_POST["reset_mission"])){
 				$display = "none";
 			}
 		}
-		echo "<h2>Current Missions&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='current-".$arrow."' src='icons/".$arrow.".png' onclick='toggleCurrentMissions(this)'/></h2>";
+		echo "<div class='rc-section-title' onclick='toggleCurrentMissions(this.querySelector(\".raid-arrow-icon\"))'>"
+		   . "<img class='raid-arrow-icon' id='current-".$arrow."' src='icons/".$arrow.".png'>"
+		   . "<span class='rc-section-label'>CURRENT MISSIONS</span>"
+		   . "</div>";
 		echo '<a name="current-missions" id="current-missions"></a>';
 		echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
 		$projects = array();
