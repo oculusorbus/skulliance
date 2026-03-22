@@ -645,8 +645,8 @@ $conn->close();
                 <div class="ana-econ-label">Raids</div>
                 <div class="ana-econ-value"><?php echo ana_fmt($raid_trans); ?></div>
                 <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($raid_credits); ?> won</span>
-                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($raid_debits); ?> lost</span>
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($raid_credits); ?> rewards</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($raid_debits); ?> penalties</span>
                 </div>
             </div>
             <div class="ana-econ-item">
