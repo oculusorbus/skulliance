@@ -17,8 +17,20 @@ $nft_joins = "FROM nfts
         INNER JOIN projects    ON projects.id = collections.project_id";
 $nft_where = "WHERE nfts.user_id != 0 AND nfts.ipfs IS NOT NULL AND nfts.ipfs != ''";
 
-// ── Main NFT query: random 400 from visible users ─────────────────────────
-$vis_clause = "users.visibility = 2" . ($my_user_id ? " AND nfts.user_id != $my_user_id" : "");
+// ── Active users: logged in last month, diamond skull owners, or delegators ─
+$active_clause = "nfts.user_id IN (
+    SELECT id FROM (
+        SELECT id FROM users WHERE last_login >= NOW() - INTERVAL 1 MONTH
+        UNION
+        SELECT DISTINCT user_id AS id FROM nfts WHERE collection_id = 16
+        UNION
+        SELECT DISTINCT n2.user_id AS id FROM nfts n2
+        INNER JOIN diamond_skulls ds ON ds.nft_id = n2.id
+    ) AS active_users
+)";
+
+// ── Main NFT query: random 400 from visible active users ───────────────────
+$vis_clause = "users.visibility = 2 AND $active_clause" . ($my_user_id ? " AND nfts.user_id != $my_user_id" : "");
 $sql = "SELECT $nft_cols $nft_joins $nft_where AND $vis_clause ORDER BY RAND() LIMIT 400";
 
 // ── Logged-in user: always fetch ALL their own NFTs ────────────────────────
