@@ -4,10 +4,6 @@ include 'message.php';
 // Verify includes Webhooks
 include 'verify.php';
 include 'skulliance.php';
-$is_mobile = preg_match('/(android|iphone|ipad|ipod|mobile)/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
-function strip_nft_images($html){
-	return preg_replace("/<span class='nft-image'>.*?<\\/span>/s", '', $html);
-}
 include 'header.php';
 ?>
 
@@ -57,10 +53,7 @@ if(getVisibility($conn) == "0"){
 				$total_nfts  = countNFTs($conn, $filterby);
 				$total_pages = (int)ceil($total_nfts / $per_page);
 				if($page > $total_pages && $total_pages > 0) $page = $total_pages;
-				ob_start();
 				getNFTs($conn, $filterby, "", false, "", false, "", $page, $per_page);
-				$html = ob_get_clean();
-				echo $is_mobile ? strip_nft_images($html) : $html;
 				if($total_pages > 1){
 					$fb = urlencode($filterby);
 					echo "<div class='nft-pagination'>";
