@@ -2371,18 +2371,33 @@ function getAddressesDiscord($conn) {
 
 // Get all addresses 
 function getAllAddresses($conn){
-	$sql = "SELECT stake_address FROM wallets";
+	$sql = "
+		-- Active users: logged in within the last month
+		SELECT DISTINCT w.stake_address FROM wallets w
+		JOIN users u ON u.id = w.user_id
+		WHERE u.last_login >= NOW() - INTERVAL 1 MONTH
+
+		UNION
+
+		-- Always include Diamond Skull owners (collection_id = 16) regardless of last login
+		SELECT DISTINCT w.stake_address FROM wallets w
+		JOIN nfts n ON n.user_id = w.user_id
+		WHERE n.collection_id = 16
+
+		UNION
+
+		-- Always include owners of NFTs delegated to any Diamond Skull regardless of last login
+		SELECT DISTINCT w.stake_address FROM wallets w
+		JOIN nfts n ON n.user_id = w.user_id
+		JOIN diamond_skulls ds ON ds.nft_id = n.id
+	";
 	$result = $conn->query($sql);
-	
-    $addresses = array();
+
+	$addresses = array();
 	if ($result->num_rows > 0) {
-	  // output data of each row
 	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
     	$addresses[] = $row["stake_address"];
 	  }
-	} else {
-	  //echo "0 results";
 	}
 	return $addresses;
 }
