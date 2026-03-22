@@ -544,7 +544,13 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 	}else{
 		echo "<li class='role".$greyed_out."'>";
 	}
-	echo "<strong>Day ".$day.":</strong>&nbsp;&nbsp;<img class='icon' src='icons/".$consumables[$day].".png'/>+&nbsp;&nbsp;&nbsp;<img class='icon' src='icons/".strtolower($currency).".png'/> +".$amount." ".preg_replace('/[0-9]+/', '', $currency);
+	echo "<span style='display:flex;align-items:center;gap:5px;flex-wrap:nowrap;'>"
+		."<strong>Day ".$day.":</strong>"
+		."<img class='icon' src='icons/".$consumables[$day].".png'/>"
+		."<span>+</span>"
+		."<img class='icon' src='icons/".strtolower($currency).".png'/>"
+		."<span>+".$amount."&nbsp;".preg_replace('/[0-9]+/', '', $currency)."</span>"
+		."</span>";
 	echo "</li>";
 }
 
