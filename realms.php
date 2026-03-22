@@ -56,7 +56,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 					?>
 					<li class="role" style="display:block;padding:8px 0 12px;">
 						<div class="location-row" style="border-bottom:1px solid rgba(0,200,160,0.15);padding-bottom:14px;margin-bottom:6px;align-items:center;">
-							<div style="flex-shrink:0;">
+							<div class="realm-logo-wrap" style="flex-shrink:0;">
 								<img src="images/realms-logo.png" style="width:100px;opacity:0.9;margin-right:0;"/>
 							</div>
 							<div style="flex:1;"></div>
