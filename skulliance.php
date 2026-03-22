@@ -544,7 +544,7 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 	}else{
 		echo "<li class='role".$greyed_out."'>";
 	}
-	echo "<span style='display:flex;align-items:center;gap:5px;flex-wrap:nowrap;white-space:nowrap;font-size:0.9rem;'>"
+	echo "<span style='display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;font-size:0.9rem;'>"
 		."<strong>Day ".$day.":</strong>"
 		."<img class='icon' src='icons/".$consumables[$day].".png'/>"
 		."<span>+</span>"
