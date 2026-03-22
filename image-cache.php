@@ -154,6 +154,17 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
         return 'error';
     }
 
+    // ── GIF: save as-is to avoid coalesceImages() OOM on animated GIFs ────────
+    if ($ext === 'gif') {
+        $filepath = $dir . $md5 . '.gif';
+        if (file_put_contents($filepath, $body) !== false) {
+            echo "  [CACHED] $filepath\n";
+            return 'cached';
+        }
+        echo "  [ERROR] Could not write GIF $filepath\n";
+        return 'error';
+    }
+
     // ── Resize and save with Imagick ──────────────────────────────────────────
     $filepath = $dir . $md5 . '.' . $ext;
 
@@ -166,19 +177,9 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
         $width = $imagick->getImageWidth();
 
         if ($width > 1000) {
-            if ($ext === 'gif') {
-                // Resize each frame of animated GIF
-                $imagick = $imagick->coalesceImages();
-                foreach ($imagick as $frame) {
-                    $frame->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
-                }
-                $imagick = $imagick->deconstructImages();
-            } else {
-                $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
-            }
+            $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
         }
 
-        // writeImages handles both single frames and multi-frame GIFs
         $imagick->writeImages($filepath, true);
         $imagick->clear();
         $imagick->destroy();
