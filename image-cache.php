@@ -27,6 +27,7 @@ $sql = "
             JOIN diamond_skulls ds ON ds.nft_id = n2.id
         ) AS active_users
     )
+LIMIT 100
 ";
 
 $result = $conn->query($sql);
