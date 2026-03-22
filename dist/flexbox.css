@@ -3477,7 +3477,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 
 /* ── NFT Pagination ──────────────────────────────────────────────────────── */
 .nft-pagination {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px;
     padding: 16px 4px 8px;
 }
 .page-btn {
