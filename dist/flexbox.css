@@ -2682,6 +2682,42 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .rs-card { flex: 1 1 100%; }
 }
 
+/* Mission stats item inventory */
+.ms-inv-header {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #00c8a0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 18px 0 10px;
+}
+.ms-inventory {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.ms-inv-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,200,160,0.05);
+    border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 8px;
+    padding: 8px 14px 8px 10px;
+}
+.ms-inv-name {
+    font-size: 0.78rem;
+    color: #7a9eb0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ms-inv-amount {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-left: 4px;
+}
+
 /* Mobile: stack columns */
 @media (max-width: 500px) {
     .rc-card-body { flex-direction: column; }

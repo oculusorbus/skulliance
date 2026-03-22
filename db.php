@@ -3903,213 +3903,110 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 }
 
 function getTotalMissions($conn){
-	/*$month_sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id 
-				  WHERE success_missions.status = '1' AND success_users.id = users.id AND DATE(success_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS success, 
-	             (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id 
-				  WHERE failed_missions.status = '2' AND failed_users.id = users.id AND DATE(failed_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS failure, 
-				 (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id 
-				  WHERE progress_missions.status = '0' AND progress_users.id = users.id AND DATE(progress_missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')) AS progress, 
-	        	  COUNT(missions.id) AS total, SUM(quests.duration) AS total_duration, users.id AS user_id 
-		    	  FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."' AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')";*/
-				  
-    $month_sql = "SELECT 
+	$month_sql = "SELECT
     users.id AS user_id,
     SUM(IF(missions.status = '1', 1, 0)) AS success,
     SUM(IF(missions.status = '2', 1, 0)) AS failure,
     SUM(IF(missions.status = '0', 1, 0)) AS progress,
     COUNT(missions.id) AS total,
     SUM(quests.duration) AS total_duration
-	FROM users 
-	INNER JOIN missions ON missions.user_id = users.id 
-	INNER JOIN quests ON quests.id = missions.quest_id 
-	WHERE users.id = '".$_SESSION['userData']['user_id']."' 
+	FROM users
+	INNER JOIN missions ON missions.user_id = users.id
+	INNER JOIN quests ON quests.id = missions.quest_id
+	WHERE users.id = '".$_SESSION['userData']['user_id']."'
 	  AND DATE(missions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')
-	GROUP BY users.id;";
-	
+	GROUP BY users.id";
+
 	$month_result = $conn->query($month_sql);
-	
-	if ($month_result->num_rows > 0) {
-		echo "<table id='transactions' cellspacing='0'>";
-		echo "<th width='14%'>Timeframe</th><th width='14%'>Score</th><th width='14%'>Total Missions</th><th width='14%'>In Progress</th><th width='14%'>Success</th><th width='14%'>Failure</th><th width='14%'>Leaderboard</th>";
-		while($month_row = $month_result->fetch_assoc()) {
-			echo "<tr class='month-row'>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/calendar.png'/>";
-			echo date('F');
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/score.png'/>";
-			echo number_format(calculateScore($month_row["total_duration"], $month_row["success"], $month_row["failure"], $month_row["progress"]));
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/total.png'/>";
-			echo $month_row["total"];
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/time.png'/>";
-			echo $month_row["progress"];
-			echo "</td>";
-			echo "<td align='center'>";
-			$success_percentage = 0;
-			$over50 = "";
-			if($month_row["total"]-$month_row["progress"] != 0){
-				$success_percentage = $month_row["success"]/($month_row["total"]-$month_row["progress"])*100;
-			}else{
-				$success_percentage = 0;
-			}
-			if(round($success_percentage) > 50){
-				$over50 = "over50";
-			}
-			?>
-			<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
-			   <span><?php echo round($success_percentage, 2)."%";?></span>
-			   <div class="left-half-clipper">
-			      <div class="first50-bar success"></div>
-			      <div class="value-bar success-bar"></div>
-			   </div>
-			</div>
-			<?php
-			echo "<span class='outcome-total'>".$month_row["success"]."</span>";
-			echo "</td>";
-			echo "<td align='center'>";
-			$failure_percentage = 0;
-			$over50 = "";
-			if($month_row["total"]-$month_row["progress"] != 0){
-				$failure_percentage = $month_row["failure"]/($month_row["total"]-$month_row["progress"])*100;
-			}else{
-				$failure_percentage = 0;
-			}
-			if(round($failure_percentage) > 50){
-				$over50 = "over50";
-			}
-			?>
-			<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
-			   <span><?php echo round($failure_percentage, 2)."%";?></span>
-			   <div class="left-half-clipper">
-			      <div class="first50-bar failure"></div>
-			      <div class="value-bar failure-bar"></div>
-			   </div>
-			</div>
-			<?php
-			echo "<span class='outcome-total'>".$month_row["failure"]."</span>";
-			echo "</td>";
-			echo "<td align='center'>";
-			echo "<img class='missions-icon' src='icons/trophy.png'/>";
-			echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='monthly'/><input type='submit' class='small-button' value='".date("F")."'/></form>";
-			echo "</td>";
-			echo "</tr>";
+
+	$sql = "SELECT
+    users.id AS user_id,
+    SUM(IF(missions.status = '1', 1, 0)) AS success,
+    SUM(IF(missions.status = '2', 1, 0)) AS failure,
+    SUM(IF(missions.status = '0', 1, 0)) AS progress,
+    COUNT(missions.id) AS total,
+    SUM(quests.duration) AS total_duration
+	FROM users
+	INNER JOIN missions ON missions.user_id = users.id
+	INNER JOIN quests ON quests.id = missions.quest_id
+	WHERE users.id = '".$_SESSION['userData']['user_id']."'
+	GROUP BY users.id";
+
+	$result = $conn->query($sql);
+
+	// --- This Month card data ---
+	$m_score = 0; $m_total = 0; $m_progress = 0; $m_success = 0; $m_failure = 0; $m_duration = 0;
+	if ($month_result && $month_result->num_rows > 0) {
+		$month_row = $month_result->fetch_assoc();
+		$m_total    = intval($month_row["total"]);
+		$m_progress = intval($month_row["progress"]);
+		$m_success  = intval($month_row["success"]);
+		$m_failure  = intval($month_row["failure"]);
+		$m_duration = intval($month_row["total_duration"]);
+		$m_score    = calculateScore($m_duration, $m_success, $m_failure, $m_progress);
+	}
+	$m_completed = $m_total - $m_progress;
+	$m_spct = ($m_completed > 0) ? round($m_success / $m_completed * 100, 1) : 0;
+	$m_fpct = ($m_completed > 0) ? round($m_failure / $m_completed * 100, 1) : 0;
+
+	echo "<div class='rs-grid'>";
+
+	// This Month card
+	echo "<div class='rs-card'>";
+	echo "<div class='rs-card-period'><img class='missions-icon' src='icons/calendar.png'/> ".date('F')."</div>";
+	echo "<div class='rs-score-label'>Score</div>";
+	echo "<div class='rs-score'>".number_format($m_score)."</div>";
+	echo "<div class='rs-stat-row'>";
+	echo "<div class='rs-stat'><div class='rs-stat-value'>".number_format($m_total)."</div><div class='rs-stat-label'>Total Missions</div></div>";
+	echo "<div class='rs-stat'><div class='rs-stat-value'>".$m_progress."</div><div class='rs-stat-label'>In Progress</div></div>";
+	echo "<div class='rs-stat rs-success'><div class='rs-stat-value'>".number_format($m_success)." <span class='rs-pct'>".$m_spct."%</span></div><div class='rs-stat-label'>Success</div></div>";
+	echo "<div class='rs-stat rs-failure'><div class='rs-stat-value'>".number_format($m_failure)." <span class='rs-pct'>".$m_fpct."%</span></div><div class='rs-stat-label'>Failure</div></div>";
+	echo "</div>"; // rs-stat-row
+	echo "<div class='rs-lb-link'><form action='leaderboards.php' method='post'><input type='hidden' name='filterby' value='monthly'/><input type='submit' class='small-button' value='".date("F")." Leaderboard'/></form></div>";
+	echo "</div>"; // rs-card
+
+	// All Time card
+	if ($result && $result->num_rows > 0) {
+		$row = $result->fetch_assoc();
+		$a_total    = intval($row["total"]);
+		$a_progress = intval($row["progress"]);
+		$a_success  = intval($row["success"]);
+		$a_failure  = intval($row["failure"]);
+		$a_duration = intval($row["total_duration"]);
+		$a_score    = calculateScore($a_duration, $a_success, $a_failure, $a_progress);
+		$a_completed = $a_total - $a_progress;
+		$a_spct = ($a_completed > 0) ? round($a_success / $a_completed * 100, 1) : 0;
+		$a_fpct = ($a_completed > 0) ? round($a_failure / $a_completed * 100, 1) : 0;
+		echo "<div class='rs-card'>";
+		echo "<div class='rs-card-period'><img class='missions-icon' src='icons/infinity.png'/> All Time</div>";
+		echo "<div class='rs-score-label'>Score</div>";
+		echo "<div class='rs-score'>".number_format($a_score)."</div>";
+		echo "<div class='rs-stat-row'>";
+		echo "<div class='rs-stat'><div class='rs-stat-value'>".number_format($a_total)."</div><div class='rs-stat-label'>Total Missions</div></div>";
+		echo "<div class='rs-stat'><div class='rs-stat-value'>".$a_progress."</div><div class='rs-stat-label'>In Progress</div></div>";
+		echo "<div class='rs-stat rs-success'><div class='rs-stat-value'>".number_format($a_success)." <span class='rs-pct'>".$a_spct."%</span></div><div class='rs-stat-label'>Success</div></div>";
+		echo "<div class='rs-stat rs-failure'><div class='rs-stat-value'>".number_format($a_failure)." <span class='rs-pct'>".$a_fpct."%</span></div><div class='rs-stat-label'>Failure</div></div>";
+		echo "</div>"; // rs-stat-row
+		echo "<div class='rs-lb-link'><form action='leaderboards.php' method='post'><input type='hidden' name='filterby' value='missions'/><input type='submit' class='small-button' value='All Time Leaderboard'/></form></div>";
+		echo "</div>"; // rs-card
+	}
+
+	echo "</div>"; // rs-grid
+
+	// Item Inventory
+	$consumables = getCurrentAmounts($conn);
+	if (!empty($consumables)) {
+		echo "<div class='ms-inv-header'>Item Inventory</div>";
+		echo "<div class='ms-inventory'>";
+		foreach ($consumables as $id => $consumable) {
+			$icon_name = strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"])));
+			echo "<div class='ms-inv-pill'>";
+			echo "<img class='icon' style='border:0px' src='icons/".$icon_name.".png'/>";
+			echo "<span class='ms-inv-name'>".$consumable["name"]."</span>";
+			echo "<span class='ms-inv-amount'>".$consumable["amount"]."</span>";
+			echo "</div>";
 		}
-		/*$sql = "SELECT (SELECT COUNT(success_missions.id) FROM missions AS success_missions INNER JOIN users AS success_users ON success_users.id = success_missions.user_id WHERE success_missions.status = '1' AND success_users.id = users.id) AS success, 
-		               (SELECT COUNT(failed_missions.id) FROM missions AS failed_missions INNER JOIN users AS failed_users ON failed_users.id = failed_missions.user_id  WHERE failed_missions.status = '2' AND failed_users.id = users.id) AS failure, 
-					   (SELECT COUNT(progress_missions.id) FROM missions AS progress_missions INNER JOIN users AS progress_users ON progress_users.id = progress_missions.user_id  WHERE progress_missions.status = '0' AND progress_users.id = users.id) AS progress, 
-		        COUNT(missions.id) AS total, SUM(quests.duration) AS total_duration, users.id AS user_id
-			    FROM users INNER JOIN missions ON missions.user_id = users.id INNER JOIN quests ON quests.id = missions.quest_id WHERE users.id = '".$_SESSION['userData']['user_id']."'";*/
-		
-		$sql = "SELECT 
-	    users.id AS user_id,
-	    SUM(IF(missions.status = '1', 1, 0)) AS success,
-	    SUM(IF(missions.status = '2', 1, 0)) AS failure,
-	    SUM(IF(missions.status = '0', 1, 0)) AS progress,
-	    COUNT(missions.id) AS total,
-	    SUM(quests.duration) AS total_duration
-		FROM users 
-		INNER JOIN missions ON missions.user_id = users.id 
-		INNER JOIN quests ON quests.id = missions.quest_id 
-		WHERE users.id = '".$_SESSION['userData']['user_id']."'
-		GROUP BY users.id";
-		
-		$result = $conn->query($sql);
-	
-		if ($result->num_rows > 0) {
-			while($row = $result->fetch_assoc()) {
-				echo "<tr>";
-				echo "<td align='center'>";
-				echo "<img class='missions-icon' src='icons/infinity.png'/>";
-				echo "All Time";
-				echo "</td>";
-				echo "<td align='center'>";
-				echo "<img class='missions-icon' src='icons/all-score.png'/>";
-				echo number_format(calculateScore($row["total_duration"], $row["success"], $row["failure"], $row["progress"]));
-				echo "</td>";
-				echo "<td align='center'>";
-				echo "<img class='missions-icon' src='icons/grand-total.png'/>";
-				echo number_format($row["total"]);
-				echo "</td>";
-				echo "<td align='center'>";
-				echo "<img class='missions-icon' src='icons/all-time.png'/>";
-				echo $row["progress"];
-				echo "</td>";
-				echo "<td align='center'>";
-				$success_percentage = 0;
-				$over50 = "";
-				if($row["total"]-$row["progress"] != 0){
-					$success_percentage = $row["success"]/($row["total"]-$row["progress"])*100;
-				}else{
-					$success_percentage = 0;
-				}
-				if(round($success_percentage) > 50){
-					$over50 = "over50";
-				}
-				?>
-				<div class="progress-circle <?php echo $over50;?> p<?php echo round($success_percentage);?>">
-				   <span><?php echo round($success_percentage, 2)."%";?></span>
-				   <div class="left-half-clipper">
-				      <div class="first50-bar success"></div>
-				      <div class="value-bar success-bar"></div>
-				   </div>
-				</div>
-				<?php
-				echo "<span class='outcome-total'>".number_format($row["success"])."</span>";
-				echo "</td>";
-				echo "<td align='center'>";
-				$failure_percentage = 0;
-				$over50 = "";
-				if($row["total"]-$row["progress"] != 0){
-					$failure_percentage = $row["failure"]/($row["total"]-$row["progress"])*100;
-				}else{
-					$failure_percentage = 0;
-				}
-				if(round($failure_percentage) > 50){
-					$over50 = "over50";
-				}
-				?>
-				<div class="progress-circle <?php echo $over50;?> p<?php echo round($failure_percentage);?>">
-				   <span><?php echo round($failure_percentage, 2)."%";?></span>
-				   <div class="left-half-clipper">
-				      <div class="first50-bar failure"></div>
-				      <div class="value-bar failure-bar"></div>
-				   </div>
-				</div>
-				<?php
-				echo "<span class='outcome-total'>".number_format($row["failure"])."</span>";
-				echo "</td>";
-				echo "<td align='center'>";
-				echo "<img class='missions-icon' src='icons/crown.png'/>";
-				echo "<form action='leaderboards.php' method='post'><input type='hidden' name='filterby' id='filterby' value='missions'/><input type='submit' class='small-button' value='All Time'/></form>";
-				echo "</td>";
-				echo "</tr>";
-				}
-			}
-		echo "</table><br>";
-		$consumables = array();
-		$consumables = getCurrentAmounts($conn);
-		if(!empty($consumables)){
-			echo "<h3>Item Inventory</h3>";
-			echo "<table id='transactions' cellspacing='0'>";
-			foreach($consumables AS $id => $consumable){
-				echo "<th align='center' width='14%'>";
-				echo $consumable["name"];
-				echo "</th>";
-			}
-			echo "<tr>";
-			foreach($consumables AS $id => $consumable){
-				echo "<td align='center'>";
-				echo "<img class='icon' style='border:0px' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable["name"]))).".png'/><br><br>";
-				echo "<span class='amount'>".$consumable["amount"]."</span>";
-				echo "</li>";
-			}
-			echo "</tr></table>";
-		}
+		echo "</div>";
 	}
 }
 

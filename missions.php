@@ -41,7 +41,10 @@ if(isset($_POST["reset_mission"])){
 				$display = "none";
 			}
 		}
-	  	echo "<h2>Missions Stats&nbsp;<img style='padding-right:20px;cursor:pointer;' class='icon' id='".$arrow."' src='icons/".$arrow.".png' onclick='toggleTotalMissions(this)'/></h2>";
+	  	echo "<div class='rc-section-title' onclick='toggleTotalMissions(this.querySelector(\".raid-arrow-icon\"))'>"
+	  	   . "<img class='raid-arrow-icon' id='".$arrow."' src='icons/".$arrow.".png'>"
+	  	   . "<span class='rc-section-label'>MISSIONS STATS</span>"
+	  	   . "</div>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
 		if($display == 'block'){
