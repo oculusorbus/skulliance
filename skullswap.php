@@ -22,7 +22,7 @@ include 'header.php';
              flex-direction: column;
              align-items: center;
              position: relative;
-             margin-top: 15px;
+             margin-top: 10px;
          }
          #hud {
              width: 100%;
