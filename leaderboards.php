@@ -5,7 +5,8 @@ include 'skulliance.php';
 include 'header.php';
 ?>
 <style>
-.podium-bleed-clip { overflow-x: clip; }
+/* overflow:hidden (not clip) creates a BFC that fully contains negative-margin children */
+.podium-bleed-clip { overflow: hidden; }
 @keyframes podium-user-glow {
   0%, 100% { box-shadow: 0 0 4px 2px rgba(0,200,160,0.15); }
   50%       { box-shadow: 0 0 22px 7px rgba(0,200,160,0.75); }
@@ -25,13 +26,15 @@ include 'header.php';
   gap: 6px;
   margin: 20px 0 0;
 }
-@media (max-width: 600px) {
-  .podium-wrap { justify-content: flex-start; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
-  .podium-slot { width: 100px; }
-  .podium-rank-1 .podium-avatar { width: 68px; height: 68px; }
-  .podium-avatar { width: 56px; height: 56px; }
-  /* Cancel the full-bleed negative margins on mobile — they extend past the clipped container */
+@media (max-width: 700px) {
+  /* Cancel full-bleed negative margins — match the 700px overflow:hidden breakpoint on #filtered-content */
   .podium-section { margin-left: 0; margin-right: 0; border-radius: 8px; }
+  /* Slots: fluid flex instead of fixed width so they fill available space without overflowing */
+  .podium-wrap { justify-content: center; gap: 4px; max-width: 100%; overflow: hidden; padding-bottom: 4px; }
+  .podium-slot { width: auto; flex: 1 1 0; min-width: 0; max-width: 120px; }
+  .podium-rank-1 .podium-avatar { width: 60px; height: 60px; }
+  .podium-avatar { width: 48px; height: 48px; }
+  .podium-name { max-width: 100%; font-size: 0.75rem; }
 }
 .podium-slot {
   display: flex;
