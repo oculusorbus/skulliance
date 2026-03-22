@@ -3313,6 +3313,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .content {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        padding: 10px;
     }
     /* Leaderboard container: clip instead of scroll — lb-rows are flex, not tables */
     #filtered-content {
