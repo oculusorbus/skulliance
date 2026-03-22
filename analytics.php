@@ -596,5 +596,6 @@ fetch('ajax/analytics-content.php')
 <div class="footer">
     <p>Skulliance<br>Copyright &copy; <span id="year"></span></p>
 </div>
+<script>document.getElementById("year").innerHTML = new Date().getFullYear();</script>
 </body>
 </html>
