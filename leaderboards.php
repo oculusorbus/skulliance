@@ -28,13 +28,21 @@ include 'header.php';
 }
 @media (max-width: 700px) {
   /* Cancel full-bleed negative margins — match the 700px overflow:hidden breakpoint on #filtered-content */
-  .podium-section { margin-left: 0; margin-right: 0; border-radius: 8px; }
-  /* Slots: fluid flex instead of fixed width so they fill available space without overflowing */
-  .podium-wrap { justify-content: center; gap: 4px; max-width: 100%; overflow: hidden; padding-bottom: 4px; }
-  .podium-slot { width: auto; flex: 1 1 0; min-width: 0; max-width: 120px; }
-  .podium-rank-1 .podium-avatar { width: 60px; height: 60px; }
-  .podium-avatar { width: 48px; height: 48px; }
-  .podium-name { max-width: 100%; font-size: 0.75rem; }
+  /* Reduce side padding: the 10px base was never overridden and was the main source of overflow */
+  .podium-section { margin-left: 0; margin-right: 0; border-radius: 8px; padding-left: 2px; padding-right: 2px; }
+  /* Slots: fluid flex so they share available space; strip excess slot padding */
+  .podium-wrap { justify-content: center; gap: 3px; max-width: 100%; overflow: hidden; padding-bottom: 4px; }
+  .podium-slot { width: auto; flex: 1 1 0; min-width: 0; max-width: 110px; padding: 6px 2px 0; }
+  /* Compact avatars */
+  .podium-rank-1 .podium-avatar { width: 52px; height: 52px; margin-bottom: 4px; }
+  .podium-avatar { width: 40px; height: 40px; margin-bottom: 4px; }
+  /* Name: clamp to slot width */
+  .podium-name { max-width: 100%; font-size: 0.68rem; }
+  .podium-rank-1 .podium-name { font-size: 0.75rem; }
+  /* Medal: slightly smaller */
+  .podium-medal { font-size: 1.2rem; margin-bottom: 2px; }
+  /* Score: tighten */
+  .podium-score { font-size: 0.62rem; margin-bottom: 4px; }
 }
 .podium-slot {
   display: flex;
