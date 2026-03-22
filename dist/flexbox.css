@@ -2693,20 +2693,25 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     text-align: left;
 }
 .ms-inventory {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    display: flex;
     gap: 10px;
 }
 .ms-inv-pill {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     gap: 6px;
     background: rgba(0,200,160,0.05);
     border: 1px solid rgba(0,200,160,0.12);
     border-radius: 8px;
-    padding: 12px 8px 10px;
+    padding: 14px 8px 12px;
     text-align: center;
+}
+.ms-inv-pill img.icon {
+    display: block;
+    margin: 0 auto;
 }
 .ms-inv-name {
     font-size: 0.7rem;
