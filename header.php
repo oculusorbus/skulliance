@@ -93,6 +93,7 @@
 		  <div class="nav-dropdown">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Account</span>
 		    <div class="nav-dropdown-menu">
+		      <a href="points.php">Points</a>
 		      <a href="crafting.php">Crafting</a>
 		      <a href="transactions.php">Transactions</a>
 		      <a href="wallets.php">Wallets</a>
