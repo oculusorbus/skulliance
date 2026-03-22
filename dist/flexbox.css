@@ -1794,6 +1794,7 @@ section.active {
 		max-height: unset;
 		overflow: unset;
 	}
+	#row1 .col1of3,
 	#row4 .col1of3 {
 		padding: 4px;
 	}
