@@ -2,6 +2,7 @@
 include_once 'db.php';
 
 set_time_limit(0);
+ini_set('memory_limit', '512M');
 
 $base_path = __DIR__ . '/images/nfts/';
 
@@ -45,11 +46,17 @@ $existing  = 0;
 echo "Found $total NFTs to process.\n\n";
 
 while ($row = $result->fetch_assoc()) {
-    $outcome = cacheNFTImage($row['ipfs'], $row['collection_id'], $row['project_id'], $base_path);
-    if ($outcome === 'exists')  { $existing++; }
-    elseif ($outcome === 'cached') { $cached++;  }
-    elseif ($outcome === 'skipped') { $skipped++; }
-    else { $errors++; }
+    try {
+        $outcome = cacheNFTImage($row['ipfs'], $row['collection_id'], $row['project_id'], $base_path);
+    } catch (Throwable $e) {
+        echo "  [ERROR] Caught exception for NFT {$row['id']}: " . $e->getMessage() . "\n";
+        $outcome = 'error';
+    }
+    if ($outcome === 'exists')    { $existing++; }
+    elseif ($outcome === 'cached')  { $cached++;   }
+    elseif ($outcome === 'skipped') { $skipped++;  }
+    else                            { $errors++;   }
+    gc_collect_cycles();
 }
 
 echo "\n--- Done ---\n";
@@ -152,6 +159,8 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
 
     try {
         $imagick = new Imagick();
+        $imagick->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024); // 256MB cap
+        $imagick->setResourceLimit(Imagick::RESOURCETYPE_MAP, 256 * 1024 * 1024);
         $imagick->readImageBlob($body);
 
         $width = $imagick->getImageWidth();
