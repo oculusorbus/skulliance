@@ -9,22 +9,7 @@ if (isset($_SESSION['userData'])) {
     $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 }
 
-include 'header.php';
-
-// ── Week boundaries (Thursday 4pm CST) ───────────────────────────
-$tz = new DateTimeZone('America/Chicago');
-$now_dt = new DateTime('now', $tz);
-$dow  = (int)$now_dt->format('N'); // 1=Mon … 4=Thu … 7=Sun
-$hour = (int)$now_dt->format('G');
-if ($dow == 4 && $hour >= 16)   { $days_back = 0; }
-elseif ($dow > 4)                { $days_back = $dow - 4; }
-else                             { $days_back = $dow + 3; }
-$week_start = clone $now_dt;
-if ($days_back > 0) $week_start->modify("-{$days_back} days");
-$week_start->setTime(16, 0, 0);
-$updated = $now_dt->format('M j, Y g:i A') . ' CST';
-
-// ── Helpers ───────────────────────────────────────────────────────
+// ── Helpers (defined before output so they're available after flush) ──
 function ana_stat($conn, $sql) {
     $r = $conn->query($sql);
     if (!$r) return 0;
@@ -41,6 +26,56 @@ function ana_pct($part, $total) {
     if (intval($total) == 0) return 0;
     return round(intval($part) / intval($total) * 100);
 }
+
+// ── Loader CSS injected into <head> via $extra_head ───────────────
+$extra_head = '<style>
+#loader {
+    position: fixed; inset: 0;
+    background: #07111d;
+    z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    transition: opacity 0.6s ease;
+}
+#loader.fade-out { opacity: 0; pointer-events: none; }
+.loader-skull { font-size: 3rem; animation: lp 1.2s ease-in-out infinite; }
+@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
+.loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden; }
+.loader-bar { height:100%;background:#00c8a0;width:0%;animation:lb 6s ease-out forwards; }
+@keyframes lb { to { width:90%; } }
+.loader-text { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
+</style>';
+
+include 'header.php';
+
+// ── Flush loader to browser immediately before running heavy queries ──
+echo '<div id="loader">
+    <div class="loader-skull">💀</div>
+    <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+    <div class="loader-text">Loading Analytics</div>
+</div>
+<script>
+    window.addEventListener("load", function() {
+        var l = document.getElementById("loader");
+        l.classList.add("fade-out");
+        setTimeout(function() { l.style.display = "none"; }, 650);
+    });
+</script>';
+if (ob_get_level()) ob_flush();
+flush();
+
+// ── Week boundaries (Thursday 4pm CST) ───────────────────────────
+$tz = new DateTimeZone('America/Chicago');
+$now_dt = new DateTime('now', $tz);
+$dow  = (int)$now_dt->format('N'); // 1=Mon … 4=Thu … 7=Sun
+$hour = (int)$now_dt->format('G');
+if ($dow == 4 && $hour >= 16)   { $days_back = 0; }
+elseif ($dow > 4)                { $days_back = $dow - 4; }
+else                             { $days_back = $dow + 3; }
+$week_start = clone $now_dt;
+if ($days_back > 0) $week_start->modify("-{$days_back} days");
+$week_start->setTime(16, 0, 0);
+$updated = $now_dt->format('M j, Y g:i A') . ' CST';
 
 $mf = "DATE_FORMAT(CURDATE(),'%Y-%m-01')";
 
@@ -156,23 +191,6 @@ $conn->close();
 ?>
 
 <style>
-/* ── Page loader ─────────────────────────────────────────────── */
-#loader {
-    position: fixed; inset: 0;
-    background: #07111d;
-    z-index: 100;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 20px;
-    transition: opacity 0.6s ease;
-}
-#loader.fade-out { opacity: 0; pointer-events: none; }
-.loader-skull { font-size: 3rem; animation: lp 1.2s ease-in-out infinite; }
-@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
-.loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden; }
-.loader-bar { height:100%;background:#00c8a0;width:0%;animation:lb 6s ease-out forwards; }
-@keyframes lb { to { width:90%; } }
-.loader-text { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
-
 /* ── Analytics page ──────────────────────────────────────────── */
 .ana-page {
     max-width: 1400px;
@@ -533,20 +551,6 @@ $conn->close();
     .ana-proj-cols { grid-template-columns: 1fr; }
 }
 </style>
-
-<div id="loader">
-    <div class="loader-skull">💀</div>
-    <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
-    <div class="loader-text">Loading Analytics</div>
-</div>
-
-<script>
-    window.addEventListener('load', function() {
-        const l = document.getElementById('loader');
-        l.classList.add('fade-out');
-        setTimeout(function() { l.style.display = 'none'; }, 650);
-    });
-</script>
 
 <div class="ana-page">
 
