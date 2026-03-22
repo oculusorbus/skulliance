@@ -1023,10 +1023,9 @@ function getCurrentMissions($conn){
 		// Header row: icons | title + consumables | time + action
 		$rows[$decimal] .= "<div class='mc-header'>";
 
-		// Mission icon + project icon stacked
+		// Mission icon only
 		$rows[$decimal] .= "<div class='mc-icons'>";
 		$rows[$decimal] .= "<img class='mc-mission-icon' title='".$row["title"]."' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
-		$rows[$decimal] .= "<img class='mc-project-icon' title='".$row["currency"]."' src='icons/".strtolower($row["currency"]).".png'/>";
 		$rows[$decimal] .= "</div>";
 
 		// Title only in body
@@ -1057,13 +1056,17 @@ function getCurrentMissions($conn){
 		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Duration</div><div class='mc-stat-val'>".$row["duration"]."&nbsp;".(($row["duration"] == 1) ? "Day" : "Days")."</div></div>";
 		$rows[$decimal] .= "</div>"; // mc-stats
 
-		// Consumable items row (anchored to bottom, above progress bar)
-		$rows[$decimal] .= "<div class='mc-items' id='consumable-".$row["mission_id"]."'>";
+		// Items row: project/points icon first, then consumables (anchored above progress bar)
+		// Project icon is outside consumable-{id} so JS innerHTML replacement on claim doesn't wipe it
+		$rows[$decimal] .= "<div class='mc-items'>";
+		$rows[$decimal] .= "<img class='mc-currency-icon icon' title='".$row["currency"]."' style='border:0px;' src='icons/".strtolower($row["currency"]).".png'/>";
+		$rows[$decimal] .= "<div id='consumable-".$row["mission_id"]."' class='mc-consumables-inner'>";
 		if(is_array($consumables)){
 			foreach($consumables AS $consumable_id => $consumable_name){
 				$rows[$decimal] .= "<img title='".$consumable_name."' class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
 			}
 		}
+		$rows[$decimal] .= "</div>";
 		$rows[$decimal] .= "</div>";
 
 		// Progress bar (separate ID for JS hide on retreat)

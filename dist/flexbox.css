@@ -2796,13 +2796,23 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Items row — sits between stats strip and progress bar */
 .mc-items {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 4px;
     padding: 6px 12px;
     border-top: 1px solid rgba(0,200,160,0.06);
-    min-height: 0;
 }
-.mc-items:empty { display: none; }
+.mc-consumables-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.mc-currency-icon.icon {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px;
+    margin: 0 !important;
+}
 .mc-items .icon {
     width: 22px !important;
     height: 22px !important;
