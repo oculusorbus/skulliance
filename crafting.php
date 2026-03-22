@@ -9,16 +9,16 @@ include 'header.php';
 <a name="crafting" id="crafting"></a>
 <div class="row" id="row1">
   <div class="col1of2">
+    <h2>Crafting</h2>
+    <div class="content" id="player-stats">
+      <?php if(isset($_SESSION['userData']['user_id'])){ renderCrafting($conn, "crafting"); } ?>
+    </div>
+  </div>
+  <div class="col1of2">
     <h2>Core Project Points</h2>
     <div class="content" id="player-stats">
       <?php renderWalletConnection("crafting"); ?>
       <?php if(isset($_SESSION['userData']['user_id'])){ renderCurrency($conn); } ?>
-    </div>
-  </div>
-  <div class="col1of2">
-    <h2>Crafting</h2>
-    <div class="content" id="player-stats">
-      <?php if(isset($_SESSION['userData']['user_id'])){ renderCrafting($conn, "crafting"); } ?>
     </div>
   </div>
 </div>
