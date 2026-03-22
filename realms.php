@@ -80,8 +80,8 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 							</div>
 							<?php endforeach; ?>
 							<div class="loc-stock-row" style="margin-top:6px;gap:6px;">
-								<button class="small-button" id="stock-all-btn" onclick="stockAllLocations()">Stock All Locations</button>
 								<button class="small-button" onclick="openInventoryInfoModal()">Inventory Info</button>
+								<button class="small-button" id="stock-all-btn" onclick="stockAllLocations()">Stock All Locations</button>
 							</div>
 						</div>
 					</li>
