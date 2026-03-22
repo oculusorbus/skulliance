@@ -3209,39 +3209,65 @@ function getItems($conn, $page, $filterby=""){
 	}else{
 		$filterby = "";
 	}
+
+	// Load all user balances keyed by project_id
+	$bal = [];
+	$logged_in = isset($_SESSION['userData']['user_id']);
+	if($logged_in){
+		$uid = (int)$_SESSION['userData']['user_id'];
+		$br = $conn->query("SELECT project_id, balance FROM balances WHERE user_id = '$uid'");
+		if($br) while($b = $br->fetch_assoc()) $bal[(int)$b['project_id']] = (float)$b['balance'];
+	}
+
 	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, secondary_project_id, projects.name AS project_name, projects.currency AS currency, divider, featured FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY featured DESC, projects.id, items.name ASC";
 	$result = $conn->query($sql);
-	
+
 	if ($result->num_rows > 0) {
-	  // output data of each row
 	  $nftcounter = 0;
 	  $uri = $_SERVER['REQUEST_URI'];
-	  if(str_contains($uri, "store.php")){
-		$class = "store-item";
-	  }else{
-		$class = "offering";
-	  }
+	  $class = str_contains($uri, "store.php") ? "store-item" : "offering";
 	  while($row = $result->fetch_assoc()) {
 		$nftcounter++;
+		$pid   = (int)$row['project_id'];
+		$price = (float)$row['price'];
+		$div   = (float)($row['divider'] ?: 1);
 	    echo "<div class='nft ".$class."'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
 		echo "<span class='nft-image'><img loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
-		/* Listing price is redundant when buy buttons list price
-		if($row["project_id"] != 7){
-			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." ".$row["currency"]."<br>or<br>".number_format($row["price"]/$row["divider"])." DIAMOND</span>";
-		}else{
-			echo "<span class='nft-level'><strong>Price</strong><br>".number_format($row["price"])." ".$row["currency"]."</span>";
-		}*/
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
-		renderBuyButton($row["item_id"], $row["project_id"], "BUY: ".number_format($row["price"])." ".$row["currency"], $row["project_id"], $page);
-		if($row["secondary_project_id"] != 0){
-			$project = getProjectInfo($conn, $row["secondary_project_id"]);
-			renderBuyButton($row["item_id"], $row["secondary_project_id"], "BUY: ".number_format($row["price"])." ".$project["currency"], $row["project_id"], $page);
+
+		// Build payment options for this item
+		$options = [];
+		$options[] = ['project_id' => $pid, 'currency' => $row['currency'], 'price' => $price];
+		if($row['secondary_project_id'] != 0){
+			$sec = getProjectInfo($conn, $row['secondary_project_id']);
+			$options[] = ['project_id' => (int)$row['secondary_project_id'], 'currency' => $sec['currency'], 'price' => $price];
 		}
-		if($row["project_id"] != 7){
-			renderBuyButton($row["item_id"], 7, "BUY: ".number_format($row["price"]/$row["divider"])." DIAMOND", $row["project_id"], $page);
+		if($pid != 7){
+			$options[] = ['project_id' => 7, 'currency' => 'DIAMOND', 'price' => $price / $div];
 		}
+
+		// Show user's relevant balances
+		if($logged_in){
+			echo "<span class='nft-level'><strong>Your Balance</strong><br>";
+			foreach($options as $opt){
+				$user_bal = $bal[$opt['project_id']] ?? 0;
+				$icon = strtolower($opt['currency']);
+				echo "<img src='icons/{$icon}.png' style='height:14px;vertical-align:middle;margin-right:3px;'>";
+				echo number_format($user_bal) . " " . $opt['currency'] . "<br>";
+			}
+			echo "</span>";
+		}
+
+		// Render buy buttons, disabled if user can't afford
+		foreach($options as $opt){
+			$user_bal   = $bal[$opt['project_id']] ?? 0;
+			$can_afford = !$logged_in || $user_bal >= $opt['price'];
+			$verbiage   = "BUY: " . number_format($opt['price']) . " " . $opt['currency'];
+			renderBuyButton($row["item_id"], $opt['project_id'], $verbiage, $pid, $page, !$can_afford);
+		}
+
 		echo "</div></div>";
 	  }
 	} else {
@@ -3250,15 +3276,25 @@ function getItems($conn, $page, $filterby=""){
 }
 
 // Render buy button for item
-function renderBuyButton($id, $project_id, $verbiage, $primary_project_id, $page){
+function renderBuyButton($id, $project_id, $verbiage, $primary_project_id, $page, $disabled=false){
 	global $conn;
-	echo "
+	if($disabled){
+		echo "
+	<form onsubmit='return false;' action='".$page.".php#store' method='post'>
+	  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
+	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
+	  <input type='hidden' id='primary_project_id' name='primary_project_id' value='".$primary_project_id."'>
+	  <button type='button' class='small-button' disabled style='opacity:0.4;cursor:not-allowed;'>".htmlspecialchars($verbiage)."</button>
+	</form>";
+	}else{
+		echo "
 	<form onsubmit='return false;' action='".$page.".php#store' method='post'>
 	  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
 	  <input type='hidden' id='project_id' name='project_id' value='".$project_id."'>
 	  <input type='hidden' id='primary_project_id' name='primary_project_id' value='".$primary_project_id."'>
 	  <button type='button' class='small-button' onclick='confirmForm(this.form, \"Purchase this item?\")'>".htmlspecialchars($verbiage)."</button>
 	</form>";
+	}
 }
 
 // Get item information

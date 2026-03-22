@@ -9,28 +9,6 @@ include 'header.php';
 ?>
 		<a name="store" id="store"></a>
 		<div class="row" id="row1">
-			<div class="side">
-				<div class="content">
-					<h2>Store</h2>
-					<div class="content" id="player-stats">
-							<?php renderWalletConnection("store"); ?>
-							<?php renderCurrency($conn); ?>
-					</div>
-					<?php if(isset($_SESSION['userData']['user_id'])){ ?>
-					<h2>Crafting</h2>
-					<div class="content" id="player-stats">
-						<?php renderCrafting($conn, "store"); ?>
-					</div>
-					<h2>Partners</h2>
-					<div class="content" id="player-stats">
-						<?php renderCurrency($conn, false); ?>
-					</div>
-					<?php
-					renderItemSubmissionForm($creators, "store");
-					}
-					?>
-				</div>
-			</div>
     		<div class="main">
 				<?php
 				if($filterby != null && $filterby != 0 && $filterby != "exclusive"){
