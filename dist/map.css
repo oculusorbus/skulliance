@@ -1,7 +1,3 @@
-@media (max-width: 768px) {
-    #map { display: none !important; }
-}
-
 @keyframes raid-pulse {
     from { opacity: 0.4; }
     to   { opacity: 0.85; }
