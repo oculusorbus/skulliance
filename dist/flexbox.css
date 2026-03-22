@@ -3103,6 +3103,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 
 @media (max-width: 400px) {
     .loc-consumable-strip { margin-left: 0; }
+    .loc-stock-row { margin-top: 14px; }
 }
 @media (max-width: 700px) {
     /* Drop the upgrade action to its own row so location-info gets full width for pills */
