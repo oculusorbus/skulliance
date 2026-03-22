@@ -1240,7 +1240,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			}else{
 				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='Select' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
 			}
-			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]), true);
+			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $project_id), true);
 			echo substr($row["asset_name"], 0, 12)." (+".$row["rate"]."%)";
 			echo "</li>";
 		}
@@ -2569,20 +2569,21 @@ function removeUser($conn, $user_id){
 }
 
 // Render IPFS
-function getIPFS($ipfs, $collection_id){
+function getIPFS($ipfs, $collection_id, $project_id = 0){
 	if(str_contains($ipfs, "data:image/svg+xml;base64")){
 		return $ipfs;
-	}else{
-		$ipfs = str_replace("ipfs/", "", $ipfs);
-		return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
-		if($collection_id == 4 || $collection_id == 23){
-			return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
-		}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-			return "https://storage.googleapis.com/jpeg-optim-files/".$ipfs;
-		}else{
-			return "https://image-optimizer.jpgstoreapis.com/".$ipfs;
+	}
+	// Check for locally cached image first
+	if($project_id > 0){
+		$matches = glob(__DIR__ . '/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.*');
+		if(!empty($matches)){
+			$ext = pathinfo($matches[0], PATHINFO_EXTENSION);
+			return '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.' . $ext;
 		}
 	}
+	// Fall back to JPGStore
+	$ipfs = str_replace("ipfs/", "", $ipfs);
+	return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
 }
 
 // Render IPFS
@@ -2622,7 +2623,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 		$nftcounter++;
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-		echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]));
+		echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $project_id));
 		echo "<span class='nft-level'><strong>".$row["username"]."</strong></span>";
 		echo "<span class='nft-level'><br><strong>".$row["rate"]." CARBON</strong></span>";
 		if($_SESSION['userData']['user_id'] == $row["user_id"] || $diamond_skull_owner == true){
@@ -2841,7 +2842,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 		//$imageurl = "https://www.skulliance.io/staking/image.php?ipfs=".str_replace("ipfs/", "", $nft_image);
 	}
 	// Defaulting to IPFS even though it doesn't work for animated GIFs
-	$imageurl = getIPFS($nft_image, $collection_id);
+	$imageurl = getIPFS($nft_image, $collection_id, $project_id);
 	discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "delegations");
 }
 
@@ -3065,7 +3066,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		    	echo $reveal_prefix."<div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".$row["nfts_name"]."</span>";
-			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"]))."</a>";
+			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]))."</a>";
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";

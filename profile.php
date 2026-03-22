@@ -371,13 +371,13 @@ if ($inv_r) {
 
 $gallery_nfts = [];
 if ($show_nfts) {
-    $gal_result = $conn->query("SELECT ipfs, nfts.name as nft_name, collection_id, p.name as project_name, c.name as collection_name
+    $gal_result = $conn->query("SELECT ipfs, nfts.name as nft_name, collection_id, p.id as project_id, p.name as project_name, c.name as collection_name
         FROM nfts INNER JOIN collections c ON c.id = nfts.collection_id INNER JOIN projects p ON p.id = c.project_id
         WHERE nfts.user_id='$tid' ORDER BY RAND() LIMIT 12");
     if ($gal_result && $gal_result->num_rows > 0) {
         while ($row = $gal_result->fetch_assoc()) {
             $gallery_nfts[] = [
-                'url'        => getIPFS($row['ipfs'], $row['collection_id']),
+                'url'        => getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
                 'name'       => htmlspecialchars($row['nft_name']),
                 'project'    => htmlspecialchars($row['project_name']),
                 'collection' => htmlspecialchars($row['collection_name']),

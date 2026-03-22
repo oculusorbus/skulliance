@@ -49,7 +49,7 @@ function build_nft_row($row, $missions_map, $skull_map){
     return [
         'asset_id'        => $row['asset_id'],
         'name'            => htmlspecialchars($name, ENT_QUOTES),
-        'image'           => getIPFS($row['ipfs'], $row['collection_id']),
+        'image'           => getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
         'user_id'         => (int)$row['user_id'],
         'username'        => htmlspecialchars($row['username'] ?? 'Unknown', ENT_QUOTES),
         'discord_id'      => $row['discord_id'],
