@@ -9,7 +9,6 @@ if (isset($_SESSION['userData'])) {
     $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 }
 
-$extra_head = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>';
 include 'header.php';
 
 // ── Week boundaries (Thursday 4pm CST) ───────────────────────────
@@ -808,7 +807,7 @@ $conn->close();
 
     <!-- ── Trends ── -->
     <div class="ana-section-label">Trends</div>
-    <div class="ana-card">
+    <div class="ana-card" id="trends-card">
 
         <div class="trend-controls">
             <select id="trend-metric" class="trend-select" onchange="fetchTrend()">
@@ -890,6 +889,7 @@ $conn->close();
     }
 
     window.fetchTrend = function() {
+        if (!chartJsLoaded) { loadChartJs(fetchTrend); return; }
         const metric = document.getElementById('trend-metric').value;
         const { start, end } = getDateRange();
 
@@ -972,16 +972,34 @@ $conn->close();
         });
     }
 
-    // Init — default to All Time, Transactions
+    // Init — lazy load Chart.js + data when trends section enters viewport
+    let chartJsLoaded = false;
+
+    function loadChartJs(callback) {
+        if (chartJsLoaded) { callback(); return; }
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+        s.onload = function() { chartJsLoaded = true; callback(); };
+        document.head.appendChild(s);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.trend-range-btn[data-range="all"]').classList.add('active');
-
-        // Set default date inputs to today
         const today = dateStr(new Date());
         document.getElementById('trend-end').value = today;
         document.getElementById('trend-start').value = dateStr(new Date(Date.now() - 30 * 86400000));
 
-        fetchTrend();
+        const trendsCard = document.getElementById('trends-card');
+        document.getElementById('trend-loading').style.display = 'flex';
+
+        const observer = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting) {
+                observer.disconnect();
+                loadChartJs(fetchTrend);
+            }
+        }, { rootMargin: '200px' });
+
+        observer.observe(trendsCard);
     });
 })();
 </script>
