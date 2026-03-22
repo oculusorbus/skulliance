@@ -1576,19 +1576,20 @@ window.onclick = function(event) {
   tick();
 }());
 
-// Pin user's own rank row to the top of each leaderboard table
+// Pin user's own rank row to the top of each leaderboard list (only if not in top 3)
 ;(function() {
-  document.querySelectorAll('table[id="transactions"]').forEach(function(table) {
-    var highlighted = table.querySelector('tr.highlight');
+  document.querySelectorAll('.lb-list').forEach(function(list) {
+    var highlighted = list.querySelector('.lb-row.lb-highlight');
     if (!highlighted) return;
+    // Top-3 rows have a trophy icon — already visible, don't pin
+    if (highlighted.querySelector('.lb-trophy')) return;
     var pinned = highlighted.cloneNode(true);
     pinned.style.cssText = 'background:rgba(0,200,160,0.09);outline:1px solid rgba(0,200,160,0.35);';
-    var rankCell = pinned.cells[0];
-    if (rankCell) {
-      rankCell.innerHTML = '<span style="font-size:9px;opacity:0.55;display:block;letter-spacing:0.5px">YOU</span>' + rankCell.innerHTML;
+    var rankNum = pinned.querySelector('.lb-rank-num');
+    if (rankNum) {
+      rankNum.insertAdjacentHTML('beforebegin', '<span style="font-size:9px;opacity:0.55;display:block;letter-spacing:0.5px;text-align:center">YOU</span>');
     }
-    var headerRow = table.querySelector('tr');
-    if (headerRow) headerRow.parentNode.insertBefore(pinned, headerRow.nextSibling);
+    list.insertBefore(pinned, list.firstChild);
   });
 })();
 
