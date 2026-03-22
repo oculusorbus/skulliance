@@ -109,7 +109,7 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
     curl_close($ch);
 
     if ($body === false || $http_code >= 400) {
-        echo "  [ERROR] HTTP $http_code fetching $url\n";
+        echo "  [ERROR] HTTP $http_code fetching $url (mime: $content_type)\n";
         return 'error';
     }
 
