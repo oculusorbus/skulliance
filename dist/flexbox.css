@@ -2950,8 +2950,9 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     align-items: center;
     gap: 8px;
     width: 170px;
-    flex-shrink: 0;
+    flex-shrink: 1;
     min-width: 0;
+    overflow: hidden;
 }
 .lb-avatar {
     width: 34px;
@@ -3265,11 +3266,18 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 
 /* ── Responsive tables: scroll instead of tiny font ─────────────────────── */
 @media screen and (max-width: 700px) {
-    /* Scrollable containers */
-    .content, #filtered-content {
+    /* Scrollable containers — tables need this, but leaderboard div rows do not */
+    .content {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+    /* Leaderboard container: clip instead of scroll — lb-rows are flex, not tables */
+    #filtered-content {
+        overflow-x: hidden;
+        padding: 10px;
+    }
+    /* Tighten the leaderboard column padding on mobile */
+    .col1of3 { padding: 8px; }
     /* Restore transactions from 7px */
     #transactions { font-size: 0.78rem; }
     #transactions th, #transactions td {

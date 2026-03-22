@@ -30,6 +30,8 @@ include 'header.php';
   .podium-slot { width: 100px; }
   .podium-rank-1 .podium-avatar { width: 68px; height: 68px; }
   .podium-avatar { width: 56px; height: 56px; }
+  /* Cancel the full-bleed negative margins on mobile — they extend past the clipped container */
+  .podium-section { margin-left: 0; margin-right: 0; border-radius: 8px; }
 }
 .podium-slot {
   display: flex;
