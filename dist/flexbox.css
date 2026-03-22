@@ -2917,6 +2917,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     flex-direction: column;
     gap: 5px;
     margin-top: 10px;
+    overflow-x: hidden;
 }
 .lb-row {
     display: flex;
@@ -3012,9 +3013,10 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 .lb-reward .lb-stat-val { color: #00c8a0; }
 @media (max-width: 600px) {
-    .lb-row { flex-wrap: wrap; padding: 8px 10px; gap: 6px; }
-    .lb-ident { width: calc(100% - 44px); flex: 1; }
-    .lb-stats { width: 100%; justify-content: flex-start; padding-left: 44px; }
+    .lb-row { flex-wrap: wrap; padding: 8px 10px; gap: 6px; min-width: 0; max-width: 100%; }
+    .lb-ident { width: calc(100% - 44px); flex: 1; flex-shrink: 1; min-width: 0; }
+    .lb-stats { width: 100%; justify-content: flex-start; padding-left: 44px; flex-wrap: wrap; }
+    .lb-stat-val { white-space: normal; word-break: break-word; }
 }
 
 /* Mobile: stack columns */
