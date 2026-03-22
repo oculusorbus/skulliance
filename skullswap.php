@@ -41,6 +41,11 @@ include 'header.php';
              color: #fff;
              text-align: right;
          }
+        @media (max-width: 768px) {
+            #matches {
+                padding-right: 48px;
+            }
+        }
          #game-board {
              display: grid;
              gap: 0.5vh;
