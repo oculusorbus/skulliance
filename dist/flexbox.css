@@ -2257,7 +2257,6 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* ── Realm location items: flex rows (replaces <table> in sidebar) ─────── */
 .location-row {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     padding: 10px 0;
@@ -2274,7 +2273,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .location-info strong { display: block; font-size: 0.82rem; color: #00c8a0; text-transform: uppercase; letter-spacing: 0.04em; }
 .location-meta { font-size: 0.75rem; color: #7a9eb0; line-height: 1.6; }
 .location-action { flex-shrink: 0; text-align: right; }
-.loc-status-labels { display: flex; flex-wrap: wrap; gap: 4px; flex-basis: 100%; padding-left: calc(52px + 12px); margin: 0 0 4px; min-height: 0; }
+.loc-status-labels { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; min-height: 0; }
 .rc-col-content .loc-status-labels { justify-content: center; }
 .loc-status-tag { font-size: 0.68rem; color: #00c8a0; background: rgba(0,200,160,0.1); border: 1px solid rgba(0,200,160,0.3); border-radius: 4px; padding: 1px 5px; line-height: 1.5; }
 
