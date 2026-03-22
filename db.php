@@ -2526,8 +2526,30 @@ function checkAvailableNFT($conn, $asset_id){
 
 // Remove all NFT user ids in preparation for cron job verification
 function removeUsers($conn){
-	$sql = "UPDATE nfts set	user_id = 0";
-	
+	// Only clear NFT ownership for users who are about to be re-verified:
+	// active users (logged in within last month), Diamond Skull owners, and delegators.
+	// Inactive users retain their NFT associations for leaderboard history.
+	// Derived table wrapper required because legs 2+3 reference nfts, the table being updated.
+	$sql = "
+		UPDATE nfts SET user_id = 0
+		WHERE user_id IN (
+			SELECT user_id FROM (
+				SELECT id AS user_id FROM users
+				WHERE last_login >= NOW() - INTERVAL 1 MONTH
+
+				UNION
+
+				SELECT DISTINCT user_id FROM nfts
+				WHERE collection_id = 16
+
+				UNION
+
+				SELECT DISTINCT n.user_id FROM nfts n
+				JOIN diamond_skulls ds ON ds.nft_id = n.id
+			) AS active_users
+		)
+	";
+
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
