@@ -578,10 +578,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 
-	<!-- Footer -->
-	<div class="footer">
-	  <p>Skulliance<br>Copyright © <span id="year"></span>
-	</div>
 </div>
 </div>
 </body>
