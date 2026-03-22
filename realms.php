@@ -60,7 +60,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								<img src="images/realms-logo.png" style="width:100px;opacity:0.9;margin-right:0;"/>
 							</div>
 							<div style="flex:1;"></div>
-							<div style="flex-shrink:0;text-align:right;">
+							<div class="realm-deactivate-wrap" style="flex-shrink:0;text-align:right;">
 								<?php echo '<input class="small-button" type="button" value="Deactivate" onclick="deactivateRealm('.$realm_id.');">';?>
 							</div>
 						</div>
