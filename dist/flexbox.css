@@ -3350,11 +3350,6 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     #filtered-content { top: 0; }
     /* Crafting forms: allow flex rows to wrap on narrow screens */
     #craftingForm > div, #diamondForm > div, #carbonForm > div { flex-wrap: wrap; row-gap: 4px; }
-    /* Realms deactivate button: move to left so it doesn't sit under the burger menu */
-    .realm-deactivate-wrap { text-align: left !important; order: -1; }
-    /* Realms logo: center on mobile — collapse the spacer so logo gets full remaining width */
-    .realm-logo-wrap { flex: 1; text-align: center; }
-    .realm-header-spacer { display: none; }
     /* player-stats panel: clip overflow so rubber-band snap-back cannot occur */
     #player-stats { overflow-x: hidden; }
     /* .role flex rows: allow wrapping so button + address don't force overflow */
