@@ -1834,7 +1834,7 @@ section.active {
 
 @media screen and (max-width: 375px) {
 	#player-stats {
-		max-width: 335px;
+		max-width: 100%;
 	}
 	
 	.role {
@@ -3344,6 +3344,12 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     #filtered-content { top: 0; }
     /* Crafting forms: allow flex rows to wrap on narrow screens */
     #craftingForm > div, #diamondForm > div, #carbonForm > div { flex-wrap: wrap; row-gap: 4px; }
+    /* player-stats panel: clip overflow so rubber-band snap-back cannot occur */
+    #player-stats { overflow-x: hidden; }
+    /* .role flex rows: allow wrapping so button + address don't force overflow */
+    .role { flex-wrap: wrap; min-width: 0; }
+    /* Wallet/profile address links: allow long strings to break */
+    .role a { word-break: break-all; min-width: 0; }
 }
 @media screen and (max-width: 480px) {
     .nft { width: 100%; }
