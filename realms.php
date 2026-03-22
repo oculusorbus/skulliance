@@ -675,7 +675,7 @@ $conn->close();
 			return;
 		}
 
-		var loadingHtml = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:48px 20px;">'
+		var loadingHtml = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:70vh;">'
 			+ '<div style="font-size:2.2rem;animation:lp 1.2s ease-in-out infinite;">&#x1F480;</div>'
 			+ '<div style="width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">'
 			+   '<div style="height:100%;background:#00c8a0;width:0%;animation:lb 4s ease-out forwards;"></div>'
