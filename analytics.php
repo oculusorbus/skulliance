@@ -99,6 +99,8 @@ $mono_month = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHER
 
 // ── Economy ───────────────────────────────────────────────────────
 $total_trans     = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
+$total_credits   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE type = 'credit'");
+$total_debits    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE type = 'debit'");
 $items_bought    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE item_id IS NOT NULL AND item_id > 0");
 $crafting_trans   = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1");
 $crafting_credits = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE crafting = 1 AND type = 'credit'");
@@ -377,8 +379,8 @@ $conn->close();
     border: 1px solid rgba(0,200,160,0.08);
     border-radius: 6px;
     padding: 11px 10px 9px;
-    text-align: center;
 }
+
 .ana-econ-value { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1; }
 .ana-econ-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7a9eb0; }
 .ana-econ-sub { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
