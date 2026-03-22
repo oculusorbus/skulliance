@@ -34,6 +34,12 @@ if(sizeof(getAddressesDiscord($conn)) != 0){
 	checkUser($conn);
 }
 
+// Update last_login at most once per day to avoid writing on every page load
+if (!empty($_SESSION['userData']['user_id'])) {
+	$uid = intval($_SESSION['userData']['user_id']);
+	mysqli_query($conn, "UPDATE users SET last_login = NOW() WHERE user_id = $uid AND (last_login IS NULL OR last_login < NOW() - INTERVAL 1 DAY)");
+}
+
 // Realm Location Upgrades
 $points_multiplier = 2;
 
