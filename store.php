@@ -39,6 +39,7 @@ include 'header.php';
 						?>				
 					</div>
 				</div>
+				<?php if(isset($_SESSION['userData']['user_id'])){ renderItemSubmissionForm($creators, "store"); } ?>
 			</div>
 		</div>
 		<!-- Footer -->
