@@ -606,6 +606,59 @@ $conn->close();
 
     </div>
 
+    <!-- ── Economy ── -->
+    <div class="ana-section-label">Economy</div>
+    <div class="ana-card">
+        <div class="ana-econ-strip" style="margin-bottom:0;">
+            <div class="ana-econ-item">
+                <div class="ana-econ-label">Transactions</div>
+                <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($total_credits); ?> credits</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($total_debits); ?> debits</span>
+                </div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-label">Store Claims</div>
+                <div class="ana-econ-value"><?php echo ana_fmt($items_bought); ?></div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item down">&#9660; costs only</span>
+                </div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-label">Crafting</div>
+                <div class="ana-econ-value"><?php echo ana_fmt($crafting_trans); ?></div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($crafting_credits); ?> credits</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($crafting_debits); ?> debits</span>
+                </div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-label">Missions</div>
+                <div class="ana-econ-value"><?php echo ana_fmt($mission_trans); ?></div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($mission_credits); ?> rewards</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($mission_debits); ?> costs</span>
+                </div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-label">Raids</div>
+                <div class="ana-econ-value"><?php echo ana_fmt($raid_trans); ?></div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($raid_credits); ?> won</span>
+                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($raid_debits); ?> lost</span>
+                </div>
+            </div>
+            <div class="ana-econ-item">
+                <div class="ana-econ-label">Location Upgrades</div>
+                <div class="ana-econ-value"><?php echo ana_fmt($upgrade_trans); ?></div>
+                <div class="ana-econ-sub">
+                    <span class="ana-econ-sub-item down">&#9660; costs only</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ── Projects ── -->
     <div class="ana-section-label">Projects</div>
     <div class="ana-card">
@@ -663,59 +716,6 @@ $conn->close();
                         <span class="ana-faction-pill-count"><?php echo $fr['realm_count']; ?></span>
                     </div>
                     <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Economy ── -->
-    <div class="ana-section-label">Economy</div>
-    <div class="ana-card">
-        <div class="ana-econ-strip" style="margin-bottom:0;">
-            <div class="ana-econ-item">
-                <div class="ana-econ-label">Transactions</div>
-                <div class="ana-econ-value"><?php echo ana_fmt($total_trans); ?></div>
-                <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($total_credits); ?> credits</span>
-                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($total_debits); ?> debits</span>
-                </div>
-            </div>
-            <div class="ana-econ-item">
-                <div class="ana-econ-label">Store Claims</div>
-                <div class="ana-econ-value"><?php echo ana_fmt($items_bought); ?></div>
-                <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item down">&#9660; costs only</span>
-                </div>
-            </div>
-            <div class="ana-econ-item">
-                <div class="ana-econ-label">Crafting</div>
-                <div class="ana-econ-value"><?php echo ana_fmt($crafting_trans); ?></div>
-                <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($crafting_credits); ?> credits</span>
-                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($crafting_debits); ?> debits</span>
-                </div>
-            </div>
-            <div class="ana-econ-item">
-                <div class="ana-econ-label">Missions</div>
-                <div class="ana-econ-value"><?php echo ana_fmt($mission_trans); ?></div>
-                <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($mission_credits); ?> rewards</span>
-                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($mission_debits); ?> costs</span>
-                </div>
-            </div>
-            <div class="ana-econ-item">
-                <div class="ana-econ-label">Raids</div>
-                <div class="ana-econ-value"><?php echo ana_fmt($raid_trans); ?></div>
-                <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item up">&#9650; <?php echo ana_fmt($raid_credits); ?> won</span>
-                    <span class="ana-econ-sub-item down">&#9660; <?php echo ana_fmt($raid_debits); ?> lost</span>
-                </div>
-            </div>
-            <div class="ana-econ-item">
-                <div class="ana-econ-label">Location Upgrades</div>
-                <div class="ana-econ-value"><?php echo ana_fmt($upgrade_trans); ?></div>
-                <div class="ana-econ-sub">
-                    <span class="ana-econ-sub-item down">&#9660; costs only</span>
                 </div>
             </div>
         </div>
