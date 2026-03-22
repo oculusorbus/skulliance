@@ -382,7 +382,7 @@ $conn->close();
 }
 
 .ana-econ-value { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 3px; line-height: 1; }
-.ana-econ-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7a9eb0; }
+.ana-econ-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7a9eb0; margin-bottom: 5px; }
 .ana-econ-sub { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
 .ana-econ-sub-item { font-size: 0.6rem; color: #7a9eb0; white-space: nowrap; }
 .ana-econ-sub-item.up { color: #00c8a0; }
