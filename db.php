@@ -3210,13 +3210,16 @@ function getItems($conn, $page, $filterby=""){
 		$filterby = "";
 	}
 
-	// Load all user balances keyed by project_id
+	// Load all user balances keyed by project_id, and set of purchased item IDs
 	$bal = [];
+	$purchased = [];
 	$logged_in = isset($_SESSION['userData']['user_id']);
 	if($logged_in){
 		$uid = (int)$_SESSION['userData']['user_id'];
 		$br = $conn->query("SELECT project_id, balance FROM balances WHERE user_id = '$uid'");
 		if($br) while($b = $br->fetch_assoc()) $bal[(int)$b['project_id']] = (float)$b['balance'];
+		$pr = $conn->query("SELECT DISTINCT item_id FROM transactions WHERE user_id = '$uid' AND type = 'debit' AND item_id > 0");
+		if($pr) while($p = $pr->fetch_assoc()) $purchased[(int)$p['item_id']] = true;
 	}
 
 	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, secondary_project_id, projects.name AS project_name, projects.currency AS currency, divider, featured FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY featured DESC, projects.id, items.name ASC";
@@ -3260,12 +3263,16 @@ function getItems($conn, $page, $filterby=""){
 			echo "</span>";
 		}
 
-		// Render buy buttons, disabled if user can't afford
+		// Render buy buttons, disabled if user can't afford or already purchased
+		$already_purchased = $logged_in && isset($purchased[(int)$row['item_id']]);
+		if($already_purchased){
+			echo "<span class='nft-level' style='color:#00c8a0;font-weight:bold;'>&#10003; Already Purchased</span>";
+		}
 		foreach($options as $opt){
 			$user_bal   = $bal[$opt['project_id']] ?? 0;
 			$can_afford = !$logged_in || $user_bal >= $opt['price'];
 			$verbiage   = "BUY: " . number_format($opt['price']) . " " . $opt['currency'];
-			renderBuyButton($row["item_id"], $opt['project_id'], $verbiage, $pid, $page, !$can_afford);
+			renderBuyButton($row["item_id"], $opt['project_id'], $verbiage, $pid, $page, !$can_afford || $already_purchased);
 		}
 
 		echo "</div></div>";
