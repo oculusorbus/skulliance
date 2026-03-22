@@ -811,6 +811,10 @@ if(isset($_POST['filterby'])){
 	$filterby = $_POST['filterby'];
 	$_SESSION['userData']['filterby'] = $filterby;
 }
+if(isset($_GET['filterby'])){
+	$filterby = $_GET['filterby'];
+	$_SESSION['userData']['filterby'] = $filterby;
+}
 if(isset($_POST['filterbystreak'])){
 	$filterby = $_POST['filterbystreak'];
 	$_SESSION['userData']['filterby'] = $filterby;
@@ -884,7 +888,7 @@ if(isset($_POST['remove_nft_id'])){
 	removeDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 
-function filterNFTs($page, $username=""){
+function filterNFTs($page, $username="", $method='post'){
 	global $conn;
 	$core_projects = getProjects($conn, "core");
 	$partner_projects = getProjects($conn, "partner");
@@ -892,7 +896,7 @@ function filterNFTs($page, $username=""){
 	if($page == "dashboard" || $page == "showcase"){
 		$anchor = "#holdings";
 	}
-	if($username != ""){
+	if($username != "" && $method == 'post'){
 		$username = "?username=".$username;
 	}
 	echo'
@@ -912,7 +916,7 @@ function filterNFTs($page, $username=""){
 			echo '</optgroup>';
 		echo '
 		</select>
-		<form id="filterNFTsForm" action="'.$page.'.php'.$username.$anchor.'" method="post">
+		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="'.$method.'">
 		  <input type="hidden" id="filterby" name="filterby" value="">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>

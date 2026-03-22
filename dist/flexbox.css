@@ -3474,3 +3474,21 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
         border-radius: 0 !important;
     }
 }
+
+/* ── NFT Pagination ──────────────────────────────────────────────────────── */
+.nft-pagination {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 16px 4px 8px;
+}
+.page-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 34px; padding: 0 10px;
+    border-radius: 6px; font-size: 0.85rem; font-weight: bold;
+    background: #0d1e2e; border: 1px solid rgba(0,200,160,0.2);
+    color: #7a9eb0; text-decoration: none; transition: background 0.15s, color 0.15s;
+}
+.page-btn:hover { background: rgba(0,200,160,0.12); color: #00c8a0; }
+.page-btn.active { background: rgba(0,200,160,0.18); border-color: #00c8a0; color: #00c8a0; }
+.page-btn.disabled { opacity: 0.35; pointer-events: none; }
+.page-ellipsis { color: #7a9eb0; padding: 0 4px; line-height: 34px; }
+.page-info { width: 100%; font-size: 0.78rem; color: #7a9eb0; padding-top: 4px; }

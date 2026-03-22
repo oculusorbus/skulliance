@@ -2995,7 +2995,7 @@ function getNFTAssetIDs($conn){
 }
 
 // Get NFTs
-function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals=""){
+function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals="", $page=1, $per_page=0){
 	global $projects, $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
 		if($filterby != "None" && $filterby != "" && $filterby != "core"){
@@ -3041,29 +3041,21 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			$core_where = "AND nfts.id NOT IN(SELECT nft_id FROM diamond_skulls)";
 		}
 		
-		// Limit for Oculus Orbus' massive NFT collection
 		$limit = "";
-		if($_SESSION['userData']['user_id'] == 1){
-			//$limit = " LIMIT 300";
+		if($per_page > 0){
+			$offset = ($page - 1) * $per_page;
+			$limit = " LIMIT " . $per_page . " OFFSET " . $offset;
 		}
 		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
 		  // output data of each row
-		  $nftcounter = 0;
 		  while($row = $result->fetch_assoc()) {
-			$nftcounter++;
-			$reveal_prefix = "";
-			$reveal_suffix = "";
-			if($nftcounter > 16){
-				$reveal_prefix = "<section class='reveal'>";
-				$reveal_suffix = "</section>";
-			}
 			if($diamond_skull == true){
-				echo $reveal_prefix."<div class='nft'><div class='diamond-skull-data'>";
+				echo "<div class='nft'><div class='diamond-skull-data'>";
 			}else{
-		    	echo $reveal_prefix."<div class='nft'><div class='nft-data'>";
+		    	echo "<div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".$row["nfts_name"]."</span>";
 			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]))."</a>";
@@ -3146,13 +3138,40 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				</form>
 				<?php
 			}
-			echo "</div></div>".$reveal_suffix;
+			echo "</div></div>";
 		  }
 		} else {
 		  //echo "0 results";
 		  echo "<p>You do not have any qualifying NFTs.</p>";
 		}
 	}
+}
+
+// Count NFTs for pagination (mirrors getNFTs WHERE logic)
+function countNFTs($conn, $filterby="", $advanced_filter=""){
+	if(!isset($_SESSION['userData']['user_id'])) return 0;
+	if($filterby != "None" && $filterby != "" && $filterby != "core"){
+		$filterby_sql = "project_id = '".$filterby."' ";
+	}else if($filterby == "core"){
+		$filterby_sql = "project_id IN(1,2,3,4,5,6) ";
+	}else{
+		$filterby_sql = "";
+	}
+	if($advanced_filter == "all"){
+		$user_filter = "";
+	}else{
+		$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
+	}
+	$and = ($filterby_sql != "" && $user_filter != "") ? " AND " : "";
+	$sql = "SELECT COUNT(*) AS total FROM nfts
+		INNER JOIN collections ON nfts.collection_id = collections.id
+		INNER JOIN projects ON collections.project_id = projects.id
+		WHERE ".$user_filter.$and.$filterby_sql;
+	$result = $conn->query($sql);
+	if($result && $row = $result->fetch_assoc()){
+		return (int)$row['total'];
+	}
+	return 0;
 }
 
 // Create item
