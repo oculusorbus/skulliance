@@ -954,8 +954,7 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
    	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
 	  renderStartAutoMissionsButton($conn);
- 	  echo "<table cellspacing='0' id='transactions'>";
-	  echo "<th align='center' width='55'>Icon</th><th width='55' align='center'>Project</th><th align='left' id='consumable-header'>Items</th><th align='left'>Cost</th><th align='left'>Reward</th><th align='left'>NFTs</th><th align='left'>Success</th><th align='left'>Duration</th><th align='left'>Time Left</th><th align='center'>Status</th>";
+	  echo "<div class='mc-list'>";
 	  // output data of each row
 	  $rows = array();
 	  while($row = $result->fetch_assoc()) {
@@ -1011,68 +1010,72 @@ function getCurrentMissions($conn){
 		}
 		$consumables = getMissionConsumables($conn, $row["mission_id"]);
 		$decimal = $days_remaining.".".(($hours_remaining<10)?"0".$hours_remaining:$hours_remaining).(($minutes_remaining<10)?"0".$minutes_remaining:$minutes_remaining).$row["mission_id"];
-		$rows[$decimal] = "";
-		$rows[$decimal] .= "<tr id='mission-row-".$row["mission_id"]."'>";
-		  $rows[$decimal] .= "<td align='center'>";
-		  $rows[$decimal] .= "<img class='icon' title='".$row["title"]."' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
-		  $rows[$decimal] .= "</td>";
-		  $rows[$decimal] .= "<td align='center'>";
-		  $rows[$decimal] .= "<img class='icon' title='".$row["currency"]."' style='border:0px;' src='icons/".strtolower($row["currency"]).".png' />";
-		  $rows[$decimal] .= "</td>";
-  		  $rows[$decimal] .= "<td align='left' id='consumable-".$row["mission_id"]."'>";
-		  if(is_array($consumables)){
-		  	  foreach($consumables AS $consumable_id => $consumable_name){
-				  $rows[$decimal] .= "<img title='".$consumable_name."' class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
-		  	  }
-		  }else{
-			  //echo "<img class='icon consumable' src='icons/nothing.png'/>";
-		  }
-		  $rows[$decimal] .= "</td>";
-		  $rows[$decimal] .= "<td align='left'>";
-		  $rows[$decimal] .= number_format($row["cost"])." ".$row["currency"];
-		  $rows[$decimal] .= "</td>";
-		  $rows[$decimal] .= "<td align='left' id='mission-reward-".$row["mission_id"]."'>";
-		  $rows[$decimal] .= number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span>";
-		  $rows[$decimal] .= "</td>";
-		  $rows[$decimal] .= "<td align='left'>";
-		  $rows[$decimal] .= $row["total_nfts"];
-		  $rows[$decimal] .= "</td>";
-  		  $rows[$decimal] .= "<td align='left'>";
-		  $rows[$decimal] .= $success_rate+$row["success_rate"]."%";
-		  $rows[$decimal] .= "</td>";
-		  $rows[$decimal] .= "<td align='left'>";
-		  $rows[$decimal] .= $row["duration"]." ".(($row["duration"] == 1)?"Day":"Days");
-		  $rows[$decimal] .= "</td>";
-  		  $rows[$decimal] .= "<td align='left'>";
-		  $rows[$decimal] .= $time_message;
-		  $rows[$decimal] .= "</td>";
-  		  $rows[$decimal] .= "<td align='center' id='mission-result-".$row["mission_id"]."'>";
-		  if($completed == "In Progress"){
-			  $rows[$decimal] .= "<input type='button' id='retreat-button-".$row["mission_id"]."' class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>";
-		  }else{
- 			  $rows[$decimal] .= $completed;
-		  }
-		  $rows[$decimal] .= "</td>";
-		$rows[$decimal] .= "</tr>";
-		$rows[$decimal] .= "<tr id='mission-progress-".$row["mission_id"]."'>";
-		$rows[$decimal] .= "<td colspan='10' style='padding:0px;'>";
-		$rows[$decimal] .= "<div class='w3-border'>";
+		// Calculate progress percentage
 		if($completed == "Completed"){
 			$percentage = 100;
 		}else{
 			$percentage = 100-((($days_remaining+($hours_remaining/24)+($minutes_remaining/1440)) / $row["duration"])*100);
 		}
-		// background-image:url("."images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png".");background-position:center;background-blend-mode:exclusion;
-		$rows[$decimal] .= "<div class='w3-grey' style='width:".$percentage."%;opacity:0.3;'></div>";
+		$rows[$decimal] = "";
+		// Card wrapper (id used by JS for success/failure class and hide on retreat)
+		$rows[$decimal] .= "<div class='mc-card' id='mission-row-".$row["mission_id"]."'>";
+
+		// Header row: icons | title + consumables | time + action
+		$rows[$decimal] .= "<div class='mc-header'>";
+
+		// Mission icon + project icon stacked
+		$rows[$decimal] .= "<div class='mc-icons'>";
+		$rows[$decimal] .= "<img class='mc-mission-icon' title='".$row["title"]."' src='images/missions/".strtolower(str_replace(" ", "-", $row["title"])).".png'/>";
+		$rows[$decimal] .= "<img class='mc-project-icon' title='".$row["currency"]."' src='icons/".strtolower($row["currency"]).".png'/>";
 		$rows[$decimal] .= "</div>";
-		$rows[$decimal] .= "</td>";
-		$rows[$decimal] .= "</tr>";
+
+		// Title + consumable items
+		$rows[$decimal] .= "<div class='mc-body'>";
+		$rows[$decimal] .= "<span class='mc-title'>".$row["title"]."</span>";
+		$rows[$decimal] .= "<div class='mc-consumables' id='consumable-".$row["mission_id"]."'>";
+		if(is_array($consumables)){
+			foreach($consumables AS $consumable_id => $consumable_name){
+				$rows[$decimal] .= "<img title='".$consumable_name."' class='icon consumable' src='icons/".strtolower(str_replace("%", "", str_replace(" ", "-", $consumable_name))).".png'/>";
+			}
+		}
+		$rows[$decimal] .= "</div>";
+		$rows[$decimal] .= "</div>"; // mc-body
+
+		// Time left + retreat/claim button
+		$rows[$decimal] .= "<div class='mc-aside'>";
+		$rows[$decimal] .= "<span class='mc-time-label'>".(($completed == "In Progress") ? "Time Left" : "Complete")."</span>";
+		$rows[$decimal] .= "<span class='mc-time'>".$time_message."</span>";
+		$rows[$decimal] .= "<div id='mission-result-".$row["mission_id"]."' class='mc-result'>";
+		if($completed == "In Progress"){
+			$rows[$decimal] .= "<input type='button' id='retreat-button-".$row["mission_id"]."'  class='small-button' value='Retreat' onclick='retreat(\"".$row["mission_id"]."\", \"".$row["quest_id"]."\");'/>"; 
+		}else{
+			$rows[$decimal] .= "<span class='mc-claim-label'>".$completed."</span>";
+		}
+		$rows[$decimal] .= "</div>"; // mc-result
+		$rows[$decimal] .= "</div>"; // mc-aside
+		$rows[$decimal] .= "</div>"; // mc-header
+
+		// Stats strip
+		$rows[$decimal] .= "<div class='mc-stats'>";
+		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Cost</div><div class='mc-stat-val'>".number_format($row["cost"])."&nbsp;".$row["currency"]."</div></div>";
+		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Reward</div><div id='mission-reward-".$row["mission_id"]."' class='mc-stat-val'>".number_format($row["reward"])." <span id='currency-".$row["mission_id"]."'>".$row["currency"]."</span></div></div>";
+		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>NFTs</div><div class='mc-stat-val'>".$row["total_nfts"]."</div></div>";
+		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Success</div><div class='mc-stat-val'>".(($success_rate+$row["success_rate"]))."%</div></div>";
+		$rows[$decimal] .= "<div class='mc-stat'><div class='mc-stat-label'>Duration</div><div class='mc-stat-val'>".$row["duration"]."&nbsp;".(($row["duration"] == 1) ? "Day" : "Days")."</div></div>";
+		$rows[$decimal] .= "</div>"; // mc-stats
+
+		// Progress bar (separate ID for JS hide on retreat)
+		$rows[$decimal] .= "<div class='mc-progress' id='mission-progress-".$row["mission_id"]."'>";
+		$rows[$decimal] .= "<div class='mc-progress-fill' style='width:".$percentage."%;' ></div>";
+		$rows[$decimal] .= "</div>";
+
+		$rows[$decimal] .= "</div>"; // mc-card
 	  }
 	  ksort($rows);
 	  foreach($rows AS $duration => $output){
 		  echo $output;
 	  }
-	  echo "</table><br>";
+	  echo "</div><br>";
 	  //json_encode(
 	  if(!empty($completed_missions)){
 		  $mission_ids = "";

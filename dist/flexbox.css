@@ -2728,6 +2728,167 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     color: #fff;
 }
 
+/* ── Current Missions Card Layout ───────────────────────────────────────── */
+.mc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.mc-card {
+    background: #0d2035;
+    border: 1px solid rgba(0,200,160,0.12);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.mc-card.success {
+    background-color: #1a0730 !important;
+    border-color: rgba(100,0,180,0.35);
+}
+.mc-card.failure {
+    background-color: #2a0518 !important;
+    border-color: rgba(200,0,80,0.35);
+}
+
+/* Header: icons | body | aside */
+.mc-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 0;
+}
+.mc-icons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.mc-mission-icon {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid rgba(0,200,160,0.2);
+}
+.mc-project-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 0;
+}
+.mc-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.mc-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #e8eaed;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mc-consumables {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+.mc-consumables .icon {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px;
+    margin: 0 !important;
+}
+.mc-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+    text-align: right;
+}
+.mc-time-label {
+    font-size: 0.58rem;
+    color: #7a9eb0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.mc-time {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #00c8a0;
+    white-space: nowrap;
+}
+.mc-result {
+    margin-top: 2px;
+}
+.mc-claim-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #00c8a0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.mc-card.failure .mc-time { color: #ff5c5c; }
+.mc-card.success .mc-time { color: #b47fff; }
+
+/* Stats strip */
+.mc-stats {
+    display: flex;
+    border-top: 1px solid rgba(0,200,160,0.08);
+    margin-top: 8px;
+}
+.mc-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 4px;
+    border-right: 1px solid rgba(0,200,160,0.06);
+    min-width: 0;
+}
+.mc-stat:last-child { border-right: none; }
+.mc-stat-label {
+    font-size: 0.55rem;
+    color: #7a9eb0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.mc-stat-val {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #e8eaed;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
+}
+
+/* Progress bar */
+.mc-progress {
+    height: 3px;
+    background: #080f18;
+}
+.mc-progress-fill {
+    height: 100%;
+    background: rgba(0,200,160,0.45);
+}
+.mc-card.failure .mc-progress-fill { background: rgba(200,0,80,0.45); }
+.mc-card.success .mc-progress-fill { background: rgba(100,0,180,0.45); }
+
+@media (max-width: 500px) {
+    .mc-title { font-size: 0.75rem; }
+    .mc-stat-label { font-size: 0.5rem; }
+    .mc-stat-val { font-size: 0.7rem; }
+    .mc-time { font-size: 0.7rem; }
+}
+
 /* Mobile: stack columns */
 @media (max-width: 500px) {
     .rc-card-body { flex-direction: column; }
