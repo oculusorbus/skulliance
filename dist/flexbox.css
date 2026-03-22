@@ -3345,7 +3345,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .side { border-right: none; padding: 10px; }
     /* Filter: remove negative-top overlap, shrink font */
     #filter-nfts { font-size: 14px; top: 0; text-align: left; margin-bottom: 8px; }
-    #filterNFTs { font-size: 14px; width: auto; max-width: 100%; }
+    #filterNFTs, #faction { font-size: 14px; width: auto; max-width: 100%; }
     /* Filtered content: remove negative-top that causes overlap when stacked */
     #filtered-content { top: 0; }
     /* Crafting forms: allow flex rows to wrap on narrow screens */
