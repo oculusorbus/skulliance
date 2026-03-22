@@ -3348,6 +3348,8 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     #filterNFTs, #faction { font-size: 14px; width: auto; max-width: 100%; }
     /* Filtered content: remove negative-top that causes overlap when stacked */
     #filtered-content { top: 0; }
+    /* Realms header: collapse spacer so logo and deactivate button sit side by side on mobile */
+    .realm-header-spacer { display: none; }
     /* Crafting forms: allow flex rows to wrap on narrow screens */
     #craftingForm > div, #diamondForm > div, #carbonForm > div { flex-wrap: wrap; row-gap: 4px; }
     /* player-stats panel: clip overflow so rubber-band snap-back cannot occur */
