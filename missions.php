@@ -204,10 +204,11 @@ if($filterby != ""){
 	}else{
 		document.getElementById('quick-menu').style.display = "none";
 		document.getElementById('row1').style.position = "relative";
-		document.getElementById('row1').style.top = '-65px';
+		document.getElementById('row1').style.top = '-20px';
 		// Ensure #stats paints above the overlapping #row1 so headers remain clickable
 		document.getElementById('stats').style.position = "relative";
 		document.getElementById('stats').style.zIndex = "1";
+		document.getElementById('stats').style.paddingBottom = "16px";
 	}
 	
 	function toggleSections(selection){
