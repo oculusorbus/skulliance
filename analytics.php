@@ -812,9 +812,10 @@ $conn->close();
 
         <div class="trend-controls">
             <select id="trend-metric" class="trend-select" onchange="fetchTrend()">
-                <option value="stakers">Stakers</option>
-                <option value="nfts">NFTs Staked</option>
-                <option value="wallets">Wallets</option>
+                <option value="transactions">Transactions</option>
+                <option value="stakers">Stakers Joined</option>
+                <option value="nfts">NFTs Added</option>
+                <option value="wallets">Wallets Connected</option>
                 <option value="realms">Realms Created</option>
                 <option value="rewards">Daily Rewards</option>
                 <option value="missions">Missions</option>
@@ -825,7 +826,6 @@ $conn->close();
                 <option value="upgrades">Location Upgrades</option>
                 <option value="crafting">Crafting</option>
                 <option value="store">Store Claims</option>
-                <option value="transactions">Transactions</option>
             </select>
 
             <div class="trend-range-group">
@@ -857,9 +857,9 @@ $conn->close();
 <script>
 (function() {
     const metricLabels = {
-        stakers:      'Stakers',
-        nfts:         'NFTs Staked',
-        wallets:      'Wallets',
+        stakers:      'Stakers Joined',
+        nfts:         'NFTs Added',
+        wallets:      'Wallets Connected',
         realms:       'Realms Created',
         rewards:      'Daily Rewards',
         missions:     'Missions',
@@ -972,7 +972,7 @@ $conn->close();
         });
     }
 
-    // Init — default to All Time, Stakers
+    // Init — default to All Time, Transactions
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.trend-range-btn[data-range="all"]').classList.add('active');
 
