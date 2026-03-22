@@ -659,41 +659,46 @@ $conn->close();
 	}*/
 	
 	function toggleSections(selection){
-		//if($(window).width() <= 700){
-			window.scrollTo(0, 0);
-			document.getElementById('locations').style.display = "none";
-			document.getElementById('locations-icon').classList.remove("selected");
-			document.getElementById('map').style.display = "none";
-			document.getElementById('map-icon').classList.remove("selected");
-			document.getElementById('realm').style.display = "none";
-			document.getElementById('realm-icon').classList.remove("selected");
-			document.getElementById('stats').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
-			document.getElementById('raids').style.display = "none";
-			document.getElementById('raids-icon').classList.remove("selected");
-			document.getElementById('realms').style.display = "none";
-			document.getElementById('realms-icon').classList.remove("selected");
-			if ($('#'+selection).length > 0) {
-				document.getElementById(selection).style.display = "block";
-				document.getElementById(selection+"-icon").classList.add("selected");
-				if($(window).width() > 700){
-					if(selection == 'locations'){
-						document.getElementById('realm').style.display = "block";
-					}
-					if(selection == 'map'){
-						// document.body.style.backgroundImage = "url('images/darkwater.gif')";
-					}else{
-						document.body.style.backgroundImage = "none";
-					}
-				}else{
-					if(selection == 'realm'){
-						document.getElementById('map').style.display = "block";
-					}
-				}
-			}else{
+		window.scrollTo(0, 0);
+		var sections = ['locations','map','realm','stats','raids','realms'];
+		sections.forEach(function(s){
+			document.getElementById(s).style.display = 'none';
+			document.getElementById(s+'-icon').classList.remove('selected');
+		});
 
-			}
-			//}
+		if(!document.getElementById(selection)) return;
+		document.getElementById(selection+'-icon').classList.add('selected');
+
+		// Map: just toggle visibility — reinitializing the SVG map via AJAX is not supported
+		if(selection === 'map'){
+			document.getElementById('map').style.display = 'block';
+			return;
+		}
+
+		var container = document.getElementById(selection);
+		container.style.display = 'block';
+		container.innerHTML = '<p style="padding:20px;opacity:0.5;text-align:center;">Loading\u2026</p>';
+
+		$.get('ajax/get-' + selection + '.php', function(html){
+			container.innerHTML = html;
+			if(typeof _checkStockButtonStates === 'function') _checkStockButtonStates();
+		}).fail(function(){
+			container.innerHTML = '<p style="padding:20px;opacity:0.5;">Failed to load section.</p>';
+		});
+
+		// Desktop: locations shows realm panel alongside it
+		if($(window).width() > 700 && selection === 'locations'){
+			var realmEl = document.getElementById('realm');
+			realmEl.style.display = 'block';
+			realmEl.innerHTML = '<p style="padding:20px;opacity:0.5;text-align:center;">Loading\u2026</p>';
+			$.get('ajax/get-realm.php', function(html){
+				realmEl.innerHTML = html;
+			});
+		}
+		// Mobile: realm shows map alongside it
+		if($(window).width() <= 700 && selection === 'realm'){
+			document.getElementById('map').style.display = 'block';
+		}
 	}
 	_checkStockButtonStates();
 </script>
