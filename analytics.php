@@ -9,6 +9,7 @@ if (isset($_SESSION['userData'])) {
     $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 }
 
+$extra_head = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>';
 include 'header.php';
 
 // ── Week boundaries (Thursday 4pm CST) ───────────────────────────
@@ -415,6 +416,90 @@ $conn->close();
 .ana-proj-pill img { width: 13px; height: 13px; object-fit: contain; }
 .ana-proj-pill strong { color: #00c8a0; }
 
+/* ── Trends ──────────────────────────────────────────────────── */
+.trend-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.trend-select {
+    background: rgba(0,200,160,0.07);
+    border: 1px solid rgba(0,200,160,0.2);
+    border-radius: 6px;
+    color: #c8dce8;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    cursor: pointer;
+    outline: none;
+}
+.trend-select option { background: #0d2035; }
+.trend-range-group {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.trend-range-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 5px;
+    color: #7a9eb0;
+    font-size: 0.72rem;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.trend-range-btn:hover { background: rgba(0,200,160,0.1); color: #c8dce8; }
+.trend-range-btn.active {
+    background: rgba(0,200,160,0.15);
+    border-color: rgba(0,200,160,0.4);
+    color: #00c8a0;
+}
+.trend-custom {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.trend-custom-label { font-size: 0.7rem; color: #7a9eb0; }
+.trend-date-input {
+    background: rgba(0,200,160,0.07);
+    border: 1px solid rgba(0,200,160,0.2);
+    border-radius: 5px;
+    color: #c8dce8;
+    font-size: 0.72rem;
+    padding: 5px 8px;
+    cursor: pointer;
+    outline: none;
+    color-scheme: dark;
+}
+.trend-custom-go {
+    background: rgba(0,200,160,0.15);
+    border: 1px solid rgba(0,200,160,0.4);
+    border-radius: 5px;
+    color: #00c8a0;
+    font-size: 0.72rem;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.trend-chart-wrap {
+    position: relative;
+    height: 280px;
+}
+.trend-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: #7a9eb0;
+    background: rgba(13,32,53,0.7);
+    border-radius: 6px;
+    display: none;
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1100px) {
     .ana-row-5, .ana-row-4 { grid-template-columns: repeat(3, 1fr); }
@@ -721,7 +806,185 @@ $conn->close();
         </div>
     </div>
 
+    <!-- ── Trends ── -->
+    <div class="ana-section-label">Trends</div>
+    <div class="ana-card">
+
+        <div class="trend-controls">
+            <select id="trend-metric" class="trend-select" onchange="fetchTrend()">
+                <option value="stakers">Stakers</option>
+                <option value="nfts">NFTs Staked</option>
+                <option value="wallets">Wallets</option>
+                <option value="realms">Realms Created</option>
+                <option value="rewards">Daily Rewards</option>
+                <option value="missions">Missions</option>
+                <option value="raids">Raids</option>
+                <option value="skullswap">Skull Swap</option>
+                <option value="monstrocity">Monstrocity</option>
+                <option value="bossbattles">Boss Battles</option>
+                <option value="upgrades">Location Upgrades</option>
+                <option value="crafting">Crafting</option>
+                <option value="store">Store Claims</option>
+                <option value="transactions">Transactions</option>
+            </select>
+
+            <div class="trend-range-group">
+                <button class="trend-range-btn" data-range="week"   onclick="setTrendRange(this)">Week</button>
+                <button class="trend-range-btn" data-range="month"  onclick="setTrendRange(this)">Month</button>
+                <button class="trend-range-btn" data-range="year"   onclick="setTrendRange(this)">Year</button>
+                <button class="trend-range-btn" data-range="all"    onclick="setTrendRange(this)">All Time</button>
+                <button class="trend-range-btn" data-range="custom" onclick="setTrendRange(this)">Custom</button>
+            </div>
+
+            <div class="trend-custom" id="trend-custom">
+                <span class="trend-custom-label">From</span>
+                <input type="date" id="trend-start" class="trend-date-input">
+                <span class="trend-custom-label">to</span>
+                <input type="date" id="trend-end" class="trend-date-input">
+                <button class="trend-custom-go" onclick="fetchTrend()">Go</button>
+            </div>
+        </div>
+
+        <div class="trend-chart-wrap">
+            <canvas id="trend-canvas"></canvas>
+            <div class="trend-loading" id="trend-loading">Loading&hellip;</div>
+        </div>
+
+    </div>
+
 </div>
+
+<script>
+(function() {
+    const metricLabels = {
+        stakers:      'Stakers',
+        nfts:         'NFTs Staked',
+        wallets:      'Wallets',
+        realms:       'Realms Created',
+        rewards:      'Daily Rewards',
+        missions:     'Missions',
+        raids:        'Raids',
+        skullswap:    'Skull Swap',
+        monstrocity:  'Monstrocity',
+        bossbattles:  'Boss Battles',
+        upgrades:     'Location Upgrades',
+        crafting:     'Crafting',
+        store:        'Store Claims',
+        transactions: 'Transactions',
+    };
+
+    let trendChart = null;
+    let activeRange = 'all';
+
+    function dateStr(d) {
+        return d.toISOString().slice(0, 10);
+    }
+
+    function getDateRange() {
+        const today = new Date();
+        if (activeRange === 'week')   return { start: dateStr(new Date(today - 7   * 86400000)), end: dateStr(today) };
+        if (activeRange === 'month')  return { start: dateStr(new Date(today - 30  * 86400000)), end: dateStr(today) };
+        if (activeRange === 'year')   return { start: dateStr(new Date(today - 365 * 86400000)), end: dateStr(today) };
+        if (activeRange === 'custom') return { start: document.getElementById('trend-start').value, end: document.getElementById('trend-end').value };
+        return { start: '', end: '' };
+    }
+
+    window.fetchTrend = function() {
+        const metric = document.getElementById('trend-metric').value;
+        const { start, end } = getDateRange();
+
+        const params = new URLSearchParams({ metric });
+        if (start) params.append('start', start);
+        if (end)   params.append('end',   end);
+
+        document.getElementById('trend-loading').style.display = 'flex';
+
+        fetch('ajax/analytics-trends.php?' + params)
+            .then(r => r.json())
+            .then(d => renderTrendChart(d, metricLabels[metric] || metric))
+            .catch(() => document.getElementById('trend-loading').style.display = 'none');
+    };
+
+    window.setTrendRange = function(btn) {
+        document.querySelectorAll('.trend-range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeRange = btn.dataset.range;
+        document.getElementById('trend-custom').style.display = activeRange === 'custom' ? 'flex' : 'none';
+        if (activeRange !== 'custom') fetchTrend();
+    };
+
+    function renderTrendChart(data, label) {
+        document.getElementById('trend-loading').style.display = 'none';
+        const ctx = document.getElementById('trend-canvas').getContext('2d');
+
+        if (trendChart) trendChart.destroy();
+
+        const pointRadius = data.labels.length > 60 ? 0 : (data.labels.length > 20 ? 2 : 3);
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: label,
+                    data: data.data,
+                    borderColor: '#00c8a0',
+                    backgroundColor: 'rgba(0,200,160,0.07)',
+                    borderWidth: 2,
+                    pointRadius: pointRadius,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#00c8a0',
+                    fill: true,
+                    tension: 0.35,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 300 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#071524',
+                        borderColor: 'rgba(0,200,160,0.25)',
+                        borderWidth: 1,
+                        titleColor: '#00c8a0',
+                        bodyColor: '#c8dce8',
+                        padding: 10,
+                        callbacks: {
+                            title: items => items[0].label,
+                            label: item => ' ' + label + ': ' + item.raw.toLocaleString(),
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#7a9eb0', maxTicksLimit: 14, maxRotation: 0 }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: { color: '#7a9eb0', callback: v => v >= 1000 ? Math.round(v/1000)+'K' : v },
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+    }
+
+    // Init — default to All Time, Stakers
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('.trend-range-btn[data-range="all"]').classList.add('active');
+
+        // Set default date inputs to today
+        const today = dateStr(new Date());
+        document.getElementById('trend-end').value = today;
+        document.getElementById('trend-start').value = dateStr(new Date(Date.now() - 30 * 86400000));
+
+        fetchTrend();
+    });
+})();
+</script>
 
 <div class="footer">
     <p>Skulliance<br>Copyright &copy; <span id="year"></span></p>
