@@ -896,8 +896,9 @@ function filterNFTs($page, $username="", $method='post'){
 	if($page == "dashboard" || $page == "showcase"){
 		$anchor = "#holdings";
 	}
-	if($username != "" && $method == 'post'){
-		$username = "?username=".$username;
+	$username_hidden = "";
+	if($username != "" && $method == 'get'){
+		$username_hidden = '<input type="hidden" name="username" value="'.htmlspecialchars($username).'">';
 	}
 	echo'
 	<div id="filter-nfts">
@@ -917,6 +918,7 @@ function filterNFTs($page, $username="", $method='post'){
 		echo '
 		</select>
 		<form id="filterNFTsForm" action="'.$page.'.php'.$anchor.'" method="'.$method.'">
+		  '.$username_hidden.'
 		  <input type="hidden" id="filterby" name="filterby" value="">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>

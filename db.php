@@ -3159,11 +3159,14 @@ function countNFTs($conn, $filterby="", $advanced_filter=""){
 	}
 	if($advanced_filter == "all"){
 		$user_filter = "";
+	}else if($advanced_filter != ""){
+		$user_filter = "username = '".mysqli_real_escape_string($conn, $advanced_filter)."'";
 	}else{
-		$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
+		$user_filter = "nfts.user_id = '".$_SESSION['userData']['user_id']."'";
 	}
 	$and = ($filterby_sql != "" && $user_filter != "") ? " AND " : "";
 	$sql = "SELECT COUNT(*) AS total FROM nfts
+		INNER JOIN users ON users.id = nfts.user_id
 		INNER JOIN collections ON nfts.collection_id = collections.id
 		INNER JOIN projects ON collections.project_id = projects.id
 		WHERE ".$user_filter.$and.$filterby_sql;
