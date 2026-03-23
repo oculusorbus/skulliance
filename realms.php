@@ -143,6 +143,11 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									echo "<input id='points-button-".$location_id."' class='small-button' type='button' value='".$points_multiplier."x Pts' onclick=\"togglePointsButtons('disable');pointsOption(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.")\"".">";
 									}
 								}else{ echo $status[$location_id]; }
+							// Location-specific modal button
+							$loc_modal_map = array(1=>'Portal',2=>'Armory',3=>'Tower',4=>'Barracks',5=>'Factory',6=>'Crypt',7=>'Mine');
+							if(isset($loc_modal_map[$location_id])){
+								echo "<br><input class='small-button loc-modal-btn' type='button' value='".$loc_modal_map[$location_id]."' onclick='openLocationModal(".$location_id.")' style='margin-top:4px;'>";
+							}
 								?>
 								</div>
 							</div>
@@ -560,6 +565,41 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 
+	<!-- Location Modal (Portal / Barracks / Crypt / Tower / Mine / Factory / Armory) -->
+	<div id="location-modal-overlay" onclick="closeLocationModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;"></div>
+	<div id="location-modal" class="modal" style="display:none;z-index:1001;" role="dialog" aria-modal="true">
+		<div class="raid-modal-content" style="max-width:600px;max-height:85vh;overflow-y:auto;" id="location-modal-inner">
+			<div class="raid-modal-header" id="location-modal-header">
+				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;" id="location-modal-title">Loading...</h2>
+				<button class="raid-modal-close" onclick="closeLocationModal()" aria-label="Close">&times;</button>
+			</div>
+			<div id="location-modal-body" style="padding:4px 0 8px;">
+				<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>
+			</div>
+			<div class="raid-modal-footer" id="location-modal-footer" style="display:none;">
+				<input type="button" class="small-button" value="Close" onclick="closeLocationModal()"/>
+			</div>
+		</div>
+	</div>
+
+	<!-- Enlist Picker Modal (child of barracks) -->
+	<div id="enlist-modal-overlay" onclick="closeEnlistPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1002;"></div>
+	<div id="enlist-modal" class="modal" style="display:none;z-index:1003;" role="dialog" aria-modal="true">
+		<div class="raid-modal-content" style="max-width:580px;max-height:80vh;overflow-y:auto;">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;">Enlist Soldiers</h2>
+				<button class="raid-modal-close" onclick="closeEnlistPicker()" aria-label="Close">&times;</button>
+			</div>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 12px;">Select NFTs to enlist. Partner NFTs cost 2 slots each.</p>
+			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
+			<div class="raid-modal-footer">
+				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 selected</span>
+				<input type="button" class="button" value="Enlist Selected" onclick="confirmEnlist()"/>
+				<input type="button" class="small-button" value="Cancel" onclick="closeEnlistPicker()"/>
+			</div>
+		</div>
+	</div>
+
 	<!-- Raid Consumables Modal -->
 	<div id="raid-consumables-modal" class="modal" style="display:none;">
 		<div class="raid-modal-content">
@@ -600,6 +640,34 @@ $conn->close();
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
 #locations, #realm, #stats, #raids, #realms { padding-bottom: 100px; }
 #map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
+/* Soldiers / Location Modals */
+.soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
+.soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
+.soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
+.soldiers-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; margin-top:8px; }
+.soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
+.soldier-card.soldier-ready { border-color:#00c8a0; }
+.soldier-card.soldier-dead { opacity:0.7; }
+.soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
+.soldier-name { font-size:0.7rem; opacity:0.8; word-break:break-word; text-align:center; }
+.soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
+.soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
+.soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
+.soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
+.soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+.soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
+.partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
+.soldier-gear-row { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:4px; }
+.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.7rem; opacity:0.85; }
+.gear-label { font-size:0.65rem; opacity:0.7; }
+.gear-empty { font-size:0.65rem; opacity:0.4; }
+.soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
+.soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
+.soldiers-table { border-collapse:collapse; }
+.soldiers-table th, .soldiers-table td { padding:4px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
+.soldiers-table th { font-size:0.72rem; opacity:0.55; font-weight:normal; text-transform:uppercase; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -712,6 +780,134 @@ $conn->close();
 		}
 	}
 	_checkStockButtonStates();
+
+	/* ── LOCATION MODALS ─────────────────────────────────── */
+	var _locModalTitles = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
+	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
+
+	function openLocationModal(loc_id) {
+		var title    = _locModalTitles[loc_id]    || 'Location';
+		var endpoint = _locModalEndpoints[loc_id] || null;
+		if (!endpoint) return;
+		document.getElementById('location-modal-title').textContent = title;
+		document.getElementById('location-modal-body').innerHTML    = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		document.getElementById('location-modal-footer').style.display = 'flex';
+		document.getElementById('location-modal-overlay').style.display = 'block';
+		document.getElementById('location-modal').style.display          = 'flex';
+		$.get('ajax/' + endpoint + '.php', function(html) {
+			document.getElementById('location-modal-body').innerHTML = html;
+		}).fail(function() {
+			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
+		});
+		window._currentLocModal = loc_id;
+	}
+
+	function closeLocationModal() {
+		document.getElementById('location-modal-overlay').style.display = 'none';
+		document.getElementById('location-modal').style.display          = 'none';
+		window._currentLocModal = null;
+	}
+
+	function refreshLocationModal() {
+		if (window._currentLocModal) openLocationModal(window._currentLocModal);
+	}
+
+	/* ── BARRACKS ─────────────────────────────────────────── */
+	function removeSoldier(soldier_id) {
+		openConfirm('Remove this soldier from the Barracks?', function() {
+			$.post('ajax/remove-soldier.php', {soldier_id: soldier_id}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) { refreshLocationModal(); }
+				else { openNotify('Could not remove soldier. They may be deployed.'); }
+			});
+		});
+	}
+
+	function autoFillBarracks() {
+		$.get('ajax/get-eligible-nfts.php', function(html) {
+			// Collect all nft_ids and enlist them all
+			var tmp = $('<div>').html(html);
+			var ids = [];
+			tmp.find('.enlist-candidate').each(function() { ids.push($(this).data('nft-id')); });
+			if (ids.length === 0) { openNotify('No eligible NFTs available to enlist.'); return; }
+			$.post('ajax/enlist-soldier.php', {nft_ids: ids}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) {
+					openNotify(r.enlisted + ' soldier' + (r.enlisted != 1 ? 's' : '') + ' enlisted.');
+					refreshLocationModal();
+				}
+			});
+		});
+	}
+
+	function openEnlistPicker() {
+		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		document.getElementById('enlist-modal-overlay').style.display = 'block';
+		document.getElementById('enlist-modal').style.display          = 'flex';
+		$.get('ajax/get-eligible-nfts.php', function(html) {
+			document.getElementById('enlist-picker-body').innerHTML = html;
+			_updateEnlistCount();
+		});
+	}
+
+	function closeEnlistPicker() {
+		document.getElementById('enlist-modal-overlay').style.display = 'none';
+		document.getElementById('enlist-modal').style.display          = 'none';
+	}
+
+	function toggleEnlistSelect(el) {
+		$(el).toggleClass('selected');
+		_updateEnlistCount();
+	}
+
+	function _updateEnlistCount() {
+		var count = $('#enlist-picker-body .enlist-candidate.selected').length;
+		document.getElementById('enlist-selected-count').textContent = count + ' selected';
+	}
+
+	function confirmEnlist() {
+		var ids = [];
+		$('#enlist-picker-body .enlist-candidate.selected').each(function() { ids.push($(this).data('nft-id')); });
+		if (ids.length === 0) { openNotify('Select at least one NFT to enlist.'); return; }
+		$.post('ajax/enlist-soldier.php', {nft_ids: ids}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) {
+				closeEnlistPicker();
+				openNotify(r.enlisted + ' soldier' + (r.enlisted != 1 ? 's' : '') + ' enlisted and now in training.');
+				refreshLocationModal();
+			}
+		});
+	}
+
+	/* ── CRYPT ────────────────────────────────────────────── */
+	function resurrectAllSoldiers() {
+		$.post('ajax/resurrect-soldiers.php', {}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) { openNotify('Soldiers have been resurrected and returned to Reserve.'); refreshLocationModal(); }
+			else { openNotify('No soldiers ready for resurrection yet.'); }
+		});
+	}
+
+	/* ── TOWER ────────────────────────────────────────────── */
+	function assignToTower(soldier_id) {
+		$.post('ajax/tower-action.php', {action:'assign', soldier_id:soldier_id}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) refreshLocationModal();
+			else openNotify('Could not assign to Tower. Tower may be full.');
+		});
+	}
+
+	function removeFromTower(soldier_id) {
+		$.post('ajax/tower-action.php', {action:'remove', soldier_id:soldier_id}, function() { refreshLocationModal(); });
+	}
+
+	function equipWeapon(soldier_id, weapon_id) {
+		$.post('ajax/tower-action.php', {action:'weapon', soldier_id:soldier_id, value:weapon_id}, function() { refreshLocationModal(); });
+	}
+
+	function equipArmor(soldier_id, armor_id) {
+		$.post('ajax/tower-action.php', {action:'armor', soldier_id:soldier_id, value:armor_id}, function() { refreshLocationModal(); });
+	}
 </script>
 <?php } ?>
 </html>
