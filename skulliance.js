@@ -821,30 +821,12 @@ function retreat(mission_id, quest_id){
 
 		xhttp.onreadystatechange = function() {
 		  if (xhttp.readyState == XMLHttpRequest.DONE) {
-		    // Check the status of the response
 		    if (xhttp.status == 200) {
-				// Access the data returned by the server
-				var data = xhttp.responseText;
-				/*
-				const obj = JSON.parse(data);
-				if(obj == null){
-
-				}else{
-
-				}*/
-				alert(data);
-				//window.location.href = "missions.php";
-				// Hide consumables since they were restored to the user upon successful retreat
-				document.getElementById("consumable-"+mission_id).style.display = "none";
-				// Hide mission row
-				document.getElementById("mission-row-"+mission_id).style.display = "none";
-				// Hide mission progress bar
-				document.getElementById("mission-progress-"+mission_id).style.display = "none";
-				console.log(data);
-				// Do something with the data
+				openNotify(xhttp.responseText);
+				window.currentMissionsLoaded = false;
+				loadCurrentMissions();
 		    } else {
-		      // Handle error
-				alert("AJAX Error");
+				openNotify("AJAX Error");
 		    }
 		  }
 		};
