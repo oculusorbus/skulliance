@@ -879,7 +879,7 @@ function dailyReward(){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
 		    document.getElementById('reward').style.opacity = 1;
-		  	document.getElementById('reward').innerHTML = "<strong>Day "+obj.day+":</strong>&nbsp;&nbsp;<img class='icon' src='icons/"+consumables[obj.day]+".png'/>+&nbsp;&nbsp;&nbsp;"+"<img class='icon' src='icons/"+obj.currency.toLowerCase()+".png'/> +"+obj.amount+" "+obj.currency;
+		  	document.getElementById('reward').innerHTML = "<span style='display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;font-size:0.9rem;'><strong>Day "+obj.day+":</strong><img class='icon' style='margin-right:0;' src='icons/"+consumables[obj.day]+".png'/><span>+</span><img class='icon' style='margin-right:0;' src='icons/"+obj.currency.toLowerCase()+".png'/><span>+"+obj.amount+"&nbsp;"+obj.currency.replace(/[0-9]+/g,'')+"</span></span>";
 			document.getElementById('claimed').style.display = "flex";
 			document.getElementById('progress_bar').style.display = "flex";
 			document.getElementById('progress_bar').innerHTML = obj.progress_bar;
