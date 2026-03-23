@@ -5,12 +5,34 @@ include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
+// Tell nginx not to buffer this response so the loader flushes to the browser immediately
+header('X-Accel-Buffering: no');
 ?>
 <style>
+#missions-loader {
+	position: fixed; inset: 0;
+	background: #07111d;
+	z-index: 9999;
+	display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 20px;
+	transition: opacity 0.5s ease;
+}
+#missions-loader.fade-out { opacity: 0; pointer-events: none; }
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
+.loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden; }
+.loader-bar { height:100%;background:#00c8a0;width:0%;animation:lb 9s ease-out forwards; }
+.loader-text { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
 </style>
+<div id="missions-loader">
+	<div style="font-size:3rem;animation:lp 1.2s ease-in-out infinite;">&#x1F480;</div>
+	<div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+	<div class="loader-text">Loading Missions</div>
+</div>
 <?php
+if(ob_get_level() > 0) ob_flush();
+flush();
+
 $username="";
 if(isset($_GET['username'])){
 	$username = $_GET['username'];
@@ -179,6 +201,11 @@ if($filterby != ""){
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type='text/javascript'>setSuccessRate('<?php echo $rate_tally; ?>');</script>
 <script type='text/javascript'>
+	// Fade out page loader now that DOM is fully rendered
+	(function(){
+		var loader = document.getElementById('missions-loader');
+		if(loader){ loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+	})();
 	// Auto-load current missions if panel is already expanded on page load
 	var _cm = document.getElementById('current-missions-container');
 	if(_cm && _cm.style.display !== 'none') loadCurrentMissions();
