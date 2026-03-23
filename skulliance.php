@@ -557,10 +557,7 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 function renderDailyRewardsSection(){
 	global $conn;
 	echo "<ul>";
-	echo "<li class='role'>Total Streaks: ".getStreaksTotal($conn)."&nbsp;&nbsp;";
-	echo '<form style="position:relative;top:-4px;" action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-streaks"><input type="submit" class="small-button" value="Leaderboard"></form>';
-	echo "</li>";
-	if(getDailyRewardEligibility($conn)) { 
+	if(getDailyRewardEligibility($conn)) {
 		// Reset daily reward streak if yesterday's daily reward wasn't claimed
 		if(!verifyYesterdaysRewards($conn)){
 			resetDailyRewardStreak($conn);
@@ -568,7 +565,7 @@ function renderDailyRewardsSection(){
 	}
 	$days = getStreakRewards($conn);
 	renderDailyRewards($days);
-	if(getDailyRewardEligibility($conn)) { 
+	if(getDailyRewardEligibility($conn)) {
 		echo '<li class="role no-border-style" id="claimed" style="display:none;">';
 		echo '<strong>Daily Reward Claimed</strong>';
 		echo '</li>';
@@ -576,24 +573,8 @@ function renderDailyRewardsSection(){
 		echo '</li>';
 		echo '<li class="role" id="remaining" style="display:none;">';
 		echo '</li><br>';
-		//$status = getDiscordStatus($conn, getDiscordID($conn));
-		//if(($status["message"] == 1 && $status["reaction"] == 1) || $_SESSION['userData']['discord_id'] == '214061010011553792'){
 			echo '<input id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
-		/*}else{
-			echo '<input style="display:none" id="claimRewardButton" type="button" value="Claim Reward" class="button" onclick="javascript:dailyReward();">';
-			echo '<span id="checkDiscordSection">';
-			echo '<li class="role no-border-style">You must send a message and add a reaction to a message in discord in order to claim your daily reward.</li>';
-			echo '<input id="checkDiscordStatusButton" type="button" value="Check Status" class="button" onclick="javascript:checkDiscordStatus();">';
-			echo '</span>';
-		}*/
-	} else { 
-			// Display 7 day completed rewards despite streak being reset
-			/*
-			$current_streak = getCurrentDailyRewardStreak($conn);
-			if($current_streak == 0){
-				$rewards = getCompletedRewards($conn);
-				renderDailyRewards($rewards);
-			}*/
+	} else {
 		echo '<li class="role no-border-style">';
 		echo '<strong>Daily Reward Already Claimed</strong>';
 		echo '</li>';
@@ -603,7 +584,10 @@ function renderDailyRewardsSection(){
 		echo '<li class="role">';
 		echo getRewardTimeRemaining($conn);
 		echo '</li>';
- 	} 
+ 	}
+	echo "<li class='role' style='margin-top:8px;'>Total Streaks: ".getStreaksTotal($conn)."&nbsp;&nbsp;";
+	echo '<form style="position:relative;top:-4px;" action="leaderboards.php" method="post"><input type="hidden" name="filterbystreak" id="filterbystreak" value="monthly-streaks"><input type="submit" class="small-button" value="Leaderboard"></form>';
+	echo "</li>";
 	echo '</ul>';
 }
 
