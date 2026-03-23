@@ -598,15 +598,15 @@ $conn->close();
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
-#locations, #realm, #stats, #raids, #realms { padding-bottom: 140px; }
-#map #container-wrapper { padding-bottom: 140px; }
+#locations, #realm, #stats, #raids, #realms { padding-bottom: 100px; }
+#map #container-wrapper { padding-bottom: 100px; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
 		document.getElementById('map').style.position = "relative";
-		document.getElementById('map').style.top = '-55px';
+		document.getElementById('map').style.top = '-45px';
 		document.getElementById('stats').style.position = "relative";
 		document.getElementById('stats').style.top = '-55px';
 		document.getElementById('raids').style.position = "relative";
