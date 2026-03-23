@@ -4,9 +4,9 @@ include 'message.php';
 // Verify includes Webhooks
 include 'verify.php';
 include 'skulliance.php';
-include 'header.php';
 // Tell nginx not to buffer this response so the loader flushes to the browser immediately
 header('X-Accel-Buffering: no');
+include 'header.php';
 ?>
 <style>
 #missions-loader {
