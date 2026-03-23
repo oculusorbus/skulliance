@@ -5209,7 +5209,7 @@ function checkRealm($conn){
 
 function createRealm($conn, $realm, $faction){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "INSERT INTO realms (name, user_id, project_id, theme_id, mine_claimed_at, factory_claimed_at, armory_claimed_at)
+		$sql = "INSERT INTO realms (name, user_id, project_id, theme_id, mine_claimed, factory_claimed, armory_claimed)
 		VALUES ('".mysqli_real_escape_string($conn, $realm)."', '".$_SESSION['userData']['user_id']."', '".$faction."', '7', NOW(), NOW(), NOW())";
 
 		if ($conn->query($sql) === TRUE) {
@@ -8060,14 +8060,14 @@ function getMineInfo($conn, $realm_id) {
 	$realm_id   = intval($realm_id);
 	$mine_level = intval(getRealmLocationLevel($conn, $realm_id, 7));
 	$nightly    = $mine_level * 10000;
-	$realm_result = $conn->query("SELECT user_id, mine_claimed_at FROM realms WHERE id = $realm_id LIMIT 1");
+	$realm_result = $conn->query("SELECT user_id, mine_claimed FROM realms WHERE id = $realm_id LIMIT 1");
 	$carbon = 0;
 	$pending_carbon = 0;
 	if ($realm_result && $realm_result->num_rows > 0) {
 		$realm_row = $realm_result->fetch_assoc();
 		$carbon = intval(getCurrentBalance($conn, $realm_row['user_id'], 15));
 		if ($mine_level > 0) {
-			$last = $realm_row['mine_claimed_at'] ? strtotime($realm_row['mine_claimed_at']) : (time() - 86400);
+			$last = $realm_row['mine_claimed'] ? strtotime($realm_row['mine_claimed']) : (time() - 86400);
 			$days = floor((time() - $last) / 86400);
 			$pending_carbon = $days * $nightly;
 		}
@@ -8078,20 +8078,20 @@ function getMineInfo($conn, $realm_id) {
 // On-demand: claim accrued CARBON for a single realm
 function claimMineRewards($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$realm_result = $conn->query("SELECT user_id, mine_claimed_at FROM realms WHERE id = $realm_id LIMIT 1");
+	$realm_result = $conn->query("SELECT user_id, mine_claimed FROM realms WHERE id = $realm_id LIMIT 1");
 	if (!$realm_result || $realm_result->num_rows == 0) return 0;
 	$realm_row  = $realm_result->fetch_assoc();
 	$user_id    = intval($realm_row['user_id']);
 	$mine_level = intval(getRealmLocationLevel($conn, $realm_id, 7));
 	if ($mine_level == 0) return 0;
 	$nightly = $mine_level * 10000;
-	$last    = $realm_row['mine_claimed_at'] ? strtotime($realm_row['mine_claimed_at']) : (time() - 86400);
+	$last    = $realm_row['mine_claimed'] ? strtotime($realm_row['mine_claimed']) : (time() - 86400);
 	$days    = floor((time() - $last) / 86400);
 	if ($days < 1) return 0;
 	$amount = $days * $nightly;
 	updateBalance($conn, $user_id, 15, $amount);
 	$conn->query("INSERT INTO transactions (type, user_id, amount, project_id, mine) VALUES ('credit', $user_id, $amount, 15, 1)");
-	$conn->query("UPDATE realms SET mine_claimed_at = NOW() WHERE id = $realm_id LIMIT 1");
+	$conn->query("UPDATE realms SET mine_claimed = NOW() WHERE id = $realm_id LIMIT 1");
 	return $amount;
 }
 
@@ -8101,10 +8101,10 @@ function getFactoryInfo($conn, $realm_id) {
 	$factory_level = intval(getRealmLocationLevel($conn, $realm_id, 5));
 	$pending_drops = 0;
 	if ($factory_level > 0) {
-		$r = $conn->query("SELECT factory_claimed_at FROM realms WHERE id = $realm_id LIMIT 1");
+		$r = $conn->query("SELECT factory_claimed FROM realms WHERE id = $realm_id LIMIT 1");
 		if ($r && $r->num_rows > 0) {
 			$row  = $r->fetch_assoc();
-			$last = $row['factory_claimed_at'] ? strtotime($row['factory_claimed_at']) : (time() - 86400);
+			$last = $row['factory_claimed'] ? strtotime($row['factory_claimed']) : (time() - 86400);
 			$days = floor((time() - $last) / 86400);
 			$pending_drops = $days * $factory_level;
 		}
@@ -8147,13 +8147,13 @@ function rollFactoryDrop($level) {
 // On-demand: claim accrued consumable drops for a single realm
 function claimFactoryDrops($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$r = $conn->query("SELECT user_id, factory_claimed_at FROM realms WHERE id = $realm_id LIMIT 1");
+	$r = $conn->query("SELECT user_id, factory_claimed FROM realms WHERE id = $realm_id LIMIT 1");
 	if (!$r || $r->num_rows == 0) return 0;
 	$realm_row     = $r->fetch_assoc();
 	$user_id       = intval($realm_row['user_id']);
 	$factory_level = intval(getRealmLocationLevel($conn, $realm_id, 5));
 	if ($factory_level == 0) return 0;
-	$last  = $realm_row['factory_claimed_at'] ? strtotime($realm_row['factory_claimed_at']) : (time() - 86400);
+	$last  = $realm_row['factory_claimed'] ? strtotime($realm_row['factory_claimed']) : (time() - 86400);
 	$days  = floor((time() - $last) / 86400);
 	if ($days < 1) return 0;
 	$drops = $days * $factory_level;
@@ -8161,7 +8161,7 @@ function claimFactoryDrops($conn, $realm_id) {
 		$consumable_id = rollFactoryDrop($factory_level);
 		updateAmount($conn, $user_id, $consumable_id, 1);
 	}
-	$conn->query("UPDATE realms SET factory_claimed_at = NOW() WHERE id = $realm_id LIMIT 1");
+	$conn->query("UPDATE realms SET factory_claimed = NOW() WHERE id = $realm_id LIMIT 1");
 	return $drops;
 }
 
@@ -8172,10 +8172,10 @@ function getArmoryInfo($conn, $realm_id) {
 	$drops        = $armory_level > 0 ? max(1, ceil($armory_level / 3)) : 0; // Level 1-3=1, 4-6=2, 7-9=3, 10=4
 	$pending_drops = 0;
 	if ($armory_level > 0) {
-		$r = $conn->query("SELECT armory_claimed_at FROM realms WHERE id = $realm_id LIMIT 1");
+		$r = $conn->query("SELECT armory_claimed FROM realms WHERE id = $realm_id LIMIT 1");
 		if ($r && $r->num_rows > 0) {
 			$row  = $r->fetch_assoc();
-			$last = $row['armory_claimed_at'] ? strtotime($row['armory_claimed_at']) : (time() - 86400);
+			$last = $row['armory_claimed'] ? strtotime($row['armory_claimed']) : (time() - 86400);
 			$days = floor((time() - $last) / 86400);
 			$pending_drops = $days * $drops;
 		}
@@ -8264,20 +8264,20 @@ function assignArmoryDrop($conn, $realm_id, $is_weapon) {
 // On-demand: generate and auto-assign accrued armory drops for a single realm
 function claimArmoryDrops($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$r = $conn->query("SELECT armory_claimed_at FROM realms WHERE id = $realm_id LIMIT 1");
+	$r = $conn->query("SELECT armory_claimed FROM realms WHERE id = $realm_id LIMIT 1");
 	if (!$r || $r->num_rows == 0) return 0;
 	$realm_row    = $r->fetch_assoc();
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 	if ($armory_level == 0) return 0;
 	$drops_per_day = max(1, ceil($armory_level / 3));
-	$last  = $realm_row['armory_claimed_at'] ? strtotime($realm_row['armory_claimed_at']) : (time() - 86400);
+	$last  = $realm_row['armory_claimed'] ? strtotime($realm_row['armory_claimed']) : (time() - 86400);
 	$days  = floor((time() - $last) / 86400);
 	if ($days < 1) return 0;
 	$drops = $days * $drops_per_day;
 	for ($i = 0; $i < $drops; $i++) {
 		assignArmoryDrop($conn, $realm_id, ($i % 2 == 0)); // alternate weapon/armor
 	}
-	$conn->query("UPDATE realms SET armory_claimed_at = NOW() WHERE id = $realm_id LIMIT 1");
+	$conn->query("UPDATE realms SET armory_claimed = NOW() WHERE id = $realm_id LIMIT 1");
 	return $drops;
 }
 
