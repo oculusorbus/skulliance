@@ -1598,6 +1598,28 @@ window.onclick = function(event) {
 })();
 
 // Shared loading state for intensive submit buttons (Start All Free, Start All Auto)
+function startFreeMissionsAjax(btn) {
+	btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+	btn.disabled = true;
+	var autoBtn = document.querySelector('#startAutoMissionsForm button');
+	if (autoBtn) autoBtn.disabled = true;
+	$.get('ajax/start-free-missions.php', function() {
+		window.currentMissionsLoaded = false;
+		loadCurrentMissions();
+	});
+}
+
+function startAutoMissionsAjax(btn) {
+	btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+	btn.disabled = true;
+	var freeBtn = document.querySelector('#startFreeMissionsForm button');
+	if (freeBtn) freeBtn.disabled = true;
+	$.get('ajax/start-auto-missions.php', function() {
+		window.currentMissionsLoaded = false;
+		loadCurrentMissions();
+	});
+}
+
 function skullSubmitBtn(btn) {
   btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
   setTimeout(function() {

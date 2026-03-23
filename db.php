@@ -1586,10 +1586,9 @@ function renderStartAllFreeEligibleMissionsButton($conn){
 		  $display = "block";
   	  }
 	}
-	echo "<form style='display:".$display."' id='startFreeMissionsForm' action='missions.php' method='post'>
-	<input type='hidden' id='start_all' name='start_all' value='true'>
-	<button type='submit' class='button' onclick='skullSubmitBtn(this)'>Start All Free</button>
-	</form><br>";
+	echo "<span style='display:".$display."' id='startFreeMissionsForm'>
+	<button type='button' class='button' onclick='startFreeMissionsAjax(this)'>Start All Free</button>
+	</span><br>";
 	return $projects;
 }
 
@@ -1866,10 +1865,9 @@ function renderStartAutoMissionsButton($conn) {
 		if ((int)$row['cnt'] > 0) $display = 'block';
 	}
 
-	echo "<form style='display:$display' id='startAutoMissionsForm' action='missions.php' method='post'>
-	<input type='hidden' name='auto_start' value='true'>
-	<button type='submit' class='button' onclick='skullSubmitBtn(this)'>Start All Auto</button>
-	</form><br>";
+	echo "<span style='display:$display' id='startAutoMissionsForm'>
+	<button type='button' class='button' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
+	</span><br>";
 }
 
 function completeMission($conn, $mission_id, $quest_id){
