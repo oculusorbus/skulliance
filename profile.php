@@ -1427,7 +1427,7 @@ $realm_con_info = [
 
 <!-- ── Boss Battles ───────────────────────────────────────────────────── -->
 <div class="profile-section">
-    <div class="section-title"><span>&#9876; Boss Battles</span><a href="monstrocity.php" target="_blank" class="section-title-link">Begin Boss Battle &rarr;</a></div>
+    <div class="section-title"><span>&#9876; Boss Battles</span><a href="monstrocity.php#boss" target="_blank" class="section-title-link">Begin Boss Battle &rarr;</a></div>
     <div class="activity-stats-row">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#e8eaed"><?php echo number_format($boss_total); ?></span>
