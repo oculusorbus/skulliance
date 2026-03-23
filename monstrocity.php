@@ -1197,6 +1197,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	</div>
 
   </div>
+    <script>if(location.hash==='#boss'){document.write('<style>#character-select-container{display:none}</style>');}</script>
     <div id="character-select-container">
 	  <h1>Match 3 RPG Game</h1>
 	  <h2>Staking Info</h2>
