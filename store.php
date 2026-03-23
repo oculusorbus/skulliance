@@ -42,6 +42,12 @@ include 'header.php';
 				<?php if(isset($_SESSION['userData']['user_id'])){ renderItemSubmissionForm($creators, "store"); } ?>
 			</div>
 		</div>
+		<!-- Store image modal -->
+		<div id="store-image-modal" onclick="closeStoreImageModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:zoom-out;">
+			<img id="store-modal-img" src="" alt="" style="max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.7);">
+			<p id="store-modal-name" style="color:#e8eef4;font-size:1rem;font-weight:bold;margin:0;"></p>
+		</div>
+
 		<!-- Footer -->
 		<div class="footer">
 		  <p>Skulliance<br>Copyright © <span id="year"></span>
@@ -56,4 +62,16 @@ if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
 }?>
 <script type="text/javascript" src="skulliance.js"></script>
+<script type="text/javascript">
+function openStoreImageModal(src, name){
+	var modal = document.getElementById('store-image-modal');
+	document.getElementById('store-modal-img').src = src;
+	document.getElementById('store-modal-name').textContent = name || '';
+	modal.style.display = 'flex';
+}
+function closeStoreImageModal(){
+	document.getElementById('store-image-modal').style.display = 'none';
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeStoreImageModal(); });
+</script>
 </html>

@@ -3236,7 +3236,7 @@ function getItems($conn, $page, $filterby=""){
 		$div   = (float)($row['divider'] ?: 1);
 	    echo "<div class='nft ".$class."'><div class='nft-data'>";
 		echo "<span class='nft-name'>".$row["item_name"]."</span>";
-		echo "<span class='nft-image'><img loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."'/></span>";
+		echo "<span class='nft-image'><img loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$row["image_url"]."' style='cursor:zoom-in;' onclick='openStoreImageModal(this.src, this.closest(\".nft-data\").querySelector(\".nft-name\").textContent)'/></span>";
 		echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 		echo "<span class='nft-level'><strong>Quantity</strong><br>".$row["quantity"]."</span>";
 
