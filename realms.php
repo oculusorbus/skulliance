@@ -582,6 +582,25 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 
+	<!-- Raid Soldier Selection Modal -->
+	<div id="raid-soldiers-overlay" onclick="closeRaidSoldierModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
+	<div id="raid-soldiers-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true">
+		<div class="raid-modal-content" style="max-width:560px;max-height:82vh;overflow-y:auto;">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;">Select Soldiers for Raid</h2>
+				<button class="raid-modal-close" onclick="closeRaidSoldierModal()" aria-label="Close">&times;</button>
+			</div>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to 10 trained soldiers from your Barracks. Their equipped weapon and armor will go on this raid.</p>
+			<div id="raid-soldiers-grid"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
+			<div class="raid-modal-footer">
+				<span id="raid-soldiers-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 / 10 selected</span>
+				<button class="button" onclick="confirmRaidSoldierSelection()">Continue</button>
+				<button class="small-button" onclick="skipRaidSoldierSelection()">Skip</button>
+				<button class="small-button" onclick="closeRaidSoldierModal()">Cancel</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Enlist Picker Modal (child of barracks) -->
 	<div id="enlist-modal-overlay" onclick="closeEnlistPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1002;"></div>
 	<div id="enlist-modal" class="modal" style="display:none;z-index:1003;" role="dialog" aria-modal="true">
@@ -780,6 +799,192 @@ $conn->close();
 		}
 	}
 	_checkStockButtonStates();
+
+	/* ── RAID SOLDIER SELECTION ──────────────────────────── */
+	// Intercept openRaidConsumablesModal to show soldier picker first
+	var _raidSoldierSelectedIds   = [];
+	var _raidSoldiersDefenseId    = null;
+	var _raidSoldiersDuration     = null;
+	var _raidSoldiersButton       = null;
+	var _raidSoldiersConsumables  = null;
+
+	// Intercept direct startRaid (raid card with pre-set consumables)
+	var _origStartRaid = typeof startRaid === 'function' ? startRaid : null;
+	startRaid = function(raidButton, defenseID, duration) {
+		_raidSoldiersButton      = raidButton;
+		_raidSoldiersDefenseId   = defenseID;
+		_raidSoldiersDuration    = duration;
+		_raidSoldiersConsumables = 'direct'; // signals this came from direct start
+		_raidSoldierSelectedIds  = [];
+		document.getElementById('raid-soldiers-grid').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		document.getElementById('raid-soldiers-overlay').style.display = 'block';
+		document.getElementById('raid-soldiers-modal').style.display   = 'flex';
+		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
+			_renderRaidSoldierGrid(raiders);
+		}).fail(function() {
+			document.getElementById('raid-soldiers-overlay').style.display = 'none';
+			document.getElementById('raid-soldiers-modal').style.display   = 'none';
+			if (_origStartRaid) _origStartRaid(raidButton, defenseID, duration);
+		});
+	};
+
+	var _origOpenRaidConsumablesModal = typeof openRaidConsumablesModal === 'function' ? openRaidConsumablesModal : null;
+	openRaidConsumablesModal = function(realmId, duration) {
+		_raidSoldiersConsumables = 'modal';
+		_raidSoldiersDefenseId = realmId;
+		_raidSoldiersDuration  = duration;
+		_raidSoldierSelectedIds = [];
+		document.getElementById('raid-soldiers-grid').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		document.getElementById('raid-soldiers-overlay').style.display = 'block';
+		document.getElementById('raid-soldiers-modal').style.display   = 'flex';
+		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
+			_renderRaidSoldierGrid(raiders);
+		}).fail(function() {
+			// No soldiers or error — skip to consumables
+			document.getElementById('raid-soldiers-overlay').style.display = 'none';
+			document.getElementById('raid-soldiers-modal').style.display   = 'none';
+			if (_origOpenRaidConsumablesModal) _origOpenRaidConsumablesModal(realmId, duration);
+		});
+	};
+
+	function _renderRaidSoldierGrid(raiders) {
+		var grid = document.getElementById('raid-soldiers-grid');
+		if (!raiders || raiders.length === 0) {
+			grid.innerHTML = '<p style="opacity:0.55;font-size:0.85rem;text-align:center;">No trained soldiers available. Enlist and train soldiers in Barracks first.</p>';
+			return;
+		}
+		var html = '<div class="soldiers-grid">';
+		raiders.forEach(function(s) {
+			var weaponInfo = s.weapon_id ? ('Lv' + s.weapon_level + ' ' + s.weapon_name) : 'No Weapon';
+			var armorInfo  = s.armor_id  ? ('Lv' + s.armor_level  + ' ' + s.armor_name)  : 'No Armor';
+			html += '<div class="soldier-card raid-soldier-pick" data-soldier-id="' + s.soldier_id + '" onclick="toggleRaidSoldierSelect(this)">';
+			html += '<img class="soldier-nft-img" src="' + (s.ipfs || 'icons/skull.png') + '" onerror="this.src=\'icons/skull.png\'" />';
+			html += '<div class="soldier-name">' + s.nft_name + '</div>';
+			html += '<div class="soldier-status" style="font-size:0.65rem;">' + weaponInfo + '</div>';
+			html += '<div class="soldier-status" style="font-size:0.65rem;">' + armorInfo + '</div>';
+			html += '</div>';
+		});
+		html += '</div>';
+		grid.innerHTML = html;
+		_updateRaidSoldierCount();
+	}
+
+	function toggleRaidSoldierSelect(el) {
+		var sid = parseInt($(el).data('soldier-id'));
+		var idx = _raidSoldierSelectedIds.indexOf(sid);
+		if (idx >= 0) {
+			_raidSoldierSelectedIds.splice(idx, 1);
+			$(el).removeClass('selected');
+		} else {
+			if (_raidSoldierSelectedIds.length >= 10) {
+				openNotify('Maximum 10 soldiers per raid.');
+				return;
+			}
+			_raidSoldierSelectedIds.push(sid);
+			$(el).addClass('selected');
+		}
+		_updateRaidSoldierCount();
+	}
+
+	function _updateRaidSoldierCount() {
+		document.getElementById('raid-soldiers-count').textContent = _raidSoldierSelectedIds.length + ' / 10 selected';
+	}
+
+	function confirmRaidSoldierSelection() {
+		document.getElementById('raid-soldiers-overlay').style.display = 'none';
+		document.getElementById('raid-soldiers-modal').style.display   = 'none';
+		_proceedAfterSoldierPick();
+	}
+
+	function skipRaidSoldierSelection() {
+		_raidSoldierSelectedIds = [];
+		document.getElementById('raid-soldiers-overlay').style.display = 'none';
+		document.getElementById('raid-soldiers-modal').style.display   = 'none';
+		_proceedAfterSoldierPick();
+	}
+
+	function closeRaidSoldierModal() {
+		document.getElementById('raid-soldiers-overlay').style.display = 'none';
+		document.getElementById('raid-soldiers-modal').style.display   = 'none';
+		_raidSoldiersDefenseId  = null;
+		_raidSoldiersDuration   = null;
+		_raidSoldierSelectedIds = [];
+		_raidSoldiersConsumables = null;
+		_raidSoldiersButton     = null;
+	}
+
+	function _proceedAfterSoldierPick() {
+		if (_raidSoldiersConsumables === 'direct') {
+			// Direct startRaid path — build soldiers param and launch immediately
+			var soldiersParam = '';
+			_raidSoldierSelectedIds.forEach(function(sid) { soldiersParam += '&soldiers[]=' + sid; });
+			var btn = _raidSoldiersButton;
+			var defId = _raidSoldiersDefenseId;
+			var dur   = _raidSoldiersDuration;
+			var allEl = document.getElementById('raid-all-items-' + defId);
+			var consumablesParam = '';
+			if (allEl && allEl.checked) {
+				var mode = allEl.dataset.mode || 'all';
+				var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
+				var conItems = document.querySelectorAll('[id^="raid-con-item-"]');
+				if (mode === 'saved') {
+					savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
+				} else {
+					consumablesParam = '&consumables=all';
+				}
+			}
+			_raidSoldierSelectedIds = [];
+			var xhttp = new XMLHttpRequest();
+			xhttp.open('GET', 'ajax/start_raid.php?defense_id=' + defId + '&duration=' + dur + consumablesParam + soldiersParam, true);
+			xhttp.send();
+			xhttp.onreadystatechange = function() {
+				if (xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200) {
+					var data = xhttp.responseText;
+					var conRow = document.getElementById('raid-con-row-' + defId);
+					if (conRow) conRow.style.display = 'none';
+					if (data != '' && btn) btn.outerHTML = data;
+				}
+			};
+		} else {
+			// Consumables modal path
+			if (_origOpenRaidConsumablesModal && _raidSoldiersDefenseId) {
+				_origOpenRaidConsumablesModal(_raidSoldiersDefenseId, _raidSoldiersDuration);
+			}
+		}
+	}
+
+	// Override startRaidFromModal to include soldiers param
+	startRaidFromModal = function() {
+		var defenseID = _raidModalDefenseId;
+		var duration  = _raidModalDuration;
+		if (!defenseID) return;
+		var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:checked');
+		var consumablesParam = '';
+		var savedCids = [];
+		checks.forEach(function(ch) {
+			consumablesParam += '&consumables[]=' + ch.getAttribute('data-id');
+			savedCids.push(parseInt(ch.getAttribute('data-id')));
+		});
+		var saveEl  = document.getElementById('raid-con-save-config');
+		var saveParam = (!saveEl || saveEl.checked) ? '&save_config=1' : '';
+		if (saveParam) _updateAllRaidConfigCheckboxes(savedCids);
+		var soldiersParam = '';
+		_raidSoldierSelectedIds.forEach(function(sid) { soldiersParam += '&soldiers[]=' + sid; });
+		closeRaidConsumablesModal();
+		var raidButton = document.getElementById('raid-btn-' + defenseID);
+		var xhttp = new XMLHttpRequest();
+		xhttp.open('GET', 'ajax/start_raid.php?defense_id=' + defenseID + '&duration=' + duration + consumablesParam + saveParam + soldiersParam, true);
+		xhttp.send();
+		xhttp.onreadystatechange = function() {
+			if (xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200) {
+				var data = xhttp.responseText;
+				var conRow = document.getElementById('raid-con-row-' + defenseID);
+				if (conRow) conRow.style.display = 'none';
+				if (data != '' && raidButton) raidButton.outerHTML = data;
+			}
+		};
+		_raidSoldierSelectedIds = [];
+	};
 
 	/* ── LOCATION MODALS ─────────────────────────────────── */
 	var _locModalTitles = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};

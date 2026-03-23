@@ -20,7 +20,12 @@ if(isset($_GET['defense_id']) && isset($_GET['duration'])){
 				}
 			}
 		}
-		startRaid($conn, $_GET['defense_id'], $_GET['duration'], $consumables);
+		$raid_id = startRaid($conn, $_GET['defense_id'], $_GET['duration'], $consumables);
+		// Commit soldiers to this raid if any were selected
+		if ($raid_id > 0 && isset($_GET['soldiers']) && is_array($_GET['soldiers'])) {
+			$soldier_ids = array_map('intval', $_GET['soldiers']);
+			commitRaidSoldiers($conn, $raid_id, $soldier_ids);
+		}
 		// Save consumable config to session if requested (only from modal start with save checkbox)
 		if(isset($_GET['save_config']) && $_GET['save_config'] == '1'){
 			$save_cids = array();

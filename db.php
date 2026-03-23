@@ -6486,10 +6486,12 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 			$raid_desc .= $items_line;
 			discordmsg("⚔️ Raid Launched", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $off_avatar_url, "FF6B35", $raid_author);
 			echo "<strong>Raid Started</strong>";
+			return $raid_id;
 		} else {
 			echo "Error: " . $conn->error;
 		}
 	}
+	return 0;
 }
 
 function checkMaxRaids($conn, $realm_id){
