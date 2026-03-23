@@ -411,10 +411,30 @@ function toggleTotalMissions(arrow){
 	};
 }
 
+function loadCurrentMissions(){
+	if(window.currentMissionsLoaded) return;
+	var container = document.getElementById('current-missions-container');
+	if(!container) return;
+	window.currentMissionsLoaded = true;
+	container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;">'
+		+ '<div style="font-size:2.2rem;animation:lp 1.2s ease-in-out infinite;">&#x1F480;</div>'
+		+ '<div style="width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">'
+		+   '<div style="height:100%;background:#00c8a0;width:0%;animation:lb 8s ease-out forwards;"></div>'
+		+ '</div>'
+		+ '<div style="font-size:.75rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;">Loading</div>'
+		+ '</div>';
+	$.get('ajax/get-current-missions.php', function(html){
+		container.innerHTML = html;
+	}).fail(function(){
+		container.innerHTML = '<p style="padding:20px;opacity:0.5;">Failed to load missions.</p>';
+		window.currentMissionsLoaded = false;
+	});
+}
+
 function toggleCurrentMissions(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
-	
+
 	if(arrow.id == 'current-down'){
 		arrow.id = 'current-up';
 		arrow.src = 'icons/up.png';
@@ -422,37 +442,14 @@ function toggleCurrentMissions(arrow){
 		document.getElementById('current-missions-container').style.display = 'none';
 	}else{
 		arrow.id = 'current-down';
-		// Swap for loading.gif if needing to use AJAX for performance
 		arrow.src = 'icons/down.png';
 		visibility = 'show';
 		document.getElementById('current-missions-container').style.display = 'block';
+		loadCurrentMissions();
 	}
-	
-	xhttp.open('GET', 'ajax/toggle-current-missions.php?visibility='+visibility, true);
-	
-	xhttp.send();
 
-	xhttp.onreadystatechange = function() {
-	  if (xhttp.readyState == XMLHttpRequest.DONE) {
-	    // Check the status of the response
-	    if (xhttp.status == 200) {
-			// Access the data returned by the server
-			var data = xhttp.responseText;
-			/* Only reactivate if there are performance issues with the current missions query
-			document.getElementById('current-missions-container').innerHTML = data;
-			if(data != ""){
-				document.getElementById('current-down').src = 'icons/down.png';
-				var claimButton = document.getElementById('claim-missions-button');
-				if (typeof(claimButton) != 'undefined' && claimButton != null){
-					document.getElementById('current-missions-container').insertBefore(document.getElementById('claim-missions-button'), document.getElementById('current-missions-container').firstChild);
-				}
-			}*/
-	    } else {
-	      // Handle error
-			alert("AJAX Error");
-	    }
-	  }
-	};
+	xhttp.open('GET', 'ajax/toggle-current-missions.php?visibility='+visibility, true);
+	xhttp.send();
 }
 
 function toggleRaids(arrow, category, results){
