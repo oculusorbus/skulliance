@@ -7864,7 +7864,7 @@ function getPortalReport($conn, $realm_id) {
 	$portal_level  = intval(getRealmLocationLevel($conn, $realm_id, 1));
 	$deployed      = getDeployedCount($conn, $realm_id);
 	$cap           = getDeploymentCap($conn, $realm_id);
-	$result = $conn->query("SELECT COUNT(*) AS cnt FROM raids WHERE realm_id = $realm_id AND outcome IS NULL");
+	$result = $conn->query("SELECT COUNT(*) AS cnt FROM raids WHERE offense_id = $realm_id AND outcome IS NULL");
 	$row = $result->fetch_assoc();
 	$active_raids  = intval($row['cnt']);
 	return array(
