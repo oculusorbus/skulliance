@@ -599,7 +599,7 @@ $conn->close();
 @keyframes lb { to { width:90%; } }
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
 #locations, #realm, #stats, #raids, #realms { padding-bottom: 100px; }
-#map #container-wrapper { padding-bottom: 100px; }
+#map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
