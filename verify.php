@@ -23,6 +23,8 @@ if(isset($_GET['verify'])){
 	$asset_ids = getNFTAssetIDs($conn);
 	// Verify all NFTs from wallets in the DB
 	verifyNFTs($conn, $addresses, $policies, $asset_ids);
+	// Remove soldiers whose NFT is no longer owned by the realm's user
+	verifyRealmSoldiers($conn);
 	// Get project percentages for Diamond Skull delegations
 	$percentages = array();
 	$percentages = getProjectDelegationPercentages($conn);
@@ -32,12 +34,6 @@ if(isset($_GET['verify'])){
 	updateBalances($conn, $diamond_skull_bonus);
 	// Deploy rewards for Diamond Skull delegation
 	deployDiamondSkullRewards($conn, $percentages);
-	// Realms enhancement: nightly processing
-	processTraining($conn);
-	verifyRealmSoldiers($conn);
-	processMineRewards($conn);
-	processFactoryDrops($conn);
-	processArmoryDrops($conn);
 }
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(), $attempts=0){

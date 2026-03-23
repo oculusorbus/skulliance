@@ -6,6 +6,8 @@ if (!isset($_SESSION['userData']['user_id'])) exit;
 $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
+// Lazy training: mark soldiers as trained if their timer has elapsed
+updateSoldierTraining($conn, $realm_id);
 $soldiers       = getBarracksSoldiers($conn, $realm_id);
 $cap            = getDeploymentCap($conn, $realm_id);
 $barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));

@@ -11,9 +11,6 @@ $con_names = array(
     1 => '100% Success', 2 => '75% Success', 3 => '50% Success',
     4 => '25% Success',  5 => 'Fast Forward', 6 => 'Double Rewards', 7 => 'Random Reward'
 );
-$rarity_labels = array(
-    1 => 'Rare', 2 => 'Rare', 3 => 'Rare', 4 => 'Common', 5 => 'Uncommon', 6 => 'Rare', 7 => 'Uncommon'
-);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
@@ -21,19 +18,29 @@ $rarity_labels = array(
         <span class="soldiers-stat-value"><?php echo $info['factory_level']; ?></span>
     </div>
     <div class="soldiers-stat">
-        <span class="soldiers-stat-label">Items Per Night</span>
+        <span class="soldiers-stat-label">Items Per Day</span>
         <span class="soldiers-stat-value"><?php echo $info['drops_per_night']; ?></span>
     </div>
 </div>
+<?php if ($info['factory_level'] > 0): ?>
+<div class="claim-panel" style="margin-top:14px;padding:12px;background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.25);border-radius:8px;text-align:center;">
+    <div style="font-size:0.82rem;opacity:0.7;margin-bottom:6px;">Items Ready to Collect</div>
+    <div style="font-size:1.4rem;font-weight:700;color:#00c8a0;margin-bottom:10px;"><?php echo $info['pending_drops']; ?> Item<?php echo $info['pending_drops'] != 1 ? 's' : ''; ?></div>
+    <?php if ($info['pending_drops'] > 0): ?>
+    <button class="small-button" onclick="claimFactory()" style="background:#00c8a0;color:#000;">Claim Items</button>
+    <?php else: ?>
+    <div style="font-size:0.8rem;opacity:0.5;">Nothing to claim yet — come back tomorrow!</div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 <p style="font-size:0.82rem;opacity:0.6;margin-top:12px;">
-    The Factory generates <strong><?php echo $info['drops_per_night']; ?> consumable item<?php echo $info['drops_per_night'] != 1 ? 's' : ''; ?></strong> per night automatically.
-    Items are credited to your inventory every night. Higher Factory levels unlock better drop odds.
+    The Factory generates <strong><?php echo $info['drops_per_night']; ?> consumable item<?php echo $info['drops_per_night'] != 1 ? 's' : ''; ?> per day</strong>.
+    Higher Factory levels unlock better drop odds.
 </p>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Drop Rates (Level <?php echo $info['factory_level']; ?>)</strong>
     <div class="inv-info-grid" style="margin-top:10px;">
         <?php
-        // Show approximate odds for current level
         $level = $info['factory_level'];
         $odds = array();
         if ($level <= 3)      $odds = array(4=>50, 3=>35, 2=>15);
