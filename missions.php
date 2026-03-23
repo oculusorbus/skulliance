@@ -28,10 +28,6 @@ include 'header.php';
 	<div class="loader-text">Loading Missions</div>
 </div>
 <?php
-// Flush loader to browser before running slow queries
-if (ob_get_level() > 0) ob_flush();
-flush();
-
 $username="";
 if(isset($_GET['username'])){
 	$username = $_GET['username'];
@@ -96,10 +92,6 @@ if(isset($_POST["reset_mission"])){
 		echo '<a name="current-missions" id="current-missions"></a>';
 		echo '<div class="content missions" id="current-missions-container" style="display:'.$display.'">';
 		$projects = array();
-		// Re-add if statement and activate AJAX JS if the query takes too long
-		//if($display == 'block'){
-			$projects = getCurrentMissions($conn);
-		//}
 		echo '</div>';
 	?>
 	</div>
@@ -206,7 +198,20 @@ if($filterby != ""){
 <script type='text/javascript'>
 	(function(){
 		var loader = document.getElementById('missions-loader');
-		if(loader){ loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+		var container = document.getElementById('current-missions-container');
+		function hideLoader(){
+			if(loader){ loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+		}
+		if(container){
+			$.get('ajax/get-current-missions.php', function(html){
+				container.innerHTML = html;
+				hideLoader();
+			}).fail(function(){
+				hideLoader();
+			});
+		} else {
+			hideLoader();
+		}
 	})();
 </script>
 <script type='text/javascript'>
