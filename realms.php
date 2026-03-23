@@ -597,8 +597,6 @@ $conn->close();
 <style>
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
-/* Push page bottom down so content can scroll past the fixed quick-menu */
-.container { padding-bottom: 130px; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -712,5 +710,6 @@ $conn->close();
 	}
 	_checkStockButtonStates();
 </script>
+<div style="height:140px;"></div>
 <?php } ?>
 </html>
