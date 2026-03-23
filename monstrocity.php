@@ -4900,15 +4900,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	            console.log('Main: Player characters loaded:', playerCharactersConfig);
 	            var game = new MonstrocityMatch3(playerCharactersConfig, initialTheme);
 	            console.log('Main: Game instance created');
-	            game.init().then(function() {
-	                console.log('Main: Game initialized successfully');
-	                // Set the logo based on the initial theme
-	                document.querySelector('.game-logo').src = game.baseImagePath + 'logo.png';
-	                // Deep link: monstrocity.php#boss goes directly to Boss Battles
-	                if (window.location.hash === '#boss' && window.isLoggedIn) {
-	                    showBossSelect(game);
-	                }
-	            });
+	            document.querySelector('.game-logo').src = game.baseImagePath + 'logo.png';
+	            // Deep link: monstrocity.php#boss skips campaign init and goes straight to Boss Battles
+	            if (window.location.hash === '#boss' && window.isLoggedIn) {
+	                showBossSelect(game);
+	            } else {
+	                game.init().then(function() {
+	                    console.log('Main: Game initialized successfully');
+	                });
+	            }
 	        }).catch(function(error) {
 	            console.error('Main: Error initializing game:', error);
 	        });
