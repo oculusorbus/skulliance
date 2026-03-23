@@ -376,10 +376,30 @@ function selectProjectFilter(project_id){
 	};
 }
 
+function loadTotalMissions(){
+	if(window.totalMissionsLoaded) return;
+	var container = document.getElementById('total-missions-container');
+	if(!container) return;
+	window.totalMissionsLoaded = true;
+	container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;">'
+		+ '<div style="font-size:2.2rem;animation:lp 1.2s ease-in-out infinite;">&#x1F480;</div>'
+		+ '<div style="width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">'
+		+   '<div style="height:100%;background:#00c8a0;width:0%;animation:lb 8s ease-out forwards;"></div>'
+		+ '</div>'
+		+ '<div style="font-size:.75rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;">Loading</div>'
+		+ '</div>';
+	$.get('ajax/get-total-missions.php', function(html){
+		container.innerHTML = html;
+	}).fail(function(){
+		container.innerHTML = '<p style="padding:20px;opacity:0.5;">Failed to load stats.</p>';
+		window.totalMissionsLoaded = false;
+	});
+}
+
 function toggleTotalMissions(arrow){
 	var xhttp = new XMLHttpRequest();
 	var visibility = "";
-	
+
 	if(arrow.id == 'down'){
 		arrow.id = 'up';
 		arrow.src = 'icons/up.png';
@@ -390,25 +410,11 @@ function toggleTotalMissions(arrow){
 		arrow.src = 'icons/down.png';
 		visibility = 'show';
 		document.getElementById('total-missions-container').style.display = 'block';
+		loadTotalMissions();
 	}
-	
-	xhttp.open('GET', 'ajax/toggle-total-missions.php?visibility='+visibility, true);
-	
-	xhttp.send();
 
-	xhttp.onreadystatechange = function() {
-	  if (xhttp.readyState == XMLHttpRequest.DONE) {
-	    // Check the status of the response
-	    if (xhttp.status == 200) {
-			// Access the data returned by the server
-			var data = xhttp.responseText;
-			document.getElementById('total-missions-container').innerHTML = data;
-	    } else {
-	      // Handle error
-			alert("AJAX Error");
-	    }
-	  }
-	};
+	xhttp.open('GET', 'ajax/toggle-total-missions.php?visibility='+visibility, true);
+	xhttp.send();
 }
 
 function loadCurrentMissions(){

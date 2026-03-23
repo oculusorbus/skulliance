@@ -74,9 +74,6 @@ if(isset($_POST["reset_mission"])){
 	  	   . "</div>";
 	  	echo '<a name="total-missions" id="total-missions"></a>';
 	    echo '<div class="content missions" id="total-missions-container" style="display:'.$display.'">';
-		if($display == 'block'){
-			getTotalMissions($conn);
-		}
 		echo '</div>';
 			
 		$arrow = "down";
@@ -206,7 +203,9 @@ if($filterby != ""){
 		var loader = document.getElementById('missions-loader');
 		if(loader){ loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
 	})();
-	// Auto-load current missions if panel is already expanded on page load
+	// Auto-load panels that are already expanded on page load
+	var _tm = document.getElementById('total-missions-container');
+	if(_tm && _tm.style.display !== 'none') loadTotalMissions();
 	var _cm = document.getElementById('current-missions-container');
 	if(_cm && _cm.style.display !== 'none') loadCurrentMissions();
 </script>
