@@ -4904,6 +4904,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                console.log('Main: Game initialized successfully');
 	                // Set the logo based on the initial theme
 	                document.querySelector('.game-logo').src = game.baseImagePath + 'logo.png';
+	                // Deep link: monstrocity.php#boss goes directly to Boss Battles
+	                if (window.location.hash === '#boss' && window.isLoggedIn) {
+	                    showBossSelect(game);
+	                }
 	            });
 	        }).catch(function(error) {
 	            console.error('Main: Error initializing game:', error);
