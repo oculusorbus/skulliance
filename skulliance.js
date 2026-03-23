@@ -430,7 +430,7 @@ function loadCurrentMissions(){
 		+ '<div style="font-size:.75rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;">Loading</div>'
 		+ '</div>';
 	$.get('ajax/get-current-missions.php', function(html){
-		container.innerHTML = html;
+		$(container).html(html);
 	}).fail(function(){
 		container.innerHTML = '<p style="padding:20px;opacity:0.5;">Failed to load missions.</p>';
 		window.currentMissionsLoaded = false;
@@ -446,6 +446,7 @@ function toggleCurrentMissions(arrow){
 		arrow.src = 'icons/up.png';
 		visibility = 'hide';
 		document.getElementById('current-missions-container').style.display = 'none';
+		window.currentMissionsLoaded = false;
 	}else{
 		arrow.id = 'current-down';
 		arrow.src = 'icons/down.png';
