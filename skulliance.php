@@ -546,9 +546,9 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 	}
 	echo "<span style='display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;font-size:0.9rem;'>"
 		."<strong>Day ".$day.":</strong>"
-		."<img class='icon' src='icons/".$consumables[$day].".png'/>"
-		."<span style='padding:0 4px;'>+</span>"
-		."<img class='icon' src='icons/".strtolower($currency).".png'/>"
+		."<img class='icon' style='margin-right:0;' src='icons/".$consumables[$day].".png'/>"
+		."<span>+</span>"
+		."<img class='icon' style='margin-right:0;' src='icons/".strtolower($currency).".png'/>"
 		."<span>+".$amount."&nbsp;".preg_replace('/[0-9]+/', '', $currency)."</span>"
 		."</span>";
 	echo "</li>";
