@@ -597,6 +597,9 @@ $conn->close();
 <style>
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
+/* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
+#locations, #realm, #stats, #raids, #realms { padding-bottom: 140px; }
+#map #container-wrapper { padding-bottom: 140px; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -710,6 +713,5 @@ $conn->close();
 	}
 	_checkStockButtonStates();
 </script>
-<div style="height:140px;"></div>
 <?php } ?>
 </html>
