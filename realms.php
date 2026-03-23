@@ -606,7 +606,7 @@ $conn->close();
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
 		document.getElementById('map').style.position = "relative";
-		document.getElementById('map').style.top = '-45px';
+		document.getElementById('map').style.top = '-100px';
 		document.getElementById('stats').style.position = "relative";
 		document.getElementById('stats').style.top = '-55px';
 		document.getElementById('raids').style.position = "relative";
