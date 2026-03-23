@@ -670,11 +670,8 @@ $conn->close();
 		document.getElementById(selection+'-icon').classList.add('selected');
 
 		// Map: just toggle visibility — reinitializing the SVG map via AJAX is not supported
-		// Also restore stats/raids visibility to provide scrollable content below the map
 		if(selection === 'map'){
 			document.getElementById('map').style.display = 'block';
-			document.getElementById('stats').style.display = 'block';
-			document.getElementById('raids').style.display = 'block';
 			return;
 		}
 
