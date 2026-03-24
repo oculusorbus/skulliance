@@ -7926,7 +7926,7 @@ function getBarracksSoldiers($conn, $realm_id) {
 	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
 	        LEFT JOIN armor ON armor.id = soldiers.armor_id
 	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL AND soldiers.active = 1
-	        ORDER BY soldiers.trained DESC, soldiers.location ASC, soldiers.date_created ASC";
+	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.date_created ASC";
 	$result = $conn->query($sql);
 	$soldiers = array();
 	while ($row = $result->fetch_assoc()) $soldiers[] = $row;
@@ -8097,13 +8097,17 @@ function getCryptSoldiers($conn, $realm_id) {
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.dead, soldiers.weapon_id, soldiers.armor_id,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id,
 	               DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) AS ready_at,
-	               (DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) <= NOW()) AS eligible
+	               (DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) <= NOW()) AS eligible,
+	               weapons.name AS weapon_name, weapons.level AS weapon_level,
+	               armor.name AS armor_name, armor.level AS armor_level
 	        FROM soldiers
 	        INNER JOIN nfts ON nfts.id = soldiers.nft_id
 	        INNER JOIN collections ON collections.id = nfts.collection_id
 	        INNER JOIN projects ON projects.id = collections.project_id
+	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
+	        LEFT JOIN armor ON armor.id = soldiers.armor_id
 	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL
-	        ORDER BY soldiers.dead ASC";
+	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.dead ASC";
 	$result = $conn->query($sql);
 	$soldiers = array();
 	while ($row = $result->fetch_assoc()) $soldiers[] = $row;
@@ -8133,7 +8137,7 @@ function getTowerGarrison($conn, $realm_id) {
 	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
 	        LEFT JOIN armor ON armor.id = soldiers.armor_id
 	        WHERE soldiers.realm_id = $realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL AND soldiers.active = 1
-	        ORDER BY soldiers.id ASC";
+	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.id ASC";
 	$result = $conn->query($sql);
 	$garrison = array();
 	while ($row = $result->fetch_assoc()) $garrison[] = $row;
