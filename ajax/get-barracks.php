@@ -80,6 +80,22 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
             echo $status_label;
         endif; ?>
     </div>
+    <div class="soldier-gear-row" style="width:100%;">
+        <?php if ($s['weapon_id']): ?>
+        <div class="soldier-gear-slot">
+            <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
+            <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+            <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
+        </div>
+        <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
+        <?php if ($s['armor_id']): ?>
+        <div class="soldier-gear-slot">
+            <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
+            <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+            <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
+        </div>
+        <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
+    </div>
     <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
 </div>
 <?php endforeach; ?>

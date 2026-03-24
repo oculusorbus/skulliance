@@ -78,24 +78,28 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     <div id="armory-soldiers-grid" class="soldiers-grid" style="margin-top:8px;grid-template-columns:repeat(4,1fr);">
     <?php foreach ($soldiers_page as $s):
         $img_src   = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
-        $loc_map   = array(1=>'Active Duty', 2=>'Tower', 3=>'On Raid');
-        $loc_label = $loc_map[intval($s['location'])] ?? 'Reserve';
+        $loc_map       = array(1=>'Active Duty', 2=>'Tower', 3=>'On Raid');
+        $loc_label     = $loc_map[intval($s['location'])] ?? 'Active Duty';
+        $loc_class_map = array(1=>'status-ready', 2=>'status-deployed', 3=>'status-deployed');
+        $status_class  = $loc_class_map[intval($s['location'])] ?? '';
     ?>
     <div class="soldier-card">
         <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
         <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
-        <div class="soldier-status"><?php echo $loc_label; ?></div>
-        <div class="soldier-gear-row" style="margin-top:4px;">
+        <div class="soldier-status <?php echo $status_class; ?>"><?php echo $loc_label; ?></div>
+        <div class="soldier-gear-row" style="margin-top:4px;width:100%;">
             <?php if ($s['weapon_id']): ?>
             <div class="soldier-gear-slot">
-                <span class="gear-label">Lv<?php echo $s['weapon_level']; ?> <?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
                 <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
             </div>
             <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
             <?php if ($s['armor_id']): ?>
             <div class="soldier-gear-slot">
-                <span class="gear-label">Lv<?php echo $s['armor_level']; ?> <?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
                 <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
             </div>
             <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
         </div>

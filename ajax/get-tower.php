@@ -54,17 +54,20 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
 <div class="soldier-card garrison-card" data-soldier-id="<?php echo $s['soldier_id']; ?>">
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
     <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
-    <div class="soldier-gear-row">
+    <div class="soldier-status status-ready">Active Duty</div>
+    <div class="soldier-gear-row" style="width:100%;">
         <div class="soldier-gear-slot">
             <?php if ($s['weapon_id']): ?>
-                <span class="gear-label">Lv<?php echo intval($s['weapon_level']); ?> <?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
                 <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo intval($s['weapon_level']); ?></span>
             <?php else: ?><span class="gear-empty">No Weapon</span><?php endif; ?>
         </div>
         <div class="soldier-gear-slot">
             <?php if ($s['armor_id']): ?>
-                <span class="gear-label">Lv<?php echo intval($s['armor_level']); ?> <?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
                 <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo intval($s['armor_level']); ?></span>
             <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
         </div>
     </div>
@@ -94,12 +97,22 @@ if ($slots_remaining > 0 && !empty($available_for_tower)):
     <div class="soldier-card tower-pick" data-soldier-id="<?php echo $s['soldier_id']; ?>" onclick="toggleTowerSelect(this)">
         <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
         <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
-        <?php if ($s['weapon_id']): ?>
-        <div class="soldier-status" style="font-size:0.65rem;">Lv<?php echo $s['weapon_level']; ?> <?php echo htmlspecialchars($s['weapon_name']); ?></div>
-        <?php endif; ?>
-        <?php if ($s['armor_id']): ?>
-        <div class="soldier-status" style="font-size:0.65rem;">Lv<?php echo $s['armor_level']; ?> <?php echo htmlspecialchars($s['armor_name']); ?></div>
-        <?php endif; ?>
+        <div class="soldier-gear-row" style="width:100%;">
+            <?php if ($s['weapon_id']): ?>
+            <div class="soldier-gear-slot">
+                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
+            </div>
+            <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
+            <?php if ($s['armor_id']): ?>
+            <div class="soldier-gear-slot">
+                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
+            </div>
+            <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
+        </div>
     </div>
     <?php endforeach; ?>
     </div>
