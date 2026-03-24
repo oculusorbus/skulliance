@@ -28,11 +28,11 @@
                 break;
             case 'weapon':
                 $label = $qty . '× Lv' . $entry['weapon_level'] . ' ' . htmlspecialchars($entry['weapon_name']);
-                $icon  = 'icons/weapons/' . strtolower(str_replace(' ', '-', $entry['weapon_name'])) . '.png';
+                $icon  = 'icons/' . strtolower(str_replace(' ', '-', $entry['weapon_name'])) . '.png';
                 break;
             case 'armor':
                 $label = $qty . '× Lv' . $entry['armor_level'] . ' ' . htmlspecialchars($entry['armor_name']);
-                $icon  = 'icons/armor/' . strtolower(str_replace(' ', '-', $entry['armor_name'])) . '.png';
+                $icon  = 'icons/' . strtolower(str_replace(' ', '-', $entry['armor_name'])) . '.png';
                 break;
             default:
                 $label = ''; $icon = 'icons/skull.png';
