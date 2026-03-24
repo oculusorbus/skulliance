@@ -1612,7 +1612,7 @@ $conn->close();
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
 			if (r.success) {
 				var msg = r.equipped + ' gear piece' + (r.equipped != 1 ? 's' : '') + ' equipped!';
-				if (r.stripped > 0) msg += ' (' + r.stripped + ' old piece' + (r.stripped != 1 ? 's' : '') + ' returned to inventory)';
+				if (r.stripped > 0) msg += '<br>' + r.stripped + ' item' + (r.stripped != 1 ? 's' : '') + ' returned to inventory!';
 				openNotify(msg); refreshLocationModal();
 			}
 			else { openNotify('Nothing new to equip.'); }
