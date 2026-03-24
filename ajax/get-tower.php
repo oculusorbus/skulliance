@@ -97,6 +97,7 @@ if ($slots_remaining > 0 && !empty($available_for_tower)):
     <div class="soldier-card tower-pick" data-soldier-id="<?php echo $s['soldier_id']; ?>" onclick="toggleTowerSelect(this)">
         <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
         <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
+        <div class="soldier-status status-ready">Active Duty</div>
         <div class="soldier-gear-row" style="width:100%;">
             <?php if ($s['weapon_id']): ?>
             <div class="soldier-gear-slot">
