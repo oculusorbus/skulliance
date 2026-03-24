@@ -7970,8 +7970,7 @@ function getEligibleEnlistNFTs($conn, $realm_id, $project_id=0, $collection_id=0
 	$project_id    = intval($project_id);
 	$collection_id = intval($collection_id);
 	$where = "nfts.user_id = $user_id
-	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL)
-	          AND nfts.id NOT IN (SELECT missions_nfts.nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE missions.status = 0)";
+	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL)";
 	if ($project_id)    $where .= " AND projects.id = $project_id";
 	if ($collection_id) $where .= " AND nfts.collection_id = $collection_id";
 	$sql = "SELECT nfts.id AS nft_id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
