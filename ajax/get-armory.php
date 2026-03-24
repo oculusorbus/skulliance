@@ -11,7 +11,8 @@ $armory_level  = $info['armory_level'];
 $drops         = $info['drops_per_night'];
 $soldiers      = $info['soldiers'];
 $inventory     = $info['inventory'];
-$logs          = getUnclaimedRealmLogs($conn, $realm_id);
+$log_types     = array('weapon', 'armor');
+$logs          = getUnclaimedRealmLogs($conn, $realm_id, $log_types);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">

@@ -7,7 +7,8 @@ $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
 $info = getMineInfo($conn, $realm_id);
-$logs = getUnclaimedRealmLogs($conn, $realm_id);
+$log_types = array('carbon');
+$logs = getUnclaimedRealmLogs($conn, $realm_id, $log_types);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
