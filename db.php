@@ -7933,6 +7933,27 @@ function removeSoldier($conn, $soldier_id, $realm_id) {
 	$conn->query("DELETE FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL");
 }
 
+// Get distinct projects and collections the user owns NFTs in, for dropdown population
+function getUserNFTProjectTree($conn) {
+	if (!isset($_SESSION['userData']['user_id'])) return array();
+	$user_id = intval($_SESSION['userData']['user_id']);
+	$sql = "SELECT DISTINCT projects.id AS project_id, projects.name AS project_name,
+	               collections.id AS collection_id, collections.name AS collection_name
+	        FROM nfts
+	        INNER JOIN collections ON collections.id = nfts.collection_id
+	        INNER JOIN projects ON projects.id = collections.project_id
+	        WHERE nfts.user_id = $user_id
+	        ORDER BY projects.name ASC, collections.name ASC";
+	$result = $conn->query($sql);
+	$tree = array();
+	while ($row = $result->fetch_assoc()) {
+		$pid = $row['project_id'];
+		if (!isset($tree[$pid])) $tree[$pid] = array('name' => $row['project_name'], 'collections' => array());
+		$tree[$pid]['collections'][] = array('id' => $row['collection_id'], 'name' => $row['collection_name']);
+	}
+	return $tree;
+}
+
 // Get eligible NFTs for enlistment: owned by user, not already a soldier, not on mission
 function getEligibleEnlistNFTs($conn, $realm_id) {
 	if (!isset($_SESSION['userData']['user_id'])) return array();

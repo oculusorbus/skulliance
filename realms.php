@@ -810,6 +810,7 @@ $conn->close();
 	/* ── RAID SOLDIER SELECTION ──────────────────────────── */
 	// Intercept openRaidConsumablesModal to show soldier picker first
 	var _portalLevel              = <?php echo intval($levels[1]); ?>;
+	var _nftProjectTree           = <?php echo json_encode(getUserNFTProjectTree($conn)); ?>;
 	var _raidSoldierSelectedIds   = [];
 	var _raidSoldiersDefenseId    = null;
 	var _raidSoldiersDuration     = null;
@@ -1074,35 +1075,29 @@ $conn->close();
 	function _buildEnlistProjectFilter() {
 		var sel = document.getElementById('enlist-project-filter');
 		sel.innerHTML = '<option value="">All Projects</option>';
-		var seen = {};
-		$('#enlist-picker-body .enlist-candidate').each(function() {
-			var pid   = $(this).data('project-id');
-			var pname = $(this).data('project-name');
-			if (!seen[pid]) {
-				seen[pid] = true;
-				sel.innerHTML += '<option value="' + pid + '">' + pname + '</option>';
-			}
-		});
-		sel.style.display = Object.keys(seen).length > 1 ? 'block' : 'none';
+		for (var pid in _nftProjectTree) {
+			sel.innerHTML += '<option value="' + pid + '">' + _nftProjectTree[pid].name + '</option>';
+		}
+		sel.style.display = Object.keys(_nftProjectTree).length > 1 ? 'block' : 'none';
+		document.getElementById('enlist-collection-filter').style.display = 'none';
 	}
 
 	function filterEnlistByProject(pid) {
 		$('#enlist-picker-body .enlist-candidate').each(function() {
 			$(this).toggle(!pid || String($(this).data('project-id')) === String(pid));
 		});
-		// rebuild collection dropdown for the selected project
 		var colSel = document.getElementById('enlist-collection-filter');
 		colSel.innerHTML = '<option value="">All Collections</option>';
-		var seen = {};
-		$('#enlist-picker-body .enlist-candidate').filter(function() {
-			return !pid || String($(this).data('project-id')) === String(pid);
-		}).each(function() {
-			var cid   = $(this).data('collection-id');
-			var cname = $(this).data('collection-name');
-			if (!seen[cid]) { seen[cid] = true; colSel.innerHTML += '<option value="'+cid+'">'+cname+'</option>'; }
-		});
+		if (pid && _nftProjectTree[pid]) {
+			var cols = _nftProjectTree[pid].collections;
+			cols.forEach(function(c) {
+				colSel.innerHTML += '<option value="' + c.id + '">' + c.name + '</option>';
+			});
+			colSel.style.display = cols.length > 1 ? 'block' : 'none';
+		} else {
+			colSel.style.display = 'none';
+		}
 		colSel.value = '';
-		colSel.style.display = (pid && Object.keys(seen).length > 1) ? 'block' : 'none';
 	}
 
 	function filterEnlistByCollection(cid) {
