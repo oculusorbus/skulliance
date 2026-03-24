@@ -1075,10 +1075,15 @@ $conn->close();
 
 	function _buildEnlistProjectFilter() {
 		var sel = document.getElementById('enlist-project-filter');
-		sel.innerHTML = '<option value="">All Projects</option>';
+		var coreHtml = '', partnerHtml = '';
 		for (var pid in _nftProjectTree) {
-			sel.innerHTML += '<option value="' + pid + '">' + _nftProjectTree[pid].name + '</option>';
+			var opt = '<option value="' + pid + '">' + _nftProjectTree[pid].name + '</option>';
+			if (_nftProjectTree[pid].group === 'core') coreHtml += opt;
+			else partnerHtml += opt;
 		}
+		sel.innerHTML = '<option value="">All Projects</option>';
+		if (coreHtml)    sel.innerHTML += '<optgroup label="Core Projects">'    + coreHtml    + '</optgroup>';
+		if (partnerHtml) sel.innerHTML += '<optgroup label="Partner Projects">' + partnerHtml + '</optgroup>';
 		sel.style.display = Object.keys(_nftProjectTree).length > 1 ? 'block' : 'none';
 		document.getElementById('enlist-collection-filter').style.display = 'none';
 	}

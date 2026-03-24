@@ -7943,15 +7943,20 @@ function getUserNFTProjectTree($conn) {
 	        INNER JOIN collections ON collections.id = nfts.collection_id
 	        INNER JOIN projects ON projects.id = collections.project_id
 	        WHERE nfts.user_id = $user_id
-	        ORDER BY projects.name ASC, collections.name ASC";
+	          AND projects.id != 15
+	        ORDER BY projects.id ASC, collections.name ASC";
 	$result = $conn->query($sql);
-	$tree = array();
+	$core = array();
+	$partner = array();
 	while ($row = $result->fetch_assoc()) {
-		$pid = $row['project_id'];
-		if (!isset($tree[$pid])) $tree[$pid] = array('name' => $row['project_name'], 'collections' => array());
-		$tree[$pid]['collections'][] = array('id' => $row['collection_id'], 'name' => $row['collection_name']);
+		$pid      = $row['project_id'];
+		$is_core  = ($pid >= 1 && $pid <= 7);
+		$group    = &($is_core ? $core : $partner);
+		if (!isset($group[$pid])) $group[$pid] = array('name' => $row['project_name'], 'group' => $is_core ? 'core' : 'partner', 'collections' => array());
+		$group[$pid]['collections'][] = array('id' => $row['collection_id'], 'name' => $row['collection_name']);
 	}
-	return $tree;
+	uasort($partner, function($a, $b) { return strcmp($a['name'], $b['name']); });
+	return $core + $partner;
 }
 
 // Get eligible NFTs for enlistment: owned by user, not already a soldier, not on mission
