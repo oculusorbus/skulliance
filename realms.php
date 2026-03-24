@@ -1133,7 +1133,7 @@ $conn->close();
 	};
 
 	/* ── LOCATION MODALS ─────────────────────────────────── */
-	var _locModalTitles    = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
+	var _locModalTitles    = {1:'Portal Report',2:'Armory',3:'Tower',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
 	var _locModalIcons     = <?php
 		$icon_map = array();
