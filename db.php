@@ -7926,6 +7926,12 @@ function enlistSoldier($conn, $realm_id, $nft_id) {
 	$dup = $conn->query("SELECT id FROM soldiers WHERE nft_id = $nft_id AND dead IS NULL AND active = 1 LIMIT 1");
 	if ($dup && $dup->num_rows > 0) return false;
 
+	// Enforce deployment cap
+	$cap        = getDeploymentCap($conn, $realm_id);
+	$used       = getTotalSlotCost($conn, $realm_id);
+	$nft_cost   = getSoldierSlotCost($conn, $nft_id);
+	if ($used + $nft_cost > $cap) return false;
+
 	// Reactivate a previously discharged soldier record if one exists
 	$inactive = $conn->query("SELECT id FROM soldiers WHERE nft_id = $nft_id AND realm_id = $realm_id AND dead IS NULL AND active = 0 LIMIT 1");
 	if ($inactive && $inactive->num_rows > 0) {
