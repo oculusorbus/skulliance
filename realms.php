@@ -1150,8 +1150,16 @@ $conn->close();
 		var params = '';
 		if (loc_id === 4) params = '?page=' + _barracksPage;
 		if (loc_id === 2) params = '?page=' + _armoryPage;
+		if (loc_id === 3) { if (window._currentLocModal !== 3) { _towerPage = 1; _towerSelectedIds = []; } params = '?page=' + _towerPage; }
 		$.get('ajax/' + endpoint + '.php' + params, function(html) {
 			document.getElementById('location-modal-body').innerHTML = html;
+			if (loc_id === 3) {
+				$('#tower-available-grid .tower-pick').each(function() {
+					if (_towerSelectedIds.indexOf(parseInt($(this).data('soldier-id'))) !== -1)
+						$(this).addClass('selected');
+				});
+				_updateTowerSelectCount();
+			}
 		}).fail(function() {
 			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
 		});
@@ -1168,9 +1176,10 @@ $conn->close();
 		if (window._currentLocModal) openLocationModal(window._currentLocModal);
 	}
 
-	function _reloadModalBody(endpoint, params) {
+	function _reloadModalBody(endpoint, params, callback) {
 		$.get('ajax/' + endpoint + '.php' + (params || ''), function(html) {
 			document.getElementById('location-modal-body').innerHTML = html;
+			if (callback) callback();
 		}).fail(function() {
 			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
 		});
@@ -1394,6 +1403,19 @@ $conn->close();
 
 	/* ── TOWER ────────────────────────────────────────────── */
 	var _towerSelectedIds = [];
+	var _towerPage        = 1;
+
+	function goTowerPage(page) {
+		_towerPage = page;
+		_reloadModalBody(_locModalEndpoints[3], '?page=' + page, function() {
+			// re-apply cross-page selections to newly rendered cards
+			$('#tower-available-grid .tower-pick').each(function() {
+				if (_towerSelectedIds.indexOf(parseInt($(this).data('soldier-id'))) !== -1)
+					$(this).addClass('selected');
+			});
+			_updateTowerSelectCount();
+		});
+	}
 
 	function toggleTowerSelect(el) {
 		var sid  = parseInt($(el).data('soldier-id'));
@@ -1417,14 +1439,32 @@ $conn->close();
 	function selectAllTower() {
 		var grid = document.getElementById('tower-available-grid');
 		if (!grid) return;
-		var max = parseInt(grid.dataset.max);
+		var max       = parseInt(grid.dataset.max);
+		var pagePicks = $(grid).find('.tower-pick');
+		var anySelected = pagePicks.filter('.selected').length > 0;
+		if (anySelected) {
+			// deselect current page only
+			pagePicks.each(function() {
+				var sid = parseInt($(this).data('soldier-id'));
+				var idx = _towerSelectedIds.indexOf(sid);
+				if (idx !== -1) _towerSelectedIds.splice(idx, 1);
+				$(this).removeClass('selected');
+			});
+		} else {
+			pagePicks.each(function() {
+				var sid = parseInt($(this).data('soldier-id'));
+				if (_towerSelectedIds.indexOf(sid) === -1 && _towerSelectedIds.length < max) {
+					_towerSelectedIds.push(sid);
+					$(this).addClass('selected');
+				}
+			});
+		}
+		_updateTowerSelectCount();
+	}
+
+	function clearAllTower() {
 		_towerSelectedIds = [];
-		$(grid).find('.tower-pick').each(function() {
-			if (_towerSelectedIds.length < max) {
-				_towerSelectedIds.push(parseInt($(this).data('soldier-id')));
-				$(this).addClass('selected');
-			}
-		});
+		$('#tower-available-grid .tower-pick').removeClass('selected');
 		_updateTowerSelectCount();
 	}
 
@@ -1433,6 +1473,14 @@ $conn->close();
 		var max  = grid ? parseInt(grid.dataset.max) : 10;
 		var el   = document.getElementById('tower-select-count');
 		if (el) el.textContent = _towerSelectedIds.length + ' of ' + max + ' slots selected';
+		// Toggle Select All / Deselect All label
+		var pagePicks = $('#tower-available-grid .tower-pick');
+		var anyVisibleSelected = pagePicks.filter('.selected').length > 0;
+		var btn = document.getElementById('tower-select-all-btn');
+		if (btn) btn.value = anyVisibleSelected ? 'Deselect All' : 'Select All';
+		// Show Clear All only when cross-page selections exist
+		var clearBtn = document.getElementById('tower-clear-all-btn');
+		if (clearBtn) clearBtn.style.display = _towerSelectedIds.length > 0 ? 'inline-block' : 'none';
 	}
 
 	function deployToTower() {
