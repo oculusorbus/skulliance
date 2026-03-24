@@ -737,6 +737,36 @@ $conn->close();
 .soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
 .soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+/* Crypt coffin cards */
+.coffin-card {
+    position:relative;
+    background:rgba(30,10,10,0.7);
+    border:1px solid rgba(150,50,50,0.4);
+    padding:8px 8px 8px 8px;
+    text-align:center;
+    font-size:0.75rem;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    /* Coffin hexagonal clip: wider top, tapered bottom */
+    clip-path: polygon(10% 0%, 90% 0%, 100% 12%, 100% 82%, 85% 100%, 15% 100%, 0% 82%, 0% 12%);
+}
+.coffin-card.soldier-ready {
+    border-color:rgba(0,200,160,0.5);
+    background:rgba(0,40,30,0.7);
+    box-shadow:0 0 10px rgba(0,200,160,0.15);
+}
+@keyframes resurrect-ascend {
+    0%   { transform:translateY(0) scale(1);   opacity:1; filter:brightness(1); }
+    30%  { transform:translateY(-8px) scale(1.05); opacity:1; filter:brightness(1.8) drop-shadow(0 0 8px #00c8a0); }
+    60%  { transform:translateY(-30px) scale(0.95); opacity:0.7; filter:brightness(2.5) drop-shadow(0 0 16px #ffffff); }
+    100% { transform:translateY(-80px) scale(0.6); opacity:0; filter:brightness(4) drop-shadow(0 0 24px #ffffff); }
+}
+.coffin-card.ascending {
+    animation: resurrect-ascend 0.9s ease-in forwards;
+    pointer-events:none;
+}
 .soldier-status.status-reserved { background:rgba(180,100,255,0.15); color:#b464ff; }
 .soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
 .partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
@@ -1445,11 +1475,19 @@ $conn->close();
 
 	/* ── CRYPT ────────────────────────────────────────────── */
 	function resurrectAllSoldiers() {
-		$.post('ajax/resurrect-soldiers.php', {}, function(resp) {
-			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success) { openNotify('Soldiers have been resurrected and returned to Reserve.'); refreshLocationModal(); }
-			else { openNotify('No soldiers ready for resurrection yet.'); }
+		// Animate eligible coffin cards before the server call
+		var readyCards = document.querySelectorAll('#crypt-soldiers-grid .coffin-card.soldier-ready');
+		readyCards.forEach(function(card, i) {
+			setTimeout(function() { card.classList.add('ascending'); }, i * 120);
 		});
+		var delay = readyCards.length > 0 ? (readyCards.length - 1) * 120 + 950 : 0;
+		setTimeout(function() {
+			$.post('ajax/resurrect-soldiers.php', {}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) { openNotify('Soldiers have been resurrected and returned to Reserve.'); refreshLocationModal(); }
+				else { openNotify('No soldiers ready for resurrection yet.'); }
+			});
+		}, delay);
 	}
 
 	/* ── TOWER ────────────────────────────────────────────── */

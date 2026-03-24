@@ -33,7 +33,7 @@ $now = time();
     $ready_at  = strtotime($s['ready_at']);
     $secs_left = $ready_at - $now;
 ?>
-<div class="soldier-card <?php echo $s['eligible'] ? 'soldier-ready' : 'soldier-dead'; ?>">
+<div class="coffin-card <?php echo $s['eligible'] ? 'soldier-ready' : 'soldier-dead'; ?>" data-soldier-id="<?php echo $s['soldier_id']; ?>">
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" style="opacity:<?php echo $s['eligible'] ? '1' : '0.5'; ?>;"/>
     <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
     <div class="soldier-status <?php echo $s['eligible'] ? 'status-ready' : 'status-dead'; ?>">
