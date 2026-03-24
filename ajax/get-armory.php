@@ -76,7 +76,7 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 <?php if (!empty($soldiers)): ?>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Soldier Loadout</strong>
-    <div class="soldiers-grid" style="margin-top:8px;">
+    <div class="soldiers-grid" style="margin-top:8px;grid-template-columns:repeat(4,1fr);">
     <?php foreach ($soldiers_page as $s):
         $img_src   = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
         $loc_map   = array(1=>'Reserve', 2=>'Tower', 3=>'Raid');
