@@ -14,7 +14,7 @@ $inventory     = $info['inventory'];
 $logs          = getUnclaimedRealmLogs($conn, $realm_id, array('weapon', 'armor'));
 $claim_types   = array('weapon', 'armor');
 
-$per_page       = 8;
+$per_page       = 10;
 $total_soldiers = count($soldiers);
 $total_pages    = max(1, ceil($total_soldiers / $per_page));
 $page           = max(1, min($total_pages, intval($_GET['page'] ?? 1)));
