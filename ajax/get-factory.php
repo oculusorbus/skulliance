@@ -48,7 +48,7 @@ $con_names = array(
             <img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
             <div>
                 <strong><?php echo $con_names[$cid]; ?></strong>
-                <p>~<?php echo $pct; ?>% chance &nbsp;·&nbsp; <span style="color:#00c8a0;">x<?php echo intval($amounts[$cid]['amount'] ?? 0); ?></span></p>
+                <p style="display:flex;justify-content:space-between;">~<?php echo $pct; ?>% chance <span style="color:#00c8a0;">x<?php echo intval($amounts[$cid]['amount'] ?? 0); ?></span></p>
             </div>
         </div>
         <?php endforeach; ?>
