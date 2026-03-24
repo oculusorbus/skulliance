@@ -8009,6 +8009,25 @@ function dischargeSoldier($conn, $soldier_id, $realm_id) {
 	return true;
 }
 
+function dischargeAllSoldiers($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return 0;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	// Fetch all alive, active soldiers in this realm
+	$result = $conn->query("SELECT id, weapon_id, armor_id, location FROM soldiers WHERE realm_id = $realm_id AND dead IS NULL AND active = 1");
+	$count = 0;
+	while ($s = $result->fetch_assoc()) {
+		$sid = intval($s['id']);
+		if (intval($s['weapon_id']) > 0) updateGear($conn, $user_id, 'weapon', intval($s['weapon_id']), 1);
+		if (intval($s['armor_id'])  > 0) updateGear($conn, $user_id, 'armor',  intval($s['armor_id']),  1);
+		if (intval($s['location']) == 3) $conn->query("DELETE FROM raids_soldiers WHERE soldier_id = $sid");
+		$conn->query("UPDATE soldiers SET active = 0, location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid AND realm_id = $realm_id LIMIT 1");
+		$count++;
+	}
+	return $count;
+}
+
 // Get distinct projects and collections the user owns NFTs in, for dropdown population
 function getUserNFTProjectTree($conn) {
 	if (!isset($_SESSION['userData']['user_id'])) return array();

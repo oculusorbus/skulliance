@@ -105,5 +105,8 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 <div class="raid-modal-footer" style="margin-top:16px;">
     <button class="small-button" onclick="openEnlistPicker()">+ Enlist Soldiers</button>
     <button class="small-button" onclick="autoFillBarracks()">Auto-Enlist</button>
+    <?php if (!empty($soldiers)): ?>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers()">Discharge All</button>
+    <?php endif; ?>
 </div>
 <?php $conn->close(); ?>

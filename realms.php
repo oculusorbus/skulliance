@@ -1242,6 +1242,18 @@ $conn->close();
 		});
 	}
 
+	function dischargeAllSoldiers() {
+		openConfirm('Discharge ALL soldiers? All gear will be returned to inventory. This cannot be undone.', function() {
+			$.post('ajax/discharge-all-soldiers.php', {}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) {
+					openNotify(r.discharged + ' soldier' + (r.discharged != 1 ? 's' : '') + ' discharged.');
+					refreshLocationModal();
+				} else { openNotify('Could not discharge soldiers.'); }
+			});
+		});
+	}
+
 	function autoFillBarracks() {
 		$.get('ajax/get-eligible-nfts.php', function(html) {
 			var tmp = $('<div>').html(html);
