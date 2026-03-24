@@ -1189,6 +1189,16 @@ $conn->close();
 		});
 	}
 
+	function dischargeSoldier(soldier_id) {
+		openConfirm('Discharge this soldier? Their gear will be returned to your inventory. This cannot be undone unless you re-enlist them.', function() {
+			$.post('ajax/discharge-soldier.php', {soldier_id: soldier_id}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) { refreshLocationModal(); }
+				else { openNotify('Could not discharge soldier.'); }
+			});
+		});
+	}
+
 	function autoFillBarracks() {
 		$.get('ajax/get-eligible-nfts.php', function(html) {
 			// Collect all nft_ids and enlist them all

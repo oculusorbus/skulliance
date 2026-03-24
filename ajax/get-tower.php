@@ -56,7 +56,10 @@ $available_for_tower = array_filter($barracks_soldiers, function($s) {
             <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
         </div>
     </div>
-    <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
+    <div style="display:flex;gap:6px;justify-content:center;">
+        <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
+    </div>
 </div>
 <?php endforeach; ?>
 <?php if (empty($garrison)): ?>

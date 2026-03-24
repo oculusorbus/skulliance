@@ -2367,6 +2367,8 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 .raid-gear-icon:hover { color: #00c8a0; }
 .raid-config-label { font-size: 0.8rem; color: #7a9eb0; }
+.soldier-discharge-btn { background-color: #7a2020 !important; color: #ffaaaa !important; box-shadow: 0 4px #2a0808 !important; }
+.soldier-discharge-btn:hover { background-color: #9e2a2a !important; }
 
 /* Raid consumables modal grid */
 .raid-con-item {

@@ -73,9 +73,7 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
             echo $status_label;
         endif; ?>
     </div>
-    <?php if ($trained && $location == 1): ?>
-    <button class="small-button soldier-remove-btn" onclick="removeSoldier(<?php echo $s['soldier_id']; ?>)">Remove</button>
-    <?php endif; ?>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
 </div>
 <?php endforeach; ?>
 <?php if (empty($soldiers)): ?>
