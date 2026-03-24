@@ -101,19 +101,21 @@ usort($armors,  fn($a,$b) => $b['armor_level']  - $a['armor_level']);
         <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
         <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
         <div class="soldier-status <?php echo $status_class; ?>"><?php echo $loc_label; ?></div>
-        <div class="soldier-gear-compact">
+        <div class="soldier-gear-row" style="margin-top:4px;width:100%;">
             <?php if ($s['weapon_id']): ?>
-            <div class="gear-compact-slot" title="<?php echo htmlspecialchars($s['weapon_name']); ?>">
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;" />
+            <div class="soldier-gear-slot">
+                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
                 <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
             </div>
-            <?php else: ?><div class="gear-compact-slot gear-compact-empty">—</div><?php endif; ?>
+            <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
             <?php if ($s['armor_id']): ?>
-            <div class="gear-compact-slot" title="<?php echo htmlspecialchars($s['armor_name']); ?>">
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;" />
+            <div class="soldier-gear-slot">
+                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
                 <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
             </div>
-            <?php else: ?><div class="gear-compact-slot gear-compact-empty">—</div><?php endif; ?>
+            <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
         </div>
     </div>
     <?php endforeach; ?>
