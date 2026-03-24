@@ -1017,7 +1017,23 @@ $conn->close();
 	// Intercept direct startRaid (raid card with pre-set consumables)
 	var _origStartRaid = typeof startRaid === 'function' ? startRaid : null;
 	startRaid = function(raidButton, defenseID, duration) {
-		openDeployConfig(defenseID, duration, 'direct', raidButton);
+		var allEl = document.getElementById('raid-all-items-' + defenseID);
+		var mode  = allEl ? (allEl.dataset.mode || 'default') : 'default';
+		if (mode === 'saved') {
+			// Both soldier and item configs are saved — skip modals, launch directly
+			_raidSoldiersDefenseId   = defenseID;
+			_raidSoldiersDuration    = duration;
+			_raidSoldiersConsumables = 'direct';
+			_raidSoldiersButton      = raidButton || null;
+			$.getJSON('ajax/get-available-raiders.php', function(raiders) {
+				_deployRaiders          = raiders || [];
+				_raidSoldierSelectedIds = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
+				_deployRaiders          = [];
+				_proceedAfterSoldierPick();
+			});
+		} else {
+			openDeployConfig(defenseID, duration, 'direct', raidButton);
+		}
 	};
 
 	var _origOpenRaidConsumablesModal = typeof openRaidConsumablesModal === 'function' ? openRaidConsumablesModal : null;
