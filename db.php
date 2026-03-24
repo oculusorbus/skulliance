@@ -7949,11 +7949,15 @@ function getUserNFTProjectTree($conn) {
 	$core = array();
 	$partner = array();
 	while ($row = $result->fetch_assoc()) {
-		$pid      = $row['project_id'];
-		$is_core  = ($pid >= 1 && $pid <= 7);
-		$group    = &($is_core ? $core : $partner);
-		if (!isset($group[$pid])) $group[$pid] = array('name' => $row['project_name'], 'group' => $is_core ? 'core' : 'partner', 'collections' => array());
-		$group[$pid]['collections'][] = array('id' => $row['collection_id'], 'name' => $row['collection_name']);
+		$pid     = $row['project_id'];
+		$is_core = ($pid >= 1 && $pid <= 7);
+		if ($is_core) {
+			if (!isset($core[$pid])) $core[$pid] = array('name' => $row['project_name'], 'group' => 'core', 'collections' => array());
+			$core[$pid]['collections'][] = array('id' => $row['collection_id'], 'name' => $row['collection_name']);
+		} else {
+			if (!isset($partner[$pid])) $partner[$pid] = array('name' => $row['project_name'], 'group' => 'partner', 'collections' => array());
+			$partner[$pid]['collections'][] = array('id' => $row['collection_id'], 'name' => $row['collection_name']);
+		}
 	}
 	uasort($partner, function($a, $b) { return strcmp($a['name'], $b['name']); });
 	return $core + $partner;
