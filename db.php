@@ -8122,7 +8122,8 @@ function getArmoryInfo($conn, $realm_id) {
 	$realm_id     = intval($realm_id);
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 	$drops        = min(10, $armory_level);
-	$soldiers     = getBarracksSoldiers($conn, $realm_id);
+	$all_soldiers = getBarracksSoldiers($conn, $realm_id);
+	$soldiers     = array_values(array_filter($all_soldiers, function($s) { return intval($s['location']) == 1 && intval($s['trained']) == 1; }));
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	$inventory    = array();
 	if ($r && $r->num_rows > 0) $inventory = getGearInventory($conn, intval($r->fetch_assoc()['user_id']));
