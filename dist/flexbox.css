@@ -3117,6 +3117,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     /* Drop the upgrade action to its own row so location-info gets full width for pills */
     .location-row { flex-wrap: wrap; }
     .location-action { flex-basis: 100%; text-align: left; padding-left: calc(52px + 12px); }
+    .location-action .loc-modal-btn { float: right; }
 }
 
 /* ── Raid Target Cards ───────────────────────────────────────────────────── */
