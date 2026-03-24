@@ -7917,11 +7917,7 @@ function enlistSoldier($conn, $realm_id, $nft_id) {
 	$dup = $conn->query("SELECT id FROM soldiers WHERE nft_id = $nft_id AND dead IS NULL LIMIT 1");
 	if ($dup && $dup->num_rows > 0) return false;
 
-	// Verify not on an active mission
-	$mission = $conn->query("SELECT missions_nfts.id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE missions_nfts.nft_id = $nft_id AND missions.status = 0 LIMIT 1");
-	if ($mission && $mission->num_rows > 0) return false;
-
-	$sql = "INSERT INTO soldiers (nft_id, realm_id, location, trained, date_created) VALUES ($nft_id, $realm_id, 1, 0, NOW())";
+	$sql = "INSERT INTO soldiers (nft_id, realm_id, location, armor_id, weapon_id, trained, date_created) VALUES ($nft_id, $realm_id, 1, 0, 0, 0, NOW())";
 	return $conn->query($sql);
 }
 
