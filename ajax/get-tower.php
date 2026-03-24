@@ -79,6 +79,9 @@ if ($slots_remaining > 0 && !empty($available_for_tower)):
         <?php if ($s['weapon_id']): ?>
         <div class="soldier-status" style="font-size:0.65rem;">Lv<?php echo $s['weapon_level']; ?> <?php echo htmlspecialchars($s['weapon_name']); ?></div>
         <?php endif; ?>
+        <?php if ($s['armor_id']): ?>
+        <div class="soldier-status" style="font-size:0.65rem;">Lv<?php echo $s['armor_level']; ?> <?php echo htmlspecialchars($s['armor_name']); ?></div>
+        <?php endif; ?>
     </div>
     <?php endforeach; ?>
     </div>
