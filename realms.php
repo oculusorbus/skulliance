@@ -739,18 +739,16 @@ $conn->close();
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
 /* Crypt coffin cards */
 .coffin-card {
-    position:relative;
     background:rgba(30,10,10,0.7);
     border:1px solid rgba(150,50,50,0.4);
-    padding:8px 8px 8px 8px;
+    border-radius:8px;
+    padding:8px;
     text-align:center;
     font-size:0.75rem;
     display:flex;
     flex-direction:column;
     align-items:center;
     gap:4px;
-    /* Coffin hexagonal clip: wider top, tapered bottom */
-    clip-path: polygon(10% 0%, 90% 0%, 100% 12%, 100% 82%, 85% 100%, 15% 100%, 0% 82%, 0% 12%);
 }
 .coffin-card.soldier-ready {
     border-color:rgba(0,200,160,0.5);
