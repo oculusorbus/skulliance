@@ -22,7 +22,7 @@ foreach ($soldiers as $s) {
     $slot_cost_total += ($s['project_id'] > 7 && $s['project_id'] != 15) ? 2 : 1;
 }
 
-$per_page    = 8;
+$per_page    = 10;
 $total       = count($soldiers);
 $total_pages = max(1, ceil($total / $per_page));
 $page        = max(1, min($total_pages, intval($_GET['page'] ?? 1)));
