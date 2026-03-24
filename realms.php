@@ -614,13 +614,15 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			<select id="enlist-project-filter" style="display:none;width:100%;margin-bottom:6px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByProject(this.value)">
 				<option value="">All Projects</option>
 			</select>
-			<select id="enlist-collection-filter" style="display:none;width:100%;margin-bottom:10px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByCollection(this.value)">
+			<select id="enlist-collection-filter" style="display:none;width:100%;margin-bottom:6px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByCollection(this.value)">
 				<option value="">All Collections</option>
 			</select>
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;">0 of <?php echo intval($barracks_slots_open); ?> slots selected</span>
+				<input type="button" class="small-button" value="Select All" onclick="selectAllEligible()"/>
+			</div>
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
-				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 of <?php echo intval($barracks_slots_open); ?> slots selected</span>
-				<input type="button" class="small-button" value="Select All" onclick="selectAllEligible()"/>
 				<input type="button" class="button" value="Enlist Selected" onclick="confirmEnlist()"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeEnlistPicker()"/>
 			</div>
