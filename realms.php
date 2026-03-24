@@ -741,10 +741,10 @@ $conn->close();
 .soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
 .partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
 .soldier-gear-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:4px; }
-.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.7rem; opacity:0.85; }
+.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.7rem; opacity:0.85; height:52px; }
 .soldier-gear-slot img.icon { margin-right:0; }
 .gear-label { font-size:0.65rem; opacity:0.7; }
-.gear-empty { font-size:0.65rem; opacity:0.4; }
+.gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:center; justify-content:center; height:52px; }
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
 .soldiers-table { border-collapse:collapse; }
