@@ -29,6 +29,12 @@ $available_for_tower = array_filter($barracks_soldiers, function($s) {
         <span class="soldiers-stat-value">+<?php echo $tower_level; ?>%</span>
     </div>
 </div>
+<?php if (!empty($garrison)): ?>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px;">
+    <strong style="font-size:0.85rem;">Garrison</strong>
+    <button class="small-button" onclick="removeAllFromTower()">Remove All</button>
+</div>
+<?php endif; ?>
 <div class="soldiers-grid" id="tower-garrison-grid">
 <?php foreach ($garrison as $s):
     $img_src = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);

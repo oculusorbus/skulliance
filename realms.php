@@ -1256,6 +1256,10 @@ $conn->close();
 		$.post('ajax/tower-action.php', {action:'remove', soldier_id:soldier_id}, function() { refreshLocationModal(); });
 	}
 
+	function removeAllFromTower() {
+		$.post('ajax/tower-action.php', {action:'remove_bulk'}, function() { refreshLocationModal(); });
+	}
+
 	/* ── GEAR EQUIP / UNEQUIP ─────────────────────────────── */
 	function equipGearItem(type, item_id) {
 		var sel = document.getElementById('equip-target-' + type + '-' + item_id);

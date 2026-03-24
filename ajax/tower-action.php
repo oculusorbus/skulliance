@@ -8,6 +8,14 @@ $action     = isset($_POST['action'])     ? $_POST['action']         : '';
 $soldier_id = isset($_POST['soldier_id']) ? intval($_POST['soldier_id']) : 0;
 $value      = isset($_POST['value'])      ? intval($_POST['value'])  : 0;
 
+if ($action === 'remove_bulk') {
+    if (!$realm_id) { echo json_encode(['success' => false]); exit; }
+    $result = $conn->query("SELECT id FROM soldiers WHERE realm_id = " . intval($realm_id) . " AND location = 2 AND dead IS NULL");
+    while ($row = $result->fetch_assoc()) { removeFromTower($conn, intval($row['id']), $realm_id); }
+    echo json_encode(['success' => true]);
+    $conn->close(); exit;
+}
+
 if ($action === 'assign_bulk') {
     if (!$realm_id) { echo json_encode(['success' => false]); exit; }
     $ids = isset($_POST['soldier_ids']) ? (array)$_POST['soldier_ids'] : array();
