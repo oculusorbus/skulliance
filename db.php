@@ -8415,41 +8415,70 @@ function releaseRaidSoldiers($conn, $raid_id) {
 	}
 }
 
+// Upsert gear into a user's inventory
+function addGearToUser($conn, $user_id, $type, $item_id, $qty = 1) {
+	$user_id = intval($user_id);
+	$item_id = intval($item_id);
+	$qty     = intval($qty);
+	$type    = $conn->real_escape_string($type);
+	$existing = $conn->query("SELECT id FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
+	if ($existing && $existing->num_rows > 0) {
+		$gear_id = intval($existing->fetch_assoc()['id']);
+		$conn->query("UPDATE gear SET quantity = quantity + $qty WHERE id = $gear_id LIMIT 1");
+	} else {
+		$conn->query("INSERT INTO gear (user_id, type, item_id, quantity) VALUES ($user_id, '$type', $item_id, $qty)");
+	}
+}
+
 // Kill raid soldiers that fail their death roll (called from endRaid on loss)
-// $armor_reduction_per_level = 5 (each armor level reduces death chance by 5%, min 5% floor)
+// Dying raiders' gear is looted by the defending realm's user.
 function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT raid_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raid_soldiers.raid_id = $raid_id");
+	// Get the defending realm's user_id
+	$rr = $conn->query("SELECT realms.user_id FROM raids INNER JOIN realms ON realms.id = raids.defense_id WHERE raids.id = $raid_id LIMIT 1");
+	$defender_user_id = ($rr && $rr->num_rows > 0) ? intval($rr->fetch_assoc()['user_id']) : 0;
+
+	$result = $conn->query("SELECT raid_soldiers.soldier_id, soldiers.weapon_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raid_soldiers.raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
-		$sid           = intval($row['soldier_id']);
-		$armor_level   = intval($row['armor_level']);
-		$death_chance  = max(5, 70 - ($armor_level * $armor_reduction_per_level));
+		$sid          = intval($row['soldier_id']);
+		$armor_level  = intval($row['armor_level']);
+		$death_chance = max(5, 70 - ($armor_level * $armor_reduction_per_level));
 		if (rand(1, 100) <= $death_chance) {
-			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+			// Loot gear to defender before marking dead
+			if ($defender_user_id > 0) {
+				if (!empty($row['weapon_id'])) addGearToUser($conn, $defender_user_id, 'weapon', intval($row['weapon_id']));
+				if (!empty($row['armor_id']))  addGearToUser($conn, $defender_user_id, 'armor',  intval($row['armor_id']));
+			}
+			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1, weapon_id = NULL, armor_id = NULL WHERE id = $sid LIMIT 1");
 		}
 	}
 }
 
 // Kill tower garrison soldiers when offense wins
-// Attacker weapon bonus: each weapon level reduces garrison survival by flat amount
+// Dying defenders' gear is looted by the attacking realm's user.
 function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonus_per_level = 3) {
-	$raid_id         = intval($raid_id);
+	$raid_id          = intval($raid_id);
 	$defense_realm_id = intval($defense_realm_id);
-	// Sum of weapon levels across all raid_soldiers for this raid
-	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raid_soldiers.raid_id = $raid_id");
-	$wrow = $wresult->fetch_assoc();
-	$total_weapon = intval($wrow['total_weapon_level']);
+	// Get the attacking realm's user_id
+	$rr = $conn->query("SELECT realms.user_id FROM raids INNER JOIN realms ON realms.id = raids.offense_id WHERE raids.id = $raid_id LIMIT 1");
+	$attacker_user_id = ($rr && $rr->num_rows > 0) ? intval($rr->fetch_assoc()['user_id']) : 0;
 
-	// Each tower soldier rolls
-	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL");
+	// Sum of weapon levels across all raid soldiers for this raid
+	$wresult      = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raid_soldiers.raid_id = $raid_id");
+	$total_weapon = intval($wresult->fetch_assoc()['total_weapon_level']);
+
+	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, soldiers.weapon_id, soldiers.armor_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL");
 	while ($row = $garrison->fetch_assoc()) {
 		$sid          = intval($row['soldier_id']);
 		$armor_level  = intval($row['armor_level']);
-		// Attacker weapons increase death chance; defender armor reduces it
-		$death_chance = max(5, 40 + ($total_weapon * $weapon_bonus_per_level) - ($armor_level * 4));
-		$death_chance = min(95, $death_chance);
+		$death_chance = min(95, max(5, 40 + ($total_weapon * $weapon_bonus_per_level) - ($armor_level * 4)));
 		if (rand(1, 100) <= $death_chance) {
-			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+			// Loot gear to attacker before marking dead
+			if ($attacker_user_id > 0) {
+				if (!empty($row['weapon_id'])) addGearToUser($conn, $attacker_user_id, 'weapon', intval($row['weapon_id']));
+				if (!empty($row['armor_id']))  addGearToUser($conn, $attacker_user_id, 'armor',  intval($row['armor_id']));
+			}
+			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1, weapon_id = NULL, armor_id = NULL WHERE id = $sid LIMIT 1");
 		}
 	}
 }
