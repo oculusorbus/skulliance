@@ -9,6 +9,7 @@ if (!$realm_id) exit;
 $info = getFactoryInfo($conn, $realm_id);
 $logs        = getUnclaimedRealmLogs($conn, $realm_id, array('consumable'));
 $claim_types = array('consumable');
+$amounts     = getCurrentAmounts($conn);
 $con_names = array(
     1 => '100% Success', 2 => '75% Success', 3 => '50% Success',
     4 => '25% Success',  5 => 'Fast Forward', 6 => 'Double Rewards', 7 => 'Random Reward'
@@ -47,7 +48,7 @@ $con_names = array(
             <img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
             <div>
                 <strong><?php echo $con_names[$cid]; ?></strong>
-                <p>~<?php echo $pct; ?>% chance</p>
+                <p>~<?php echo $pct; ?>% chance &nbsp;·&nbsp; <span style="color:#00c8a0;">x<?php echo intval($amounts[$cid]['amount'] ?? 0); ?></span></p>
             </div>
         </div>
         <?php endforeach; ?>
