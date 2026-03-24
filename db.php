@@ -8077,11 +8077,11 @@ function getFactoryInfo($conn, $realm_id) {
 }
 
 // ── ARMORY ─────────────────────────────────────────────────
-// Gear drops_per_night: level 1-3=1, 4-6=2, 7-9=3, 10=4
+// Gear drops_per_night = armory_level, capped at 10
 function getArmoryInfo($conn, $realm_id) {
 	$realm_id     = intval($realm_id);
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
-	$drops        = $armory_level > 0 ? max(1, ceil($armory_level / 3)) : 0;
+	$drops        = min(10, $armory_level);
 	$soldiers     = getBarracksSoldiers($conn, $realm_id);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	$inventory    = array();
@@ -8262,7 +8262,7 @@ function processArmoryDrops($conn) {
 		$realm_id     = intval($row['id']);
 		$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 		if ($armory_level == 0) continue;
-		$drops_per_night = max(1, ceil($armory_level / 3));
+		$drops_per_night = min(10, $armory_level);
 		for ($i = 0; $i < $drops_per_night; $i++) {
 			$is_weapon = ($i % 2 == 0);
 			$tier = rollArmoryTier($armory_level);
