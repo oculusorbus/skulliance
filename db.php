@@ -8412,6 +8412,7 @@ function claimRealmLogs($conn, $realm_id, $types = array()) {
 function getAvailableRaiders($conn, $realm_id) {
 	$realm_id = intval($realm_id);
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.weapon_id, soldiers.armor_id,
+	               soldiers.date_created,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id,
 	               weapons.name AS weapon_name, weapons.level AS weapon_level,
 	               armor.name AS armor_name, armor.level AS armor_level

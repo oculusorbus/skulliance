@@ -584,6 +584,49 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 
+	<!-- Deployment Configuration Modal -->
+	<div id="deploy-config-overlay" onclick="closeDeployConfig()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
+	<div id="deploy-config-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true" onclick="closeDeployConfig()">
+		<div class="raid-modal-content" style="max-width:480px;" onclick="event.stopPropagation()">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Deployment Configuration</h2>
+				<button class="raid-modal-close" onclick="closeDeployConfig()" aria-label="Close">&times;</button>
+			</div>
+			<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0 10px;">
+				<div class="deploy-axis">
+					<div class="deploy-axis-label">Force Size</div>
+					<div class="deploy-tier-group">
+						<button class="deploy-tier-btn" data-axis="amount" data-value="blitz">Blitz</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="tactical">Tactical</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="recon">Recon</button>
+					</div>
+				</div>
+				<div class="deploy-axis">
+					<div class="deploy-axis-label">Weapon Priority</div>
+					<div class="deploy-tier-group">
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="aggressive">Aggressive</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="balanced">Balanced</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="stealth">Stealth</button>
+					</div>
+				</div>
+				<div class="deploy-axis">
+					<div class="deploy-axis-label">Armor Priority</div>
+					<div class="deploy-tier-group">
+						<button class="deploy-tier-btn" data-axis="armor" data-value="heavy">Heavy</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="medium">Medium</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="light">Light</button>
+					</div>
+				</div>
+				<div id="deploy-preview" style="font-size:0.82rem;opacity:0.65;text-align:center;min-height:1.2em;"></div>
+			</div>
+			<div class="raid-modal-footer">
+				<label style="font-size:0.8rem;opacity:0.65;margin-right:auto;"><input type="checkbox" id="deploy-save-config" checked> Save configuration</label>
+				<button class="button" onclick="confirmDeployConfig()">Continue</button>
+				<button class="small-button" onclick="closeDeployConfig()">Cancel</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Raid Soldier Selection Modal -->
 	<div id="raid-soldiers-overlay" onclick="closeRaidSoldierModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
 	<div id="raid-soldiers-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true" onclick="closeRaidSoldierModal()">
@@ -657,6 +700,7 @@ getFactionsRealmsMapData($conn);
 getActiveRaidsMapData($conn);
 if($realm_status && isset($_SESSION['userData']['user_id'])){
 	echo "<script>window.myRealmId = ".(int)getRealmID($conn).";</script>";
+$_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeployConfig'] : array('amount'=>'tactical','weapon'=>'balanced','armor'=>'medium');
 }
 $nft_project_tree    = getUserNFTProjectTree($conn);
 $barracks_cap        = getDeploymentCap($conn, $realm_id);
@@ -703,6 +747,12 @@ $conn->close();
 .soldiers-table { border-collapse:collapse; }
 .soldiers-table th, .soldiers-table td { padding:4px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
 .soldiers-table th { font-size:0.72rem; opacity:0.55; font-weight:normal; text-transform:uppercase; }
+.deploy-axis { display:flex; align-items:center; gap:12px; }
+.deploy-axis-label { font-size:0.78rem; opacity:0.6; text-transform:uppercase; letter-spacing:0.05em; width:110px; flex-shrink:0; }
+.deploy-tier-group { display:flex; gap:6px; flex:1; }
+.deploy-tier-btn { flex:1; padding:6px 4px; font-size:0.78rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; cursor:pointer; transition:background 0.15s,border-color 0.15s; }
+.deploy-tier-btn:hover { background:rgba(255,255,255,0.1); }
+.deploy-tier-btn.active { background:rgba(0,200,160,0.18); border-color:#00c8a0; color:#00c8a0; font-weight:bold; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -827,43 +877,123 @@ $conn->close();
 	var _raidSoldiersButton       = null;
 	var _raidSoldiersConsumables  = null;
 
+	/* ── DEPLOYMENT CONFIG ────────────────────────────────── */
+	var _deployConfig   = <?php echo json_encode($_raidDeployConfig); ?>;
+	var _deployRaiders  = [];
+
+	function openDeployConfig(defenseId, duration, mode, raidButton) {
+		_raidSoldiersDefenseId   = defenseId;
+		_raidSoldiersDuration    = duration;
+		_raidSoldiersConsumables = mode;
+		_raidSoldiersButton      = raidButton || null;
+		_applyDeployConfigUI();
+		document.getElementById('deploy-config-overlay').style.display = 'block';
+		document.getElementById('deploy-config-modal').style.display   = 'flex';
+		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
+			_deployRaiders = raiders || [];
+			_updateDeployPreview();
+		});
+	}
+
+	function closeDeployConfig() {
+		document.getElementById('deploy-config-overlay').style.display = 'none';
+		document.getElementById('deploy-config-modal').style.display   = 'none';
+		_deployRaiders = [];
+	}
+
+	function _applyDeployConfigUI() {
+		document.querySelectorAll('.deploy-tier-btn').forEach(function(btn) {
+			var axis = btn.dataset.axis, val = btn.dataset.value;
+			btn.classList.toggle('active', _deployConfig[axis] === val);
+		});
+		_updateDeployPreview();
+	}
+
+	document.addEventListener('click', function(e) {
+		var btn = e.target.closest('.deploy-tier-btn');
+		if (!btn) return;
+		var axis = btn.dataset.axis, val = btn.dataset.value;
+		_deployConfig[axis] = val;
+		document.querySelectorAll('.deploy-tier-btn[data-axis="' + axis + '"]').forEach(function(b) {
+			b.classList.toggle('active', b.dataset.value === val);
+		});
+		_updateDeployPreview();
+	});
+
+	function _updateDeployPreview() {
+		var selected = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
+		var withWeapon = selected.filter(function(id) {
+			var s = _deployRaiders.find(function(r) { return r.soldier_id == id; });
+			return s && s.weapon_id;
+		}).length;
+		var withArmor = selected.filter(function(id) {
+			var s = _deployRaiders.find(function(r) { return r.soldier_id == id; });
+			return s && s.armor_id;
+		}).length;
+		var total = _deployRaiders.length;
+		var msg = total === 0
+			? 'No trained soldiers available.'
+			: 'Sending ' + selected.length + ' soldier' + (selected.length !== 1 ? 's' : '') +
+			  ' &mdash; ' + withWeapon + ' armed, ' + withArmor + ' armored';
+		document.getElementById('deploy-preview').innerHTML = msg;
+	}
+
+	function _autoSelectSoldiers(raiders, config, portalLevel) {
+		if (!raiders || raiders.length === 0) return [];
+		var count;
+		if      (config.amount === 'blitz')    count = portalLevel;
+		else if (config.amount === 'tactical') count = Math.ceil(portalLevel / 2);
+		else                                   count = Math.ceil(portalLevel / 3);
+
+		var wSum = 0, aSum = 0, wCount = 0, aCount = 0;
+		raiders.forEach(function(s) {
+			if (s.weapon_level) { wSum += parseFloat(s.weapon_level); wCount++; }
+			if (s.armor_level)  { aSum += parseFloat(s.armor_level);  aCount++; }
+		});
+		var wMean = wCount > 0 ? wSum / wCount : 5;
+		var aMean = aCount > 0 ? aSum / aCount : 5;
+
+		function wScore(s) {
+			var lv = s.weapon_level ? parseFloat(s.weapon_level) : null;
+			if (config.weapon === 'aggressive') return lv !== null ? (10 - lv) : 999;
+			if (config.weapon === 'balanced')   return lv !== null ? (Math.abs(lv - wMean) * 10 + (lv < wMean ? 0 : 1)) : 999;
+			/* stealth */                        return lv !== null ? (lv - 1) : 999;
+		}
+		function aScore(s) {
+			var lv = s.armor_level ? parseFloat(s.armor_level) : null;
+			if (config.armor === 'heavy')  return lv !== null ? (10 - lv) : 999;
+			if (config.armor === 'medium') return lv !== null ? (Math.abs(lv - aMean) * 10 + (lv < aMean ? 0 : 1)) : 999;
+			/* light */                     return lv !== null ? (lv - 1) : 999;
+		}
+
+		var sorted = raiders.slice().sort(function(a, b) {
+			var ws = wScore(a) - wScore(b);
+			if (ws !== 0) return ws;
+			var as_ = aScore(a) - aScore(b);
+			if (as_ !== 0) return as_;
+			return new Date(a.date_created) - new Date(b.date_created);
+		});
+		return sorted.slice(0, count).map(function(s) { return s.soldier_id; });
+	}
+
+	function confirmDeployConfig() {
+		if (document.getElementById('deploy-save-config').checked) {
+			$.post('ajax/save-raid-deploy-config.php', _deployConfig);
+		}
+		_raidSoldierSelectedIds = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
+		closeDeployConfig();
+		_proceedAfterSoldierPick();
+	}
+
 	// Intercept direct startRaid (raid card with pre-set consumables)
 	var _origStartRaid = typeof startRaid === 'function' ? startRaid : null;
 	startRaid = function(raidButton, defenseID, duration) {
-		_raidSoldiersButton      = raidButton;
-		_raidSoldiersDefenseId   = defenseID;
-		_raidSoldiersDuration    = duration;
-		_raidSoldiersConsumables = 'direct'; // signals this came from direct start
-		_raidSoldierSelectedIds  = [];
-		document.getElementById('raid-soldiers-grid').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
-		document.getElementById('raid-soldiers-overlay').style.display = 'block';
-		document.getElementById('raid-soldiers-modal').style.display   = 'flex';
-		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
-			_renderRaidSoldierGrid(raiders);
-		}).fail(function() {
-			document.getElementById('raid-soldiers-overlay').style.display = 'none';
-			document.getElementById('raid-soldiers-modal').style.display   = 'none';
-			if (_origStartRaid) _origStartRaid(raidButton, defenseID, duration);
-		});
+		openDeployConfig(defenseID, duration, 'direct', raidButton);
 	};
 
 	var _origOpenRaidConsumablesModal = typeof openRaidConsumablesModal === 'function' ? openRaidConsumablesModal : null;
 	openRaidConsumablesModal = function(realmId, duration) {
-		_raidSoldiersConsumables = 'modal';
-		_raidSoldiersDefenseId = realmId;
-		_raidSoldiersDuration  = duration;
-		_raidSoldierSelectedIds = [];
-		document.getElementById('raid-soldiers-grid').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
-		document.getElementById('raid-soldiers-overlay').style.display = 'block';
-		document.getElementById('raid-soldiers-modal').style.display   = 'flex';
-		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
-			_renderRaidSoldierGrid(raiders);
-		}).fail(function() {
-			// No soldiers or error — skip to consumables
-			document.getElementById('raid-soldiers-overlay').style.display = 'none';
-			document.getElementById('raid-soldiers-modal').style.display   = 'none';
-			if (_origOpenRaidConsumablesModal) _origOpenRaidConsumablesModal(realmId, duration);
-		});
+		openDeployConfig(realmId, duration, 'modal', null);
 	};
 
 	function _renderRaidSoldierGrid(raiders) {
