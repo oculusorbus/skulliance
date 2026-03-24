@@ -668,6 +668,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
 				<input type="button" class="button" value="Enlist Selected" onclick="confirmEnlist()"/>
+				<input type="button" id="enlist-clear-all-btn" class="small-button" value="Clear All" onclick="clearAllEnlist()" style="display:none;"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeEnlistPicker()"/>
 			</div>
 		</div>
@@ -1305,21 +1306,34 @@ $conn->close();
 
 	function _updateEnlistCount() {
 		document.getElementById('enlist-selected-count').textContent = _enlistUsedSlots() + ' of ' + _barracksOpenSlots + ' slots selected';
+		// Select All / Deselect All scoped to current listing
+		var visibleIds = [];
+		$('#enlist-picker-body .enlist-candidate').each(function() { visibleIds.push(parseInt($(this).data('nft-id'))); });
+		var anyVisibleSelected = visibleIds.some(function(id) { return _enlistSelectedIds.indexOf(id) !== -1; });
 		var btn = document.getElementById('enlist-select-all-btn');
-		if (btn) btn.value = _enlistSelectedIds.length > 0 ? 'Deselect All' : 'Select All';
+		if (btn) btn.value = anyVisibleSelected ? 'Deselect All' : 'Select All';
+		// Clear All visible only when cross-collection selections exist
+		var clearBtn = document.getElementById('enlist-clear-all-btn');
+		if (clearBtn) clearBtn.style.display = _enlistSelectedIds.length > 0 ? 'inline-block' : 'none';
 	}
 
 	function selectAllEligible() {
-		if (_enlistSelectedIds.length > 0) {
-			// deselect all
-			_enlistSelectedIds = [];
-			$('#enlist-picker-body .enlist-candidate').removeClass('selected');
+		var candidates = $('#enlist-picker-body .enlist-candidate');
+		var anySelected = candidates.filter('.selected').length > 0;
+		if (anySelected) {
+			// deselect only the current listing
+			candidates.each(function() {
+				var id  = parseInt($(this).data('nft-id'));
+				var idx = _enlistSelectedIds.indexOf(id);
+				if (idx !== -1) _enlistSelectedIds.splice(idx, 1);
+				$(this).removeClass('selected');
+			});
 			_updateEnlistCount();
 			return;
 		}
 		var remaining = _barracksOpenSlots - _enlistUsedSlots();
 		if (remaining <= 0) return;
-		$('#enlist-picker-body .enlist-candidate').each(function() {
+		candidates.each(function() {
 			var id   = parseInt($(this).data('nft-id'));
 			var cost = parseInt($(this).data('slots')) || 1;
 			_enlistSlotMap[id] = cost;
@@ -1329,6 +1343,12 @@ $conn->close();
 				remaining -= cost;
 			}
 		});
+		_updateEnlistCount();
+	}
+
+	function clearAllEnlist() {
+		_enlistSelectedIds = [];
+		$('#enlist-picker-body .enlist-candidate').removeClass('selected');
 		_updateEnlistCount();
 	}
 
