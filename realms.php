@@ -744,7 +744,7 @@ $conn->close();
 .soldier-gear-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.7rem; opacity:0.85; height:52px; }
 .soldier-gear-slot img.icon { margin-right:0; }
 .gear-label { font-size:0.65rem; opacity:0.7; }
-.gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:center; justify-content:center; height:52px; }
+.gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:flex-start; justify-content:center; height:52px; padding-top:2px; }
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
 .soldiers-table { border-collapse:collapse; }
