@@ -1161,17 +1161,22 @@ $conn->close();
 		if (loc_id === 4) params = '?page=' + _barracksPage;
 		if (loc_id === 2) params = '?page=' + _armoryPage;
 		if (loc_id === 3) { if (window._currentLocModal !== 3) { _towerPage = 1; _towerSelectedIds = []; } params = '?page=' + _towerPage; }
-		$.get('ajax/' + endpoint + '.php' + params + (params ? '&' : '?') + '_t=' + Date.now(), function(html) {
-			document.getElementById('location-modal-body').innerHTML = html;
-			if (loc_id === 3) {
-				$('#tower-available-grid .tower-pick').each(function() {
-					if (_towerSelectedIds.indexOf(parseInt($(this).data('soldier-id'))) !== -1)
-						$(this).addClass('selected');
-				});
-				_updateTowerSelectCount();
+		$.ajax({
+			url: 'ajax/' + endpoint + '.php' + params,
+			cache: false,
+			success: function(html) {
+				document.getElementById('location-modal-body').innerHTML = html;
+				if (loc_id === 3) {
+					$('#tower-available-grid .tower-pick').each(function() {
+						if (_towerSelectedIds.indexOf(parseInt($(this).data('soldier-id'))) !== -1)
+							$(this).addClass('selected');
+					});
+					_updateTowerSelectCount();
+				}
+			},
+			error: function() {
+				document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
 			}
-		}).fail(function() {
-			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
 		});
 		window._currentLocModal = loc_id;
 	}
@@ -1575,10 +1580,21 @@ $conn->close();
 
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
 	function claimRealmLogs(types) {
-		$.post('ajax/claim-realm-logs.php', {types: types}, function(resp) {
-			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success) { openNotify('Rewards claimed!'); refreshLocationModal(); }
-			else { openNotify('Nothing to claim.'); }
+		$.ajax({
+			url: 'ajax/claim-realm-logs.php',
+			type: 'POST',
+			data: {types: types},
+			cache: false,
+			success: function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) {
+					openNotify('Rewards claimed!');
+					var loc = window._currentLocModal;
+					if (loc) openLocationModal(loc);
+				} else {
+					openNotify('Nothing to claim.');
+				}
+			}
 		});
 	}
 </script>

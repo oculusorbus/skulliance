@@ -1,4 +1,6 @@
 <?php
+header("Cache-Control: no-store, no-cache, must-revalidate");
+header("Pragma: no-cache");
 include '../db.php';
 include '../skulliance.php';
 
@@ -26,8 +28,8 @@ $carbon_icon = '<img src="icons/carbon.png" onerror="this.src=\'icons/skull.png\
     </div>
 </div>
 <p style="font-size:0.82rem;opacity:0.6;margin-top:12px;">
-    The Mine generates <strong><?php echo number_format($info['nightly']); ?> <?php echo $carbon_icon; ?>CARBON per day</strong>, distributed nightly.
-    <?php echo $carbon_icon; ?>CARBON can be crafted into DIAMOND. Upgrade the Mine to increase your daily yield.
+    The Mine generates <strong><?php echo number_format($info['nightly']); ?> CARBON per day</strong>, distributed nightly.
+    CARBON can be crafted into DIAMOND. Upgrade the Mine to increase your daily yield.
 </p>
 <?php include 'realm-log-panel.php'; ?>
 <div style="margin-top:12px;">
