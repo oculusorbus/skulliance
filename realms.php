@@ -725,8 +725,7 @@ $conn->close();
 .soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
 .soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
 .soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
-.soldiers-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; margin-top:8px; }
-#tower-garrison-grid, #tower-available-grid { grid-template-columns:repeat(5,1fr); }
+.soldiers-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
 .soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
 .soldier-card.soldier-ready { border-color:#00c8a0; }
@@ -778,15 +777,12 @@ $conn->close();
 .soldier-gear-compact { display:flex; flex-direction:row; gap:6px; justify-content:center; margin-top:4px; width:100%; }
 .gear-compact-slot { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
 .gear-compact-empty { font-size:0.65rem; opacity:0.3; }
-/* Armory soldier grid */
-.armory-soldiers-grid { grid-template-columns:repeat(4,1fr); }
 /* Tower header and action rows */
 .tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
 .tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .tower-deploy-row { margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
 @media (max-width:500px) {
-    .armory-soldiers-grid { grid-template-columns:repeat(3,1fr); }
-    .soldiers-grid.tower-grid { grid-template-columns:repeat(3,1fr) !important; }
+    .soldiers-grid { grid-template-columns:repeat(3,1fr); }
     .gear-inventory-row { flex-direction:column !important; }
     .soldiers-stat { padding:7px 10px; min-width:0; }
     .soldiers-stat-value { font-size:0.95rem; }

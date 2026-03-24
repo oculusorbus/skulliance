@@ -89,7 +89,7 @@ usort($armors,  fn($a,$b) => $b['armor_level']  - $a['armor_level']);
 <?php if (!empty($soldiers)): ?>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Soldier Loadout</strong>
-    <div id="armory-soldiers-grid" class="soldiers-grid armory-soldiers-grid" style="margin-top:8px;">
+    <div id="armory-soldiers-grid" class="soldiers-grid" style="margin-top:8px;">
     <?php foreach ($soldiers_page as $s):
         $img_src   = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
         $loc_map       = array(1=>'Active Duty', 2=>'Tower', 3=>'On Raid');
