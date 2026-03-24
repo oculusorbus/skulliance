@@ -8274,11 +8274,12 @@ function autoEquipReserve($conn, $realm_id) {
 		foreach ($inv_items as $gear) {
 			$gear_id    = intval($gear['item_id']);
 			$gear_level = intval($gear['level']);
-			if (getCurrentGear($conn, $user_id, $type, $gear_id) < 1) continue;
-			// Find reserve soldier with weakest slot that this gear would upgrade
-			$target = $conn->query("SELECT soldiers.id AS soldier_id FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.dead IS NULL AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC LIMIT 1");
-			if (!$target || $target->num_rows == 0) continue;
-			equipGear($conn, intval($target->fetch_assoc()['soldier_id']), $realm_id, $gear_id, $type === 'weapon');
+			// Equip as many copies as available to trained soldiers that would benefit
+			while (getCurrentGear($conn, $user_id, $type, $gear_id) > 0) {
+				$target = $conn->query("SELECT soldiers.id AS soldier_id FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.trained = 1 AND soldiers.dead IS NULL AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC LIMIT 1");
+				if (!$target || $target->num_rows == 0) break;
+				equipGear($conn, intval($target->fetch_assoc()['soldier_id']), $realm_id, $gear_id, $type === 'weapon');
+			}
 		}
 	}
 }
