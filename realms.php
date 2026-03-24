@@ -785,7 +785,7 @@ $conn->close();
 /* Tower header and action rows */
 .tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
 .tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.tower-deploy-row { margin-top:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.tower-deploy-row { margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
 @media (max-width:500px) {
     .armory-soldiers-grid { grid-template-columns:repeat(3,1fr); }
     .soldiers-grid.tower-grid { grid-template-columns:repeat(3,1fr) !important; }
