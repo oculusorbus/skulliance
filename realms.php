@@ -1008,6 +1008,7 @@ $conn->close();
 	/* ── LOCATION MODALS ─────────────────────────────────── */
 	var _locModalTitles = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
+	var _barracksPage = 1;
 
 	function openLocationModal(loc_id) {
 		var title    = _locModalTitles[loc_id]    || 'Location';
@@ -1018,7 +1019,8 @@ $conn->close();
 		document.getElementById('location-modal-footer').style.display = 'flex';
 		document.getElementById('location-modal-overlay').style.display = 'block';
 		document.getElementById('location-modal').style.display          = 'flex';
-		$.get('ajax/' + endpoint + '.php', function(html) {
+		var params = (loc_id === 4) ? '?page=' + _barracksPage : '';
+		$.get('ajax/' + endpoint + '.php' + params, function(html) {
 			document.getElementById('location-modal-body').innerHTML = html;
 		}).fail(function() {
 			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
@@ -1034,6 +1036,11 @@ $conn->close();
 
 	function refreshLocationModal() {
 		if (window._currentLocModal) openLocationModal(window._currentLocModal);
+	}
+
+	function goBarracksPage(page) {
+		_barracksPage = page;
+		openLocationModal(4);
 	}
 
 	/* ── BARRACKS ─────────────────────────────────────────── */
@@ -1220,6 +1227,14 @@ $conn->close();
 		$.post('ajax/gear-action.php', {action:'unequip', soldier_id:soldier_id, type:type}, function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
 			if (r.success) { refreshLocationModal(); } else { openNotify('Could not unequip gear.'); }
+		});
+	}
+
+	function autoEquipGear() {
+		$.post('ajax/auto-equip.php', {}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) { openNotify('Gear auto-equipped!'); refreshLocationModal(); }
+			else { openNotify('Nothing to equip.'); }
 		});
 	}
 

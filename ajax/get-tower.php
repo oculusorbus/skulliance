@@ -8,8 +8,6 @@ if (!$realm_id) exit;
 
 $tower_level = intval(getRealmLocationLevel($conn, $realm_id, 3));
 $garrison    = getTowerGarrison($conn, $realm_id);
-$weapons     = getAllWeapons($conn);
-$armor_list  = getAllArmor($conn);
 
 // Reserve soldiers available to assign to tower
 $barracks_soldiers = getBarracksSoldiers($conn, $realm_id);
@@ -52,25 +50,7 @@ $available_for_tower = array_filter($barracks_soldiers, function($s) {
             <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
         </div>
     </div>
-    <div class="soldier-gear-controls">
-        <select class="dropdown soldier-weapon-select" onchange="equipWeapon(<?php echo $s['soldier_id']; ?>, this.value)">
-            <option value="0">-- Weapon --</option>
-            <?php foreach ($weapons as $w): ?>
-            <option value="<?php echo $w['id']; ?>" <?php echo ($s['weapon_id'] == $w['id']) ? 'selected' : ''; ?>>
-                Lv<?php echo $w['level']; ?> <?php echo htmlspecialchars($w['name']); ?>
-            </option>
-            <?php endforeach; ?>
-        </select>
-        <select class="dropdown soldier-armor-select" onchange="equipArmor(<?php echo $s['soldier_id']; ?>, this.value)">
-            <option value="0">-- Armor --</option>
-            <?php foreach ($armor_list as $a): ?>
-            <option value="<?php echo $a['id']; ?>" <?php echo ($s['armor_id'] == $a['id']) ? 'selected' : ''; ?>>
-                Lv<?php echo $a['level']; ?> <?php echo htmlspecialchars($a['name']); ?>
-            </option>
-            <?php endforeach; ?>
-        </select>
-        <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
-    </div>
+    <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
 </div>
 <?php endforeach; ?>
 <?php if (empty($garrison)): ?>

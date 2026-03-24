@@ -21,6 +21,12 @@ $slot_cost_total = 0;
 foreach ($soldiers as $s) {
     $slot_cost_total += ($s['project_id'] > 7 && $s['project_id'] != 15) ? 2 : 1;
 }
+
+$per_page    = 8;
+$total       = count($soldiers);
+$total_pages = max(1, ceil($total / $per_page));
+$page        = max(1, min($total_pages, intval($_GET['page'] ?? 1)));
+$soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
@@ -37,7 +43,7 @@ foreach ($soldiers as $s) {
     </div>
 </div>
 <div class="soldiers-grid" id="barracks-soldiers-grid">
-<?php foreach ($soldiers as $s):
+<?php foreach ($soldiers_page as $s):
     $is_partner = ($s['project_id'] > 7 && $s['project_id'] != 15);
     $slot_cost  = $is_partner ? 2 : 1;
     $img_src    = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
@@ -76,6 +82,21 @@ foreach ($soldiers as $s) {
 <p style="opacity:0.55;font-size:0.85rem;">No soldiers enlisted. Click Enlist to add NFTs to your army.</p>
 <?php endif; ?>
 </div>
+<?php if ($total_pages > 1): ?>
+<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:0.82rem;">
+    <?php if ($page > 1): ?>
+    <button class="small-button" onclick="goBarracksPage(<?php echo $page - 1; ?>)">&#8249; Prev</button>
+    <?php else: ?>
+    <button class="small-button" disabled style="opacity:0.3;">&#8249; Prev</button>
+    <?php endif; ?>
+    <span style="opacity:0.6;"><?php echo $page; ?> / <?php echo $total_pages; ?></span>
+    <?php if ($page < $total_pages): ?>
+    <button class="small-button" onclick="goBarracksPage(<?php echo $page + 1; ?>)">Next &#8250;</button>
+    <?php else: ?>
+    <button class="small-button" disabled style="opacity:0.3;">Next &#8250;</button>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 <div class="raid-modal-footer" style="margin-top:16px;">
     <button class="small-button" onclick="openEnlistPicker()">+ Enlist Soldiers</button>
     <button class="small-button" onclick="autoFillBarracks()">Auto-Fill</button>
