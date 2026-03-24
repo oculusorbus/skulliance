@@ -1114,6 +1114,7 @@ function openRaidConsumablesModal(realmId, duration){
 	itemsEl.innerHTML = '<p style="opacity:0.5">Loading...</p>';
 	sumEl.innerHTML   = '';
 	modal.style.display = 'block';
+	document.getElementById('raid-consumables-overlay').style.display = 'block';
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/get-raid-consumables.php', true);
 	xhttp.send();
@@ -1179,6 +1180,7 @@ function updateRaidModalSummary(){
 
 function closeRaidConsumablesModal(){
 	document.getElementById('raid-consumables-modal').style.display = 'none';
+	document.getElementById('raid-consumables-overlay').style.display = 'none';
 	_raidModalDefenseId = null;
 	_raidModalDuration  = null;
 }
@@ -1235,11 +1237,15 @@ function startRaidFromModal(){
 function openInventoryInfoModal(){
 	var m = document.getElementById('inventory-info-modal');
 	if(m) m.style.display = 'block';
+	var o = document.getElementById('inventory-info-overlay');
+	if(o) o.style.display = 'block';
 }
 
 function closeInventoryInfoModal(){
 	var m = document.getElementById('inventory-info-modal');
 	if(m) m.style.display = 'none';
+	var o = document.getElementById('inventory-info-overlay');
+	if(o) o.style.display = 'none';
 }
 
 function applyLocationConsumable(locationId, consumableId){

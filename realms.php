@@ -502,7 +502,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 </div>
 <?php } ?>
 	<!-- Inventory Info Modal -->
-	<div id="inventory-info-modal" class="modal" style="display:none;">
+	<div id="inventory-info-overlay" onclick="closeInventoryInfoModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1006;"></div>
+	<div id="inventory-info-modal" class="modal" style="display:none;z-index:1007;">
 		<div class="raid-modal-content" style="max-width:560px;max-height:80vh;overflow-y:auto;">
 			<div class="raid-modal-header">
 				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Location Consumables Guide</h2>
@@ -630,7 +631,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 
 	<!-- Raid Consumables Modal -->
-	<div id="raid-consumables-modal" class="modal" style="display:none;">
+	<div id="raid-consumables-overlay" onclick="closeRaidConsumablesModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1008;"></div>
+	<div id="raid-consumables-modal" class="modal" style="display:none;z-index:1009;">
 		<div class="raid-modal-content">
 			<div class="raid-modal-header">
 				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Customize Raid Consumables</h2>

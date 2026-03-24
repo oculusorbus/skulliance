@@ -2,24 +2,37 @@
 <div style="margin-top:18px;border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;">
     <strong style="font-size:0.85rem;">Unclaimed Rewards</strong>
     <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
-    <?php foreach ($logs as $log):
-        $date = date('M j', strtotime($log['created_date']));
-        switch ($log['type']) {
+    <?php
+    // Group duplicate weapon/armor entries by item
+    $grouped = array();
+    foreach ($logs as $log) {
+        $key = $log['type'] . '_' . $log['item_id'];
+        if (!isset($grouped[$key])) {
+            $grouped[$key] = $log;
+            $grouped[$key]['total_qty'] = intval($log['quantity']);
+        } else {
+            $grouped[$key]['total_qty'] += intval($log['quantity']);
+        }
+    }
+    foreach ($grouped as $entry):
+        $qty  = $entry['total_qty'];
+        $date = date('M j', strtotime($entry['created_date']));
+        switch ($entry['type']) {
             case 'carbon':
-                $label = number_format($log['quantity']) . ' CARBON';
+                $label = number_format($qty) . ' CARBON';
                 $icon  = 'icons/carbon.png';
                 break;
             case 'consumable':
-                $label = $log['quantity'] . '× ' . htmlspecialchars($log['consumable_name']);
-                $icon  = 'icons/' . strtolower(str_replace('%', '', str_replace(' ', '-', $log['consumable_name']))) . '.png';
+                $label = $qty . '× ' . htmlspecialchars($entry['consumable_name']);
+                $icon  = 'icons/' . strtolower(str_replace('%', '', str_replace(' ', '-', $entry['consumable_name']))) . '.png';
                 break;
             case 'weapon':
-                $label = 'Lv' . $log['weapon_level'] . ' ' . htmlspecialchars($log['weapon_name']);
-                $icon  = 'icons/weapons/' . strtolower(str_replace(' ', '-', $log['weapon_name'])) . '.png';
+                $label = ($qty > 1 ? $qty . '× ' : '') . 'Lv' . $entry['weapon_level'] . ' ' . htmlspecialchars($entry['weapon_name']);
+                $icon  = 'icons/weapons/' . strtolower(str_replace(' ', '-', $entry['weapon_name'])) . '.png';
                 break;
             case 'armor':
-                $label = 'Lv' . $log['armor_level'] . ' ' . htmlspecialchars($log['armor_name']);
-                $icon  = 'icons/armor/' . strtolower(str_replace(' ', '-', $log['armor_name'])) . '.png';
+                $label = ($qty > 1 ? $qty . '× ' : '') . 'Lv' . $entry['armor_level'] . ' ' . htmlspecialchars($entry['armor_name']);
+                $icon  = 'icons/armor/' . strtolower(str_replace(' ', '-', $entry['armor_name'])) . '.png';
                 break;
             default:
                 $label = ''; $icon = 'icons/skull.png';
