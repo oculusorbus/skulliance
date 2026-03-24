@@ -7,7 +7,8 @@ $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
 $info = getFactoryInfo($conn, $realm_id);
-$logs = getUnclaimedRealmLogs($conn, $realm_id);
+$logs        = getUnclaimedRealmLogs($conn, $realm_id, array('consumable'));
+$claim_types = array('consumable');
 $con_names = array(
     1 => '100% Success', 2 => '75% Success', 3 => '50% Success',
     4 => '25% Success',  5 => 'Fast Forward', 6 => 'Double Rewards', 7 => 'Random Reward'

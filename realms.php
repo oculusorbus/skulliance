@@ -1222,8 +1222,8 @@ $conn->close();
 	}
 
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
-	function claimRealmLogs() {
-		$.get('ajax/claim-realm-logs.php', function(resp) {
+	function claimRealmLogs(types) {
+		$.post('ajax/claim-realm-logs.php', {types: types}, function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
 			if (r.success) { openNotify('Rewards claimed!'); refreshLocationModal(); }
 			else { openNotify('Nothing to claim.'); }

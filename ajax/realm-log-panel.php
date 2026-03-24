@@ -32,7 +32,7 @@
     </div>
     <?php endforeach; ?>
     </div>
-    <button class="small-button" onclick="claimRealmLogs()" style="margin-top:12px;background:#00c8a0;color:#000;width:100%;">Claim All</button>
+    <button class="small-button" onclick="claimRealmLogs(<?php echo htmlspecialchars(json_encode($claim_types)); ?>)" style="margin-top:12px;background:#00c8a0;color:#000;width:100%;">Claim All</button>
 </div>
 <?php else: ?>
 <div style="margin-top:18px;border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;font-size:0.8rem;opacity:0.5;text-align:center;">

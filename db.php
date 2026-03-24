@@ -8317,8 +8317,13 @@ function processArmoryDrops($conn) {
 }
 
 // Get all unclaimed log entries for a realm with item names/levels joined
-function getUnclaimedRealmLogs($conn, $realm_id) {
-	$realm_id = intval($realm_id);
+function getUnclaimedRealmLogs($conn, $realm_id, $types = array()) {
+	$realm_id    = intval($realm_id);
+	$type_filter = '';
+	if (!empty($types)) {
+		$escaped     = array_map(function($t) use ($conn) { return "'" . $conn->real_escape_string($t) . "'"; }, $types);
+		$type_filter = " AND rl.type IN (" . implode(',', $escaped) . ")";
+	}
 	$result = $conn->query("
 		SELECT rl.id, rl.type, rl.item_id, rl.quantity, rl.created_date,
 		       w.name AS weapon_name, w.level AS weapon_level,
@@ -8328,7 +8333,7 @@ function getUnclaimedRealmLogs($conn, $realm_id) {
 		LEFT JOIN weapons w ON rl.type = 'weapon' AND w.id = rl.item_id
 		LEFT JOIN armor a ON rl.type = 'armor' AND a.id = rl.item_id
 		LEFT JOIN consumables c ON rl.type = 'consumable' AND c.id = rl.item_id
-		WHERE rl.realm_id = $realm_id AND rl.claimed = 0
+		WHERE rl.realm_id = $realm_id AND rl.claimed = 0$type_filter
 		ORDER BY rl.created_date ASC
 	");
 	$logs = array();
@@ -8336,13 +8341,13 @@ function getUnclaimedRealmLogs($conn, $realm_id) {
 	return $logs;
 }
 
-// Claim all unclaimed log entries for a realm — credits CARBON, adds consumables, assigns gear
-function claimRealmLogs($conn, $realm_id) {
+// Claim unclaimed log entries for a realm, optionally scoped to specific types
+function claimRealmLogs($conn, $realm_id, $types = array()) {
 	$realm_id = intval($realm_id);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	if (!$r || $r->num_rows == 0) return false;
 	$user_id = intval($r->fetch_assoc()['user_id']);
-	$logs = getUnclaimedRealmLogs($conn, $realm_id);
+	$logs = getUnclaimedRealmLogs($conn, $realm_id, $types);
 	if (empty($logs)) return false;
 	foreach ($logs as $log) {
 		$item_id = intval($log['item_id']);
@@ -8363,7 +8368,12 @@ function claimRealmLogs($conn, $realm_id) {
 				break;
 		}
 	}
-	$conn->query("UPDATE realms_logs SET claimed = 1 WHERE realm_id = $realm_id AND claimed = 0");
+	$type_filter = '';
+	if (!empty($types)) {
+		$escaped     = array_map(function($t) use ($conn) { return "'" . $conn->real_escape_string($t) . "'"; }, $types);
+		$type_filter = " AND type IN (" . implode(',', $escaped) . ")";
+	}
+	$conn->query("UPDATE realms_logs SET claimed = 1 WHERE realm_id = $realm_id AND claimed = 0$type_filter");
 	return true;
 }
 
