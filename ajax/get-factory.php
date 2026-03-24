@@ -46,7 +46,7 @@ $con_names = array(
         ?>
         <div class="inv-info-item">
             <img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
-            <div>
+            <div style="flex:1;min-width:0;">
                 <strong><?php echo $con_names[$cid]; ?></strong>
                 <p style="display:flex;justify-content:space-between;">~<?php echo $pct; ?>% chance <span style="color:#00c8a0;">x<?php echo intval($amounts[$cid]['amount'] ?? 0); ?></span></p>
             </div>
