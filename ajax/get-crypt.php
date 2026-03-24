@@ -7,7 +7,7 @@ $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
 $crypt_level  = intval(getRealmLocationLevel($conn, $realm_id, 6));
-$res_days     = max(1, 11 - $crypt_level);
+$res_days     = getCryptResurrectionDays($conn, $realm_id);
 $soldiers     = getCryptSoldiers($conn, $realm_id);
 $eligible_count = 0;
 foreach ($soldiers as $s) { if ($s['eligible']) $eligible_count++; }
