@@ -653,6 +653,7 @@ getActiveRaidsMapData($conn);
 if($realm_status && isset($_SESSION['userData']['user_id'])){
 	echo "<script>window.myRealmId = ".(int)getRealmID($conn).";</script>";
 }
+$nft_project_tree = getUserNFTProjectTree($conn);
 // Close DB Connection
 $conn->close();
 ?>
@@ -810,7 +811,7 @@ $conn->close();
 	/* ── RAID SOLDIER SELECTION ──────────────────────────── */
 	// Intercept openRaidConsumablesModal to show soldier picker first
 	var _portalLevel              = <?php echo intval($levels[1]); ?>;
-	var _nftProjectTree           = <?php echo json_encode(getUserNFTProjectTree($conn)); ?>;
+	var _nftProjectTree           = <?php echo json_encode($nft_project_tree); ?>;
 	var _raidSoldierSelectedIds   = [];
 	var _raidSoldiersDefenseId    = null;
 	var _raidSoldiersDuration     = null;
