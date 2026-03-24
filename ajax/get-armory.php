@@ -13,6 +13,12 @@ $soldiers      = $info['soldiers'];
 $inventory     = $info['inventory'];
 $logs          = getUnclaimedRealmLogs($conn, $realm_id, array('weapon', 'armor'));
 $claim_types   = array('weapon', 'armor');
+
+$per_page       = 8;
+$total_soldiers = count($soldiers);
+$total_pages    = max(1, ceil($total_soldiers / $per_page));
+$page           = max(1, min($total_pages, intval($_GET['page'] ?? 1)));
+$soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
@@ -71,7 +77,7 @@ $claim_types   = array('weapon', 'armor');
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Soldier Loadout</strong>
     <div class="soldiers-grid" style="margin-top:8px;">
-    <?php foreach ($soldiers as $s):
+    <?php foreach ($soldiers_page as $s):
         $img_src   = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
         $loc_map   = array(1=>'Reserve', 2=>'Tower', 3=>'Raid');
         $loc_label = $loc_map[intval($s['location'])] ?? 'Reserve';
@@ -97,6 +103,21 @@ $claim_types   = array('weapon', 'armor');
     </div>
     <?php endforeach; ?>
     </div>
+    <?php if ($total_pages > 1): ?>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:0.82rem;">
+        <?php if ($page > 1): ?>
+        <button class="small-button" onclick="goArmoryPage(<?php echo $page - 1; ?>)">&#8249; Prev</button>
+        <?php else: ?>
+        <button class="small-button" disabled style="opacity:0.3;">&#8249; Prev</button>
+        <?php endif; ?>
+        <span style="opacity:0.6;"><?php echo $page; ?> / <?php echo $total_pages; ?></span>
+        <?php if ($page < $total_pages): ?>
+        <button class="small-button" onclick="goArmoryPage(<?php echo $page + 1; ?>)">Next &#8250;</button>
+        <?php else: ?>
+        <button class="small-button" disabled style="opacity:0.3;">Next &#8250;</button>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
 <?php else: ?>
 <p style="opacity:0.55;font-size:0.85rem;margin-top:12px;">No soldiers in Barracks yet. Enlist soldiers to receive gear drops.</p>

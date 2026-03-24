@@ -1009,6 +1009,7 @@ $conn->close();
 	var _locModalTitles = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
 	var _barracksPage = 1;
+	var _armoryPage   = 1;
 
 	function openLocationModal(loc_id) {
 		var title    = _locModalTitles[loc_id]    || 'Location';
@@ -1019,7 +1020,9 @@ $conn->close();
 		document.getElementById('location-modal-footer').style.display = 'flex';
 		document.getElementById('location-modal-overlay').style.display = 'block';
 		document.getElementById('location-modal').style.display          = 'flex';
-		var params = (loc_id === 4) ? '?page=' + _barracksPage : '';
+		var params = '';
+		if (loc_id === 4) params = '?page=' + _barracksPage;
+		if (loc_id === 2) params = '?page=' + _armoryPage;
 		$.get('ajax/' + endpoint + '.php' + params, function(html) {
 			document.getElementById('location-modal-body').innerHTML = html;
 		}).fail(function() {
@@ -1041,6 +1044,11 @@ $conn->close();
 	function goBarracksPage(page) {
 		_barracksPage = page;
 		openLocationModal(4);
+	}
+
+	function goArmoryPage(page) {
+		_armoryPage = page;
+		openLocationModal(2);
 	}
 
 	/* ── BARRACKS ─────────────────────────────────────────── */
