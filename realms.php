@@ -611,8 +611,11 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<button class="raid-modal-close" onclick="closeEnlistPicker()" aria-label="Close">&times;</button>
 			</div>
 			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 8px;">Select NFTs to enlist. Partner NFTs cost 2 slots each.</p>
-			<select id="enlist-project-filter" style="display:none;width:100%;margin-bottom:10px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByProject(this.value)">
+			<select id="enlist-project-filter" style="display:none;width:100%;margin-bottom:6px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByProject(this.value)">
 				<option value="">All Projects</option>
+			</select>
+			<select id="enlist-collection-filter" style="display:none;width:100%;margin-bottom:10px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByCollection(this.value)">
+				<option value="">All Collections</option>
 			</select>
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
@@ -1053,6 +1056,7 @@ $conn->close();
 	function openEnlistPicker() {
 		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
 		document.getElementById('enlist-project-filter').style.display = 'none';
+		document.getElementById('enlist-collection-filter').style.display = 'none';
 		document.getElementById('enlist-modal-overlay').style.display = 'block';
 		document.getElementById('enlist-modal').style.display          = 'flex';
 		$.get('ajax/get-eligible-nfts.php', function(html) {
@@ -1085,6 +1089,28 @@ $conn->close();
 	function filterEnlistByProject(pid) {
 		$('#enlist-picker-body .enlist-candidate').each(function() {
 			$(this).toggle(!pid || String($(this).data('project-id')) === String(pid));
+		});
+		// rebuild collection dropdown for the selected project
+		var colSel = document.getElementById('enlist-collection-filter');
+		colSel.innerHTML = '<option value="">All Collections</option>';
+		var seen = {};
+		$('#enlist-picker-body .enlist-candidate').filter(function() {
+			return !pid || String($(this).data('project-id')) === String(pid);
+		}).each(function() {
+			var cid   = $(this).data('collection-id');
+			var cname = $(this).data('collection-name');
+			if (!seen[cid]) { seen[cid] = true; colSel.innerHTML += '<option value="'+cid+'">'+cname+'</option>'; }
+		});
+		colSel.value = '';
+		colSel.style.display = (pid && Object.keys(seen).length > 1) ? 'block' : 'none';
+	}
+
+	function filterEnlistByCollection(cid) {
+		var pid = document.getElementById('enlist-project-filter').value;
+		$('#enlist-picker-body .enlist-candidate').each(function() {
+			var matchProject    = !pid || String($(this).data('project-id')) === String(pid);
+			var matchCollection = !cid || String($(this).data('collection-id')) === String(cid);
+			$(this).toggle(matchProject && matchCollection);
 		});
 	}
 
