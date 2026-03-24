@@ -11,7 +11,7 @@
                 break;
             case 'consumable':
                 $label = $log['quantity'] . '× ' . htmlspecialchars($log['consumable_name']);
-                $icon  = 'icons/skull.png';
+                $icon  = 'icons/' . strtolower(str_replace('%', '', str_replace(' ', '-', $log['consumable_name']))) . '.png';
                 break;
             case 'weapon':
                 $label = 'Lv' . $log['weapon_level'] . ' ' . htmlspecialchars($log['weapon_name']);
