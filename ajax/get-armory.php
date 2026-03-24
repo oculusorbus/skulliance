@@ -59,11 +59,10 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
         $is_weapon = $item['type'] === 'weapon';
         $name      = $is_weapon ? $item['weapon_name'] : $item['armor_name'];
         $level     = $is_weapon ? $item['weapon_level'] : $item['armor_level'];
-        $icon_dir  = $is_weapon ? 'weapons' : 'armor';
         $icon_file = strtolower(str_replace(' ', '-', $name)) . '.png';
     ?>
     <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;background:rgba(255,255,255,0.04);border-radius:6px;padding:6px 8px;">
-        <img class="icon" src="icons/<?php echo $icon_dir; ?>/<?php echo $icon_file; ?>" onerror="this.src='icons/skull.png'" style="width:22px;height:22px;" />
+        <img class="icon" src="icons/<?php echo $icon_file; ?>" onerror="this.src='icons/skull.png'" style="width:22px;height:22px;" />
         <span style="flex:1;">Lv<?php echo $level; ?> <?php echo htmlspecialchars($name); ?></span>
         <span style="opacity:0.5;">×<?php echo $item['quantity']; ?></span>
     </div>
@@ -89,13 +88,13 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
         <div class="soldier-gear-row" style="margin-top:4px;">
             <?php if ($s['weapon_id']): ?>
             <div class="soldier-gear-slot" title="<?php echo htmlspecialchars($s['weapon_name']); ?>">
-                <img class="icon" src="icons/weapons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
                 <span class="gear-label" style="font-size:0.7rem;">Lv<?php echo $s['weapon_level']; ?></span>
             </div>
             <?php else: ?><div class="gear-empty" style="font-size:0.72rem;">No Weapon</div><?php endif; ?>
             <?php if ($s['armor_id']): ?>
             <div class="soldier-gear-slot" title="<?php echo htmlspecialchars($s['armor_name']); ?>">
-                <img class="icon" src="icons/armor/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
                 <span class="gear-label" style="font-size:0.7rem;">Lv<?php echo $s['armor_level']; ?></span>
             </div>
             <?php else: ?><div class="gear-empty" style="font-size:0.72rem;">No Armor</div><?php endif; ?>
