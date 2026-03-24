@@ -742,6 +742,7 @@ $conn->close();
 .partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
 .soldier-gear-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:4px; }
 .soldier-gear-slot { display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.7rem; opacity:0.85; }
+.soldier-gear-slot img.icon { margin-right:0; }
 .gear-label { font-size:0.65rem; opacity:0.7; }
 .gear-empty { font-size:0.65rem; opacity:0.4; }
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
