@@ -2136,18 +2136,11 @@ function getCurrentAmounts($conn){
 
 // Get current amount for user for a specific consumable
 function getCurrentAmount($conn, $user_id, $consumable_id){
-	$sql = "SELECT amount FROM amounts WHERE user_id = '".$user_id."' AND consumable_id = '".$consumable_id."'";
-	$result = $conn->query($sql);
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	return $row["amount"];
-	  }
-	} else {
-	  //echo "0 results";
-	    return "false";
-	}
+	$user_id       = intval($user_id);
+	$consumable_id = intval($consumable_id);
+	$result = $conn->query("SELECT COALESCE(SUM(amount), 0) AS total FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id");
+	if ($result) return intval($result->fetch_assoc()['total']);
+	return 0;
 }
 
 // Update specific user amount for a specific consumable
@@ -2155,10 +2148,13 @@ function updateAmount($conn, $user_id, $consumable_id, $subtotal){
 	$user_id       = intval($user_id);
 	$consumable_id = intval($consumable_id);
 	$subtotal      = intval($subtotal);
-	$result = $conn->query("SELECT amount FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id LIMIT 1");
-	if ($result && $result->num_rows > 0) {
-		$new_total = intval($result->fetch_assoc()['amount']) + $subtotal;
-		$conn->query("UPDATE amounts SET amount = $new_total WHERE user_id = $user_id AND consumable_id = $consumable_id");
+	// Collapse duplicate rows: sum all amounts into the lowest-id row, delete the rest
+	$agg = $conn->query("SELECT MIN(id) AS keep_id, COALESCE(SUM(amount), 0) AS total FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id");
+	if ($agg && ($row = $agg->fetch_assoc()) && $row['keep_id'] !== null) {
+		$new_total = max(0, intval($row['total']) + $subtotal);
+		$keep_id   = intval($row['keep_id']);
+		$conn->query("UPDATE amounts SET amount = $new_total WHERE id = $keep_id");
+		$conn->query("DELETE FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id AND id != $keep_id");
 	} else if ($subtotal > 0) {
 		$conn->query("INSERT INTO amounts (amount, user_id, consumable_id) VALUES ($subtotal, $user_id, $consumable_id)");
 	}
@@ -8265,8 +8261,8 @@ function getCurrentGear($conn, $user_id, $type, $item_id) {
 	$user_id = intval($user_id);
 	$item_id = intval($item_id);
 	$type    = mysqli_real_escape_string($conn, $type);
-	$result  = $conn->query("SELECT quantity FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
-	if ($result && $result->num_rows > 0) return intval($result->fetch_assoc()['quantity']);
+	$result  = $conn->query("SELECT COALESCE(SUM(quantity), 0) AS total FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id");
+	if ($result) return intval($result->fetch_assoc()['total']);
 	return 0;
 }
 
@@ -8275,10 +8271,13 @@ function updateGear($conn, $user_id, $type, $item_id, $delta) {
 	$item_id = intval($item_id);
 	$delta   = intval($delta);
 	$type    = mysqli_real_escape_string($conn, $type);
-	$result  = $conn->query("SELECT quantity FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
-	if ($result && $result->num_rows > 0) {
-		$new_qty = max(0, intval($result->fetch_assoc()['quantity']) + $delta);
-		$conn->query("UPDATE gear SET quantity = $new_qty WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
+	// Collapse duplicate rows: sum all quantities into the lowest-id row, delete the rest
+	$agg = $conn->query("SELECT MIN(id) AS keep_id, COALESCE(SUM(quantity), 0) AS total FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id");
+	if ($agg && ($row = $agg->fetch_assoc()) && $row['keep_id'] !== null) {
+		$new_qty = max(0, intval($row['total']) + $delta);
+		$keep_id = intval($row['keep_id']);
+		$conn->query("UPDATE gear SET quantity = $new_qty WHERE id = $keep_id");
+		$conn->query("DELETE FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id AND id != $keep_id");
 	} else if ($delta > 0) {
 		$conn->query("INSERT INTO gear (user_id, type, item_id, quantity) VALUES ($user_id, '$type', $item_id, $delta)");
 	}
