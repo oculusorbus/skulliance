@@ -1477,7 +1477,7 @@ $conn->close();
 		var pagePicks = $('#tower-available-grid .tower-pick');
 		var anyVisibleSelected = pagePicks.filter('.selected').length > 0;
 		var btn = document.getElementById('tower-select-all-btn');
-		if (btn) btn.value = anyVisibleSelected ? 'Deselect All' : 'Select All';
+		if (btn) btn.textContent = anyVisibleSelected ? 'Deselect All' : 'Select All';
 		// Show Clear All only when cross-page selections exist
 		var clearBtn = document.getElementById('tower-clear-all-btn');
 		if (clearBtn) clearBtn.style.display = _towerSelectedIds.length > 0 ? 'inline-block' : 'none';
