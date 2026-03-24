@@ -1068,21 +1068,16 @@ $conn->close();
 			var defId = _raidSoldiersDefenseId;
 			var dur   = _raidSoldiersDuration;
 			var allEl = document.getElementById('raid-all-items-' + defId);
-			if (!allEl || !allEl.checked) {
-				// No config selected — force consumables modal
+			var mode  = allEl ? (allEl.dataset.mode || 'default') : 'default';
+			if (mode !== 'saved') {
+				// No saved config — force consumables modal
 				_raidSoldiersConsumables = 'modal';
 				if (_origOpenRaidConsumablesModal) _origOpenRaidConsumablesModal(defId, dur);
 				return;
 			}
-			var consumablesParam = '';
-			var mode    = allEl.dataset.mode || 'default';
 			var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
-			if (mode === 'saved') {
-				savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
-			} else {
-				// default: all except 100% Success (1) and Double Rewards (6)
-				[2, 3, 4, 5, 7].forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
-			}
+			var consumablesParam = '';
+			savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
 			_raidSoldierSelectedIds = [];
 			var xhttp = new XMLHttpRequest();
 			xhttp.open('GET', 'ajax/start_raid.php?defense_id=' + defId + '&duration=' + dur + consumablesParam + soldiersParam, true);

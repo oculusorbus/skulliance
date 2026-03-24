@@ -1191,18 +1191,8 @@ function _updateAllRaidConfigCheckboxes(savedIds){
 	var savedIdsStr = savedIds.join(',');
 	var hasSaved = savedIds.length > 0;
 	document.querySelectorAll('[id^="raid-all-items-"]').forEach(function(el){
-		el.checked = hasSaved;
-		el.dataset.mode = hasSaved ? 'saved' : 'default';
+		el.dataset.mode     = hasSaved ? 'saved' : 'default';
 		el.dataset.savedIds = savedIdsStr;
-		var label = el.parentNode;
-		if(label){
-			for(var i = 0; i < label.childNodes.length; i++){
-				if(label.childNodes[i].nodeType === 3){
-					label.childNodes[i].nodeValue = hasSaved ? ' Saved Config' : ' Default Config';
-					break;
-				}
-			}
-		}
 	});
 }
 
