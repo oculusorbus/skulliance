@@ -1200,24 +1200,60 @@ $conn->close();
 	}
 
 	/* ── TOWER ────────────────────────────────────────────── */
-	function assignToTower(soldier_id) {
-		$.post('ajax/tower-action.php', {action:'assign', soldier_id:soldier_id}, function(resp) {
+	var _towerSelectedIds = [];
+
+	function toggleTowerSelect(el) {
+		var sid  = parseInt($(el).data('soldier-id'));
+		var grid = document.getElementById('tower-available-grid');
+		var max  = grid ? parseInt(grid.dataset.max) : 10;
+		var idx  = _towerSelectedIds.indexOf(sid);
+		if (idx >= 0) {
+			_towerSelectedIds.splice(idx, 1);
+			$(el).removeClass('selected');
+		} else {
+			if (_towerSelectedIds.length >= max) {
+				openNotify('Only ' + max + ' garrison slot' + (max !== 1 ? 's' : '') + ' remaining.');
+				return;
+			}
+			_towerSelectedIds.push(sid);
+			$(el).addClass('selected');
+		}
+		_updateTowerSelectCount();
+	}
+
+	function selectAllTower() {
+		var grid = document.getElementById('tower-available-grid');
+		if (!grid) return;
+		var max = parseInt(grid.dataset.max);
+		_towerSelectedIds = [];
+		$(grid).find('.tower-pick').each(function() {
+			if (_towerSelectedIds.length < max) {
+				_towerSelectedIds.push(parseInt($(this).data('soldier-id')));
+				$(this).addClass('selected');
+			}
+		});
+		_updateTowerSelectCount();
+	}
+
+	function _updateTowerSelectCount() {
+		var grid = document.getElementById('tower-available-grid');
+		var max  = grid ? parseInt(grid.dataset.max) : 10;
+		var el   = document.getElementById('tower-select-count');
+		if (el) el.textContent = _towerSelectedIds.length + ' of ' + max + ' slots selected';
+	}
+
+	function deployToTower() {
+		if (_towerSelectedIds.length === 0) { openNotify('Select at least one soldier.'); return; }
+		$.post('ajax/tower-action.php', {action:'assign_bulk', soldier_ids: _towerSelectedIds}, function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			_towerSelectedIds = [];
 			if (r.success) refreshLocationModal();
-			else openNotify('Could not assign to Tower. Tower may be full.');
+			else openNotify('Could not deploy soldiers. Tower may be full.');
 		});
 	}
 
 	function removeFromTower(soldier_id) {
 		$.post('ajax/tower-action.php', {action:'remove', soldier_id:soldier_id}, function() { refreshLocationModal(); });
-	}
-
-	function equipWeapon(soldier_id, weapon_id) {
-		$.post('ajax/tower-action.php', {action:'weapon', soldier_id:soldier_id, value:weapon_id}, function() { refreshLocationModal(); });
-	}
-
-	function equipArmor(soldier_id, armor_id) {
-		$.post('ajax/tower-action.php', {action:'armor', soldier_id:soldier_id, value:armor_id}, function() { refreshLocationModal(); });
 	}
 
 	/* ── GEAR EQUIP / UNEQUIP ─────────────────────────────── */
