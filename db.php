@@ -8433,7 +8433,7 @@ function getAvailableRaiders($conn, $realm_id) {
 	return $raiders;
 }
 
-// Commit soldiers to a raid (set location=3, insert raid_soldiers rows)
+// Commit soldiers to a raid (set location=3, insert raids_soldiers rows)
 function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 	$raid_id = intval($raid_id);
 	foreach ($soldier_ids as $sid) {
@@ -8441,7 +8441,7 @@ function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 		// Verify soldier is in reserve (location=1), trained, alive
 		$check = $conn->query("SELECT id, realm_id FROM soldiers WHERE id = $sid AND location = 1 AND trained = 1 AND dead IS NULL LIMIT 1");
 		if (!$check || $check->num_rows == 0) continue;
-		$conn->query("INSERT INTO raid_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
+		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
 		$conn->query("UPDATE soldiers SET location = 3 WHERE id = $sid LIMIT 1");
 	}
 }
@@ -8449,7 +8449,7 @@ function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 // Release raid soldiers back to reserve (called when raid resolves)
 function releaseRaidSoldiers($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT soldier_id FROM raid_soldiers WHERE raid_id = $raid_id");
+	$result  = $conn->query("SELECT soldier_id FROM raids_soldiers WHERE raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
 		$sid = intval($row['soldier_id']);
 		$conn->query("UPDATE soldiers SET location = 1 WHERE id = $sid AND location = 3 LIMIT 1");
@@ -8460,7 +8460,7 @@ function releaseRaidSoldiers($conn, $raid_id) {
 // $armor_reduction_per_level = 5 (each armor level reduces death chance by 5%, min 5% floor)
 function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT raid_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raid_soldiers.raid_id = $raid_id");
+	$result  = $conn->query("SELECT raids_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raids_soldiers.raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
 		$sid           = intval($row['soldier_id']);
 		$armor_level   = intval($row['armor_level']);
@@ -8476,8 +8476,8 @@ function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) 
 function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonus_per_level = 3) {
 	$raid_id         = intval($raid_id);
 	$defense_realm_id = intval($defense_realm_id);
-	// Sum of weapon levels across all raid_soldiers for this raid
-	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raid_soldiers.raid_id = $raid_id");
+	// Sum of weapon levels across all raids_soldiers for this raid
+	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raids_soldiers.raid_id = $raid_id");
 	$wrow = $wresult->fetch_assoc();
 	$total_weapon = intval($wrow['total_weapon_level']);
 
