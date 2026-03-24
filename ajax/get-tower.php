@@ -55,20 +55,18 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
     <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
     <div class="soldier-status status-ready">Active Duty</div>
-    <div class="soldier-gear-row" style="width:100%;">
-        <div class="soldier-gear-slot">
+    <div class="soldier-gear-compact">
+        <div class="gear-compact-slot" title="<?php echo $s['weapon_id'] ? htmlspecialchars($s['weapon_name']) : 'No Weapon'; ?>">
             <?php if ($s['weapon_id']): ?>
-                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;" />
                 <span class="gear-label">Lv<?php echo intval($s['weapon_level']); ?></span>
-            <?php else: ?><span class="gear-empty">No Weapon</span><?php endif; ?>
+            <?php else: ?><span class="gear-compact-empty">—</span><?php endif; ?>
         </div>
-        <div class="soldier-gear-slot">
+        <div class="gear-compact-slot" title="<?php echo $s['armor_id'] ? htmlspecialchars($s['armor_name']) : 'No Armor'; ?>">
             <?php if ($s['armor_id']): ?>
-                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;" />
                 <span class="gear-label">Lv<?php echo intval($s['armor_level']); ?></span>
-            <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
+            <?php else: ?><span class="gear-compact-empty">—</span><?php endif; ?>
         </div>
     </div>
     <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
@@ -98,21 +96,19 @@ if ($slots_remaining > 0 && !empty($available_for_tower)):
         <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
         <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
         <div class="soldier-status status-ready">Active Duty</div>
-        <div class="soldier-gear-row" style="width:100%;">
-            <?php if ($s['weapon_id']): ?>
-            <div class="soldier-gear-slot">
-                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
-                <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
+        <div class="soldier-gear-compact">
+            <div class="gear-compact-slot" title="<?php echo $s['weapon_id'] ? htmlspecialchars($s['weapon_name']) : 'No Weapon'; ?>">
+                <?php if ($s['weapon_id']): ?>
+                    <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;" />
+                    <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
+                <?php else: ?><span class="gear-compact-empty">—</span><?php endif; ?>
             </div>
-            <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
-            <?php if ($s['armor_id']): ?>
-            <div class="soldier-gear-slot">
-                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
-                <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
+            <div class="gear-compact-slot" title="<?php echo $s['armor_id'] ? htmlspecialchars($s['armor_name']) : 'No Armor'; ?>">
+                <?php if ($s['armor_id']): ?>
+                    <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;" />
+                    <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
+                <?php else: ?><span class="gear-compact-empty">—</span><?php endif; ?>
             </div>
-            <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
         </div>
     </div>
     <?php endforeach; ?>

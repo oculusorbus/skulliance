@@ -774,6 +774,18 @@ $conn->close();
 .soldier-gear-slot img.icon { margin-right:0; }
 .gear-label { font-size:0.65rem; opacity:0.7; }
 .gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:flex-start; justify-content:center; height:52px; padding-top:2px; }
+/* Compact gear row (armory/tower cards) */
+.soldier-gear-compact { display:flex; flex-direction:row; gap:6px; justify-content:center; margin-top:4px; width:100%; }
+.gear-compact-slot { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
+.gear-compact-empty { font-size:0.65rem; opacity:0.3; }
+/* Armory soldier grid */
+.armory-soldiers-grid { grid-template-columns:repeat(4,1fr); }
+@media (max-width:500px) {
+    .armory-soldiers-grid { grid-template-columns:repeat(3,1fr); }
+    .gear-inventory-row { flex-direction:column !important; }
+    .soldiers-stat { padding:7px 10px; }
+    .soldiers-stat-value { font-size:0.95rem; }
+}
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
 .soldiers-table { border-collapse:collapse; }
