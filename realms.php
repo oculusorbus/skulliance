@@ -568,8 +568,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 
 	<!-- Location Modal (Portal / Barracks / Crypt / Tower / Mine / Factory / Armory) -->
 	<div id="location-modal-overlay" onclick="closeLocationModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;"></div>
-	<div id="location-modal" class="modal" style="display:none;z-index:1001;" role="dialog" aria-modal="true">
-		<div class="raid-modal-content" style="max-width:600px;max-height:85vh;overflow-y:auto;" id="location-modal-inner">
+	<div id="location-modal" class="modal" style="display:none;z-index:1001;" role="dialog" aria-modal="true" onclick="closeLocationModal()">
+		<div class="raid-modal-content" style="max-width:600px;max-height:85vh;overflow-y:auto;" id="location-modal-inner" onclick="event.stopPropagation()">
 			<div class="raid-modal-header" id="location-modal-header">
 				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;" id="location-modal-title">Loading...</h2>
 				<button class="raid-modal-close" onclick="closeLocationModal()" aria-label="Close">&times;</button>
@@ -585,8 +585,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 
 	<!-- Raid Soldier Selection Modal -->
 	<div id="raid-soldiers-overlay" onclick="closeRaidSoldierModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
-	<div id="raid-soldiers-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true">
-		<div class="raid-modal-content" style="max-width:560px;max-height:82vh;overflow-y:auto;">
+	<div id="raid-soldiers-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true" onclick="closeRaidSoldierModal()">
+		<div class="raid-modal-content" style="max-width:560px;max-height:82vh;overflow-y:auto;" onclick="event.stopPropagation()">
 			<div class="raid-modal-header">
 				<h2 style="margin:0;font-size:1rem;">Select Soldiers for Raid</h2>
 				<button class="raid-modal-close" onclick="closeRaidSoldierModal()" aria-label="Close">&times;</button>
@@ -604,8 +604,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 
 	<!-- Enlist Picker Modal (child of barracks) -->
 	<div id="enlist-modal-overlay" onclick="closeEnlistPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1002;"></div>
-	<div id="enlist-modal" class="modal" style="display:none;z-index:1003;" role="dialog" aria-modal="true">
-		<div class="raid-modal-content" style="max-width:580px;max-height:80vh;overflow-y:auto;">
+	<div id="enlist-modal" class="modal" style="display:none;z-index:1003;" role="dialog" aria-modal="true" onclick="closeEnlistPicker()">
+		<div class="raid-modal-content" style="max-width:580px;max-height:80vh;overflow-y:auto;" onclick="event.stopPropagation()">
 			<div class="raid-modal-header">
 				<h2 style="margin:0;font-size:1rem;">Enlist Soldiers</h2>
 				<button class="raid-modal-close" onclick="closeEnlistPicker()" aria-label="Close">&times;</button>
@@ -630,8 +630,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 
 	<!-- Raid Consumables Modal -->
-	<div id="raid-consumables-modal" class="modal" style="display:none;">
-		<div class="raid-modal-content">
+	<div id="raid-consumables-modal" class="modal" style="display:none;" onclick="closeRaidConsumablesModal()">
+		<div class="raid-modal-content" onclick="event.stopPropagation()">
 			<div class="raid-modal-header">
 				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Customize Raid Consumables</h2>
 				<button class="raid-modal-close" onclick="closeRaidConsumablesModal()" aria-label="Close">&times;</button>
