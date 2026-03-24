@@ -1168,14 +1168,22 @@ $conn->close();
 		if (window._currentLocModal) openLocationModal(window._currentLocModal);
 	}
 
+	function _reloadModalBody(endpoint, params) {
+		$.get('ajax/' + endpoint + '.php' + (params || ''), function(html) {
+			document.getElementById('location-modal-body').innerHTML = html;
+		}).fail(function() {
+			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
+		});
+	}
+
 	function goBarracksPage(page) {
 		_barracksPage = page;
-		openLocationModal(4);
+		_reloadModalBody(_locModalEndpoints[4], '?page=' + page);
 	}
 
 	function goArmoryPage(page) {
 		_armoryPage = page;
-		openLocationModal(2);
+		_reloadModalBody(_locModalEndpoints[2], '?page=' + page);
 	}
 
 	/* ── BARRACKS ─────────────────────────────────────────── */
