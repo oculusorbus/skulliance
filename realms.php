@@ -619,7 +619,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			</select>
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
-				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 selected</span>
+				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 of <?php echo intval($barracks_slots_open); ?> slots selected</span>
+				<input type="button" class="small-button" value="Select All" onclick="selectAllEligible()"/>
 				<input type="button" class="button" value="Enlist Selected" onclick="confirmEnlist()"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeEnlistPicker()"/>
 			</div>
@@ -653,7 +654,10 @@ getActiveRaidsMapData($conn);
 if($realm_status && isset($_SESSION['userData']['user_id'])){
 	echo "<script>window.myRealmId = ".(int)getRealmID($conn).";</script>";
 }
-$nft_project_tree = getUserNFTProjectTree($conn);
+$nft_project_tree    = getUserNFTProjectTree($conn);
+$barracks_cap        = getDeploymentCap($conn, $realm_id);
+$barracks_soldiers   = getTotalSoldierCount($conn, $realm_id);
+$barracks_slots_open = max(0, $barracks_cap - $barracks_soldiers);
 // Close DB Connection
 $conn->close();
 ?>
@@ -812,6 +816,7 @@ $conn->close();
 	// Intercept openRaidConsumablesModal to show soldier picker first
 	var _portalLevel              = <?php echo intval($levels[1]); ?>;
 	var _nftProjectTree           = <?php echo json_encode($nft_project_tree); ?>;
+	var _barracksOpenSlots        = <?php echo intval($barracks_slots_open); ?>;
 	var _raidSoldierSelectedIds   = [];
 	var _raidSoldiersDefenseId    = null;
 	var _raidSoldiersDuration     = null;
@@ -1135,7 +1140,22 @@ $conn->close();
 	}
 
 	function _updateEnlistCount() {
-		document.getElementById('enlist-selected-count').textContent = _enlistSelectedIds.length + ' selected';
+		document.getElementById('enlist-selected-count').textContent = _enlistSelectedIds.length + ' of ' + _barracksOpenSlots + ' slots selected';
+	}
+
+	function selectAllEligible() {
+		var remaining = _barracksOpenSlots - _enlistSelectedIds.length;
+		if (remaining <= 0) return;
+		$('#enlist-picker-body .enlist-candidate').each(function() {
+			if (remaining <= 0) return false;
+			var id = parseInt($(this).data('nft-id'));
+			if (_enlistSelectedIds.indexOf(id) === -1) {
+				_enlistSelectedIds.push(id);
+				$(this).addClass('selected');
+				remaining--;
+			}
+		});
+		_updateEnlistCount();
 	}
 
 	function confirmEnlist() {
