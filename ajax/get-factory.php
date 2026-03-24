@@ -36,11 +36,11 @@ $con_names = array(
         <?php
         $level = $info['factory_level'];
         $odds = array();
-        // Rarity: id=7 (most common) → id=4 → id=5 → id=3 → id=6 → id=2 → id=1 (rarest)
-        if ($level <= 3)      $odds = array(7=>50, 4=>35, 5=>15);
-        elseif ($level <= 6)  $odds = array(7=>35, 4=>28, 5=>18, 3=>13, 6=>6);
-        elseif ($level <= 9)  $odds = array(7=>28, 4=>22, 5=>16, 3=>14, 6=>10, 2=>10);
-        else                  $odds = array(7=>25, 4=>20, 5=>15, 3=>14, 6=>10, 2=>10, 1=>6);
+        // Rarity matches consumables DB rates (id=7 most common → id=1/id=6 rarest at 5% each)
+        if ($level <= 3)      $odds = array(7=>50, 4=>30, 5=>20);
+        elseif ($level <= 6)  $odds = array(7=>40, 4=>25, 5=>20, 3=>15);
+        elseif ($level <= 9)  $odds = array(7=>32, 4=>22, 5=>20, 3=>16, 2=>8, 6=>2);
+        else                  $odds = array(7=>25, 4=>20, 5=>20, 3=>15, 2=>10, 1=>5, 6=>5);
 
         foreach ($odds as $cid => $pct):
             $icon = strtolower(str_replace(array('%',' '), array('','-'), $con_names[$cid])) . '.png';

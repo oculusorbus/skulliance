@@ -8398,12 +8398,12 @@ function processMineRewards($conn) {
 	}
 }
 
-// Rarity-based odds by factory level (id=7 most common → id=1 rarest)
+// Rarity-based odds by factory level (matches consumables DB rates at max level)
 function getFactoryOdds($factory_level) {
-	if ($factory_level <= 3)     return array(7=>50, 4=>35, 5=>15);
-	elseif ($factory_level <= 6) return array(7=>35, 4=>28, 5=>18, 3=>13, 6=>6);
-	elseif ($factory_level <= 9) return array(7=>28, 4=>22, 5=>16, 3=>14, 6=>10, 2=>10);
-	else                         return array(7=>25, 4=>20, 5=>15, 3=>14, 6=>10, 2=>10, 1=>6);
+	if ($factory_level <= 3)     return array(7=>50, 4=>30, 5=>20);
+	elseif ($factory_level <= 6) return array(7=>40, 4=>25, 5=>20, 3=>15);
+	elseif ($factory_level <= 9) return array(7=>32, 4=>22, 5=>20, 3=>16, 2=>8, 6=>2);
+	else                         return array(7=>25, 4=>20, 5=>20, 3=>15, 2=>10, 1=>5, 6=>5);
 }
 
 // Nightly: write consumable drops to realms_logs for all realms using level-based rarity rates
