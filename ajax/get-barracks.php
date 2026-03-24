@@ -11,7 +11,8 @@ updateSoldierTraining($conn, $realm_id);
 $soldiers       = getBarracksSoldiers($conn, $realm_id);
 $cap            = getDeploymentCap($conn, $realm_id);
 $barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));
-$training_hours = max(1, 11 - $barracks_level);
+$training_hours = getBarracksTrainingHours($conn, $realm_id);
+$training_days  = $training_hours > 0 ? $training_hours / 24 : 0;
 
 $loc_labels = array(1 => 'Reserve', 2 => 'Tower', 3 => 'On Raid');
 $now = time();
@@ -28,7 +29,7 @@ foreach ($soldiers as $s) {
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Training Time</span>
-        <span class="soldiers-stat-value"><?php echo $training_hours; ?>h</span>
+        <span class="soldiers-stat-value"><?php echo $training_days > 0 ? $training_days . 'd' : 'N/A'; ?></span>
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Barracks Level</span>
