@@ -596,25 +596,25 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<div class="deploy-axis">
 					<div class="deploy-axis-label">Force Size</div>
 					<div class="deploy-tier-group">
-						<button class="deploy-tier-btn" data-axis="amount" data-value="blitz">Blitz</button>
-						<button class="deploy-tier-btn" data-axis="amount" data-value="tactical">Tactical</button>
-						<button class="deploy-tier-btn" data-axis="amount" data-value="recon">Recon</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="blitz" onclick="setDeployTier('amount','blitz')">Blitz</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="tactical" onclick="setDeployTier('amount','tactical')">Tactical</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="recon" onclick="setDeployTier('amount','recon')">Recon</button>
 					</div>
 				</div>
 				<div class="deploy-axis">
 					<div class="deploy-axis-label">Weapon Priority</div>
 					<div class="deploy-tier-group">
-						<button class="deploy-tier-btn" data-axis="weapon" data-value="aggressive">Aggressive</button>
-						<button class="deploy-tier-btn" data-axis="weapon" data-value="balanced">Balanced</button>
-						<button class="deploy-tier-btn" data-axis="weapon" data-value="stealth">Stealth</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="aggressive" onclick="setDeployTier('weapon','aggressive')">Aggressive</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="balanced" onclick="setDeployTier('weapon','balanced')">Balanced</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="stealth" onclick="setDeployTier('weapon','stealth')">Stealth</button>
 					</div>
 				</div>
 				<div class="deploy-axis">
 					<div class="deploy-axis-label">Armor Priority</div>
 					<div class="deploy-tier-group">
-						<button class="deploy-tier-btn" data-axis="armor" data-value="heavy">Heavy</button>
-						<button class="deploy-tier-btn" data-axis="armor" data-value="medium">Medium</button>
-						<button class="deploy-tier-btn" data-axis="armor" data-value="light">Light</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="heavy" onclick="setDeployTier('armor','heavy')">Heavy</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="medium" onclick="setDeployTier('armor','medium')">Medium</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="light" onclick="setDeployTier('armor','light')">Light</button>
 					</div>
 				</div>
 				<div id="deploy-preview" style="font-size:0.82rem;opacity:0.65;text-align:center;min-height:1.2em;"></div>
@@ -909,16 +909,13 @@ $conn->close();
 		_updateDeployPreview();
 	}
 
-	document.addEventListener('click', function(e) {
-		var btn = e.target.closest('.deploy-tier-btn');
-		if (!btn) return;
-		var axis = btn.dataset.axis, val = btn.dataset.value;
+	function setDeployTier(axis, val) {
 		_deployConfig[axis] = val;
 		document.querySelectorAll('.deploy-tier-btn[data-axis="' + axis + '"]').forEach(function(b) {
 			b.classList.toggle('active', b.dataset.value === val);
 		});
 		_updateDeployPreview();
-	});
+	}
 
 	function _updateDeployPreview() {
 		var selected = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
