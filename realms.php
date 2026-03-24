@@ -726,6 +726,7 @@ $conn->close();
 .soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
 .soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
 .soldiers-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; margin-top:8px; }
+#tower-garrison-grid, #tower-available-grid { grid-template-columns:repeat(5,1fr); }
 .soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
 .soldier-card.soldier-ready { border-color:#00c8a0; }
