@@ -35,12 +35,7 @@ $con_names = array(
     <div class="inv-info-grid" style="margin-top:10px;">
         <?php
         $level = $info['factory_level'];
-        $odds = array();
-        // Rarity matches consumables DB rates (id=7 most common → id=1/id=6 rarest at 5% each)
-        if ($level <= 3)      $odds = array(7=>50, 4=>30, 5=>20);
-        elseif ($level <= 6)  $odds = array(7=>40, 4=>25, 5=>20, 3=>15);
-        elseif ($level <= 9)  $odds = array(7=>32, 4=>22, 5=>20, 3=>16, 2=>8, 6=>2);
-        else                  $odds = array(7=>25, 4=>20, 5=>20, 3=>15, 2=>10, 1=>5, 6=>5);
+        $odds  = getFactoryOdds($level);
 
         foreach ($odds as $cid => $pct):
             $icon = strtolower(str_replace(array('%',' '), array('','-'), $con_names[$cid])) . '.png';

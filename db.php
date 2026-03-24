@@ -8398,12 +8398,22 @@ function processMineRewards($conn) {
 	}
 }
 
-// Rarity-based odds by factory level (matches consumables DB rates at max level)
+// Factory drop odds scale linearly from DB baseline (level 1) to ±10% shift (level 10).
+// Rare items (id=1,6) gain up to +10pp; common items (id=7,4,5) lose up to -10pp/-5pp.
+// id=3 and id=2 are anchored. Total always sums to 100.
 function getFactoryOdds($factory_level) {
-	if ($factory_level <= 3)     return array(7=>50, 4=>30, 5=>20);
-	elseif ($factory_level <= 6) return array(7=>40, 4=>25, 5=>20, 3=>15);
-	elseif ($factory_level <= 9) return array(7=>32, 4=>22, 5=>20, 3=>16, 2=>8, 6=>2);
-	else                         return array(7=>25, 4=>20, 5=>20, 3=>15, 2=>10, 1=>5, 6=>5);
+	$level = max(1, min(10, intval($factory_level)));
+	$t     = ($level - 1) / 9.0; // 0.0 at level 1, 1.0 at level 10
+	$id1 = (int) round(5  + $t * 10); // 5% → 15%
+	$id6 = (int) round(5  + $t * 10); // 5% → 15%
+	$id7 = (int) round(25 - $t * 10); // 25% → 15%
+	$id4 = (int) round(20 - $t * 5);  // 20% → 15%
+	$id5 = (int) round(20 - $t * 5);  // 20% → 15%
+	$id3 = 15;
+	$id2 = 10;
+	// Absorb any rounding error into the most common item
+	$id7 += 100 - ($id1 + $id6 + $id7 + $id4 + $id5 + $id3 + $id2);
+	return array(7=>$id7, 4=>$id4, 5=>$id5, 3=>$id3, 2=>$id2, 1=>$id1, 6=>$id6);
 }
 
 // Nightly: write consumable drops to realms_logs for all realms using level-based rarity rates
