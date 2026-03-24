@@ -1184,7 +1184,13 @@ $conn->close();
 		var body = document.getElementById('location-modal-body');
 		if (gridSelector) {
 			var grid = body.querySelector(gridSelector);
-			if (grid) grid.innerHTML = _skullLoaderHTML;
+			if (grid) {
+				grid.style.display         = 'flex';
+				grid.style.alignItems      = 'center';
+				grid.style.justifyContent  = 'center';
+				grid.style.minHeight       = '160px';
+				grid.innerHTML = _skullLoaderHTML;
+			}
 		} else {
 			body.innerHTML = _skullLoaderHTML;
 		}
