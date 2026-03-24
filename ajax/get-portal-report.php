@@ -30,5 +30,9 @@ $cap           = $report['cap'];
         <span class="soldiers-stat-label">Soldiers Deployed</span>
         <span class="soldiers-stat-value"><?php echo $deployed; ?> / <?php echo $cap; ?></span>
     </div>
+    <div class="soldiers-stat">
+        <span class="soldiers-stat-label">Soldiers Per Raid</span>
+        <span class="soldiers-stat-value"><?php echo $portal_level; ?></span>
+    </div>
 </div>
 <?php $conn->close(); ?>
