@@ -1055,17 +1055,18 @@ $conn->close();
 		});
 	}
 
+	var _enlistSelectedIds = [];
+
 	function openEnlistPicker() {
-		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
-		document.getElementById('enlist-project-filter').style.display = 'none';
+		_enlistSelectedIds = [];
+		document.getElementById('enlist-picker-body').innerHTML = '<p style="text-align:center;padding:20px;opacity:0.5;">Select a project above to view eligible NFTs.</p>';
+		document.getElementById('enlist-project-filter').value  = '';
 		document.getElementById('enlist-collection-filter').style.display = 'none';
+		document.getElementById('enlist-collection-filter').value = '';
 		document.getElementById('enlist-modal-overlay').style.display = 'block';
 		document.getElementById('enlist-modal').style.display          = 'flex';
-		$.get('ajax/get-eligible-nfts.php', function(html) {
-			document.getElementById('enlist-picker-body').innerHTML = html;
-			_buildEnlistProjectFilter();
-			_updateEnlistCount();
-		});
+		_buildEnlistProjectFilter();
+		_updateEnlistCount();
 	}
 
 	function closeEnlistPicker() {
@@ -1084,16 +1085,13 @@ $conn->close();
 		sel.innerHTML = '<option value="">All Projects</option>';
 		if (coreHtml)    sel.innerHTML += '<optgroup label="Core Projects">'    + coreHtml    + '</optgroup>';
 		if (partnerHtml) sel.innerHTML += '<optgroup label="Partner Projects">' + partnerHtml + '</optgroup>';
-		sel.style.display = Object.keys(_nftProjectTree).length > 1 ? 'block' : 'none';
-		document.getElementById('enlist-collection-filter').style.display = 'none';
+		sel.style.display = Object.keys(_nftProjectTree).length > 0 ? 'block' : 'none';
 	}
 
 	function filterEnlistByProject(pid) {
-		$('#enlist-picker-body .enlist-candidate').each(function() {
-			$(this).toggle(!pid || String($(this).data('project-id')) === String(pid));
-		});
 		var colSel = document.getElementById('enlist-collection-filter');
 		colSel.innerHTML = '<option value="">All Collections</option>';
+		colSel.value = '';
 		if (pid && _nftProjectTree[pid]) {
 			var cols = _nftProjectTree[pid].collections;
 			cols.forEach(function(c) {
@@ -1103,31 +1101,45 @@ $conn->close();
 		} else {
 			colSel.style.display = 'none';
 		}
-		colSel.value = '';
+		_loadEligibleNFTs(pid, '');
 	}
 
 	function filterEnlistByCollection(cid) {
 		var pid = document.getElementById('enlist-project-filter').value;
-		$('#enlist-picker-body .enlist-candidate').each(function() {
-			var matchProject    = !pid || String($(this).data('project-id')) === String(pid);
-			var matchCollection = !cid || String($(this).data('collection-id')) === String(cid);
-			$(this).toggle(matchProject && matchCollection);
+		_loadEligibleNFTs(pid, cid);
+	}
+
+	function _loadEligibleNFTs(pid, cid) {
+		if (!pid) {
+			document.getElementById('enlist-picker-body').innerHTML = '<p style="text-align:center;padding:20px;opacity:0.5;">Select a project above to view eligible NFTs.</p>';
+			_updateEnlistCount();
+			return;
+		}
+		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		$.get('ajax/get-eligible-nfts.php', {project_id: pid, collection_id: cid}, function(html) {
+			document.getElementById('enlist-picker-body').innerHTML = html;
+			// re-apply existing selections
+			$('#enlist-picker-body .enlist-candidate').each(function() {
+				if (_enlistSelectedIds.indexOf(parseInt($(this).data('nft-id'))) !== -1) $(this).addClass('selected');
+			});
+			_updateEnlistCount();
 		});
 	}
 
 	function toggleEnlistSelect(el) {
-		$(el).toggleClass('selected');
+		var id = parseInt($(el).data('nft-id'));
+		var idx = _enlistSelectedIds.indexOf(id);
+		if (idx === -1) { _enlistSelectedIds.push(id); $(el).addClass('selected'); }
+		else            { _enlistSelectedIds.splice(idx, 1); $(el).removeClass('selected'); }
 		_updateEnlistCount();
 	}
 
 	function _updateEnlistCount() {
-		var count = $('#enlist-picker-body .enlist-candidate.selected').length;
-		document.getElementById('enlist-selected-count').textContent = count + ' selected';
+		document.getElementById('enlist-selected-count').textContent = _enlistSelectedIds.length + ' selected';
 	}
 
 	function confirmEnlist() {
-		var ids = [];
-		$('#enlist-picker-body .enlist-candidate.selected').each(function() { ids.push($(this).data('nft-id')); });
+		var ids = _enlistSelectedIds;
 		if (ids.length === 0) { openNotify('Select at least one NFT to enlist.'); return; }
 		$.post('ajax/enlist-soldier.php', {nft_ids: ids}, function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }

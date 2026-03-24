@@ -7964,19 +7964,24 @@ function getUserNFTProjectTree($conn) {
 }
 
 // Get eligible NFTs for enlistment: owned by user, not already a soldier, not on mission
-function getEligibleEnlistNFTs($conn, $realm_id) {
+function getEligibleEnlistNFTs($conn, $realm_id, $project_id=0, $collection_id=0) {
 	if (!isset($_SESSION['userData']['user_id'])) return array();
-	$user_id = intval($_SESSION['userData']['user_id']);
+	$user_id       = intval($_SESSION['userData']['user_id']);
+	$project_id    = intval($project_id);
+	$collection_id = intval($collection_id);
+	$where = "nfts.user_id = $user_id
+	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL)
+	          AND nfts.id NOT IN (SELECT missions_nfts.nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE missions.status = 0)";
+	if ($project_id)    $where .= " AND projects.id = $project_id";
+	if ($collection_id) $where .= " AND nfts.collection_id = $collection_id";
 	$sql = "SELECT nfts.id AS nft_id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
 	               collections.name AS collection_name,
 	               projects.id AS project_id, projects.name AS project_name
 	        FROM nfts
 	        INNER JOIN collections ON collections.id = nfts.collection_id
 	        INNER JOIN projects ON projects.id = collections.project_id
-	        WHERE nfts.user_id = $user_id
-	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL)
-	          AND nfts.id NOT IN (SELECT missions_nfts.nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE missions.status = 0)
-	        ORDER BY projects.id ASC, collections.name ASC, nfts.name ASC";
+	        WHERE $where
+	        ORDER BY collections.name ASC, nfts.name ASC";
 	$result = $conn->query($sql);
 	$nfts = array();
 	while ($row = $result->fetch_assoc()) $nfts[] = $row;

@@ -6,7 +6,9 @@ if (!isset($_SESSION['userData']['user_id'])) exit;
 $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
-$nfts = getEligibleEnlistNFTs($conn, $realm_id);
+$project_id    = isset($_GET['project_id'])    ? intval($_GET['project_id'])    : 0;
+$collection_id = isset($_GET['collection_id']) ? intval($_GET['collection_id']) : 0;
+$nfts = getEligibleEnlistNFTs($conn, $realm_id, $project_id, $collection_id);
 ?>
 <div class="soldiers-grid" id="enlist-picker-grid">
 <?php foreach ($nfts as $n):
