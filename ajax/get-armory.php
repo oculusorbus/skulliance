@@ -47,6 +47,12 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 
 <?php include 'realm-log-panel.php'; ?>
 
+<?php
+$weapons = array_filter($inventory, fn($i) => $i['type'] === 'weapon');
+$armors  = array_filter($inventory, fn($i) => $i['type'] === 'armor');
+usort($weapons, fn($a,$b) => $b['weapon_level'] - $a['weapon_level']);
+usort($armors,  fn($a,$b) => $b['armor_level']  - $a['armor_level']);
+?>
 <?php if (!empty($inventory)): ?>
 <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between;">
     <strong style="font-size:0.85rem;">Gear Inventory</strong>
@@ -54,18 +60,26 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     <button class="small-button" onclick="autoEquipGear()">Auto-Equip All</button>
     <?php endif; ?>
 </div>
-<div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
-    <?php foreach ($inventory as $item):
-        $is_weapon = $item['type'] === 'weapon';
-        $name      = $is_weapon ? $item['weapon_name'] : $item['armor_name'];
-        $level     = $is_weapon ? $item['weapon_level'] : $item['armor_level'];
-        $icon_file = strtolower(str_replace(' ', '-', $name)) . '.png';
-    ?>
-    <div style="display:flex;align-items:center;gap:8px;font-size:0.82rem;background:rgba(255,255,255,0.04);border-radius:6px;padding:6px 8px;">
-        <img class="icon" src="icons/<?php echo $icon_file; ?>" onerror="this.src='icons/skull.png'" style="width:22px;height:22px;" />
-        <span style="flex:1;">Lv<?php echo $level; ?> <?php echo htmlspecialchars($name); ?></span>
-        <span style="opacity:0.5;">×<?php echo $item['quantity']; ?></span>
+<div style="margin-top:8px;display:flex;gap:12px;">
+    <?php foreach (array('Weapons' => $weapons, 'Armor' => $armors) as $label => $group): ?>
+    <?php if (!empty($group)): ?>
+    <div style="flex:1;min-width:0;">
+        <div style="font-size:0.72rem;opacity:0.5;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;"><?php echo $label; ?></div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+        <?php foreach ($group as $item):
+            $name      = $label === 'Weapons' ? $item['weapon_name'] : $item['armor_name'];
+            $level     = $label === 'Weapons' ? $item['weapon_level'] : $item['armor_level'];
+            $icon_file = strtolower(str_replace(' ', '-', $name)) . '.png';
+        ?>
+        <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;background:rgba(255,255,255,0.04);border-radius:6px;padding:5px 8px;">
+            <img class="icon" src="icons/<?php echo $icon_file; ?>" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+            <span style="flex:1;">Lv<?php echo $level; ?> <?php echo htmlspecialchars($name); ?></span>
+            <span style="opacity:0.5;">×<?php echo $item['quantity']; ?></span>
+        </div>
+        <?php endforeach; ?>
+        </div>
     </div>
+    <?php endif; ?>
     <?php endforeach; ?>
 </div>
 <?php else: ?>
