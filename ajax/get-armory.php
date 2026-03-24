@@ -38,6 +38,33 @@ $logs          = getUnclaimedRealmLogs($conn, $realm_id, $log_types);
     The Armory generates <strong><?php echo $drops; ?> gear drop<?php echo $drops != 1 ? 's' : ''; ?> per day</strong>, distributed nightly
     into your inventory. Equip gear to your soldiers from the inventory below.
 </p>
+<?php if ($armory_level > 0):
+    if ($armory_level <= 2)      $tier_odds = array(1=>50, 2=>35, 3=>15);
+    elseif ($armory_level <= 4)  $tier_odds = array(1=>35, 2=>25, 3=>20, 4=>12, 5=>8);
+    elseif ($armory_level <= 6)  $tier_odds = array(1=>20, 2=>18, 3=>17, 4=>13, 5=>11, 6=>9, 7=>7, 8=>5);
+    elseif ($armory_level <= 8)  $tier_odds = array(1=>12, 2=>14, 3=>14, 4=>13, 5=>11, 6=>10, 7=>9, 8=>8, 9=>5, 10=>4);
+    else                         $tier_odds = array(1=>8,  2=>10, 3=>12, 4=>12, 5=>12, 6=>11, 7=>10, 8=>9, 9=>9, 10=>7);
+    // Build tier → name maps
+    $weapons_by_tier = array(); $armor_by_tier = array();
+    $wr = $conn->query("SELECT level, name FROM weapons ORDER BY level ASC");
+    while ($row = $wr->fetch_assoc()) $weapons_by_tier[intval($row['level'])] = $row['name'];
+    $ar = $conn->query("SELECT level, name FROM armor ORDER BY level ASC");
+    while ($row = $ar->fetch_assoc()) $armor_by_tier[intval($row['level'])] = $row['name'];
+?>
+<div style="margin-top:14px;">
+    <strong style="font-size:0.85rem;">Drop Rates (Level <?php echo $armory_level; ?>)</strong>
+    <table class="soldiers-table" style="width:100%;font-size:0.8rem;margin-top:8px;">
+        <tr><th>~%</th><th>Weapon</th><th>Armor</th></tr>
+        <?php foreach ($tier_odds as $tier => $pct): ?>
+        <tr>
+            <td><?php echo $pct; ?>%</td>
+            <td><?php echo htmlspecialchars($weapons_by_tier[$tier] ?? 'Lv'.$tier); ?></td>
+            <td><?php echo htmlspecialchars($armor_by_tier[$tier]  ?? 'Lv'.$tier); ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+<?php endif; ?>
 
 <?php if (!empty($inventory)): ?>
 <div style="margin-top:14px;">
