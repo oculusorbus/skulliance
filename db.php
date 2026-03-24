@@ -8354,8 +8354,9 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 function autoEquipReserve($conn, $realm_id) {
 	$realm_id = intval($realm_id);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
-	if (!$r || $r->num_rows == 0) return;
+	if (!$r || $r->num_rows == 0) return 0;
 	$user_id = intval($r->fetch_assoc()['user_id']);
+	$equipped = 0;
 	foreach (array('weapon', 'armor') as $type) {
 		$col   = $type === 'weapon' ? 'weapon_id' : 'armor_id';
 		$table = $type === 'weapon' ? 'weapons' : 'armor';
@@ -8369,12 +8370,13 @@ function autoEquipReserve($conn, $realm_id) {
 			$gear_level = intval($gear['level']);
 			// Equip as many copies as available to trained soldiers that would benefit
 			while (getCurrentGear($conn, $user_id, $type, $gear_id) > 0) {
-				$target = $conn->query("SELECT soldiers.id AS soldier_id FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.trained = 1 AND soldiers.dead IS NULL AND soldiers.active = 1 AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC LIMIT 1");
+				$target = $conn->query("SELECT soldiers.id AS soldier_id FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.trained = 1 AND soldiers.dead IS NULL AND soldiers.active = 1 AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC, soldiers.date_created ASC LIMIT 1");
 				if (!$target || $target->num_rows == 0) break;
-				equipGear($conn, intval($target->fetch_assoc()['soldier_id']), $realm_id, $gear_id, $type === 'weapon');
+				if (equipGear($conn, intval($target->fetch_assoc()['soldier_id']), $realm_id, $gear_id, $type === 'weapon')) $equipped++;
 			}
 		}
 	}
+	return $equipped;
 }
 
 // ── REALM LOG ──────────────────────────────────────────────

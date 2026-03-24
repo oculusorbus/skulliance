@@ -79,7 +79,7 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     <div id="armory-soldiers-grid" class="soldiers-grid" style="margin-top:8px;grid-template-columns:repeat(4,1fr);">
     <?php foreach ($soldiers_page as $s):
         $img_src   = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
-        $loc_map   = array(1=>'Reserve', 2=>'Tower', 3=>'Raid');
+        $loc_map   = array(1=>'Active Duty', 2=>'Tower', 3=>'On Raid');
         $loc_label = $loc_map[intval($s['location'])] ?? 'Reserve';
     ?>
     <div class="soldier-card">

@@ -1567,8 +1567,8 @@ $conn->close();
 	function autoEquipGear() {
 		$.post('ajax/auto-equip.php', {}, function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success) { openNotify('Gear auto-equipped!'); refreshLocationModal(); }
-			else { openNotify('Nothing to equip.'); }
+			if (r.success) { openNotify(r.equipped + ' gear piece' + (r.equipped != 1 ? 's' : '') + ' equipped!'); refreshLocationModal(); }
+			else { openNotify('Nothing new to equip.'); }
 		});
 	}
 
