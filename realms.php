@@ -780,8 +780,6 @@ $conn->close();
 .gear-compact-empty { font-size:0.65rem; opacity:0.3; }
 /* Armory soldier grid */
 .armory-soldiers-grid { grid-template-columns:repeat(4,1fr); }
-/* Tower grid */
-.soldiers-grid.tower-grid { grid-template-columns:repeat(3,1fr) !important; }
 /* Tower header and action rows */
 .tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
 .tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
