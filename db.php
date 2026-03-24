@@ -8393,23 +8393,35 @@ function processMineRewards($conn) {
 	}
 }
 
-// Nightly: write consumable drops to realms_logs for all realms using mission rarity rates
+// Rarity-based odds by factory level (id=7 most common → id=1 rarest)
+function getFactoryOdds($factory_level) {
+	if ($factory_level <= 3)     return array(7=>50, 4=>35, 5=>15);
+	elseif ($factory_level <= 6) return array(7=>35, 4=>28, 5=>18, 3=>13, 6=>6);
+	elseif ($factory_level <= 9) return array(7=>28, 4=>22, 5=>16, 3=>14, 6=>10, 2=>10);
+	else                         return array(7=>25, 4=>20, 5=>15, 3=>14, 6=>10, 2=>10, 1=>6);
+}
+
+// Nightly: write consumable drops to realms_logs for all realms using level-based rarity rates
 function processFactoryDrops($conn) {
-	$consumable_ranges = getConsumableRanges($conn);
 	$result = $conn->query("SELECT id FROM realms");
 	while ($row = $result->fetch_assoc()) {
 		$realm_id      = intval($row['id']);
 		$factory_level = intval(getRealmLocationLevel($conn, $realm_id, 5));
 		if ($factory_level == 0) continue;
+		$odds   = getFactoryOdds($factory_level);
+		$ranges = array();
+		$cursor = 1;
+		foreach ($odds as $cid => $pct) {
+			$ranges[$cid] = array($cursor, $cursor + $pct - 1);
+			$cursor += $pct;
+		}
 		$drops = array();
 		for ($i = 0; $i < $factory_level; $i++) {
 			$random = rand(1, 100);
-			foreach ($consumable_ranges as $id => $range) {
-				foreach ($range as $start => $end) {
-					if ($random >= $start && $random <= $end) {
-						$drops[$id] = ($drops[$id] ?? 0) + 1;
-						break 2;
-					}
+			foreach ($ranges as $cid => $range) {
+				if ($random >= $range[0] && $random <= $range[1]) {
+					$drops[$cid] = ($drops[$cid] ?? 0) + 1;
+					break;
 				}
 			}
 		}

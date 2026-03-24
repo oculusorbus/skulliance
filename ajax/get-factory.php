@@ -36,10 +36,11 @@ $con_names = array(
         <?php
         $level = $info['factory_level'];
         $odds = array();
-        if ($level <= 3)      $odds = array(4=>50, 3=>35, 2=>15);
-        elseif ($level <= 6)  $odds = array(4=>30, 3=>28, 2=>20, 5=>12, 1=>10);
-        elseif ($level <= 9)  $odds = array(4=>18, 3=>20, 2=>17, 5=>13, 1=>12, 7=>11, 6=>9);
-        else                  $odds = array(4=>12, 3=>16, 2=>16, 5=>13, 1=>13, 7=>13, 6=>17);
+        // Rarity: id=7 (most common) → id=4 → id=5 → id=3 → id=6 → id=2 → id=1 (rarest)
+        if ($level <= 3)      $odds = array(7=>50, 4=>35, 5=>15);
+        elseif ($level <= 6)  $odds = array(7=>35, 4=>28, 5=>18, 3=>13, 6=>6);
+        elseif ($level <= 9)  $odds = array(7=>28, 4=>22, 5=>16, 3=>14, 6=>10, 2=>10);
+        else                  $odds = array(7=>25, 4=>20, 5=>15, 3=>14, 6=>10, 2=>10, 1=>6);
 
         foreach ($odds as $cid => $pct):
             $icon = strtolower(str_replace(array('%',' '), array('','-'), $con_names[$cid])) . '.png';
