@@ -1133,8 +1133,9 @@ $conn->close();
 	};
 
 	/* ── LOCATION MODALS ─────────────────────────────────── */
-	var _locModalTitles = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
+	var _locModalTitles    = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
+	var _locModalIcons     = {1:'Portal',2:'Armory',3:'Tower',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _barracksPage = 1;
 	var _armoryPage   = 1;
 
@@ -1142,7 +1143,9 @@ $conn->close();
 		var title    = _locModalTitles[loc_id]    || 'Location';
 		var endpoint = _locModalEndpoints[loc_id] || null;
 		if (!endpoint) return;
-		document.getElementById('location-modal-title').textContent = title;
+		var iconName = _locModalIcons[loc_id];
+		var iconHtml = iconName ? '<img src="icons/locations/' + iconName + '.png" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;opacity:0.9;" onerror="this.style.display=\'none\'">' : '';
+		document.getElementById('location-modal-title').innerHTML = iconHtml + title;
 		var _soldierModals = [2, 3, 4, 6];
 		document.getElementById('location-modal-body').innerHTML = _soldierModals.indexOf(loc_id) !== -1 ? _skullLoaderHTML : '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
 		document.getElementById('location-modal-footer').style.display = 'flex';
