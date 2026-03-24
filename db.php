@@ -8083,7 +8083,10 @@ function getArmoryInfo($conn, $realm_id) {
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 	$drops        = $armory_level > 0 ? max(1, ceil($armory_level / 3)) : 0;
 	$soldiers     = getBarracksSoldiers($conn, $realm_id);
-	return array('armory_level' => $armory_level, 'drops_per_night' => $drops, 'soldiers' => $soldiers);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	$inventory    = array();
+	if ($r && $r->num_rows > 0) $inventory = getGearInventory($conn, intval($r->fetch_assoc()['user_id']));
+	return array('armory_level' => $armory_level, 'drops_per_night' => $drops, 'soldiers' => $soldiers, 'inventory' => $inventory);
 }
 
 // Roll a weapon/armor tier (1-10) based on armory level
@@ -8133,19 +8136,83 @@ function rollArmoryTier($level) {
 	}
 }
 
-// Assign a specific weapon or armor to the least-equipped trained soldier in a realm
-function assignGearById($conn, $realm_id, $gear_id, $is_weapon) {
-	$realm_id = intval($realm_id);
-	$gear_id  = intval($gear_id);
-	if ($is_weapon) {
-		$target = $conn->query("SELECT soldiers.id FROM soldiers LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL AND soldiers.trained = 1 ORDER BY COALESCE(weapons.level, 0) ASC LIMIT 1");
-		if (!$target || $target->num_rows == 0) return;
-		$conn->query("UPDATE soldiers SET weapon_id = $gear_id WHERE id = ".intval($target->fetch_assoc()['id'])." LIMIT 1");
+// ── GEAR INVENTORY ─────────────────────────────────────────
+function getCurrentGear($conn, $user_id, $type, $item_id) {
+	$user_id = intval($user_id);
+	$item_id = intval($item_id);
+	$type    = mysqli_real_escape_string($conn, $type);
+	$result  = $conn->query("SELECT quantity FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
+	if ($result && $result->num_rows > 0) return intval($result->fetch_assoc()['quantity']);
+	return 0;
+}
+
+function updateGear($conn, $user_id, $type, $item_id, $delta) {
+	$user_id = intval($user_id);
+	$item_id = intval($item_id);
+	$delta   = intval($delta);
+	$type    = mysqli_real_escape_string($conn, $type);
+	$current = getCurrentGear($conn, $user_id, $type, $item_id);
+	if ($current === 0 && $delta > 0) {
+		$conn->query("INSERT INTO gear (user_id, type, item_id, quantity) VALUES ($user_id, '$type', $item_id, $delta)");
 	} else {
-		$target = $conn->query("SELECT soldiers.id FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL AND soldiers.trained = 1 ORDER BY COALESCE(armor.level, 0) ASC LIMIT 1");
-		if (!$target || $target->num_rows == 0) return;
-		$conn->query("UPDATE soldiers SET armor_id = $gear_id WHERE id = ".intval($target->fetch_assoc()['id'])." LIMIT 1");
+		$new_qty = max(0, $current + $delta);
+		$conn->query("UPDATE gear SET quantity = $new_qty WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
 	}
+}
+
+function getGearInventory($conn, $user_id) {
+	$user_id = intval($user_id);
+	$result  = $conn->query("
+		SELECT g.type, g.item_id, g.quantity,
+		       w.name AS weapon_name, w.level AS weapon_level,
+		       a.name AS armor_name, a.level AS armor_level
+		FROM gear g
+		LEFT JOIN weapons w ON g.type = 'weapon' AND w.id = g.item_id
+		LEFT JOIN armor a ON g.type = 'armor' AND a.id = g.item_id
+		WHERE g.user_id = $user_id AND g.quantity > 0
+		ORDER BY g.type ASC, COALESCE(w.level, a.level) DESC
+	");
+	$inventory = array();
+	if ($result) while ($row = $result->fetch_assoc()) $inventory[] = $row;
+	return $inventory;
+}
+
+// Equip a gear item from inventory to a soldier; returns current gear to inventory
+function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
+	$soldier_id = intval($soldier_id);
+	$realm_id   = intval($realm_id);
+	$item_id    = intval($item_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return false;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	$type    = $is_weapon ? 'weapon' : 'armor';
+	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
+	if (getCurrentGear($conn, $user_id, $type, $item_id) < 1) return false;
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	if (!$s || $s->num_rows == 0) return false;
+	$current_gear_id = intval($s->fetch_assoc()[$col]);
+	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
+	updateGear($conn, $user_id, $type, $item_id, -1);
+	$conn->query("UPDATE soldiers SET $col = $item_id WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	return true;
+}
+
+// Unequip gear from a soldier and return it to inventory
+function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
+	$soldier_id = intval($soldier_id);
+	$realm_id   = intval($realm_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return false;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	$type    = $is_weapon ? 'weapon' : 'armor';
+	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	if (!$s || $s->num_rows == 0) return false;
+	$gear_id = intval($s->fetch_assoc()[$col]);
+	if ($gear_id == 0) return false;
+	updateGear($conn, $user_id, $type, $gear_id, 1);
+	$conn->query("UPDATE soldiers SET $col = NULL WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	return true;
 }
 
 // ── REALM LOG ──────────────────────────────────────────────
@@ -8249,10 +8316,10 @@ function claimRealmLogs($conn, $realm_id) {
 				updateAmount($conn, $user_id, $item_id, $qty);
 				break;
 			case 'weapon':
-				assignGearById($conn, $realm_id, $item_id, true);
+				updateGear($conn, $user_id, 'weapon', $item_id, $qty);
 				break;
 			case 'armor':
-				assignGearById($conn, $realm_id, $item_id, false);
+				updateGear($conn, $user_id, 'armor', $item_id, $qty);
 				break;
 		}
 	}

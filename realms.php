@@ -1115,6 +1115,24 @@ $conn->close();
 		$.post('ajax/tower-action.php', {action:'armor', soldier_id:soldier_id, value:armor_id}, function() { refreshLocationModal(); });
 	}
 
+	/* ── GEAR EQUIP / UNEQUIP ─────────────────────────────── */
+	function equipGearItem(type, item_id) {
+		var sel = document.getElementById('equip-target-' + type + '-' + item_id);
+		var soldier_id = sel ? sel.value : '';
+		if (!soldier_id) { openNotify('Select a soldier first.'); return; }
+		$.post('ajax/gear-action.php', {action:'equip', soldier_id:soldier_id, item_id:item_id, type:type}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) { refreshLocationModal(); } else { openNotify('Could not equip gear.'); }
+		});
+	}
+
+	function unequipGearItem(soldier_id, type) {
+		$.post('ajax/gear-action.php', {action:'unequip', soldier_id:soldier_id, type:type}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) { refreshLocationModal(); } else { openNotify('Could not unequip gear.'); }
+		});
+	}
+
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
 	function claimRealmLogs() {
 		$.get('ajax/claim-realm-logs.php', function(resp) {
