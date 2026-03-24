@@ -780,15 +780,15 @@ $conn->close();
 .gear-compact-empty { font-size:0.65rem; opacity:0.3; }
 /* Armory soldier grid */
 .armory-soldiers-grid { grid-template-columns:repeat(4,1fr); }
-/* Tower grid — explicit column counts like armory */
-.tower-grid { grid-template-columns:repeat(3,1fr); }
+/* Tower grid */
+.soldiers-grid.tower-grid { grid-template-columns:repeat(3,1fr) !important; }
 /* Tower header and action rows */
 .tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
 .tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .tower-deploy-row { margin-top:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
 @media (max-width:500px) {
     .armory-soldiers-grid { grid-template-columns:repeat(3,1fr); }
-    .tower-grid { grid-template-columns:repeat(3,1fr); }
+    .soldiers-grid.tower-grid { grid-template-columns:repeat(3,1fr) !important; }
     .gear-inventory-row { flex-direction:column !important; }
     .soldiers-stat { padding:7px 10px; min-width:0; }
     .soldiers-stat-value { font-size:0.95rem; }
