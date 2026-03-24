@@ -780,11 +780,19 @@ $conn->close();
 .gear-compact-empty { font-size:0.65rem; opacity:0.3; }
 /* Armory soldier grid */
 .armory-soldiers-grid { grid-template-columns:repeat(4,1fr); }
+/* Tower grid — tighter min so cards fit on narrow screens */
+.tower-grid { grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); }
+/* Tower header and action rows */
+.tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.tower-deploy-row { margin-top:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
 @media (max-width:500px) {
     .armory-soldiers-grid { grid-template-columns:repeat(3,1fr); }
     .gear-inventory-row { flex-direction:column !important; }
     .soldiers-stat { padding:7px 10px; }
     .soldiers-stat-value { font-size:0.95rem; }
+    .tower-garrison-header { flex-direction:column; align-items:flex-start; }
+    .tower-deploy-row { justify-content:flex-end; }
 }
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }

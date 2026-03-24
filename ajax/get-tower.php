@@ -47,7 +47,7 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
     <button class="small-button" onclick="removeAllFromTower()">Remove All</button>
 </div>
 <?php endif; ?>
-<div class="soldiers-grid" id="tower-garrison-grid">
+<div class="soldiers-grid tower-grid" id="tower-garrison-grid">
 <?php foreach ($garrison as $s):
     $img_src = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
 ?>
@@ -81,14 +81,14 @@ $slots_remaining = 10 - count($garrison);
 if ($slots_remaining > 0 && !empty($available_for_tower)):
 ?>
 <div style="margin-top:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <div class="tower-garrison-header">
         <strong style="font-size:0.85rem;">Add to Garrison:</strong>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="tower-garrison-controls">
             <span id="tower-select-count" style="font-size:0.8rem;opacity:0.65;">0 of <?php echo $slots_remaining; ?> slots selected</span>
             <button id="tower-select-all-btn" class="small-button" onclick="selectAllTower()">Select All</button>
         </div>
     </div>
-    <div class="soldiers-grid" id="tower-available-grid" data-max="<?php echo $slots_remaining; ?>" style="margin-top:0;">
+    <div class="soldiers-grid tower-grid" id="tower-available-grid" data-max="<?php echo $slots_remaining; ?>" style="margin-top:0;">
     <?php foreach ($available_page as $s):
         $img_src = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
     ?>
@@ -128,7 +128,7 @@ if ($slots_remaining > 0 && !empty($available_for_tower)):
         <?php endif; ?>
     </div>
     <?php endif; ?>
-    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+    <div class="tower-deploy-row">
         <button id="tower-clear-all-btn" class="small-button soldier-discharge-btn" onclick="clearAllTower()" style="display:none;">Clear All</button>
         <button class="button" onclick="deployToTower()">Deploy to Tower</button>
     </div>
