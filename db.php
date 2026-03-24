@@ -6154,7 +6154,8 @@ function getRealms($conn, $sort, $group){
 							$_cb_mode      = $_has_saved ? 'saved' : 'default';
 							$_cb_ids       = $_has_saved ? implode(',', array_map('intval', $_saved_config)) : '';
 							$output[$key] .= "<div id='raid-con-row-".$row['realm_id']."' class='raid-con-row'>";
-							$output[$key] .= "<span id='raid-all-items-".$row['realm_id']."' data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."'></span>";
+							$_cb_label = $_has_saved ? 'Saved Config' : 'Default Config';
+							$output[$key] .= "<span id='raid-all-items-".$row['realm_id']."' class='raid-config-label' data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."'>".$_cb_label."</span>";
 							$output[$key] .= "<span class='raid-gear-icon' onclick='openRaidConsumablesModal(".$row['realm_id'].", ".$duration.")' title='Customize consumables'>&#9881;</span>";
 							$output[$key] .= "</div>";
 							$output[$key] .= "<input type='button' id='raid-btn-".$row['realm_id']."' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";

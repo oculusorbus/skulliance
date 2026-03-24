@@ -1136,10 +1136,9 @@ function _renderRaidConsumablesModal(consumables){
 		html += '<div class="raid-con-item'+(has?'':' unavailable')+'">';
 		html += '<label>';
 		var allEl = document.getElementById('raid-all-items-'+_raidModalDefenseId);
-		var allChecked = allEl ? allEl.checked : false;
-		var allMode = allEl ? (allEl.dataset.mode || 'all') : 'all';
+		var allMode = allEl ? (allEl.dataset.mode || 'default') : 'default';
 		var savedIds = (allEl && allEl.dataset.savedIds) ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
-		var itemChecked = has && allChecked && (allMode === 'saved' ? savedIds.indexOf(c.id) !== -1 : _defaultConIds.indexOf(c.id) !== -1);
+		var itemChecked = has && (allMode === 'saved' ? savedIds.indexOf(c.id) !== -1 : _defaultConIds.indexOf(c.id) !== -1);
 		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?(itemChecked?' checked':''):' disabled')+'>';
 		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src=\'icons/skull.png\'" title="'+c.name+'"/>';
 		html += '<span class="raid-con-name">'+c.name+'</span>';
@@ -1190,9 +1189,11 @@ function closeRaidConsumablesModal(){
 function _updateAllRaidConfigCheckboxes(savedIds){
 	var savedIdsStr = savedIds.join(',');
 	var hasSaved = savedIds.length > 0;
+	var label = hasSaved ? 'Saved Config' : 'Default Config';
 	document.querySelectorAll('[id^="raid-all-items-"]').forEach(function(el){
 		el.dataset.mode     = hasSaved ? 'saved' : 'default';
 		el.dataset.savedIds = savedIdsStr;
+		el.textContent      = label;
 	});
 }
 

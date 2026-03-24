@@ -2366,6 +2366,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     transition: color 0.15s;
 }
 .raid-gear-icon:hover { color: #00c8a0; }
+.raid-config-label { font-size: 0.8rem; color: #7a9eb0; }
 
 /* Raid consumables modal grid */
 .raid-con-item {
