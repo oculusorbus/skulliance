@@ -37,7 +37,7 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Defense Bonus</span>
-        <span class="soldiers-stat-value">+<?php echo $tower_level; ?>%</span>
+        <span class="soldiers-stat-value">+<?php echo min(count($garrison), 10); ?>%</span>
     </div>
 </div>
 <?php if (!empty($garrison)): ?>
