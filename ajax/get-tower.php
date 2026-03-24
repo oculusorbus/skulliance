@@ -11,8 +11,9 @@ $garrison    = getTowerGarrison($conn, $realm_id);
 
 // Reserve soldiers available to assign to tower, sorted by combined gear level desc
 $barracks_soldiers = getBarracksSoldiers($conn, $realm_id);
-$available_for_tower = array_values(array_filter($barracks_soldiers, function($s) {
-    return intval($s['location']) == 1 && intval($s['trained']) == 1;
+$reserved_ids = getReservedSoldierIds($conn, $realm_id);
+$available_for_tower = array_values(array_filter($barracks_soldiers, function($s) use ($reserved_ids) {
+    return intval($s['location']) == 1 && intval($s['trained']) == 1 && !in_array(intval($s['soldier_id']), $reserved_ids);
 }));
 usort($available_for_tower, function($a, $b) {
     $a_score = intval($a['weapon_level']) + intval($a['armor_level']);

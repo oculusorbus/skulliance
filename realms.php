@@ -737,6 +737,7 @@ $conn->close();
 .soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
 .soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+.soldier-status.status-reserved { background:rgba(180,100,255,0.15); color:#b464ff; }
 .soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
 .partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
 .soldier-gear-row { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:4px; }

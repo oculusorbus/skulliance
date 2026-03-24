@@ -14,7 +14,8 @@ $barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));
 $training_hours = getBarracksTrainingHours($conn, $realm_id);
 $training_days  = $training_hours > 0 ? $training_hours / 24 : 0;
 
-$loc_labels = array(1 => 'Reserve', 2 => 'Tower', 3 => 'On Raid');
+$reserved_ids = getReservedSoldierIds($conn, $realm_id);
+$loc_labels = array(1 => 'Active Duty', 2 => 'Tower', 3 => 'On Raid');
 $now = time();
 
 $slot_cost_total = 0;
@@ -30,7 +31,7 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
-        <span class="soldiers-stat-label">Deployment Slots Used</span>
+        <span class="soldiers-stat-label">Enlistment Slots Used</span>
         <span class="soldiers-stat-value"><?php echo $slot_cost_total; ?> / <?php echo $cap; ?></span>
     </div>
     <div class="soldiers-stat">
@@ -52,9 +53,15 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     $ready_at   = strtotime($s['ready_at']);
     $seconds_left = $ready_at - $now;
 
+    $is_reserved = in_array($s['soldier_id'], $reserved_ids);
     if ($trained) {
-        $status_label = $loc_labels[$location] ?? 'Reserve';
-        $status_class = $location == 1 ? 'status-ready' : 'status-deployed';
+        if ($is_reserved) {
+            $status_label = 'Reserved';
+            $status_class = 'status-reserved';
+        } else {
+            $status_label = $loc_labels[$location] ?? 'Active Duty';
+            $status_class = $location == 1 ? 'status-ready' : 'status-deployed';
+        }
     } else {
         $status_label = 'Training';
         $status_class = 'status-training';
@@ -97,6 +104,6 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
 <?php endif; ?>
 <div class="raid-modal-footer" style="margin-top:16px;">
     <button class="small-button" onclick="openEnlistPicker()">+ Enlist Soldiers</button>
-    <button class="small-button" onclick="autoFillBarracks()">Auto-Fill</button>
+    <button class="small-button" onclick="autoFillBarracks()">Auto-Enlist</button>
 </div>
 <?php $conn->close(); ?>

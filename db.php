@@ -7856,6 +7856,41 @@ function getTotalSlotCost($conn, $realm_id) {
 	return $total;
 }
 
+// Returns soldier IDs that are over the deployment cap (reserved status)
+// Priority: partner NFTs reserved first, then lowest gear score, then oldest
+function getReservedSoldierIds($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$cap = getDeploymentCap($conn, $realm_id);
+	$sql = "SELECT soldiers.id AS soldier_id,
+	               projects.id AS project_id,
+	               COALESCE(weapons.level,0) + COALESCE(armor.level,0) AS gear_score
+	        FROM soldiers
+	        INNER JOIN nfts ON nfts.id = soldiers.nft_id
+	        INNER JOIN collections ON collections.id = nfts.collection_id
+	        INNER JOIN projects ON projects.id = collections.project_id
+	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
+	        LEFT JOIN armor ON armor.id = soldiers.armor_id
+	        WHERE soldiers.realm_id = $realm_id
+	          AND soldiers.dead IS NULL
+	          AND soldiers.active = 1
+	        ORDER BY (projects.id > 7 AND projects.id != 15) ASC,
+	                 gear_score DESC,
+	                 soldiers.date_created ASC";
+	$result = $conn->query($sql);
+	$reserved_ids = array();
+	$used = 0;
+	while ($row = $result->fetch_assoc()) {
+		$is_partner = (intval($row['project_id']) > 7 && intval($row['project_id']) != 15);
+		$cost = $is_partner ? 2 : 1;
+		if ($used + $cost <= $cap) {
+			$used += $cost;
+		} else {
+			$reserved_ids[] = intval($row['soldier_id']);
+		}
+	}
+	return $reserved_ids;
+}
+
 // ── PORTAL ─────────────────────────────────────────────────
 function getPortalReport($conn, $realm_id) {
 	$realm_id = intval($realm_id);
@@ -8104,6 +8139,9 @@ function assignToTower($conn, $soldier_id, $realm_id) {
 	$realm_id   = intval($realm_id);
 	// Max 10 in tower
 	if (count(getTowerGarrison($conn, $realm_id)) >= 10) return false;
+	// Reserved soldiers may not support tower
+	$reserved = getReservedSoldierIds($conn, $realm_id);
+	if (in_array($soldier_id, $reserved)) return false;
 	// Must be trained, in reserve, and alive
 	$conn->query("UPDATE soldiers SET location = 2 WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND trained = 1 AND dead IS NULL LIMIT 1");
 	return true;
@@ -8446,6 +8484,8 @@ function claimRealmLogs($conn, $realm_id, $types = array()) {
 // Get trained, alive, reserve soldiers available for a new raid
 function getAvailableRaiders($conn, $realm_id) {
 	$realm_id = intval($realm_id);
+	$reserved = getReservedSoldierIds($conn, $realm_id);
+	$exclude  = !empty($reserved) ? 'AND soldiers.id NOT IN (' . implode(',', $reserved) . ')' : '';
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.weapon_id, soldiers.armor_id,
 	               soldiers.date_created,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id,
@@ -8461,6 +8501,7 @@ function getAvailableRaiders($conn, $realm_id) {
 	          AND soldiers.location = 1
 	          AND soldiers.trained = 1
 	          AND soldiers.dead IS NULL
+	          $exclude
 	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC";
 	$result = $conn->query($sql);
 	$raiders = array();
