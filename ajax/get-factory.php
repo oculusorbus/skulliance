@@ -28,6 +28,7 @@ $con_names = array(
     The Factory generates <strong><?php echo $info['drops_per_night']; ?> consumable item<?php echo $info['drops_per_night'] != 1 ? 's' : ''; ?> per day</strong>, distributed nightly.
     Higher Factory levels unlock better drop odds.
 </p>
+<?php include 'realm-log-panel.php'; ?>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Drop Rates (Level <?php echo $info['factory_level']; ?>)</strong>
     <div class="inv-info-grid" style="margin-top:10px;">
@@ -52,5 +53,4 @@ $con_names = array(
         <?php endforeach; ?>
     </div>
 </div>
-<?php include 'realm-log-panel.php'; ?>
 <?php $conn->close(); ?>

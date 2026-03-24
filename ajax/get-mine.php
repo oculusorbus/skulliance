@@ -28,6 +28,7 @@ $claim_types = array('carbon');
     The Mine generates <strong><?php echo number_format($info['nightly']); ?> CARBON per day</strong>, distributed nightly.
     CARBON can be crafted into DIAMOND. Upgrade the Mine to increase your daily yield.
 </p>
+<?php include 'realm-log-panel.php'; ?>
 <div style="margin-top:12px;">
     <table class="soldiers-table" style="width:100%;font-size:0.8rem;">
         <tr><th>Level</th><th>CARBON / Day</th></tr>
@@ -39,5 +40,4 @@ $claim_types = array('carbon');
         <?php endfor; ?>
     </table>
 </div>
-<?php include 'realm-log-panel.php'; ?>
 <?php $conn->close(); ?>

@@ -39,6 +39,8 @@ $claim_types   = array('weapon', 'armor');
     into your inventory. Equip gear to your soldiers from the inventory below.
 </p>
 
+<?php include 'realm-log-panel.php'; ?>
+
 <?php if (!empty($inventory)): ?>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Gear Inventory</strong>
@@ -105,5 +107,4 @@ $claim_types   = array('weapon', 'armor');
 <?php else: ?>
 <p style="opacity:0.55;font-size:0.85rem;margin-top:12px;">No soldiers in Barracks yet. Enlist soldiers to receive gear drops.</p>
 <?php endif; ?>
-<?php include 'realm-log-panel.php'; ?>
 <?php $conn->close(); ?>
