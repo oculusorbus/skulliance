@@ -8218,6 +8218,7 @@ function getGearInventory($conn, $user_id) {
 }
 
 // Equip a gear item from inventory to a soldier; returns current gear to inventory
+// Equip gear from inventory to a reserve (location=1) soldier; returns displaced gear to inventory
 function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$soldier_id = intval($soldier_id);
 	$realm_id   = intval($realm_id);
@@ -8228,7 +8229,8 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$type    = $is_weapon ? 'weapon' : 'armor';
 	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
 	if (getCurrentGear($conn, $user_id, $type, $item_id) < 1) return false;
-	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	// Only allow equipping to reserve (barracks) soldiers
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL LIMIT 1");
 	if (!$s || $s->num_rows == 0) return false;
 	$current_gear_id = intval($s->fetch_assoc()[$col]);
 	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
@@ -8237,7 +8239,7 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	return true;
 }
 
-// Unequip gear from a soldier and return it to inventory
+// Unequip gear from a reserve (location=1) soldier and return it to inventory
 function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	$soldier_id = intval($soldier_id);
 	$realm_id   = intval($realm_id);
@@ -8246,13 +8248,39 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	$user_id = intval($r->fetch_assoc()['user_id']);
 	$type    = $is_weapon ? 'weapon' : 'armor';
 	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
-	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL LIMIT 1");
 	if (!$s || $s->num_rows == 0) return false;
 	$gear_id = intval($s->fetch_assoc()[$col]);
 	if ($gear_id == 0) return false;
 	updateGear($conn, $user_id, $type, $gear_id, 1);
 	$conn->query("UPDATE soldiers SET $col = NULL WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
+}
+
+// Auto-equip inventory gear to reserve soldiers, best gear first, upgrading weakest slots
+function autoEquipReserve($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	foreach (array('weapon', 'armor') as $type) {
+		$col   = $type === 'weapon' ? 'weapon_id' : 'armor_id';
+		$table = $type === 'weapon' ? 'weapons' : 'armor';
+		// Snapshot inventory best-to-worst
+		$inv_result = $conn->query("SELECT g.item_id, $table.level FROM gear g INNER JOIN $table ON $table.id = g.item_id WHERE g.user_id = $user_id AND g.type = '$type' AND g.quantity > 0 ORDER BY $table.level DESC");
+		if (!$inv_result) continue;
+		$inv_items = array();
+		while ($row = $inv_result->fetch_assoc()) $inv_items[] = $row;
+		foreach ($inv_items as $gear) {
+			$gear_id    = intval($gear['item_id']);
+			$gear_level = intval($gear['level']);
+			if (getCurrentGear($conn, $user_id, $type, $gear_id) < 1) continue;
+			// Find reserve soldier with weakest slot that this gear would upgrade
+			$target = $conn->query("SELECT soldiers.id AS soldier_id FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.dead IS NULL AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC LIMIT 1");
+			if (!$target || $target->num_rows == 0) continue;
+			equipGear($conn, intval($target->fetch_assoc()['soldier_id']), $realm_id, $gear_id, $type === 'weapon');
+		}
+	}
 }
 
 // ── REALM LOG ──────────────────────────────────────────────
