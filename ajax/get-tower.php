@@ -55,16 +55,16 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
     <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
     <div class="soldier-gear-row">
-        <div class="soldier-gear-slot" title="Weapon">
+        <div class="soldier-gear-slot">
             <?php if ($s['weapon_id']): ?>
-                <img class="icon" src="icons/weapons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
                 <span class="gear-label">Lv<?php echo intval($s['weapon_level']); ?> <?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
             <?php else: ?><span class="gear-empty">No Weapon</span><?php endif; ?>
         </div>
-        <div class="soldier-gear-slot" title="Armor">
+        <div class="soldier-gear-slot">
             <?php if ($s['armor_id']): ?>
-                <img class="icon" src="icons/armor/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
                 <span class="gear-label">Lv<?php echo intval($s['armor_level']); ?> <?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
             <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
         </div>
     </div>

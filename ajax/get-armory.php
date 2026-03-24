@@ -87,17 +87,17 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
         <div class="soldier-status"><?php echo $loc_label; ?></div>
         <div class="soldier-gear-row" style="margin-top:4px;">
             <?php if ($s['weapon_id']): ?>
-            <div class="soldier-gear-slot" title="<?php echo htmlspecialchars($s['weapon_name']); ?>">
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
-                <span class="gear-label" style="font-size:0.7rem;">Lv<?php echo $s['weapon_level']; ?></span>
+            <div class="soldier-gear-slot">
+                <span class="gear-label">Lv<?php echo $s['weapon_level']; ?> <?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
             </div>
-            <?php else: ?><div class="gear-empty" style="font-size:0.72rem;">No Weapon</div><?php endif; ?>
+            <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
             <?php if ($s['armor_id']): ?>
-            <div class="soldier-gear-slot" title="<?php echo htmlspecialchars($s['armor_name']); ?>">
-                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
-                <span class="gear-label" style="font-size:0.7rem;">Lv<?php echo $s['armor_level']; ?></span>
+            <div class="soldier-gear-slot">
+                <span class="gear-label">Lv<?php echo $s['armor_level']; ?> <?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
             </div>
-            <?php else: ?><div class="gear-empty" style="font-size:0.72rem;">No Armor</div><?php endif; ?>
+            <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
         </div>
     </div>
     <?php endforeach; ?>
