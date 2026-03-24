@@ -1115,28 +1115,12 @@ $conn->close();
 		$.post('ajax/tower-action.php', {action:'armor', soldier_id:soldier_id, value:armor_id}, function() { refreshLocationModal(); });
 	}
 
-	/* ── MINE / FACTORY / ARMORY CLAIMS ───────────────────── */
-	function claimMine() {
-		$.get('ajax/claim-mine.php', function(resp) {
+	/* ── REALM LOG CLAIM ──────────────────────────────────── */
+	function claimRealmLogs() {
+		$.get('ajax/claim-realm-logs.php', function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success && r.amount > 0) { openNotify(r.amount.toLocaleString() + ' CARBON claimed!'); refreshLocationModal(); }
-			else { openNotify('Nothing to claim yet.'); }
-		});
-	}
-
-	function claimFactory() {
-		$.get('ajax/claim-factory.php', function(resp) {
-			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success && r.drops > 0) { openNotify(r.drops + ' consumable item' + (r.drops != 1 ? 's' : '') + ' added to your inventory!'); refreshLocationModal(); }
-			else { openNotify('Nothing to claim yet.'); }
-		});
-	}
-
-	function claimArmory() {
-		$.get('ajax/claim-armory.php', function(resp) {
-			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success && r.drops > 0) { openNotify(r.drops + ' gear drop' + (r.drops != 1 ? 's' : '') + ' assigned to your soldiers!'); refreshLocationModal(); }
-			else { openNotify('Nothing to claim yet.'); }
+			if (r.success) { openNotify('Rewards claimed!'); refreshLocationModal(); }
+			else { openNotify('Nothing to claim.'); }
 		});
 	}
 </script>

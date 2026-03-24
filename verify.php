@@ -34,6 +34,10 @@ if(isset($_GET['verify'])){
 	updateBalances($conn, $diamond_skull_bonus);
 	// Deploy rewards for Diamond Skull delegation
 	deployDiamondSkullRewards($conn, $percentages);
+	// Write nightly realm resource generation to realms_logs
+	processMineRewards($conn);
+	processFactoryDrops($conn);
+	processArmoryDrops($conn);
 }
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(), $attempts=0){

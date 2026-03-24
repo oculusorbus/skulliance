@@ -7,6 +7,7 @@ $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
 $info = getFactoryInfo($conn, $realm_id);
+$logs = getUnclaimedRealmLogs($conn, $realm_id);
 $con_names = array(
     1 => '100% Success', 2 => '75% Success', 3 => '50% Success',
     4 => '25% Success',  5 => 'Fast Forward', 6 => 'Double Rewards', 7 => 'Random Reward'
@@ -22,19 +23,8 @@ $con_names = array(
         <span class="soldiers-stat-value"><?php echo $info['drops_per_night']; ?></span>
     </div>
 </div>
-<?php if ($info['factory_level'] > 0): ?>
-<div class="claim-panel" style="margin-top:14px;padding:12px;background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.25);border-radius:8px;text-align:center;">
-    <div style="font-size:0.82rem;opacity:0.7;margin-bottom:6px;">Items Ready to Collect</div>
-    <div style="font-size:1.4rem;font-weight:700;color:#00c8a0;margin-bottom:10px;"><?php echo $info['pending_drops']; ?> Item<?php echo $info['pending_drops'] != 1 ? 's' : ''; ?></div>
-    <?php if ($info['pending_drops'] > 0): ?>
-    <button class="small-button" onclick="claimFactory()" style="background:#00c8a0;color:#000;">Claim Items</button>
-    <?php else: ?>
-    <div style="font-size:0.8rem;opacity:0.5;">Nothing to claim yet — come back tomorrow!</div>
-    <?php endif; ?>
-</div>
-<?php endif; ?>
 <p style="font-size:0.82rem;opacity:0.6;margin-top:12px;">
-    The Factory generates <strong><?php echo $info['drops_per_night']; ?> consumable item<?php echo $info['drops_per_night'] != 1 ? 's' : ''; ?> per day</strong>.
+    The Factory generates <strong><?php echo $info['drops_per_night']; ?> consumable item<?php echo $info['drops_per_night'] != 1 ? 's' : ''; ?> per day</strong>, distributed nightly.
     Higher Factory levels unlock better drop odds.
 </p>
 <div style="margin-top:14px;">
@@ -61,4 +51,5 @@ $con_names = array(
         <?php endforeach; ?>
     </div>
 </div>
+<?php include 'realm-log-panel.php'; ?>
 <?php $conn->close(); ?>
