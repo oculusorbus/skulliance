@@ -610,7 +610,10 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<h2 style="margin:0;font-size:1rem;">Enlist Soldiers</h2>
 				<button class="raid-modal-close" onclick="closeEnlistPicker()" aria-label="Close">&times;</button>
 			</div>
-			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 12px;">Select NFTs to enlist. Partner NFTs cost 2 slots each.</p>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 8px;">Select NFTs to enlist. Partner NFTs cost 2 slots each.</p>
+			<select id="enlist-project-filter" style="display:none;width:100%;margin-bottom:10px;background:#1a1a1a;color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:5px 8px;font-size:0.82rem;" onchange="filterEnlistByProject(this.value)">
+				<option value="">All Projects</option>
+			</select>
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
 				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 selected</span>
@@ -1049,10 +1052,12 @@ $conn->close();
 
 	function openEnlistPicker() {
 		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		document.getElementById('enlist-project-filter').style.display = 'none';
 		document.getElementById('enlist-modal-overlay').style.display = 'block';
 		document.getElementById('enlist-modal').style.display          = 'flex';
 		$.get('ajax/get-eligible-nfts.php', function(html) {
 			document.getElementById('enlist-picker-body').innerHTML = html;
+			_buildEnlistProjectFilter();
 			_updateEnlistCount();
 		});
 	}
@@ -1060,6 +1065,27 @@ $conn->close();
 	function closeEnlistPicker() {
 		document.getElementById('enlist-modal-overlay').style.display = 'none';
 		document.getElementById('enlist-modal').style.display          = 'none';
+	}
+
+	function _buildEnlistProjectFilter() {
+		var sel = document.getElementById('enlist-project-filter');
+		sel.innerHTML = '<option value="">All Projects</option>';
+		var seen = {};
+		$('#enlist-picker-body .enlist-candidate').each(function() {
+			var pid   = $(this).data('project-id');
+			var pname = $(this).data('project-name');
+			if (!seen[pid]) {
+				seen[pid] = true;
+				sel.innerHTML += '<option value="' + pid + '">' + pname + '</option>';
+			}
+		});
+		sel.style.display = Object.keys(seen).length > 1 ? 'block' : 'none';
+	}
+
+	function filterEnlistByProject(pid) {
+		$('#enlist-picker-body .enlist-candidate').each(function() {
+			$(this).toggle(!pid || String($(this).data('project-id')) === String(pid));
+		});
 	}
 
 	function toggleEnlistSelect(el) {
