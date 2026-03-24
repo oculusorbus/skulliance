@@ -872,8 +872,8 @@ $conn->close();
 		}
 		var html = '<div class="soldiers-grid">';
 		raiders.forEach(function(s) {
-			var weaponInfo = s.weapon_id ? ('Lv' + s.weapon_level + ' ' + s.weapon_name) : 'No Weapon';
-			var armorInfo  = s.armor_id  ? ('Lv' + s.armor_level  + ' ' + s.armor_name)  : 'No Armor';
+			var weaponInfo = s.weapon_name ? ('Lv' + s.weapon_level + ' ' + s.weapon_name) : 'No Weapon';
+			var armorInfo  = s.armor_name  ? ('Lv' + s.armor_level  + ' ' + s.armor_name)  : 'No Armor';
 			html += '<div class="soldier-card raid-soldier-pick" data-soldier-id="' + s.soldier_id + '" onclick="toggleRaidSoldierSelect(this)">';
 			html += '<img class="soldier-nft-img" src="' + (s.ipfs || 'icons/skull.png') + '" onerror="this.src=\'icons/skull.png\'" />';
 			html += '<div class="soldier-name">' + s.nft_name + '</div>';
