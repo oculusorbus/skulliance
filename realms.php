@@ -1178,24 +1178,32 @@ $conn->close();
 
 	var _skullLoaderHTML = '<div class="modal-skull-loader"><div class="lsk">💀</div><div class="lbar-wrap"><div class="lbar"></div></div></div>';
 
-	function _reloadModalBody(endpoint, params, callback) {
-		document.getElementById('location-modal-body').innerHTML = _skullLoaderHTML;
+	// gridSelector: optional CSS selector for just the soldiers grid — shows loader there only.
+	// Omit for a full-body loader (used on initial modal open).
+	function _reloadModalBody(endpoint, params, callback, gridSelector) {
+		var body = document.getElementById('location-modal-body');
+		if (gridSelector) {
+			var grid = body.querySelector(gridSelector);
+			if (grid) grid.innerHTML = _skullLoaderHTML;
+		} else {
+			body.innerHTML = _skullLoaderHTML;
+		}
 		$.get('ajax/' + endpoint + '.php' + (params || ''), function(html) {
-			document.getElementById('location-modal-body').innerHTML = html;
+			body.innerHTML = html;
 			if (callback) callback();
 		}).fail(function() {
-			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
+			body.innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
 		});
 	}
 
 	function goBarracksPage(page) {
 		_barracksPage = page;
-		_reloadModalBody(_locModalEndpoints[4], '?page=' + page);
+		_reloadModalBody(_locModalEndpoints[4], '?page=' + page, null, '#barracks-soldiers-grid');
 	}
 
 	function goArmoryPage(page) {
 		_armoryPage = page;
-		_reloadModalBody(_locModalEndpoints[2], '?page=' + page);
+		_reloadModalBody(_locModalEndpoints[2], '?page=' + page, null, '#armory-soldiers-grid');
 	}
 
 	/* ── BARRACKS ─────────────────────────────────────────── */
@@ -1417,7 +1425,7 @@ $conn->close();
 					$(this).addClass('selected');
 			});
 			_updateTowerSelectCount();
-		});
+		}, '#tower-available-grid');
 	}
 
 	function toggleTowerSelect(el) {
