@@ -1243,10 +1243,17 @@ $conn->close();
 
 	function autoFillBarracks() {
 		$.get('ajax/get-eligible-nfts.php', function(html) {
-			// Collect all nft_ids and enlist them all
 			var tmp = $('<div>').html(html);
 			var ids = [];
-			tmp.find('.enlist-candidate').each(function() { ids.push($(this).data('nft-id')); });
+			var remaining = _barracksOpenSlots;
+			if (remaining <= 0) { openNotify('No open slots available.'); return; }
+			tmp.find('.enlist-candidate').each(function() {
+				var cost = parseInt($(this).data('slots')) || 1;
+				if (remaining >= cost) {
+					ids.push($(this).data('nft-id'));
+					remaining -= cost;
+				}
+			});
 			if (ids.length === 0) { openNotify('No eligible NFTs available to enlist.'); return; }
 			$.post('ajax/enlist-soldier.php', {nft_ids: ids}, function(resp) {
 				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
