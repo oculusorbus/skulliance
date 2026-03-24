@@ -1176,7 +1176,10 @@ $conn->close();
 		if (window._currentLocModal) openLocationModal(window._currentLocModal);
 	}
 
+	var _skullLoaderHTML = '<div class="modal-skull-loader"><div class="lsk">💀</div><div class="lbar-wrap"><div class="lbar"></div></div></div>';
+
 	function _reloadModalBody(endpoint, params, callback) {
+		document.getElementById('location-modal-body').innerHTML = _skullLoaderHTML;
 		$.get('ajax/' + endpoint + '.php' + (params || ''), function(html) {
 			document.getElementById('location-modal-body').innerHTML = html;
 			if (callback) callback();

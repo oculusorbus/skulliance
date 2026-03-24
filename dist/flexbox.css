@@ -2369,6 +2369,12 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .raid-config-label { font-size: 0.8rem; color: #7a9eb0; }
 .soldier-discharge-btn { background-color: #7a2020 !important; color: #ffaaaa !important; box-shadow: 0 4px #2a0808 !important; }
 .soldier-discharge-btn:hover { background-color: #9e2a2a !important; }
+.modal-skull-loader { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:32px 0; }
+.modal-skull-loader .lsk { font-size:2rem; animation:lp 1.2s ease-in-out infinite; }
+.modal-skull-loader .lbar-wrap { width:120px; height:3px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.modal-skull-loader .lbar { height:100%; background:#00c8a0; width:0%; animation:lb 3s ease-out forwards; }
+@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
+@keyframes lb  { to { width:85%; } }
 
 /* Raid consumables modal grid */
 .raid-con-item {
