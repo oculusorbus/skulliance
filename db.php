@@ -3679,10 +3679,9 @@ function burn($conn, $balance, $project_id){
 
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id=0, $mine=0) {
-	$mine = $mine ? 1 : 0;
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id, raid_id, mine)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."', '".$raid_id."', '".$mine."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id, raid_id)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."', '".$raid_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -7939,6 +7938,7 @@ function getEligibleEnlistNFTs($conn, $realm_id) {
 	if (!isset($_SESSION['userData']['user_id'])) return array();
 	$user_id = intval($_SESSION['userData']['user_id']);
 	$sql = "SELECT nfts.id AS nft_id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
+	               collections.name AS collection_name,
 	               projects.id AS project_id, projects.name AS project_name
 	        FROM nfts
 	        INNER JOIN collections ON collections.id = nfts.collection_id
@@ -7946,7 +7946,7 @@ function getEligibleEnlistNFTs($conn, $realm_id) {
 	        WHERE nfts.user_id = $user_id
 	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL)
 	          AND nfts.id NOT IN (SELECT missions_nfts.nft_id FROM missions_nfts INNER JOIN missions ON missions.id = missions_nfts.mission_id WHERE missions.status = 0)
-	        ORDER BY projects.id ASC, nfts.name ASC";
+	        ORDER BY projects.id ASC, collections.name ASC, nfts.name ASC";
 	$result = $conn->query($sql);
 	$nfts = array();
 	while ($row = $result->fetch_assoc()) $nfts[] = $row;
@@ -8310,7 +8310,7 @@ function claimRealmLogs($conn, $realm_id) {
 		switch ($log['type']) {
 			case 'carbon':
 				updateBalance($conn, $user_id, 15, $qty);
-				$conn->query("INSERT INTO transactions (type, user_id, amount, project_id, mine) VALUES ('credit', $user_id, $qty, 15, 1)");
+				logCredit($conn, $user_id, $qty, 15);
 				break;
 			case 'consumable':
 				updateAmount($conn, $user_id, $item_id, $qty);
