@@ -1068,16 +1068,20 @@ $conn->close();
 			var defId = _raidSoldiersDefenseId;
 			var dur   = _raidSoldiersDuration;
 			var allEl = document.getElementById('raid-all-items-' + defId);
+			if (!allEl || !allEl.checked) {
+				// No config selected — force consumables modal
+				_raidSoldiersConsumables = 'modal';
+				if (_origOpenRaidConsumablesModal) _origOpenRaidConsumablesModal(defId, dur);
+				return;
+			}
 			var consumablesParam = '';
-			if (allEl && allEl.checked) {
-				var mode = allEl.dataset.mode || 'all';
-				var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
-				var conItems = document.querySelectorAll('[id^="raid-con-item-"]');
-				if (mode === 'saved') {
-					savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
-				} else {
-					consumablesParam = '&consumables=all';
-				}
+			var mode    = allEl.dataset.mode || 'default';
+			var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
+			if (mode === 'saved') {
+				savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
+			} else {
+				// default: all except 100% Success (1) and Double Rewards (6)
+				[2, 3, 4, 5, 7].forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
 			}
 			_raidSoldierSelectedIds = [];
 			var xhttp = new XMLHttpRequest();

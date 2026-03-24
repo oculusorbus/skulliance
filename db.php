@@ -6151,9 +6151,9 @@ function getRealms($conn, $sort, $group){
 						if(checkMaxRaids($conn, $offense_id)){
 							$_saved_config = isset($_SESSION['raid_consumable_config']) && !empty($_SESSION['raid_consumable_config']) ? $_SESSION['raid_consumable_config'] : null;
 							$_has_saved    = !empty($_saved_config);
-							$_cb_label     = $_has_saved ? 'Saved Items' : 'All Items';
-							$_cb_checked   = $_has_saved ? 'checked ' : '';
-							$_cb_mode      = $_has_saved ? 'saved' : 'all';
+							$_cb_label     = $_has_saved ? 'Saved Config' : 'Default Config';
+							$_cb_checked   = 'checked ';
+							$_cb_mode      = $_has_saved ? 'saved' : 'default';
 							$_cb_ids       = $_has_saved ? implode(',', array_map('intval', $_saved_config)) : '';
 							$output[$key] .= "<div id='raid-con-row-".$row['realm_id']."' class='raid-con-row'>";
 							$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' ".$_cb_checked."data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."' onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> ".$_cb_label."</label>";

@@ -1091,6 +1091,8 @@ function startRaid(raidButton, defenseID, duration){
 	};
 }
 
+var _defaultConIds = [2, 3, 4, 5, 7]; // all except 100% Success (1) and Double Rewards (6)
+
 function updateRaidAllLabel(checkbox, realmId){
 	var checks = document.querySelectorAll('#raid-con-modal-items .raid-con-check:not(:disabled)');
 	if(!checkbox.checked){
@@ -1099,7 +1101,7 @@ function updateRaidAllLabel(checkbox, realmId){
 		var savedIds = checkbox.dataset.savedIds ? checkbox.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
 		checks.forEach(function(ch){ ch.checked = savedIds.indexOf(parseInt(ch.getAttribute('data-id'))) !== -1; });
 	} else {
-		checks.forEach(function(ch){ ch.checked = true; });
+		checks.forEach(function(ch){ ch.checked = _defaultConIds.indexOf(parseInt(ch.getAttribute('data-id'))) !== -1; });
 	}
 	updateRaidModalSummary();
 	_updateRaidStats(realmId, _getRaidSelectedCids(realmId));
@@ -1137,7 +1139,7 @@ function _renderRaidConsumablesModal(consumables){
 		var allChecked = allEl ? allEl.checked : false;
 		var allMode = allEl ? (allEl.dataset.mode || 'all') : 'all';
 		var savedIds = (allEl && allEl.dataset.savedIds) ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
-		var itemChecked = has && allChecked && (allMode === 'saved' ? savedIds.indexOf(c.id) !== -1 : true);
+		var itemChecked = has && allChecked && (allMode === 'saved' ? savedIds.indexOf(c.id) !== -1 : _defaultConIds.indexOf(c.id) !== -1);
 		html += '<input type="checkbox" class="raid-con-check" data-id="'+c.id+'" data-boost="'+_consumableBoost(c.id)+'"'+(has?(itemChecked?' checked':''):' disabled')+'>';
 		html += '<img class="icon consumable" src="icons/'+c.icon+'" onerror="this.src=\'icons/skull.png\'" title="'+c.name+'"/>';
 		html += '<span class="raid-con-name">'+c.name+'</span>';
@@ -1190,13 +1192,13 @@ function _updateAllRaidConfigCheckboxes(savedIds){
 	var hasSaved = savedIds.length > 0;
 	document.querySelectorAll('[id^="raid-all-items-"]').forEach(function(el){
 		el.checked = hasSaved;
-		el.dataset.mode = hasSaved ? 'saved' : 'all';
+		el.dataset.mode = hasSaved ? 'saved' : 'default';
 		el.dataset.savedIds = savedIdsStr;
 		var label = el.parentNode;
 		if(label){
 			for(var i = 0; i < label.childNodes.length; i++){
 				if(label.childNodes[i].nodeType === 3){
-					label.childNodes[i].nodeValue = hasSaved ? ' Saved Items' : ' All Items';
+					label.childNodes[i].nodeValue = hasSaved ? ' Saved Config' : ' Default Config';
 					break;
 				}
 			}
