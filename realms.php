@@ -132,7 +132,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									</div>
 								</div>
 								<div class="location-action" id="loc-action-<?php echo $location_id; ?>">
-								<?php 
+								<div id="loc-upgrade-<?php echo $location_id; ?>"><?php
 								if(!isset($status[$location_id])){
 									$balance = getBalance($conn, $location_id);
 									if($balance >= $cost){ 
@@ -143,6 +143,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 									echo "<input id='points-button-".$location_id."' class='small-button' type='button' value='".$points_multiplier."x Pts' onclick=\"togglePointsButtons('disable');pointsOption(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.")\"".">";
 									}
 								}else{ echo $status[$location_id]; }
+								?></div><?php
 							// Location-specific modal button
 							$loc_modal_map = array(1=>'Portal',2=>'Armory',3=>'Tower',4=>'Barracks',5=>'Factory',6=>'Crypt',7=>'Mine');
 							if(isset($loc_modal_map[$location_id])){

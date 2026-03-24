@@ -1379,7 +1379,7 @@ function _updateLocationStatusLabels(lid, equippedRow){
 
 function _updateUpgradeDisplays(upgrades){
 	for(var lid in upgrades){
-		var el = document.getElementById('loc-action-'+lid);
+		var el = document.getElementById('loc-upgrade-'+lid);
 		if(!el) continue;
 		var upg = upgrades[lid];
 		var dur = upg.duration;
