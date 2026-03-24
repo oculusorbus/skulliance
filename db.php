@@ -7876,11 +7876,21 @@ function getPortalReport($conn, $realm_id) {
 }
 
 // ── BARRACKS ───────────────────────────────────────────────
+// Training duration: (11 - level) days. Level 0 = no training. Fast Forward halves it.
+function getBarracksTrainingHours($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$level = intval(getRealmLocationLevel($conn, $realm_id, 4));
+	if ($level == 0) return 0;
+	$hours = (11 - $level) * 24;
+	$ff = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id = $realm_id AND rl.location_id = 4 AND rlc.consumable_id = 5 AND rlc.raid_id = 0 LIMIT 1");
+	if ($ff && $ff->num_rows > 0) $hours = (int)ceil($hours / 2);
+	return $hours;
+}
+
 // Get all soldiers for a realm with NFT info and training status
 function getBarracksSoldiers($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));
-	$training_hours = max(1, 11 - $barracks_level);
+	$training_hours = getBarracksTrainingHours($conn, $realm_id);
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.location, soldiers.trained, soldiers.dead,
 	               soldiers.weapon_id, soldiers.armor_id, soldiers.date_created,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
@@ -7983,11 +7993,11 @@ function getEligibleEnlistNFTs($conn, $realm_id, $project_id=0, $collection_id=0
 	return $nfts;
 }
 
-// Lazy training: mark trained=1 for soldiers in one realm that have completed training (called on modal view)
+/// Lazy training: mark trained=1 for soldiers in one realm that have completed training (called on modal view)
 function updateSoldierTraining($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));
-	$hours = max(1, 11 - $barracks_level);
+	$hours = getBarracksTrainingHours($conn, $realm_id);
+	if ($hours == 0) return; // level 0, training not possible
 	$conn->query("UPDATE soldiers SET trained = 1 WHERE realm_id = $realm_id AND trained = 0 AND dead IS NULL AND DATE_ADD(date_created, INTERVAL $hours HOUR) <= NOW()");
 }
 
