@@ -1161,7 +1161,7 @@ $conn->close();
 		if (loc_id === 4) params = '?page=' + _barracksPage;
 		if (loc_id === 2) params = '?page=' + _armoryPage;
 		if (loc_id === 3) { if (window._currentLocModal !== 3) { _towerPage = 1; _towerSelectedIds = []; } params = '?page=' + _towerPage; }
-		$.get('ajax/' + endpoint + '.php' + params, function(html) {
+		$.get('ajax/' + endpoint + '.php' + params + (params ? '&' : '?') + '_t=' + Date.now(), function(html) {
 			document.getElementById('location-modal-body').innerHTML = html;
 			if (loc_id === 3) {
 				$('#tower-available-grid .tower-pick').each(function() {

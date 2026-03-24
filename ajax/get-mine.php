@@ -22,7 +22,7 @@ $carbon_icon = '<img src="icons/carbon.png" onerror="this.src=\'icons/skull.png\
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label"><?php echo $carbon_icon; ?>CARBON Balance</span>
-        <span class="soldiers-stat-value"><?php echo $carbon_icon; ?><?php echo number_format($info['carbon']); ?></span>
+        <span class="soldiers-stat-value"><?php echo number_format($info['carbon']); ?></span>
     </div>
 </div>
 <p style="font-size:0.82rem;opacity:0.6;margin-top:12px;">
