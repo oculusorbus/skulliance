@@ -15,7 +15,7 @@ $nfts = getEligibleEnlistNFTs($conn, $realm_id, $project_id, $collection_id);
     $img_src    = getIPFS($n['ipfs'], $n['collection_id'], $n['project_id']);
     $is_partner = ($n['project_id'] > 7 && $n['project_id'] != 15);
 ?>
-<div class="soldier-card enlist-candidate" data-nft-id="<?php echo $n['nft_id']; ?>" data-project-id="<?php echo $n['project_id']; ?>" data-project-name="<?php echo htmlspecialchars($n['project_name']); ?>" data-collection-id="<?php echo $n['collection_id']; ?>" data-collection-name="<?php echo htmlspecialchars($n['collection_name']); ?>" onclick="toggleEnlistSelect(this)">
+<div class="soldier-card enlist-candidate" data-nft-id="<?php echo $n['nft_id']; ?>" data-slots="<?php echo $is_partner ? 2 : 1; ?>" data-project-id="<?php echo $n['project_id']; ?>" data-project-name="<?php echo htmlspecialchars($n['project_name']); ?>" data-collection-id="<?php echo $n['collection_id']; ?>" data-collection-name="<?php echo htmlspecialchars($n['collection_name']); ?>" onclick="toggleEnlistSelect(this)">
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
     <div class="soldier-name"><?php echo htmlspecialchars($n['nft_name']); ?></div>
     <?php if ($is_partner): ?><div class="soldier-badge partner-badge">2 slots</div><?php endif; ?>

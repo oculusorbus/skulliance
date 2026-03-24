@@ -663,7 +663,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			</select>
 			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
 				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;">0 of <?php echo intval($barracks_slots_open); ?> slots selected</span>
-				<input type="button" class="small-button" value="Select All" onclick="selectAllEligible()"/>
+				<input type="button" id="enlist-select-all-btn" class="small-button" value="Select All" onclick="selectAllEligible()"/>
 			</div>
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
@@ -1206,9 +1206,15 @@ $conn->close();
 	}
 
 	var _enlistSelectedIds = [];
+	var _enlistSlotMap     = {}; // nft_id -> slot cost (1 or 2)
+
+	function _enlistUsedSlots() {
+		return _enlistSelectedIds.reduce(function(sum, id) { return sum + (_enlistSlotMap[id] || 1); }, 0);
+	}
 
 	function openEnlistPicker() {
 		_enlistSelectedIds = [];
+		_enlistSlotMap     = {};
 		document.getElementById('enlist-picker-body').innerHTML = '<p style="text-align:center;padding:20px;opacity:0.5;">Select a project above to view eligible NFTs.</p>';
 		document.getElementById('enlist-project-filter').value  = '';
 		document.getElementById('enlist-collection-filter').style.display = 'none';
@@ -1268,36 +1274,59 @@ $conn->close();
 		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
 		$.get('ajax/get-eligible-nfts.php', {project_id: pid, collection_id: cid}, function(html) {
 			document.getElementById('enlist-picker-body').innerHTML = html;
-			// re-apply existing selections
+			// cache slot costs and re-apply existing selections
 			$('#enlist-picker-body .enlist-candidate').each(function() {
-				if (_enlistSelectedIds.indexOf(parseInt($(this).data('nft-id'))) !== -1) $(this).addClass('selected');
+				var id = parseInt($(this).data('nft-id'));
+				_enlistSlotMap[id] = parseInt($(this).data('slots')) || 1;
+				if (_enlistSelectedIds.indexOf(id) !== -1) $(this).addClass('selected');
 			});
 			_updateEnlistCount();
 		});
 	}
 
 	function toggleEnlistSelect(el) {
-		var id = parseInt($(el).data('nft-id'));
-		var idx = _enlistSelectedIds.indexOf(id);
-		if (idx === -1) { _enlistSelectedIds.push(id); $(el).addClass('selected'); }
-		else            { _enlistSelectedIds.splice(idx, 1); $(el).removeClass('selected'); }
+		var id   = parseInt($(el).data('nft-id'));
+		var cost = parseInt($(el).data('slots')) || 1;
+		_enlistSlotMap[id] = cost;
+		var idx  = _enlistSelectedIds.indexOf(id);
+		if (idx === -1) {
+			if (_enlistUsedSlots() + cost > _barracksOpenSlots) {
+				openNotify('Not enough open slots. Deselect an NFT or reduce your selection.');
+				return;
+			}
+			_enlistSelectedIds.push(id);
+			$(el).addClass('selected');
+		} else {
+			_enlistSelectedIds.splice(idx, 1);
+			$(el).removeClass('selected');
+		}
 		_updateEnlistCount();
 	}
 
 	function _updateEnlistCount() {
-		document.getElementById('enlist-selected-count').textContent = _enlistSelectedIds.length + ' of ' + _barracksOpenSlots + ' slots selected';
+		document.getElementById('enlist-selected-count').textContent = _enlistUsedSlots() + ' of ' + _barracksOpenSlots + ' slots selected';
+		var btn = document.getElementById('enlist-select-all-btn');
+		if (btn) btn.value = _enlistSelectedIds.length > 0 ? 'Deselect All' : 'Select All';
 	}
 
 	function selectAllEligible() {
-		var remaining = _barracksOpenSlots - _enlistSelectedIds.length;
+		if (_enlistSelectedIds.length > 0) {
+			// deselect all
+			_enlistSelectedIds = [];
+			$('#enlist-picker-body .enlist-candidate').removeClass('selected');
+			_updateEnlistCount();
+			return;
+		}
+		var remaining = _barracksOpenSlots - _enlistUsedSlots();
 		if (remaining <= 0) return;
 		$('#enlist-picker-body .enlist-candidate').each(function() {
-			if (remaining <= 0) return false;
-			var id = parseInt($(this).data('nft-id'));
-			if (_enlistSelectedIds.indexOf(id) === -1) {
+			var id   = parseInt($(this).data('nft-id'));
+			var cost = parseInt($(this).data('slots')) || 1;
+			_enlistSlotMap[id] = cost;
+			if (_enlistSelectedIds.indexOf(id) === -1 && remaining >= cost) {
 				_enlistSelectedIds.push(id);
 				$(this).addClass('selected');
-				remaining--;
+				remaining -= cost;
 			}
 		});
 		_updateEnlistCount();
