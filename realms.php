@@ -145,7 +145,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								}else{ echo $status[$location_id]; }
 								?></div><?php
 							// Location-specific modal button
-							$loc_modal_map = array(1=>'Review Portal',2=>'Manage Armory',3=>'Manage Tower',4=>'Manage Barracks',5=>'Manage Factory',6=>'Manage Crypt',7=>'Manage Mine');
+							$loc_modal_map = array(1=>'Manage Portal',2=>'Manage Armory',3=>'Manage Tower',4=>'Manage Barracks',5=>'Manage Factory',6=>'Manage Crypt',7=>'Manage Mine');
 							if(isset($loc_modal_map[$location_id])){
 								echo "<br><input class='small-button loc-modal-btn' type='button' value='".$loc_modal_map[$location_id]."' onclick='openLocationModal(".$location_id.")' style='margin-top:4px;'>";
 							}
