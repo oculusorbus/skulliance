@@ -27,6 +27,11 @@ $now = time();
         <span class="soldiers-stat-value"><?php echo count($soldiers); ?></span>
     </div>
 </div>
+<?php if ($eligible_count > 0): ?>
+<div style="margin-bottom:12px;">
+    <button class="button" onclick="resurrectAllSoldiers()">Resurrect All (<?php echo $eligible_count; ?> Ready)</button>
+</div>
+<?php endif; ?>
 <div class="soldiers-grid" id="crypt-soldiers-grid">
 <?php foreach ($soldiers as $s):
     $img_src   = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
@@ -53,9 +58,4 @@ $now = time();
 <p style="opacity:0.55;font-size:0.85rem;">The Crypt is empty. No fallen soldiers.</p>
 <?php endif; ?>
 </div>
-<?php if ($eligible_count > 0): ?>
-<div class="raid-modal-footer" style="margin-top:16px;">
-    <button class="button" onclick="resurrectAllSoldiers()">Resurrect All (<?php echo $eligible_count; ?> Ready)</button>
-</div>
-<?php endif; ?>
 <?php $conn->close(); ?>
