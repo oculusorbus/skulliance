@@ -739,7 +739,7 @@ $conn->close();
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
 /* Crypt coffin cards */
 .coffin-card {
-    background:rgba(30,10,10,0.7);
+    background: rgba(30,10,10,0.7) url('../icons/coffin.png') center bottom / contain no-repeat;
     border:1px solid rgba(150,50,50,0.4);
     border-radius:8px;
     padding:8px;
@@ -752,7 +752,7 @@ $conn->close();
 }
 .coffin-card.soldier-ready {
     border-color:rgba(0,200,160,0.5);
-    background:rgba(0,40,30,0.7);
+    background: rgba(0,40,30,0.7) url('../icons/coffin.png') center bottom / contain no-repeat;
     box-shadow:0 0 10px rgba(0,200,160,0.15);
 }
 @keyframes resurrect-ascend {
@@ -1311,8 +1311,20 @@ $conn->close();
 		});
 	}
 
-	function dischargeSoldier(soldier_id) {
-		openConfirm('Discharge this soldier? Their gear will be returned to your inventory. This cannot be undone unless you re-enlist them.', function() {
+	var _dischargeMessages = {
+		barracks: 'PERMANENTLY discharge this soldier from your army? Their gear will be returned to inventory and they will be removed from your forces entirely. This cannot be undone unless you re-enlist them.',
+		tower:    'PERMANENTLY discharge this soldier from your army — not just the garrison. If you only want to move them back to reserve, use the Remove button instead. Their gear will be returned to inventory. This cannot be undone unless you re-enlist them.',
+		portal:   'PERMANENTLY discharge this soldier mid-raid? They will be immediately pulled from the active raid and removed from your army entirely. Their gear will be returned to inventory. This cannot be undone unless you re-enlist them.'
+	};
+	var _dischargeAllMessages = {
+		1: 'PERMANENTLY discharge ALL soldiers currently in reserve? This will not affect soldiers in the Tower or on active Raids. All gear will be returned to inventory. This cannot be undone.',
+		2: 'PERMANENTLY discharge ALL garrison soldiers from your army — not just remove them from the Tower. To move them back to reserve instead, use Remove All. All gear will be returned to inventory. This cannot be undone.',
+		3: 'PERMANENTLY discharge ALL soldiers currently on raids? They will be immediately pulled from active raids and removed from your army entirely. All gear will be returned to inventory. This cannot be undone.'
+	};
+
+	function dischargeSoldier(soldier_id, context) {
+		var msg = _dischargeMessages[context] || _dischargeMessages['barracks'];
+		openConfirm(msg, function() {
 			$.post('ajax/discharge-soldier.php', {soldier_id: soldier_id}, function(resp) {
 				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
 				if (r.success) { refreshLocationModal(); }
@@ -1321,9 +1333,10 @@ $conn->close();
 		});
 	}
 
-	function dischargeAllSoldiers() {
-		openConfirm('Discharge ALL soldiers? All gear will be returned to inventory. This cannot be undone.', function() {
-			$.post('ajax/discharge-all-soldiers.php', {}, function(resp) {
+	function dischargeAllSoldiers(location) {
+		var msg = _dischargeAllMessages[location] || 'PERMANENTLY discharge ALL soldiers? All gear will be returned to inventory. This cannot be undone.';
+		openConfirm(msg, function() {
+			$.post('ajax/discharge-all-soldiers.php', {location: location}, function(resp) {
 				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
 				if (r.success) {
 					openNotify(r.discharged + ' soldier' + (r.discharged != 1 ? 's' : '') + ' discharged.');
