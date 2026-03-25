@@ -791,7 +791,9 @@ $conn->close();
     .soldiers-grid { grid-template-columns:repeat(3,1fr); }
     #crypt-soldiers-grid { grid-template-columns:repeat(2,1fr); }
     .gear-inventory-row { flex-direction:column !important; }
+    .soldiers-stat-row { display:grid; grid-template-columns:repeat(2,1fr); }
     .soldiers-stat { padding:7px 10px; min-width:0; }
+    .soldiers-stat-label { font-size:0.66rem; }
     .soldiers-stat-value { font-size:0.95rem; }
     .tower-garrison-header { flex-direction:column; align-items:flex-start; }
     .tower-deploy-row { justify-content:flex-end; }
