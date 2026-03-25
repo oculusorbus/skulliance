@@ -8126,7 +8126,7 @@ function getCryptSoldiers($conn, $realm_id) {
 	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
 	        LEFT JOIN armor ON armor.id = soldiers.armor_id
 	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL AND soldiers.active = 1
-	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.dead ASC";
+	        ORDER BY eligible DESC, COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.dead ASC";
 	$result = $conn->query($sql);
 	$soldiers = array();
 	while ($row = $result->fetch_assoc()) $soldiers[] = $row;

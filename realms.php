@@ -740,7 +740,6 @@ $conn->close();
 /* Crypt coffin cards */
 .coffin-wrapper {
     background: url('icons/coffin.png') center bottom / contain no-repeat;
-    padding-bottom:8px;
 }
 .coffin-card {
     background:rgba(30,10,10,0.7);
