@@ -139,4 +139,34 @@ usort($armors,  fn($a,$b) => $b['armor_level']  - $a['armor_level']);
 <?php else: ?>
 <p style="opacity:0.55;font-size:0.85rem;margin-top:12px;">No soldiers in Barracks yet. Enlist soldiers to receive gear drops.</p>
 <?php endif; ?>
+
+<div style="margin-top:14px;">
+    <strong style="font-size:0.85rem;">Gear Drop Rates (Level <?php echo $armory_level; ?>)</strong>
+    <?php
+    $tier_odds = array(
+        1 => array(1=>55, 2=>30, 3=>15),
+        2 => array(1=>55, 2=>30, 3=>15),
+        3 => array(1=>35, 2=>30, 3=>20, 4=>10, 5=>5),
+        4 => array(1=>35, 2=>30, 3=>20, 4=>10, 5=>5),
+        5 => array(1=>15, 2=>18, 3=>20, 4=>18, 5=>15, 6=>8, 7=>5, 8=>1),
+        6 => array(1=>15, 2=>18, 3=>20, 4=>18, 5=>15, 6=>8, 7=>5, 8=>1),
+        7 => array(1=>8, 2=>10, 3=>14, 4=>16, 5=>18, 6=>16, 7=>10, 8=>5, 9=>2, 10=>1),
+        8 => array(1=>8, 2=>10, 3=>14, 4=>16, 5=>18, 6=>16, 7=>10, 8=>5, 9=>2, 10=>1),
+    );
+    $odds = ($armory_level >= 9)
+        ? array(1=>5, 2=>8, 3=>12, 4=>15, 5=>20, 6=>18, 7=>12, 8=>6, 9=>3, 10=>1)
+        : ($tier_odds[min(8, $armory_level)] ?? array(1=>100));
+    ?>
+    <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+        <?php foreach ($odds as $tier => $pct): ?>
+        <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;">
+            <span style="width:52px;opacity:0.55;">Tier <?php echo $tier; ?></span>
+            <div style="flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:<?php echo $pct; ?>%;background:<?php echo $tier >= 9 ? '#ff9944' : ($tier >= 7 ? '#00c8a0' : 'rgba(255,255,255,0.3)'); ?>;border-radius:3px;"></div>
+            </div>
+            <span style="width:32px;text-align:right;opacity:0.7;"><?php echo $pct; ?>%</span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
 <?php $conn->close(); ?>
