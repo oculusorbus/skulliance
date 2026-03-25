@@ -732,7 +732,7 @@ $conn->close();
 .soldier-card.soldier-ready { border-color:#00c8a0; }
 .soldier-card.soldier-dead { opacity:0.7; }
 .soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
-.soldier-name { font-size:0.7rem; opacity:0.8; word-break:break-word; text-align:center; }
+.soldier-name { font-size:0.7rem; opacity:0.8; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10ch; }
 .soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
 .soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
 .soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
@@ -793,11 +793,12 @@ $conn->close();
     .soldiers-grid { grid-template-columns:repeat(3,1fr); }
     #crypt-soldiers-grid { grid-template-columns:repeat(2,1fr); }
     .gear-inventory-row { flex-direction:column !important; }
+    .soldiers-stat-row { display:grid; grid-template-columns:repeat(2,1fr); }
     .soldiers-stat { padding:7px 10px; min-width:0; }
+    .soldiers-stat-label { font-size:0.66rem; }
     .soldiers-stat-value { font-size:0.95rem; }
     .tower-garrison-header { flex-direction:column; align-items:flex-start; }
     .tower-deploy-row { justify-content:flex-end; }
-    .soldier-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
 }
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
