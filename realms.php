@@ -797,7 +797,6 @@ $conn->close();
     .soldiers-stat-value { font-size:0.95rem; }
     .tower-garrison-header { flex-direction:column; align-items:flex-start; }
     .tower-deploy-row { justify-content:flex-end; }
-    .soldier-name { max-width:100%; }
 }
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
