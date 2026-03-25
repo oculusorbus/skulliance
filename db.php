@@ -8579,7 +8579,7 @@ function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 		$armor_id  = intval($srow['armor_id']);
 		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
 		$conn->query("UPDATE soldiers SET location = 3 WHERE id = $sid LIMIT 1");
-		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id) VALUES ($raid_id, 'offense', $sid, $weapon_id, $armor_id)");
+		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id, dead) VALUES ($raid_id, 'offense', $sid, $weapon_id, $armor_id, 0)");
 	}
 }
 
