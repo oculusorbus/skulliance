@@ -44,7 +44,10 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
 <?php if (!empty($garrison)): ?>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px;">
     <strong style="font-size:0.85rem;">Garrison</strong>
-    <button class="small-button" onclick="removeAllFromTower()">Remove All</button>
+    <div style="display:flex;gap:6px;">
+        <button class="small-button" onclick="removeAllFromTower()">Remove All</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers()">Discharge All</button>
+    </div>
 </div>
 <?php endif; ?>
 <div class="soldiers-grid" id="tower-garrison-grid">
@@ -71,7 +74,10 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
             <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
         </div>
     </div>
-    <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
+    <div style="display:flex;gap:6px;justify-content:center;">
+        <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
+    </div>
 </div>
 <?php endforeach; ?>
 <?php if (empty($garrison)): ?>

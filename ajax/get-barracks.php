@@ -8,7 +8,8 @@ if (!$realm_id) exit;
 
 // Lazy training: mark soldiers as trained if their timer has elapsed
 updateSoldierTraining($conn, $realm_id);
-$soldiers       = getBarracksSoldiers($conn, $realm_id);
+$all_soldiers   = getBarracksSoldiers($conn, $realm_id);
+$soldiers       = array_values(array_filter($all_soldiers, fn($s) => intval($s['location']) == 1));
 $cap            = getDeploymentCap($conn, $realm_id);
 $barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));
 $training_hours = getBarracksTrainingHours($conn, $realm_id);
@@ -19,7 +20,7 @@ $loc_labels = array(1 => 'Active Duty', 2 => 'Tower', 3 => 'On Raid');
 $now = time();
 
 $slot_cost_total = 0;
-foreach ($soldiers as $s) {
+foreach ($all_soldiers as $s) {
     $slot_cost_total += ($s['project_id'] > 7 && $s['project_id'] != 15) ? 2 : 1;
 }
 
