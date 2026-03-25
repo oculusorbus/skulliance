@@ -738,8 +738,12 @@ $conn->close();
 .soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
 /* Crypt coffin cards */
+.coffin-wrapper {
+    background: url('icons/coffin.png') center bottom / contain no-repeat;
+    padding-bottom:8px;
+}
 .coffin-card {
-    background: rgba(30,10,10,0.7) url('icons/coffin.png') center bottom / contain no-repeat;
+    background:rgba(30,10,10,0.7);
     border:1px solid rgba(150,50,50,0.4);
     border-radius:8px;
     padding:8px;
@@ -752,7 +756,7 @@ $conn->close();
 }
 .coffin-card.soldier-ready {
     border-color:rgba(0,200,160,0.5);
-    background: rgba(0,40,30,0.7) url('icons/coffin.png') center bottom / contain no-repeat;
+    background:rgba(0,40,30,0.7);
     box-shadow:0 0 10px rgba(0,200,160,0.15);
 }
 @keyframes resurrect-ascend {
@@ -761,7 +765,7 @@ $conn->close();
     60%  { transform:translateY(-30px) scale(0.95); opacity:0.7; filter:brightness(2.5) drop-shadow(0 0 16px #ffffff); }
     100% { transform:translateY(-80px) scale(0.6); opacity:0; filter:brightness(4) drop-shadow(0 0 24px #ffffff); }
 }
-.coffin-card.ascending {
+.coffin-wrapper.ascending {
     animation: resurrect-ascend 0.9s ease-in forwards;
     pointer-events:none;
 }
@@ -1532,9 +1536,9 @@ $conn->close();
 	/* ── CRYPT ────────────────────────────────────────────── */
 	function resurrectAllSoldiers() {
 		// Animate eligible coffin cards before the server call
-		var readyCards = document.querySelectorAll('#crypt-soldiers-grid .coffin-card.soldier-ready');
-		readyCards.forEach(function(card, i) {
-			setTimeout(function() { card.classList.add('ascending'); }, i * 120);
+		var readyCards = document.querySelectorAll('#crypt-soldiers-grid .coffin-wrapper:has(.coffin-card.soldier-ready)');
+		readyCards.forEach(function(wrapper, i) {
+			setTimeout(function() { wrapper.classList.add('ascending'); }, i * 120);
 		});
 		var delay = readyCards.length > 0 ? (readyCards.length - 1) * 120 + 950 : 0;
 		setTimeout(function() {
