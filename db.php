@@ -7815,6 +7815,14 @@ function getTotalSoldierCount($conn, $realm_id) {
 	return intval($row['cnt']);
 }
 
+// Weighted slot cost across all alive soldiers (partner NFTs cost 2 slots, core cost 1)
+function getTotalSoldierSlotCost($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$result = $conn->query("SELECT COALESCE(SUM(CASE WHEN collections.project_id > 7 AND collections.project_id != 15 THEN 2 ELSE 1 END), 0) AS slot_cost FROM soldiers INNER JOIN nfts ON nfts.id = soldiers.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL AND soldiers.active = 1");
+	$row = $result->fetch_assoc();
+	return intval($row['slot_cost']);
+}
+
 // Count of deployed soldiers (tower + raid, alive)
 function getDeployedCount($conn, $realm_id) {
 	$realm_id = intval($realm_id);

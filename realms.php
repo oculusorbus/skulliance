@@ -705,8 +705,7 @@ $_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeplo
 }
 $nft_project_tree    = getUserNFTProjectTree($conn);
 $barracks_cap        = getDeploymentCap($conn, $realm_id);
-$barracks_soldiers   = getTotalSoldierCount($conn, $realm_id);
-$barracks_slots_open = max(0, $barracks_cap - $barracks_soldiers);
+$barracks_slots_open = max(0, $barracks_cap - getTotalSoldierSlotCost($conn, $realm_id));
 // Close DB Connection
 $conn->close();
 ?>
@@ -1395,7 +1394,10 @@ $conn->close();
 		document.getElementById('enlist-modal-overlay').style.display = 'block';
 		document.getElementById('enlist-modal').style.display          = 'flex';
 		_buildEnlistProjectFilter();
-		_updateEnlistCount();
+		$.getJSON('ajax/get-barracks-slots.php', function(r) {
+			if (typeof r.open !== 'undefined') _barracksOpenSlots = r.open;
+			_updateEnlistCount();
+		}).fail(function() { _updateEnlistCount(); });
 	}
 
 	function closeEnlistPicker() {
