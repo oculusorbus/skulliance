@@ -142,6 +142,7 @@ usort($armors,  fn($a,$b) => $b['armor_level']  - $a['armor_level']);
 
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Gear Drop Rates (Level <?php echo $armory_level; ?>)</strong>
+    <p style="font-size:0.78rem;opacity:0.55;margin:6px 0 0;">Each night, your armory rolls <strong><?php echo $armory_level == 1 ? '1 drop' : '1–' . $armory_level . ' drops'; ?></strong> at random, then each drop rolls its tier from the table below. Low roll nights are normal.</p>
     <?php
     $tier_odds = array(
         1 => array(1=>55, 2=>30, 3=>15),
