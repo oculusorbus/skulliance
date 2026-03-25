@@ -733,10 +733,10 @@ $conn->close();
 .soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
 .soldier-name { font-size:0.7rem; opacity:0.8; word-break:break-word; text-align:center; }
 .soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
-.soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
+.soldier-status.status-ready { color:#00c8a0; }
 .soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
 .soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
-.soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+.soldier-status.status-dead { color:#ff6060; }
 /* Crypt coffin cards */
 .coffin-wrapper {
     background: url('icons/coffin.png') center bottom / contain no-repeat;
