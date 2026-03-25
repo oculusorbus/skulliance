@@ -743,17 +743,19 @@ $conn->close();
     background: url('icons/coffin.png') center bottom / contain no-repeat;
 }
 .coffin-card {
-    background:rgba(30,10,10,0.7);
-    border:1px solid rgba(150,50,50,0.4);
-    border-radius:8px;
-    padding:8px;
-    text-align:center;
-    font-size:0.75rem;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:4px;
+    background: rgba(30, 10, 10, 0.7);
+    border: 1px solid rgba(150, 50, 50, 0.4);
+    border-radius: 8px;
+    padding: 32.5px;
+    text-align: center;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: -4px;
 }
+#crypt-soldiers-grid { grid-template-columns:repeat(4,1fr); }
 .coffin-card.soldier-ready {
     border-color:rgba(0,200,160,0.5);
     background:rgba(0,40,30,0.7);
@@ -787,6 +789,7 @@ $conn->close();
 .tower-deploy-row { margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
 @media (max-width:500px) {
     .soldiers-grid { grid-template-columns:repeat(3,1fr); }
+    #crypt-soldiers-grid { grid-template-columns:repeat(2,1fr); }
     .gear-inventory-row { flex-direction:column !important; }
     .soldiers-stat { padding:7px 10px; min-width:0; }
     .soldiers-stat-value { font-size:0.95rem; }
