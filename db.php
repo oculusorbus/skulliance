@@ -8225,11 +8225,16 @@ function getFactoryInfo($conn, $realm_id) {
 }
 
 // ── ARMORY ─────────────────────────────────────────────────
-// Gear drops_per_night = armory_level, capped at 10
+function getArmoryDropsPerNight($level) {
+	if ($level <= 0) return 0;
+	$table = array(1=>1, 2=>1, 3=>2, 4=>2, 5=>3, 6=>4, 7=>4, 8=>5, 9=>6, 10=>7);
+	return isset($table[$level]) ? $table[$level] : 7; // level 11+ same as 10
+}
+
 function getArmoryInfo($conn, $realm_id) {
 	$realm_id     = intval($realm_id);
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
-	$drops        = min(10, $armory_level);
+	$drops        = getArmoryDropsPerNight($armory_level);
 	$all_soldiers = getBarracksSoldiers($conn, $realm_id);
 	$soldiers     = array_values(array_filter($all_soldiers, function($s) { return intval($s['trained']) == 1 && intval($s['location']) == 1; }));
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
@@ -8242,45 +8247,50 @@ function getArmoryInfo($conn, $realm_id) {
 function rollArmoryTier($level) {
 	$roll = rand(1, 100);
 	if ($level <= 2) {
-		if ($roll <= 50) return 1;
+		// T1:55 T2:30 T3:15
+		if ($roll <= 55) return 1;
 		if ($roll <= 85) return 2;
 		return 3;
 	} elseif ($level <= 4) {
+		// T1:35 T2:30 T3:20 T4:10 T5:5
 		if ($roll <= 35) return 1;
-		if ($roll <= 60) return 2;
-		if ($roll <= 80) return 3;
-		if ($roll <= 92) return 4;
+		if ($roll <= 65) return 2;
+		if ($roll <= 85) return 3;
+		if ($roll <= 95) return 4;
 		return 5;
 	} elseif ($level <= 6) {
-		if ($roll <= 20) return 1;
-		if ($roll <= 38) return 2;
-		if ($roll <= 55) return 3;
-		if ($roll <= 68) return 4;
-		if ($roll <= 79) return 5;
-		if ($roll <= 88) return 6;
-		if ($roll <= 95) return 7;
+		// T1:15 T2:18 T3:20 T4:18 T5:15 T6:8 T7:5 T8:1
+		if ($roll <= 15) return 1;
+		if ($roll <= 33) return 2;
+		if ($roll <= 53) return 3;
+		if ($roll <= 71) return 4;
+		if ($roll <= 86) return 5;
+		if ($roll <= 94) return 6;
+		if ($roll <= 99) return 7;
 		return 8;
 	} elseif ($level <= 8) {
-		if ($roll <= 12) return 1;
-		if ($roll <= 26) return 2;
-		if ($roll <= 40) return 3;
-		if ($roll <= 53) return 4;
-		if ($roll <= 64) return 5;
-		if ($roll <= 74) return 6;
-		if ($roll <= 83) return 7;
-		if ($roll <= 91) return 8;
-		if ($roll <= 96) return 9;
-		return 10;
-	} else { // level 9-10
+		// T1:8 T2:10 T3:14 T4:16 T5:18 T6:16 T7:10 T8:5 T9:2 T10:1
 		if ($roll <= 8)  return 1;
 		if ($roll <= 18) return 2;
-		if ($roll <= 30) return 3;
-		if ($roll <= 42) return 4;
-		if ($roll <= 54) return 5;
-		if ($roll <= 65) return 6;
-		if ($roll <= 75) return 7;
-		if ($roll <= 84) return 8;
-		if ($roll <= 93) return 9;
+		if ($roll <= 32) return 3;
+		if ($roll <= 48) return 4;
+		if ($roll <= 66) return 5;
+		if ($roll <= 82) return 6;
+		if ($roll <= 92) return 7;
+		if ($roll <= 97) return 8;
+		if ($roll <= 99) return 9;
+		return 10;
+	} else { // level 9+ (handles 10, 11, 12, ...)
+		// T1:5 T2:8 T3:12 T4:15 T5:20 T6:18 T7:12 T8:6 T9:3 T10:1
+		if ($roll <= 5)  return 1;
+		if ($roll <= 13) return 2;
+		if ($roll <= 25) return 3;
+		if ($roll <= 40) return 4;
+		if ($roll <= 60) return 5;
+		if ($roll <= 78) return 6;
+		if ($roll <= 90) return 7;
+		if ($roll <= 96) return 8;
+		if ($roll <= 99) return 9;
 		return 10;
 	}
 }
@@ -8470,7 +8480,7 @@ function processArmoryDrops($conn) {
 		$realm_id     = intval($row['id']);
 		$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 		if ($armory_level == 0) continue;
-		$drops_per_night = min(10, $armory_level);
+		$drops_per_night = getArmoryDropsPerNight($armory_level);
 		for ($i = 0; $i < $drops_per_night; $i++) {
 			$is_weapon = ($i % 2 == 0);
 			$tier = rollArmoryTier($armory_level);
