@@ -1210,6 +1210,7 @@ $conn->close();
 	?>;
 	var _barracksPage = 1;
 	var _armoryPage   = 1;
+	var _portalPage   = 1;
 
 	function openLocationModal(loc_id) {
 		var title    = _locModalTitles[loc_id]    || 'Location';
@@ -1224,6 +1225,7 @@ $conn->close();
 		document.getElementById('location-modal-overlay').style.display = 'block';
 		document.getElementById('location-modal').style.display          = 'flex';
 		var params = '';
+		if (loc_id === 1) params = '?page=' + _portalPage;
 		if (loc_id === 4) params = '?page=' + _barracksPage;
 		if (loc_id === 2) params = '?page=' + _armoryPage;
 		if (loc_id === 3) { if (window._currentLocModal !== 3) { _towerPage = 1; _towerSelectedIds = []; } params = '?page=' + _towerPage; }
@@ -1286,6 +1288,11 @@ $conn->close();
 	function goBarracksPage(page) {
 		_barracksPage = page;
 		_reloadModalBody(_locModalEndpoints[4], '?page=' + page, null, '#barracks-soldiers-grid');
+	}
+
+	function goPortalPage(page) {
+		_portalPage = page;
+		_reloadModalBody(_locModalEndpoints[1], '?page=' + page, null, null);
 	}
 
 	function goArmoryPage(page) {
