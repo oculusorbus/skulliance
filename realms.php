@@ -761,19 +761,11 @@ $conn->close();
     background:rgba(0,40,30,0.7);
     box-shadow:0 0 10px rgba(0,200,160,0.15);
 }
-@keyframes coffin-fade {
-    0%   { background-image: url('icons/coffin.png'); opacity:1; }
-    100% { background-image: url('icons/coffin.png'); opacity:0; }
-}
 @keyframes resurrect-ascend {
     0%   { transform:translateY(0) scale(1);   opacity:1; filter:brightness(1); }
     30%  { transform:translateY(-8px) scale(1.05); opacity:1; filter:brightness(1.8) drop-shadow(0 0 8px #00c8a0); }
     60%  { transform:translateY(-30px) scale(0.95); opacity:0.7; filter:brightness(2.5) drop-shadow(0 0 16px #ffffff); }
     100% { transform:translateY(-80px) scale(0.6); opacity:0; filter:brightness(4) drop-shadow(0 0 24px #ffffff); }
-}
-.coffin-wrapper.coffin-fading {
-    animation: coffin-fade 0.6s ease-out forwards;
-    pointer-events:none;
 }
 .coffin-wrapper.ascending {
     background-image: none;
@@ -1548,22 +1540,14 @@ $conn->close();
 	/* ── CRYPT ────────────────────────────────────────────── */
 	function resurrectAllSoldiers() {
 		var readyCards = document.querySelectorAll('#crypt-soldiers-grid .coffin-wrapper:has(.coffin-card.soldier-ready)');
-		var fadeDuration = 600;
-		// Phase 1: fade out coffin background on each wrapper
+		// Remove coffin background immediately then ascend
 		readyCards.forEach(function(wrapper, i) {
-			setTimeout(function() { wrapper.classList.add('coffin-fading'); }, i * 120);
+			setTimeout(function() {
+				wrapper.style.backgroundImage = 'none';
+				wrapper.classList.add('ascending');
+			}, i * 120);
 		});
-		var fadeEnd = readyCards.length > 0 ? (readyCards.length - 1) * 120 + fadeDuration : 0;
-		// Phase 2: ascend after all coffins have faded
-		setTimeout(function() {
-			readyCards.forEach(function(wrapper, i) {
-				setTimeout(function() {
-					wrapper.classList.remove('coffin-fading');
-					wrapper.classList.add('ascending');
-				}, i * 120);
-			});
-		}, fadeEnd);
-		var ascendEnd = fadeEnd + (readyCards.length > 0 ? (readyCards.length - 1) * 120 + 950 : 0);
+		var ascendEnd = readyCards.length > 0 ? (readyCards.length - 1) * 120 + 950 : 0;
 		setTimeout(function() {
 			$.post('ajax/resurrect-soldiers.php', {}, function(resp) {
 				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
