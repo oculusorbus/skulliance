@@ -61,7 +61,7 @@ $page_soldiers = array_slice($raid_soldiers, ($page - 1) * $per_page, $per_page)
 <?php if (!empty($raid_soldiers)): ?>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Soldiers on Raids</strong>
-    <div class="soldiers-grid" style="margin-top:8px;">
+    <div class="soldiers-grid" id="portal-soldiers-grid" style="margin-top:8px;">
     <?php foreach ($page_soldiers as $s):
         $img_src = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
     ?>

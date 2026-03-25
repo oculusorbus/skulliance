@@ -1227,7 +1227,7 @@ $conn->close();
 		var iconSrc  = _locModalIcons[loc_id];
 		var iconHtml = iconSrc ? '<img src="' + iconSrc + '" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;opacity:0.9;" onerror="this.style.display=\'none\'">' : '';
 		document.getElementById('location-modal-title').innerHTML = iconHtml + title;
-		var _soldierModals = [2, 3, 4, 6];
+		var _soldierModals = [1, 2, 3, 4, 6];
 		document.getElementById('location-modal-body').innerHTML = _soldierModals.indexOf(loc_id) !== -1 ? _skullLoaderHTML : '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
 		document.getElementById('location-modal-footer').style.display = 'flex';
 		document.getElementById('location-modal-overlay').style.display = 'block';
@@ -1300,7 +1300,7 @@ $conn->close();
 
 	function goPortalPage(page) {
 		_portalPage = page;
-		_reloadModalBody(_locModalEndpoints[1], '?page=' + page, null, null);
+		_reloadModalBody(_locModalEndpoints[1], '?page=' + page, null, '#portal-soldiers-grid');
 	}
 
 	function goArmoryPage(page) {
