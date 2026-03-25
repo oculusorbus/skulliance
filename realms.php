@@ -1042,7 +1042,12 @@ $conn->close();
 			_raidSoldiersConsumables = 'direct';
 			_raidSoldiersButton      = raidButton || null;
 			$.getJSON('ajax/get-available-raiders.php', function(raiders) {
-				_deployRaiders          = raiders || [];
+				_deployRaiders = raiders || [];
+				if (_deployRaiders.length === 0) {
+					openNotify('No trained soldiers available.<br>Enlist and train soldiers in your Barracks before raiding.');
+					_deployRaiders = []; _raidSoldiersDefenseId = null;
+					return;
+				}
 				_raidSoldierSelectedIds = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
 				_deployRaiders          = [];
 				_proceedAfterSoldierPick();

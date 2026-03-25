@@ -8077,15 +8077,22 @@ function updateSoldierTraining($conn, $realm_id) {
 	$conn->query("UPDATE soldiers SET trained = 1 WHERE realm_id = $realm_id AND trained = 0 AND dead IS NULL AND DATE_ADD(date_created, INTERVAL $hours HOUR) <= NOW()");
 }
 
-// Remove soldiers whose NFT is no longer owned by the realm's user (called after verifyNFTs)
+// Deactivate soldiers whose NFT is no longer owned by the realm's user (called after verifyNFTs).
+// Returns equipped gear to the realm owner's inventory, then soft-deletes the soldier (active=0).
+// The soldier record is preserved so the original owner can re-enlist the same NFT if it returns.
 function verifyRealmSoldiers($conn) {
-	// Find soldiers where the NFT's user_id doesn't match the realm's user_id
-	$sql = "SELECT soldiers.id FROM soldiers INNER JOIN realms ON realms.id = soldiers.realm_id INNER JOIN nfts ON nfts.id = soldiers.nft_id WHERE nfts.user_id != realms.user_id";
+	$sql = "SELECT soldiers.id, soldiers.weapon_id, soldiers.armor_id, realms.user_id AS realm_user_id
+	        FROM soldiers
+	        INNER JOIN realms ON realms.id = soldiers.realm_id
+	        INNER JOIN nfts ON nfts.id = soldiers.nft_id
+	        WHERE nfts.user_id != realms.user_id AND soldiers.active = 1";
 	$result = $conn->query($sql);
-	$ids = array();
-	while ($row = $result->fetch_assoc()) $ids[] = intval($row['id']);
-	if (!empty($ids)) {
-		$conn->query("DELETE FROM soldiers WHERE id IN (" . implode(',', $ids) . ")");
+	while ($row = $result->fetch_assoc()) {
+		$sid     = intval($row['id']);
+		$user_id = intval($row['realm_user_id']);
+		if (intval($row['weapon_id']) > 0) updateGear($conn, $user_id, 'weapon', intval($row['weapon_id']), 1);
+		if (intval($row['armor_id'])  > 0) updateGear($conn, $user_id, 'armor',  intval($row['armor_id']),  1);
+		$conn->query("UPDATE soldiers SET active = 0, location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid LIMIT 1");
 	}
 }
 
@@ -8114,7 +8121,7 @@ function getCryptSoldiers($conn, $realm_id) {
 	        INNER JOIN projects ON projects.id = collections.project_id
 	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
 	        LEFT JOIN armor ON armor.id = soldiers.armor_id
-	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL
+	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL AND soldiers.active = 1
 	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.dead ASC";
 	$result = $conn->query($sql);
 	$soldiers = array();
@@ -8127,7 +8134,7 @@ function resurrectSoldiers($conn, $realm_id) {
 	$realm_id    = intval($realm_id);
 	$res_days    = getCryptResurrectionDays($conn, $realm_id);
 	// Set location=1 (reserve), trained=1 (already trained), clear dead timestamp
-	$conn->query("UPDATE soldiers SET dead = NULL, location = 1, trained = 1 WHERE realm_id = $realm_id AND dead IS NOT NULL AND DATE_ADD(dead, INTERVAL $res_days DAY) <= NOW()");
+	$conn->query("UPDATE soldiers SET dead = NULL, location = 1, trained = 1 WHERE realm_id = $realm_id AND dead IS NOT NULL AND active = 1 AND DATE_ADD(dead, INTERVAL $res_days DAY) <= NOW()");
 }
 
 // ── TOWER ──────────────────────────────────────────────────
@@ -8199,7 +8206,6 @@ function getMineInfo($conn, $realm_id) {
 }
 
 // ── FACTORY ────────────────────────────────────────────────
-// Factory drops_per_night = factory_level (1-10); rarity uses consumables.rate via getConsumableRanges
 function getFactoryInfo($conn, $realm_id) {
 	$realm_id      = intval($realm_id);
 	$factory_level = intval(getRealmLocationLevel($conn, $realm_id, 5));
@@ -8213,7 +8219,7 @@ function getArmoryInfo($conn, $realm_id) {
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 	$drops        = min(10, $armory_level);
 	$all_soldiers = getBarracksSoldiers($conn, $realm_id);
-	$soldiers     = array_values(array_filter($all_soldiers, function($s) { return intval($s['trained']) == 1; }));
+	$soldiers     = array_values(array_filter($all_soldiers, function($s) { return intval($s['trained']) == 1 && intval($s['location']) == 1; }));
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	$inventory    = array();
 	if ($r && $r->num_rows > 0) $inventory = getGearInventory($conn, intval($r->fetch_assoc()['user_id']));

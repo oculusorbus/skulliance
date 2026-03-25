@@ -20,7 +20,8 @@
     usort($gear_armors,  fn($a,$b) => $b['armor_level']  - $a['armor_level']);
     $has_gear = !empty($gear_weapons) || !empty($gear_armors);
 
-    // Helper to render a single log row
+    // Helper to render a single log row (guard against redeclaration if included multiple times)
+    if (!function_exists('_log_row')) {
     function _log_row($entry) {
         $qty  = $entry['total_qty'];
         $date = date('M j', strtotime($entry['created_date']));
@@ -46,6 +47,7 @@
         echo '<span style="opacity:0.45;font-size:0.75rem;">' . $date . '</span>';
         echo '</div>';
     }
+    } // end function_exists guard
     ?>
     <?php if (!empty($other)): ?>
     <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;">
