@@ -97,7 +97,7 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
         </div>
         <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
     </div>
-    <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>, 'barracks')">Discharge</button>
 </div>
 <?php endforeach; ?>
 <?php if (empty($soldiers)): ?>
@@ -123,7 +123,7 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     <button class="small-button" onclick="openEnlistPicker()">+ Enlist Soldiers</button>
     <button class="small-button" onclick="autoFillBarracks()">Auto-Enlist</button>
     <?php if (!empty($soldiers)): ?>
-    <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers()">Discharge All</button>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers(1)">Discharge All</button>
     <?php endif; ?>
 </div>
 <?php $conn->close(); ?>

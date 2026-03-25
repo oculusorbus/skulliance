@@ -46,7 +46,7 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
     <strong style="font-size:0.85rem;">Garrison</strong>
     <div style="display:flex;gap:6px;">
         <button class="small-button" onclick="removeAllFromTower()">Remove All</button>
-        <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers()">Discharge All</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers(2)">Discharge All</button>
     </div>
 </div>
 <?php endif; ?>
@@ -75,7 +75,7 @@ $available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $pe
         </div>
     </div>
     <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
-    <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>, 'tower')">Discharge</button>
 </div>
 <?php endforeach; ?>
 <?php if (empty($garrison)): ?>

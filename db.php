@@ -8000,13 +8000,13 @@ function dischargeSoldier($conn, $soldier_id, $realm_id) {
 	return true;
 }
 
-function dischargeAllSoldiers($conn, $realm_id) {
+function dischargeAllSoldiers($conn, $realm_id, $location = null) {
 	$realm_id = intval($realm_id);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	if (!$r || $r->num_rows == 0) return 0;
 	$user_id = intval($r->fetch_assoc()['user_id']);
-	// Fetch all alive, active soldiers in this realm
-	$result = $conn->query("SELECT id, weapon_id, armor_id, location FROM soldiers WHERE realm_id = $realm_id AND dead IS NULL AND active = 1");
+	$loc_filter = ($location !== null) ? " AND location = " . intval($location) : "";
+	$result = $conn->query("SELECT id, weapon_id, armor_id, location FROM soldiers WHERE realm_id = $realm_id AND dead IS NULL AND active = 1" . $loc_filter);
 	$count = 0;
 	while ($s = $result->fetch_assoc()) {
 		$sid = intval($s['id']);

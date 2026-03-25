@@ -85,7 +85,7 @@ $page_soldiers = array_slice($raid_soldiers, ($page - 1) * $per_page, $per_page)
             </div>
             <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
         </div>
-        <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>)">Discharge</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>, 'portal')">Discharge</button>
     </div>
     <?php endforeach; ?>
     </div>
@@ -105,7 +105,7 @@ $page_soldiers = array_slice($raid_soldiers, ($page - 1) * $per_page, $per_page)
     </div>
     <?php endif; ?>
     <div class="raid-modal-footer" style="margin-top:16px;">
-        <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers()">Discharge All</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers(3)">Discharge All</button>
     </div>
 </div>
 <?php else: ?>
