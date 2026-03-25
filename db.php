@@ -8226,9 +8226,9 @@ function getFactoryInfo($conn, $realm_id) {
 
 // ── ARMORY ─────────────────────────────────────────────────
 function getArmoryDropsPerNight($level) {
-	// Returns max possible drops for display purposes; actual nightly count is rand(1, level)
+	// Returns max possible drops for display purposes; actual nightly count is rand(1, min(10, level))
 	if ($level <= 0) return 0;
-	return $level;
+	return min(10, $level);
 }
 
 function getArmoryInfo($conn, $realm_id) {
@@ -8480,7 +8480,7 @@ function processArmoryDrops($conn) {
 		$realm_id     = intval($row['id']);
 		$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 		if ($armory_level == 0) continue;
-		$drops_per_night = ($armory_level == 1) ? 1 : rand(1, $armory_level);
+		$drops_per_night = ($armory_level <= 1) ? 1 : rand(1, min(10, $armory_level));
 		for ($i = 0; $i < $drops_per_night; $i++) {
 			$is_weapon = ($i % 2 == 0);
 			$tier = rollArmoryTier($armory_level);
