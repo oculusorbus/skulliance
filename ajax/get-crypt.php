@@ -7,7 +7,7 @@ $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
 $crypt_level  = intval(getRealmLocationLevel($conn, $realm_id, 6));
-$res_days     = max(1, 11 - $crypt_level);
+$res_days     = getCryptResurrectionDays($conn, $realm_id);
 $soldiers     = getCryptSoldiers($conn, $realm_id);
 $eligible_count = 0;
 foreach ($soldiers as $s) { if ($s['eligible']) $eligible_count++; }
@@ -38,7 +38,8 @@ $now = time();
     $ready_at  = strtotime($s['ready_at']);
     $secs_left = $ready_at - $now;
 ?>
-<div class="soldier-card <?php echo $s['eligible'] ? 'soldier-ready' : 'soldier-dead'; ?>">
+<div class="coffin-wrapper">
+<div class="coffin-card <?php echo $s['eligible'] ? 'soldier-ready' : 'soldier-dead'; ?>" data-soldier-id="<?php echo $s['soldier_id']; ?>">
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" style="opacity:<?php echo $s['eligible'] ? '1' : '0.5'; ?>;"/>
     <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
     <div class="soldier-status <?php echo $s['eligible'] ? 'status-ready' : 'status-dead'; ?>">
@@ -50,6 +51,7 @@ $now = time();
             echo $d . "d " . $h . "h remaining";
         endif; ?>
     </div>
+</div>
 </div>
 <?php endforeach; ?>
 <?php if (empty($soldiers)): ?>

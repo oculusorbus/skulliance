@@ -2366,6 +2366,15 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     transition: color 0.15s;
 }
 .raid-gear-icon:hover { color: #00c8a0; }
+.raid-config-label { font-size: 0.8rem; color: #7a9eb0; }
+.soldier-discharge-btn { background-color: #7a2020 !important; color: #ffaaaa !important; box-shadow: 0 4px #2a0808 !important; }
+.soldier-discharge-btn:hover { background-color: #9e2a2a !important; }
+.modal-skull-loader { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:32px 0; }
+.modal-skull-loader .lsk { font-size:2rem; animation:lp 1.2s ease-in-out infinite; }
+.modal-skull-loader .lbar-wrap { width:120px; height:3px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.modal-skull-loader .lbar { height:100%; background:#00c8a0; width:0%; animation:lb 3s ease-out forwards; }
+@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
+@keyframes lb  { to { width:85%; } }
 
 /* Raid consumables modal grid */
 .raid-con-item {
@@ -2582,6 +2591,39 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     display: flex;
     justify-content: flex-end;
 }
+/* Soldier logs panel (completed raids) */
+.rc-logs-panel {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 8px 14px 10px;
+}
+.rc-logs-col {
+    flex: 1;
+    min-width: 0;
+}
+.rc-logs-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.45;
+    color: #7a9eb0;
+    margin-bottom: 4px;
+}
+.rc-log-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    color: #c8dce8;
+    padding: 2px 0;
+}
+.rc-log-row.rc-log-dead {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+.rc-log-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-log-gear { display: flex; gap: 2px; flex-shrink: 0; }
 /* History link */
 .rc-history-link {
     padding: 4px 2px 10px;
@@ -3108,6 +3150,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     /* Drop the upgrade action to its own row so location-info gets full width for pills */
     .location-row { flex-wrap: wrap; }
     .location-action { flex-basis: 100%; text-align: left; padding-left: calc(52px + 12px); }
+    .location-action .loc-modal-btn { float: right; }
 }
 
 /* ── Raid Target Cards ───────────────────────────────────────────────────── */

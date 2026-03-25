@@ -2136,40 +2136,27 @@ function getCurrentAmounts($conn){
 
 // Get current amount for user for a specific consumable
 function getCurrentAmount($conn, $user_id, $consumable_id){
-	$sql = "SELECT amount FROM amounts WHERE user_id = '".$user_id."' AND consumable_id = '".$consumable_id."'";
-	$result = $conn->query($sql);
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	return $row["amount"];
-	  }
-	} else {
-	  //echo "0 results";
-	    return "false";
-	}
+	$user_id       = intval($user_id);
+	$consumable_id = intval($consumable_id);
+	$result = $conn->query("SELECT COALESCE(SUM(amount), 0) AS total FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id");
+	if ($result) return intval($result->fetch_assoc()['total']);
+	return 0;
 }
 
 // Update specific user amount for a specific consumable
 function updateAmount($conn, $user_id, $consumable_id, $subtotal){
-	$current_amount = getCurrentAmount($conn, $user_id, $consumable_id);
-	if($current_amount != "false"){
-		$total = $subtotal + $current_amount;
-		$sql = "UPDATE amounts SET amount = '".$total."' WHERE user_id='".$user_id."' AND consumable_id ='".$consumable_id."'";
-		if ($conn->query($sql) === TRUE) {
-		  //echo "New record created successfully";
-		} else {
-		  //echo "Error: " . $sql . "<br>" . $conn->error;
-		}
-	}else{
-		$sql = "INSERT INTO amounts (amount, user_id, consumable_id)
-		VALUES ('".$subtotal."', '".$user_id."', '".$consumable_id."')";
-
-		if ($conn->query($sql) === TRUE) {
-		  //echo "New record created successfully";
-		} else {
-		  //echo "Error: " . $sql . "<br>" . $conn->error;
-		}
+	$user_id       = intval($user_id);
+	$consumable_id = intval($consumable_id);
+	$subtotal      = intval($subtotal);
+	// Collapse duplicate rows: sum all amounts into the lowest-id row, delete the rest
+	$agg = $conn->query("SELECT MIN(id) AS keep_id, COALESCE(SUM(amount), 0) AS total FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id");
+	if ($agg && ($row = $agg->fetch_assoc()) && $row['keep_id'] !== null) {
+		$new_total = max(0, intval($row['total']) + $subtotal);
+		$keep_id   = intval($row['keep_id']);
+		$conn->query("UPDATE amounts SET amount = $new_total WHERE id = $keep_id");
+		$conn->query("DELETE FROM amounts WHERE user_id = $user_id AND consumable_id = $consumable_id AND id != $keep_id");
+	} else if ($subtotal > 0) {
+		$conn->query("INSERT INTO amounts (amount, user_id, consumable_id) VALUES ($subtotal, $user_id, $consumable_id)");
 	}
 }
 
@@ -3570,7 +3557,7 @@ function getCurrentBalance($conn, $user_id, $project_id){
 // Update specific user balance for a project
 function updateBalance($conn, $user_id, $project_id, $subtotal){
 	$current_balance = getCurrentBalance($conn, $user_id, $project_id);
-	if($current_balance != "false"){
+	if($current_balance !== "false"){
 		$total = $subtotal + $current_balance;
 		$sql = "UPDATE balances SET balance = '".$total."' WHERE user_id='".$user_id."' AND project_id='".$project_id."'";
 		if ($conn->query($sql) === TRUE) {
@@ -6151,12 +6138,11 @@ function getRealms($conn, $sort, $group){
 						if(checkMaxRaids($conn, $offense_id)){
 							$_saved_config = isset($_SESSION['raid_consumable_config']) && !empty($_SESSION['raid_consumable_config']) ? $_SESSION['raid_consumable_config'] : null;
 							$_has_saved    = !empty($_saved_config);
-							$_cb_label     = $_has_saved ? 'Saved Items' : 'All Items';
-							$_cb_checked   = $_has_saved ? 'checked ' : '';
-							$_cb_mode      = $_has_saved ? 'saved' : 'all';
+							$_cb_mode      = $_has_saved ? 'saved' : 'default';
 							$_cb_ids       = $_has_saved ? implode(',', array_map('intval', $_saved_config)) : '';
 							$output[$key] .= "<div id='raid-con-row-".$row['realm_id']."' class='raid-con-row'>";
-							$output[$key] .= "<label class='raid-all-label'><input type='checkbox' id='raid-all-items-".$row['realm_id']."' ".$_cb_checked."data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."' onchange='updateRaidAllLabel(this, ".$row['realm_id'].")'> ".$_cb_label."</label>";
+							$_cb_label = $_has_saved ? 'Saved Config' : 'Default Config';
+							$output[$key] .= "<span id='raid-all-items-".$row['realm_id']."' class='raid-config-label' data-mode='".$_cb_mode."' data-saved-ids='".$_cb_ids."'>".$_cb_label."</span>";
 							$output[$key] .= "<span class='raid-gear-icon' onclick='openRaidConsumablesModal(".$row['realm_id'].", ".$duration.")' title='Customize consumables'>&#9881;</span>";
 							$output[$key] .= "</div>";
 							$output[$key] .= "<input type='button' id='raid-btn-".$row['realm_id']."' class='raid-button' value='".$value."' onclick='startRaid(this, ".$row['realm_id'].", ".$duration.");'>";
@@ -6746,6 +6732,10 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "</div>"; // rc-card-body
+				// Soldier breakdown from raids_logs (completed only)
+				if($status == "Completed"){
+					$rows[$decimal] .= getRaidLogsDisplay($conn, $row['raid_id']);
+				}
 				// Retreat button (outgoing pending only)
 				if($type == 'outgoing' && $date > time()){
 					$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
@@ -7820,7 +7810,7 @@ function getDeploymentCap($conn, $realm_id) {
 // Count of alive soldiers for this realm (all locations, not dead)
 function getTotalSoldierCount($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$result = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers WHERE realm_id = $realm_id AND dead IS NULL");
+	$result = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers WHERE realm_id = $realm_id AND dead IS NULL AND active = 1");
 	$row = $result->fetch_assoc();
 	return intval($row['cnt']);
 }
@@ -7828,7 +7818,7 @@ function getTotalSoldierCount($conn, $realm_id) {
 // Count of deployed soldiers (tower + raid, alive)
 function getDeployedCount($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$result = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers WHERE realm_id = $realm_id AND location IN(2,3) AND dead IS NULL");
+	$result = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers WHERE realm_id = $realm_id AND location IN(2,3) AND dead IS NULL AND active = 1");
 	$row = $result->fetch_assoc();
 	return intval($row['cnt']);
 }
@@ -7848,7 +7838,7 @@ function getSoldierSlotCost($conn, $nft_id) {
 // Total slot cost of all alive soldiers for realm
 function getTotalSlotCost($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$result = $conn->query("SELECT soldiers.nft_id, projects.id AS project_id FROM soldiers INNER JOIN nfts ON nfts.id = soldiers.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL");
+	$result = $conn->query("SELECT soldiers.nft_id, projects.id AS project_id FROM soldiers INNER JOIN nfts ON nfts.id = soldiers.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL AND soldiers.active = 1");
 	$total = 0;
 	while ($row = $result->fetch_assoc()) {
 		$pid = intval($row['project_id']);
@@ -7857,13 +7847,48 @@ function getTotalSlotCost($conn, $realm_id) {
 	return $total;
 }
 
+// Returns soldier IDs that are over the deployment cap (reserved status)
+// Priority: partner NFTs reserved first, then lowest gear score, then oldest
+function getReservedSoldierIds($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$cap = getDeploymentCap($conn, $realm_id);
+	$sql = "SELECT soldiers.id AS soldier_id,
+	               projects.id AS project_id,
+	               COALESCE(weapons.level,0) + COALESCE(armor.level,0) AS gear_score
+	        FROM soldiers
+	        INNER JOIN nfts ON nfts.id = soldiers.nft_id
+	        INNER JOIN collections ON collections.id = nfts.collection_id
+	        INNER JOIN projects ON projects.id = collections.project_id
+	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
+	        LEFT JOIN armor ON armor.id = soldiers.armor_id
+	        WHERE soldiers.realm_id = $realm_id
+	          AND soldiers.dead IS NULL
+	          AND soldiers.active = 1
+	        ORDER BY (projects.id > 7 AND projects.id != 15) ASC,
+	                 gear_score DESC,
+	                 soldiers.date_created ASC";
+	$result = $conn->query($sql);
+	$reserved_ids = array();
+	$used = 0;
+	while ($row = $result->fetch_assoc()) {
+		$is_partner = (intval($row['project_id']) > 7 && intval($row['project_id']) != 15);
+		$cost = $is_partner ? 2 : 1;
+		if ($used + $cost <= $cap) {
+			$used += $cost;
+		} else {
+			$reserved_ids[] = intval($row['soldier_id']);
+		}
+	}
+	return $reserved_ids;
+}
+
 // ── PORTAL ─────────────────────────────────────────────────
 function getPortalReport($conn, $realm_id) {
 	$realm_id = intval($realm_id);
 	$portal_level  = intval(getRealmLocationLevel($conn, $realm_id, 1));
 	$deployed      = getDeployedCount($conn, $realm_id);
 	$cap           = getDeploymentCap($conn, $realm_id);
-	$result = $conn->query("SELECT COUNT(*) AS cnt FROM raids WHERE offense_id = $realm_id AND outcome IS NULL");
+	$result = $conn->query("SELECT COUNT(*) AS cnt FROM raids WHERE offense_id = $realm_id AND outcome = '0'");
 	$row = $result->fetch_assoc();
 	$active_raids  = intval($row['cnt']);
 	return array(
@@ -7904,8 +7929,8 @@ function getBarracksSoldiers($conn, $realm_id) {
 	        INNER JOIN projects ON projects.id = collections.project_id
 	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
 	        LEFT JOIN armor ON armor.id = soldiers.armor_id
-	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL
-	        ORDER BY soldiers.trained DESC, soldiers.location ASC, soldiers.date_created ASC";
+	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NULL AND soldiers.active = 1
+	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.date_created ASC";
 	$result = $conn->query($sql);
 	$soldiers = array();
 	while ($row = $result->fetch_assoc()) $soldiers[] = $row;
@@ -7923,11 +7948,25 @@ function enlistSoldier($conn, $realm_id, $nft_id) {
 	$check = $conn->query("SELECT id FROM nfts WHERE id = $nft_id AND user_id = $user_id LIMIT 1");
 	if (!$check || $check->num_rows == 0) return false;
 
-	// Verify not already a soldier
-	$dup = $conn->query("SELECT id FROM soldiers WHERE nft_id = $nft_id AND dead IS NULL LIMIT 1");
+	// Verify not already an active soldier
+	$dup = $conn->query("SELECT id FROM soldiers WHERE nft_id = $nft_id AND dead IS NULL AND active = 1 LIMIT 1");
 	if ($dup && $dup->num_rows > 0) return false;
 
-	$sql = "INSERT INTO soldiers (nft_id, realm_id, location, armor_id, weapon_id, trained, date_created) VALUES ($nft_id, $realm_id, 1, 0, 0, 0, NOW())";
+	// Enforce deployment cap
+	$cap        = getDeploymentCap($conn, $realm_id);
+	$used       = getTotalSlotCost($conn, $realm_id);
+	$nft_cost   = getSoldierSlotCost($conn, $nft_id);
+	if ($used + $nft_cost > $cap) return false;
+
+	// Reactivate a previously discharged soldier record if one exists
+	$inactive = $conn->query("SELECT id FROM soldiers WHERE nft_id = $nft_id AND realm_id = $realm_id AND dead IS NULL AND active = 0 LIMIT 1");
+	if ($inactive && $inactive->num_rows > 0) {
+		$inactive_id = intval($inactive->fetch_assoc()['id']);
+		$conn->query("UPDATE soldiers SET active = 1, location = 1 WHERE id = $inactive_id LIMIT 1");
+		return true;
+	}
+
+	$sql = "INSERT INTO soldiers (nft_id, realm_id, location, armor_id, weapon_id, trained, date_created, active) VALUES ($nft_id, $realm_id, 1, 0, 0, 0, NOW(), 1)";
 	return $conn->query($sql);
 }
 
@@ -7937,6 +7976,47 @@ function removeSoldier($conn, $soldier_id, $realm_id) {
 	$realm_id   = intval($realm_id);
 	// Only allow removing reserve soldiers (location=1) that are trained and alive
 	$conn->query("DELETE FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL");
+}
+
+// Discharge a soldier: deactivates them, returns gear to inventory, removes from raids_soldiers if on raid.
+// Not allowed if dead (crypt).
+function dischargeSoldier($conn, $soldier_id, $realm_id) {
+	$soldier_id = intval($soldier_id);
+	$realm_id   = intval($realm_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return false;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	// Must be alive and active
+	$check = $conn->query("SELECT id, weapon_id, armor_id, location FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND dead IS NULL AND active = 1 LIMIT 1");
+	if (!$check || $check->num_rows == 0) return false;
+	$s = $check->fetch_assoc();
+	// Return gear to inventory
+	if (intval($s['weapon_id']) > 0) updateGear($conn, $user_id, 'weapon', intval($s['weapon_id']), 1);
+	if (intval($s['armor_id'])  > 0) updateGear($conn, $user_id, 'armor',  intval($s['armor_id']),  1);
+	// Pull from raids_soldiers if currently on a raid
+	if (intval($s['location']) == 3) $conn->query("DELETE FROM raids_soldiers WHERE soldier_id = $soldier_id");
+	// Deactivate: clear gear, reset to reserve, mark inactive
+	$conn->query("UPDATE soldiers SET active = 0, location = 1, weapon_id = 0, armor_id = 0 WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	return true;
+}
+
+function dischargeAllSoldiers($conn, $realm_id, $location = null) {
+	$realm_id = intval($realm_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return 0;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	$loc_filter = ($location !== null) ? " AND location = " . intval($location) : "";
+	$result = $conn->query("SELECT id, weapon_id, armor_id, location FROM soldiers WHERE realm_id = $realm_id AND dead IS NULL AND active = 1" . $loc_filter);
+	$count = 0;
+	while ($s = $result->fetch_assoc()) {
+		$sid = intval($s['id']);
+		if (intval($s['weapon_id']) > 0) updateGear($conn, $user_id, 'weapon', intval($s['weapon_id']), 1);
+		if (intval($s['armor_id'])  > 0) updateGear($conn, $user_id, 'armor',  intval($s['armor_id']),  1);
+		if (intval($s['location']) == 3) $conn->query("DELETE FROM raids_soldiers WHERE soldier_id = $sid");
+		$conn->query("UPDATE soldiers SET active = 0, location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid AND realm_id = $realm_id LIMIT 1");
+		$count++;
+	}
+	return $count;
 }
 
 // Get distinct projects and collections the user owns NFTs in, for dropdown population
@@ -7976,7 +8056,7 @@ function getEligibleEnlistNFTs($conn, $realm_id, $project_id=0, $collection_id=0
 	$project_id    = intval($project_id);
 	$collection_id = intval($collection_id);
 	$where = "nfts.user_id = $user_id
-	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL)";
+	          AND nfts.id NOT IN (SELECT nft_id FROM soldiers WHERE dead IS NULL AND active = 1)";
 	if ($project_id)    $where .= " AND projects.id = $project_id";
 	if ($collection_id) $where .= " AND nfts.collection_id = $collection_id";
 	$sql = "SELECT nfts.id AS nft_id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
@@ -8001,33 +8081,52 @@ function updateSoldierTraining($conn, $realm_id) {
 	$conn->query("UPDATE soldiers SET trained = 1 WHERE realm_id = $realm_id AND trained = 0 AND dead IS NULL AND DATE_ADD(date_created, INTERVAL $hours HOUR) <= NOW()");
 }
 
-// Remove soldiers whose NFT is no longer owned by the realm's user (called after verifyNFTs)
+// Deactivate soldiers whose NFT is no longer owned by the realm's user (called after verifyNFTs).
+// Returns equipped gear to the realm owner's inventory, then soft-deletes the soldier (active=0).
+// The soldier record is preserved so the original owner can re-enlist the same NFT if it returns.
 function verifyRealmSoldiers($conn) {
-	// Find soldiers where the NFT's user_id doesn't match the realm's user_id
-	$sql = "SELECT soldiers.id FROM soldiers INNER JOIN realms ON realms.id = soldiers.realm_id INNER JOIN nfts ON nfts.id = soldiers.nft_id WHERE nfts.user_id != realms.user_id";
+	$sql = "SELECT soldiers.id, soldiers.weapon_id, soldiers.armor_id, realms.user_id AS realm_user_id
+	        FROM soldiers
+	        INNER JOIN realms ON realms.id = soldiers.realm_id
+	        INNER JOIN nfts ON nfts.id = soldiers.nft_id
+	        WHERE nfts.user_id != realms.user_id AND soldiers.active = 1";
 	$result = $conn->query($sql);
-	$ids = array();
-	while ($row = $result->fetch_assoc()) $ids[] = intval($row['id']);
-	if (!empty($ids)) {
-		$conn->query("DELETE FROM soldiers WHERE id IN (" . implode(',', $ids) . ")");
+	while ($row = $result->fetch_assoc()) {
+		$sid     = intval($row['id']);
+		$user_id = intval($row['realm_user_id']);
+		if (intval($row['weapon_id']) > 0) updateGear($conn, $user_id, 'weapon', intval($row['weapon_id']), 1);
+		if (intval($row['armor_id'])  > 0) updateGear($conn, $user_id, 'armor',  intval($row['armor_id']),  1);
+		$conn->query("UPDATE soldiers SET active = 0, location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid LIMIT 1");
 	}
 }
 
 // ── CRYPT ──────────────────────────────────────────────────
+function getCryptResurrectionDays($conn, $realm_id) {
+	$realm_id    = intval($realm_id);
+	$crypt_level = intval(getRealmLocationLevel($conn, $realm_id, 6));
+	$res_days    = max(1, 11 - $crypt_level);
+	$ff = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id = $realm_id AND rl.location_id = 6 AND rlc.consumable_id = 5 AND rlc.raid_id = 0 LIMIT 1");
+	if ($ff && $ff->num_rows > 0) $res_days = max(1, (int)ceil($res_days / 2));
+	return $res_days;
+}
+
 function getCryptSoldiers($conn, $realm_id) {
 	$realm_id     = intval($realm_id);
-	$crypt_level  = intval(getRealmLocationLevel($conn, $realm_id, 6));
-	$res_days     = max(1, 11 - $crypt_level);
+	$res_days     = getCryptResurrectionDays($conn, $realm_id);
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.dead, soldiers.weapon_id, soldiers.armor_id,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id,
 	               DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) AS ready_at,
-	               (DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) <= NOW()) AS eligible
+	               (DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) <= NOW()) AS eligible,
+	               weapons.name AS weapon_name, weapons.level AS weapon_level,
+	               armor.name AS armor_name, armor.level AS armor_level
 	        FROM soldiers
 	        INNER JOIN nfts ON nfts.id = soldiers.nft_id
 	        INNER JOIN collections ON collections.id = nfts.collection_id
 	        INNER JOIN projects ON projects.id = collections.project_id
-	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL
-	        ORDER BY soldiers.dead ASC";
+	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
+	        LEFT JOIN armor ON armor.id = soldiers.armor_id
+	        WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL AND soldiers.active = 1
+	        ORDER BY eligible DESC, COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.dead ASC";
 	$result = $conn->query($sql);
 	$soldiers = array();
 	while ($row = $result->fetch_assoc()) $soldiers[] = $row;
@@ -8037,10 +8136,9 @@ function getCryptSoldiers($conn, $realm_id) {
 // Resurrect all eligible soldiers (dead timer expired)
 function resurrectSoldiers($conn, $realm_id) {
 	$realm_id    = intval($realm_id);
-	$crypt_level = intval(getRealmLocationLevel($conn, $realm_id, 6));
-	$res_days    = max(1, 11 - $crypt_level);
+	$res_days    = getCryptResurrectionDays($conn, $realm_id);
 	// Set location=1 (reserve), trained=1 (already trained), clear dead timestamp
-	$conn->query("UPDATE soldiers SET dead = NULL, location = 1, trained = 1 WHERE realm_id = $realm_id AND dead IS NOT NULL AND DATE_ADD(dead, INTERVAL $res_days DAY) <= NOW()");
+	$conn->query("UPDATE soldiers SET dead = NULL, location = 1, trained = 1 WHERE realm_id = $realm_id AND dead IS NOT NULL AND active = 1 AND DATE_ADD(dead, INTERVAL $res_days DAY) <= NOW()");
 }
 
 // ── TOWER ──────────────────────────────────────────────────
@@ -8056,8 +8154,8 @@ function getTowerGarrison($conn, $realm_id) {
 	        INNER JOIN projects ON projects.id = collections.project_id
 	        LEFT JOIN weapons ON weapons.id = soldiers.weapon_id
 	        LEFT JOIN armor ON armor.id = soldiers.armor_id
-	        WHERE soldiers.realm_id = $realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL
-	        ORDER BY soldiers.id ASC";
+	        WHERE soldiers.realm_id = $realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL AND soldiers.active = 1
+	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC, soldiers.id ASC";
 	$result = $conn->query($sql);
 	$garrison = array();
 	while ($row = $result->fetch_assoc()) $garrison[] = $row;
@@ -8069,6 +8167,9 @@ function assignToTower($conn, $soldier_id, $realm_id) {
 	$realm_id   = intval($realm_id);
 	// Max 10 in tower
 	if (count(getTowerGarrison($conn, $realm_id)) >= 10) return false;
+	// Reserved soldiers may not support tower
+	$reserved = getReservedSoldierIds($conn, $realm_id);
+	if (in_array($soldier_id, $reserved)) return false;
 	// Must be trained, in reserve, and alive
 	$conn->query("UPDATE soldiers SET location = 2 WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND trained = 1 AND dead IS NULL LIMIT 1");
 	return true;
@@ -8109,7 +8210,6 @@ function getMineInfo($conn, $realm_id) {
 }
 
 // ── FACTORY ────────────────────────────────────────────────
-// Factory drops_per_night = factory_level (1-10); rarity uses consumables.rate via getConsumableRanges
 function getFactoryInfo($conn, $realm_id) {
 	$realm_id      = intval($realm_id);
 	$factory_level = intval(getRealmLocationLevel($conn, $realm_id, 5));
@@ -8122,7 +8222,8 @@ function getArmoryInfo($conn, $realm_id) {
 	$realm_id     = intval($realm_id);
 	$armory_level = intval(getRealmLocationLevel($conn, $realm_id, 2));
 	$drops        = min(10, $armory_level);
-	$soldiers     = getBarracksSoldiers($conn, $realm_id);
+	$all_soldiers = getBarracksSoldiers($conn, $realm_id);
+	$soldiers     = array_values(array_filter($all_soldiers, function($s) { return intval($s['trained']) == 1 && intval($s['location']) == 1; }));
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	$inventory    = array();
 	if ($r && $r->num_rows > 0) $inventory = getGearInventory($conn, intval($r->fetch_assoc()['user_id']));
@@ -8181,8 +8282,8 @@ function getCurrentGear($conn, $user_id, $type, $item_id) {
 	$user_id = intval($user_id);
 	$item_id = intval($item_id);
 	$type    = mysqli_real_escape_string($conn, $type);
-	$result  = $conn->query("SELECT quantity FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
-	if ($result && $result->num_rows > 0) return intval($result->fetch_assoc()['quantity']);
+	$result  = $conn->query("SELECT COALESCE(SUM(quantity), 0) AS total FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id");
+	if ($result) return intval($result->fetch_assoc()['total']);
 	return 0;
 }
 
@@ -8191,12 +8292,15 @@ function updateGear($conn, $user_id, $type, $item_id, $delta) {
 	$item_id = intval($item_id);
 	$delta   = intval($delta);
 	$type    = mysqli_real_escape_string($conn, $type);
-	$current = getCurrentGear($conn, $user_id, $type, $item_id);
-	if ($current === 0 && $delta > 0) {
+	// Collapse duplicate rows: sum all quantities into the lowest-id row, delete the rest
+	$agg = $conn->query("SELECT MIN(id) AS keep_id, COALESCE(SUM(quantity), 0) AS total FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id");
+	if ($agg && ($row = $agg->fetch_assoc()) && $row['keep_id'] !== null) {
+		$new_qty = max(0, intval($row['total']) + $delta);
+		$keep_id = intval($row['keep_id']);
+		$conn->query("UPDATE gear SET quantity = $new_qty WHERE id = $keep_id");
+		$conn->query("DELETE FROM gear WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id AND id != $keep_id");
+	} else if ($delta > 0) {
 		$conn->query("INSERT INTO gear (user_id, type, item_id, quantity) VALUES ($user_id, '$type', $item_id, $delta)");
-	} else {
-		$new_qty = max(0, $current + $delta);
-		$conn->query("UPDATE gear SET quantity = $new_qty WHERE user_id = $user_id AND type = '$type' AND item_id = $item_id LIMIT 1");
 	}
 }
 
@@ -8218,6 +8322,7 @@ function getGearInventory($conn, $user_id) {
 }
 
 // Equip a gear item from inventory to a soldier; returns current gear to inventory
+// Equip gear from inventory to a reserve (location=1) soldier; returns displaced gear to inventory
 function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$soldier_id = intval($soldier_id);
 	$realm_id   = intval($realm_id);
@@ -8228,7 +8333,8 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$type    = $is_weapon ? 'weapon' : 'armor';
 	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
 	if (getCurrentGear($conn, $user_id, $type, $item_id) < 1) return false;
-	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	// Only allow equipping to reserve (barracks) soldiers
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL AND active = 1 LIMIT 1");
 	if (!$s || $s->num_rows == 0) return false;
 	$current_gear_id = intval($s->fetch_assoc()[$col]);
 	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
@@ -8237,7 +8343,7 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	return true;
 }
 
-// Unequip gear from a soldier and return it to inventory
+// Unequip gear from a reserve (location=1) soldier and return it to inventory
 function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	$soldier_id = intval($soldier_id);
 	$realm_id   = intval($realm_id);
@@ -8246,13 +8352,47 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	$user_id = intval($r->fetch_assoc()['user_id']);
 	$type    = $is_weapon ? 'weapon' : 'armor';
 	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
-	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL AND active = 1 LIMIT 1");
 	if (!$s || $s->num_rows == 0) return false;
 	$gear_id = intval($s->fetch_assoc()[$col]);
 	if ($gear_id == 0) return false;
 	updateGear($conn, $user_id, $type, $gear_id, 1);
 	$conn->query("UPDATE soldiers SET $col = NULL WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
+}
+
+// Auto-equip inventory gear to reserve soldiers, best gear first, upgrading weakest slots
+function autoEquipReserve($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
+	if (!$r || $r->num_rows == 0) return 0;
+	$user_id = intval($r->fetch_assoc()['user_id']);
+	$equipped = 0;
+	$stripped = 0;
+	foreach (array('weapon', 'armor') as $type) {
+		$col   = $type === 'weapon' ? 'weapon_id' : 'armor_id';
+		$table = $type === 'weapon' ? 'weapons' : 'armor';
+		// Snapshot inventory best-to-worst
+		$inv_result = $conn->query("SELECT g.item_id, $table.level FROM gear g INNER JOIN $table ON $table.id = g.item_id WHERE g.user_id = $user_id AND g.type = '$type' AND g.quantity > 0 ORDER BY $table.level DESC");
+		if (!$inv_result) continue;
+		$inv_items = array();
+		while ($row = $inv_result->fetch_assoc()) $inv_items[] = $row;
+		foreach ($inv_items as $gear) {
+			$gear_id    = intval($gear['item_id']);
+			$gear_level = intval($gear['level']);
+			// Equip as many copies as available to trained soldiers that would benefit
+			while (getCurrentGear($conn, $user_id, $type, $gear_id) > 0) {
+				$target = $conn->query("SELECT soldiers.id AS soldier_id, COALESCE($table.level, 0) AS current_level FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.trained = 1 AND soldiers.dead IS NULL AND soldiers.active = 1 AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC, soldiers.date_created ASC LIMIT 1");
+				if (!$target || $target->num_rows == 0) break;
+				$trow = $target->fetch_assoc();
+				if (equipGear($conn, intval($trow['soldier_id']), $realm_id, $gear_id, $type === 'weapon')) {
+					$equipped++;
+					if (intval($trow['current_level']) > 0) $stripped++;
+				}
+			}
+		}
+	}
+	return array('equipped' => $equipped, 'stripped' => $stripped);
 }
 
 // ── REALM LOG ──────────────────────────────────────────────
@@ -8268,23 +8408,43 @@ function processMineRewards($conn) {
 	}
 }
 
-// Nightly: write consumable drops to realms_logs for all realms using mission rarity rates
+// Factory drop odds scale linearly from DB baseline (level 1) toward level 10 targets.
+// Rare items gain pp; Random Reward (worst item) absorbs all reductions.
+// Total always sums to 100.
+function getFactoryOdds($factory_level) {
+	$level = max(1, min(10, intval($factory_level)));
+	$t     = ($level - 1) / 9.0; // 0.0 at level 1, 1.0 at level 10
+	$id1 = (int) round(5  + $t * 10); // 5%  → 15%
+	$id6 = (int) round(5  + $t * 10); // 5%  → 15%
+	$id2 = (int) round(10 + $t * 5);  // 10% → 15%
+	$id4 = (int) round(20 - $t * 5);  // 20% → 15%
+	$id5 = (int) round(20 - $t * 5);  // 20% → 15%
+	$id3 = 15;
+	$id7 = 100 - ($id1 + $id6 + $id2 + $id4 + $id5 + $id3); // 25% → 10%, absorbs rounding
+	return array(7=>$id7, 4=>$id4, 5=>$id5, 3=>$id3, 2=>$id2, 1=>$id1, 6=>$id6);
+}
+
+// Nightly: write consumable drops to realms_logs for all realms using level-based rarity rates
 function processFactoryDrops($conn) {
-	$consumable_ranges = getConsumableRanges($conn);
 	$result = $conn->query("SELECT id FROM realms");
 	while ($row = $result->fetch_assoc()) {
 		$realm_id      = intval($row['id']);
 		$factory_level = intval(getRealmLocationLevel($conn, $realm_id, 5));
 		if ($factory_level == 0) continue;
+		$odds   = getFactoryOdds($factory_level);
+		$ranges = array();
+		$cursor = 1;
+		foreach ($odds as $cid => $pct) {
+			$ranges[$cid] = array($cursor, $cursor + $pct - 1);
+			$cursor += $pct;
+		}
 		$drops = array();
 		for ($i = 0; $i < $factory_level; $i++) {
 			$random = rand(1, 100);
-			foreach ($consumable_ranges as $id => $range) {
-				foreach ($range as $start => $end) {
-					if ($random >= $start && $random <= $end) {
-						$drops[$id] = ($drops[$id] ?? 0) + 1;
-						break 2;
-					}
+			foreach ($ranges as $cid => $range) {
+				if ($random >= $range[0] && $random <= $range[1]) {
+					$drops[$cid] = ($drops[$cid] ?? 0) + 1;
+					break;
 				}
 			}
 		}
@@ -8381,7 +8541,10 @@ function claimRealmLogs($conn, $realm_id, $types = array()) {
 // Get trained, alive, reserve soldiers available for a new raid
 function getAvailableRaiders($conn, $realm_id) {
 	$realm_id = intval($realm_id);
+	$reserved = getReservedSoldierIds($conn, $realm_id);
+	$exclude  = !empty($reserved) ? 'AND soldiers.id NOT IN (' . implode(',', $reserved) . ')' : '';
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.weapon_id, soldiers.armor_id,
+	               soldiers.date_created,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id,
 	               weapons.name AS weapon_name, weapons.level AS weapon_level,
 	               armor.name AS armor_name, armor.level AS armor_level
@@ -8395,6 +8558,7 @@ function getAvailableRaiders($conn, $realm_id) {
 	          AND soldiers.location = 1
 	          AND soldiers.trained = 1
 	          AND soldiers.dead IS NULL
+	          $exclude
 	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC";
 	$result = $conn->query($sql);
 	$raiders = array();
@@ -8402,23 +8566,27 @@ function getAvailableRaiders($conn, $realm_id) {
 	return $raiders;
 }
 
-// Commit soldiers to a raid (set location=3, insert raid_soldiers rows)
+// Commit soldiers to a raid (set location=3, insert raids_soldiers rows)
 function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 	$raid_id = intval($raid_id);
 	foreach ($soldier_ids as $sid) {
 		$sid = intval($sid);
 		// Verify soldier is in reserve (location=1), trained, alive
-		$check = $conn->query("SELECT id, realm_id FROM soldiers WHERE id = $sid AND location = 1 AND trained = 1 AND dead IS NULL LIMIT 1");
+		$check = $conn->query("SELECT id, realm_id, weapon_id, armor_id FROM soldiers WHERE id = $sid AND location = 1 AND trained = 1 AND dead IS NULL AND active = 1 LIMIT 1");
 		if (!$check || $check->num_rows == 0) continue;
-		$conn->query("INSERT INTO raid_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
+		$srow      = $check->fetch_assoc();
+		$weapon_id = intval($srow['weapon_id']);
+		$armor_id  = intval($srow['armor_id']);
+		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
 		$conn->query("UPDATE soldiers SET location = 3 WHERE id = $sid LIMIT 1");
+		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id) VALUES ($raid_id, 'offense', $sid, $weapon_id, $armor_id)");
 	}
 }
 
 // Release raid soldiers back to reserve (called when raid resolves)
 function releaseRaidSoldiers($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT soldier_id FROM raid_soldiers WHERE raid_id = $raid_id");
+	$result  = $conn->query("SELECT soldier_id FROM raids_soldiers WHERE raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
 		$sid = intval($row['soldier_id']);
 		$conn->query("UPDATE soldiers SET location = 1 WHERE id = $sid AND location = 3 LIMIT 1");
@@ -8429,13 +8597,16 @@ function releaseRaidSoldiers($conn, $raid_id) {
 // $armor_reduction_per_level = 5 (each armor level reduces death chance by 5%, min 5% floor)
 function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT raid_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raid_soldiers.raid_id = $raid_id");
+	$result  = $conn->query("SELECT raids_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raids_soldiers.raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
 		$sid           = intval($row['soldier_id']);
 		$armor_level   = intval($row['armor_level']);
 		$death_chance  = max(5, 70 - ($armor_level * $armor_reduction_per_level));
 		if (rand(1, 100) <= $death_chance) {
 			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+			$conn->query("UPDATE raids_logs SET dead = 1 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
+		} else {
+			$conn->query("UPDATE raids_logs SET dead = 0 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
 		}
 	}
 }
@@ -8445,23 +8616,65 @@ function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) 
 function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonus_per_level = 3) {
 	$raid_id         = intval($raid_id);
 	$defense_realm_id = intval($defense_realm_id);
-	// Sum of weapon levels across all raid_soldiers for this raid
-	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raid_soldiers INNER JOIN soldiers ON soldiers.id = raid_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raid_soldiers.raid_id = $raid_id");
+	// Sum of weapon levels across all raids_soldiers for this raid
+	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raids_soldiers.raid_id = $raid_id");
 	$wrow = $wresult->fetch_assoc();
 	$total_weapon = intval($wrow['total_weapon_level']);
 
 	// Each tower soldier rolls
-	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL");
+	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, soldiers.weapon_id, soldiers.armor_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL AND soldiers.active = 1");
 	while ($row = $garrison->fetch_assoc()) {
 		$sid          = intval($row['soldier_id']);
+		$weapon_id    = intval($row['weapon_id']);
+		$armor_id     = intval($row['armor_id']);
 		$armor_level  = intval($row['armor_level']);
 		// Attacker weapons increase death chance; defender armor reduces it
 		$death_chance = max(5, 40 + ($total_weapon * $weapon_bonus_per_level) - ($armor_level * 4));
 		$death_chance = min(95, $death_chance);
-		if (rand(1, 100) <= $death_chance) {
+		$dead         = (rand(1, 100) <= $death_chance) ? 1 : 0;
+		if ($dead) {
 			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
 		}
+		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id, dead) VALUES ($raid_id, 'defense', $sid, $weapon_id, $armor_id, $dead)");
 	}
+}
+
+// Render soldier breakdown from raids_logs for a completed raid card
+function getRaidLogsDisplay($conn, $raid_id) {
+	$raid_id = intval($raid_id);
+	$result  = $conn->query("SELECT raids_logs.side, raids_logs.dead, raids_logs.weapon_id, raids_logs.armor_id, nfts.name AS nft_name, weapons.name AS weapon_name, armor.name AS armor_name FROM raids_logs INNER JOIN soldiers ON soldiers.id = raids_logs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = raids_logs.weapon_id AND raids_logs.weapon_id > 0 LEFT JOIN armor ON armor.id = raids_logs.armor_id AND raids_logs.armor_id > 0 WHERE raids_logs.raid_id = $raid_id ORDER BY raids_logs.side, raids_logs.dead DESC");
+	if (!$result || $result->num_rows == 0) return '';
+	$offense = array(); $defense = array();
+	while ($row = $result->fetch_assoc()) {
+		if ($row['side'] === 'offense') $offense[] = $row;
+		else $defense[] = $row;
+	}
+	if (empty($offense) && empty($defense)) return '';
+	$html = "<div class='rc-logs-panel'>";
+	foreach (array('Offense' => $offense, 'Defense' => $defense) as $label => $soldiers) {
+		if (empty($soldiers)) continue;
+		$html .= "<div class='rc-logs-col'>";
+		$html .= "<div class='rc-logs-label'>" . $label . "</div>";
+		foreach ($soldiers as $s) {
+			$dead_class = ($s['dead'] == 1) ? ' rc-log-dead' : '';
+			$html .= "<div class='rc-log-row" . $dead_class . "'>";
+			$html .= "<span class='rc-log-name'>" . htmlspecialchars($s['nft_name']) . "</span>";
+			$gear_icons = '';
+			if (!empty($s['weapon_name'])) {
+				$wfile = strtolower(str_replace(' ', '-', $s['weapon_name'])) . '.png';
+				$gear_icons .= "<img class='icon' src='icons/" . $wfile . "' onerror=\"this.src='icons/skull.png'\" style='width:14px;height:14px;opacity:0.7;' title='" . htmlspecialchars($s['weapon_name']) . "'>";
+			}
+			if (!empty($s['armor_name'])) {
+				$afile = strtolower(str_replace(' ', '-', $s['armor_name'])) . '.png';
+				$gear_icons .= "<img class='icon' src='icons/" . $afile . "' onerror=\"this.src='icons/skull.png'\" style='width:14px;height:14px;opacity:0.7;' title='" . htmlspecialchars($s['armor_name']) . "'>";
+			}
+			if ($gear_icons) $html .= "<span class='rc-log-gear'>" . $gear_icons . "</span>";
+			$html .= "</div>";
+		}
+		$html .= "</div>";
+	}
+	$html .= "</div>";
+	return $html;
 }
 
 // ── BARRACKS & TOWER SCORE FOR RAID CALCULATIONS ───────────
@@ -8470,7 +8683,7 @@ function getBarracksScore($conn, $realm_id) {
 	$realm_id = intval($realm_id);
 	$cap = getDeploymentCap($conn, $realm_id);
 	if ($cap == 0) return 0;
-	$result = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers WHERE realm_id = $realm_id AND trained = 1 AND dead IS NULL");
+	$result = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers WHERE realm_id = $realm_id AND trained = 1 AND dead IS NULL AND active = 1");
 	$row    = $result->fetch_assoc();
 	$filled = intval($row['cnt']);
 	return min(10, ($filled / $cap) * 10);

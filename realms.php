@@ -145,7 +145,7 @@ if(isset($_SESSION['userData']['user_id'])){ ?>
 								}else{ echo $status[$location_id]; }
 								?></div><?php
 							// Location-specific modal button
-							$loc_modal_map = array(1=>'Portal',2=>'Armory',3=>'Tower',4=>'Barracks',5=>'Factory',6=>'Crypt',7=>'Mine');
+							$loc_modal_map = array(1=>'Manage Portal',2=>'Manage Armory',3=>'Manage Tower',4=>'Manage Barracks',5=>'Manage Factory',6=>'Manage Crypt',7=>'Manage Mine');
 							if(isset($loc_modal_map[$location_id])){
 								echo "<br><input class='small-button loc-modal-btn' type='button' value='".$loc_modal_map[$location_id]."' onclick='openLocationModal(".$location_id.")' style='margin-top:4px;'>";
 							}
@@ -584,6 +584,49 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 
+	<!-- Deployment Configuration Modal -->
+	<div id="deploy-config-overlay" onclick="closeDeployConfig()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
+	<div id="deploy-config-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true" onclick="closeDeployConfig()">
+		<div class="raid-modal-content" style="max-width:480px;" onclick="event.stopPropagation()">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Deployment Configuration</h2>
+				<button class="raid-modal-close" onclick="closeDeployConfig()" aria-label="Close">&times;</button>
+			</div>
+			<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0 10px;">
+				<div class="deploy-axis">
+					<div class="deploy-axis-label">Force Size</div>
+					<div class="deploy-tier-group">
+						<button class="deploy-tier-btn" data-axis="amount" data-value="blitz" onclick="setDeployTier('amount','blitz')">Blitz</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="tactical" onclick="setDeployTier('amount','tactical')">Tactical</button>
+						<button class="deploy-tier-btn" data-axis="amount" data-value="recon" onclick="setDeployTier('amount','recon')">Recon</button>
+					</div>
+				</div>
+				<div class="deploy-axis">
+					<div class="deploy-axis-label">Weapon Priority</div>
+					<div class="deploy-tier-group">
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="aggressive" onclick="setDeployTier('weapon','aggressive')">Aggressive</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="balanced" onclick="setDeployTier('weapon','balanced')">Balanced</button>
+						<button class="deploy-tier-btn" data-axis="weapon" data-value="stealth" onclick="setDeployTier('weapon','stealth')">Stealth</button>
+					</div>
+				</div>
+				<div class="deploy-axis">
+					<div class="deploy-axis-label">Armor Priority</div>
+					<div class="deploy-tier-group">
+						<button class="deploy-tier-btn" data-axis="armor" data-value="heavy" onclick="setDeployTier('armor','heavy')">Heavy</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="medium" onclick="setDeployTier('armor','medium')">Medium</button>
+						<button class="deploy-tier-btn" data-axis="armor" data-value="light" onclick="setDeployTier('armor','light')">Light</button>
+					</div>
+				</div>
+				<div id="deploy-preview" style="font-size:0.82rem;opacity:0.65;text-align:center;min-height:1.2em;"></div>
+			</div>
+			<div class="raid-modal-footer">
+				<label style="font-size:0.8rem;opacity:0.65;margin-right:auto;"><input type="checkbox" id="deploy-save-config" checked> Save configuration</label>
+				<button class="button" onclick="confirmDeployConfig()">Continue</button>
+				<button class="small-button" onclick="closeDeployConfig()">Cancel</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Raid Soldier Selection Modal -->
 	<div id="raid-soldiers-overlay" onclick="closeRaidSoldierModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
 	<div id="raid-soldiers-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true" onclick="closeRaidSoldierModal()">
@@ -620,11 +663,12 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			</select>
 			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
 				<span id="enlist-selected-count" style="font-size:0.8rem;opacity:0.65;">0 of <?php echo intval($barracks_slots_open); ?> slots selected</span>
-				<input type="button" class="small-button" value="Select All" onclick="selectAllEligible()"/>
+				<input type="button" id="enlist-select-all-btn" class="small-button" value="Select All" onclick="selectAllEligible()"/>
 			</div>
 			<div id="enlist-picker-body"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
 				<input type="button" class="button" value="Enlist Selected" onclick="confirmEnlist()"/>
+				<input type="button" id="enlist-clear-all-btn" class="small-button" value="Clear All" onclick="clearAllEnlist()" style="display:none;"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeEnlistPicker()"/>
 			</div>
 		</div>
@@ -657,6 +701,7 @@ getFactionsRealmsMapData($conn);
 getActiveRaidsMapData($conn);
 if($realm_status && isset($_SESSION['userData']['user_id'])){
 	echo "<script>window.myRealmId = ".(int)getRealmID($conn).";</script>";
+$_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeployConfig'] : array('amount'=>'tactical','weapon'=>'balanced','armor'=>'medium');
 }
 $nft_project_tree    = getUserNFTProjectTree($conn);
 $barracks_cap        = getDeploymentCap($conn, $realm_id);
@@ -680,7 +725,7 @@ $conn->close();
 .soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
 .soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
 .soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
-.soldiers-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:10px; margin-top:8px; }
+.soldiers-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
 .soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
 .soldier-card.soldier-ready { border-color:#00c8a0; }
@@ -692,17 +737,86 @@ $conn->close();
 .soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
 .soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+/* Crypt coffin cards */
+#crypt-soldiers-grid .soldier-status { background:none; }
+.coffin-wrapper {
+    background: url('icons/coffin.png') center bottom / contain no-repeat;
+}
+.coffin-card {
+    background: rgba(30, 10, 10, 0.7);
+    border: 1px solid rgba(150, 50, 50, 0.4);
+    border-radius: 8px;
+    padding: 32.5px;
+    text-align: center;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: -4px;
+}
+#crypt-soldiers-grid { grid-template-columns:repeat(4,1fr); }
+.coffin-card.soldier-ready {
+    border-color:rgba(0,200,160,0.5);
+    background:rgba(0,40,30,0.7);
+    box-shadow:0 0 10px rgba(0,200,160,0.15);
+}
+@keyframes coffin-fade {
+    0%   { background-image: url('icons/coffin.png'); opacity:1; }
+    100% { background-image: url('icons/coffin.png'); opacity:0; }
+}
+@keyframes resurrect-ascend {
+    0%   { transform:translateY(0) scale(1);   opacity:1; filter:brightness(1); }
+    30%  { transform:translateY(-8px) scale(1.05); opacity:1; filter:brightness(1.8) drop-shadow(0 0 8px #00c8a0); }
+    60%  { transform:translateY(-30px) scale(0.95); opacity:0.7; filter:brightness(2.5) drop-shadow(0 0 16px #ffffff); }
+    100% { transform:translateY(-80px) scale(0.6); opacity:0; filter:brightness(4) drop-shadow(0 0 24px #ffffff); }
+}
+.coffin-wrapper.coffin-fading {
+    animation: coffin-fade 0.6s ease-out forwards;
+    pointer-events:none;
+}
+.coffin-wrapper.ascending {
+    background-image: none;
+    animation: resurrect-ascend 0.9s ease-in forwards;
+    pointer-events:none;
+}
+.soldier-status.status-reserved { background:rgba(180,100,255,0.15); color:#b464ff; }
 .soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
 .partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
-.soldier-gear-row { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:4px; }
-.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; gap:2px; font-size:0.7rem; opacity:0.85; }
+.soldier-gear-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:4px; }
+.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.7rem; opacity:0.85; height:52px; }
+.soldier-gear-slot img.icon { margin-right:0; }
 .gear-label { font-size:0.65rem; opacity:0.7; }
-.gear-empty { font-size:0.65rem; opacity:0.4; }
+.gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:flex-start; justify-content:center; height:52px; padding-top:2px; }
+/* Compact gear row (armory/tower cards) */
+.soldier-gear-compact { display:flex; flex-direction:row; gap:6px; justify-content:center; margin-top:4px; width:100%; }
+.gear-compact-slot { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
+.gear-compact-empty { font-size:0.65rem; opacity:0.3; }
+/* Tower header and action rows */
+.tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.tower-deploy-row { margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+@media (max-width:500px) {
+    .soldiers-grid { grid-template-columns:repeat(3,1fr); }
+    #crypt-soldiers-grid { grid-template-columns:repeat(2,1fr); }
+    .gear-inventory-row { flex-direction:column !important; }
+    .soldiers-stat { padding:7px 10px; min-width:0; }
+    .soldiers-stat-value { font-size:0.95rem; }
+    .tower-garrison-header { flex-direction:column; align-items:flex-start; }
+    .tower-deploy-row { justify-content:flex-end; }
+    .soldier-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+}
 .soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
 .soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
 .soldiers-table { border-collapse:collapse; }
 .soldiers-table th, .soldiers-table td { padding:4px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
 .soldiers-table th { font-size:0.72rem; opacity:0.55; font-weight:normal; text-transform:uppercase; }
+.deploy-axis { display:flex; align-items:center; gap:12px; }
+.deploy-axis-label { font-size:0.78rem; opacity:0.6; text-transform:uppercase; letter-spacing:0.05em; width:110px; flex-shrink:0; }
+.deploy-tier-group { display:flex; gap:6px; flex:1; }
+.deploy-tier-btn { flex:1; padding:6px 4px; font-size:0.78rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; cursor:pointer; transition:background 0.15s,border-color 0.15s; }
+.deploy-tier-btn:hover { background:rgba(255,255,255,0.1); }
+.deploy-tier-btn.active { background:rgba(0,200,160,0.18); border-color:#00c8a0; color:#00c8a0; font-weight:bold; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -827,43 +941,141 @@ $conn->close();
 	var _raidSoldiersButton       = null;
 	var _raidSoldiersConsumables  = null;
 
+	/* ── DEPLOYMENT CONFIG ────────────────────────────────── */
+	var _deployConfig   = <?php echo json_encode($_raidDeployConfig); ?>;
+	var _deployRaiders  = [];
+
+	function openDeployConfig(defenseId, duration, mode, raidButton) {
+		_raidSoldiersDefenseId   = defenseId;
+		_raidSoldiersDuration    = duration;
+		_raidSoldiersConsumables = mode;
+		_raidSoldiersButton      = raidButton || null;
+		_applyDeployConfigUI();
+		document.getElementById('deploy-config-overlay').style.display = 'block';
+		document.getElementById('deploy-config-modal').style.display   = 'flex';
+		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
+			_deployRaiders = raiders || [];
+			_updateDeployPreview();
+		});
+	}
+
+	function closeDeployConfig() {
+		document.getElementById('deploy-config-overlay').style.display = 'none';
+		document.getElementById('deploy-config-modal').style.display   = 'none';
+		_deployRaiders = [];
+	}
+
+	function _applyDeployConfigUI() {
+		document.querySelectorAll('.deploy-tier-btn').forEach(function(btn) {
+			var axis = btn.dataset.axis, val = btn.dataset.value;
+			btn.classList.toggle('active', _deployConfig[axis] === val);
+		});
+		_updateDeployPreview();
+	}
+
+	function setDeployTier(axis, val) {
+		_deployConfig[axis] = val;
+		document.querySelectorAll('.deploy-tier-btn[data-axis="' + axis + '"]').forEach(function(b) {
+			b.classList.toggle('active', b.dataset.value === val);
+		});
+		_updateDeployPreview();
+	}
+
+	function _updateDeployPreview() {
+		var selected = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
+		var withWeapon = selected.filter(function(id) {
+			var s = _deployRaiders.find(function(r) { return r.soldier_id == id; });
+			return s && s.weapon_id;
+		}).length;
+		var withArmor = selected.filter(function(id) {
+			var s = _deployRaiders.find(function(r) { return r.soldier_id == id; });
+			return s && s.armor_id;
+		}).length;
+		var total = _deployRaiders.length;
+		var msg = total === 0
+			? 'No trained soldiers available.'
+			: 'Sending ' + selected.length + ' soldier' + (selected.length !== 1 ? 's' : '') +
+			  ' &mdash; ' + withWeapon + ' armed, ' + withArmor + ' armored';
+		document.getElementById('deploy-preview').innerHTML = msg;
+	}
+
+	function _autoSelectSoldiers(raiders, config, portalLevel) {
+		if (!raiders || raiders.length === 0) return [];
+		var count;
+		if      (config.amount === 'blitz')    count = portalLevel;
+		else if (config.amount === 'tactical') count = Math.ceil(portalLevel / 2);
+		else                                   count = Math.ceil(portalLevel / 3);
+
+		var wSum = 0, aSum = 0, wCount = 0, aCount = 0;
+		raiders.forEach(function(s) {
+			if (s.weapon_level) { wSum += parseFloat(s.weapon_level); wCount++; }
+			if (s.armor_level)  { aSum += parseFloat(s.armor_level);  aCount++; }
+		});
+		var wMean = wCount > 0 ? wSum / wCount : 5;
+		var aMean = aCount > 0 ? aSum / aCount : 5;
+
+		function wScore(s) {
+			var lv = s.weapon_level ? parseFloat(s.weapon_level) : null;
+			if (config.weapon === 'aggressive') return lv !== null ? (10 - lv) : 999;
+			if (config.weapon === 'balanced')   return lv !== null ? (Math.abs(lv - wMean) * 10 + (lv < wMean ? 0 : 1)) : 999;
+			/* stealth */                        return lv !== null ? (lv - 1) : 999;
+		}
+		function aScore(s) {
+			var lv = s.armor_level ? parseFloat(s.armor_level) : null;
+			if (config.armor === 'heavy')  return lv !== null ? (10 - lv) : 999;
+			if (config.armor === 'medium') return lv !== null ? (Math.abs(lv - aMean) * 10 + (lv < aMean ? 0 : 1)) : 999;
+			/* light */                     return lv !== null ? (lv - 1) : 999;
+		}
+
+		var sorted = raiders.slice().sort(function(a, b) {
+			var ws = wScore(a) - wScore(b);
+			if (ws !== 0) return ws;
+			var as_ = aScore(a) - aScore(b);
+			if (as_ !== 0) return as_;
+			return new Date(a.date_created) - new Date(b.date_created);
+		});
+		return sorted.slice(0, count).map(function(s) { return s.soldier_id; });
+	}
+
+	function confirmDeployConfig() {
+		if (document.getElementById('deploy-save-config').checked) {
+			$.post('ajax/save-raid-deploy-config.php', _deployConfig);
+		}
+		_raidSoldierSelectedIds = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
+		closeDeployConfig();
+		_proceedAfterSoldierPick();
+	}
+
 	// Intercept direct startRaid (raid card with pre-set consumables)
 	var _origStartRaid = typeof startRaid === 'function' ? startRaid : null;
 	startRaid = function(raidButton, defenseID, duration) {
-		_raidSoldiersButton      = raidButton;
-		_raidSoldiersDefenseId   = defenseID;
-		_raidSoldiersDuration    = duration;
-		_raidSoldiersConsumables = 'direct'; // signals this came from direct start
-		_raidSoldierSelectedIds  = [];
-		document.getElementById('raid-soldiers-grid').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
-		document.getElementById('raid-soldiers-overlay').style.display = 'block';
-		document.getElementById('raid-soldiers-modal').style.display   = 'flex';
-		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
-			_renderRaidSoldierGrid(raiders);
-		}).fail(function() {
-			document.getElementById('raid-soldiers-overlay').style.display = 'none';
-			document.getElementById('raid-soldiers-modal').style.display   = 'none';
-			if (_origStartRaid) _origStartRaid(raidButton, defenseID, duration);
-		});
+		var allEl = document.getElementById('raid-all-items-' + defenseID);
+		var mode  = allEl ? (allEl.dataset.mode || 'default') : 'default';
+		if (mode === 'saved') {
+			// Both soldier and item configs are saved — skip modals, launch directly
+			_raidSoldiersDefenseId   = defenseID;
+			_raidSoldiersDuration    = duration;
+			_raidSoldiersConsumables = 'direct';
+			_raidSoldiersButton      = raidButton || null;
+			$.getJSON('ajax/get-available-raiders.php', function(raiders) {
+				_deployRaiders = raiders || [];
+				if (_deployRaiders.length === 0) {
+					openNotify('No trained soldiers available.<br>Enlist and train soldiers in your Barracks before raiding.');
+					_deployRaiders = []; _raidSoldiersDefenseId = null;
+					return;
+				}
+				_raidSoldierSelectedIds = _autoSelectSoldiers(_deployRaiders, _deployConfig, _portalLevel);
+				_deployRaiders          = [];
+				_proceedAfterSoldierPick();
+			});
+		} else {
+			openDeployConfig(defenseID, duration, 'direct', raidButton);
+		}
 	};
 
 	var _origOpenRaidConsumablesModal = typeof openRaidConsumablesModal === 'function' ? openRaidConsumablesModal : null;
 	openRaidConsumablesModal = function(realmId, duration) {
-		_raidSoldiersConsumables = 'modal';
-		_raidSoldiersDefenseId = realmId;
-		_raidSoldiersDuration  = duration;
-		_raidSoldierSelectedIds = [];
-		document.getElementById('raid-soldiers-grid').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
-		document.getElementById('raid-soldiers-overlay').style.display = 'block';
-		document.getElementById('raid-soldiers-modal').style.display   = 'flex';
-		$.getJSON('ajax/get-available-raiders.php', function(raiders) {
-			_renderRaidSoldierGrid(raiders);
-		}).fail(function() {
-			// No soldiers or error — skip to consumables
-			document.getElementById('raid-soldiers-overlay').style.display = 'none';
-			document.getElementById('raid-soldiers-modal').style.display   = 'none';
-			if (_origOpenRaidConsumablesModal) _origOpenRaidConsumablesModal(realmId, duration);
-		});
+		openDeployConfig(realmId, duration, 'modal', null);
 	};
 
 	function _renderRaidSoldierGrid(raiders) {
@@ -941,17 +1153,16 @@ $conn->close();
 			var defId = _raidSoldiersDefenseId;
 			var dur   = _raidSoldiersDuration;
 			var allEl = document.getElementById('raid-all-items-' + defId);
-			var consumablesParam = '';
-			if (allEl && allEl.checked) {
-				var mode = allEl.dataset.mode || 'all';
-				var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
-				var conItems = document.querySelectorAll('[id^="raid-con-item-"]');
-				if (mode === 'saved') {
-					savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
-				} else {
-					consumablesParam = '&consumables=all';
-				}
+			var mode  = allEl ? (allEl.dataset.mode || 'default') : 'default';
+			if (mode !== 'saved') {
+				// No saved config — force consumables modal
+				_raidSoldiersConsumables = 'modal';
+				if (_origOpenRaidConsumablesModal) _origOpenRaidConsumablesModal(defId, dur);
+				return;
 			}
+			var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
+			var consumablesParam = '';
+			savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
 			_raidSoldierSelectedIds = [];
 			var xhttp = new XMLHttpRequest();
 			xhttp.open('GET', 'ajax/start_raid.php?defense_id=' + defId + '&duration=' + dur + consumablesParam + soldiersParam, true);
@@ -1006,22 +1217,50 @@ $conn->close();
 	};
 
 	/* ── LOCATION MODALS ─────────────────────────────────── */
-	var _locModalTitles = {1:'Portal Report',2:'Armory',3:'Tower Garrison',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
+	var _locModalTitles    = {1:'Portal',2:'Armory',3:'Tower',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
+	var _locModalIcons     = <?php
+		$icon_map = array();
+		foreach ($locations as $loc_id => $loc) { $icon_map[intval($loc_id)] = 'icons/locations/' . $loc['name'] . '.png'; }
+		echo json_encode($icon_map);
+	?>;
+	var _barracksPage = 1;
+	var _armoryPage   = 1;
+	var _portalPage   = 1;
 
 	function openLocationModal(loc_id) {
 		var title    = _locModalTitles[loc_id]    || 'Location';
 		var endpoint = _locModalEndpoints[loc_id] || null;
 		if (!endpoint) return;
-		document.getElementById('location-modal-title').textContent = title;
-		document.getElementById('location-modal-body').innerHTML    = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+		var iconSrc  = _locModalIcons[loc_id];
+		var iconHtml = iconSrc ? '<img src="' + iconSrc + '" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;opacity:0.9;" onerror="this.style.display=\'none\'">' : '';
+		document.getElementById('location-modal-title').innerHTML = iconHtml + title;
+		var _soldierModals = [2, 3, 4, 6];
+		document.getElementById('location-modal-body').innerHTML = _soldierModals.indexOf(loc_id) !== -1 ? _skullLoaderHTML : '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
 		document.getElementById('location-modal-footer').style.display = 'flex';
 		document.getElementById('location-modal-overlay').style.display = 'block';
 		document.getElementById('location-modal').style.display          = 'flex';
-		$.get('ajax/' + endpoint + '.php', function(html) {
-			document.getElementById('location-modal-body').innerHTML = html;
-		}).fail(function() {
-			document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
+		var params = '';
+		if (loc_id === 1) params = '?page=' + _portalPage;
+		if (loc_id === 4) params = '?page=' + _barracksPage;
+		if (loc_id === 2) params = '?page=' + _armoryPage;
+		if (loc_id === 3) { if (window._currentLocModal !== 3) { _towerPage = 1; _towerSelectedIds = []; } params = '?page=' + _towerPage; }
+		$.ajax({
+			url: 'ajax/' + endpoint + '.php' + params,
+			cache: false,
+			success: function(html) {
+				document.getElementById('location-modal-body').innerHTML = html;
+				if (loc_id === 3) {
+					$('#tower-available-grid .tower-pick').each(function() {
+						if (_towerSelectedIds.indexOf(parseInt($(this).data('soldier-id'))) !== -1)
+							$(this).addClass('selected');
+					});
+					_updateTowerSelectCount();
+				}
+			},
+			error: function() {
+				document.getElementById('location-modal-body').innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
+			}
 		});
 		window._currentLocModal = loc_id;
 	}
@@ -1036,6 +1275,47 @@ $conn->close();
 		if (window._currentLocModal) openLocationModal(window._currentLocModal);
 	}
 
+	var _skullLoaderHTML = '<div class="modal-skull-loader"><div class="lsk">💀</div><div class="lbar-wrap"><div class="lbar"></div></div></div>';
+
+	// gridSelector: optional CSS selector for just the soldiers grid — shows loader there only.
+	// Omit for a full-body loader (used on initial modal open).
+	function _reloadModalBody(endpoint, params, callback, gridSelector) {
+		var body = document.getElementById('location-modal-body');
+		if (gridSelector) {
+			var grid = body.querySelector(gridSelector);
+			if (grid) {
+				grid.style.display         = 'flex';
+				grid.style.alignItems      = 'center';
+				grid.style.justifyContent  = 'center';
+				grid.style.minHeight       = '160px';
+				grid.innerHTML = _skullLoaderHTML;
+			}
+		} else {
+			body.innerHTML = _skullLoaderHTML;
+		}
+		$.get('ajax/' + endpoint + '.php' + (params || ''), function(html) {
+			body.innerHTML = html;
+			if (callback) callback();
+		}).fail(function() {
+			body.innerHTML = '<p style="opacity:0.5;text-align:center;">Failed to load.</p>';
+		});
+	}
+
+	function goBarracksPage(page) {
+		_barracksPage = page;
+		_reloadModalBody(_locModalEndpoints[4], '?page=' + page, null, '#barracks-soldiers-grid');
+	}
+
+	function goPortalPage(page) {
+		_portalPage = page;
+		_reloadModalBody(_locModalEndpoints[1], '?page=' + page, null, null);
+	}
+
+	function goArmoryPage(page) {
+		_armoryPage = page;
+		_reloadModalBody(_locModalEndpoints[2], '?page=' + page, null, '#armory-soldiers-grid');
+	}
+
 	/* ── BARRACKS ─────────────────────────────────────────── */
 	function removeSoldier(soldier_id) {
 		openConfirm('Remove this soldier from the Barracks?', function() {
@@ -1047,12 +1327,54 @@ $conn->close();
 		});
 	}
 
+	var _dischargeMessages = {
+		barracks: 'PERMANENTLY discharge this soldier from your army? Their gear will be returned to inventory and they will be removed from your forces entirely. This cannot be undone unless you re-enlist them.',
+		tower:    'PERMANENTLY discharge this soldier from your army — not just the garrison. If you only want to move them back to reserve, use the Remove button instead. Their gear will be returned to inventory. This cannot be undone unless you re-enlist them.',
+		portal:   'PERMANENTLY discharge this soldier mid-raid? They will be immediately pulled from the active raid and removed from your army entirely. Their gear will be returned to inventory. This cannot be undone unless you re-enlist them.'
+	};
+	var _dischargeAllMessages = {
+		1: 'PERMANENTLY discharge ALL soldiers currently in reserve? This will not affect soldiers in the Tower or on active Raids. All gear will be returned to inventory. This cannot be undone.',
+		2: 'PERMANENTLY discharge ALL garrison soldiers from your army — not just remove them from the Tower. To move them back to reserve instead, use Remove All. All gear will be returned to inventory. This cannot be undone.',
+		3: 'PERMANENTLY discharge ALL soldiers currently on raids? They will be immediately pulled from active raids and removed from your army entirely. All gear will be returned to inventory. This cannot be undone.'
+	};
+
+	function dischargeSoldier(soldier_id, context) {
+		var msg = _dischargeMessages[context] || _dischargeMessages['barracks'];
+		openConfirm(msg, function() {
+			$.post('ajax/discharge-soldier.php', {soldier_id: soldier_id}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) { refreshLocationModal(); }
+				else { openNotify('Could not discharge soldier.'); }
+			});
+		});
+	}
+
+	function dischargeAllSoldiers(location) {
+		var msg = _dischargeAllMessages[location] || 'PERMANENTLY discharge ALL soldiers? All gear will be returned to inventory. This cannot be undone.';
+		openConfirm(msg, function() {
+			$.post('ajax/discharge-all-soldiers.php', {location: location}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) {
+					openNotify(r.discharged + ' soldier' + (r.discharged != 1 ? 's' : '') + ' discharged.');
+					refreshLocationModal();
+				} else { openNotify('Could not discharge soldiers.'); }
+			});
+		});
+	}
+
 	function autoFillBarracks() {
 		$.get('ajax/get-eligible-nfts.php', function(html) {
-			// Collect all nft_ids and enlist them all
 			var tmp = $('<div>').html(html);
 			var ids = [];
-			tmp.find('.enlist-candidate').each(function() { ids.push($(this).data('nft-id')); });
+			var remaining = _barracksOpenSlots;
+			if (remaining <= 0) { openNotify('No open slots available.'); return; }
+			tmp.find('.enlist-candidate').each(function() {
+				var cost = parseInt($(this).data('slots')) || 1;
+				if (remaining >= cost) {
+					ids.push($(this).data('nft-id'));
+					remaining -= cost;
+				}
+			});
 			if (ids.length === 0) { openNotify('No eligible NFTs available to enlist.'); return; }
 			$.post('ajax/enlist-soldier.php', {nft_ids: ids}, function(resp) {
 				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
@@ -1065,9 +1387,15 @@ $conn->close();
 	}
 
 	var _enlistSelectedIds = [];
+	var _enlistSlotMap     = {}; // nft_id -> slot cost (1 or 2)
+
+	function _enlistUsedSlots() {
+		return _enlistSelectedIds.reduce(function(sum, id) { return sum + (_enlistSlotMap[id] || 1); }, 0);
+	}
 
 	function openEnlistPicker() {
 		_enlistSelectedIds = [];
+		_enlistSlotMap     = {};
 		document.getElementById('enlist-picker-body').innerHTML = '<p style="text-align:center;padding:20px;opacity:0.5;">Select a project above to view eligible NFTs.</p>';
 		document.getElementById('enlist-project-filter').value  = '';
 		document.getElementById('enlist-collection-filter').style.display = 'none';
@@ -1127,38 +1455,80 @@ $conn->close();
 		document.getElementById('enlist-picker-body').innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
 		$.get('ajax/get-eligible-nfts.php', {project_id: pid, collection_id: cid}, function(html) {
 			document.getElementById('enlist-picker-body').innerHTML = html;
-			// re-apply existing selections
+			// cache slot costs and re-apply existing selections
 			$('#enlist-picker-body .enlist-candidate').each(function() {
-				if (_enlistSelectedIds.indexOf(parseInt($(this).data('nft-id'))) !== -1) $(this).addClass('selected');
+				var id = parseInt($(this).data('nft-id'));
+				_enlistSlotMap[id] = parseInt($(this).data('slots')) || 1;
+				if (_enlistSelectedIds.indexOf(id) !== -1) $(this).addClass('selected');
 			});
 			_updateEnlistCount();
 		});
 	}
 
 	function toggleEnlistSelect(el) {
-		var id = parseInt($(el).data('nft-id'));
-		var idx = _enlistSelectedIds.indexOf(id);
-		if (idx === -1) { _enlistSelectedIds.push(id); $(el).addClass('selected'); }
-		else            { _enlistSelectedIds.splice(idx, 1); $(el).removeClass('selected'); }
+		var id   = parseInt($(el).data('nft-id'));
+		var cost = parseInt($(el).data('slots')) || 1;
+		_enlistSlotMap[id] = cost;
+		var idx  = _enlistSelectedIds.indexOf(id);
+		if (idx === -1) {
+			if (_enlistUsedSlots() + cost > _barracksOpenSlots) {
+				openNotify('Not enough open slots. Deselect an NFT or reduce your selection.');
+				return;
+			}
+			_enlistSelectedIds.push(id);
+			$(el).addClass('selected');
+		} else {
+			_enlistSelectedIds.splice(idx, 1);
+			$(el).removeClass('selected');
+		}
 		_updateEnlistCount();
 	}
 
 	function _updateEnlistCount() {
-		document.getElementById('enlist-selected-count').textContent = _enlistSelectedIds.length + ' of ' + _barracksOpenSlots + ' slots selected';
+		document.getElementById('enlist-selected-count').textContent = _enlistUsedSlots() + ' of ' + _barracksOpenSlots + ' slots selected';
+		// Select All / Deselect All scoped to current listing
+		var visibleIds = [];
+		$('#enlist-picker-body .enlist-candidate').each(function() { visibleIds.push(parseInt($(this).data('nft-id'))); });
+		var anyVisibleSelected = visibleIds.some(function(id) { return _enlistSelectedIds.indexOf(id) !== -1; });
+		var btn = document.getElementById('enlist-select-all-btn');
+		if (btn) btn.value = anyVisibleSelected ? 'Deselect All' : 'Select All';
+		// Clear All visible only when cross-collection selections exist
+		var clearBtn = document.getElementById('enlist-clear-all-btn');
+		if (clearBtn) clearBtn.style.display = _enlistSelectedIds.length > 0 ? 'inline-block' : 'none';
 	}
 
 	function selectAllEligible() {
-		var remaining = _barracksOpenSlots - _enlistSelectedIds.length;
+		var candidates = $('#enlist-picker-body .enlist-candidate');
+		var anySelected = candidates.filter('.selected').length > 0;
+		if (anySelected) {
+			// deselect only the current listing
+			candidates.each(function() {
+				var id  = parseInt($(this).data('nft-id'));
+				var idx = _enlistSelectedIds.indexOf(id);
+				if (idx !== -1) _enlistSelectedIds.splice(idx, 1);
+				$(this).removeClass('selected');
+			});
+			_updateEnlistCount();
+			return;
+		}
+		var remaining = _barracksOpenSlots - _enlistUsedSlots();
 		if (remaining <= 0) return;
-		$('#enlist-picker-body .enlist-candidate').each(function() {
-			if (remaining <= 0) return false;
-			var id = parseInt($(this).data('nft-id'));
-			if (_enlistSelectedIds.indexOf(id) === -1) {
+		candidates.each(function() {
+			var id   = parseInt($(this).data('nft-id'));
+			var cost = parseInt($(this).data('slots')) || 1;
+			_enlistSlotMap[id] = cost;
+			if (_enlistSelectedIds.indexOf(id) === -1 && remaining >= cost) {
 				_enlistSelectedIds.push(id);
 				$(this).addClass('selected');
-				remaining--;
+				remaining -= cost;
 			}
 		});
+		_updateEnlistCount();
+	}
+
+	function clearAllEnlist() {
+		_enlistSelectedIds = [];
+		$('#enlist-picker-body .enlist-candidate').removeClass('selected');
 		_updateEnlistCount();
 	}
 
@@ -1177,19 +1547,121 @@ $conn->close();
 
 	/* ── CRYPT ────────────────────────────────────────────── */
 	function resurrectAllSoldiers() {
-		$.post('ajax/resurrect-soldiers.php', {}, function(resp) {
-			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success) { openNotify('Soldiers have been resurrected and returned to Reserve.'); refreshLocationModal(); }
-			else { openNotify('No soldiers ready for resurrection yet.'); }
+		var readyCards = document.querySelectorAll('#crypt-soldiers-grid .coffin-wrapper:has(.coffin-card.soldier-ready)');
+		var fadeDuration = 600;
+		// Phase 1: fade out coffin background on each wrapper
+		readyCards.forEach(function(wrapper, i) {
+			setTimeout(function() { wrapper.classList.add('coffin-fading'); }, i * 120);
 		});
+		var fadeEnd = readyCards.length > 0 ? (readyCards.length - 1) * 120 + fadeDuration : 0;
+		// Phase 2: ascend after all coffins have faded
+		setTimeout(function() {
+			readyCards.forEach(function(wrapper, i) {
+				setTimeout(function() {
+					wrapper.classList.remove('coffin-fading');
+					wrapper.classList.add('ascending');
+				}, i * 120);
+			});
+		}, fadeEnd);
+		var ascendEnd = fadeEnd + (readyCards.length > 0 ? (readyCards.length - 1) * 120 + 950 : 0);
+		setTimeout(function() {
+			$.post('ajax/resurrect-soldiers.php', {}, function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) { openNotify('Soldiers have been resurrected and returned to Reserve.'); refreshLocationModal(); }
+				else { openNotify('No soldiers ready for resurrection yet.'); }
+			});
+		}, ascendEnd);
 	}
 
 	/* ── TOWER ────────────────────────────────────────────── */
-	function assignToTower(soldier_id) {
-		$.post('ajax/tower-action.php', {action:'assign', soldier_id:soldier_id}, function(resp) {
+	var _towerSelectedIds = [];
+	var _towerPage        = 1;
+
+	function goTowerPage(page) {
+		_towerPage = page;
+		_reloadModalBody(_locModalEndpoints[3], '?page=' + page, function() {
+			// re-apply cross-page selections to newly rendered cards
+			$('#tower-available-grid .tower-pick').each(function() {
+				if (_towerSelectedIds.indexOf(parseInt($(this).data('soldier-id'))) !== -1)
+					$(this).addClass('selected');
+			});
+			_updateTowerSelectCount();
+		}, '#tower-available-grid');
+	}
+
+	function toggleTowerSelect(el) {
+		var sid  = parseInt($(el).data('soldier-id'));
+		var grid = document.getElementById('tower-available-grid');
+		var max  = grid ? parseInt(grid.dataset.max) : 10;
+		var idx  = _towerSelectedIds.indexOf(sid);
+		if (idx >= 0) {
+			_towerSelectedIds.splice(idx, 1);
+			$(el).removeClass('selected');
+		} else {
+			if (_towerSelectedIds.length >= max) {
+				openNotify('Only ' + max + ' garrison slot' + (max !== 1 ? 's' : '') + ' remaining.');
+				return;
+			}
+			_towerSelectedIds.push(sid);
+			$(el).addClass('selected');
+		}
+		_updateTowerSelectCount();
+	}
+
+	function selectAllTower() {
+		var grid = document.getElementById('tower-available-grid');
+		if (!grid) return;
+		var max       = parseInt(grid.dataset.max);
+		var pagePicks = $(grid).find('.tower-pick');
+		var anySelected = pagePicks.filter('.selected').length > 0;
+		if (anySelected) {
+			// deselect current page only
+			pagePicks.each(function() {
+				var sid = parseInt($(this).data('soldier-id'));
+				var idx = _towerSelectedIds.indexOf(sid);
+				if (idx !== -1) _towerSelectedIds.splice(idx, 1);
+				$(this).removeClass('selected');
+			});
+		} else {
+			pagePicks.each(function() {
+				var sid = parseInt($(this).data('soldier-id'));
+				if (_towerSelectedIds.indexOf(sid) === -1 && _towerSelectedIds.length < max) {
+					_towerSelectedIds.push(sid);
+					$(this).addClass('selected');
+				}
+			});
+		}
+		_updateTowerSelectCount();
+	}
+
+	function clearAllTower() {
+		_towerSelectedIds = [];
+		$('#tower-available-grid .tower-pick').removeClass('selected');
+		_updateTowerSelectCount();
+	}
+
+	function _updateTowerSelectCount() {
+		var grid = document.getElementById('tower-available-grid');
+		var max  = grid ? parseInt(grid.dataset.max) : 10;
+		var el   = document.getElementById('tower-select-count');
+		if (el) el.textContent = _towerSelectedIds.length + ' of ' + max + ' slots selected';
+		// Toggle Select All / Deselect All label
+		var pagePicks = $('#tower-available-grid .tower-pick');
+		var anyVisibleSelected = pagePicks.filter('.selected').length > 0;
+		var btn = document.getElementById('tower-select-all-btn');
+		if (btn) btn.textContent = anyVisibleSelected ? 'Deselect All' : 'Select All';
+		// Show Clear All only when cross-page selections exist
+		var clearBtn = document.getElementById('tower-clear-all-btn');
+		if (clearBtn) clearBtn.style.display = _towerSelectedIds.length > 0 ? 'inline-block' : 'none';
+	}
+
+	function deployToTower() {
+		if (_towerSelectedIds.length === 0) { openNotify('Select at least one soldier.'); return; }
+		$.post('ajax/tower-action.php', {action:'assign_bulk', soldier_ids: _towerSelectedIds}, function(resp) {
 			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			_towerSelectedIds = [];
 			if (r.success) refreshLocationModal();
-			else openNotify('Could not assign to Tower. Tower may be full.');
+			else openNotify('Could not deploy soldiers. Tower may be full.');
 		});
 	}
 
@@ -1197,12 +1669,8 @@ $conn->close();
 		$.post('ajax/tower-action.php', {action:'remove', soldier_id:soldier_id}, function() { refreshLocationModal(); });
 	}
 
-	function equipWeapon(soldier_id, weapon_id) {
-		$.post('ajax/tower-action.php', {action:'weapon', soldier_id:soldier_id, value:weapon_id}, function() { refreshLocationModal(); });
-	}
-
-	function equipArmor(soldier_id, armor_id) {
-		$.post('ajax/tower-action.php', {action:'armor', soldier_id:soldier_id, value:armor_id}, function() { refreshLocationModal(); });
+	function removeAllFromTower() {
+		$.post('ajax/tower-action.php', {action:'remove_bulk'}, function() { refreshLocationModal(); });
 	}
 
 	/* ── GEAR EQUIP / UNEQUIP ─────────────────────────────── */
@@ -1223,12 +1691,35 @@ $conn->close();
 		});
 	}
 
+	function autoEquipGear() {
+		$.post('ajax/auto-equip.php', {}, function(resp) {
+			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+			if (r.success) {
+				var msg = r.equipped + ' gear item' + (r.equipped != 1 ? 's' : '') + ' equipped!';
+				if (r.stripped > 0) msg += '<br>' + r.stripped + ' gear item' + (r.stripped != 1 ? 's' : '') + ' returned to inventory!';
+				openNotify(msg); refreshLocationModal();
+			}
+			else { openNotify('Nothing new to equip.'); }
+		});
+	}
+
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
 	function claimRealmLogs(types) {
-		$.post('ajax/claim-realm-logs.php', {types: types}, function(resp) {
-			try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
-			if (r.success) { openNotify('Rewards claimed!'); refreshLocationModal(); }
-			else { openNotify('Nothing to claim.'); }
+		$.ajax({
+			url: 'ajax/claim-realm-logs.php',
+			type: 'POST',
+			data: {types: types},
+			cache: false,
+			success: function(resp) {
+				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
+				if (r.success) {
+					openNotify('Rewards claimed!');
+					var loc = window._currentLocModal;
+					if (loc) openLocationModal(loc);
+				} else {
+					openNotify('Nothing to claim.');
+				}
+			}
 		});
 	}
 </script>

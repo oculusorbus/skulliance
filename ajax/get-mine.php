@@ -1,4 +1,6 @@
 <?php
+header("Cache-Control: no-store, no-cache, must-revalidate");
+header("Pragma: no-cache");
 include '../db.php';
 include '../skulliance.php';
 
@@ -9,6 +11,7 @@ if (!$realm_id) exit;
 $info = getMineInfo($conn, $realm_id);
 $logs        = getUnclaimedRealmLogs($conn, $realm_id, array('carbon'));
 $claim_types = array('carbon');
+$carbon_icon = '<img src="icons/carbon.png" onerror="this.src=\'icons/skull.png\'" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;">';
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
@@ -16,11 +19,11 @@ $claim_types = array('carbon');
         <span class="soldiers-stat-value"><?php echo $info['mine_level']; ?></span>
     </div>
     <div class="soldiers-stat">
-        <span class="soldiers-stat-label">CARBON / Day</span>
+        <span class="soldiers-stat-label"><?php echo $carbon_icon; ?>CARBON / Day</span>
         <span class="soldiers-stat-value"><?php echo number_format($info['nightly']); ?></span>
     </div>
     <div class="soldiers-stat">
-        <span class="soldiers-stat-label">CARBON Balance</span>
+        <span class="soldiers-stat-label"><?php echo $carbon_icon; ?>CARBON Balance</span>
         <span class="soldiers-stat-value"><?php echo number_format($info['carbon']); ?></span>
     </div>
 </div>
@@ -31,7 +34,7 @@ $claim_types = array('carbon');
 <?php include 'realm-log-panel.php'; ?>
 <div style="margin-top:12px;">
     <table class="soldiers-table" style="width:100%;font-size:0.8rem;">
-        <tr><th>Level</th><th>CARBON / Day</th></tr>
+        <tr><th>Level</th><th><?php echo $carbon_icon; ?>CARBON / Day</th></tr>
         <?php for ($lv = 1; $lv <= 10; $lv++): ?>
         <tr style="<?php echo ($lv == $info['mine_level']) ? 'color:#00c8a0;font-weight:bold;' : ''; ?>">
             <td><?php echo $lv; ?></td>

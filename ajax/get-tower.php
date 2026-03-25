@@ -8,14 +8,24 @@ if (!$realm_id) exit;
 
 $tower_level = intval(getRealmLocationLevel($conn, $realm_id, 3));
 $garrison    = getTowerGarrison($conn, $realm_id);
-$weapons     = getAllWeapons($conn);
-$armor_list  = getAllArmor($conn);
 
-// Reserve soldiers available to assign to tower
+// Reserve soldiers available to assign to tower, sorted by combined gear level desc
 $barracks_soldiers = getBarracksSoldiers($conn, $realm_id);
-$available_for_tower = array_filter($barracks_soldiers, function($s) {
-    return intval($s['location']) == 1 && intval($s['trained']) == 1;
+$reserved_ids = getReservedSoldierIds($conn, $realm_id);
+$available_for_tower = array_values(array_filter($barracks_soldiers, function($s) use ($reserved_ids) {
+    return intval($s['location']) == 1 && intval($s['trained']) == 1 && !in_array(intval($s['soldier_id']), $reserved_ids);
+}));
+usort($available_for_tower, function($a, $b) {
+    $a_score = intval($a['weapon_level']) + intval($a['armor_level']);
+    $b_score = intval($b['weapon_level']) + intval($b['armor_level']);
+    return $b_score - $a_score;
 });
+
+$per_page    = 10;
+$total_avail = count($available_for_tower);
+$total_pages = max(1, ceil($total_avail / $per_page));
+$page        = max(1, min($total_pages, intval($_GET['page'] ?? 1)));
+$available_page = array_slice($available_for_tower, ($page - 1) * $per_page, $per_page);
 ?>
 <div class="soldiers-stat-row">
     <div class="soldiers-stat">
@@ -28,9 +38,18 @@ $available_for_tower = array_filter($barracks_soldiers, function($s) {
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Defense Bonus</span>
-        <span class="soldiers-stat-value">+<?php echo $tower_level; ?>%</span>
+        <span class="soldiers-stat-value">+<?php echo min(count($garrison), 10); ?>%</span>
     </div>
 </div>
+<?php if (!empty($garrison)): ?>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px;">
+    <strong style="font-size:0.85rem;">Garrison</strong>
+    <div style="display:flex;gap:6px;">
+        <button class="small-button" onclick="removeAllFromTower()">Remove All</button>
+        <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers(2)">Discharge All</button>
+    </div>
+</div>
+<?php endif; ?>
 <div class="soldiers-grid" id="tower-garrison-grid">
 <?php foreach ($garrison as $s):
     $img_src = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
@@ -38,58 +57,88 @@ $available_for_tower = array_filter($barracks_soldiers, function($s) {
 <div class="soldier-card garrison-card" data-soldier-id="<?php echo $s['soldier_id']; ?>">
     <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
     <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
-    <div class="soldier-gear-row">
-        <div class="soldier-gear-slot" title="Weapon">
+    <div class="soldier-status status-ready">Active Duty</div>
+    <div class="soldier-gear-row" style="width:100%;">
+        <div class="soldier-gear-slot">
             <?php if ($s['weapon_id']): ?>
-                <img class="icon" src="icons/weapons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
                 <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo intval($s['weapon_level']); ?></span>
             <?php else: ?><span class="gear-empty">No Weapon</span><?php endif; ?>
         </div>
-        <div class="soldier-gear-slot" title="Armor">
+        <div class="soldier-gear-slot">
             <?php if ($s['armor_id']): ?>
-                <img class="icon" src="icons/armor/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" />
                 <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo intval($s['armor_level']); ?></span>
             <?php else: ?><span class="gear-empty">No Armor</span><?php endif; ?>
         </div>
     </div>
-    <div class="soldier-gear-controls">
-        <select class="dropdown soldier-weapon-select" onchange="equipWeapon(<?php echo $s['soldier_id']; ?>, this.value)">
-            <option value="0">-- Weapon --</option>
-            <?php foreach ($weapons as $w): ?>
-            <option value="<?php echo $w['id']; ?>" <?php echo ($s['weapon_id'] == $w['id']) ? 'selected' : ''; ?>>
-                Lv<?php echo $w['level']; ?> <?php echo htmlspecialchars($w['name']); ?>
-            </option>
-            <?php endforeach; ?>
-        </select>
-        <select class="dropdown soldier-armor-select" onchange="equipArmor(<?php echo $s['soldier_id']; ?>, this.value)">
-            <option value="0">-- Armor --</option>
-            <?php foreach ($armor_list as $a): ?>
-            <option value="<?php echo $a['id']; ?>" <?php echo ($s['armor_id'] == $a['id']) ? 'selected' : ''; ?>>
-                Lv<?php echo $a['level']; ?> <?php echo htmlspecialchars($a['name']); ?>
-            </option>
-            <?php endforeach; ?>
-        </select>
-        <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
-    </div>
+    <button class="small-button" onclick="removeFromTower(<?php echo $s['soldier_id']; ?>)">Remove</button>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeSoldier(<?php echo $s['soldier_id']; ?>, 'tower')">Discharge</button>
 </div>
 <?php endforeach; ?>
 <?php if (empty($garrison)): ?>
 <p style="opacity:0.55;font-size:0.85rem;">Tower is undefended. Add trained soldiers from your Barracks.</p>
 <?php endif; ?>
 </div>
-<?php if (count($garrison) < 10 && !empty($available_for_tower)): ?>
+<?php
+$slots_remaining = 10 - count($garrison);
+if ($slots_remaining > 0 && !empty($available_for_tower)):
+?>
 <div style="margin-top:16px;">
-    <strong style="font-size:0.85rem;">Add to Garrison:</strong>
-    <div class="soldiers-grid" id="tower-available-grid" style="margin-top:8px;">
-    <?php foreach ($available_for_tower as $s):
+    <div class="tower-garrison-header">
+        <strong style="font-size:0.85rem;">Add to Garrison:</strong>
+        <div class="tower-garrison-controls">
+            <span id="tower-select-count" style="font-size:0.8rem;opacity:0.65;">0 of <?php echo $slots_remaining; ?> slots selected</span>
+            <button id="tower-select-all-btn" class="small-button" onclick="selectAllTower()">Select All</button>
+        </div>
+    </div>
+    <div class="soldiers-grid" id="tower-available-grid" data-max="<?php echo $slots_remaining; ?>" style="margin-top:0;">
+    <?php foreach ($available_page as $s):
         $img_src = getIPFS($s['ipfs'], $s['collection_id'], $s['project_id']);
     ?>
-    <div class="soldier-card">
+    <div class="soldier-card tower-pick" data-soldier-id="<?php echo $s['soldier_id']; ?>" onclick="toggleTowerSelect(this)">
         <img class="soldier-nft-img" src="<?php echo htmlspecialchars($img_src); ?>" onerror="this.src='icons/skull.png'" />
         <div class="soldier-name"><?php echo htmlspecialchars($s['nft_name']); ?></div>
-        <button class="small-button" onclick="assignToTower(<?php echo $s['soldier_id']; ?>)">+ Garrison</button>
+        <div class="soldier-status status-ready">Active Duty</div>
+        <div class="soldier-gear-row" style="width:100%;">
+            <?php if ($s['weapon_id']): ?>
+            <div class="soldier-gear-slot">
+                <span class="gear-label"><?php echo htmlspecialchars($s['weapon_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['weapon_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo $s['weapon_level']; ?></span>
+            </div>
+            <?php else: ?><div class="gear-empty">No Weapon</div><?php endif; ?>
+            <?php if ($s['armor_id']): ?>
+            <div class="soldier-gear-slot">
+                <span class="gear-label"><?php echo htmlspecialchars($s['armor_name']); ?></span>
+                <img class="icon" src="icons/<?php echo strtolower(str_replace(' ', '-', $s['armor_name'])); ?>.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;" />
+                <span class="gear-label">Lv<?php echo $s['armor_level']; ?></span>
+            </div>
+            <?php else: ?><div class="gear-empty">No Armor</div><?php endif; ?>
+        </div>
     </div>
     <?php endforeach; ?>
+    </div>
+    <?php if ($total_pages > 1): ?>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:0.82rem;">
+        <?php if ($page > 1): ?>
+        <button class="small-button" onclick="goTowerPage(<?php echo $page - 1; ?>)">&#8249; Prev</button>
+        <?php else: ?>
+        <button class="small-button" disabled style="opacity:0.3;">&#8249; Prev</button>
+        <?php endif; ?>
+        <span style="opacity:0.6;"><?php echo $page; ?> / <?php echo $total_pages; ?></span>
+        <?php if ($page < $total_pages): ?>
+        <button class="small-button" onclick="goTowerPage(<?php echo $page + 1; ?>)">Next &#8250;</button>
+        <?php else: ?>
+        <button class="small-button" disabled style="opacity:0.3;">Next &#8250;</button>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    <div class="tower-deploy-row">
+        <button id="tower-clear-all-btn" class="small-button soldier-discharge-btn" onclick="clearAllTower()" style="display:none;">Clear All</button>
+        <button class="button" onclick="deployToTower()">Deploy to Tower</button>
     </div>
 </div>
 <?php endif; ?>
