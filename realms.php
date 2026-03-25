@@ -739,7 +739,7 @@ $conn->close();
 .soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
 /* Crypt coffin cards */
 .coffin-card {
-    background: rgba(30,10,10,0.7) url('../icons/coffin.png') center bottom / contain no-repeat;
+    background: rgba(30,10,10,0.7) url('icons/coffin.png') center bottom / contain no-repeat;
     border:1px solid rgba(150,50,50,0.4);
     border-radius:8px;
     padding:8px;
@@ -752,7 +752,7 @@ $conn->close();
 }
 .coffin-card.soldier-ready {
     border-color:rgba(0,200,160,0.5);
-    background: rgba(0,40,30,0.7) url('../icons/coffin.png') center bottom / contain no-repeat;
+    background: rgba(0,40,30,0.7) url('icons/coffin.png') center bottom / contain no-repeat;
     box-shadow:0 0 10px rgba(0,200,160,0.15);
 }
 @keyframes resurrect-ascend {
