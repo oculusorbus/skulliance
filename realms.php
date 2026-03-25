@@ -33,10 +33,14 @@ if(isset($_POST['realmText'])){
 	}
 }
 
-if(isset($_SESSION['userData']['user_id'])){ ?>
+if(isset($_SESSION['userData']['user_id'])){
+// Run completed raid resolution first so endRaid updates consumables before locations panel renders
+$outgoing_completed = getRaids($conn, "outgoing", "completed");
+$incoming_completed = getRaids($conn, "incoming", "completed");
+?>
 <!-- The flexible grid (content) -->
 
-<div class="row" id="row0">	
+<div class="row" id="row0">
 	  <div class="side" id="locations">
 		<div class="content realm">
 			<?php
@@ -380,19 +384,17 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				echo $outgoing_raids;
 				echo '</div>';
 			}	
-			$outgoing_completed = getRaids($conn, "outgoing", "completed"); 
 			if(isset($outgoing_completed)){
 				echo '<div class="content raids">';
 				echo $outgoing_completed;
 				echo '</div>';
-			}	
+			}
 			$incoming_raids = getRaids($conn, "incoming", "pending"); 
 			if(isset($incoming_raids)){
 				echo '<div class="content raids">';
 				echo $incoming_raids;
 				echo '</div>';
 			}	
-			$incoming_completed = getRaids($conn, "incoming", "completed"); 
 			if(isset($incoming_completed)){
 				echo '<div class="content raids">';
 				echo $incoming_completed;
