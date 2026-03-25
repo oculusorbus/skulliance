@@ -32,20 +32,20 @@ $con_names = array(
 <?php include 'realm-log-panel.php'; ?>
 <div style="margin-top:14px;">
     <strong style="font-size:0.85rem;">Drop Rates (Level <?php echo $info['factory_level']; ?>)</strong>
-    <div class="inv-info-grid" style="margin-top:10px;">
-        <?php
-        $level = $info['factory_level'];
-        $odds  = getFactoryOdds($level);
-
-        foreach ($odds as $cid => $pct):
+    <?php $odds = getFactoryOdds($info['factory_level']); ?>
+    <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+        <?php foreach ($odds as $cid => $pct):
             $icon = strtolower(str_replace(array('%',' '), array('','-'), $con_names[$cid])) . '.png';
+            $qty  = intval($amounts[$cid]['amount'] ?? 0);
         ?>
-        <div class="inv-info-item">
-            <img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
-            <div style="flex:1;min-width:0;">
-                <strong><?php echo $con_names[$cid]; ?></strong>
-                <p style="display:flex;justify-content:space-between;">~<?php echo $pct; ?>% chance <span style="color:#00c8a0;">x<?php echo intval($amounts[$cid]['amount'] ?? 0); ?></span></p>
+        <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem;">
+            <img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'" style="width:18px;height:18px;flex-shrink:0;"/>
+            <span style="width:110px;opacity:0.75;flex-shrink:0;"><?php echo $con_names[$cid]; ?></span>
+            <div style="flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;width:<?php echo $pct; ?>%;background:rgba(0,200,160,0.7);border-radius:3px;"></div>
             </div>
+            <span style="width:32px;text-align:right;opacity:0.7;"><?php echo $pct; ?>%</span>
+            <span style="width:28px;text-align:right;color:#00c8a0;opacity:<?php echo $qty > 0 ? '1' : '0.3'; ?>;">x<?php echo $qty; ?></span>
         </div>
         <?php endforeach; ?>
     </div>
