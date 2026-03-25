@@ -6732,6 +6732,10 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "</div>"; // rc-card-body
+				// Soldier breakdown from raids_logs (completed only)
+				if($status == "Completed"){
+					$rows[$decimal] .= getRaidLogsDisplay($conn, $row['raid_id']);
+				}
 				// Retreat button (outgoing pending only)
 				if($type == 'outgoing' && $date > time()){
 					$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
@@ -8568,10 +8572,14 @@ function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 	foreach ($soldier_ids as $sid) {
 		$sid = intval($sid);
 		// Verify soldier is in reserve (location=1), trained, alive
-		$check = $conn->query("SELECT id, realm_id FROM soldiers WHERE id = $sid AND location = 1 AND trained = 1 AND dead IS NULL AND active = 1 LIMIT 1");
+		$check = $conn->query("SELECT id, realm_id, weapon_id, armor_id FROM soldiers WHERE id = $sid AND location = 1 AND trained = 1 AND dead IS NULL AND active = 1 LIMIT 1");
 		if (!$check || $check->num_rows == 0) continue;
+		$srow      = $check->fetch_assoc();
+		$weapon_id = intval($srow['weapon_id']);
+		$armor_id  = intval($srow['armor_id']);
 		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
 		$conn->query("UPDATE soldiers SET location = 3 WHERE id = $sid LIMIT 1");
+		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id) VALUES ($raid_id, 'offense', $sid, $weapon_id, $armor_id)");
 	}
 }
 
@@ -8596,6 +8604,9 @@ function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) 
 		$death_chance  = max(5, 70 - ($armor_level * $armor_reduction_per_level));
 		if (rand(1, 100) <= $death_chance) {
 			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+			$conn->query("UPDATE raids_logs SET dead = 1 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
+		} else {
+			$conn->query("UPDATE raids_logs SET dead = 0 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
 		}
 	}
 }
@@ -8611,17 +8622,59 @@ function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonu
 	$total_weapon = intval($wrow['total_weapon_level']);
 
 	// Each tower soldier rolls
-	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL AND soldiers.active = 1");
+	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, soldiers.weapon_id, soldiers.armor_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL AND soldiers.active = 1");
 	while ($row = $garrison->fetch_assoc()) {
 		$sid          = intval($row['soldier_id']);
+		$weapon_id    = intval($row['weapon_id']);
+		$armor_id     = intval($row['armor_id']);
 		$armor_level  = intval($row['armor_level']);
 		// Attacker weapons increase death chance; defender armor reduces it
 		$death_chance = max(5, 40 + ($total_weapon * $weapon_bonus_per_level) - ($armor_level * 4));
 		$death_chance = min(95, $death_chance);
-		if (rand(1, 100) <= $death_chance) {
+		$dead         = (rand(1, 100) <= $death_chance) ? 1 : 0;
+		if ($dead) {
 			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
 		}
+		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id, dead) VALUES ($raid_id, 'defense', $sid, $weapon_id, $armor_id, $dead)");
 	}
+}
+
+// Render soldier breakdown from raids_logs for a completed raid card
+function getRaidLogsDisplay($conn, $raid_id) {
+	$raid_id = intval($raid_id);
+	$result  = $conn->query("SELECT raids_logs.side, raids_logs.dead, raids_logs.weapon_id, raids_logs.armor_id, nfts.name AS nft_name, weapons.name AS weapon_name, armor.name AS armor_name FROM raids_logs INNER JOIN soldiers ON soldiers.id = raids_logs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = raids_logs.weapon_id AND raids_logs.weapon_id > 0 LEFT JOIN armor ON armor.id = raids_logs.armor_id AND raids_logs.armor_id > 0 WHERE raids_logs.raid_id = $raid_id ORDER BY raids_logs.side, raids_logs.dead DESC");
+	if (!$result || $result->num_rows == 0) return '';
+	$offense = array(); $defense = array();
+	while ($row = $result->fetch_assoc()) {
+		if ($row['side'] === 'offense') $offense[] = $row;
+		else $defense[] = $row;
+	}
+	if (empty($offense) && empty($defense)) return '';
+	$html = "<div class='rc-logs-panel'>";
+	foreach (array('Offense' => $offense, 'Defense' => $defense) as $label => $soldiers) {
+		if (empty($soldiers)) continue;
+		$html .= "<div class='rc-logs-col'>";
+		$html .= "<div class='rc-logs-label'>" . $label . "</div>";
+		foreach ($soldiers as $s) {
+			$dead_class = ($s['dead'] == 1) ? ' rc-log-dead' : '';
+			$html .= "<div class='rc-log-row" . $dead_class . "'>";
+			$html .= "<span class='rc-log-name'>" . htmlspecialchars($s['nft_name']) . "</span>";
+			$gear_icons = '';
+			if (!empty($s['weapon_name'])) {
+				$wfile = strtolower(str_replace(' ', '-', $s['weapon_name'])) . '.png';
+				$gear_icons .= "<img class='icon' src='icons/" . $wfile . "' onerror=\"this.src='icons/skull.png'\" style='width:14px;height:14px;opacity:0.7;' title='" . htmlspecialchars($s['weapon_name']) . "'>";
+			}
+			if (!empty($s['armor_name'])) {
+				$afile = strtolower(str_replace(' ', '-', $s['armor_name'])) . '.png';
+				$gear_icons .= "<img class='icon' src='icons/" . $afile . "' onerror=\"this.src='icons/skull.png'\" style='width:14px;height:14px;opacity:0.7;' title='" . htmlspecialchars($s['armor_name']) . "'>";
+			}
+			if ($gear_icons) $html .= "<span class='rc-log-gear'>" . $gear_icons . "</span>";
+			$html .= "</div>";
+		}
+		$html .= "</div>";
+	}
+	$html .= "</div>";
+	return $html;
 }
 
 // ── BARRACKS & TOWER SCORE FOR RAID CALCULATIONS ───────────
