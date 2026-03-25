@@ -27,7 +27,7 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Gear Drops / Day</span>
-        <span class="soldiers-stat-value"><?php echo $drops; ?></span>
+        <span class="soldiers-stat-value"><?php echo $armory_level == 1 ? '1' : '1–' . $drops; ?></span>
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Armed Soldiers</span>
@@ -41,7 +41,7 @@ $soldiers_page  = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     </div>
 </div>
 <p style="font-size:0.82rem;opacity:0.6;margin-top:12px;">
-    The Armory generates <strong><?php echo $drops; ?> gear drop<?php echo $drops != 1 ? 's' : ''; ?> per day</strong>, distributed nightly
+    The Armory generates <strong><?php echo $armory_level == 1 ? '1 gear drop' : '1–' . $drops . ' gear drops'; ?> per day</strong> (random), distributed nightly
     into your inventory. Equip gear to your soldiers from the inventory below.
 </p>
 
