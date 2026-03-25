@@ -1354,6 +1354,9 @@ $conn->close();
 	}
 
 	function autoFillBarracks() {
+		$.getJSON('ajax/get-barracks-slots.php', function(s) {
+			if (typeof s.open !== 'undefined') _barracksOpenSlots = s.open;
+		}).always(function() {
 		$.get('ajax/get-eligible-nfts.php', function(html) {
 			var tmp = $('<div>').html(html);
 			var ids = [];
@@ -1375,6 +1378,7 @@ $conn->close();
 				}
 			});
 		});
+		}); // always
 	}
 
 	var _enlistSelectedIds = [];
