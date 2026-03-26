@@ -17,6 +17,15 @@ $training_days  = $training_hours > 0 ? $training_hours / 24 : 0;
 $barracks_ff    = hasLocationFastForward($conn, $realm_id, 4);
 
 $reserved_ids = getReservedSoldierIds($conn, $realm_id);
+// Group: active duty first, reserved second; gear power descending within each group
+usort($soldiers, function($a, $b) use ($reserved_ids) {
+    $a_reserved = in_array(intval($a['soldier_id']), $reserved_ids) ? 1 : 0;
+    $b_reserved = in_array(intval($b['soldier_id']), $reserved_ids) ? 1 : 0;
+    if ($a_reserved !== $b_reserved) return $a_reserved - $b_reserved;
+    $a_power = intval($a['weapon_level']) + intval($a['armor_level']);
+    $b_power = intval($b['weapon_level']) + intval($b['armor_level']);
+    return $b_power - $a_power;
+});
 $loc_labels = array(1 => 'Active Duty', 2 => 'Tower', 3 => 'On Raid');
 $now = time();
 
