@@ -581,7 +581,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			<div style="display:flex;flex-direction:column;gap:18px;">
 				<div style="background:rgba(0,200,160,0.07);border:1px solid rgba(0,200,160,0.2);border-radius:8px;padding:14px 16px;">
 					<div style="font-weight:600;color:#00c8a0;margin-bottom:6px;">&#127984; Your Realm</div>
-					<p style="margin:0;opacity:0.8;">Your Realm is your base of operations. Build and upgrade locations to grow your power, defend against raiders, and earn rewards every night.</p>
+					<p style="margin:0;opacity:0.8;">Your Realm is your base of operations. Build and upgrade locations to grow your power, defend against raiders, and earn rewards every night. Join a faction for your favorite project and earn even more rewards with the help of your fellow community members.</p>
 				</div>
 				<div style="background:rgba(74,144,217,0.07);border:1px solid rgba(74,144,217,0.2);border-radius:8px;padding:14px 16px;">
 					<div style="font-weight:600;color:#4a90d9;margin-bottom:8px;">&#128205; Locations</div>
@@ -591,30 +591,34 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 						<div><span style="opacity:0.55;font-size:0.78rem;">TOWER</span><br/>Garrison trained soldiers here to defend your realm. Up to 10 defenders, +1% defense per soldier.</div>
 						<div><span style="opacity:0.55;font-size:0.78rem;">PORTAL</span><br/>Launch raids against other realms. Higher level = more simultaneous raids &amp; larger squads.</div>
 						<div><span style="opacity:0.55;font-size:0.78rem;">CRYPT</span><br/>Fallen soldiers rest here. Higher level = faster resurrection time.</div>
-						<div><span style="opacity:0.55;font-size:0.78rem;">MINE &amp; FACTORY</span><br/>Passive resource generation. Upgrade to increase nightly yields.</div>
+						<div><span style="opacity:0.55;font-size:0.78rem;">MINE &amp; FACTORY</span><br/>Passive resource generation. Upgrade to increase nightly yields of CARBON and consumables.</div>
 					</div>
 				</div>
 				<div style="background:rgba(255,150,50,0.07);border:1px solid rgba(255,150,50,0.2);border-radius:8px;padding:14px 16px;">
 					<div style="font-weight:600;color:#ff9632;margin-bottom:6px;">&#9876;&#65039; Raids</div>
-					<p style="margin:0 0 8px;opacity:0.8;">Send soldiers through your Portal to raid other realms. Win to steal points from their locations. Lose and risk your soldiers' lives &mdash; and take a hit to your own locations.</p>
-					<p style="margin:0;opacity:0.8;">Each raid pits your squad against the defender's Tower garrison. Gear levels tip the odds. Soldiers who die go to the Crypt and must wait to be resurrected before fighting again.</p>
+					<p style="margin:0 0 8px;opacity:0.8;">Send soldiers through your Portal to raid other realms. Win to loot points from their realm. Lose and risk your soldiers' lives &mdash; and take a hit to your own locations.</p>
+					<p style="margin:0;opacity:0.8;">Each raid pits your squad against the defender's Tower garrison. Gear levels and consumables tip the odds. Soldiers who die go to the Crypt and must wait to be resurrected before fighting again.</p>
 				</div>
 				<div style="background:rgba(180,100,255,0.07);border:1px solid rgba(180,100,255,0.2);border-radius:8px;padding:14px 16px;">
 					<div style="font-weight:600;color:#b464ff;margin-bottom:8px;">&#129514; Consumables</div>
 					<div style="display:flex;flex-direction:column;gap:6px;">
-						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/fast-forward.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Fast Forward</strong> &mdash; Halves training time (Barracks) or resurrection time (Crypt) while active.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/fast-forward.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Fast Forward</strong> &mdash; Halves location upgrades, training time (Barracks) or resurrection time (Crypt) while active.</span></div>
 						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/double-rewards.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Double Rewards</strong> &mdash; Acts as a shield. Absorbs one incoming raid hit and is consumed on use.</span></div>
-						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/random-reward.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Random Reward</strong> &mdash; When all locations of the same side are stocked and a raid is won, grants a free level-up to a random location.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/random-reward.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Random Reward</strong> &mdash; When all locations of the same side (offense/defense) are stocked and a raid is won, grants a free level-up to a random location.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/100-success.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>+4% Success</strong> &mdash; Adds 4% to the raid success chance for this location's side (offense/defense). Averaged across all locations in the group, up to +10% total.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/75-success.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>+3% Success</strong> &mdash; Adds 3% to the raid success chance for this location's side.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/50-success.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>+2% Success</strong> &mdash; Adds 2% to the raid success chance for this location's side.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/25-success.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>+1% Success</strong> &mdash; Adds 1% to the raid success chance for this location's side.</span></div>
 					</div>
 				</div>
 				<div style="background:rgba(255,200,0,0.06);border:1px solid rgba(255,200,0,0.18);border-radius:8px;padding:14px 16px;">
 					<div style="font-weight:600;color:#ffc800;margin-bottom:6px;">&#128161; Getting Started</div>
 					<ol style="margin:0;padding-left:18px;opacity:0.8;display:flex;flex-direction:column;gap:4px;">
 						<li>Activate your Realm and upgrade your Barracks to unlock soldier training.</li>
-						<li>Enlist NFTs as soldiers and train them &mdash; trained soldiers can be deployed to the Tower or sent on raids.</li>
-						<li>Upgrade your Armory to generate gear, then equip your soldiers for better odds in combat.</li>
-						<li>Garrison your best soldiers in the Tower to protect your locations from incoming raids.</li>
-						<li>Once your Portal is ready, launch raids to earn points from rival realms.</li>
+						<li>Enlist NFTs as soldiers and train them &mdash; trained soldiers can be deployed to the Tower garrison or sent on raids.</li>
+						<li>Upgrade your Armory to generate gear (weapons/armor), then equip your soldiers for better odds in combat.</li>
+						<li>Garrison your best soldiers in the Tower to protect your defensive locations from incoming raids.</li>
+						<li>Once your Portal is upgraded, launch more raids to loot points from rival realms.</li>
 					</ol>
 				</div>
 			</div>
