@@ -8359,7 +8359,8 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
 	updateGear($conn, $user_id, $type, $item_id, -1);
 	$cnt_col  = $is_weapon ? 'weapon_count' : 'armor_count';
-	$lr       = $conn->query("SELECT level FROM $type" . "s WHERE id = $item_id LIMIT 1");
+	$lr_table = $is_weapon ? 'weapons' : 'armor';
+	$lr       = $conn->query("SELECT level FROM $lr_table WHERE id = $item_id LIMIT 1");
 	$gear_lvl = ($lr && $lr->num_rows > 0) ? intval($lr->fetch_assoc()['level']) : 1;
 	$conn->query("UPDATE soldiers SET $col = $item_id, $cnt_col = $gear_lvl WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
@@ -8388,7 +8389,7 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 function autoEquipReserve($conn, $realm_id) {
 	$realm_id = intval($realm_id);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
-	if (!$r || $r->num_rows == 0) return 0;
+	if (!$r || $r->num_rows == 0) return array('equipped' => 0, 'stripped' => 0);
 	$user_id = intval($r->fetch_assoc()['user_id']);
 	$equipped = 0;
 	$stripped = 0;
