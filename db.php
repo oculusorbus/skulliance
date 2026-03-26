@@ -7239,14 +7239,9 @@ function endRaid($conn, $raid_id){
 		$author = array("name" => $def_username." · ".$def_name, "icon_url" => $def_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($def_username));
 		discordmsg("🛡️ Defense Holds", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $def_avatar_url, "4A90D9", $author);
 	}
-	// Soldier death rolls
-	if ($outcome == 1) {
-		// Offense wins: tower garrison defenders may die
-		rollTowerSoldierDeaths($conn, $raid_id, $defense_id);
-	} else {
-		// Defense wins: attacking raiders may die
-		rollRaidSoldierDeaths($conn, $raid_id);
-	}
+	// Soldier death rolls — always record both sides for the raid log
+	rollTowerSoldierDeaths($conn, $raid_id, $defense_id, 3, $outcome == 1);
+	if ($outcome != 1) rollRaidSoldierDeaths($conn, $raid_id);
 	// Release raid soldiers back to reserve (alive ones return, dead ones stay dead in location=1)
 	releaseRaidSoldiers($conn, $raid_id);
 
@@ -8357,7 +8352,10 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$current_gear_id = intval($s->fetch_assoc()[$col]);
 	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
 	updateGear($conn, $user_id, $type, $item_id, -1);
-	$conn->query("UPDATE soldiers SET $col = $item_id WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	$cnt_col  = $is_weapon ? 'weapon_count' : 'armor_count';
+	$lr       = $conn->query("SELECT level FROM $type" . "s WHERE id = $item_id LIMIT 1");
+	$gear_lvl = ($lr && $lr->num_rows > 0) ? intval($lr->fetch_assoc()['level']) : 1;
+	$conn->query("UPDATE soldiers SET $col = $item_id, $cnt_col = $gear_lvl WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
 }
 
@@ -8374,8 +8372,9 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	if (!$s || $s->num_rows == 0) return false;
 	$gear_id = intval($s->fetch_assoc()[$col]);
 	if ($gear_id == 0) return false;
+	$cnt_col = $is_weapon ? 'weapon_count' : 'armor_count';
 	updateGear($conn, $user_id, $type, $gear_id, 1);
-	$conn->query("UPDATE soldiers SET $col = NULL WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	$conn->query("UPDATE soldiers SET $col = 0, $cnt_col = 0 WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
 }
 
@@ -8595,19 +8594,34 @@ function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 		$srow      = $check->fetch_assoc();
 		$weapon_id = intval($srow['weapon_id']);
 		$armor_id  = intval($srow['armor_id']);
-		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id) VALUES ($raid_id, $sid)");
+		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id, side, weapon_id, armor_id, dead) VALUES ($raid_id, $sid, 'offense', $weapon_id, $armor_id, 0)");
 		$conn->query("UPDATE soldiers SET location = 3 WHERE id = $sid LIMIT 1");
-		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id, dead) VALUES ($raid_id, 'offense', $sid, $weapon_id, $armor_id, 0)");
 	}
 }
 
-// Release raid soldiers back to reserve (called when raid resolves)
+// Release raid soldiers back to reserve and decrement gear durability (offense only)
 function releaseRaidSoldiers($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT soldier_id FROM raids_soldiers WHERE raid_id = $raid_id");
+	$result  = $conn->query("SELECT soldier_id, side FROM raids_soldiers WHERE raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
-		$sid = intval($row['soldier_id']);
-		$conn->query("UPDATE soldiers SET location = 1 WHERE id = $sid AND location = 3 LIMIT 1");
+		$sid  = intval($row['soldier_id']);
+		$side = $row['side'];
+		if ($side !== 'offense') continue;
+		$sr = $conn->query("SELECT weapon_id, armor_id, weapon_count, armor_count FROM soldiers WHERE id = $sid AND location = 3 LIMIT 1");
+		if (!$sr || $sr->num_rows == 0) continue;
+		$s   = $sr->fetch_assoc();
+		$set = array('location = 1');
+		if (intval($s['weapon_id']) > 0) {
+			$wc = intval($s['weapon_count']) - 1;
+			if ($wc <= 0) { $set[] = 'weapon_id = 0'; $set[] = 'weapon_count = 0'; }
+			else            $set[] = "weapon_count = $wc";
+		}
+		if (intval($s['armor_id']) > 0) {
+			$ac = intval($s['armor_count']) - 1;
+			if ($ac <= 0) { $set[] = 'armor_id = 0'; $set[] = 'armor_count = 0'; }
+			else            $set[] = "armor_count = $ac";
+		}
+		$conn->query("UPDATE soldiers SET " . implode(', ', $set) . " WHERE id = $sid LIMIT 1");
 	}
 }
 
@@ -8621,46 +8635,46 @@ function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) 
 		$armor_level   = intval($row['armor_level']);
 		$death_chance  = max(5, 70 - ($armor_level * $armor_reduction_per_level));
 		if (rand(1, 100) <= $death_chance) {
-			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
-			$conn->query("UPDATE raids_logs SET dead = 1 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
+			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid LIMIT 1");
+			$conn->query("UPDATE raids_soldiers SET dead = 1 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
 		} else {
-			$conn->query("UPDATE raids_logs SET dead = 0 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
+			$conn->query("UPDATE raids_soldiers SET dead = 0 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
 		}
 	}
 }
 
-// Kill tower garrison soldiers when offense wins
-// Attacker weapon bonus: each weapon level reduces garrison survival by flat amount
-function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonus_per_level = 3) {
-	$raid_id         = intval($raid_id);
+// Record tower garrison soldiers and optionally roll deaths (offense win only)
+// $apply_deaths = false when defense wins — soldiers recorded but not killed
+function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonus_per_level = 3, $apply_deaths = true) {
+	$raid_id          = intval($raid_id);
 	$defense_realm_id = intval($defense_realm_id);
-	// Sum of weapon levels across all raids_soldiers for this raid
-	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raids_soldiers.raid_id = $raid_id");
-	$wrow = $wresult->fetch_assoc();
+	// Sum of weapon levels across offense raiders only
+	$wresult = $conn->query("SELECT COALESCE(SUM(COALESCE(weapons.level,0)),0) AS total_weapon_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN weapons ON weapons.id = soldiers.weapon_id WHERE raids_soldiers.raid_id = $raid_id AND raids_soldiers.side = 'offense'");
+	$wrow         = $wresult->fetch_assoc();
 	$total_weapon = intval($wrow['total_weapon_level']);
 
-	// Each tower soldier rolls
 	$garrison = $conn->query("SELECT soldiers.id AS soldier_id, soldiers.weapon_id, soldiers.armor_id, COALESCE(armor.level,0) AS armor_level FROM soldiers LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE soldiers.realm_id = $defense_realm_id AND soldiers.location = 2 AND soldiers.dead IS NULL AND soldiers.active = 1");
 	while ($row = $garrison->fetch_assoc()) {
-		$sid          = intval($row['soldier_id']);
-		$weapon_id    = intval($row['weapon_id']);
-		$armor_id     = intval($row['armor_id']);
-		$armor_level  = intval($row['armor_level']);
-		// Attacker weapons increase death chance; defender armor reduces it
-		$death_chance = max(5, 40 + ($total_weapon * $weapon_bonus_per_level) - ($armor_level * 4));
-		$death_chance = min(95, $death_chance);
-		$dead         = (rand(1, 100) <= $death_chance) ? 1 : 0;
-		if ($dead) {
-			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+		$sid         = intval($row['soldier_id']);
+		$weapon_id   = intval($row['weapon_id']);
+		$armor_id    = intval($row['armor_id']);
+		$armor_level = intval($row['armor_level']);
+		$dead        = 0;
+		if ($apply_deaths) {
+			$death_chance = min(95, max(5, 40 + ($total_weapon * $weapon_bonus_per_level) - ($armor_level * 4)));
+			$dead         = (rand(1, 100) <= $death_chance) ? 1 : 0;
+			if ($dead) {
+				$conn->query("UPDATE soldiers SET dead = NOW(), location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid LIMIT 1");
+			}
 		}
-		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id, dead) VALUES ($raid_id, 'defense', $sid, $weapon_id, $armor_id, $dead)");
+		$conn->query("INSERT INTO raids_soldiers (raid_id, soldier_id, side, weapon_id, armor_id, dead) VALUES ($raid_id, $sid, 'defense', $weapon_id, $armor_id, $dead)");
 	}
 }
 
-// Render soldier breakdown from raids_logs for a completed raid card
+// Render soldier breakdown from raids_soldiers for a completed raid card
 function getRaidLogsDisplay($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT raids_logs.side, raids_logs.dead, raids_logs.weapon_id, raids_logs.armor_id, nfts.name AS nft_name, weapons.name AS weapon_name, armor.name AS armor_name FROM raids_logs INNER JOIN soldiers ON soldiers.id = raids_logs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = raids_logs.weapon_id AND raids_logs.weapon_id > 0 LEFT JOIN armor ON armor.id = raids_logs.armor_id AND raids_logs.armor_id > 0 WHERE raids_logs.raid_id = $raid_id ORDER BY raids_logs.side, raids_logs.dead DESC");
+	$result  = $conn->query("SELECT rs.side, rs.dead, rs.weapon_id, rs.armor_id, nfts.name AS nft_name, weapons.name AS weapon_name, armor.name AS armor_name FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = rs.weapon_id AND rs.weapon_id > 0 LEFT JOIN armor ON armor.id = rs.armor_id AND rs.armor_id > 0 WHERE rs.raid_id = $raid_id ORDER BY rs.side, rs.dead DESC");
 	if (!$result || $result->num_rows == 0) return '';
 	$offense = array(); $defense = array();
 	while ($row = $result->fetch_assoc()) {
