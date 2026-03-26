@@ -4786,7 +4786,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 				
 				// Limit number of rows added to description to prevent going over Discord notification text length limit
 				if($counter <= 45){
-					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Score: ".$row["max_score"].", Attempts: ".$row["attempts"]."\r\n";
+					$description .= "- ".(($leaderboardCounter<10)?"0":"").$leaderboardCounter." "."<@".$row["discord_id"]."> Score: ".number_format(round($row["max_score"])).", Attempts: ".$row["attempts"]."\r\n";
 					$description .= "        ".number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND\r\n";
 				}
 			}
