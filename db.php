@@ -8110,22 +8110,22 @@ function verifyRealmSoldiers($conn) {
 }
 
 // ── CRYPT ──────────────────────────────────────────────────
-function getCryptResurrectionDays($conn, $realm_id) {
+// Resurrection duration in hours: (11 - level) days, capped at level 10. Fast Forward halves it.
+function getCryptResurrectionHours($conn, $realm_id) {
 	$realm_id    = intval($realm_id);
-	$crypt_level = intval(getRealmLocationLevel($conn, $realm_id, 6));
-	$res_days    = max(1, 11 - $crypt_level);
-	$ff = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id = $realm_id AND rl.location_id = 6 AND rlc.consumable_id = 5 AND rlc.raid_id = 0 LIMIT 1");
-	if ($ff && $ff->num_rows > 0) $res_days = max(1, (int)ceil($res_days / 2));
-	return $res_days;
+	$crypt_level = min(intval(getRealmLocationLevel($conn, $realm_id, 6)), 10);
+	$hours       = (11 - $crypt_level) * 24;
+	if (hasLocationFastForward($conn, $realm_id, 6)) $hours = $hours / 2;
+	return $hours;
 }
 
 function getCryptSoldiers($conn, $realm_id) {
-	$realm_id     = intval($realm_id);
-	$res_days     = getCryptResurrectionDays($conn, $realm_id);
+	$realm_id  = intval($realm_id);
+	$res_hours = getCryptResurrectionHours($conn, $realm_id);
 	$sql = "SELECT soldiers.id AS soldier_id, soldiers.nft_id, soldiers.dead, soldiers.weapon_id, soldiers.armor_id,
 	               nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id,
-	               DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) AS ready_at,
-	               (DATE_ADD(soldiers.dead, INTERVAL $res_days DAY) <= NOW()) AS eligible,
+	               DATE_ADD(soldiers.dead, INTERVAL $res_hours HOUR) AS ready_at,
+	               (DATE_ADD(soldiers.dead, INTERVAL $res_hours HOUR) <= NOW()) AS eligible,
 	               weapons.name AS weapon_name, weapons.level AS weapon_level,
 	               armor.name AS armor_name, armor.level AS armor_level
 	        FROM soldiers
@@ -8144,10 +8144,10 @@ function getCryptSoldiers($conn, $realm_id) {
 
 // Resurrect all eligible soldiers (dead timer expired)
 function resurrectSoldiers($conn, $realm_id) {
-	$realm_id    = intval($realm_id);
-	$res_days    = getCryptResurrectionDays($conn, $realm_id);
+	$realm_id  = intval($realm_id);
+	$res_hours = getCryptResurrectionHours($conn, $realm_id);
 	// Set location=1 (reserve), trained=1 (already trained), clear dead timestamp
-	$conn->query("UPDATE soldiers SET dead = NULL, location = 1, trained = 1 WHERE realm_id = $realm_id AND dead IS NOT NULL AND active = 1 AND DATE_ADD(dead, INTERVAL $res_days DAY) <= NOW()");
+	$conn->query("UPDATE soldiers SET dead = NULL, location = 1, trained = 1 WHERE realm_id = $realm_id AND dead IS NOT NULL AND active = 1 AND DATE_ADD(dead, INTERVAL $res_hours HOUR) <= NOW()");
 }
 
 // ── TOWER ──────────────────────────────────────────────────

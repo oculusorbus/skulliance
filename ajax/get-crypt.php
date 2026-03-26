@@ -7,7 +7,8 @@ $realm_id = getRealmID($conn);
 if (!$realm_id) exit;
 
 $crypt_level  = intval(getRealmLocationLevel($conn, $realm_id, 6));
-$res_days     = getCryptResurrectionDays($conn, $realm_id);
+$res_hours    = getCryptResurrectionHours($conn, $realm_id);
+$res_days     = $res_hours / 24;
 $crypt_ff     = hasLocationFastForward($conn, $realm_id, 6);
 $soldiers     = getCryptSoldiers($conn, $realm_id);
 $eligible_count = 0;
@@ -21,7 +22,7 @@ $now = time();
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Resurrection Time<?php if ($crypt_ff): ?> <span style="color:#ffc800;font-size:0.7rem;" title="Fast Forward active">⚡</span><?php endif; ?></span>
-        <span class="soldiers-stat-value"><?php echo $res_days; ?> <?php echo $res_days == 1 ? 'Day' : 'Days'; ?></span>
+        <span class="soldiers-stat-value"><?php echo ($res_days == floor($res_days)) ? intval($res_days) : $res_days; ?> <?php echo $res_days == 1 ? 'Day' : 'Days'; ?></span>
     </div>
     <div class="soldiers-stat">
         <span class="soldiers-stat-label">Dead Soldiers</span>
