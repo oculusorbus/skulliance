@@ -8670,42 +8670,25 @@ function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonu
 	}
 }
 
-// Render soldier breakdown from raids_soldiers for a completed raid card.
-// Returns array('offense' => html, 'defense' => html) for injection into each column.
+// Render soldier death summary from raids_soldiers for a completed raid card.
+// Returns array('offense' => html, 'defense' => html); empty string for a side with no deaths.
 function getRaidLogsDisplay($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT rs.side, rs.dead, rs.weapon_id, rs.armor_id, nfts.name AS nft_name, weapons.name AS weapon_name, armor.name AS armor_name FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = rs.weapon_id AND rs.weapon_id > 0 LEFT JOIN armor ON armor.id = rs.armor_id AND rs.armor_id > 0 WHERE rs.raid_id = $raid_id ORDER BY rs.side, rs.dead DESC");
+	$result  = $conn->query("SELECT rs.side, nfts.name AS nft_name FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id WHERE rs.raid_id = $raid_id AND rs.dead = 1 ORDER BY rs.side");
 	$out = array('offense' => '', 'defense' => '');
 	if (!$result || $result->num_rows == 0) return $out;
 	$offense = array(); $defense = array();
 	while ($row = $result->fetch_assoc()) {
-		if ($row['side'] === 'offense') $offense[] = $row;
-		else $defense[] = $row;
+		if ($row['side'] === 'offense') $offense[] = $row['nft_name'];
+		else $defense[] = $row['nft_name'];
 	}
-	foreach (array('offense' => $offense, 'defense' => $defense) as $side => $soldiers) {
-		if (empty($soldiers)) continue;
-		$killed    = count(array_filter($soldiers, fn($s) => $s['dead'] == 1));
-		$total     = count($soldiers);
-		$kill_note = $killed > 0 ? " <span style='color:#ff6b6b;font-size:0.75rem;'>(${killed} killed)</span>" : '';
-		$html  = "<div class='rc-logs-col'>";
-		$html .= "<div class='rc-logs-label'><span style='opacity:0.5;font-size:0.75rem;'>" . $total . " soldiers</span>" . $kill_note . "</div>";
-		foreach ($soldiers as $s) {
-			$dead_class = ($s['dead'] == 1) ? ' rc-log-dead' : '';
-			$html .= "<div class='rc-log-row" . $dead_class . "'>";
-			$html .= "<span class='rc-log-name'>" . htmlspecialchars($s['nft_name']) . "</span>";
-			$gear_icons = '';
-			if (!empty($s['weapon_name'])) {
-				$wfile = strtolower(str_replace(' ', '-', $s['weapon_name'])) . '.png';
-				$gear_icons .= "<img class='icon' src='icons/" . $wfile . "' onerror=\"this.src='icons/skull.png'\" style='width:14px;height:14px;opacity:0.7;' title='" . htmlspecialchars($s['weapon_name']) . "'>";
-			}
-			if (!empty($s['armor_name'])) {
-				$afile = strtolower(str_replace(' ', '-', $s['armor_name'])) . '.png';
-				$gear_icons .= "<img class='icon' src='icons/" . $afile . "' onerror=\"this.src='icons/skull.png'\" style='width:14px;height:14px;opacity:0.7;' title='" . htmlspecialchars($s['armor_name']) . "'>";
-			}
-			if ($gear_icons) $html .= "<span class='rc-log-gear'>" . $gear_icons . "</span>";
-			$html .= "</div>";
+	foreach (array('offense' => $offense, 'defense' => $defense) as $side => $names) {
+		if (empty($names)) continue;
+		$count = count($names);
+		$html  = "<br>-" . $count . " Soldier" . ($count > 1 ? "s" : "");
+		foreach ($names as $name) {
+			$html .= "<br><span style='opacity:0.4;font-size:0.8rem;'>" . htmlspecialchars($name) . "</span>";
 		}
-		$html .= "</div>";
 		$out[$side] = $html;
 	}
 	return $out;
