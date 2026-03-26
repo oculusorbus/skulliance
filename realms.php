@@ -626,6 +626,23 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<button class="button" onclick="confirmDeployConfig()">Continue</button>
 				<button class="small-button" onclick="closeDeployConfig()">Cancel</button>
 			</div>
+			<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;display:flex;flex-direction:column;gap:10px;">
+				<div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.4;">How Raids Work</div>
+				<div style="display:flex;gap:10px;">
+					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+						<div style="font-size:0.72rem;color:#00c8a0;margin-bottom:5px;font-weight:600;">⚔️ Win Chance</div>
+						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Determined by your realm's Armory, Portal, and Mine levels plus how full your Barracks is. Consumables shift the odds.</div>
+					</div>
+					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+						<div style="font-size:0.72rem;color:#ff9944;margin-bottom:5px;font-weight:600;">💀 If You Win</div>
+						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Your raiders' weapon levels increase the death chance for the defender's garrison. Higher weapon tiers = more casualties.</div>
+					</div>
+				</div>
+				<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+					<div style="font-size:0.72rem;color:#ff6b6b;margin-bottom:5px;font-weight:600;">🛡️ If You Lose</div>
+					<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Each raider faces an individual death roll. Base chance: <strong style="color:#c8dce8;">70%</strong>. Every armor level reduces it by <strong style="color:#c8dce8;">5%</strong>, down to a floor of <strong style="color:#c8dce8;">5%</strong>. Gear your soldiers before sending them.</div>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -691,23 +708,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<label style="font-size:0.8rem;opacity:0.65;margin-right:auto;"><input type="checkbox" id="raid-con-save-config" checked> Save configuration</label>
 				<input type="button" class="button" id="raid-con-modal-start-btn" value="Start Raid" onclick="startRaidFromModal()"/>
 				<input type="button" class="small-button" value="Cancel" onclick="closeRaidConsumablesModal()"/>
-			</div>
-			<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;display:flex;flex-direction:column;gap:10px;">
-				<div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.4;">How Raids Work</div>
-				<div style="display:flex;gap:10px;">
-					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
-						<div style="font-size:0.72rem;color:#00c8a0;margin-bottom:5px;font-weight:600;">⚔️ Win Chance</div>
-						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Determined by your realm's Armory, Portal, and Mine levels plus how full your Barracks is. Consumables shift the odds.</div>
-					</div>
-					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
-						<div style="font-size:0.72rem;color:#ff9944;margin-bottom:5px;font-weight:600;">💀 If You Win</div>
-						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Your raiders' weapon levels increase the death chance for the defender's garrison. Higher weapon tiers = more casualties.</div>
-					</div>
-				</div>
-				<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
-					<div style="font-size:0.72rem;color:#ff6b6b;margin-bottom:5px;font-weight:600;">🛡️ If You Lose</div>
-					<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Each raider faces an individual death roll. Base chance: <strong style="color:#c8dce8;">70%</strong>. Every armor level reduces it by <strong style="color:#c8dce8;">5%</strong>, down to a floor of <strong style="color:#c8dce8;">5%</strong>. Gear your soldiers before sending them.</div>
-				</div>
 			</div>
 		</div>
 	</div>
