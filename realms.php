@@ -681,21 +681,21 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<button class="button" onclick="confirmDeployConfig()">Continue</button>
 				<button class="small-button" onclick="closeDeployConfig()">Cancel</button>
 			</div>
-			<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;display:flex;flex-direction:column;gap:10px;">
-				<div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.4;">How Raids Work</div>
-				<div style="display:flex;gap:10px;">
-					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
-						<div style="font-size:0.72rem;color:#00c8a0;margin-bottom:5px;font-weight:600;">⚔️ Win Chance</div>
-						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Determined by your realm's Armory, Portal, and Mine levels plus how full your Barracks is. Consumables shift the odds.</div>
-					</div>
-					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
-						<div style="font-size:0.72rem;color:#ff9944;margin-bottom:5px;font-weight:600;">💀 If You Win</div>
-						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Your raiders' weapon levels increase the death chance for the defender's garrison. Higher weapon tiers = more casualties.</div>
-					</div>
-				</div>
+			<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;display:flex;flex-direction:column;gap:8px;">
+				<div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;opacity:0.4;margin-bottom:2px;">Raid Mechanics</div>
 				<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
-					<div style="font-size:0.72rem;color:#ff6b6b;margin-bottom:5px;font-weight:600;">🛡️ If You Lose</div>
-					<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Each raider faces an individual death roll. Base chance: <strong style="color:#c8dce8;">70%</strong>. Every armor level reduces it by <strong style="color:#c8dce8;">5%</strong>, down to a floor of <strong style="color:#c8dce8;">5%</strong>. Gear your soldiers before sending them.</div>
+					<div style="font-size:0.72rem;color:#00c8a0;margin-bottom:6px;font-weight:600;">⚔️ Offense Score</div>
+					<div style="font-size:0.75rem;opacity:0.65;line-height:1.6;">Your <strong style="color:#c8dce8;">Armory</strong>, <strong style="color:#c8dce8;">Barracks</strong>, and <strong style="color:#c8dce8;">Crypt</strong> levels drive your raid power, weighted by how fully you've filled your Barracks with trained soldiers. Consumables can tip a close matchup.</div>
+				</div>
+				<div style="display:flex;gap:8px;">
+					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+						<div style="font-size:0.72rem;color:#ff9944;margin-bottom:5px;font-weight:600;">💀 On Victory</div>
+						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Your raiders' combined weapon levels raise the death chance for the defender's garrison soldiers.</div>
+					</div>
+					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+						<div style="font-size:0.72rem;color:#ff6b6b;margin-bottom:5px;font-weight:600;">🛡️ On Defeat</div>
+						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Each raider rolls individually. <strong style="color:#c8dce8;">70%</strong> base death chance, reduced by <strong style="color:#c8dce8;">5%</strong> per armor level (min <strong style="color:#c8dce8;">5%</strong>).</div>
+					</div>
 				</div>
 			</div>
 		</div>
