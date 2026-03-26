@@ -92,15 +92,19 @@ $page_soldiers = array_slice($raid_soldiers, ($page - 1) * $per_page, $per_page)
     <?php if ($total_pages > 1): ?>
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:0.82rem;">
         <?php if ($page > 1): ?>
+        <button class="small-button" onclick="goPortalPage(1)">&#171; First</button>
         <button class="small-button" onclick="goPortalPage(<?php echo $page - 1; ?>)">&#8249; Prev</button>
         <?php else: ?>
+        <button class="small-button" disabled style="opacity:0.3;">&#171; First</button>
         <button class="small-button" disabled style="opacity:0.3;">&#8249; Prev</button>
         <?php endif; ?>
         <span style="opacity:0.6;"><?php echo $page; ?> / <?php echo $total_pages; ?></span>
         <?php if ($page < $total_pages): ?>
         <button class="small-button" onclick="goPortalPage(<?php echo $page + 1; ?>)">Next &#8250;</button>
+        <button class="small-button" onclick="goPortalPage(<?php echo $total_pages; ?>)">Last &#187;</button>
         <?php else: ?>
         <button class="small-button" disabled style="opacity:0.3;">Next &#8250;</button>
+        <button class="small-button" disabled style="opacity:0.3;">Last &#187;</button>
         <?php endif; ?>
     </div>
     <?php endif; ?>
