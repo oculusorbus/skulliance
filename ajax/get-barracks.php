@@ -74,7 +74,7 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     $is_reserved = in_array($s['soldier_id'], $reserved_ids);
     if ($trained) {
         if ($is_reserved) {
-            $status_label = 'Reserved';
+            $status_label = 'Reserve';
             $status_class = 'status-reserved';
         } else {
             $status_label = $loc_labels[$location] ?? 'Active Duty';
