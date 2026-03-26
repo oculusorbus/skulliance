@@ -8615,19 +8615,24 @@ function releaseRaidSoldiers($conn, $raid_id) {
 		if ($side !== 'offense') continue;
 		$sr = $conn->query("SELECT weapon_id, armor_id, weapon_count, armor_count FROM soldiers WHERE id = $sid AND location = 3 LIMIT 1");
 		if (!$sr || $sr->num_rows == 0) continue;
-		$s   = $sr->fetch_assoc();
-		$set = array('location = 1');
+		$s                = $sr->fetch_assoc();
+		$set              = array('location = 1');
+		$weapon_destroyed = 0;
+		$armor_destroyed  = 0;
 		if (intval($s['weapon_id']) > 0) {
 			$wc = intval($s['weapon_count']) - 1;
-			if ($wc <= 0) { $set[] = 'weapon_id = 0'; $set[] = 'weapon_count = 0'; }
+			if ($wc <= 0) { $set[] = 'weapon_id = 0'; $set[] = 'weapon_count = 0'; $weapon_destroyed = 1; }
 			else            $set[] = "weapon_count = $wc";
 		}
 		if (intval($s['armor_id']) > 0) {
 			$ac = intval($s['armor_count']) - 1;
-			if ($ac <= 0) { $set[] = 'armor_id = 0'; $set[] = 'armor_count = 0'; }
+			if ($ac <= 0) { $set[] = 'armor_id = 0'; $set[] = 'armor_count = 0'; $armor_destroyed = 1; }
 			else            $set[] = "armor_count = $ac";
 		}
 		$conn->query("UPDATE soldiers SET " . implode(', ', $set) . " WHERE id = $sid LIMIT 1");
+		if ($weapon_destroyed || $armor_destroyed) {
+			$conn->query("UPDATE raids_soldiers SET weapon_destroyed = $weapon_destroyed, armor_destroyed = $armor_destroyed WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
+		}
 	}
 }
 
@@ -8681,23 +8686,45 @@ function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonu
 // Returns array('offense' => html, 'defense' => html); empty string for a side with no deaths.
 function getRaidLogsDisplay($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT rs.side, nfts.name AS nft_name FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id WHERE rs.raid_id = $raid_id AND rs.dead = 1 ORDER BY rs.side");
 	$out = array('offense' => '', 'defense' => '');
-	if (!$result || $result->num_rows == 0) return $out;
-	$offense = array(); $defense = array();
-	while ($row = $result->fetch_assoc()) {
-		if ($row['side'] === 'offense') $offense[] = $row['nft_name'];
-		else $defense[] = $row['nft_name'];
-	}
-	foreach (array('offense' => $offense, 'defense' => $defense) as $side => $names) {
-		if (empty($names)) continue;
-		$count = count($names);
-		$html  = "<br>-" . $count . " Soldier" . ($count > 1 ? "s" : "");
-		foreach ($names as $name) {
-			$html .= "<br><span style='opacity:0.4;font-size:0.8rem;'>" . htmlspecialchars($name) . "</span>";
+
+	// Soldier deaths
+	$result = $conn->query("SELECT rs.side, nfts.name AS nft_name FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id WHERE rs.raid_id = $raid_id AND rs.dead = 1 ORDER BY rs.side");
+	if ($result && $result->num_rows > 0) {
+		$offense = array(); $defense = array();
+		while ($row = $result->fetch_assoc()) {
+			if ($row['side'] === 'offense') $offense[] = $row['nft_name'];
+			else $defense[] = $row['nft_name'];
 		}
-		$out[$side] = $html;
+		foreach (array('offense' => $offense, 'defense' => $defense) as $side => $names) {
+			if (empty($names)) continue;
+			$count = count($names);
+			$html  = "<br>-" . $count . " Soldier" . ($count > 1 ? "s" : "");
+			foreach ($names as $name) {
+				$html .= "<br><span style='opacity:0.4;font-size:0.8rem;'>" . htmlspecialchars($name) . "</span>";
+			}
+			$out[$side] .= $html;
+		}
 	}
+
+	// Gear destroyed by degradation (offense only)
+	$gresult = $conn->query("SELECT nfts.name AS nft_name, rs.weapon_destroyed, rs.armor_destroyed, weapons.name AS weapon_name, weapons.level AS weapon_level, armor.name AS armor_name, armor.level AS armor_level FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = rs.weapon_id LEFT JOIN armor ON armor.id = rs.armor_id WHERE rs.raid_id = $raid_id AND rs.side = 'offense' AND (rs.weapon_destroyed = 1 OR rs.armor_destroyed = 1)");
+	if ($gresult && $gresult->num_rows > 0) {
+		$gear_lines = array();
+		while ($row = $gresult->fetch_assoc()) {
+			$pieces = array();
+			if ($row['weapon_destroyed'] && $row['weapon_name']) $pieces[] = "Lv" . intval($row['weapon_level']) . " " . htmlspecialchars($row['weapon_name']);
+			if ($row['armor_destroyed']  && $row['armor_name'])  $pieces[] = "Lv" . intval($row['armor_level'])  . " " . htmlspecialchars($row['armor_name']);
+			if (!empty($pieces)) {
+				$gear_lines[] = "<br><span style='opacity:0.4;font-size:0.8rem;'>" . htmlspecialchars($row['nft_name']) . ": " . implode(', ', $pieces) . "</span>";
+			}
+		}
+		if (!empty($gear_lines)) {
+			$out['offense'] .= "<br>-" . count($gear_lines) . " Gear Destroyed";
+			foreach ($gear_lines as $line) $out['offense'] .= $line;
+		}
+	}
+
 	return $out;
 }
 
