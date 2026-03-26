@@ -773,7 +773,7 @@ $conn->close();
     animation: resurrect-ascend 0.9s ease-in forwards;
     pointer-events:none;
 }
-.soldier-status.status-reserved { background:rgba(180,100,255,0.15); color:#b464ff; }
+.soldier-status.status-reserve { background:rgba(180,100,255,0.15); color:#b464ff; }
 .soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
 .partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
 .soldier-gear-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:4px; }
