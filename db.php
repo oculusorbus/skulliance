@@ -7914,11 +7914,10 @@ function hasLocationFastForward($conn, $realm_id, $location_id) {
 // Training duration: (11 - level) days. Level 0 = no training. Fast Forward halves it.
 function getBarracksTrainingHours($conn, $realm_id) {
 	$realm_id = intval($realm_id);
-	$level = intval(getRealmLocationLevel($conn, $realm_id, 4));
+	$level = min(intval(getRealmLocationLevel($conn, $realm_id, 4)), 10);
 	if ($level == 0) return 0;
 	$hours = (11 - $level) * 24;
-	$ff = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id = $realm_id AND rl.location_id = 4 AND rlc.consumable_id = 5 AND rlc.raid_id = 0 LIMIT 1");
-	if ($ff && $ff->num_rows > 0) $hours = (int)ceil($hours / 2);
+	if (hasLocationFastForward($conn, $realm_id, 4)) $hours = $hours / 2;
 	return $hours;
 }
 
@@ -8636,7 +8635,7 @@ function releaseRaidSoldiers($conn, $raid_id) {
 // $armor_reduction_per_level = 5 (each armor level reduces death chance by 5%, min 5% floor)
 function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT raids_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raids_soldiers.raid_id = $raid_id");
+	$result  = $conn->query("SELECT raids_soldiers.soldier_id, soldiers.armor_id, COALESCE(armor.level, 0) AS armor_level FROM raids_soldiers INNER JOIN soldiers ON soldiers.id = raids_soldiers.soldier_id LEFT JOIN armor ON armor.id = soldiers.armor_id WHERE raids_soldiers.raid_id = $raid_id AND raids_soldiers.side = 'offense'");
 	while ($row = $result->fetch_assoc()) {
 		$sid           = intval($row['soldier_id']);
 		$armor_level   = intval($row['armor_level']);
