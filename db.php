@@ -6720,22 +6720,21 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$_col1_avatar = ($type == 'outgoing') ? $_sess_avatar_url : $_opp_avatar_url;
 				$_col2_avatar = ($type == 'outgoing') ? $_opp_avatar_url : $_sess_avatar_url;
 				// Body: two result columns
+				$_raid_logs = ($status == "Completed") ? getRaidLogsDisplay($conn, $row['raid_id']) : array('offense' => '', 'defense' => '');
 				$rows[$decimal] .= "<div class='rc-card-body'>";
 				$rows[$decimal] .= "<div class='rc-col'>";
 				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col1_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results1." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$offense_results."</div>";
+				$rows[$decimal] .= $_raid_logs['offense'];
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "<div class='rc-col'>";
 				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col2_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results2." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
+				$rows[$decimal] .= $_raid_logs['defense'];
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "</div>"; // rc-card-body
-				// Soldier breakdown from raids_logs (completed only)
-				if($status == "Completed"){
-					$rows[$decimal] .= getRaidLogsDisplay($conn, $row['raid_id']);
-				}
 				// Retreat button (outgoing pending only)
 				if($type == 'outgoing' && $date > time()){
 					$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
@@ -8671,25 +8670,25 @@ function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonu
 	}
 }
 
-// Render soldier breakdown from raids_soldiers for a completed raid card
+// Render soldier breakdown from raids_soldiers for a completed raid card.
+// Returns array('offense' => html, 'defense' => html) for injection into each column.
 function getRaidLogsDisplay($conn, $raid_id) {
 	$raid_id = intval($raid_id);
 	$result  = $conn->query("SELECT rs.side, rs.dead, rs.weapon_id, rs.armor_id, nfts.name AS nft_name, weapons.name AS weapon_name, armor.name AS armor_name FROM raids_soldiers rs INNER JOIN soldiers ON soldiers.id = rs.soldier_id INNER JOIN nfts ON nfts.id = soldiers.nft_id LEFT JOIN weapons ON weapons.id = rs.weapon_id AND rs.weapon_id > 0 LEFT JOIN armor ON armor.id = rs.armor_id AND rs.armor_id > 0 WHERE rs.raid_id = $raid_id ORDER BY rs.side, rs.dead DESC");
-	if (!$result || $result->num_rows == 0) return '';
+	$out = array('offense' => '', 'defense' => '');
+	if (!$result || $result->num_rows == 0) return $out;
 	$offense = array(); $defense = array();
 	while ($row = $result->fetch_assoc()) {
 		if ($row['side'] === 'offense') $offense[] = $row;
 		else $defense[] = $row;
 	}
-	if (empty($offense) && empty($defense)) return '';
-	$html = "<div class='rc-logs-panel'>";
-	foreach (array('Offense' => $offense, 'Defense' => $defense) as $label => $soldiers) {
+	foreach (array('offense' => $offense, 'defense' => $defense) as $side => $soldiers) {
 		if (empty($soldiers)) continue;
-		$killed = count(array_filter($soldiers, fn($s) => $s['dead'] == 1));
-		$total  = count($soldiers);
+		$killed    = count(array_filter($soldiers, fn($s) => $s['dead'] == 1));
+		$total     = count($soldiers);
 		$kill_note = $killed > 0 ? " <span style='color:#ff6b6b;font-size:0.75rem;'>(${killed} killed)</span>" : '';
-		$html .= "<div class='rc-logs-col'>";
-		$html .= "<div class='rc-logs-label'>" . $label . " <span style='opacity:0.5;font-size:0.75rem;'>" . $total . " soldiers</span>" . $kill_note . "</div>";
+		$html  = "<div class='rc-logs-col'>";
+		$html .= "<div class='rc-logs-label'><span style='opacity:0.5;font-size:0.75rem;'>" . $total . " soldiers</span>" . $kill_note . "</div>";
 		foreach ($soldiers as $s) {
 			$dead_class = ($s['dead'] == 1) ? ' rc-log-dead' : '';
 			$html .= "<div class='rc-log-row" . $dead_class . "'>";
@@ -8707,9 +8706,9 @@ function getRaidLogsDisplay($conn, $raid_id) {
 			$html .= "</div>";
 		}
 		$html .= "</div>";
+		$out[$side] = $html;
 	}
-	$html .= "</div>";
-	return $html;
+	return $out;
 }
 
 // ── BARRACKS & TOWER SCORE FOR RAID CALCULATIONS ───────────
