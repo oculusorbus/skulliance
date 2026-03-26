@@ -8685,8 +8685,11 @@ function getRaidLogsDisplay($conn, $raid_id) {
 	$html = "<div class='rc-logs-panel'>";
 	foreach (array('Offense' => $offense, 'Defense' => $defense) as $label => $soldiers) {
 		if (empty($soldiers)) continue;
+		$killed = count(array_filter($soldiers, fn($s) => $s['dead'] == 1));
+		$total  = count($soldiers);
+		$kill_note = $killed > 0 ? " <span style='color:#ff6b6b;font-size:0.75rem;'>(${killed} killed)</span>" : '';
 		$html .= "<div class='rc-logs-col'>";
-		$html .= "<div class='rc-logs-label'>" . $label . "</div>";
+		$html .= "<div class='rc-logs-label'>" . $label . " <span style='opacity:0.5;font-size:0.75rem;'>" . $total . " soldiers</span>" . $kill_note . "</div>";
 		foreach ($soldiers as $s) {
 			$dead_class = ($s['dead'] == 1) ? ' rc-log-dead' : '';
 			$html .= "<div class='rc-log-row" . $dead_class . "'>";
