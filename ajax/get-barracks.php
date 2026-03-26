@@ -20,9 +20,16 @@ $reserved_ids = getReservedSoldierIds($conn, $realm_id);
 $loc_labels = array(1 => 'Active Duty', 2 => 'Tower', 3 => 'On Raid');
 $now = time();
 
+// Slot cost includes living AND crypt (dead) soldiers — all active enlistments occupy a slot
 $slot_cost_total = 0;
 foreach ($all_soldiers as $s) {
     $slot_cost_total += ($s['project_id'] > 7 && $s['project_id'] != 15) ? 2 : 1;
+}
+$crypt_res = $conn->query("SELECT collections.project_id FROM soldiers INNER JOIN nfts ON nfts.id = soldiers.nft_id INNER JOIN collections ON collections.id = nfts.collection_id WHERE soldiers.realm_id = $realm_id AND soldiers.dead IS NOT NULL AND soldiers.active = 1");
+if ($crypt_res) {
+    while ($crow = $crypt_res->fetch_assoc()) {
+        $slot_cost_total += ($crow['project_id'] > 7 && $crow['project_id'] != 15) ? 2 : 1;
+    }
 }
 
 $per_page    = 10;
