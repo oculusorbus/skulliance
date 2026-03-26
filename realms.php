@@ -64,7 +64,8 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 								<img src="images/realms-logo.png" style="width:100px;opacity:0.9;margin-right:0;margin-top:8px;"/>
 							</div>
 							<div class="realm-header-spacer" style="flex:1;"></div>
-							<div class="realm-deactivate-wrap" style="flex-shrink:0;text-align:right;">
+							<div class="realm-deactivate-wrap" style="flex-shrink:0;text-align:right;display:flex;gap:6px;align-items:center;">
+								<input class="small-button" type="button" value="Guide" onclick="openGuideModal()"/>
 								<?php echo '<input class="small-button" type="button" value="Deactivate" onclick="deactivateRealm('.$realm_id.');">';?>
 							</div>
 						</div>
@@ -565,6 +566,60 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			</div>
 			<div class="raid-modal-footer">
 				<input type="button" class="small-button" value="Close" onclick="closeInventoryInfoModal()"/>
+			</div>
+		</div>
+	</div>
+
+	<!-- Guide Modal -->
+	<div id="guide-modal-overlay" onclick="closeGuideModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;"></div>
+	<div id="guide-modal" style="display:none;position:fixed;inset:0;z-index:1001;overflow-y:auto;pointer-events:none;">
+		<div style="pointer-events:all;max-width:640px;margin:40px auto;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:28px 28px 20px;font-size:0.85rem;line-height:1.55;" onclick="event.stopPropagation()">
+			<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+				<h2 style="margin:0;font-size:1.1rem;letter-spacing:0.05em;color:#00c8a0;">Realm &amp; Raids Guide</h2>
+				<button class="raid-modal-close" onclick="closeGuideModal()" aria-label="Close">&times;</button>
+			</div>
+			<div style="display:flex;flex-direction:column;gap:18px;">
+				<div style="background:rgba(0,200,160,0.07);border:1px solid rgba(0,200,160,0.2);border-radius:8px;padding:14px 16px;">
+					<div style="font-weight:600;color:#00c8a0;margin-bottom:6px;">&#127984; Your Realm</div>
+					<p style="margin:0;opacity:0.8;">Your Realm is your base of operations. Build and upgrade locations to grow your power, defend against raiders, and earn rewards every night.</p>
+				</div>
+				<div style="background:rgba(74,144,217,0.07);border:1px solid rgba(74,144,217,0.2);border-radius:8px;padding:14px 16px;">
+					<div style="font-weight:600;color:#4a90d9;margin-bottom:8px;">&#128205; Locations</div>
+					<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+						<div><span style="opacity:0.55;font-size:0.78rem;">BARRACKS</span><br/>Enlist soldiers and train them for deployment. Higher level = faster training.</div>
+						<div><span style="opacity:0.55;font-size:0.78rem;">ARMORY</span><br/>Generates gear drops nightly. Equip weapons &amp; armor to boost soldier power.</div>
+						<div><span style="opacity:0.55;font-size:0.78rem;">TOWER</span><br/>Garrison trained soldiers here to defend your realm. Up to 10 defenders, +1% defense per soldier.</div>
+						<div><span style="opacity:0.55;font-size:0.78rem;">PORTAL</span><br/>Launch raids against other realms. Higher level = more simultaneous raids &amp; larger squads.</div>
+						<div><span style="opacity:0.55;font-size:0.78rem;">CRYPT</span><br/>Fallen soldiers rest here. Higher level = faster resurrection time.</div>
+						<div><span style="opacity:0.55;font-size:0.78rem;">MINE &amp; FACTORY</span><br/>Passive resource generation. Upgrade to increase nightly yields.</div>
+					</div>
+				</div>
+				<div style="background:rgba(255,150,50,0.07);border:1px solid rgba(255,150,50,0.2);border-radius:8px;padding:14px 16px;">
+					<div style="font-weight:600;color:#ff9632;margin-bottom:6px;">&#9876;&#65039; Raids</div>
+					<p style="margin:0 0 8px;opacity:0.8;">Send soldiers through your Portal to raid other realms. Win to steal points from their locations. Lose and risk your soldiers' lives &mdash; and take a hit to your own locations.</p>
+					<p style="margin:0;opacity:0.8;">Each raid pits your squad against the defender's Tower garrison. Gear levels tip the odds. Soldiers who die go to the Crypt and must wait to be resurrected before fighting again.</p>
+				</div>
+				<div style="background:rgba(180,100,255,0.07);border:1px solid rgba(180,100,255,0.2);border-radius:8px;padding:14px 16px;">
+					<div style="font-weight:600;color:#b464ff;margin-bottom:8px;">&#129514; Consumables</div>
+					<div style="display:flex;flex-direction:column;gap:6px;">
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/fast-forward.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Fast Forward</strong> &mdash; Halves training time (Barracks) or resurrection time (Crypt) while active.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/double-rewards.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Double Rewards</strong> &mdash; Acts as a shield. Absorbs one incoming raid hit and is consumed on use.</span></div>
+						<div style="display:flex;gap:10px;align-items:flex-start;"><img class="icon" src="icons/random-reward.png" onerror="this.src='icons/skull.png'" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;"/><span><strong>Random Reward</strong> &mdash; When all locations of the same side are stocked and a raid is won, grants a free level-up to a random location.</span></div>
+					</div>
+				</div>
+				<div style="background:rgba(255,200,0,0.06);border:1px solid rgba(255,200,0,0.18);border-radius:8px;padding:14px 16px;">
+					<div style="font-weight:600;color:#ffc800;margin-bottom:6px;">&#128161; Getting Started</div>
+					<ol style="margin:0;padding-left:18px;opacity:0.8;display:flex;flex-direction:column;gap:4px;">
+						<li>Activate your Realm and upgrade your Barracks to unlock soldier training.</li>
+						<li>Enlist NFTs as soldiers and train them &mdash; trained soldiers can be deployed to the Tower or sent on raids.</li>
+						<li>Upgrade your Armory to generate gear, then equip your soldiers for better odds in combat.</li>
+						<li>Garrison your best soldiers in the Tower to protect your locations from incoming raids.</li>
+						<li>Once your Portal is ready, launch raids to earn points from rival realms.</li>
+					</ol>
+				</div>
+			</div>
+			<div class="raid-modal-footer" style="margin-top:20px;">
+				<button class="small-button" onclick="closeGuideModal()">Close</button>
 			</div>
 		</div>
 	</div>

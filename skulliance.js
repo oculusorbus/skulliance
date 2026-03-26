@@ -1227,6 +1227,20 @@ function startRaidFromModal(){
 	};
 }
 
+function openGuideModal(){
+	var m = document.getElementById('guide-modal');
+	if(m) m.style.display = 'block';
+	var o = document.getElementById('guide-modal-overlay');
+	if(o) o.style.display = 'block';
+}
+
+function closeGuideModal(){
+	var m = document.getElementById('guide-modal');
+	if(m) m.style.display = 'none';
+	var o = document.getElementById('guide-modal-overlay');
+	if(o) o.style.display = 'none';
+}
+
 function openInventoryInfoModal(){
 	var m = document.getElementById('inventory-info-modal');
 	if(m) m.style.display = 'block';
