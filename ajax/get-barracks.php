@@ -61,6 +61,13 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
         <span class="soldiers-stat-value"><?php echo $barracks_level; ?></span>
     </div>
 </div>
+<div class="raid-modal-footer" style="margin-top:12px;margin-bottom:4px;">
+    <button class="small-button" onclick="openEnlistPicker()">+ Enlist Soldiers</button>
+    <button class="small-button" onclick="autoFillBarracks()">Auto-Enlist</button>
+    <?php if (!empty($soldiers)): ?>
+    <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers(1)">Discharge All</button>
+    <?php endif; ?>
+</div>
 <div class="soldiers-grid" id="barracks-soldiers-grid">
 <?php foreach ($soldiers_page as $s):
     $is_partner = ($s['project_id'] > 7 && $s['project_id'] != 15);
@@ -140,11 +147,4 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
     <?php endif; ?>
 </div>
 <?php endif; ?>
-<div class="raid-modal-footer" style="margin-top:16px;">
-    <button class="small-button" onclick="openEnlistPicker()">+ Enlist Soldiers</button>
-    <button class="small-button" onclick="autoFillBarracks()">Auto-Enlist</button>
-    <?php if (!empty($soldiers)): ?>
-    <button class="small-button soldier-discharge-btn" onclick="dischargeAllSoldiers(1)">Discharge All</button>
-    <?php endif; ?>
-</div>
 <?php $conn->close(); ?>
