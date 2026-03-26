@@ -8621,7 +8621,7 @@ function rollRaidSoldierDeaths($conn, $raid_id, $armor_reduction_per_level = 5) 
 		$armor_level   = intval($row['armor_level']);
 		$death_chance  = max(5, 70 - ($armor_level * $armor_reduction_per_level));
 		if (rand(1, 100) <= $death_chance) {
-			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid LIMIT 1");
 			$conn->query("UPDATE raids_logs SET dead = 1 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
 		} else {
 			$conn->query("UPDATE raids_logs SET dead = 0 WHERE raid_id = $raid_id AND soldier_id = $sid AND side = 'offense' LIMIT 1");
@@ -8651,7 +8651,7 @@ function rollTowerSoldierDeaths($conn, $raid_id, $defense_realm_id, $weapon_bonu
 		$death_chance = min(95, $death_chance);
 		$dead         = (rand(1, 100) <= $death_chance) ? 1 : 0;
 		if ($dead) {
-			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1 WHERE id = $sid LIMIT 1");
+			$conn->query("UPDATE soldiers SET dead = NOW(), location = 1, weapon_id = 0, armor_id = 0 WHERE id = $sid LIMIT 1");
 		}
 		$conn->query("INSERT INTO raids_logs (raid_id, side, soldier_id, weapon_id, armor_id, dead) VALUES ($raid_id, 'defense', $sid, $weapon_id, $armor_id, $dead)");
 	}
