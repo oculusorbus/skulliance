@@ -8352,7 +8352,10 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$current_gear_id = intval($s->fetch_assoc()[$col]);
 	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
 	updateGear($conn, $user_id, $type, $item_id, -1);
-	$conn->query("UPDATE soldiers SET $col = $item_id WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	$cnt_col  = $is_weapon ? 'weapon_count' : 'armor_count';
+	$lr       = $conn->query("SELECT level FROM $type" . "s WHERE id = $item_id LIMIT 1");
+	$gear_lvl = ($lr && $lr->num_rows > 0) ? intval($lr->fetch_assoc()['level']) : 1;
+	$conn->query("UPDATE soldiers SET $col = $item_id, $cnt_col = $gear_lvl WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
 }
 
@@ -8369,8 +8372,9 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	if (!$s || $s->num_rows == 0) return false;
 	$gear_id = intval($s->fetch_assoc()[$col]);
 	if ($gear_id == 0) return false;
+	$cnt_col = $is_weapon ? 'weapon_count' : 'armor_count';
 	updateGear($conn, $user_id, $type, $gear_id, 1);
-	$conn->query("UPDATE soldiers SET $col = NULL WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
+	$conn->query("UPDATE soldiers SET $col = 0, $cnt_col = 0 WHERE id = $soldier_id AND realm_id = $realm_id LIMIT 1");
 	return true;
 }
 
@@ -8595,13 +8599,29 @@ function commitRaidSoldiers($conn, $raid_id, $soldier_ids) {
 	}
 }
 
-// Release raid soldiers back to reserve (called when raid resolves)
+// Release raid soldiers back to reserve and decrement gear durability (offense only)
 function releaseRaidSoldiers($conn, $raid_id) {
 	$raid_id = intval($raid_id);
-	$result  = $conn->query("SELECT soldier_id FROM raids_soldiers WHERE raid_id = $raid_id");
+	$result  = $conn->query("SELECT soldier_id, side FROM raids_soldiers WHERE raid_id = $raid_id");
 	while ($row = $result->fetch_assoc()) {
-		$sid = intval($row['soldier_id']);
-		$conn->query("UPDATE soldiers SET location = 1 WHERE id = $sid AND location = 3 LIMIT 1");
+		$sid  = intval($row['soldier_id']);
+		$side = $row['side'];
+		if ($side !== 'offense') continue;
+		$sr = $conn->query("SELECT weapon_id, armor_id, weapon_count, armor_count FROM soldiers WHERE id = $sid AND location = 3 LIMIT 1");
+		if (!$sr || $sr->num_rows == 0) continue;
+		$s   = $sr->fetch_assoc();
+		$set = array('location = 1');
+		if (intval($s['weapon_id']) > 0) {
+			$wc = intval($s['weapon_count']) - 1;
+			if ($wc <= 0) { $set[] = 'weapon_id = 0'; $set[] = 'weapon_count = 0'; }
+			else            $set[] = "weapon_count = $wc";
+		}
+		if (intval($s['armor_id']) > 0) {
+			$ac = intval($s['armor_count']) - 1;
+			if ($ac <= 0) { $set[] = 'armor_id = 0'; $set[] = 'armor_count = 0'; }
+			else            $set[] = "armor_count = $ac";
+		}
+		$conn->query("UPDATE soldiers SET " . implode(', ', $set) . " WHERE id = $sid LIMIT 1");
 	}
 }
 
