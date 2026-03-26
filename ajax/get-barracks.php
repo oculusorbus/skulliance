@@ -14,6 +14,7 @@ $cap            = getDeploymentCap($conn, $realm_id);
 $barracks_level = intval(getRealmLocationLevel($conn, $realm_id, 4));
 $training_hours = getBarracksTrainingHours($conn, $realm_id);
 $training_days  = $training_hours > 0 ? $training_hours / 24 : 0;
+$barracks_ff    = hasLocationFastForward($conn, $realm_id, 4);
 
 $reserved_ids = getReservedSoldierIds($conn, $realm_id);
 $loc_labels = array(1 => 'Active Duty', 2 => 'Tower', 3 => 'On Raid');
@@ -36,7 +37,7 @@ $soldiers_page = array_slice($soldiers, ($page - 1) * $per_page, $per_page);
         <span class="soldiers-stat-value"><?php echo $slot_cost_total; ?> / <?php echo $cap; ?></span>
     </div>
     <div class="soldiers-stat">
-        <span class="soldiers-stat-label">Training Time</span>
+        <span class="soldiers-stat-label">Training Time<?php if ($barracks_ff): ?> <span style="color:#ffc800;font-size:0.7rem;" title="Fast Forward active">⚡</span><?php endif; ?></span>
         <span class="soldiers-stat-value"><?php echo $training_days > 0 ? $training_days . 'd' : 'N/A'; ?></span>
     </div>
     <div class="soldiers-stat">

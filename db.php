@@ -7902,6 +7902,14 @@ function getPortalReport($conn, $realm_id) {
 	);
 }
 
+// Returns true if a Fast Forward consumable is active on the given location for the realm.
+function hasLocationFastForward($conn, $realm_id, $location_id) {
+	$realm_id    = intval($realm_id);
+	$location_id = intval($location_id);
+	$r = $conn->query("SELECT rlc.id FROM realms_locations_consumables rlc INNER JOIN realms_locations rl ON rl.id = rlc.realm_location_id WHERE rl.realm_id = $realm_id AND rl.location_id = $location_id AND rlc.consumable_id = 5 AND rlc.raid_id = 0 LIMIT 1");
+	return $r && $r->num_rows > 0;
+}
+
 // ── BARRACKS ───────────────────────────────────────────────
 // Training duration: (11 - level) days. Level 0 = no training. Fast Forward halves it.
 function getBarracksTrainingHours($conn, $realm_id) {
