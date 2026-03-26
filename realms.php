@@ -690,7 +690,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<div style="display:flex;gap:8px;">
 					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
 						<div style="font-size:0.72rem;color:#ff9944;margin-bottom:5px;font-weight:600;">💀 On Victory</div>
-						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Your raiders' combined weapon levels raise the death chance for the defender's garrison soldiers.</div>
+						<div style="font-size:0.75rem;opacity:0.65;line-height:1.5;">Raiders' combined weapon levels raise garrison death chance (<strong style="color:#c8dce8;">+3%</strong> per level). Garrison armor resists: <strong style="color:#c8dce8;">-4%</strong> per armor level.</div>
 					</div>
 					<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
 						<div style="font-size:0.72rem;color:#ff6b6b;margin-bottom:5px;font-weight:600;">🛡️ On Defeat</div>
