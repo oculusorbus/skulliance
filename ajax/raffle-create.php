@@ -1,8 +1,28 @@
 <?php
 ob_start();
 header('Content-Type: application/json');
+
+// DEBUG — remove after resolving
+$_debug_log = __DIR__ . '/../debug_raffle_create.txt';
+function dbg($msg) { global $_debug_log; file_put_contents($_debug_log, date('H:i:s') . ' ' . $msg . "\n", FILE_APPEND); }
+dbg('--- REQUEST START ---');
+dbg('POST: ' . json_encode($_POST));
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    dbg("PHP ERROR [$errno] $errstr in $errfile:$errline");
+    return false;
+});
+register_shutdown_function(function() {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        dbg('FATAL: ' . $e['message'] . ' in ' . $e['file'] . ':' . $e['line']);
+    }
+    dbg('--- REQUEST END ---');
+});
+
 include '../db.php';
+dbg('db.php loaded, session user_id: ' . ($_SESSION['userData']['user_id'] ?? 'NOT SET'));
 include '../webhooks.php';
+dbg('webhooks.php loaded');
 
 if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
 
@@ -86,7 +106,9 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image_path = 'images/raffles/' . $fname;
 }
 
+dbg('calling createRaffle');
 $raffle_id = createRaffle($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $ticket_options);
+dbg('createRaffle returned: ' . var_export($raffle_id, true) . ' | conn error: ' . $conn->error);
 if (!$raffle_id) { echo json_encode(['success'=>false,'message'=>'Database error creating raffle.']); exit; }
 
 // Discord notification — build labels before closing conn, send after
@@ -102,8 +124,10 @@ $conn->close();
 
 // Send success to client first, then fire Discord (non-blocking)
 ob_end_clean();
+dbg('sending success JSON for raffle_id=' . $raffle_id);
 echo json_encode(['success'=>true,'raffle_id'=>$raffle_id]);
 
+dbg('calling discordmsg');
 discordmsg(
     '🎟️ New Raffle: ' . $title,
     "**$creator** started a new raffle!\n" .
