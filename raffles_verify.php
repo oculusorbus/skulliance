@@ -132,14 +132,14 @@ while ($raffle = $result->fetch_assoc()) {
     }
 
     // ── Step 2: Build weighted ticket pool and draw winner ────────────────────
-    $tres = $conn->query("SELECT id AS ticket_id, user_id, quantity FROM tickets WHERE raffle_id='$rid' AND status=1");
+    $tres = $conn->query("SELECT user_id, quantity FROM tickets WHERE raffle_id='$rid' AND status=1");
     $pool       = [];
     $total_sold = 0;
     if ($tres && $tres->num_rows > 0) {
         while ($t = $tres->fetch_assoc()) {
             $qty = intval($t['quantity']);
             for ($i = 0; $i < $qty; $i++) {
-                $pool[] = ['ticket_id' => intval($t['ticket_id']), 'user_id' => intval($t['user_id'])];
+                $pool[] = intval($t['user_id']);
             }
             $total_sold += $qty;
         }
@@ -157,16 +157,14 @@ while ($raffle = $result->fetch_assoc()) {
         continue;
     }
 
-    $winning_entry   = $pool[array_rand($pool)];
-    $winning_uid     = $winning_entry['user_id'];
-    $winning_tick_id = $winning_entry['ticket_id'];
+    $winning_uid = $pool[array_rand($pool)];
 
     $wres        = $conn->query("SELECT name, discord_id FROM users WHERE id='$winning_uid' LIMIT 1");
     $winner      = $wres ? $wres->fetch_assoc() : null;
     $winner_name = $winner ? $winner['name'] : 'Unknown';
 
     // Update raffle record
-    $conn->query("UPDATE raffles SET winner_id='$winning_uid', winning_ticket_id='$winning_tick_id', completed=1, processing=0 WHERE id='$rid'");
+    $conn->query("UPDATE raffles SET winner_id='$winning_uid', completed=1, processing=0 WHERE id='$rid'");
 
     // DM winner
     if ($winner && $winner['discord_id']) {
@@ -203,7 +201,7 @@ while ($raffle = $result->fetch_assoc()) {
         'raffles', '', 'a040ff'
     );
 
-    echo "  Winner: $winner_name (ticket #$winning_tick_id, pool of $total_sold)\n";
+    echo "  Winner: $winner_name (pool of $total_sold)\n";
     echo "  Raffle #$rid marked completed.\n";
 }
 
