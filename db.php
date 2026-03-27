@@ -1862,7 +1862,7 @@ function renderStartAutoMissionsButton($conn) {
 	}
 
 	echo "<span style='display:$display' id='startAutoMissionsForm'>
-	<button type='button' class='button' data-tooltip='Automatically builds the best mission loadouts across all your projects — picking the highest-reward missions your NFTs and point balance can support. Ideal for maximising returns in one click.' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
+	<button type='button' class='button' data-tooltip='Automatically builds the best mission loadouts across all your projects — picking the highest-reward missions your NFTs and point balance can support. Will spend success consumables, Fast Forward, and Double Reward items from your inventory as needed. Ideal for maximising returns in one click.' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
 	</span><br>";
 }
 
