@@ -9,6 +9,7 @@ $auctions = getActiveAuctions($conn);
 $all_projects_res = $conn->query("SELECT id, name, currency FROM projects ORDER BY id ASC");
 $all_projects = array();
 if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_projects[] = $r; }
+$now_ts = time();
 ?>
 <style>
 .auctions-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:18px; margin-top:16px; }
@@ -22,6 +23,7 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
 .auction-bid-label { opacity:0.5; }
 .auction-bid-value { font-weight:bold; color:#00c8a0; }
 .auction-timer { font-size:0.75rem; opacity:0.5; }
+.auction-upcoming-badge { font-size:0.72rem; background:rgba(255,200,0,0.12); border:1px solid rgba(255,200,0,0.25); border-radius:4px; padding:2px 7px; color:#ffc800; display:inline-block; margin-bottom:4px; }
 .auction-card-footer { padding:10px 14px; border-top:1px solid rgba(255,255,255,0.05); }
 .auction-empty { opacity:0.5; text-align:center; padding:40px 0; }
 
@@ -39,15 +41,16 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
 .form-row textarea { resize:vertical; min-height:70px; }
 .form-row input:focus, .form-row textarea:focus, .form-row select:focus { outline:none; border-color:rgba(0,200,160,0.4); }
 .form-section-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; opacity:0.4; margin-top:4px; }
-.projects-check-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
-.proj-check { display:flex; align-items:center; gap:5px; font-size:0.8rem; cursor:pointer; }
-.proj-check input { width:auto; }
+.currency-rows { display:flex; flex-direction:column; gap:6px; }
+.currency-row { display:flex; gap:8px; align-items:center; }
+.currency-row select { flex:2; }
+.currency-row input { flex:1; }
+.currency-row .rm-btn { flex-shrink:0; background:rgba(200,50,50,0.15); border:1px solid rgba(200,50,50,0.3); border-radius:5px; color:#ff6b6b; cursor:pointer; padding:6px 10px; font-size:0.78rem; white-space:nowrap; }
 
 .bid-modal-box { width:min(420px,95vw); }
 .bid-history { max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
 .bid-row { display:flex; justify-content:space-between; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; }
 
-/* Detail modal image */
 .auction-detail-img { width:100%; max-height:260px; object-fit:contain; border-radius:8px; background:#0a1520; }
 </style>
 
@@ -68,8 +71,9 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
       <?php else: ?>
       <div class="auctions-grid">
         <?php foreach ($auctions as $a):
-          $has_img = !empty($a['image_path']) && file_exists($a['image_path']);
-          $is_owner = (isset($_SESSION['userData']['user_id']) && intval($a['user_id']) === intval($_SESSION['userData']['user_id']));
+          $has_img   = !empty($a['image_path']) && file_exists($a['image_path']);
+          $is_owner  = (isset($_SESSION['userData']['user_id']) && intval($a['user_id']) === intval($_SESSION['userData']['user_id']));
+          $upcoming  = strtotime($a['start_date']) > $now_ts;
         ?>
         <div class="auction-card">
           <?php if ($has_img): ?>
@@ -78,6 +82,9 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
           <div class="auction-card-img-placeholder">&#x1F3F7;</div>
           <?php endif; ?>
           <div class="auction-card-body">
+            <?php if ($upcoming): ?>
+            <div class="auction-upcoming-badge">Upcoming</div>
+            <?php endif; ?>
             <div class="auction-card-title"><?php echo htmlspecialchars($a['title']); ?></div>
             <?php if ($a['nft_name']): ?><div style="font-size:0.75rem;opacity:0.45;margin-top:-4px;"><?php echo htmlspecialchars($a['nft_name']); ?></div><?php endif; ?>
             <?php if ($a['description']): ?><div class="auction-card-desc"><?php echo htmlspecialchars(mb_substr($a['description'],0,100)) . (mb_strlen($a['description'])>100?'…':''); ?></div><?php endif; ?>
@@ -86,27 +93,19 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
               <span class="auction-bid-value">
                 <?php
                   if ($a['current_bid'] > 0) {
-                    $cur = $a['bid_currency'] ?: 'pts';
-                    echo number_format($a['current_bid']) . ' ' . strtoupper($cur);
+                    echo number_format($a['current_bid']) . ' ' . strtoupper($a['current_bid_currency'] ?: 'pts');
                   } else {
                     echo 'No bids yet';
                   }
                 ?>
               </span>
             </div>
-            <?php if ($a['bid_project_name']): ?>
-            <div class="auction-bid-row" style="font-size:0.75rem;">
-              <span style="opacity:0.45;">Accepted Currency</span>
-              <span style="opacity:0.7;"><?php echo htmlspecialchars($a['bid_project_name']); ?></span>
-            </div>
-            <?php else: ?>
-            <div class="auction-bid-row" style="font-size:0.75rem;">
-              <span style="opacity:0.45;">Accepted Currency</span>
-              <span style="opacity:0.7;">Any</span>
-            </div>
-            <?php endif; ?>
             <div class="auction-timer">
+              <?php if ($upcoming): ?>
+              Launches: <span class="countdown" data-deadline="<?php echo strtotime($a['start_date']); ?>"></span>
+              <?php else: ?>
               Ends: <span class="countdown" data-deadline="<?php echo strtotime($a['end_date']); ?>"></span>
+              <?php endif; ?>
             </div>
             <div style="font-size:0.72rem;opacity:0.35;">By <?php echo htmlspecialchars($a['creator_name']); ?></div>
           </div>
@@ -130,6 +129,7 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
   <div class="auction-modal-box">
     <button class="auction-modal-close" onclick="closeCreateAuctionModal()">&times;</button>
     <div class="auction-modal-title">Create Auction</div>
+
     <div class="form-section-label">Item Details</div>
     <div class="form-row"><label>Title *</label><input type="text" id="a-title" maxlength="255" placeholder="What are you auctioning?" /></div>
     <div class="form-row"><label>Description</label><textarea id="a-desc" placeholder="Optional details about the item…"></textarea></div>
@@ -139,29 +139,15 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
       <label>Image Upload (optional — PNG/GIF, max 5MB)</label>
       <input type="file" id="a-image" accept="image/png,image/gif,image/jpeg,image/webp" />
     </div>
-    <div class="form-section-label" style="margin-top:8px;">Bidding Settings</div>
-    <div class="form-row"><label>Starting Bid *</label><input type="number" id="a-start-bid" min="1" step="1" placeholder="e.g. 100" /></div>
-    <div class="form-row">
-      <label>Accepted Currency (leave blank to accept any)</label>
-      <select id="a-bid-project">
-        <option value="">Any currency</option>
-        <?php foreach ($all_projects as $p): ?>
-        <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?> (<?php echo strtoupper($p['currency']); ?>)</option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div id="a-multi-project-wrap">
-      <div class="form-section-label">Or: accept specific currencies (check all that apply)</div>
-      <div class="projects-check-grid" id="a-projects-check">
-        <?php foreach ($all_projects as $p): ?>
-        <label class="proj-check">
-          <input type="checkbox" class="a-proj-cb" value="<?php echo $p['id']; ?>" />
-          <?php echo htmlspecialchars($p['name']); ?>
-        </label>
-        <?php endforeach; ?>
-      </div>
-    </div>
+
+    <div class="form-section-label" style="margin-top:8px;">Accepted Currencies &amp; Minimum Bids *</div>
+    <div class="currency-rows" id="a-currency-rows"></div>
+    <button type="button" onclick="addAuctionCurrencyRow()" style="background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.2);border-radius:6px;color:#00c8a0;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
+
+    <div class="form-section-label" style="margin-top:8px;">Schedule</div>
+    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="datetime-local" id="a-start-date" /></div>
     <div class="form-row"><label>End Date *</label><input type="datetime-local" id="a-end-date" /></div>
+
     <div id="a-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitCreateAuction()" style="margin-top:4px;">Create Auction</button>
   </div>
@@ -184,6 +170,9 @@ if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_proj
 <?php $conn->close(); ?>
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
+// ── Project options (for dynamic currency rows) ───────────────────────────────
+var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>$p['id'],'name'=>$p['name'],'currency'=>strtoupper($p['currency'])]; }, $all_projects)); ?>;
+
 // ── Countdown timers ──────────────────────────────────────────────────────────
 function updateCountdowns() {
   var now = Math.floor(Date.now() / 1000);
@@ -203,40 +192,62 @@ updateCountdowns();
 
 // ── Create Auction Modal ──────────────────────────────────────────────────────
 function openCreateAuctionModal() {
+  var rows = document.getElementById('a-currency-rows');
+  if (rows.children.length === 0) addAuctionCurrencyRow();
   document.getElementById('create-auction-modal').classList.add('open');
 }
 function closeCreateAuctionModal() {
   document.getElementById('create-auction-modal').classList.remove('open');
 }
 
+function buildProjectOptions(selectedId) {
+  return allProjects.map(function(p) {
+    var sel = (p.id == selectedId) ? ' selected' : '';
+    return '<option value="' + p.id + '"' + sel + '>' + p.name + ' (' + p.currency + ')</option>';
+  }).join('');
+}
+
+function addAuctionCurrencyRow(projectId, minBid) {
+  var rows = document.getElementById('a-currency-rows');
+  var div  = document.createElement('div');
+  div.className = 'currency-row';
+  div.innerHTML =
+    '<select class="a-proj-select">' + buildProjectOptions(projectId || '') + '</select>' +
+    '<input type="number" class="a-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
+    '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
+  rows.appendChild(div);
+}
+
 function submitCreateAuction() {
   var err = document.getElementById('a-error');
   err.style.display = 'none';
-  var title    = document.getElementById('a-title').value.trim();
-  var desc     = document.getElementById('a-desc').value.trim();
-  var nftName  = document.getElementById('a-nft-name').value.trim();
-  var assetId  = document.getElementById('a-asset-id').value.trim();
-  var startBid = parseFloat(document.getElementById('a-start-bid').value);
-  var bidPid   = document.getElementById('a-bid-project').value;
-  var endDate  = document.getElementById('a-end-date').value;
-  var imgFile  = document.getElementById('a-image').files[0];
+  var title      = document.getElementById('a-title').value.trim();
+  var desc       = document.getElementById('a-desc').value.trim();
+  var nftName    = document.getElementById('a-nft-name').value.trim();
+  var assetId    = document.getElementById('a-asset-id').value.trim();
+  var startDate  = document.getElementById('a-start-date').value;
+  var endDate    = document.getElementById('a-end-date').value;
+  var imgFile    = document.getElementById('a-image').files[0];
 
   if (!title) { err.textContent = 'Title is required.'; err.style.display = 'block'; return; }
-  if (!startBid || startBid < 1) { err.textContent = 'Starting bid must be at least 1.'; err.style.display = 'block'; return; }
   if (!endDate) { err.textContent = 'End date is required.'; err.style.display = 'block'; return; }
   if (assetId && !/^[0-9a-fA-F]{56,120}$/.test(assetId)) { err.textContent = 'Asset ID must be 56-120 hex characters.'; err.style.display = 'block'; return; }
 
-  var checkedProjects = [];
-  document.querySelectorAll('.a-proj-cb:checked').forEach(function(cb) { checkedProjects.push(cb.value); });
+  var projects = [];
+  document.querySelectorAll('#a-currency-rows .currency-row').forEach(function(row) {
+    var pid  = parseInt(row.querySelector('.a-proj-select').value, 10);
+    var mmin = parseInt(row.querySelector('.a-min-bid').value, 10);
+    if (pid > 0 && mmin > 0) projects.push({ project_id: pid, minimum_bid: mmin });
+  });
+  if (projects.length === 0) { err.textContent = 'Add at least one currency with a minimum bid.'; err.style.display = 'block'; return; }
 
   var fd = new FormData();
   fd.append('title', title);
   fd.append('description', desc);
   fd.append('nft_name', nftName);
   fd.append('asset_id', assetId);
-  fd.append('start_bid', startBid);
-  fd.append('bid_project_id', bidPid);
-  fd.append('allowed_projects', JSON.stringify(checkedProjects));
+  fd.append('projects', JSON.stringify(projects));
+  fd.append('start_date', startDate);
   fd.append('end_date', endDate);
   if (imgFile) fd.append('image', imgFile);
 

@@ -7,21 +7,34 @@ header('Content-Type: application/json');
 
 if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
 
-$user_id  = intval($_SESSION['userData']['user_id']);
-$title    = trim($_POST['title'] ?? '');
-$desc     = trim($_POST['description'] ?? '');
-$nft_name = trim($_POST['nft_name'] ?? '');
-$asset_id = trim($_POST['asset_id'] ?? '');
-$start_bid = floatval($_POST['start_bid'] ?? 0);
-$bid_pid  = intval($_POST['bid_project_id'] ?? 0);
-$end_date_raw = trim($_POST['end_date'] ?? '');
-$allowed_raw  = $_POST['allowed_projects'] ?? '[]';
+$user_id        = intval($_SESSION['userData']['user_id']);
+$title          = trim($_POST['title'] ?? '');
+$desc           = trim($_POST['description'] ?? '');
+$nft_name       = trim($_POST['nft_name'] ?? '');
+$asset_id       = trim($_POST['asset_id'] ?? '');
+$projects_raw   = $_POST['projects'] ?? '[]';
+$start_date_raw = trim($_POST['start_date'] ?? '');
+$end_date_raw   = trim($_POST['end_date'] ?? '');
 
 if (!$title) { echo json_encode(['success'=>false,'message'=>'Title is required.']); exit; }
-if ($start_bid < 1) { echo json_encode(['success'=>false,'message'=>'Starting bid must be at least 1.']); exit; }
 if (!$end_date_raw) { echo json_encode(['success'=>false,'message'=>'End date is required.']); exit; }
 if ($asset_id && !preg_match('/^[0-9a-fA-F]{56,120}$/', $asset_id)) {
     echo json_encode(['success'=>false,'message'=>'Invalid asset ID format.']); exit;
+}
+
+$projects = json_decode($projects_raw, true) ?: [];
+$projects = array_values(array_filter($projects, function($p) {
+    return intval($p['project_id'] ?? 0) > 0 && intval($p['minimum_bid'] ?? 0) > 0;
+}));
+if (empty($projects)) { echo json_encode(['success'=>false,'message'=>'At least one currency with a minimum bid is required.']); exit; }
+
+// Optional start_date (defaults to now)
+if ($start_date_raw) {
+    $ds = new DateTime($start_date_raw, new DateTimeZone('America/Chicago'));
+    $ds->setTimezone(new DateTimeZone('UTC'));
+    $start_date = $ds->format('Y-m-d H:i:s');
+} else {
+    $start_date = date('Y-m-d H:i:s');
 }
 
 // Normalize end_date to midnight CST (UTC-6)
@@ -31,9 +44,6 @@ $dt->setTimezone(new DateTimeZone('UTC'));
 $end_date = $dt->format('Y-m-d H:i:s');
 
 if (strtotime($end_date) <= time()) { echo json_encode(['success'=>false,'message'=>'End date must be in the future.']); exit; }
-
-$allowed_pids = json_decode($allowed_raw, true) ?: [];
-if ($bid_pid) $allowed_pids = [$bid_pid]; // single-currency overrides multi-select
 
 // Image upload
 $image_path = '';
@@ -77,22 +87,22 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image_path = 'images/auctions/' . $fname;
 }
 
-$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $nft_name, $start_bid, $bid_pid ?: null, $allowed_pids, $end_date);
+$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $nft_name, $start_date, $end_date, $projects);
 if (!$auction_id) { echo json_encode(['success'=>false,'message'=>'Database error creating auction.']); exit; }
 
 // Discord notification
-$creator = $_SESSION['userData']['name'] ?? 'Unknown';
-$cur_label = $bid_pid ? '' : 'Any currency';
-if ($bid_pid) {
-    $pr = $conn->query("SELECT name FROM projects WHERE id=".intval($bid_pid)." LIMIT 1");
-    if ($pr && $pr->num_rows) { $prow = $pr->fetch_assoc(); $cur_label = $prow['name']; }
+$creator     = $_SESSION['userData']['name'] ?? 'Unknown';
+$end_fmt     = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
+$proj_labels = [];
+foreach ($projects as $p) {
+    $pr = $conn->query("SELECT name, currency FROM projects WHERE id=".intval($p['project_id'])." LIMIT 1");
+    if ($pr && $pr->num_rows) { $row = $pr->fetch_assoc(); $proj_labels[] = number_format($p['minimum_bid']) . ' ' . strtoupper($row['currency']); }
 }
-$end_fmt = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
 discordmsg(
     '🔨 New Auction: ' . $title,
-    "**" . $creator . "** listed a new auction!\n" .
-    "Starting Bid: **" . number_format($start_bid) . ($cur_label ? ' ' . strtoupper($cur_label) : ' pts') . "**\n" .
-    "Ends: **" . $end_fmt . "**\n" .
+    "**$creator** listed a new auction!\n" .
+    "Min Bid: **" . implode(' / ', $proj_labels) . "**\n" .
+    "Ends: **$end_fmt**\n" .
     ($desc ? "\n" . mb_substr($desc, 0, 150) . (mb_strlen($desc) > 150 ? '…' : '') : ''),
     $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
     'https://skulliance.io/staking/auctions.php',

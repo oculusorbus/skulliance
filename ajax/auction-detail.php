@@ -13,6 +13,7 @@ if (!$auction) { echo '<p style="opacity:0.5;">Auction not found.</p>'; exit; }
 $user_id   = intval($_SESSION['userData']['user_id']);
 $is_closed = $auction['completed'] || $auction['canceled'];
 $ended     = strtotime($auction['end_date']) < time();
+$upcoming  = strtotime($auction['start_date']) > time();
 $is_leader = intval($auction['current_bidder_id']) === $user_id;
 
 // Allowed project options for bid form
@@ -62,13 +63,13 @@ $conn->close();
   </div>
   <?php if ($is_leader): ?><div style="font-size:0.75rem;color:#00c8a0;opacity:0.8;">&#x2713; You are the current leader</div><?php endif; ?>
   <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
-    <span style="opacity:0.5;">Ends</span>
-    <span><span class="countdown" data-deadline="<?php echo strtotime($auction['end_date']); ?>"></span></span>
+    <span style="opacity:0.5;"><?php echo $upcoming ? 'Launches' : 'Ends'; ?></span>
+    <span><span class="countdown" data-deadline="<?php echo strtotime($upcoming ? $auction['start_date'] : $auction['end_date']); ?>"></span></span>
   </div>
   <div style="font-size:0.75rem;opacity:0.4;">By <?php echo htmlspecialchars($auction['creator_name']); ?></div>
 </div>
 
-<?php if (!$is_closed && !$ended): ?>
+<?php if (!$is_closed && !$ended && !$upcoming): ?>
 <div style="display:flex;flex-direction:column;gap:8px;">
   <div style="font-size:0.82rem;font-weight:bold;">Place a Bid</div>
   <div style="display:flex;gap:8px;">
@@ -86,6 +87,8 @@ $conn->close();
   <button class="small-button" onclick="submitBid(<?php echo $auction_id; ?>)">Submit Bid</button>
   <p style="font-size:0.72rem;opacity:0.4;margin:0;">Bids must be at least 5% above current bid (normalized). Outbid bids are refunded automatically.</p>
 </div>
+<?php elseif ($upcoming): ?>
+<div style="font-size:0.82rem;opacity:0.5;">This auction hasn't started yet.</div>
 <?php elseif ($is_closed): ?>
 <div style="font-size:0.82rem;color:#ff6b6b;opacity:0.7;">This auction is closed.</div>
 <?php else: ?>

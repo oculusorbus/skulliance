@@ -7,23 +7,34 @@ header('Content-Type: application/json');
 
 if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
 
-$user_id   = intval($_SESSION['userData']['user_id']);
-$title     = trim($_POST['title'] ?? '');
-$desc      = trim($_POST['description'] ?? '');
-$nft_name  = trim($_POST['nft_name'] ?? '');
-$asset_id  = trim($_POST['asset_id'] ?? '');
-$tpid      = intval($_POST['ticket_project_id'] ?? 0);
-$tprice    = floatval($_POST['ticket_price'] ?? 0);
-$max_t     = $_POST['max_tickets'] !== '' ? intval($_POST['max_tickets']) : null;
-$per_u     = $_POST['tickets_per_user'] !== '' ? intval($_POST['tickets_per_user']) : null;
-$end_date_raw = trim($_POST['end_date'] ?? '');
+$user_id         = intval($_SESSION['userData']['user_id']);
+$title           = trim($_POST['title'] ?? '');
+$desc            = trim($_POST['description'] ?? '');
+$nft_name        = trim($_POST['nft_name'] ?? '');
+$asset_id        = trim($_POST['asset_id'] ?? '');
+$options_raw     = $_POST['ticket_options'] ?? '[]';
+$start_date_raw  = trim($_POST['start_date'] ?? '');
+$end_date_raw    = trim($_POST['end_date'] ?? '');
 
 if (!$title) { echo json_encode(['success'=>false,'message'=>'Title is required.']); exit; }
-if (!$tpid) { echo json_encode(['success'=>false,'message'=>'Ticket currency is required.']); exit; }
-if ($tprice < 1) { echo json_encode(['success'=>false,'message'=>'Ticket price must be at least 1.']); exit; }
 if (!$end_date_raw) { echo json_encode(['success'=>false,'message'=>'End date is required.']); exit; }
 if ($asset_id && !preg_match('/^[0-9a-fA-F]{56,120}$/', $asset_id)) {
     echo json_encode(['success'=>false,'message'=>'Invalid asset ID format.']); exit;
+}
+
+$ticket_options = json_decode($options_raw, true) ?: [];
+$ticket_options = array_values(array_filter($ticket_options, function($o) {
+    return intval($o['project_id'] ?? 0) > 0 && intval($o['cost'] ?? 0) > 0;
+}));
+if (empty($ticket_options)) { echo json_encode(['success'=>false,'message'=>'At least one ticket currency with a price is required.']); exit; }
+
+// Optional start_date (defaults to now)
+if ($start_date_raw) {
+    $ds = new DateTime($start_date_raw, new DateTimeZone('America/Chicago'));
+    $ds->setTimezone(new DateTimeZone('UTC'));
+    $start_date = $ds->format('Y-m-d H:i:s');
+} else {
+    $start_date = date('Y-m-d H:i:s');
 }
 
 // Normalize end_date to midnight CST
@@ -76,21 +87,22 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image_path = 'images/raffles/' . $fname;
 }
 
-$raffle_id = createRaffle($conn, $user_id, $title, $desc, $image_path, $asset_id, $nft_name, $tprice, $tpid, $max_t, $per_u, $end_date);
+$raffle_id = createRaffle($conn, $user_id, $title, $desc, $image_path, $asset_id, $nft_name, $start_date, $end_date, $ticket_options);
 if (!$raffle_id) { echo json_encode(['success'=>false,'message'=>'Database error creating raffle.']); exit; }
 
 // Discord notification
-$creator = $_SESSION['userData']['name'] ?? 'Unknown';
-$pr = $conn->query("SELECT name, currency FROM projects WHERE id=".intval($tpid)." LIMIT 1");
-$cur = 'pts'; $proj_name = '';
-if ($pr && $pr->num_rows) { $row = $pr->fetch_assoc(); $cur = strtoupper($row['currency']); $proj_name = $row['name']; }
-$end_fmt = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
-$max_label = $max_t ? " (max $max_t tickets)" : '';
+$creator     = $_SESSION['userData']['name'] ?? 'Unknown';
+$end_fmt     = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
+$opt_labels  = [];
+foreach ($ticket_options as $opt) {
+    $pr = $conn->query("SELECT name, currency FROM projects WHERE id=".intval($opt['project_id'])." LIMIT 1");
+    if ($pr && $pr->num_rows) { $row = $pr->fetch_assoc(); $opt_labels[] = number_format($opt['cost']) . ' ' . strtoupper($row['currency']); }
+}
 discordmsg(
     '🎟️ New Raffle: ' . $title,
-    "**" . $creator . "** started a new raffle!\n" .
-    "Ticket Price: **" . number_format($tprice) . " $cur**$max_label\n" .
-    "Ends: **" . $end_fmt . "**\n" .
+    "**$creator** started a new raffle!\n" .
+    "Ticket Price: **" . implode(' / ', $opt_labels) . "**\n" .
+    "Ends: **$end_fmt**\n" .
     ($desc ? "\n" . mb_substr($desc, 0, 150) . (mb_strlen($desc) > 150 ? '…' : '') : ''),
     $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
     'https://skulliance.io/staking/raffles.php',

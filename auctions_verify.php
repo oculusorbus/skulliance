@@ -11,10 +11,14 @@ include 'webhooks.php';
 
 $now = date('Y-m-d H:i:s');
 
+// Join bids (status=1) to get current leader inline
 $result = $conn->query(
-    "SELECT a.*, u.name AS creator_name, u.discord_id AS creator_discord
+    "SELECT a.*, u.name AS creator_name, u.discord_id AS creator_discord,
+            b.id AS winning_bid_id, b.user_id AS current_bidder_id,
+            b.amount AS current_bid, b.project_id AS current_bid_project_id
      FROM auctions a
      INNER JOIN users u ON u.id = a.user_id
+     LEFT JOIN bids b ON b.auction_id = a.id AND b.status = 1
      WHERE a.end_date <= '$now'
        AND a.completed = 0
        AND a.processing = 0
@@ -28,13 +32,14 @@ if (!$result || $result->num_rows === 0) {
 }
 
 while ($auction = $result->fetch_assoc()) {
-    $aid         = intval($auction['id']);
-    $title       = $auction['title'];
-    $img_url     = !empty($auction['image_path']) ? 'https://skulliance.io/staking/' . $auction['image_path'] : '';
-    $creator_id  = intval($auction['user_id']);
-    $prev_bidder = intval($auction['current_bidder_id']);
-    $prev_bid    = floatval($auction['current_bid']);
-    $prev_pid    = intval($auction['current_bid_project_id']);
+    $aid             = intval($auction['id']);
+    $title           = $auction['title'];
+    $img_url         = !empty($auction['image_path']) ? 'https://skulliance.io/staking/' . $auction['image_path'] : '';
+    $creator_id      = intval($auction['user_id']);
+    $prev_bidder     = intval($auction['current_bidder_id']);
+    $prev_bid        = floatval($auction['current_bid']);
+    $prev_pid        = intval($auction['current_bid_project_id']);
+    $winning_bid_id  = intval($auction['winning_bid_id']);
 
     echo "Processing auction #$aid: $title\n";
 
@@ -75,12 +80,13 @@ while ($auction = $result->fetch_assoc()) {
             if ($prev_bidder && $prev_bid > 0 && $prev_pid) {
                 updateBalance($conn, $prev_bidder, $prev_pid, $prev_bid);
                 logCredit($conn, $prev_bidder, $prev_bid, $prev_pid);
+                $conn->query("UPDATE bids SET status=0 WHERE id='$winning_bid_id'");
 
-                $wres = $conn->query("SELECT name, discord_id FROM users WHERE id='$prev_bidder' LIMIT 1");
+                $wres  = $conn->query("SELECT name, discord_id FROM users WHERE id='$prev_bidder' LIMIT 1");
                 $loser = $wres ? $wres->fetch_assoc() : null;
                 if ($loser && $loser['discord_id']) {
-                    $pr   = $conn->query("SELECT currency FROM projects WHERE id='$prev_pid' LIMIT 1");
-                    $cur  = ($pr && $pr->num_rows) ? strtoupper($pr->fetch_assoc()['currency']) : 'pts';
+                    $pr  = $conn->query("SELECT currency FROM projects WHERE id='$prev_pid' LIMIT 1");
+                    $cur = ($pr && $pr->num_rows) ? strtoupper($pr->fetch_assoc()['currency']) : 'pts';
                     sendDM($loser['discord_id'],
                         "❌ The auction **{$title}** was canceled because the creator could not verify ownership of the NFT at close time.\n\n" .
                         "Your bid of **" . number_format($prev_bid) . " $cur** has been fully refunded."
@@ -121,6 +127,10 @@ while ($auction = $result->fetch_assoc()) {
         $cur = 'pts';
         if ($pr && $pr->num_rows) { $row = $pr->fetch_assoc(); $cur = strtoupper($row['currency']); }
 
+        // Mark winning bid as won; store winner_id on auction
+        if ($winning_bid_id) $conn->query("UPDATE bids SET status=2 WHERE id='$winning_bid_id'");
+        $conn->query("UPDATE auctions SET winner_id='$prev_bidder', completed=1, processing=0 WHERE id='$aid'");
+
         // DM winner
         if ($winner && $winner['discord_id']) {
             $dm = "🎉 Congratulations! You won the auction for **{$title}**!\n\n" .
@@ -158,6 +168,7 @@ while ($auction = $result->fetch_assoc()) {
         echo "  Winner: $winner_name — " . number_format($prev_bid) . " $cur\n";
     } else {
         // No bids
+        $conn->query("UPDATE auctions SET completed=1, processing=0 WHERE id='$aid'");
         discordmsg(
             '⏱️ Auction Ended (No Bids): ' . $title,
             "**{$title}** by **{$auction['creator_name']}** ended with no bids.",
@@ -167,7 +178,6 @@ while ($auction = $result->fetch_assoc()) {
         echo "  No bids — ended with no winner.\n";
     }
 
-    $conn->query("UPDATE auctions SET completed=1, processing=0 WHERE id='$aid'");
     echo "  Auction #$aid marked completed.\n";
 }
 
