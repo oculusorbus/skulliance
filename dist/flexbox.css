@@ -1006,6 +1006,7 @@ li form {
     position: relative;
     top: -10px;
 	clear: both;
+	overflow: hidden;
 }
 
 .missions-filter {
