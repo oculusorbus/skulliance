@@ -248,6 +248,7 @@ function submitCreateRaffle() {
     data: fd,
     processData: false,
     contentType: false,
+    dataType: 'text',
     success: function(res) {
       try { var r = JSON.parse(res); } catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
       if (r.success) { location.reload(); }
