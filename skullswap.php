@@ -194,6 +194,138 @@ include 'header.php';
              50% { transform: scale(1.1); opacity: 1; }
              100% { transform: scale(1); opacity: 0.8; }
          }
+        #guide-btn {
+            font-size: 13px;
+            font-family: Arial;
+            font-weight: bold;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.5);
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 6px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        #guide-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+        #guide-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        #guide-modal {
+            background: #0d1b2a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 28px 28px 24px;
+            box-sizing: border-box;
+            position: relative;
+            color: rgba(255,255,255,0.85);
+            font-family: Arial, sans-serif;
+        }
+        #guide-modal h2 {
+            font-size: 1.3rem;
+            color: #fff;
+            margin: 0 0 20px;
+            text-align: center;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        #guide-close {
+            position: absolute;
+            top: 14px; right: 16px;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.4);
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        #guide-close:hover { color: #fff; }
+        .guide-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .guide-section:last-child { border-bottom: none; margin-bottom: 0; }
+        .guide-section h3 {
+            font-size: 0.82rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            margin: 0 0 10px;
+        }
+        .guide-section p, .guide-section li {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.78);
+            margin: 0 0 7px;
+        }
+        .guide-section ul, .guide-section ol {
+            margin: 6px 0 8px;
+            padding-left: 20px;
+        }
+        .guide-bomb-card {
+            border-radius: 7px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+        .carbon-card { background: rgba(255,102,0,0.1); border: 1px solid rgba(255,102,0,0.25); }
+        .diamond-card { background: rgba(153,0,204,0.1); border: 1px solid rgba(180,0,255,0.25); }
+        .guide-bomb-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .guide-bomb-header img { width: 22px; height: 22px; object-fit: contain; }
+        .guide-bomb-sub { font-weight: normal; font-size: 0.78rem; color: rgba(255,255,255,0.45); }
+        .guide-callout {
+            background: rgba(255,255,255,0.04);
+            border-left: 3px solid rgba(255,255,255,0.2);
+            border-radius: 0 5px 5px 0;
+            padding: 10px 14px !important;
+            margin-top: 10px !important;
+            font-style: italic;
+        }
+        .guide-warning { background: rgba(255,180,0,0.05); border-radius: 7px; padding: 12px 14px; border: 1px solid rgba(255,180,0,0.18); }
+        .guide-warning h3 { color: rgba(255,200,0,0.7); }
+        .guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+            margin-top: 6px;
+        }
+        .guide-table th {
+            text-align: left;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.5);
+            font-size: 0.75rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+        .guide-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.78);
+        }
+        .guide-table tr:last-child td { border-bottom: none; }
+        .guide-table img { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin: 0 2px; }
      </style>
  </head>
  <body>
@@ -213,7 +345,98 @@ include 'header.php';
                  </form>
              </div>
          </div>
+         <button id="guide-btn" onclick="openGuide()">HOW TO PLAY</button>
      </div>
+
+     <!-- Skull Swap Guide Modal -->
+     <div id="guide-overlay" onclick="if(event.target===this)closeGuide()">
+         <div id="guide-modal">
+             <button id="guide-close" onclick="closeGuide()">&#x2715;</button>
+             <h2>Skull Swap Guide</h2>
+
+             <div class="guide-section">
+                 <h3>The Basics</h3>
+                 <p>You get <strong>25 matches</strong>. The goal is to squeeze maximum points out of each one.</p>
+                 <p>Every tile cleared = <strong>10 points</strong>. A plain match-3 gives you 30 points. That&#39;s the floor &#8211; not the ceiling.</p>
+             </div>
+
+             <div class="guide-section">
+                 <h3>The Two Special Tiles</h3>
+                 <div class="guide-bomb-card carbon-card">
+                     <div class="guide-bomb-header">
+                         <img src="icons/carbon.png" alt="Carbon"> CARBON <span class="guide-bomb-sub">(grey bomb)</span>
+                     </div>
+                     <ul>
+                         <li>Created by matching <strong>exactly 4 tiles</strong> in a row or column</li>
+                         <li>When detonated, wipes its entire <strong>row + entire column</strong></li>
+                         <li>Scoring: 10 pts per tile cleared + <strong>25 point bonus</strong></li>
+                     </ul>
+                 </div>
+                 <div class="guide-bomb-card diamond-card">
+                     <div class="guide-bomb-header">
+                         <img src="icons/diamond.png" alt="Diamond"> DIAMOND <span class="guide-bomb-sub">(black bomb)</span>
+                     </div>
+                     <ul>
+                         <li>Created by matching <strong>5 or more tiles</strong></li>
+                         <li>When detonated, wipes the <strong>entire board</strong></li>
+                         <li>Scoring: 10 pts per tile cleared + <strong>50 point bonus</strong></li>
+                     </ul>
+                 </div>
+                 <p class="guide-callout">On an 8&times;8 board a <img src="icons/diamond.png" style="width:14px;height:14px;vertical-align:middle;"> Diamond bomb clears ~63 tiles = <strong>680 points</strong> in one move. A plain match-3 gives 30. That&#39;s the gap you need to close.</p>
+             </div>
+
+             <div class="guide-section">
+                 <h3>How to Detonate Bombs</h3>
+                 <p>Bombs sit on the board like normal tiles. To set one off, slide it into a 3-match with tiles that share its icon. The explosion happens automatically after the match resolves.</p>
+             </div>
+
+             <div class="guide-section">
+                 <h3>Chain Detonations Are Where Big Scores Come From</h3>
+                 <p>If a bomb explosion hits another bomb, the second bomb chain-detonates for an extra:</p>
+                 <ul>
+                     <li><img src="icons/carbon.png" style="width:14px;height:14px;vertical-align:middle;"> Carbon chain = <strong>+50 bonus</strong></li>
+                     <li><img src="icons/diamond.png" style="width:14px;height:14px;vertical-align:middle;"> Diamond chain = <strong>+100 bonus</strong></li>
+                 </ul>
+                 <p>Stack bombs near each other intentionally. One Diamond detonating into a Carbon = massive combo.</p>
+             </div>
+
+             <div class="guide-section guide-warning">
+                 <h3>&#x26A0; The End Game Trap</h3>
+                 <p>When your 25th match fires, all remaining bombs auto-detonate &#8211; but you <strong>lose the manual bonuses (+25/+50)</strong>. You still get 10 pts per tile, but nothing extra.</p>
+                 <p><strong>Don&#39;t leave bombs on the board when you hit match 25.</strong> Detonate them manually in the moves before your last match to collect the full bonuses.</p>
+             </div>
+
+             <div class="guide-section">
+                 <h3>Priority Order</h3>
+                 <ol>
+                     <li>Always take a <strong>5-match over a 3-match</strong> &#8211; <img src="icons/diamond.png" style="width:14px;height:14px;vertical-align:middle;"> Diamond bomb is worth hundreds of points</li>
+                     <li>Take a <strong>4-match over a 3-match</strong> &#8211; <img src="icons/carbon.png" style="width:14px;height:14px;vertical-align:middle;"> Carbon bomb beats a plain clear every time</li>
+                     <li><strong>Position your drag endpoint</strong> &#8211; where you release determines where the bomb spawns, so place it where it can chain later</li>
+                     <li><strong>Detonate before match 25</strong> &#8211; never let the game auto-fire your bombs at discount rates</li>
+                 </ol>
+             </div>
+
+             <div class="guide-section">
+                 <h3>Quick Score Reference</h3>
+                 <table class="guide-table">
+                     <thead><tr><th>Move</th><th>Points</th></tr></thead>
+                     <tbody>
+                         <tr><td>Match 3</td><td>30</td></tr>
+                         <tr><td>Match 4 (makes <img src="icons/carbon.png" alt=""> Carbon bomb)</td><td>40</td></tr>
+                         <tr><td>Match 5 (makes <img src="icons/diamond.png" alt=""> Diamond bomb)</td><td>50</td></tr>
+                         <tr><td>Manually detonate <img src="icons/carbon.png" alt=""> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
+                         <tr><td>Manually detonate <img src="icons/diamond.png" alt=""> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
+                         <tr><td>Chain: <img src="icons/carbon.png" alt=""> Carbon into <img src="icons/diamond.png" alt=""> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
+                     </tbody>
+                 </table>
+             </div>
+         </div>
+     </div>
+
+     <script>
+function openGuide() { document.getElementById('guide-overlay').style.display = 'flex'; }
+function closeGuide() { document.getElementById('guide-overlay').style.display = 'none'; }
+     </script>
 
      <script>
  class Match3Game {
