@@ -1583,7 +1583,7 @@ function renderStartAllFreeEligibleMissionsButton($conn){
   	  }
 	}
 	echo "<span style='display:".$display."' id='startFreeMissionsForm'>
-	<button type='button' class='button' onclick='startFreeMissionsAjax(this)'>Start All Free</button>
+	<button type='button' class='button' data-tooltip='Instantly enlists all your available NFTs into free (Level 1) missions at no cost. Great for keeping idle NFTs productive without spending any points.' onclick='startFreeMissionsAjax(this)'>Start All Free</button>
 	</span><br>";
 	return $projects;
 }
@@ -1862,7 +1862,7 @@ function renderStartAutoMissionsButton($conn) {
 	}
 
 	echo "<span style='display:$display' id='startAutoMissionsForm'>
-	<button type='button' class='button' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
+	<button type='button' class='button' data-tooltip='Automatically builds the best mission loadouts across all your projects — picking the highest-reward missions your NFTs and point balance can support. Ideal for maximising returns in one click.' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
 	</span><br>";
 }
 
