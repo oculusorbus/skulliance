@@ -14,6 +14,9 @@ if (!$raffle_id) { json_exit(['success'=>false,'message'=>'Invalid raffle ID.'])
 $raffle = getRaffle($conn, $raffle_id);
 if (!$raffle) { json_exit(['success'=>false,'message'=>'Raffle not found.']); }
 if (intval($raffle['user_id']) !== $user_id) { json_exit(['success'=>false,'message'=>'Not authorized.']); }
+$sold_check = $conn->query("SELECT COUNT(*) AS cnt FROM tickets WHERE raffle_id='$raffle_id' AND status=1");
+$sold_row   = $sold_check ? $sold_check->fetch_assoc() : null;
+if ($sold_row && intval($sold_row['cnt']) > 0) { json_exit(['success'=>false,'message'=>'Cannot edit: tickets have already been purchased for this raffle.']); }
 
 $tz_chicago = new DateTimeZone('America/Chicago');
 $tz_utc     = new DateTimeZone('UTC');

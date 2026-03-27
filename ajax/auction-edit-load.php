@@ -14,6 +14,7 @@ if (!$auction_id) { json_exit(['success'=>false,'message'=>'Invalid auction ID.'
 $auction = getAuction($conn, $auction_id);
 if (!$auction) { json_exit(['success'=>false,'message'=>'Auction not found.']); }
 if (intval($auction['user_id']) !== $user_id) { json_exit(['success'=>false,'message'=>'Not authorized.']); }
+if (!empty($auction['current_bidder_id'])) { json_exit(['success'=>false,'message'=>'Cannot edit: this auction already has bids.']); }
 
 $tz_chicago = new DateTimeZone('America/Chicago');
 $tz_utc     = new DateTimeZone('UTC');

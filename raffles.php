@@ -107,7 +107,7 @@ $now_ts = time();
             <?php if ($is_owner && !$r['completed'] && !$r['canceled']): ?>
             <button class="small-button" onclick="cancelRaffle(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;background:rgba(200,50,50,0.15);border-color:rgba(200,50,50,0.3);">Cancel Raffle</button>
             <?php endif; ?>
-            <?php if ($is_owner && !$r['completed'] && !$r['canceled'] && intval($r['total_tickets_sold']) === 0): ?>
+            <?php if ($is_owner && !$r['completed'] && !$r['canceled']): ?>
             <button class="small-button" onclick="openEditRaffleModal(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;background:rgba(0,200,160,0.08);border-color:rgba(0,200,160,0.2);">Edit Raffle</button>
             <?php endif; ?>
           </div>
