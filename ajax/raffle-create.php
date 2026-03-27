@@ -1,9 +1,8 @@
 <?php
-include '../db.php';
-include '../message.php';
-include '../verify.php';
-include '../webhooks.php';
+ob_start();
 header('Content-Type: application/json');
+include '../db.php';
+include '../webhooks.php';
 
 if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
 
@@ -90,7 +89,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
 $raffle_id = createRaffle($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $ticket_options);
 if (!$raffle_id) { echo json_encode(['success'=>false,'message'=>'Database error creating raffle.']); exit; }
 
-// Discord notification
+// Discord notification — build labels before closing conn, send after
 $creator     = $_SESSION['userData']['name'] ?? 'Unknown';
 $end_fmt     = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
 $opt_labels  = [];
@@ -98,6 +97,13 @@ foreach ($ticket_options as $opt) {
     $pr = $conn->query("SELECT name, currency FROM projects WHERE id=".intval($opt['project_id'])." LIMIT 1");
     if ($pr && $pr->num_rows) { $row = $pr->fetch_assoc(); $opt_labels[] = number_format($opt['cost']) . ' ' . strtoupper($row['currency']); }
 }
+
+$conn->close();
+
+// Send success to client first, then fire Discord (non-blocking)
+ob_end_clean();
+echo json_encode(['success'=>true,'raffle_id'=>$raffle_id]);
+
 discordmsg(
     '🎟️ New Raffle: ' . $title,
     "**$creator** started a new raffle!\n" .
@@ -108,6 +114,3 @@ discordmsg(
     'https://skulliance.io/staking/raffles.php',
     'raffles', '', 'a040ff'
 );
-
-$conn->close();
-echo json_encode(['success'=>true,'raffle_id'=>$raffle_id]);
