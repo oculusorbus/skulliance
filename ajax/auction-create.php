@@ -23,8 +23,11 @@ include '../db.php';
 dbg('db.php loaded, session user_id: ' . ($_SESSION['userData']['user_id'] ?? 'NOT SET'));
 include '../webhooks.php';
 dbg('webhooks.php loaded');
+dbg('ob buffer contents so far: ' . substr(ob_get_contents(), 0, 500));
 
-if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
+dbg('step: auth check');
+if (!isset($_SESSION['userData']['user_id'])) { ob_clean(); echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
+dbg('step: auth passed');
 
 $user_id        = intval($_SESSION['userData']['user_id']);
 $title          = trim($_POST['title'] ?? '');
@@ -33,19 +36,26 @@ $asset_id       = trim($_POST['asset_id'] ?? '');
 $projects_raw   = $_POST['projects'] ?? '[]';
 $start_date_raw = trim($_POST['start_date'] ?? '');
 $end_date_raw   = trim($_POST['end_date'] ?? '');
+dbg('step: vars assigned - title=' . $title . ' asset_id=' . $asset_id . ' end_date_raw=' . $end_date_raw);
 
-if (!$title) { echo json_encode(['success'=>false,'message'=>'Title is required.']); exit; }
-if (!$end_date_raw) { echo json_encode(['success'=>false,'message'=>'End date is required.']); exit; }
-if (!$asset_id) { echo json_encode(['success'=>false,'message'=>'Cardano Asset ID is required.']); exit; }
+if (!$title) { ob_clean(); echo json_encode(['success'=>false,'message'=>'Title is required.']); exit; }
+dbg('step: title ok');
+if (!$end_date_raw) { ob_clean(); echo json_encode(['success'=>false,'message'=>'End date is required.']); exit; }
+dbg('step: end_date ok');
+if (!$asset_id) { ob_clean(); echo json_encode(['success'=>false,'message'=>'Cardano Asset ID is required.']); exit; }
+dbg('step: asset_id present');
 if (!preg_match('/^asset1[a-z0-9]{38}$/', $asset_id)) {
-    echo json_encode(['success'=>false,'message'=>'Invalid asset ID — must be in asset1... fingerprint format.']); exit;
+    dbg('step: asset_id REGEX FAILED for: ' . $asset_id . ' len=' . strlen($asset_id));
+    ob_clean(); echo json_encode(['success'=>false,'message'=>'Invalid asset ID — must be in asset1... fingerprint format.']); exit;
 }
+dbg('step: asset_id regex ok');
 
 $projects = json_decode($projects_raw, true) ?: [];
 $projects = array_values(array_filter($projects, function($p) {
     return intval($p['project_id'] ?? 0) > 0 && intval($p['minimum_bid'] ?? 0) > 0;
 }));
-if (empty($projects)) { echo json_encode(['success'=>false,'message'=>'At least one currency with a minimum bid is required.']); exit; }
+dbg('step: projects count=' . count($projects));
+if (empty($projects)) { ob_clean(); echo json_encode(['success'=>false,'message'=>'At least one currency with a minimum bid is required.']); exit; }
 
 // Optional start_date (defaults to now)
 if ($start_date_raw) {
@@ -62,7 +72,9 @@ $dt->setTime(0, 0, 0);
 $dt->setTimezone(new DateTimeZone('UTC'));
 $end_date = $dt->format('Y-m-d H:i:s');
 
-if (strtotime($end_date) <= time()) { echo json_encode(['success'=>false,'message'=>'End date must be in the future.']); exit; }
+dbg('step: end_date parsed=' . $end_date);
+if (strtotime($end_date) <= time()) { ob_clean(); echo json_encode(['success'=>false,'message'=>'End date must be in the future.']); exit; }
+dbg('step: end_date in future ok');
 
 // Image upload
 $image_path = '';
