@@ -126,7 +126,7 @@ $now_ts = time();
     <div class="form-section-label">Prize Details</div>
     <div class="form-row"><label>Title *</label><input type="text" id="r-title" maxlength="255" placeholder="What are you raffling off?" /></div>
     <div class="form-row"><label>Description</label><textarea id="r-desc" placeholder="Optional prize details…"></textarea></div>
-    <div class="form-row"><label>Cardano Asset ID (optional)</label><input type="text" id="r-asset-id" maxlength="120" placeholder="Policy ID + hex asset name" /></div>
+    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="r-asset-id" maxlength="120" placeholder="Policy ID + hex asset name" /></div>
     <div class="form-row">
       <label>Image Upload (optional — PNG/GIF, max 5MB)</label>
       <input type="file" id="r-image" accept="image/png,image/gif,image/jpeg,image/webp" />
@@ -222,7 +222,8 @@ function submitCreateRaffle() {
 
   if (!title) { err.textContent = 'Title is required.'; err.style.display = 'block'; return; }
   if (!endDate) { err.textContent = 'End date is required.'; err.style.display = 'block'; return; }
-  if (assetId && !/^[0-9a-fA-F]{56,120}$/.test(assetId)) { err.textContent = 'Asset ID must be 56-120 hex characters.'; err.style.display = 'block'; return; }
+  if (!assetId) { err.textContent = 'Cardano Asset ID is required.'; err.style.display = 'block'; return; }
+  if (!/^[0-9a-fA-F]{56,120}$/.test(assetId)) { err.textContent = 'Asset ID must be 56-120 hex characters.'; err.style.display = 'block'; return; }
 
   var ticketOptions = [];
   document.querySelectorAll('#r-currency-rows .currency-row').forEach(function(row) {
