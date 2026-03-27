@@ -8743,5 +8743,281 @@ function getTowerScore($conn, $realm_id) {
 	return ($count / 10) * 10;
 }
 
+// ── AUCTIONS & RAFFLES ────────────────────────────────────────────────────────
+
+// Conversion rates: normalize any currency to a common value for comparison.
+// Core project points (id <= 6) = 2× multiplier (worth twice partner points).
+// DIAMOND (id = 7) = 10× multiplier.
+// CARBON (id = 15) = 0.01× multiplier.
+// Partner (id > 7, not 15) = 1× multiplier (baseline).
+function getProjectNormalizedValue($project_id) {
+	$pid = intval($project_id);
+	if ($pid === 7)  return 10.0;
+	if ($pid === 15) return 0.01;
+	if ($pid <= 6)   return 2.0;
+	return 1.0; // partner
+}
+
+// Return all active (not completed, not canceled) auctions with creator info.
+function getActiveAuctions($conn) {
+	$sql = "SELECT a.*, u.name AS creator_name, u.discord_id AS creator_discord,
+	               p.name AS bid_project_name, p.currency AS bid_currency
+	        FROM auctions a
+	        INNER JOIN users u ON u.id = a.user_id
+	        LEFT JOIN projects p ON p.id = a.bid_project_id
+	        WHERE a.completed = 0 AND a.canceled = 0
+	        ORDER BY a.end_date ASC";
+	$result = $conn->query($sql);
+	$rows = array();
+	if ($result && $result->num_rows > 0) {
+		while ($row = $result->fetch_assoc()) $rows[] = $row;
+	}
+	return $rows;
+}
+
+// Return a single auction by id with allowed project list.
+function getAuction($conn, $auction_id) {
+	$aid = intval($auction_id);
+	$result = $conn->query("SELECT a.*, u.name AS creator_name, u.discord_id AS creator_discord
+	                         FROM auctions a
+	                         INNER JOIN users u ON u.id = a.user_id
+	                         WHERE a.id = $aid LIMIT 1");
+	if (!$result || $result->num_rows === 0) return null;
+	$auction = $result->fetch_assoc();
+	// Allowed projects
+	$pr = $conn->query("SELECT ap.project_id, p.name, p.currency FROM auctions_projects ap INNER JOIN projects p ON p.id = ap.project_id WHERE ap.auction_id = $aid");
+	$auction['allowed_projects'] = array();
+	if ($pr) { while ($row = $pr->fetch_assoc()) $auction['allowed_projects'][] = $row; }
+	// Recent bids
+	$br = $conn->query("SELECT b.*, u.name AS bidder_name, p.name AS project_name, p.currency FROM bids b INNER JOIN users u ON u.id = b.user_id INNER JOIN projects p ON p.id = b.project_id WHERE b.auction_id = $aid ORDER BY b.created_date DESC LIMIT 10");
+	$auction['bids'] = array();
+	if ($br) { while ($row = $br->fetch_assoc()) $auction['bids'][] = $row; }
+	return $auction;
+}
+
+// Create a new auction. Returns new auction id or false on error.
+function createAuction($conn, $user_id, $title, $description, $image_path, $asset_id, $nft_name, $start_bid, $bid_project_id, $allowed_project_ids, $end_date) {
+	$uid   = intval($user_id);
+	$title = $conn->real_escape_string($title);
+	$desc  = $conn->real_escape_string($description);
+	$img   = $conn->real_escape_string($image_path);
+	$aid   = $conn->real_escape_string($asset_id);
+	$nname = $conn->real_escape_string($nft_name);
+	$sbid  = floatval($start_bid);
+	$bpid  = $bid_project_id ? intval($bid_project_id) : 'NULL';
+	$edate = $conn->real_escape_string($end_date);
+
+	$sql = "INSERT INTO auctions (user_id, title, description, image_path, asset_id, nft_name, start_bid, bid_project_id, current_bid, end_date)
+	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$nname', '$sbid', $bpid, '$sbid', '$edate')";
+	if (!$conn->query($sql)) return false;
+	$auction_id = $conn->insert_id;
+	foreach ($allowed_project_ids as $pid) {
+		$pid = intval($pid);
+		$conn->query("INSERT INTO auctions_projects (auction_id, project_id) VALUES ('$auction_id', '$pid')");
+	}
+	return $auction_id;
+}
+
+// Place a bid on an auction. Returns array with 'success' bool and 'message'.
+function placeBid($conn, $auction_id, $user_id, $amount, $project_id) {
+	$aid   = intval($auction_id);
+	$uid   = intval($user_id);
+	$amt   = floatval($amount);
+	$pid   = intval($project_id);
+
+	$auction = getAuction($conn, $aid);
+	if (!$auction) return array('success' => false, 'message' => 'Auction not found.');
+	if ($auction['completed'] || $auction['canceled']) return array('success' => false, 'message' => 'Auction is no longer active.');
+	if (strtotime($auction['end_date']) < time()) return array('success' => false, 'message' => 'Auction has ended.');
+
+	// Check project is allowed
+	if (!empty($auction['allowed_projects'])) {
+		$allowed = array_column($auction['allowed_projects'], 'project_id');
+		if (!in_array($pid, $allowed)) return array('success' => false, 'message' => 'That currency is not accepted for this auction.');
+	}
+
+	// Check balance
+	$balance = getCurrentBalance($conn, $uid, $pid);
+	if ($balance === 'false' || floatval($balance) < $amt) return array('success' => false, 'message' => 'Insufficient balance.');
+
+	// Normalize bid and check 5% minimum increment
+	$norm = $amt * getProjectNormalizedValue($pid);
+	$current_norm = floatval($auction['current_bid_normalized']);
+	$min_norm = $current_norm > 0 ? $current_norm * 1.05 : floatval($auction['start_bid']) * getProjectNormalizedValue($auction['bid_project_id'] ?: $pid);
+	if ($norm < $min_norm) {
+		$deficit = $min_norm / getProjectNormalizedValue($pid);
+		return array('success' => false, 'message' => 'Bid must be at least ' . number_format($deficit, 2) . ' in that currency (5% above current bid).');
+	}
+
+	// Refund previous leader
+	$prev_bidder = intval($auction['current_bidder_id']);
+	$prev_bid    = floatval($auction['current_bid']);
+	$prev_pid    = intval($auction['current_bid_project_id']);
+	if ($prev_bidder && $prev_bid > 0 && $prev_pid) {
+		updateBalance($conn, $prev_bidder, $prev_pid, $prev_bid);
+		logCredit($conn, $prev_bidder, $prev_bid, $prev_pid);
+	}
+
+	// Deduct new bid
+	updateBalance($conn, $uid, $pid, -$amt);
+	logDebit($conn, $uid, 0, $amt, $pid);
+
+	// Log bid
+	$conn->query("INSERT INTO bids (auction_id, user_id, amount, project_id, normalized) VALUES ('$aid', '$uid', '$amt', '$pid', '$norm')");
+
+	// Update auction
+	$norm_esc = floatval($norm);
+	$conn->query("UPDATE auctions SET current_bid='$amt', current_bid_project_id='$pid', current_bid_normalized='$norm_esc', current_bidder_id='$uid' WHERE id='$aid'");
+
+	return array('success' => true, 'message' => 'Bid placed successfully!');
+}
+
+// Cancel an auction (creator or admin only). Refunds current leader.
+function cancelAuction($conn, $auction_id, $user_id) {
+	$aid = intval($auction_id);
+	$uid = intval($user_id);
+	$auction = getAuction($conn, $aid);
+	if (!$auction) return array('success' => false, 'message' => 'Auction not found.');
+	if ($auction['completed'] || $auction['canceled']) return array('success' => false, 'message' => 'Auction already closed.');
+	if (intval($auction['user_id']) !== $uid) return array('success' => false, 'message' => 'Not authorized.');
+
+	// Refund current leader
+	$prev_bidder = intval($auction['current_bidder_id']);
+	$prev_bid    = floatval($auction['current_bid']);
+	$prev_pid    = intval($auction['current_bid_project_id']);
+	if ($prev_bidder && $prev_bid > 0 && $prev_pid) {
+		updateBalance($conn, $prev_bidder, $prev_pid, $prev_bid);
+		logCredit($conn, $prev_bidder, $prev_bid, $prev_pid);
+	}
+
+	$conn->query("UPDATE auctions SET canceled=1 WHERE id='$aid'");
+	return array('success' => true, 'message' => 'Auction canceled.');
+}
+
+// Return all active raffles.
+function getActiveRaffles($conn) {
+	$sql = "SELECT r.*, u.name AS creator_name, u.discord_id AS creator_discord,
+	               p.name AS ticket_project_name, p.currency AS ticket_currency,
+	               (SELECT COUNT(*) FROM tickets t WHERE t.raffle_id = r.id) AS total_tickets_sold
+	        FROM raffles r
+	        INNER JOIN users u ON u.id = r.user_id
+	        INNER JOIN projects p ON p.id = r.ticket_project_id
+	        WHERE r.completed = 0 AND r.canceled = 0
+	        ORDER BY r.end_date ASC";
+	$result = $conn->query($sql);
+	$rows = array();
+	if ($result && $result->num_rows > 0) {
+		while ($row = $result->fetch_assoc()) $rows[] = $row;
+	}
+	return $rows;
+}
+
+// Return a single raffle by id with ticket counts.
+function getRaffle($conn, $raffle_id) {
+	$rid = intval($raffle_id);
+	$result = $conn->query("SELECT r.*, u.name AS creator_name, u.discord_id AS creator_discord,
+	                                p.name AS ticket_project_name, p.currency AS ticket_currency
+	                         FROM raffles r
+	                         INNER JOIN users u ON u.id = r.user_id
+	                         INNER JOIN projects p ON p.id = r.ticket_project_id
+	                         WHERE r.id = $rid LIMIT 1");
+	if (!$result || $result->num_rows === 0) return null;
+	$raffle = $result->fetch_assoc();
+	$tr = $conn->query("SELECT COUNT(*) AS total FROM tickets WHERE raffle_id = $rid");
+	$raffle['total_tickets_sold'] = $tr ? intval($tr->fetch_assoc()['total']) : 0;
+	// Per-user ticket count for session user (if set)
+	$raffle['user_tickets'] = 0;
+	if (isset($_SESSION['userData']['user_id'])) {
+		$sess_uid = intval($_SESSION['userData']['user_id']);
+		$ur = $conn->query("SELECT SUM(quantity) AS qty FROM tickets WHERE raffle_id = $rid AND user_id = $sess_uid");
+		if ($ur) $raffle['user_tickets'] = intval($ur->fetch_assoc()['qty']);
+	}
+	return $raffle;
+}
+
+// Create a new raffle. Returns new raffle id or false on error.
+function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $nft_name, $ticket_price, $ticket_project_id, $max_tickets, $tickets_per_user, $end_date) {
+	$uid   = intval($user_id);
+	$title = $conn->real_escape_string($title);
+	$desc  = $conn->real_escape_string($description);
+	$img   = $conn->real_escape_string($image_path);
+	$aid   = $conn->real_escape_string($asset_id);
+	$nname = $conn->real_escape_string($nft_name);
+	$tprice = floatval($ticket_price);
+	$tpid  = intval($ticket_project_id);
+	$maxT  = $max_tickets ? intval($max_tickets) : 'NULL';
+	$perU  = $tickets_per_user ? intval($tickets_per_user) : 'NULL';
+	$edate = $conn->real_escape_string($end_date);
+
+	$sql = "INSERT INTO raffles (user_id, title, description, image_path, asset_id, nft_name, ticket_price, ticket_project_id, max_tickets, tickets_per_user, end_date)
+	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$nname', '$tprice', '$tpid', $maxT, $perU, '$edate')";
+	if (!$conn->query($sql)) return false;
+	return $conn->insert_id;
+}
+
+// Purchase raffle tickets. Returns array with 'success' bool and 'message'.
+function buyRaffleTickets($conn, $raffle_id, $user_id, $quantity) {
+	$rid = intval($raffle_id);
+	$uid = intval($user_id);
+	$qty = max(1, intval($quantity));
+
+	$raffle = getRaffle($conn, $rid);
+	if (!$raffle) return array('success' => false, 'message' => 'Raffle not found.');
+	if ($raffle['completed'] || $raffle['canceled']) return array('success' => false, 'message' => 'Raffle is no longer active.');
+	if (strtotime($raffle['end_date']) < time()) return array('success' => false, 'message' => 'Raffle has ended.');
+
+	// Check max tickets remaining
+	if ($raffle['max_tickets']) {
+		$remaining = intval($raffle['max_tickets']) - intval($raffle['total_tickets_sold']);
+		if ($qty > $remaining) return array('success' => false, 'message' => "Only $remaining ticket(s) remaining.");
+	}
+
+	// Check per-user limit
+	if ($raffle['tickets_per_user']) {
+		$used = intval($raffle['user_tickets']);
+		$allowed = intval($raffle['tickets_per_user']) - $used;
+		if ($qty > $allowed) return array('success' => false, 'message' => "You can only buy $allowed more ticket(s).");
+	}
+
+	$pid   = intval($raffle['ticket_project_id']);
+	$price = floatval($raffle['ticket_price']);
+	$total = $price * $qty;
+
+	// Check balance
+	$balance = getCurrentBalance($conn, $uid, $pid);
+	if ($balance === 'false' || floatval($balance) < $total) return array('success' => false, 'message' => 'Insufficient balance.');
+
+	// Deduct
+	updateBalance($conn, $uid, $pid, -$total);
+	logDebit($conn, $uid, 0, $total, $pid);
+
+	// Insert tickets row
+	$conn->query("INSERT INTO tickets (raffle_id, user_id, quantity, project_id, amount) VALUES ('$rid', '$uid', '$qty', '$pid', '$total')");
+
+	return array('success' => true, 'message' => "Successfully purchased $qty ticket(s)!");
+}
+
+// Cancel a raffle (creator only). Refunds all ticket buyers proportionally.
+function cancelRaffle($conn, $raffle_id, $user_id) {
+	$rid = intval($raffle_id);
+	$uid = intval($user_id);
+	$raffle = getRaffle($conn, $rid);
+	if (!$raffle) return array('success' => false, 'message' => 'Raffle not found.');
+	if ($raffle['completed'] || $raffle['canceled']) return array('success' => false, 'message' => 'Raffle already closed.');
+	if (intval($raffle['user_id']) !== $uid) return array('success' => false, 'message' => 'Not authorized.');
+
+	// Refund all ticket buyers
+	$tres = $conn->query("SELECT user_id, project_id, amount FROM tickets WHERE raffle_id = $rid");
+	if ($tres) {
+		while ($t = $tres->fetch_assoc()) {
+			updateBalance($conn, intval($t['user_id']), intval($t['project_id']), floatval($t['amount']));
+			logCredit($conn, intval($t['user_id']), floatval($t['amount']), intval($t['project_id']));
+		}
+	}
+
+	$conn->query("UPDATE raffles SET canceled=1 WHERE id='$rid'");
+	return array('success' => true, 'message' => 'Raffle canceled and all tickets refunded.');
+}
+
 /* END REALMS ENHANCEMENT */
 ?>

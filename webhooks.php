@@ -32,6 +32,10 @@ include('credentials/webhooks_credentials.php');
 			$webhook = getBossBattlesWebhook();
 		}else if($channel == "store"){
 			$webhook = getStoreWebhook();
+		}else if($channel == "auctions"){
+			$webhook = getAuctionsWebhook();
+		}else if($channel == "raffles"){
+			$webhook = getRafflesWebhook();
 		}else if($channel == "delegations"){
 			$webhook = getDelegationsWebhook();
 		}else{
