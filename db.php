@@ -1862,7 +1862,7 @@ function renderStartAutoMissionsButton($conn) {
 	}
 
 	echo "<span style='display:$display' id='startAutoMissionsForm'>
-	<button type='button' class='button' data-tooltip='Automatically builds the best mission load-outs across all your projects, picking the highest-reward missions your NFTs and points balance can support. Will spend Random Reward and 25-75% Success Rate items on completed mission campaigns and Fast Forward and Double Rewards items in addition to all previously mentioned items on uncompleted mission campaigns. Items are deployed systematically from your inventory as needed. Ideal for maximizing point returns and guaranteeing item drops in one click.' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
+	<button type='button' class='button' data-tooltip='Automatically builds the best mission load-outs across all your projects, picking the highest-reward missions your NFTs and points balance can support. Systematically deploys Random Reward and 25-75% Success Rate items on completed campaigns, plus Fast Forward and Double Rewards on top of those for uncompleted ones. Ideal for maximizing point returns and guaranteeing item drops in one click.' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
 	</span><br>";
 }
 
