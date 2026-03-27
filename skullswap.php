@@ -352,7 +352,7 @@ include 'header.php';
      <div id="guide-overlay" onclick="if(event.target===this)closeGuide()">
          <div id="guide-modal">
              <button id="guide-close" onclick="closeGuide()">&#x2715;</button>
-             <h2>Skull Swap Guide</h2>
+             <h2>&#x1F480; Skull Swap Guide &#x1F480;</h2>
 
              <div class="guide-section">
                  <h3>The Basics</h3>
