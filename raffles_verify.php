@@ -1,6 +1,9 @@
 <?php
 // raffles_verify.php — Nightly cron: draw raffle winners for ended raffles
-// Runs after midnight CST. Picks a random winning ticket, DMs winner and creator, marks completed.
+// 1. If an asset_id is set, verify via Koios that the creator still holds the NFT.
+//    If not found: cancel, refund all ticket buyers, DM creator, skip to next.
+// 2. If verified (or no asset_id): draw a random winner weighted by ticket count,
+//    DM winner and creator, announce to Discord.
 set_time_limit(0);
 include 'db.php';
 include 'message.php';
@@ -9,16 +12,17 @@ include 'webhooks.php';
 
 $now = date('Y-m-d H:i:s');
 
-// Find ended raffles not yet processed
-$result = $conn->query("SELECT r.*, u.name AS creator_name, u.discord_id AS creator_discord,
-                                p.name AS ticket_project_name, p.currency AS ticket_currency
-                         FROM raffles r
-                         INNER JOIN users u ON u.id = r.user_id
-                         INNER JOIN projects p ON p.id = r.ticket_project_id
-                         WHERE r.end_date <= '$now'
-                           AND r.completed = 0
-                           AND r.processing = 0
-                           AND r.canceled = 0");
+$result = $conn->query(
+    "SELECT r.*, u.name AS creator_name, u.discord_id AS creator_discord,
+            p.name AS ticket_project_name, p.currency AS ticket_currency
+     FROM raffles r
+     INNER JOIN users u ON u.id = r.user_id
+     INNER JOIN projects p ON p.id = r.ticket_project_id
+     WHERE r.end_date <= '$now'
+       AND r.completed = 0
+       AND r.processing = 0
+       AND r.canceled = 0"
+);
 
 if (!$result || $result->num_rows === 0) {
     echo "No raffles to process.\n";
@@ -27,34 +31,120 @@ if (!$result || $result->num_rows === 0) {
 }
 
 while ($raffle = $result->fetch_assoc()) {
-    $rid = intval($raffle['id']);
-    echo "Processing raffle #$rid: {$raffle['title']}\n";
+    $rid        = intval($raffle['id']);
+    $title      = $raffle['title'];
+    $img_url    = !empty($raffle['image_path']) ? 'https://skulliance.io/staking/' . $raffle['image_path'] : '';
+    $creator_id = intval($raffle['user_id']);
+    $cur        = strtoupper($raffle['ticket_currency']);
+
+    echo "Processing raffle #$rid: $title\n";
 
     // Mark as processing
     $conn->query("UPDATE raffles SET processing=1 WHERE id='$rid'");
 
-    $cur   = strtoupper($raffle['ticket_currency']);
-    $title = $raffle['title'];
-    $img_url = !empty($raffle['image_path']) ? 'https://skulliance.io/staking/' . $raffle['image_path'] : '';
+    // ── Step 1: Blockchain verification (only when asset_id is present) ───────
+    $asset_id = trim($raffle['asset_id'] ?? '');
+    if ($asset_id !== '') {
+        $stake_address = getCreatorStakeAddress($conn, $creator_id);
 
-    // Fetch all ticket rows with expansion by quantity
-    $tres = $conn->query("SELECT t.id AS ticket_id, t.user_id, t.quantity FROM tickets t WHERE t.raffle_id='$rid'");
-    $pool = []; // array of [ticket_id, user_id] entries, one per ticket purchased
+        if (!$stake_address) {
+            echo "  WARNING: No wallet found for creator (user_id=$creator_id). Cannot verify NFT ownership.\n";
+
+            // Refund all ticket buyers
+            refundAllRaffleTickets($conn, $rid);
+
+            if ($raffle['creator_discord']) {
+                sendDM($raffle['creator_discord'],
+                    "⚠️ Your raffle **{$title}** could not be completed because we were unable to verify NFT ownership — your Cardano wallet is not linked to your Skulliance account.\n\n" .
+                    "All ticket buyers have been refunded. Please link your wallet and contact support."
+                );
+            }
+            discordmsg(
+                '⚠️ Raffle Verification Failed: ' . $title,
+                "**{$raffle['creator_name']}**'s raffle **{$title}** could not be processed — no linked wallet found to verify NFT ownership. All tickets have been refunded.",
+                $img_url, 'https://skulliance.io/staking/raffles.php',
+                'raffles', '', 'ff6b00'
+            );
+            $conn->query("UPDATE raffles SET canceled=1, processing=0 WHERE id='$rid'");
+            echo "  Raffle #$rid canceled (no wallet).\n";
+            continue;
+        }
+
+        echo "  Verifying asset $asset_id in wallet $stake_address via Koios…\n";
+        $asset_found = verifyAssetInWallet($stake_address, $asset_id);
+
+        if (!$asset_found) {
+            echo "  FAILED: Asset not found in creator's wallet. Canceling and refunding all tickets.\n";
+
+            // Refund all ticket buyers and notify each one
+            $tres = $conn->query("SELECT user_id, project_id, amount FROM tickets WHERE raffle_id='$rid'");
+            if ($tres) {
+                $notified = [];
+                while ($t = $tres->fetch_assoc()) {
+                    $tuid  = intval($t['user_id']);
+                    $tpid  = intval($t['project_id']);
+                    $tamt  = floatval($t['amount']);
+                    updateBalance($conn, $tuid, $tpid, $tamt);
+                    logCredit($conn, $tuid, $tamt, $tpid);
+                    // DM each buyer once
+                    if (!in_array($tuid, $notified)) {
+                        $ures = $conn->query("SELECT discord_id FROM users WHERE id='$tuid' LIMIT 1");
+                        if ($ures && $ures->num_rows) {
+                            $urow = $ures->fetch_assoc();
+                            if ($urow['discord_id']) {
+                                $pr2  = $conn->query("SELECT currency FROM projects WHERE id='$tpid' LIMIT 1");
+                                $cur2 = ($pr2 && $pr2->num_rows) ? strtoupper($pr2->fetch_assoc()['currency']) : 'pts';
+                                sendDM($urow['discord_id'],
+                                    "❌ The raffle **{$title}** was canceled because the creator could not verify ownership of the NFT at close time.\n\n" .
+                                    "Your tickets have been fully refunded."
+                                );
+                            }
+                        }
+                        $notified[] = $tuid;
+                    }
+                }
+            }
+
+            if ($raffle['creator_discord']) {
+                sendDM($raffle['creator_discord'],
+                    "❌ Your raffle **{$title}** was automatically canceled because the NFT (asset: $asset_id) could not be found in your linked wallet at close time.\n\n" .
+                    "All ticket buyers have been refunded. If this is an error, please contact support."
+                );
+            }
+
+            discordmsg(
+                '❌ Raffle Canceled (NFT Not Verified): ' . $title,
+                "**{$title}** by **{$raffle['creator_name']}** was canceled — the NFT could not be verified in the creator's wallet at close time. All tickets have been refunded.",
+                $img_url, 'https://skulliance.io/staking/raffles.php',
+                'raffles', '', 'ff3333'
+            );
+
+            $conn->query("UPDATE raffles SET canceled=1, processing=0 WHERE id='$rid'");
+            echo "  Raffle #$rid canceled.\n";
+            continue;
+        }
+
+        echo "  Verified: asset confirmed in creator's wallet.\n";
+    }
+
+    // ── Step 2: Build weighted ticket pool and draw winner ────────────────────
+    $tres = $conn->query("SELECT id AS ticket_id, user_id, quantity FROM tickets WHERE raffle_id='$rid'");
+    $pool       = [];
     $total_sold = 0;
     if ($tres && $tres->num_rows > 0) {
         while ($t = $tres->fetch_assoc()) {
-            for ($i = 0; $i < intval($t['quantity']); $i++) {
+            $qty = intval($t['quantity']);
+            for ($i = 0; $i < $qty; $i++) {
                 $pool[] = ['ticket_id' => intval($t['ticket_id']), 'user_id' => intval($t['user_id'])];
             }
-            $total_sold += intval($t['quantity']);
+            $total_sold += $qty;
         }
     }
 
     if (empty($pool)) {
-        // No tickets sold
         discordmsg(
             '🎟️ Raffle Ended (No Tickets): ' . $title,
-            "**$title** by **{$raffle['creator_name']}** ended with no tickets sold.\nAll participants will be notified.",
+            "**{$title}** by **{$raffle['creator_name']}** ended with no tickets sold.",
             $img_url, 'https://skulliance.io/staking/raffles.php',
             'raffles', '', '555555'
         );
@@ -63,14 +153,12 @@ while ($raffle = $result->fetch_assoc()) {
         continue;
     }
 
-    // Draw winner
     $winning_entry   = $pool[array_rand($pool)];
     $winning_uid     = $winning_entry['user_id'];
     $winning_tick_id = $winning_entry['ticket_id'];
 
-    // Fetch winner info
-    $wres   = $conn->query("SELECT name, discord_id FROM users WHERE id='$winning_uid' LIMIT 1");
-    $winner = $wres ? $wres->fetch_assoc() : null;
+    $wres        = $conn->query("SELECT name, discord_id FROM users WHERE id='$winning_uid' LIMIT 1");
+    $winner      = $wres ? $wres->fetch_assoc() : null;
     $winner_name = $winner ? $winner['name'] : 'Unknown';
 
     // Update raffle record
@@ -78,23 +166,30 @@ while ($raffle = $result->fetch_assoc()) {
 
     // DM winner
     if ($winner && $winner['discord_id']) {
-        $msg = "🎉 You won the raffle for **{$title}**!\n\n"
-             . "You were drawn from **$total_sold** total ticket(s).\n"
-             . "Please contact the creator **{$raffle['creator_name']}** in the Skulliance Discord to arrange delivery of your prize.\n\n"
-             . "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket.";
-        sendDM($winner['discord_id'], $msg);
+        $dm = "🎉 You won the raffle for **{$title}**!\n\n" .
+              "You were drawn from **$total_sold** total ticket(s).\n" .
+              ($asset_id !== ''
+                  ? "NFT Asset ID: `$asset_id`\n\n"
+                  : "\n") .
+              "Please contact the creator **{$raffle['creator_name']}** in the Skulliance Discord to arrange delivery of your prize.\n\n" .
+              "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket.";
+        sendDM($winner['discord_id'], $dm);
     }
 
     // DM creator
     if ($raffle['creator_discord']) {
-        $msg = "🎟️ Your raffle **{$title}** has ended!\n\n"
-             . "Winner: **{$winner_name}**\n"
-             . "Total tickets sold: **$total_sold**\n\n"
-             . "Please arrange delivery of your prize to the winner via Skulliance Discord.";
-        sendDM($raffle['creator_discord'], $msg);
+        $dm = "🎟️ Your raffle **{$title}** has ended!\n\n" .
+              "Winner: **{$winner_name}**\n" .
+              "Total tickets sold: **$total_sold**\n" .
+              ($asset_id !== ''
+                  ? "NFT Asset ID: `$asset_id`\n\n"
+                  : "\n") .
+              "Please send the prize to the winner via the Skulliance Discord. " .
+              "Ensure your DMs from Skulliance members are open so the winner can contact you.";
+        sendDM($raffle['creator_discord'], $dm);
     }
 
-    // Webhook announcement
+    // Discord announcement
     discordmsg(
         '🏆 Raffle Winner: ' . $title,
         "🎉 **{$winner_name}** won **{$title}**!\n" .
@@ -104,8 +199,21 @@ while ($raffle = $result->fetch_assoc()) {
         'raffles', '', 'a040ff'
     );
 
-    echo "  Winner: {$winner_name} (ticket #{$winning_tick_id}, pool of $total_sold)\n";
+    echo "  Winner: $winner_name (ticket #$winning_tick_id, pool of $total_sold)\n";
+    echo "  Raffle #$rid marked completed.\n";
 }
 
 $conn->close();
 echo "Done.\n";
+
+// ── Helper: refund all ticket buyers for a raffle (no DMs) ───────────────────
+function refundAllRaffleTickets($conn, $raffle_id) {
+    $rid = intval($raffle_id);
+    $tres = $conn->query("SELECT user_id, project_id, amount FROM tickets WHERE raffle_id='$rid'");
+    if ($tres) {
+        while ($t = $tres->fetch_assoc()) {
+            updateBalance($conn, intval($t['user_id']), intval($t['project_id']), floatval($t['amount']));
+            logCredit($conn, intval($t['user_id']), floatval($t['amount']), intval($t['project_id']));
+        }
+    }
+}

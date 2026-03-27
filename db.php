@@ -9019,5 +9019,68 @@ function cancelRaffle($conn, $raffle_id, $user_id) {
 	return array('success' => true, 'message' => 'Raffle canceled and all tickets refunded.');
 }
 
+// Return the main stake address for a user (falls back to lowest-id wallet).
+function getCreatorStakeAddress($conn, $user_id) {
+	$uid = intval($user_id);
+	$res = $conn->query("SELECT stake_address FROM wallets WHERE user_id='$uid' AND main='1' AND stake_address != '' LIMIT 1");
+	if ($res && $res->num_rows) {
+		$row = $res->fetch_assoc();
+		if (!empty($row['stake_address'])) return $row['stake_address'];
+	}
+	$res = $conn->query("SELECT stake_address FROM wallets WHERE user_id='$uid' AND stake_address != '' ORDER BY id ASC LIMIT 1");
+	if ($res && $res->num_rows) {
+		$row = $res->fetch_assoc();
+		return $row['stake_address'] ?: null;
+	}
+	return null;
+}
+
+// Check if a specific Cardano asset_id (policy_id + hex_asset_name, 56–120 chars) is present
+// in any UTXO belonging to a given stake address, using the Koios v1 API.
+// Returns true if found, false if not found or on API error.
+function verifyAssetInWallet($stake_address, $asset_id) {
+	$koios_bearer = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg';
+
+	// asset_id is concatenation of policy_id (exactly 56 hex chars) + hex asset_name (remaining)
+	if (strlen($asset_id) < 56) return false;
+	$policy_id  = substr($asset_id, 0, 56);
+	$asset_name = substr($asset_id, 56); // may be empty for policy-only assets
+
+	$payload = json_encode(['_stake_addresses' => [$stake_address], '_extended' => true]);
+
+	$ch = curl_init('https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null');
+	curl_setopt($ch, CURLOPT_HTTPHEADER, [
+		'Content-type: application/json',
+		'accept: application/json',
+		'authorization: Bearer ' . $koios_bearer,
+	]);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+	$response  = curl_exec($ch);
+	$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	curl_close($ch);
+
+	if ($response === false || $http_code >= 400) return false;
+
+	$data = json_decode($response, true);
+	if (!is_array($data)) return false;
+
+	foreach ($data as $utxo) {
+		if (empty($utxo['asset_list']) || !is_array($utxo['asset_list'])) continue;
+		foreach ($utxo['asset_list'] as $asset) {
+			if (isset($asset['policy_id'], $asset['asset_name'])
+				&& $asset['policy_id'] === $policy_id
+				&& $asset['asset_name'] === $asset_name) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /* END REALMS ENHANCEMENT */
 ?>

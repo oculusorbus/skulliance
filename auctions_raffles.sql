@@ -67,6 +67,13 @@ CREATE TABLE IF NOT EXISTS raffles (
   FOREIGN KEY (winning_ticket_id) REFERENCES tickets(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS raffles_projects (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  raffle_id  INT NOT NULL,
+  project_id INT NOT NULL,
+  FOREIGN KEY (raffle_id) REFERENCES raffles(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS tickets (
   id           INT AUTO_INCREMENT PRIMARY KEY,
   raffle_id    INT NOT NULL,
