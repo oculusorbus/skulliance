@@ -132,7 +132,7 @@ $now_ts = time();
     <div class="form-section-label">Item Details</div>
     <div class="form-row"><label>Title *</label><input type="text" id="a-title" maxlength="255" placeholder="What are you auctioning?" /></div>
     <div class="form-row"><label>Description</label><textarea id="a-desc" placeholder="Optional details about the item…"></textarea></div>
-    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="a-asset-id" maxlength="120" placeholder="Policy ID + hex asset name" /></div>
+    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="a-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row">
       <label>Image Upload (optional — PNG/GIF, max 5MB)</label>
       <input type="file" id="a-image" accept="image/png,image/gif,image/jpeg,image/webp" />
@@ -229,7 +229,7 @@ function submitCreateAuction() {
   if (!title) { err.textContent = 'Title is required.'; err.style.display = 'block'; return; }
   if (!endDate) { err.textContent = 'End date is required.'; err.style.display = 'block'; return; }
   if (!assetId) { err.textContent = 'Cardano Asset ID is required.'; err.style.display = 'block'; return; }
-  if (!/^[0-9a-fA-F]{56,120}$/.test(assetId)) { err.textContent = 'Asset ID must be 56-120 hex characters.'; err.style.display = 'block'; return; }
+  if (!/^asset1[a-z0-9]{38}$/.test(assetId)) { err.textContent = 'Asset ID must be in asset1... fingerprint format (e.g. asset16jt7ekn7...).'; err.style.display = 'block'; return; }
 
   var projects = [];
   document.querySelectorAll('#a-currency-rows .currency-row').forEach(function(row) {

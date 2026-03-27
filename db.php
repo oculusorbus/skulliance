@@ -9080,16 +9080,15 @@ function getCreatorStakeAddress($conn, $user_id) {
 
 // Verify a Cardano asset_id (policy_id[56] + hex_asset_name) is present in a stake address
 // via Koios v1 account_utxos. Returns true if found, false on not found or API error.
-function verifyAssetInWallet($stake_address, $asset_id) {
+// Verify a Cardano asset fingerprint (asset1...) is present in a stake address via Koios v1.
+// Uses account_assets which returns fingerprints directly — no hex conversion needed.
+function verifyAssetInWallet($stake_address, $asset_fingerprint) {
 	$koios_bearer = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg';
-	if (strlen($asset_id) < 56) return false;
-	$policy_id  = substr($asset_id, 0, 56);
-	$asset_name = substr($asset_id, 56);
 
-	$ch = curl_init('https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null');
+	$ch = curl_init('https://api.koios.rest/api/v1/account_assets');
 	curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-type: application/json','accept: application/json','authorization: Bearer '.$koios_bearer]);
 	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['_stake_addresses'=>[$stake_address],'_extended'=>true]));
+	curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['_stake_addresses' => [$stake_address]]));
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 	curl_setopt($ch, CURLOPT_HEADER, 0);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -9101,13 +9100,8 @@ function verifyAssetInWallet($stake_address, $asset_id) {
 
 	$data = json_decode($response, true);
 	if (!is_array($data)) return false;
-	foreach ($data as $utxo) {
-		if (empty($utxo['asset_list'])) continue;
-		foreach ($utxo['asset_list'] as $asset) {
-			if (isset($asset['policy_id'],$asset['asset_name'])
-				&& $asset['policy_id'] === $policy_id
-				&& $asset['asset_name'] === $asset_name) return true;
-		}
+	foreach ($data as $item) {
+		if (($item['fingerprint'] ?? '') === $asset_fingerprint) return true;
 	}
 	return false;
 }

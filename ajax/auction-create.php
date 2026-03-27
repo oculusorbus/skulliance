@@ -18,8 +18,8 @@ $end_date_raw   = trim($_POST['end_date'] ?? '');
 if (!$title) { echo json_encode(['success'=>false,'message'=>'Title is required.']); exit; }
 if (!$end_date_raw) { echo json_encode(['success'=>false,'message'=>'End date is required.']); exit; }
 if (!$asset_id) { echo json_encode(['success'=>false,'message'=>'Cardano Asset ID is required.']); exit; }
-if (!preg_match('/^[0-9a-fA-F]{56,120}$/', $asset_id)) {
-    echo json_encode(['success'=>false,'message'=>'Invalid asset ID format.']); exit;
+if (!preg_match('/^asset1[a-z0-9]{38}$/', $asset_id)) {
+    echo json_encode(['success'=>false,'message'=>'Invalid asset ID — must be in asset1... fingerprint format.']); exit;
 }
 
 $projects = json_decode($projects_raw, true) ?: [];
