@@ -10,7 +10,6 @@ if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>fal
 $user_id        = intval($_SESSION['userData']['user_id']);
 $title          = trim($_POST['title'] ?? '');
 $desc           = trim($_POST['description'] ?? '');
-$nft_name       = trim($_POST['nft_name'] ?? '');
 $asset_id       = trim($_POST['asset_id'] ?? '');
 $projects_raw   = $_POST['projects'] ?? '[]';
 $start_date_raw = trim($_POST['start_date'] ?? '');
@@ -87,7 +86,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image_path = 'images/auctions/' . $fname;
 }
 
-$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $nft_name, $start_date, $end_date, $projects);
+$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects);
 if (!$auction_id) { echo json_encode(['success'=>false,'message'=>'Database error creating auction.']); exit; }
 
 // Discord notification

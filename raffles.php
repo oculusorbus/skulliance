@@ -82,7 +82,6 @@ $now_ts = time();
             <div class="raffle-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="raffle-card-title"><?php echo htmlspecialchars($r['title']); ?></div>
-            <?php if ($r['nft_name']): ?><div style="font-size:0.75rem;opacity:0.45;margin-top:-4px;"><?php echo htmlspecialchars($r['nft_name']); ?></div><?php endif; ?>
             <?php if ($r['description']): ?><div class="raffle-card-desc"><?php echo htmlspecialchars(mb_substr($r['description'],0,100)) . (mb_strlen($r['description'])>100?'…':''); ?></div><?php endif; ?>
             <?php if ($cheap): ?>
             <div class="raffle-stat-row">
@@ -127,7 +126,6 @@ $now_ts = time();
     <div class="form-section-label">Prize Details</div>
     <div class="form-row"><label>Title *</label><input type="text" id="r-title" maxlength="255" placeholder="What are you raffling off?" /></div>
     <div class="form-row"><label>Description</label><textarea id="r-desc" placeholder="Optional prize details…"></textarea></div>
-    <div class="form-row"><label>NFT Name (optional display name)</label><input type="text" id="r-nft-name" maxlength="255" placeholder="e.g. Skull #1234" /></div>
     <div class="form-row"><label>Cardano Asset ID (optional)</label><input type="text" id="r-asset-id" maxlength="120" placeholder="Policy ID + hex asset name" /></div>
     <div class="form-row">
       <label>Image Upload (optional — PNG/GIF, max 5MB)</label>
@@ -217,7 +215,6 @@ function submitCreateRaffle() {
   err.style.display = 'none';
   var title     = document.getElementById('r-title').value.trim();
   var desc      = document.getElementById('r-desc').value.trim();
-  var nftName   = document.getElementById('r-nft-name').value.trim();
   var assetId   = document.getElementById('r-asset-id').value.trim();
   var startDate = document.getElementById('r-start-date').value;
   var endDate   = document.getElementById('r-end-date').value;
@@ -238,7 +235,6 @@ function submitCreateRaffle() {
   var fd = new FormData();
   fd.append('title', title);
   fd.append('description', desc);
-  fd.append('nft_name', nftName);
   fd.append('asset_id', assetId);
   fd.append('ticket_options', JSON.stringify(ticketOptions));
   fd.append('start_date', startDate);

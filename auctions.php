@@ -86,7 +86,6 @@ $now_ts = time();
             <div class="auction-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="auction-card-title"><?php echo htmlspecialchars($a['title']); ?></div>
-            <?php if ($a['nft_name']): ?><div style="font-size:0.75rem;opacity:0.45;margin-top:-4px;"><?php echo htmlspecialchars($a['nft_name']); ?></div><?php endif; ?>
             <?php if ($a['description']): ?><div class="auction-card-desc"><?php echo htmlspecialchars(mb_substr($a['description'],0,100)) . (mb_strlen($a['description'])>100?'…':''); ?></div><?php endif; ?>
             <div class="auction-bid-row">
               <span class="auction-bid-label">Current Bid</span>
@@ -133,7 +132,6 @@ $now_ts = time();
     <div class="form-section-label">Item Details</div>
     <div class="form-row"><label>Title *</label><input type="text" id="a-title" maxlength="255" placeholder="What are you auctioning?" /></div>
     <div class="form-row"><label>Description</label><textarea id="a-desc" placeholder="Optional details about the item…"></textarea></div>
-    <div class="form-row"><label>NFT Name (optional display name)</label><input type="text" id="a-nft-name" maxlength="255" placeholder="e.g. Skull #1234" /></div>
     <div class="form-row"><label>Cardano Asset ID (optional)</label><input type="text" id="a-asset-id" maxlength="120" placeholder="Policy ID + hex asset name" /></div>
     <div class="form-row">
       <label>Image Upload (optional — PNG/GIF, max 5MB)</label>
@@ -223,7 +221,6 @@ function submitCreateAuction() {
   err.style.display = 'none';
   var title      = document.getElementById('a-title').value.trim();
   var desc       = document.getElementById('a-desc').value.trim();
-  var nftName    = document.getElementById('a-nft-name').value.trim();
   var assetId    = document.getElementById('a-asset-id').value.trim();
   var startDate  = document.getElementById('a-start-date').value;
   var endDate    = document.getElementById('a-end-date').value;
@@ -244,7 +241,6 @@ function submitCreateAuction() {
   var fd = new FormData();
   fd.append('title', title);
   fd.append('description', desc);
-  fd.append('nft_name', nftName);
   fd.append('asset_id', assetId);
   fd.append('projects', JSON.stringify(projects));
   fd.append('start_date', startDate);

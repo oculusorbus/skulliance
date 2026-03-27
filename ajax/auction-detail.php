@@ -45,7 +45,6 @@ $conn->close();
 <img class="auction-detail-img" src="<?php echo htmlspecialchars($auction['image_path']); ?>" alt="" />
 <?php endif; ?>
 <div style="font-size:1rem;font-weight:bold;color:#e8eef4;"><?php echo htmlspecialchars($auction['title']); ?></div>
-<?php if ($auction['nft_name']): ?><div style="font-size:0.78rem;opacity:0.45;"><?php echo htmlspecialchars($auction['nft_name']); ?></div><?php endif; ?>
 <?php if ($auction['description']): ?><div style="font-size:0.82rem;opacity:0.6;line-height:1.5;"><?php echo nl2br(htmlspecialchars($auction['description'])); ?></div><?php endif; ?>
 
 <div style="display:flex;flex-direction:column;gap:6px;background:rgba(0,200,160,0.06);border:1px solid rgba(0,200,160,0.15);border-radius:8px;padding:12px;">

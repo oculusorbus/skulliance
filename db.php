@@ -8824,18 +8824,17 @@ function getAuction($conn, $auction_id) {
 
 // Create a new auction. $projects is array of ['project_id'=>X,'minimum_bid'=>Y].
 // Returns new auction id or false on error.
-function createAuction($conn, $user_id, $title, $description, $image_path, $asset_id, $nft_name, $start_date, $end_date, $projects) {
+function createAuction($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $projects) {
 	$uid   = intval($user_id);
 	$title = $conn->real_escape_string($title);
 	$desc  = $conn->real_escape_string($description);
 	$img   = $conn->real_escape_string($image_path);
 	$aid   = $conn->real_escape_string($asset_id);
-	$nname = $conn->real_escape_string($nft_name);
 	$sdate = $conn->real_escape_string($start_date);
 	$edate = $conn->real_escape_string($end_date);
 
-	$sql = "INSERT INTO auctions (user_id, title, description, image_path, asset_id, nft_name, start_date, end_date)
-	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$nname', '$sdate', '$edate')";
+	$sql = "INSERT INTO auctions (user_id, title, description, image_path, asset_id, start_date, end_date)
+	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$sdate', '$edate')";
 	if (!$conn->query($sql)) return false;
 	$auction_id = $conn->insert_id;
 
@@ -8977,18 +8976,17 @@ function getRaffle($conn, $raffle_id) {
 
 // Create a new raffle. $ticket_options is array of ['project_id'=>X,'cost'=>Y].
 // Returns new raffle id or false on error.
-function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $nft_name, $start_date, $end_date, $ticket_options) {
+function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options) {
 	$uid   = intval($user_id);
 	$title = $conn->real_escape_string($title);
 	$desc  = $conn->real_escape_string($description);
 	$img   = $conn->real_escape_string($image_path);
 	$aid   = $conn->real_escape_string($asset_id);
-	$nname = $conn->real_escape_string($nft_name);
 	$sdate = $conn->real_escape_string($start_date);
 	$edate = $conn->real_escape_string($end_date);
 
-	$sql = "INSERT INTO raffles (user_id, title, description, image_path, asset_id, nft_name, start_date, end_date)
-	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$nname', '$sdate', '$edate')";
+	$sql = "INSERT INTO raffles (user_id, title, description, image_path, asset_id, start_date, end_date)
+	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$sdate', '$edate')";
 	if (!$conn->query($sql)) return false;
 	$raffle_id = $conn->insert_id;
 
