@@ -159,7 +159,7 @@ while ($raffle = $result->fetch_assoc()) {
 
     $winning_uid = $pool[array_rand($pool)];
 
-    $wres        = $conn->query("SELECT name, discord_id FROM users WHERE id='$winning_uid' LIMIT 1");
+    $wres        = $conn->query("SELECT username AS name, discord_id FROM users WHERE id='$winning_uid' LIMIT 1");
     $winner      = $wres ? $wres->fetch_assoc() : null;
     $winner_name = $winner ? $winner['name'] : 'Unknown';
 

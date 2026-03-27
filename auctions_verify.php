@@ -82,7 +82,7 @@ while ($auction = $result->fetch_assoc()) {
                 logCredit($conn, $prev_bidder, $prev_bid, $prev_pid);
                 $conn->query("UPDATE bids SET status=0 WHERE id='$winning_bid_id'");
 
-                $wres  = $conn->query("SELECT name, discord_id FROM users WHERE id='$prev_bidder' LIMIT 1");
+                $wres  = $conn->query("SELECT username AS name, discord_id FROM users WHERE id='$prev_bidder' LIMIT 1");
                 $loser = $wres ? $wres->fetch_assoc() : null;
                 if ($loser && $loser['discord_id']) {
                     $pr  = $conn->query("SELECT currency FROM projects WHERE id='$prev_pid' LIMIT 1");
@@ -119,7 +119,7 @@ while ($auction = $result->fetch_assoc()) {
 
     // ── Step 2: Process winner ────────────────────────────────────────────────
     if ($prev_bidder && $prev_bid > 0) {
-        $wres        = $conn->query("SELECT name, discord_id FROM users WHERE id='$prev_bidder' LIMIT 1");
+        $wres        = $conn->query("SELECT username AS name, discord_id FROM users WHERE id='$prev_bidder' LIMIT 1");
         $winner      = $wres ? $wres->fetch_assoc() : null;
         $winner_name = $winner ? $winner['name'] : 'Unknown';
 
