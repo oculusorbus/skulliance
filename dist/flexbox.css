@@ -1036,6 +1036,12 @@ li form {
 	border: 1px solid #00c8a0;
 }
 
+.missions-filter[data-tooltip]::after {
+    width: auto;
+    white-space: nowrap;
+    text-align: center;
+}
+
 .nfts {
 	color: #e8eaed;
 	clear: both;

@@ -760,7 +760,7 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 		while($row = $result->fetch_assoc()) {
 			$eligible = checkMissionInventory($conn, $row["id"]) ? " eligible" : "";
 			//echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
-			echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img title='".$row["name"]."' src='icons/".strtolower($row["currency"]).".png'/></div>";
+			echo "<div class='missions-filter".$eligible."' data-tooltip='".htmlspecialchars($row["name"])."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img src='icons/".strtolower($row["currency"]).".png'/></div>";
 		}
 	}
 	echo "</div>";
