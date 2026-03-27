@@ -50,7 +50,7 @@ if (strtotime($end_date) <= time()) { json_exit(['success'=>false,'message'=>'En
 $image_path = '';
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['image'];
-    if ($file['size'] > 5 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 5MB.']); }
+    if ($file['size'] > 50 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 50MB.']); }
     $allowed_types = ['image/png','image/gif','image/jpeg','image/webp'];
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime  = $finfo->file($file['tmp_name']);

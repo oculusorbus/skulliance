@@ -55,7 +55,11 @@ $conn->close();
         if ($auction['current_bid'] > 0) {
           echo number_format($auction['current_bid']) . ($cur_bid_label ? ' ' . $cur_bid_label : '');
         } else {
-          echo 'No bids — starting at ' . number_format($auction['start_bid']);
+          // Show lowest minimum bid from allowed projects
+          $min_bids = array_column($allowed, 'minimum_bid');
+          $min_val  = !empty($min_bids) ? min(array_filter($min_bids)) : 0;
+          echo 'No bids yet';
+          if ($min_val) echo ' — min ' . number_format($min_val);
         }
       ?>
     </span>
