@@ -29,10 +29,8 @@ if($_SESSION['userData']['discord_id'] != "772831523899965440"){
 	exit;
 }*/
 
-// Call initial DB functions
-if(sizeof(getAddressesDiscord($conn)) != 0){
-	checkUser($conn);
-}
+// Always resolve the DB user_id into the session
+checkUser($conn);
 
 // Update last_login at most once per day to avoid writing on every page load
 if (!empty($_SESSION['userData']['discord_id'])) {
