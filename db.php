@@ -8846,6 +8846,46 @@ function createAuction($conn, $user_id, $title, $description, $image_path, $asse
 	return $auction_id;
 }
 
+// Update an existing auction. $projects is array of ['project_id'=>X,'minimum_bid'=>Y].
+// Only allowed when no bids have been placed. Returns ['success'=>true] or ['success'=>false,'message'=>'...'].
+function updateAuction($conn, $auction_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $projects) {
+	$aid   = intval($auction_id);
+	$uid   = intval($user_id);
+
+	// Verify ownership
+	$ar = $conn->query("SELECT user_id, completed, canceled FROM auctions WHERE id='$aid' LIMIT 1");
+	if (!$ar || !$ar->num_rows) return ['success'=>false,'message'=>'Auction not found.'];
+	$row = $ar->fetch_assoc();
+	if (intval($row['user_id']) !== $uid) return ['success'=>false,'message'=>'Not authorized.'];
+	if ($row['completed'] || $row['canceled']) return ['success'=>false,'message'=>'Auction is already closed.'];
+
+	// Verify zero bids
+	$br = $conn->query("SELECT COUNT(*) AS cnt FROM bids WHERE auction_id='$aid'");
+	if ($br) { $bc = $br->fetch_assoc(); if (intval($bc['cnt']) > 0) return ['success'=>false,'message'=>'Cannot edit an auction that already has bids.']; }
+
+	$title = $conn->real_escape_string($title);
+	$desc  = $conn->real_escape_string($description);
+	$aid_e = $conn->real_escape_string($asset_id);
+	$sdate = $conn->real_escape_string($start_date);
+	$edate = $conn->real_escape_string($end_date);
+
+	if ($image_path !== '') {
+		$img  = $conn->real_escape_string($image_path);
+		$sql  = "UPDATE auctions SET title='$title', description='$desc', image_path='$img', asset_id='$aid_e', start_date='$sdate', end_date='$edate' WHERE id='$aid'";
+	} else {
+		$sql  = "UPDATE auctions SET title='$title', description='$desc', asset_id='$aid_e', start_date='$sdate', end_date='$edate' WHERE id='$aid'";
+	}
+	if (!$conn->query($sql)) return ['success'=>false,'message'=>'Database error updating auction.'];
+
+	$conn->query("DELETE FROM auctions_projects WHERE auction_id='$aid'");
+	foreach ($projects as $p) {
+		$pid  = intval($p['project_id']);
+		$mmin = intval($p['minimum_bid']);
+		$conn->query("INSERT INTO auctions_projects (auction_id, project_id, minimum_bid) VALUES ('$aid', '$pid', '$mmin')");
+	}
+	return ['success'=>true];
+}
+
 // Place a bid on an auction. Returns ['success'=>bool,'message'=>string].
 // Cross-currency comparison: new normalized value must beat current leader by 5%.
 // bids.status: 0=outbid, 1=leading.
@@ -8996,6 +9036,46 @@ function createRaffle($conn, $user_id, $title, $description, $image_path, $asset
 		$conn->query("INSERT INTO raffles_projects (raffle_id, project_id, cost) VALUES ('$raffle_id','$pid','$cost')");
 	}
 	return $raffle_id;
+}
+
+// Update an existing raffle. $ticket_options is array of ['project_id'=>X,'cost'=>Y].
+// Only allowed when no active tickets have been sold. Returns ['success'=>true] or ['success'=>false,'message'=>'...'].
+function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options) {
+	$rid = intval($raffle_id);
+	$uid = intval($user_id);
+
+	// Verify ownership
+	$rr = $conn->query("SELECT user_id, completed, canceled FROM raffles WHERE id='$rid' LIMIT 1");
+	if (!$rr || !$rr->num_rows) return ['success'=>false,'message'=>'Raffle not found.'];
+	$row = $rr->fetch_assoc();
+	if (intval($row['user_id']) !== $uid) return ['success'=>false,'message'=>'Not authorized.'];
+	if ($row['completed'] || $row['canceled']) return ['success'=>false,'message'=>'Raffle is already closed.'];
+
+	// Verify zero active tickets
+	$tr = $conn->query("SELECT SUM(quantity) AS qty FROM tickets WHERE raffle_id='$rid' AND status=1");
+	if ($tr) { $tc = $tr->fetch_assoc(); if (intval($tc['qty']) > 0) return ['success'=>false,'message'=>'Cannot edit a raffle that already has tickets sold.']; }
+
+	$title = $conn->real_escape_string($title);
+	$desc  = $conn->real_escape_string($description);
+	$aid   = $conn->real_escape_string($asset_id);
+	$sdate = $conn->real_escape_string($start_date);
+	$edate = $conn->real_escape_string($end_date);
+
+	if ($image_path !== '') {
+		$img  = $conn->real_escape_string($image_path);
+		$sql  = "UPDATE raffles SET title='$title', description='$desc', image_path='$img', asset_id='$aid', start_date='$sdate', end_date='$edate' WHERE id='$rid'";
+	} else {
+		$sql  = "UPDATE raffles SET title='$title', description='$desc', asset_id='$aid', start_date='$sdate', end_date='$edate' WHERE id='$rid'";
+	}
+	if (!$conn->query($sql)) return ['success'=>false,'message'=>'Database error updating raffle.'];
+
+	$conn->query("DELETE FROM raffles_projects WHERE raffle_id='$rid'");
+	foreach ($ticket_options as $opt) {
+		$pid  = intval($opt['project_id']);
+		$cost = intval($opt['cost']);
+		$conn->query("INSERT INTO raffles_projects (raffle_id, project_id, cost) VALUES ('$rid','$pid','$cost')");
+	}
+	return ['success'=>true];
 }
 
 // Purchase raffle tickets. $project_id selects which currency to pay with.

@@ -107,6 +107,9 @@ $now_ts = time();
             <?php if ($is_owner && !$r['completed'] && !$r['canceled']): ?>
             <button class="small-button" onclick="cancelRaffle(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;background:rgba(200,50,50,0.15);border-color:rgba(200,50,50,0.3);">Cancel Raffle</button>
             <?php endif; ?>
+            <?php if ($is_owner && !$r['completed'] && !$r['canceled'] && intval($r['total_tickets_sold']) === 0): ?>
+            <button class="small-button" onclick="openEditRaffleModal(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;background:rgba(0,200,160,0.08);border-color:rgba(0,200,160,0.2);">Edit Raffle</button>
+            <?php endif; ?>
           </div>
         </div>
         <?php endforeach; ?>
@@ -142,6 +145,36 @@ $now_ts = time();
 
     <div id="r-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitCreateRaffle()" style="margin-top:4px;">Create Raffle</button>
+  </div>
+</div>
+
+<!-- Edit Raffle Modal -->
+<div class="raffle-modal" id="edit-raffle-modal">
+  <div class="raffle-modal-overlay" onclick="closeEditRaffleModal()"></div>
+  <div class="raffle-modal-box">
+    <button class="raffle-modal-close" onclick="closeEditRaffleModal()">&times;</button>
+    <div class="raffle-modal-title">Edit Raffle</div>
+    <input type="hidden" id="re-raffle-id" />
+
+    <div class="form-section-label">Prize Details</div>
+    <div class="form-row"><label>Title *</label><input type="text" id="re-title" maxlength="255" placeholder="What are you raffling off?" /></div>
+    <div class="form-row"><label>Description</label><textarea id="re-desc" placeholder="Optional prize details…"></textarea></div>
+    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="re-asset-id" maxlength="44" placeholder="asset1..." /></div>
+    <div class="form-row">
+      <label>Replace Image (optional — leave blank to keep existing)</label>
+      <input type="file" id="re-image" accept="image/png,image/gif,image/jpeg,image/webp" />
+    </div>
+
+    <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
+    <div class="currency-rows" id="re-currency-rows"></div>
+    <button type="button" onclick="addRaffleEditCurrencyRow()" style="background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:6px;color:#a040ff;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
+
+    <div class="form-section-label" style="margin-top:8px;">Schedule</div>
+    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="datetime-local" id="re-start-date" /></div>
+    <div class="form-row"><label>End Date *</label><input type="datetime-local" id="re-end-date" /></div>
+
+    <div id="re-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
+    <button class="small-button" onclick="submitEditRaffle()" style="margin-top:4px;">Save Changes</button>
   </div>
 </div>
 
@@ -282,6 +315,90 @@ function submitBuyTickets(raffle_id) {
     try { var r = JSON.parse(res); } catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
     if (r.success) { openNotify(r.message); setTimeout(function(){ openTicketModal(raffle_id); }, 800); }
     else { err.textContent = r.message || 'Purchase failed.'; err.style.display = 'block'; }
+  });
+}
+
+// ── Edit Raffle Modal ─────────────────────────────────────────────────────────
+function openEditRaffleModal(id) {
+  $.getJSON('ajax/raffle-edit-load.php', { id: id }, function(r) {
+    if (!r.success) { openNotify(r.message || 'Could not load raffle data.'); return; }
+    document.getElementById('re-raffle-id').value    = id;
+    document.getElementById('re-title').value         = r.title || '';
+    document.getElementById('re-desc').value          = r.description || '';
+    document.getElementById('re-asset-id').value      = r.asset_id || '';
+    document.getElementById('re-start-date').value    = r.start_date || '';
+    document.getElementById('re-end-date').value      = r.end_date || '';
+    document.getElementById('re-image').value         = '';
+    var rows = document.getElementById('re-currency-rows');
+    rows.innerHTML = '';
+    (r.ticket_options || []).forEach(function(o) { addRaffleEditCurrencyRow(o.project_id, o.cost); });
+    if (rows.children.length === 0) addRaffleEditCurrencyRow();
+    document.getElementById('re-error').style.display = 'none';
+    document.getElementById('edit-raffle-modal').classList.add('open');
+  });
+}
+function closeEditRaffleModal() {
+  document.getElementById('edit-raffle-modal').classList.remove('open');
+}
+
+function addRaffleEditCurrencyRow(projectId, cost) {
+  var rows = document.getElementById('re-currency-rows');
+  var div  = document.createElement('div');
+  div.className = 'currency-row';
+  div.innerHTML =
+    '<select class="re-proj-select">' + buildProjectOptions(projectId || '') + '</select>' +
+    '<input type="number" class="re-cost" min="1" step="1" placeholder="Cost per ticket" value="' + (cost || '') + '" />' +
+    '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
+  rows.appendChild(div);
+}
+
+function submitEditRaffle() {
+  var err = document.getElementById('re-error');
+  err.style.display = 'none';
+  var raffleId   = document.getElementById('re-raffle-id').value;
+  var title      = document.getElementById('re-title').value.trim();
+  var desc       = document.getElementById('re-desc').value.trim();
+  var assetId    = document.getElementById('re-asset-id').value.trim();
+  var startDate  = document.getElementById('re-start-date').value;
+  var endDate    = document.getElementById('re-end-date').value;
+  var imgFile    = document.getElementById('re-image').files[0];
+
+  if (!title)   { err.textContent = 'Title is required.'; err.style.display = 'block'; return; }
+  if (!endDate) { err.textContent = 'End date is required.'; err.style.display = 'block'; return; }
+  if (!assetId) { err.textContent = 'Cardano Asset ID is required.'; err.style.display = 'block'; return; }
+  if (!/^asset1[a-z0-9]{38}$/.test(assetId)) { err.textContent = 'Asset ID must be in asset1... fingerprint format.'; err.style.display = 'block'; return; }
+
+  var ticketOptions = [];
+  document.querySelectorAll('#re-currency-rows .currency-row').forEach(function(row) {
+    var pid  = parseInt(row.querySelector('.re-proj-select').value, 10);
+    var cost = parseInt(row.querySelector('.re-cost').value, 10);
+    if (pid > 0 && cost > 0) ticketOptions.push({ project_id: pid, cost: cost });
+  });
+  if (ticketOptions.length === 0) { err.textContent = 'Add at least one currency with a ticket price.'; err.style.display = 'block'; return; }
+
+  var fd = new FormData();
+  fd.append('raffle_id', raffleId);
+  fd.append('title', title);
+  fd.append('description', desc);
+  fd.append('asset_id', assetId);
+  fd.append('ticket_options', JSON.stringify(ticketOptions));
+  fd.append('start_date', startDate);
+  fd.append('end_date', endDate);
+  if (imgFile) fd.append('image', imgFile);
+
+  $.ajax({
+    url: 'ajax/raffle-edit.php',
+    type: 'POST',
+    data: fd,
+    processData: false,
+    contentType: false,
+    dataType: 'text',
+    success: function(res) {
+      try { var r = JSON.parse(res); } catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
+      if (r.success) { location.reload(); }
+      else { err.textContent = r.message || 'Error saving raffle.'; err.style.display = 'block'; }
+    },
+    error: function() { err.textContent = 'Server error.'; err.style.display = 'block'; }
   });
 }
 

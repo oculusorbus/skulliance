@@ -1,0 +1,95 @@
+<?php
+ob_start();
+header('Content-Type: application/json');
+include '../db.php';
+
+function json_exit($data) { ob_clean(); echo json_encode($data); exit; }
+
+if (!isset($_SESSION['userData']['user_id'])) { json_exit(['success'=>false,'message'=>'Not logged in.']); }
+
+$user_id        = intval($_SESSION['userData']['user_id']);
+$auction_id     = intval($_POST['auction_id'] ?? 0);
+$title          = trim($_POST['title'] ?? '');
+$desc           = trim($_POST['description'] ?? '');
+$asset_id       = trim($_POST['asset_id'] ?? '');
+$projects_raw   = $_POST['projects'] ?? '[]';
+$start_date_raw = trim($_POST['start_date'] ?? '');
+$end_date_raw   = trim($_POST['end_date'] ?? '');
+
+if (!$auction_id)   { json_exit(['success'=>false,'message'=>'Invalid auction ID.']); }
+if (!$title)        { json_exit(['success'=>false,'message'=>'Title is required.']); }
+if (!$end_date_raw) { json_exit(['success'=>false,'message'=>'End date is required.']); }
+if (!$asset_id)     { json_exit(['success'=>false,'message'=>'Cardano Asset ID is required.']); }
+if (!preg_match('/^asset1[a-z0-9]{38}$/', $asset_id)) {
+    json_exit(['success'=>false,'message'=>'Invalid asset ID — must be in asset1... fingerprint format.']);
+}
+
+$projects = json_decode($projects_raw, true) ?: [];
+$projects = array_values(array_filter($projects, function($p) {
+    return intval($p['project_id'] ?? 0) > 0 && intval($p['minimum_bid'] ?? 0) > 0;
+}));
+if (empty($projects)) { json_exit(['success'=>false,'message'=>'At least one currency with a minimum bid is required.']); }
+
+// Optional start_date (defaults to now)
+if ($start_date_raw) {
+    $ds = new DateTime($start_date_raw, new DateTimeZone('America/Chicago'));
+    $ds->setTimezone(new DateTimeZone('UTC'));
+    $start_date = $ds->format('Y-m-d H:i:s');
+} else {
+    $start_date = date('Y-m-d H:i:s');
+}
+
+// Normalize end_date to midnight CST
+$dt = new DateTime($end_date_raw, new DateTimeZone('America/Chicago'));
+$dt->setTime(0, 0, 0);
+$dt->setTimezone(new DateTimeZone('UTC'));
+$end_date = $dt->format('Y-m-d H:i:s');
+
+if (strtotime($end_date) <= time()) { json_exit(['success'=>false,'message'=>'End date must be in the future.']); }
+
+// Image upload
+$image_path = '';
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    $file = $_FILES['image'];
+    if ($file['size'] > 50 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 50MB.']); }
+    $allowed_types = ['image/png','image/gif','image/jpeg','image/webp'];
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime  = $finfo->file($file['tmp_name']);
+    if (!in_array($mime, $allowed_types)) { json_exit(['success'=>false,'message'=>'Invalid image type.']); }
+
+    $ext = ['image/png'=>'png','image/gif'=>'gif','image/jpeg'=>'jpg','image/webp'=>'webp'][$mime] ?? 'jpg';
+    $dir = __DIR__ . '/../images/auctions/';
+    if (!is_dir($dir)) mkdir($dir, 0755, true);
+
+    if (class_exists('Imagick') && $mime !== 'image/gif') {
+        $imagick = new Imagick();
+        $imagick->readImageBlob(file_get_contents($file['tmp_name']));
+        if ($imagick->getImageWidth() > 1000) $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
+        $imagick->setImageFormat('png');
+        $ext = 'png';
+        $fname = uniqid('auction_', true) . '.' . $ext;
+        $imagick->writeImage($dir . $fname);
+        $imagick->clear(); $imagick->destroy();
+    } elseif (class_exists('Imagick') && $mime === 'image/gif') {
+        $imagick = new Imagick();
+        $imagick->readImageBlob(file_get_contents($file['tmp_name']));
+        if ($imagick->getImageWidth() > 1000) {
+            $imagick = $imagick->coalesceImages();
+            foreach ($imagick as $frame) { $frame->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1); }
+            $imagick = $imagick->deconstructImages();
+        }
+        $fname = uniqid('auction_', true) . '.gif';
+        $imagick->writeImages($dir . $fname, true);
+        $imagick->clear(); $imagick->destroy();
+        $ext = 'gif';
+    } else {
+        $fname = uniqid('auction_', true) . '.' . $ext;
+        move_uploaded_file($file['tmp_name'], $dir . $fname);
+    }
+    $image_path = 'images/auctions/' . $fname;
+}
+
+$result = updateAuction($conn, $auction_id, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects);
+$conn->close();
+
+json_exit($result);
