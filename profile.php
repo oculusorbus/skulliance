@@ -333,6 +333,64 @@ if ($realm_r && $realm_r->num_rows > 0) {
         }
     }
 
+    // ── Realm location stats ─────────────────────────────────────────────────
+    $realm_loc_stats = [];
+    $rid = $realm_id_p;
+
+    // Portal (1): soldiers on raid
+    $r = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=3 AND active=1 AND dead IS NULL");
+    $realm_loc_stats[1] = ['raiding' => $r ? (int)$r->fetch_assoc()['c'] : 0];
+
+    // Barracks (4): training / reserve / active duty
+    $r = $conn->query("SELECT
+        SUM(trained=0 AND location=1 AND dead IS NULL) AS training,
+        SUM(trained=1 AND location=1 AND dead IS NULL) AS reserve,
+        SUM(location IN(2,3) AND dead IS NULL) AS on_duty
+        FROM soldiers WHERE realm_id=$rid AND active=1");
+    $row = $r ? $r->fetch_assoc() : [];
+    $realm_loc_stats[4] = [
+        'training' => (int)($row['training'] ?? 0),
+        'reserve'  => (int)($row['reserve']  ?? 0),
+        'on_duty'  => (int)($row['on_duty']  ?? 0),
+    ];
+
+    // Tower (3): garrisoned soldiers
+    $r = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=2 AND active=1 AND dead IS NULL");
+    $realm_loc_stats[3] = ['garrisoned' => $r ? (int)$r->fetch_assoc()['c'] : 0];
+
+    // Armory (2): weapons & armor equipped on active soldiers
+    $r = $conn->query("SELECT
+        SUM(weapon_id > 0 AND dead IS NULL) AS weapons,
+        SUM(armor_id  > 0 AND dead IS NULL) AS armors
+        FROM soldiers WHERE realm_id=$rid AND active=1");
+    $row = $r ? $r->fetch_assoc() : [];
+    $realm_loc_stats[2] = [
+        'weapons' => (int)($row['weapons'] ?? 0),
+        'armors'  => (int)($row['armors']  ?? 0),
+    ];
+
+    // Crypt (6): dead / eligible for resurrection
+    $crypt_level = isset($realm_locations[6]) ? (int)$realm_locations[6]['level'] : 1;
+    $res_hours   = (11 - max(1, $crypt_level)) * 24;
+    $r = $conn->query("SELECT
+        COUNT(*) AS dead_total,
+        SUM(DATE_ADD(dead, INTERVAL $res_hours HOUR) <= NOW()) AS ready
+        FROM soldiers WHERE realm_id=$rid AND active=1 AND dead IS NOT NULL");
+    $row = $r ? $r->fetch_assoc() : [];
+    $realm_loc_stats[6] = [
+        'dead'  => (int)($row['dead_total'] ?? 0),
+        'ready' => (int)($row['ready']      ?? 0),
+    ];
+
+    // Factory (5): total consumable items currently in inventory
+    $profile_user_id = $tid;
+    $r = $conn->query("SELECT COALESCE(SUM(amount),0) AS total FROM amounts WHERE user_id=$profile_user_id");
+    $realm_loc_stats[5] = ['items' => $r ? (int)$r->fetch_assoc()['total'] : 0];
+
+    // Mine (7): current CARBON balance (project_id=15)
+    $r = $conn->query("SELECT COALESCE(balance,0) AS bal FROM balances WHERE user_id=$profile_user_id AND project_id=15 LIMIT 1");
+    $realm_loc_stats[7] = ['carbon' => $r ? (int)$r->fetch_assoc()['bal'] : 0];
+
     // Faction members — other users in the same project faction
     $faction_project_id = intval($realm_data['project_id']);
     $faction_members = [];
@@ -1070,6 +1128,16 @@ include 'header.php';
 .realm-loc-name { font-size: 0.82rem; font-weight: bold; color: #c8d8e4; }
 .realm-loc-level { font-size: 0.7rem; color: #00c8a0; font-weight: bold; margin-left: auto; white-space: nowrap; }
 .realm-loc-type { font-size: 0.65rem; color: #5a7888; text-transform: capitalize; }
+.loc-stat-rows {
+    margin-top: 8px; display: flex; flex-direction: column; gap: 3px;
+    border-top: 1px solid rgba(255,255,255,0.05); padding-top: 7px;
+}
+.loc-stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.68rem;
+}
+.loc-stat-lbl { color: #5a7888; }
+.loc-stat-val { color: #c8d8e4; font-weight: bold; }
 
 /* ── Faction members ── */
 .faction-member-card {
@@ -1346,6 +1414,45 @@ $realm_con_info = [
             <div class="loc-status-labels">
                 <?php foreach ($loc_tags as $tag): ?>
                 <span class="loc-status-tag"><?php echo $tag; ?></span>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            <?php
+            $ls = $realm_loc_stats[$lid] ?? [];
+            $loc_stat_rows = [];
+            if ($lid === 1 && isset($ls['raiding'])) {
+                $loc_stat_rows[] = ['Raiding', $ls['raiding']];
+            }
+            if ($lid === 4 && $ls) {
+                $loc_stat_rows[] = ['Training',    $ls['training']];
+                $loc_stat_rows[] = ['Reserve',     $ls['reserve']];
+                $loc_stat_rows[] = ['Active Duty', $ls['on_duty']];
+            }
+            if ($lid === 3 && isset($ls['garrisoned'])) {
+                $loc_stat_rows[] = ['Garrisoned', $ls['garrisoned']];
+            }
+            if ($lid === 2 && $ls) {
+                $loc_stat_rows[] = ['Weapons Deployed', $ls['weapons']];
+                $loc_stat_rows[] = ['Armor Deployed',   $ls['armors']];
+            }
+            if ($lid === 6 && $ls) {
+                $loc_stat_rows[] = ['Fallen',           $ls['dead']];
+                $loc_stat_rows[] = ['Ready to Rise',    $ls['ready']];
+            }
+            if ($lid === 5 && isset($ls['items'])) {
+                $loc_stat_rows[] = ['Items in Stock', $ls['items']];
+            }
+            if ($lid === 7 && isset($ls['carbon'])) {
+                $loc_stat_rows[] = ['CARBON Balance', number_format($ls['carbon'])];
+            }
+            ?>
+            <?php if (!empty($loc_stat_rows)): ?>
+            <div class="loc-stat-rows">
+                <?php foreach ($loc_stat_rows as [$lbl, $val]): ?>
+                <div class="loc-stat-row">
+                    <span class="loc-stat-lbl"><?php echo $lbl; ?></span>
+                    <span class="loc-stat-val"><?php echo is_int($val) ? number_format($val) : $val; ?></span>
+                </div>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
