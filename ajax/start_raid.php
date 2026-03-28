@@ -20,10 +20,14 @@ if(isset($_GET['defense_id']) && isset($_GET['duration'])){
 				}
 			}
 		}
+		// Require at least one soldier
+		$soldier_ids = (isset($_GET['soldiers']) && is_array($_GET['soldiers'])) ? array_map('intval', $_GET['soldiers']) : array();
+		if (empty($soldier_ids)) {
+			echo "No soldiers selected. Enlist and train soldiers in your Barracks before raiding.";
+			$conn->close(); exit;
+		}
 		$raid_id = startRaid($conn, $_GET['defense_id'], $_GET['duration'], $consumables);
-		// Commit soldiers to this raid if any were selected
-		if ($raid_id > 0 && isset($_GET['soldiers']) && is_array($_GET['soldiers'])) {
-			$soldier_ids = array_map('intval', $_GET['soldiers']);
+		if ($raid_id > 0) {
 			commitRaidSoldiers($conn, $raid_id, $soldier_ids);
 		}
 		// Save consumable config to session if requested (only from modal start with save checkbox)

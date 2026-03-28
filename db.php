@@ -8577,6 +8577,7 @@ function getAvailableRaiders($conn, $realm_id) {
 	        WHERE soldiers.realm_id = $realm_id
 	          AND soldiers.location = 1
 	          AND soldiers.trained = 1
+	          AND soldiers.active = 1
 	          AND soldiers.dead IS NULL
 	          $exclude
 	        ORDER BY COALESCE(weapons.level,0) + COALESCE(armor.level,0) DESC";
