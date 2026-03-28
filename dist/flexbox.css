@@ -751,6 +751,19 @@ input {
 	background-color: #00a882;
 }
 
+.small-button-danger {
+  background-color: #c0392b;
+  box-shadow: 0 4px #5a0a05;
+  color: #fff;
+}
+.small-button-danger:hover {
+  background-color: #a93226;
+}
+.small-button-danger:active {
+  background-color: #a93226;
+  box-shadow: 0 2px #5a0a05;
+}
+
 .small-button:active {
   background-color: #00a882;
   box-shadow: 0 2px #003828;
