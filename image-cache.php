@@ -157,6 +157,7 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
     $filepath = $dir . $md5 . '.' . $ext;
 
     try {
+		if($ext != 'gif'){
         $imagick = new Imagick();
         $imagick->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024); // 256MB cap
         $imagick->setResourceLimit(Imagick::RESOURCETYPE_MAP, 256 * 1024 * 1024);
@@ -184,6 +185,9 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
 
         echo "  [CACHED] $filepath\n";
         return 'cached';
+		}else{
+			echo "Skipped GIF";
+		}
 
     } catch (Exception $e) {
         echo "  [ERROR] Imagick failed for $url: " . $e->getMessage() . "\n";
