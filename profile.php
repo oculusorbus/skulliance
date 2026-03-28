@@ -358,15 +358,22 @@ if ($realm_r && $realm_r->num_rows > 0) {
     $r = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=2 AND active=1 AND dead IS NULL");
     $realm_loc_stats[3] = ['garrisoned' => $r ? (int)$r->fetch_assoc()['c'] : 0];
 
-    // Armory (2): weapons & armor equipped on active soldiers
+    // Armory (2): weapons & armor equipped on active soldiers + unclaimed gear
     $r = $conn->query("SELECT
         SUM(weapon_id > 0 AND dead IS NULL) AS weapons,
         SUM(armor_id  > 0 AND dead IS NULL) AS armors
         FROM soldiers WHERE realm_id=$rid AND active=1");
     $row = $r ? $r->fetch_assoc() : [];
+    $r2 = $conn->query("SELECT
+        SUM(type='weapon') AS unclaimed_weapons,
+        SUM(type='armor')  AS unclaimed_armors
+        FROM realms_logs WHERE realm_id=$rid AND claimed=0 AND type IN('weapon','armor')");
+    $row2 = $r2 ? $r2->fetch_assoc() : [];
     $realm_loc_stats[2] = [
-        'weapons' => (int)($row['weapons'] ?? 0),
-        'armors'  => (int)($row['armors']  ?? 0),
+        'weapons'          => (int)($row['weapons']           ?? 0),
+        'armors'           => (int)($row['armors']            ?? 0),
+        'unclaimed_weapons'=> (int)($row2['unclaimed_weapons'] ?? 0),
+        'unclaimed_armors' => (int)($row2['unclaimed_armors']  ?? 0),
     ];
 
     // Crypt (6): dead / eligible for resurrection
@@ -382,14 +389,22 @@ if ($realm_r && $realm_r->num_rows > 0) {
         'ready' => (int)($row['ready']      ?? 0),
     ];
 
-    // Factory (5): total consumable items currently in inventory
+    // Factory (5): consumable inventory total + unclaimed from realms_logs
     $profile_user_id = $tid;
     $r = $conn->query("SELECT COALESCE(SUM(amount),0) AS total FROM amounts WHERE user_id=$profile_user_id");
-    $realm_loc_stats[5] = ['items' => $r ? (int)$r->fetch_assoc()['total'] : 0];
+    $r2 = $conn->query("SELECT COALESCE(SUM(quantity),0) AS unclaimed FROM realms_logs WHERE realm_id=$rid AND claimed=0 AND type='consumable'");
+    $realm_loc_stats[5] = [
+        'items'    => $r  ? (int)$r->fetch_assoc()['total']    : 0,
+        'unclaimed'=> $r2 ? (int)$r2->fetch_assoc()['unclaimed']: 0,
+    ];
 
-    // Mine (7): current CARBON balance (project_id=15)
+    // Mine (7): current CARBON balance + unclaimed CARBON from realms_logs
     $r = $conn->query("SELECT COALESCE(balance,0) AS bal FROM balances WHERE user_id=$profile_user_id AND project_id=15 LIMIT 1");
-    $realm_loc_stats[7] = ['carbon' => $r ? (int)$r->fetch_assoc()['bal'] : 0];
+    $r2 = $conn->query("SELECT COALESCE(SUM(quantity),0) AS unclaimed FROM realms_logs WHERE realm_id=$rid AND claimed=0 AND type='carbon'");
+    $realm_loc_stats[7] = [
+        'carbon'   => $r  ? (int)$r->fetch_assoc()['bal']       : 0,
+        'unclaimed'=> $r2 ? (int)$r2->fetch_assoc()['unclaimed'] : 0,
+    ];
 
     // Faction members — other users in the same project faction
     $faction_project_id = intval($realm_data['project_id']);
@@ -1138,6 +1153,8 @@ include 'header.php';
 }
 .loc-stat-lbl { color: #5a7888; }
 .loc-stat-val { color: #c8d8e4; font-weight: bold; }
+.loc-stat-claim .loc-stat-lbl { color: #f5c518; }
+.loc-stat-claim .loc-stat-val { color: #f5c518; }
 
 /* ── Faction members ── */
 .faction-member-card {
@@ -1432,8 +1449,11 @@ $realm_con_info = [
                 $loc_stat_rows[] = ['Garrisoned', $ls['garrisoned']];
             }
             if ($lid === 2 && $ls) {
-                $loc_stat_rows[] = ['Weapons Deployed', $ls['weapons']];
-                $loc_stat_rows[] = ['Armor Deployed',   $ls['armors']];
+                $loc_stat_rows[] = ['Weapons Deployed',  $ls['weapons']];
+                $loc_stat_rows[] = ['Armor Deployed',    $ls['armors']];
+                $gear_pending = ($ls['unclaimed_weapons'] + $ls['unclaimed_armors']);
+                if ($gear_pending > 0)
+                    $loc_stat_rows[] = ['⚑ Gear to Claim', $ls['unclaimed_weapons'] . 'W / ' . $ls['unclaimed_armors'] . 'A'];
             }
             if ($lid === 6 && $ls) {
                 $loc_stat_rows[] = ['Fallen',           $ls['dead']];
@@ -1441,15 +1461,21 @@ $realm_con_info = [
             }
             if ($lid === 5 && isset($ls['items'])) {
                 $loc_stat_rows[] = ['Items in Stock', $ls['items']];
+                if ($ls['unclaimed'] > 0)
+                    $loc_stat_rows[] = ['⚑ Items to Claim', $ls['unclaimed']];
             }
             if ($lid === 7 && isset($ls['carbon'])) {
                 $loc_stat_rows[] = ['CARBON Balance', number_format($ls['carbon'])];
+                if ($ls['unclaimed'] > 0)
+                    $loc_stat_rows[] = ['⚑ CARBON to Claim', number_format($ls['unclaimed'])];
             }
             ?>
             <?php if (!empty($loc_stat_rows)): ?>
             <div class="loc-stat-rows">
-                <?php foreach ($loc_stat_rows as [$lbl, $val]): ?>
-                <div class="loc-stat-row">
+                <?php foreach ($loc_stat_rows as [$lbl, $val]):
+                    $is_claim = (strpos($lbl, '⚑') === 0);
+                ?>
+                <div class="loc-stat-row<?php echo $is_claim ? ' loc-stat-claim' : ''; ?>">
                     <span class="loc-stat-lbl"><?php echo $lbl; ?></span>
                     <span class="loc-stat-val"><?php echo is_int($val) ? number_format($val) : $val; ?></span>
                 </div>
