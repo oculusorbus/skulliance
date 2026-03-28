@@ -1,7 +1,7 @@
 <?php
-// Can be run standalone: php realms-test.php verify=1
+// Can be run standalone: php realms-logs.php verify=1
 // or included from verify.php where the ?verify guard is already active
-if (!defined('REALMS_TEST_INCLUDED')) {
+if (!defined('REALMS_LOGS_INCLUDED')) {
 	if (isset($argv)) {
 		parse_str(implode('&', array_slice($argv, 1)), $_GET);
 	}

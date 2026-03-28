@@ -35,8 +35,8 @@ if(isset($_GET['verify'])){
 	// Deploy rewards for Diamond Skull delegation
 	deployDiamondSkullRewards($conn, $percentages);
 	// Write nightly realm resource generation to realms_logs
-	define('REALMS_TEST_INCLUDED', true);
-	include_once 'realms-test.php';
+	//define('REALMS_LOGS_INCLUDED', true);
+	//include_once 'realms-logs.php';
 }
 
 function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(), $attempts=0){
