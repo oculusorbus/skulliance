@@ -109,6 +109,13 @@ $now_ts = time();
             <div style="font-size:0.72rem;opacity:0.35;">By <?php echo htmlspecialchars($a['creator_name']); ?></div>
           </div>
           <div class="auction-card-footer">
+			  <?php
+			  var_dump($is_owner);
+			  var_dump($a['completed']);
+			  var_dump($a['canceled']);
+			  var_dump( !$a['completed'] );     // should be true if 0 or "0"
+			  var_dump( $a['completed'] == 0 ); // safer check
+			  ?>
             <button class="small-button" onclick="openBidModal(<?php echo $a['id']; ?>)" style="width:100%;">View &amp; Bid</button>
             <?php if ($is_owner && !$a['completed'] && !$a['canceled']): ?>
             <button class="small-button" onclick="cancelAuction(<?php echo $a['id']; ?>)" style="width:100%;margin-top:6px;background:rgba(200,50,50,0.15);border-color:rgba(200,50,50,0.3);">Cancel Auction</button>
