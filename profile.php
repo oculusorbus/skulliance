@@ -337,15 +337,12 @@ if ($realm_r && $realm_r->num_rows > 0) {
     $realm_loc_stats = [];
     $rid = $realm_id_p;
 
-    // Portal (1): soldiers on raid + active outgoing raids
-    $r  = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=3 AND active=1 AND dead IS NULL");
-    $r2 = $conn->query("SELECT COUNT(*) AS c FROM raids WHERE offense_id=$rid AND outcome=0");
-    $portal_level       = isset($realm_locations[1]) ? (int)$realm_locations[1]['level'] : 1;
-    $active_raids_count = $r2 ? (int)$r2->fetch_assoc()['c'] : 0;
+    // Portal (1): soldiers on raid; available slots = portal level − in-progress raids
+    $r            = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=3 AND active=1 AND dead IS NULL");
+    $portal_level = isset($realm_locations[1]) ? (int)$realm_locations[1]['level'] : 1;
     $realm_loc_stats[1] = [
         'raiding'         => $r ? (int)$r->fetch_assoc()['c'] : 0,
-        'active_raids'    => $active_raids_count,
-        'available_raids' => max(0, $portal_level - $active_raids_count),
+        'available_raids' => max(0, $portal_level - $raid_progress),
     ];
 
     // Barracks (4): training / reserve / active duty
@@ -355,20 +352,23 @@ if ($realm_r && $realm_r->num_rows > 0) {
         SUM(location IN(2,3) AND dead IS NULL) AS on_duty
         FROM soldiers WHERE realm_id=$rid AND active=1");
     $row = $r ? $r->fetch_assoc() : [];
+    $barracks_cap  = getDeploymentCap($conn, $rid);
+    $barracks_used = getTotalSoldierSlotCost($conn, $rid);
     $realm_loc_stats[4] = [
         'training' => (int)($row['training'] ?? 0),
         'reserve'  => (int)($row['reserve']  ?? 0),
         'on_duty'  => (int)($row['on_duty']  ?? 0),
-        'needed'   => (int)($row['reserve']  ?? 0), // idle trained soldiers awaiting deployment
+        'needed'   => max(0, $barracks_cap - $barracks_used), // open enlistment slots
     ];
 
     // Tower (3): garrisoned soldiers + available garrison slots
     $r = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=2 AND active=1 AND dead IS NULL");
-    $tower_level     = isset($realm_locations[3]) ? (int)$realm_locations[3]['level'] : 1;
+    $tower_level      = isset($realm_locations[3]) ? (int)$realm_locations[3]['level'] : 1;
+    $tower_capacity   = min($tower_level, 10); // hard cap at 10 regardless of level
     $garrisoned_count = $r ? (int)$r->fetch_assoc()['c'] : 0;
     $realm_loc_stats[3] = [
         'garrisoned' => $garrisoned_count,
-        'needed'     => max(0, $tower_level - $garrisoned_count),
+        'needed'     => max(0, $tower_capacity - $garrisoned_count),
     ];
 
     // Armory (2): weapons & armor equipped on active soldiers + unclaimed gear
