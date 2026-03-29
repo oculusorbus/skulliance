@@ -101,27 +101,57 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
     $existing = glob($dir . $md5 . '.*');
     if (!empty($existing)) return 'exists';
 
-    // ── Fetch from JPGStore ───────────────────────────────────────────────────
+    // ── Fetch with gateway fallback and retry ────────────────────────────────
     $clean_ipfs = str_replace('ipfs/', '', $ipfs);
-    $url = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
+    $gateways = [
+        'https://ipfs5.jpgstoreapis.com/ipfs/',
+        'https://cloudflare-ipfs.com/ipfs/',
+        'https://ipfs.io/ipfs/',
+        'https://dweb.link/ipfs/',
+    ];
 
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-        'Accept-Language: en-US,en;q=0.9',
-        'Referer: https://www.jpg.store/',
-    ]);
-    $body         = curl_exec($ch);
-    $content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    $http_code    = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    $body         = false;
+    $content_type = '';
+    $http_code    = 0;
+    $tried_url    = '';
 
-    if ($body === false || $http_code >= 400) {
-        echo "  [ERROR] HTTP $http_code fetching $url (mime: $content_type)\n";
+    foreach ($gateways as $gateway) {
+        $url = $gateway . $clean_ipfs;
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                'Accept-Language: en-US,en;q=0.9',
+                'Referer: https://www.jpg.store/',
+            ]);
+            $resp      = curl_exec($ch);
+            $ct        = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+            $code      = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($resp !== false && $code > 0 && $code < 400) {
+                $body         = $resp;
+                $content_type = $ct;
+                $http_code    = $code;
+                $tried_url    = $url;
+                break 2; // success — stop trying gateways
+            }
+
+            // Transient failure — pause briefly before retry or next gateway
+            if ($attempt === 1) usleep(500000); // 0.5s between retries
+        }
+    }
+
+    if ($body === false || $http_code === 0) {
+        echo "  [ERROR] All gateways failed for $clean_ipfs\n";
+        return 'error';
+    }
+    if ($http_code >= 400) {
+        echo "  [ERROR] HTTP $http_code fetching $tried_url (mime: $content_type)\n";
         return 'error';
     }
 
