@@ -227,7 +227,7 @@ $now_ts = time();
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
 // ── Project options (for dynamic currency rows) ───────────────────────────────
-var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>$p['id'],'name'=>$p['name'],'currency'=>strtoupper($p['currency']),'divider'=>(float)$p['divider']]; }, $all_projects)); ?>;
+var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>intval($p['id']),'name'=>$p['name'],'currency'=>strtoupper($p['currency']),'divider'=>(float)$p['divider']]; }, $all_projects)); ?>;
 // Conversion rate to Diamond: Diamond(7)=1, Core(1-6)=6, Partner(8+,not 15)=12, CARBON(15)=10000
 function getConversionRate(pid) {
   pid = parseInt(pid, 10);
