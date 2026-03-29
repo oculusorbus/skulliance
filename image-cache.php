@@ -132,6 +132,13 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
         }
     }
 
+    // ── Skip animated GIFs (temporarily disabled for performance) ─────────────
+    if ($mime === 'image/gif') {
+        echo "  [SKIP]   $url (gif - temporarily skipped)\n";
+        return 'skipped';
+    }
+    // ── END SKIP GIFs ──────────────────────────────────────────────────────────
+
     // ── Determine file extension ──────────────────────────────────────────────
     $ext_map = [
         'image/jpeg'    => 'jpg',
