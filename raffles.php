@@ -258,11 +258,31 @@ function closeCreateRaffleModal() {
   document.getElementById('create-raffle-modal').classList.remove('open');
 }
 
-function buildProjectOptions(selectedId) {
-  return allProjects.map(function(p) {
+function buildProjectOptions(selectedId, excludeIds) {
+  excludeIds = excludeIds || [];
+  return allProjects.filter(function(p) {
+    return p.id == selectedId || excludeIds.indexOf(p.id) === -1;
+  }).map(function(p) {
     var sel = (p.id == selectedId) ? ' selected' : '';
     return '<option value="' + p.id + '"' + sel + '>' + p.name + ' (' + p.currency + ')</option>';
   }).join('');
+}
+
+function getUsedProjectIds(containerSel, selectClass) {
+  var ids = [];
+  document.querySelectorAll(containerSel + ' ' + selectClass).forEach(function(s) {
+    var v = parseInt(s.value, 10);
+    if (v) ids.push(v);
+  });
+  return ids;
+}
+
+function refreshCurrencySelects(containerSel, selectClass) {
+  document.querySelectorAll(containerSel + ' ' + selectClass).forEach(function(sel) {
+    var currentVal = parseInt(sel.value, 10) || '';
+    var otherUsed = getUsedProjectIds(containerSel, selectClass).filter(function(id) { return id !== currentVal; });
+    sel.innerHTML = buildProjectOptions(currentVal, otherUsed);
+  });
 }
 
 // ── Currency conversion sync ──────────────────────────────────────────────────
@@ -285,6 +305,7 @@ function attachBidSync(row, containerSel, bidClass, selectClass) {
     syncBids(row, containerSel, bidClass, selectClass);
   });
   row.querySelector(selectClass).addEventListener('change', function() {
+    refreshCurrencySelects(containerSel, selectClass);
     var sourceRow = null;
     document.querySelectorAll(containerSel + ' .currency-row').forEach(function(r) {
       if (r === row) return;
@@ -295,15 +316,25 @@ function attachBidSync(row, containerSel, bidClass, selectClass) {
 }
 
 function addRaffleCurrencyRow(projectId, cost) {
-  var rows = document.getElementById('r-currency-rows');
-  var div  = document.createElement('div');
+  var rows    = document.getElementById('r-currency-rows');
+  var usedIds = getUsedProjectIds('#r-currency-rows', '.r-proj-select');
+  var avail   = allProjects.filter(function(p) { return usedIds.indexOf(p.id) === -1; });
+  if (!projectId && avail.length === 0) return;
+  var selId = projectId || (avail[0] ? avail[0].id : '');
+  var div   = document.createElement('div');
   div.className = 'currency-row';
   div.innerHTML =
-    '<select class="r-proj-select">' + buildProjectOptions(projectId || '') + '</select>' +
+    '<select class="r-proj-select">' + buildProjectOptions(selId, usedIds) + '</select>' +
     '<input type="number" class="r-cost" min="1" step="1" placeholder="Cost per ticket" value="' + (cost || '') + '" />' +
-    '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
+    '<button type="button" class="rm-btn" onclick="removeRaffleCurrencyRow(this)">Remove</button>';
   rows.appendChild(div);
+  refreshCurrencySelects('#r-currency-rows', '.r-proj-select');
   attachBidSync(div, '#r-currency-rows', '.r-cost', '.r-proj-select');
+}
+
+function removeRaffleCurrencyRow(btn) {
+  btn.parentNode.remove();
+  refreshCurrencySelects('#r-currency-rows', '.r-proj-select');
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
@@ -485,15 +516,25 @@ function closeEditRaffleModal() {
 }
 
 function addRaffleEditCurrencyRow(projectId, cost) {
-  var rows = document.getElementById('re-currency-rows');
-  var div  = document.createElement('div');
+  var rows    = document.getElementById('re-currency-rows');
+  var usedIds = getUsedProjectIds('#re-currency-rows', '.re-proj-select');
+  var avail   = allProjects.filter(function(p) { return usedIds.indexOf(p.id) === -1; });
+  if (!projectId && avail.length === 0) return;
+  var selId = projectId || (avail[0] ? avail[0].id : '');
+  var div   = document.createElement('div');
   div.className = 'currency-row';
   div.innerHTML =
-    '<select class="re-proj-select">' + buildProjectOptions(projectId || '') + '</select>' +
+    '<select class="re-proj-select">' + buildProjectOptions(selId, usedIds) + '</select>' +
     '<input type="number" class="re-cost" min="1" step="1" placeholder="Cost per ticket" value="' + (cost || '') + '" />' +
-    '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
+    '<button type="button" class="rm-btn" onclick="removeRaffleEditCurrencyRow(this)">Remove</button>';
   rows.appendChild(div);
+  refreshCurrencySelects('#re-currency-rows', '.re-proj-select');
   attachBidSync(div, '#re-currency-rows', '.re-cost', '.re-proj-select');
+}
+
+function removeRaffleEditCurrencyRow(btn) {
+  btn.parentNode.remove();
+  refreshCurrencySelects('#re-currency-rows', '.re-proj-select');
 }
 
 function submitEditRaffle() {

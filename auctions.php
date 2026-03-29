@@ -264,11 +264,31 @@ function closeCreateAuctionModal() {
   document.getElementById('create-auction-modal').classList.remove('open');
 }
 
-function buildProjectOptions(selectedId) {
-  return allProjects.map(function(p) {
+function buildProjectOptions(selectedId, excludeIds) {
+  excludeIds = excludeIds || [];
+  return allProjects.filter(function(p) {
+    return p.id == selectedId || excludeIds.indexOf(p.id) === -1;
+  }).map(function(p) {
     var sel = (p.id == selectedId) ? ' selected' : '';
     return '<option value="' + p.id + '"' + sel + '>' + p.name + ' (' + p.currency + ')</option>';
   }).join('');
+}
+
+function getUsedProjectIds(containerSel, selectClass) {
+  var ids = [];
+  document.querySelectorAll(containerSel + ' ' + selectClass).forEach(function(s) {
+    var v = parseInt(s.value, 10);
+    if (v) ids.push(v);
+  });
+  return ids;
+}
+
+function refreshCurrencySelects(containerSel, selectClass) {
+  document.querySelectorAll(containerSel + ' ' + selectClass).forEach(function(sel) {
+    var currentVal = parseInt(sel.value, 10) || '';
+    var otherUsed = getUsedProjectIds(containerSel, selectClass).filter(function(id) { return id !== currentVal; });
+    sel.innerHTML = buildProjectOptions(currentVal, otherUsed);
+  });
 }
 
 // ── Currency conversion sync ──────────────────────────────────────────────────
@@ -291,6 +311,7 @@ function attachBidSync(row, containerSel, bidClass, selectClass) {
     syncBids(row, containerSel, bidClass, selectClass);
   });
   row.querySelector(selectClass).addEventListener('change', function() {
+    refreshCurrencySelects(containerSel, selectClass);
     // When project changes, find first filled sibling row and re-sync from it
     var sourceRow = null;
     document.querySelectorAll(containerSel + ' .currency-row').forEach(function(r) {
@@ -302,15 +323,25 @@ function attachBidSync(row, containerSel, bidClass, selectClass) {
 }
 
 function addAuctionCurrencyRow(projectId, minBid) {
-  var rows = document.getElementById('a-currency-rows');
-  var div  = document.createElement('div');
+  var rows    = document.getElementById('a-currency-rows');
+  var usedIds = getUsedProjectIds('#a-currency-rows', '.a-proj-select');
+  var avail   = allProjects.filter(function(p) { return usedIds.indexOf(p.id) === -1; });
+  if (!projectId && avail.length === 0) return;
+  var selId = projectId || (avail[0] ? avail[0].id : '');
+  var div   = document.createElement('div');
   div.className = 'currency-row';
   div.innerHTML =
-    '<select class="a-proj-select">' + buildProjectOptions(projectId || '') + '</select>' +
+    '<select class="a-proj-select">' + buildProjectOptions(selId, usedIds) + '</select>' +
     '<input type="number" class="a-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
-    '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
+    '<button type="button" class="rm-btn" onclick="removeAuctionCurrencyRow(this)">Remove</button>';
   rows.appendChild(div);
+  refreshCurrencySelects('#a-currency-rows', '.a-proj-select');
   attachBidSync(div, '#a-currency-rows', '.a-min-bid', '.a-proj-select');
+}
+
+function removeAuctionCurrencyRow(btn) {
+  btn.parentNode.remove();
+  refreshCurrencySelects('#a-currency-rows', '.a-proj-select');
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
@@ -492,15 +523,25 @@ function closeEditAuctionModal() {
 }
 
 function addAuctionEditCurrencyRow(projectId, minBid) {
-  var rows = document.getElementById('ae-currency-rows');
-  var div  = document.createElement('div');
+  var rows    = document.getElementById('ae-currency-rows');
+  var usedIds = getUsedProjectIds('#ae-currency-rows', '.ae-proj-select');
+  var avail   = allProjects.filter(function(p) { return usedIds.indexOf(p.id) === -1; });
+  if (!projectId && avail.length === 0) return;
+  var selId = projectId || (avail[0] ? avail[0].id : '');
+  var div   = document.createElement('div');
   div.className = 'currency-row';
   div.innerHTML =
-    '<select class="ae-proj-select">' + buildProjectOptions(projectId || '') + '</select>' +
+    '<select class="ae-proj-select">' + buildProjectOptions(selId, usedIds) + '</select>' +
     '<input type="number" class="ae-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
-    '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
+    '<button type="button" class="rm-btn" onclick="removeAuctionEditCurrencyRow(this)">Remove</button>';
   rows.appendChild(div);
+  refreshCurrencySelects('#ae-currency-rows', '.ae-proj-select');
   attachBidSync(div, '#ae-currency-rows', '.ae-min-bid', '.ae-proj-select');
+}
+
+function removeAuctionEditCurrencyRow(btn) {
+  btn.parentNode.remove();
+  refreshCurrencySelects('#ae-currency-rows', '.ae-proj-select');
 }
 
 function submitEditAuction() {
