@@ -133,9 +133,9 @@ $now_ts = time();
     <div class="auction-modal-title">Create Auction</div>
 
     <div class="form-section-label">Item Details</div>
+    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="a-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row"><label>Title *</label><input type="text" id="a-title" maxlength="255" placeholder="What are you auctioning?" /></div>
     <div class="form-row"><label>Description</label><textarea id="a-desc" placeholder="Optional details about the item…"></textarea></div>
-    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="a-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row">
       <label>Image Upload (optional — will auto-fetch from asset if left blank)</label>
       <input type="file" id="a-image" accept="image/png,image/gif,image/jpeg,image/webp" />
@@ -168,9 +168,9 @@ $now_ts = time();
     <input type="hidden" id="ae-auction-id" />
 
     <div class="form-section-label">Item Details</div>
+    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="ae-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row"><label>Title *</label><input type="text" id="ae-title" maxlength="255" placeholder="What are you auctioning?" /></div>
     <div class="form-row"><label>Description</label><textarea id="ae-desc" placeholder="Optional details about the item…"></textarea></div>
-    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="ae-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row">
       <label>Replace Image (optional — will auto-fetch from asset if left blank)</label>
       <input type="file" id="ae-image" accept="image/png,image/gif,image/jpeg,image/webp" />
@@ -260,59 +260,66 @@ function addAuctionCurrencyRow(projectId, minBid) {
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
-function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId) {
-  var timer = null;
+function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId) {
+  var timer      = null;
   var assetInput = document.getElementById(assetInputId);
   var fileInput  = document.getElementById(fileInputId);
   var status     = document.getElementById(statusId);
   var preview    = document.getElementById(previewId);
   var previewImg = document.getElementById(previewImgId);
   var ipfsHidden = document.getElementById(ipfsHiddenId);
+  var titleInput = titleInputId ? document.getElementById(titleInputId) : null;
 
   assetInput.addEventListener('input', function() {
     clearTimeout(timer);
     var val = this.value.trim();
-    ipfsHidden.value = '';
+    ipfsHidden.value      = '';
     preview.style.display = 'none';
     status.style.display  = 'none';
     if (!/^asset1[a-z0-9]{38}$/.test(val)) return;
-    status.textContent   = 'Looking up asset image…';
+    status.textContent   = 'Looking up asset…';
     status.style.color   = '#8899aa';
     status.style.display = 'block';
     timer = setTimeout(function() {
       $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
         if (r.success) {
-          ipfsHidden.value      = r.ipfs_raw;
-          previewImg.src        = r.ipfs_url;
-          previewImg.onload     = function() { preview.style.display = 'block'; };
-          previewImg.onerror    = function() { preview.style.display = 'none'; };
-          status.textContent    = 'Image found — will be used automatically if no file is uploaded.';
-          status.style.color    = '#00c8a0';
+          if (titleInput && titleInput.value.trim() === '' && r.name) titleInput.value = r.name;
+          if (r.ipfs_raw) {
+            ipfsHidden.value   = r.ipfs_raw;
+            previewImg.src     = r.ipfs_url;
+            previewImg.onload  = function() { preview.style.display = 'block'; };
+            previewImg.onerror = function() { preview.style.display = 'none'; };
+            status.textContent = 'Asset found — image and name pre-filled.';
+            status.style.color = '#00c8a0';
+          } else {
+            status.textContent = 'Asset found — please upload an image manually.';
+            status.style.color = '#8899aa';
+          }
         } else {
-          status.textContent  = 'No image found for this asset — please upload one manually.';
-          status.style.color  = '#8899aa';
+          status.textContent = 'Asset not found — please fill in details manually.';
+          status.style.color = '#8899aa';
         }
       }).fail(function() {
-        status.textContent  = 'Image lookup failed — please upload manually.';
-        status.style.color  = '#8899aa';
+        status.textContent = 'Lookup failed — please fill in details manually.';
+        status.style.color = '#8899aa';
       });
     }, 600);
   });
 
   fileInput.addEventListener('change', function() {
     if (this.files.length > 0) {
-      ipfsHidden.value     = '';
+      ipfsHidden.value      = '';
       preview.style.display = 'none';
-      status.textContent   = 'Using uploaded file.';
-      status.style.color   = '#8899aa';
-      status.style.display = 'block';
+      status.textContent    = 'Using uploaded file.';
+      status.style.color    = '#8899aa';
+      status.style.display  = 'block';
     }
   });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url');
-  setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url');
+  setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title');
+  setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title');
 });
 
 function submitCreateAuction() {
