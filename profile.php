@@ -337,9 +337,16 @@ if ($realm_r && $realm_r->num_rows > 0) {
     $realm_loc_stats = [];
     $rid = $realm_id_p;
 
-    // Portal (1): soldiers on raid
-    $r = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=3 AND active=1 AND dead IS NULL");
-    $realm_loc_stats[1] = ['raiding' => $r ? (int)$r->fetch_assoc()['c'] : 0];
+    // Portal (1): soldiers on raid + active outgoing raids
+    $r  = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=3 AND active=1 AND dead IS NULL");
+    $r2 = $conn->query("SELECT COUNT(*) AS c FROM raids WHERE offense_id=$rid AND outcome=0");
+    $portal_level       = isset($realm_locations[1]) ? (int)$realm_locations[1]['level'] : 1;
+    $active_raids_count = $r2 ? (int)$r2->fetch_assoc()['c'] : 0;
+    $realm_loc_stats[1] = [
+        'raiding'         => $r ? (int)$r->fetch_assoc()['c'] : 0,
+        'active_raids'    => $active_raids_count,
+        'available_raids' => max(0, $portal_level - $active_raids_count),
+    ];
 
     // Barracks (4): training / reserve / active duty
     $r = $conn->query("SELECT
@@ -352,11 +359,17 @@ if ($realm_r && $realm_r->num_rows > 0) {
         'training' => (int)($row['training'] ?? 0),
         'reserve'  => (int)($row['reserve']  ?? 0),
         'on_duty'  => (int)($row['on_duty']  ?? 0),
+        'needed'   => (int)($row['reserve']  ?? 0), // idle trained soldiers awaiting deployment
     ];
 
-    // Tower (3): garrisoned soldiers
+    // Tower (3): garrisoned soldiers + available garrison slots
     $r = $conn->query("SELECT COUNT(*) AS c FROM soldiers WHERE realm_id=$rid AND location=2 AND active=1 AND dead IS NULL");
-    $realm_loc_stats[3] = ['garrisoned' => $r ? (int)$r->fetch_assoc()['c'] : 0];
+    $tower_level     = isset($realm_locations[3]) ? (int)$realm_locations[3]['level'] : 1;
+    $garrisoned_count = $r ? (int)$r->fetch_assoc()['c'] : 0;
+    $realm_loc_stats[3] = [
+        'garrisoned' => $garrisoned_count,
+        'needed'     => max(0, $tower_level - $garrisoned_count),
+    ];
 
     // Armory (2): weapons & armor equipped on active soldiers + unclaimed gear
     $r = $conn->query("SELECT
@@ -1438,15 +1451,18 @@ $realm_con_info = [
             $ls = $realm_loc_stats[$lid] ?? [];
             $loc_stat_rows = [];
             if ($lid === 1 && isset($ls['raiding'])) {
-                $loc_stat_rows[] = ['Raiding', $ls['raiding']];
+                $loc_stat_rows[] = ['Raiding',           $ls['raiding']];
+                $loc_stat_rows[] = ['⚑ Available Raids', $ls['available_raids']];
             }
             if ($lid === 4 && $ls) {
-                $loc_stat_rows[] = ['Training',    $ls['training']];
-                $loc_stat_rows[] = ['Reserve',     $ls['reserve']];
-                $loc_stat_rows[] = ['Active Duty', $ls['on_duty']];
+                $loc_stat_rows[] = ['Training',             $ls['training']];
+                $loc_stat_rows[] = ['Reserve',              $ls['reserve']];
+                $loc_stat_rows[] = ['Active Duty',          $ls['on_duty']];
+                $loc_stat_rows[] = ['⚑ Soldiers Needed',   $ls['needed']];
             }
             if ($lid === 3 && isset($ls['garrisoned'])) {
-                $loc_stat_rows[] = ['Garrisoned', $ls['garrisoned']];
+                $loc_stat_rows[] = ['Garrisoned',         $ls['garrisoned']];
+                $loc_stat_rows[] = ['⚑ Soldiers Needed',  $ls['needed']];
             }
             if ($lid === 2 && $ls) {
                 $loc_stat_rows[] = ['Weapons Deployed',  $ls['weapons']];
@@ -1456,8 +1472,8 @@ $realm_con_info = [
                     $loc_stat_rows[] = ['⚑ Gear to Claim', $ls['unclaimed_weapons'] . 'W / ' . $ls['unclaimed_armors'] . 'A'];
             }
             if ($lid === 6 && $ls) {
-                $loc_stat_rows[] = ['Fallen',           $ls['dead']];
-                $loc_stat_rows[] = ['Ready to Rise',    $ls['ready']];
+                $loc_stat_rows[] = ['Fallen',            $ls['dead']];
+                $loc_stat_rows[] = ['⚑ Ready to Rise',  $ls['ready']];
             }
             if ($lid === 5 && isset($ls['items'])) {
                 $loc_stat_rows[] = ['Items in Stock', $ls['items']];
