@@ -5,7 +5,7 @@ set_time_limit(0);
 ini_set('memory_limit', '512M');
 
 $base_path   = __DIR__ . '/images/nfts/';
-$num_workers = 8; // Parallel worker processes
+$num_workers = 16; // Parallel worker processes
 
 // ─── Fetch all NFTs belonging to active users, Diamond Skull owners, and delegators ───
 $sql = "
@@ -57,7 +57,7 @@ if (!function_exists('pcntl_fork') || $total === 0) {
     echo "Found $total NFTs to process.\n\n";
     $cached = $skipped = $errors = $existing = 0;
     foreach ($rows as $row) {
-        $outcome = safeCache($row, $base_path, null);
+        $outcome = safeCache($row, $base_path, null, 0);
         tally($outcome, $cached, $skipped, $errors, $existing);
         gc_collect_cycles();
     }
@@ -91,7 +91,7 @@ foreach ($chunks as $wid => $chunk) {
         $wcached = $wskipped = $werrors = $wexisting = 0;
 
         foreach ($chunk as $row) {
-            $outcome = safeCache($row, $base_path, $label);
+            $outcome = safeCache($row, $base_path, $label, $wid);
             tally($outcome, $wcached, $wskipped, $werrors, $wexisting);
             gc_collect_cycles();
         }
@@ -137,9 +137,9 @@ printSummary($existing, $cached, $skipped, $errors, $total);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function safeCache(array $row, string $base_path, ?string $label): string {
+function safeCache(array $row, string $base_path, ?string $label, int $wid): string {
     try {
-        return cacheNFTImage($row['ipfs'], $row['collection_id'], $row['project_id'], $base_path, $label);
+        return cacheNFTImage($row['ipfs'], $row['collection_id'], $row['project_id'], $base_path, $label, $wid);
     } catch (Throwable $e) {
         $prefix = $label ? "$label " : '';
         echo "  {$prefix}[ERROR] Caught exception for NFT {$row['id']}: " . $e->getMessage() . "\n";
@@ -168,7 +168,7 @@ function printSummary(int $existing, int $cached, int $skipped, int $errors, int
 
 // ─── Core caching function ───────────────────────────────────────────────────
 
-function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = null) {
+function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = null, $wid = 0) {
     $prefix = $label ? "$label " : '';
 
     $clean_check = str_replace('ipfs/', '', $ipfs);
@@ -205,12 +205,16 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = 
 
     // ── Fetch with gateway fallback and retry ────────────────────────────────
     $clean_ipfs = str_replace('ipfs/', '', $ipfs);
+
+    // Rotate gateway order by worker ID so each worker hits a different primary
     $gateways = [
         'https://ipfs5.jpgstoreapis.com/ipfs/',
         'https://cloudflare-ipfs.com/ipfs/',
         'https://ipfs.io/ipfs/',
         'https://dweb.link/ipfs/',
     ];
+    $offset   = $wid % count($gateways);
+    $gateways = array_merge(array_slice($gateways, $offset), array_slice($gateways, 0, $offset));
 
     $body         = false;
     $content_type = '';
