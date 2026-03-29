@@ -3656,8 +3656,8 @@ function burn($conn, $balance, $project_id){
     updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, -$balance);
 	logDebit($conn, $_SESSION['userData']['user_id'], 0, $balance, $project_id, 1);
 	// Update DIAMOND Balance and Log Credit
-	updateBalance($conn, $_SESSION['userData']['user_id'], 7, ($balance/10000));
-	logCredit($conn, $_SESSION['userData']['user_id'], ($balance/10000), 7, 1);
+	updateBalance($conn, $_SESSION['userData']['user_id'], 7, ($balance/100));
+	logCredit($conn, $_SESSION['userData']['user_id'], ($balance/100), 7, 1);
 }
 
 

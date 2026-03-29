@@ -697,8 +697,8 @@ function renderCrafting($conn, $page){
 			</li>
 			<?php
 		}
-		if($carbon >= 1000){
-			$carbon_max = floor($carbon/1000)*1000;
+		if($carbon >= 100){
+			$carbon_max = floor($carbon/100)*100;
 			?>
 			<li class="role">
 			<form onsubmit="return false;" id="carbonForm" action="<?php echo $page; ?>.php" method="post">
@@ -711,7 +711,7 @@ function renderCrafting($conn, $page){
 			    <span id="diamond-display" style="font-weight:bold;color:#00c8a0;"><?php echo number_format($carbon_max/100); ?></span>
 			  </div>
 			  <div style="display:flex; align-items:center; gap:8px;">
-			    <input type="range" name="carbon" id="carbon" min="1000" max="<?php echo $carbon_max; ?>" step="1000" value="<?php echo $carbon_max; ?>" style="flex:1;"
+			    <input type="range" name="carbon" id="carbon" min="100" max="<?php echo $carbon_max; ?>" step="100" value="<?php echo $carbon_max; ?>" style="flex:1;"
 			      oninput="document.getElementById('carbon-display').textContent=Number(this.value).toLocaleString();document.getElementById('diamond-display').textContent=Number(this.value/100).toLocaleString();">
 			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Burn ' + document.getElementById('carbon-display').textContent + ' CARBON to form ' + document.getElementById('diamond-display').textContent + ' DIAMOND?')">Burn</button>
 			  </div>
