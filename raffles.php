@@ -46,7 +46,21 @@ $now_ts = time();
 .currency-row input { flex:1; }
 .currency-row .rm-btn { flex-shrink:0; background:rgba(200,50,50,0.15); border:1px solid rgba(200,50,50,0.3); border-radius:5px; color:#ff6b6b; cursor:pointer; padding:6px 10px; font-size:0.78rem; white-space:nowrap; }
 .ticket-modal-box { width:min(420px,95vw); }
+
+/* ── Flatpickr overrides ── */
+.flatpickr-calendar { background:#0e1e2e !important; border:1px solid rgba(255,255,255,0.12) !important; box-shadow:0 8px 32px rgba(0,0,0,0.5) !important; }
+.flatpickr-day { color:#c8d8e4 !important; }
+.flatpickr-day:hover, .flatpickr-day.prevMonthDay:hover, .flatpickr-day.nextMonthDay:hover { background:rgba(160,64,255,0.15) !important; border-color:transparent !important; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background:#a040ff !important; border-color:#a040ff !important; color:#fff !important; }
+.flatpickr-day.today { border-color:#a040ff !important; }
+.flatpickr-months, .flatpickr-weekdays, .flatpickr-time { background:#0e1e2e !important; }
+.flatpickr-current-month, .flatpickr-weekday, .numInputWrapper span { color:#c8d8e4 !important; }
+.flatpickr-prev-month svg, .flatpickr-next-month svg { fill:#c8d8e4 !important; }
+.flatpickr-time input, .flatpickr-time .flatpickr-am-pm { color:#c8d8e4 !important; background:#0a1520 !important; }
+.flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus { background:rgba(160,64,255,0.08) !important; }
+.numInput { color:#c8d8e4 !important; background:#0a1520 !important; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 <div class="row" id="row1">
   <div class="main">
@@ -145,8 +159,8 @@ $now_ts = time();
     <button type="button" onclick="addRaffleCurrencyRow()" style="background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:6px;color:#a040ff;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
 
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
-    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="datetime-local" id="r-start-date" /></div>
-    <div class="form-row"><label>End Date *</label><input type="datetime-local" id="r-end-date" /></div>
+    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="r-start-date" /></div>
+    <div class="form-row"><label>End Date *</label><input type="text" id="r-end-date" /></div>
 
     <div id="r-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitCreateRaffle()" style="margin-top:4px;">Create Raffle</button>
@@ -180,8 +194,8 @@ $now_ts = time();
     <button type="button" onclick="addRaffleEditCurrencyRow()" style="background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:6px;color:#a040ff;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
 
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
-    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="datetime-local" id="re-start-date" /></div>
-    <div class="form-row"><label>End Date *</label><input type="datetime-local" id="re-end-date" /></div>
+    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="re-start-date" /></div>
+    <div class="form-row"><label>End Date *</label><input type="text" id="re-end-date" /></div>
 
     <div id="re-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitEditRaffle()" style="margin-top:4px;">Save Changes</button>
@@ -203,6 +217,7 @@ $now_ts = time();
 <div class="footer"><p>Skulliance<br>Copyright © <span id="year"></span></p></div>
 </div></div>
 <?php $conn->close(); ?>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
 // ── Project options ───────────────────────────────────────────────────────────
@@ -311,9 +326,23 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   });
 }
 
+var _fpCfg = {
+  enableTime:      true,
+  altInput:        true,
+  altFormat:       'M j, Y — h:i K',
+  dateFormat:      'Y-m-d H:i',
+  minuteIncrement: 15,
+  minDate:         'today',
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title');
   setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title');
+
+  flatpickr('#r-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
+  flatpickr('#r-end-date',    _fpCfg);
+  flatpickr('#re-start-date', Object.assign({}, _fpCfg, { minDate: null }));
+  flatpickr('#re-end-date',   _fpCfg);
 });
 
 function submitCreateRaffle() {
@@ -400,8 +429,10 @@ function openEditRaffleModal(id) {
     document.getElementById('re-title').value         = r.title || '';
     document.getElementById('re-desc').value          = r.description || '';
     document.getElementById('re-asset-id').value      = r.asset_id || '';
-    document.getElementById('re-start-date').value    = r.start_date || '';
-    document.getElementById('re-end-date').value      = r.end_date || '';
+    var fpStart = document.getElementById('re-start-date')._flatpickr;
+    var fpEnd   = document.getElementById('re-end-date')._flatpickr;
+    if (r.start_date) fpStart.setDate(r.start_date, false); else fpStart.clear();
+    if (r.end_date)   fpEnd.setDate(r.end_date, false);     else fpEnd.clear();
     document.getElementById('re-image').value         = '';
     var rows = document.getElementById('re-currency-rows');
     rows.innerHTML = '';

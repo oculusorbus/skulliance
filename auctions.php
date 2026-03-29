@@ -52,7 +52,21 @@ $now_ts = time();
 .bid-row { display:flex; justify-content:space-between; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; }
 
 .auction-detail-img { width:100%; max-height:260px; object-fit:contain; border-radius:8px; background:#0a1520; }
+
+/* ── Flatpickr overrides ── */
+.flatpickr-calendar { background:#0e1e2e !important; border:1px solid rgba(255,255,255,0.12) !important; box-shadow:0 8px 32px rgba(0,0,0,0.5) !important; }
+.flatpickr-day { color:#c8d8e4 !important; }
+.flatpickr-day:hover, .flatpickr-day.prevMonthDay:hover, .flatpickr-day.nextMonthDay:hover { background:rgba(0,200,160,0.15) !important; border-color:transparent !important; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background:#00c8a0 !important; border-color:#00c8a0 !important; color:#0a1520 !important; }
+.flatpickr-day.today { border-color:#00c8a0 !important; }
+.flatpickr-months, .flatpickr-weekdays, .flatpickr-time { background:#0e1e2e !important; }
+.flatpickr-current-month, .flatpickr-weekday, .numInputWrapper span { color:#c8d8e4 !important; }
+.flatpickr-prev-month svg, .flatpickr-next-month svg { fill:#c8d8e4 !important; }
+.flatpickr-time input, .flatpickr-time .flatpickr-am-pm { color:#c8d8e4 !important; background:#0a1520 !important; }
+.flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus { background:rgba(0,200,160,0.08) !important; }
+.numInput { color:#c8d8e4 !important; background:#0a1520 !important; }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 <div class="row" id="row1">
   <div class="main">
@@ -151,8 +165,8 @@ $now_ts = time();
     <button type="button" onclick="addAuctionCurrencyRow()" style="background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.2);border-radius:6px;color:#00c8a0;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
 
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
-    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="datetime-local" id="a-start-date" /></div>
-    <div class="form-row"><label>End Date *</label><input type="datetime-local" id="a-end-date" /></div>
+    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="a-start-date" /></div>
+    <div class="form-row"><label>End Date *</label><input type="text" id="a-end-date" /></div>
 
     <div id="a-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitCreateAuction()" style="margin-top:4px;">Create Auction</button>
@@ -186,8 +200,8 @@ $now_ts = time();
     <button type="button" onclick="addAuctionEditCurrencyRow()" style="background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.2);border-radius:6px;color:#00c8a0;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
 
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
-    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="datetime-local" id="ae-start-date" /></div>
-    <div class="form-row"><label>End Date *</label><input type="datetime-local" id="ae-end-date" /></div>
+    <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="ae-start-date" /></div>
+    <div class="form-row"><label>End Date *</label><input type="text" id="ae-end-date" /></div>
 
     <div id="ae-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitEditAuction()" style="margin-top:4px;">Save Changes</button>
@@ -209,6 +223,7 @@ $now_ts = time();
 <div class="footer"><p>Skulliance<br>Copyright © <span id="year"></span></p></div>
 </div></div>
 <?php $conn->close(); ?>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
 // ── Project options (for dynamic currency rows) ───────────────────────────────
@@ -317,9 +332,23 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   });
 }
 
+var _fpCfg = {
+  enableTime:      true,
+  altInput:        true,
+  altFormat:       'M j, Y — h:i K',
+  dateFormat:      'Y-m-d H:i',
+  minuteIncrement: 15,
+  minDate:         'today',
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title');
   setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title');
+
+  flatpickr('#a-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
+  flatpickr('#a-end-date',    _fpCfg);
+  flatpickr('#ae-start-date', Object.assign({}, _fpCfg, { minDate: null }));
+  flatpickr('#ae-end-date',   _fpCfg);
 });
 
 function submitCreateAuction() {
@@ -406,8 +435,10 @@ function openEditAuctionModal(id) {
     document.getElementById('ae-title').value        = r.title || '';
     document.getElementById('ae-desc').value         = r.description || '';
     document.getElementById('ae-asset-id').value     = r.asset_id || '';
-    document.getElementById('ae-start-date').value   = r.start_date || '';
-    document.getElementById('ae-end-date').value     = r.end_date || '';
+    var fpStart = document.getElementById('ae-start-date')._flatpickr;
+    var fpEnd   = document.getElementById('ae-end-date')._flatpickr;
+    if (r.start_date) fpStart.setDate(r.start_date, false); else fpStart.clear();
+    if (r.end_date)   fpEnd.setDate(r.end_date, false);     else fpEnd.clear();
     document.getElementById('ae-image').value        = '';
     var rows = document.getElementById('ae-currency-rows');
     rows.innerHTML = '';
