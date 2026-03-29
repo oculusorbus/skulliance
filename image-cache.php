@@ -69,6 +69,11 @@ echo "Total          : $total\n";
 // ─── Core caching function ───────────────────────────────────────────────────
 
 function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path) {
+    $clean_check = str_replace('ipfs/', '', $ipfs);
+    if (empty(trim($clean_check))) {
+        echo "  [SKIP]   Empty IPFS hash for collection $collection_id\n";
+        return 'skipped';
+    }
     $dir = $base_path . $project_id . '/' . $collection_id . '/';
     $md5 = md5($ipfs);
 
