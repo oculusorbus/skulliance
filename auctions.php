@@ -6,7 +6,7 @@ include 'skulliance.php';
 include 'header.php';
 
 $auctions = getActiveAuctions($conn);
-$all_projects_res = $conn->query("SELECT id, name, currency FROM projects ORDER BY id ASC");
+$all_projects_res = $conn->query("SELECT id, name, currency, divider FROM projects ORDER BY id ASC");
 $all_projects = array();
 if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_projects[] = $r; }
 $now_ts = time();
@@ -227,7 +227,9 @@ $now_ts = time();
 <script type="text/javascript" src="skulliance.js"></script>
 <script type="text/javascript">
 // ── Project options (for dynamic currency rows) ───────────────────────────────
-var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>$p['id'],'name'=>$p['name'],'currency'=>strtoupper($p['currency'])]; }, $all_projects)); ?>;
+var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>$p['id'],'name'=>$p['name'],'currency'=>strtoupper($p['currency']),'divider'=>(float)$p['divider']]; }, $all_projects)); ?>;
+var projectDividers = {};
+allProjects.forEach(function(p) { projectDividers[p.id] = p.divider || 1; });
 
 // ── Countdown timers ──────────────────────────────────────────────────────────
 function updateCountdowns() {
@@ -263,6 +265,37 @@ function buildProjectOptions(selectedId) {
   }).join('');
 }
 
+// ── Currency conversion sync ──────────────────────────────────────────────────
+function syncBids(sourceRow, containerSel, bidClass, selectClass) {
+  var sourcePid = parseInt(sourceRow.querySelector(selectClass).value, 10);
+  var sourceVal = parseFloat(sourceRow.querySelector(bidClass).value);
+  if (!sourcePid || !sourceVal || sourceVal <= 0) return;
+  var sourceDiv   = projectDividers[sourcePid] || 1;
+  var baseDiamonds = sourceVal / sourceDiv;
+  document.querySelectorAll(containerSel + ' .currency-row').forEach(function(row) {
+    if (row === sourceRow) return;
+    var targetPid = parseInt(row.querySelector(selectClass).value, 10);
+    if (!targetPid) return;
+    var computed = Math.ceil(baseDiamonds * (projectDividers[targetPid] || 1));
+    row.querySelector(bidClass).value = computed > 0 ? computed : '';
+  });
+}
+
+function attachBidSync(row, containerSel, bidClass, selectClass) {
+  row.querySelector(bidClass).addEventListener('input', function() {
+    syncBids(row, containerSel, bidClass, selectClass);
+  });
+  row.querySelector(selectClass).addEventListener('change', function() {
+    // When project changes, find first filled sibling row and re-sync from it
+    var sourceRow = null;
+    document.querySelectorAll(containerSel + ' .currency-row').forEach(function(r) {
+      if (r === row) return;
+      if (!sourceRow && parseFloat(r.querySelector(bidClass).value) > 0) sourceRow = r;
+    });
+    if (sourceRow) syncBids(sourceRow, containerSel, bidClass, selectClass);
+  });
+}
+
 function addAuctionCurrencyRow(projectId, minBid) {
   var rows = document.getElementById('a-currency-rows');
   var div  = document.createElement('div');
@@ -272,6 +305,7 @@ function addAuctionCurrencyRow(projectId, minBid) {
     '<input type="number" class="a-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
     '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
   rows.appendChild(div);
+  attachBidSync(div, '#a-currency-rows', '.a-min-bid', '.a-proj-select');
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
@@ -461,6 +495,7 @@ function addAuctionEditCurrencyRow(projectId, minBid) {
     '<input type="number" class="ae-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
     '<button type="button" class="rm-btn" onclick="this.parentNode.remove()">Remove</button>';
   rows.appendChild(div);
+  attachBidSync(div, '#ae-currency-rows', '.ae-min-bid', '.ae-proj-select');
 }
 
 function submitEditAuction() {
