@@ -226,7 +226,7 @@ var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>$
 function getConversionRate(pid) {
   pid = parseInt(pid, 10);
   if (pid === 7)  return 1;
-  if (pid === 15) return 10000;
+  if (pid === 15) return 100;
   if (pid >= 1 && pid <= 6) return 6;
   return 12;
 }
