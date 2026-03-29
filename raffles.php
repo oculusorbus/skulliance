@@ -131,8 +131,13 @@ $now_ts = time();
     <div class="form-row"><label>Description</label><textarea id="r-desc" placeholder="Optional prize details…"></textarea></div>
     <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="r-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row">
-      <label>Image Upload (optional — PNG/GIF, max 5MB)</label>
+      <label>Image Upload (optional — will auto-fetch from asset if left blank)</label>
       <input type="file" id="r-image" accept="image/png,image/gif,image/jpeg,image/webp" />
+      <input type="hidden" id="r-ipfs-url" />
+      <div id="r-img-status" style="font-size:0.75rem;margin-top:5px;display:none;"></div>
+      <div id="r-img-preview" style="display:none;margin-top:6px;">
+        <img id="r-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
+      </div>
     </div>
 
     <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
@@ -161,8 +166,13 @@ $now_ts = time();
     <div class="form-row"><label>Description</label><textarea id="re-desc" placeholder="Optional prize details…"></textarea></div>
     <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="re-asset-id" maxlength="44" placeholder="asset1..." /></div>
     <div class="form-row">
-      <label>Replace Image (optional — leave blank to keep existing)</label>
+      <label>Replace Image (optional — will auto-fetch from asset if left blank)</label>
       <input type="file" id="re-image" accept="image/png,image/gif,image/jpeg,image/webp" />
+      <input type="hidden" id="re-ipfs-url" />
+      <div id="re-img-status" style="font-size:0.75rem;margin-top:5px;display:none;"></div>
+      <div id="re-img-preview" style="display:none;margin-top:6px;">
+        <img id="re-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
+      </div>
     </div>
 
     <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
@@ -243,6 +253,62 @@ function addRaffleCurrencyRow(projectId, cost) {
   rows.appendChild(div);
 }
 
+// ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
+function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId) {
+  var timer = null;
+  var assetInput = document.getElementById(assetInputId);
+  var fileInput  = document.getElementById(fileInputId);
+  var status     = document.getElementById(statusId);
+  var preview    = document.getElementById(previewId);
+  var previewImg = document.getElementById(previewImgId);
+  var ipfsHidden = document.getElementById(ipfsHiddenId);
+
+  assetInput.addEventListener('input', function() {
+    clearTimeout(timer);
+    var val = this.value.trim();
+    ipfsHidden.value      = '';
+    preview.style.display = 'none';
+    status.style.display  = 'none';
+    if (!/^asset1[a-z0-9]{38}$/.test(val)) return;
+    status.textContent   = 'Looking up asset image…';
+    status.style.color   = '#8899aa';
+    status.style.display = 'block';
+    timer = setTimeout(function() {
+      $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
+        if (r.success) {
+          ipfsHidden.value   = r.ipfs_raw;
+          previewImg.src     = r.ipfs_url;
+          previewImg.onload  = function() { preview.style.display = 'block'; };
+          previewImg.onerror = function() { preview.style.display = 'none'; };
+          status.textContent = 'Image found — will be used automatically if no file is uploaded.';
+          status.style.color = '#00c8a0';
+        } else {
+          status.textContent = 'No image found for this asset — please upload one manually.';
+          status.style.color = '#8899aa';
+        }
+      }).fail(function() {
+        status.textContent = 'Image lookup failed — please upload manually.';
+        status.style.color = '#8899aa';
+      });
+    }, 600);
+  });
+
+  fileInput.addEventListener('change', function() {
+    if (this.files.length > 0) {
+      ipfsHidden.value      = '';
+      preview.style.display = 'none';
+      status.textContent    = 'Using uploaded file.';
+      status.style.color    = '#8899aa';
+      status.style.display  = 'block';
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url');
+  setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url');
+});
+
 function submitCreateRaffle() {
   var err = document.getElementById('r-error');
   err.style.display = 'none';
@@ -274,6 +340,7 @@ function submitCreateRaffle() {
   fd.append('start_date', startDate);
   fd.append('end_date', endDate);
   if (imgFile) fd.append('image', imgFile);
+  else { var ipfsUrl = document.getElementById('r-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 
   $.ajax({
     url: 'ajax/raffle-create.php',
@@ -385,6 +452,7 @@ function submitEditRaffle() {
   fd.append('start_date', startDate);
   fd.append('end_date', endDate);
   if (imgFile) fd.append('image', imgFile);
+  else { var ipfsUrl = document.getElementById('re-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 
   $.ajax({
     url: 'ajax/raffle-edit.php',

@@ -88,6 +88,47 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image_path = 'images/raffles/' . $fname;
 }
 
+// IPFS fallback: if no file uploaded, try the auto-fetched IPFS URL
+if ($image_path === '') {
+    $ipfs_raw = trim($_POST['ipfs_url'] ?? '');
+    if ($ipfs_raw !== '') {
+        $clean_ipfs = str_replace('ipfs/', '', $ipfs_raw);
+        $gateways   = ['https://ipfs5.jpgstoreapis.com/ipfs/', 'https://cloudflare-ipfs.com/ipfs/', 'https://ipfs.io/ipfs/'];
+        foreach ($gateways as $gw) {
+            $ch = curl_init($gw . $clean_ipfs);
+            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>1, CURLOPT_FOLLOWLOCATION=>1, CURLOPT_TIMEOUT=>15,
+                CURLOPT_HTTPHEADER=>['User-Agent: Mozilla/5.0']]);
+            $body = curl_exec($ch);
+            $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($body !== false && $code === 200) {
+                $mime = trim(explode(';', $ct)[0]);
+                $allowed_types = ['image/png','image/gif','image/jpeg','image/webp'];
+                if (in_array($mime, $allowed_types)) {
+                    $dir = __DIR__ . '/../images/raffles/';
+                    if (!is_dir($dir)) mkdir($dir, 0755, true);
+                    if (class_exists('Imagick')) {
+                        $imagick = new Imagick();
+                        $imagick->readImageBlob($body);
+                        if ($imagick->getImageWidth() > 1000) $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
+                        $imagick->setImageFormat('png');
+                        $fname = uniqid('raffle_', true) . '.png';
+                        $imagick->writeImage($dir . $fname);
+                        $imagick->clear(); $imagick->destroy();
+                    } else {
+                        $ext_map = ['image/png'=>'png','image/gif'=>'gif','image/jpeg'=>'jpg','image/webp'=>'webp'];
+                        $fname = uniqid('raffle_', true) . '.' . ($ext_map[$mime] ?? 'jpg');
+                        file_put_contents($dir . $fname, $body);
+                    }
+                    $image_path = 'images/raffles/' . $fname;
+                }
+                break;
+            }
+        }
+    }
+}
+
 $raffle_id = createRaffle($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $ticket_options);
 if (!$raffle_id) { json_exit(['success'=>false,'message'=>'Database error creating raffle.']); }
 
