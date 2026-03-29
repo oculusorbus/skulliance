@@ -228,8 +228,14 @@ $now_ts = time();
 <script type="text/javascript">
 // ── Project options (for dynamic currency rows) ───────────────────────────────
 var allProjects = <?php echo json_encode(array_map(function($p){ return ['id'=>$p['id'],'name'=>$p['name'],'currency'=>strtoupper($p['currency']),'divider'=>(float)$p['divider']]; }, $all_projects)); ?>;
-var projectDividers = {};
-allProjects.forEach(function(p) { projectDividers[p.id] = p.divider || 1; });
+// Conversion rate to Diamond: Diamond(7)=1, Core(1-6)=6, Partner(8+,not 15)=12, CARBON(15)=10000
+function getConversionRate(pid) {
+  pid = parseInt(pid, 10);
+  if (pid === 7)  return 1;
+  if (pid === 15) return 10000;
+  if (pid >= 1 && pid <= 6) return 6;
+  return 12;
+}
 
 // ── Countdown timers ──────────────────────────────────────────────────────────
 function updateCountdowns() {
@@ -270,13 +276,12 @@ function syncBids(sourceRow, containerSel, bidClass, selectClass) {
   var sourcePid = parseInt(sourceRow.querySelector(selectClass).value, 10);
   var sourceVal = parseFloat(sourceRow.querySelector(bidClass).value);
   if (!sourcePid || !sourceVal || sourceVal <= 0) return;
-  var sourceDiv   = projectDividers[sourcePid] || 1;
-  var baseDiamonds = sourceVal / sourceDiv;
+  var baseDiamonds = sourceVal / getConversionRate(sourcePid);
   document.querySelectorAll(containerSel + ' .currency-row').forEach(function(row) {
     if (row === sourceRow) return;
     var targetPid = parseInt(row.querySelector(selectClass).value, 10);
     if (!targetPid) return;
-    var computed = Math.ceil(baseDiamonds * (projectDividers[targetPid] || 1));
+    var computed = Math.ceil(baseDiamonds * getConversionRate(targetPid));
     row.querySelector(bidClass).value = computed > 0 ? computed : '';
   });
 }
