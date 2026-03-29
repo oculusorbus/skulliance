@@ -283,8 +283,9 @@ function getUsedProjectIds(containerSel, selectClass) {
   return ids;
 }
 
-function refreshCurrencySelects(containerSel, selectClass) {
+function refreshCurrencySelects(containerSel, selectClass, skipEl) {
   document.querySelectorAll(containerSel + ' ' + selectClass).forEach(function(sel) {
+    if (skipEl && sel === skipEl) return;
     var currentVal = parseInt(sel.value, 10) || '';
     var otherUsed = getUsedProjectIds(containerSel, selectClass).filter(function(id) { return id !== currentVal; });
     sel.innerHTML = buildProjectOptions(currentVal, otherUsed);
@@ -335,7 +336,7 @@ function addAuctionCurrencyRow(projectId, minBid) {
     '<input type="number" class="a-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
     '<button type="button" class="rm-btn" onclick="removeAuctionCurrencyRow(this)">Remove</button>';
   rows.appendChild(div);
-  refreshCurrencySelects('#a-currency-rows', '.a-proj-select');
+  refreshCurrencySelects('#a-currency-rows', '.a-proj-select', div.querySelector('.a-proj-select'));
   attachBidSync(div, '#a-currency-rows', '.a-min-bid', '.a-proj-select');
 }
 
@@ -535,7 +536,7 @@ function addAuctionEditCurrencyRow(projectId, minBid) {
     '<input type="number" class="ae-min-bid" min="1" step="1" placeholder="Min bid" value="' + (minBid || '') + '" />' +
     '<button type="button" class="rm-btn" onclick="removeAuctionEditCurrencyRow(this)">Remove</button>';
   rows.appendChild(div);
-  refreshCurrencySelects('#ae-currency-rows', '.ae-proj-select');
+  refreshCurrencySelects('#ae-currency-rows', '.ae-proj-select', div.querySelector('.ae-proj-select'));
   attachBidSync(div, '#ae-currency-rows', '.ae-min-bid', '.ae-proj-select');
 }
 
