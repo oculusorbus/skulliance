@@ -1447,7 +1447,7 @@ $realm_con_info = [
             $ls = $realm_loc_stats[$lid] ?? [];
             $loc_stat_rows = [];
             if ($lid === 1 && isset($ls['raiding'])) {
-                $loc_stat_rows[] = ['Raiding', $ls['raiding']];
+                $loc_stat_rows[] = ['Soldiers Raiding', $ls['raiding']];
             }
             if ($lid === 4 && $ls) {
                 $loc_stat_rows[] = ['Training',    $ls['training']];
