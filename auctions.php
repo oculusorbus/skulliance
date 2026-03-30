@@ -105,7 +105,9 @@ $now_ts = time();
               <span class="auction-bid-value">
                 <?php
                   if ($a['current_bid'] > 0) {
-                    echo number_format($a['current_bid']) . ' ' . strtoupper($a['current_bid_currency'] ?: 'pts');
+                    $cur_lc = strtolower($a['current_bid_currency'] ?: 'pts');
+                    echo '<img src="icons/' . $cur_lc . '.png" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;">';
+                    echo number_format($a['current_bid']) . ' ' . strtoupper($cur_lc);
                   } else {
                     echo 'No bids yet';
                   }

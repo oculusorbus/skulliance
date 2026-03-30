@@ -99,7 +99,12 @@ $now_ts = time();
             <?php if ($cheap): ?>
             <div class="raffle-stat-row">
               <span class="raffle-stat-label">Ticket Price</span>
-              <span class="raffle-stat-value"><?php echo 'from ' . number_format($cheap['cost']) . ' ' . strtoupper($cheap['currency']); ?></span>
+              <span class="raffle-stat-value" style="display:flex;align-items:center;gap:3px;"><?php
+                $rcur_lc = strtolower($cheap['currency']);
+                echo 'from ';
+                echo '<img src="icons/' . $rcur_lc . '.png" style="width:14px;height:14px;vertical-align:middle;">';
+                echo number_format($cheap['cost']) . ' ' . strtoupper($rcur_lc);
+              ?></span>
             </div>
             <?php endif; ?>
             <div class="raffle-stat-row">

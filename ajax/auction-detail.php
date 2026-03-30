@@ -34,10 +34,11 @@ foreach ($allowed as $p) {
 $has_img = !empty($auction['image_path']) && file_exists($auction['image_path']);
 // Resolve current bid currency label from already-loaded allowed projects list
 $cur_bid_label = '';
+$cur_bid_currency_lc = '';
 $cur_bid_pid = intval($auction['current_bid_project_id']);
 foreach ($allowed as $ap) {
     $apid = intval($ap['project_id'] ?? $ap['id']);
-    if ($apid === $cur_bid_pid) { $cur_bid_label = strtoupper($ap['currency']); break; }
+    if ($apid === $cur_bid_pid) { $cur_bid_currency_lc = strtolower($ap['currency']); $cur_bid_label = strtoupper($ap['currency']); break; }
 }
 $conn->close();
 ?>
@@ -52,6 +53,7 @@ $conn->close();
     <span style="font-weight:bold;color:#00c8a0;">
       <?php
         if ($auction['current_bid'] > 0) {
+          if ($cur_bid_currency_lc) echo '<img src="icons/' . $cur_bid_currency_lc . '.png" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;">';
           echo number_format($auction['current_bid']) . ($cur_bid_label ? ' ' . $cur_bid_label : '');
         } else {
           // Show lowest minimum bid from allowed projects
@@ -126,7 +128,10 @@ $conn->close();
         <?php endif; ?>
         <a href="/staking/profile.php?username=<?php echo htmlspecialchars($b['bidder_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($b['bidder_name']); ?></a>
       </span>
-      <span><?php echo number_format($b['amount']); ?> <?php echo strtoupper($b['currency']); ?></span>
+      <span style="display:flex;align-items:center;gap:3px;">
+        <img src="icons/<?php echo strtolower($b['currency']); ?>.png" style="width:14px;height:14px;vertical-align:middle;">
+        <?php echo number_format($b['amount']); ?> <?php echo strtoupper($b['currency']); ?>
+      </span>
       <span style="opacity:0.4;"><?php echo date('M j g:ia', strtotime($b['created_date'])); ?></span>
     </div>
     <?php endforeach; ?>
