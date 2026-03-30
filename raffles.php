@@ -525,6 +525,10 @@ function openTicketModal(raffle_id) {
   $.get('ajax/raffle-detail.php', { id: raffle_id }, function(html) {
     document.getElementById('ticket-modal-inner').innerHTML = html;
     updateCountdowns();
+    var sel = document.getElementById('raffle-project-select');
+    var qty = document.getElementById('ticket-qty');
+    if (sel) sel.addEventListener('change', updateRaffleTicketUI);
+    if (qty) qty.addEventListener('input', updateRaffleTicketUI);
     updateRaffleTicketUI();
   });
 }
