@@ -129,7 +129,8 @@ if ($image_path === '') {
     }
 }
 
-$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects);
+$quantity   = max(1, intval($_POST['quantity'] ?? 1));
+$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects, $quantity);
 if (!$auction_id) { json_exit(['success'=>false,'message'=>'Database error creating auction.']); }
 
 // Build Discord labels before closing connection

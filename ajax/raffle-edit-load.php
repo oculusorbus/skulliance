@@ -49,4 +49,5 @@ json_exit([
     'end_date'       => $end_fmt,
     'image_path'     => $raffle['image_path'],
     'ticket_options' => $ticket_options,
+    'quantity'       => intval($raffle['quantity'] ?? 1),
 ]);

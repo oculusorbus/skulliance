@@ -160,6 +160,11 @@ $now_ts = time();
       </div>
     </div>
 
+    <div class="form-row" id="a-qty-row" style="display:none;">
+      <label>Quantity *</label>
+      <input type="number" id="a-quantity" min="1" step="1" value="1" style="max-width:140px;" />
+    </div>
+
     <div class="form-section-label" style="margin-top:8px;">Accepted Currencies &amp; Minimum Bids *</div>
     <div class="currency-rows" id="a-currency-rows"></div>
     <button type="button" onclick="addAuctionCurrencyRow()" style="background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.2);border-radius:6px;color:#00c8a0;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
@@ -193,6 +198,11 @@ $now_ts = time();
       <div id="ae-img-preview" style="display:none;margin-top:6px;">
         <img id="ae-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
       </div>
+    </div>
+
+    <div class="form-row" id="ae-qty-row" style="display:none;">
+      <label>Quantity *</label>
+      <input type="number" id="ae-quantity" min="1" step="1" value="1" style="max-width:140px;" />
     </div>
 
     <div class="form-section-label" style="margin-top:8px;">Accepted Currencies &amp; Minimum Bids *</div>
@@ -346,7 +356,7 @@ function removeAuctionCurrencyRow(btn) {
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
-function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId) {
+function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId, quantityWrapperId) {
   var timer      = null;
   var assetInput = document.getElementById(assetInputId);
   var fileInput  = document.getElementById(fileInputId);
@@ -355,6 +365,14 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   var previewImg = document.getElementById(previewImgId);
   var ipfsHidden = document.getElementById(ipfsHiddenId);
   var titleInput = titleInputId ? document.getElementById(titleInputId) : null;
+  var qtyRow     = quantityWrapperId ? document.getElementById(quantityWrapperId) : null;
+  var qtyInput   = qtyRow ? qtyRow.querySelector('input[type=number]') : null;
+
+  function setQtyVisible(visible) {
+    if (!qtyRow) return;
+    qtyRow.style.display = visible ? '' : 'none';
+    if (!visible && qtyInput) qtyInput.value = 1;
+  }
 
   assetInput.addEventListener('input', function() {
     clearTimeout(timer);
@@ -362,7 +380,7 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
     ipfsHidden.value      = '';
     preview.style.display = 'none';
     status.style.display  = 'none';
-    if (!/^asset1[a-z0-9]{38}$/.test(val)) return;
+    if (!/^asset1[a-z0-9]{38}$/.test(val)) { setQtyVisible(false); return; }
     status.textContent   = 'Looking up asset…';
     status.style.color   = '#8899aa';
     status.style.display = 'block';
@@ -370,6 +388,7 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
       $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
         if (r.success) {
           if (titleInput && titleInput.value.trim() === '' && r.name) titleInput.value = r.name;
+          setQtyVisible(r.is_fungible);
           if (r.ipfs_raw) {
             ipfsHidden.value   = r.ipfs_raw;
             previewImg.src     = r.ipfs_url;
@@ -382,10 +401,12 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
             status.style.color = '#8899aa';
           }
         } else {
+          setQtyVisible(true); // show as fallback when lookup fails
           status.textContent = 'Asset not found — please fill in details manually.';
           status.style.color = '#8899aa';
         }
       }).fail(function() {
+        setQtyVisible(true); // show as fallback on error
         status.textContent = 'Lookup failed — please fill in details manually.';
         status.style.color = '#8899aa';
       });
@@ -413,8 +434,8 @@ var _fpCfg = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title');
-  setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title');
+  setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title',  'a-qty-row');
+  setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title', 'ae-qty-row');
 
   flatpickr('#a-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#a-end-date',    _fpCfg);
@@ -452,6 +473,8 @@ function submitCreateAuction() {
   fd.append('projects', JSON.stringify(projects));
   fd.append('start_date', startDate);
   fd.append('end_date', endDate);
+  var aQtyRow = document.getElementById('a-qty-row');
+  fd.append('quantity', (aQtyRow && aQtyRow.style.display !== 'none') ? (parseInt(document.getElementById('a-quantity').value) || 1) : 1);
   if (imgFile) fd.append('image', imgFile);
   else { var ipfsUrl = document.getElementById('a-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 
@@ -515,6 +538,9 @@ function openEditAuctionModal(id) {
     rows.innerHTML = '';
     (r.projects || []).forEach(function(p) { addAuctionEditCurrencyRow(p.project_id, p.minimum_bid); });
     if (rows.children.length === 0) addAuctionEditCurrencyRow();
+    var aeQr = document.getElementById('ae-qty-row');
+    var qty  = parseInt(r.quantity) || 1;
+    if (aeQr) { aeQr.style.display = qty > 1 ? '' : 'none'; document.getElementById('ae-quantity').value = qty > 1 ? qty : 1; }
     document.getElementById('ae-error').style.display = 'none';
     document.getElementById('edit-auction-modal').classList.add('open');
   });
@@ -577,6 +603,8 @@ function submitEditAuction() {
   fd.append('projects', JSON.stringify(projects));
   fd.append('start_date', startDate);
   fd.append('end_date', endDate);
+  var aeQtyRow = document.getElementById('ae-qty-row');
+  fd.append('quantity', (aeQtyRow && aeQtyRow.style.display !== 'none') ? (parseInt(document.getElementById('ae-quantity').value) || 1) : 1);
   if (imgFile) fd.append('image', imgFile);
   else { var ipfsUrl = document.getElementById('ae-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 

@@ -47,4 +47,5 @@ json_exit([
     'end_date'   => $end_fmt,
     'image_path' => $auction['image_path'],
     'projects'   => $projects,
+    'quantity'   => intval($auction['quantity'] ?? 1),
 ]);

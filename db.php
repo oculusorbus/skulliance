@@ -8825,7 +8825,7 @@ function getAuction($conn, $auction_id) {
 
 // Create a new auction. $projects is array of ['project_id'=>X,'minimum_bid'=>Y].
 // Returns new auction id or false on error.
-function createAuction($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $projects) {
+function createAuction($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $projects, $quantity = 1) {
 	$uid   = intval($user_id);
 	$title = $conn->real_escape_string($title);
 	$desc  = $conn->real_escape_string($description);
@@ -8833,9 +8833,10 @@ function createAuction($conn, $user_id, $title, $description, $image_path, $asse
 	$aid   = $conn->real_escape_string($asset_id);
 	$sdate = $conn->real_escape_string($start_date);
 	$edate = $conn->real_escape_string($end_date);
+	$qty   = max(1, intval($quantity));
 
-	$sql = "INSERT INTO auctions (user_id, title, description, image_path, asset_id, start_date, end_date)
-	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$sdate', '$edate')";
+	$sql = "INSERT INTO auctions (user_id, title, description, image_path, asset_id, start_date, end_date, quantity)
+	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$sdate', '$edate', '$qty')";
 	if (!$conn->query($sql)) return false;
 	$auction_id = $conn->insert_id;
 
@@ -8849,9 +8850,10 @@ function createAuction($conn, $user_id, $title, $description, $image_path, $asse
 
 // Update an existing auction. $projects is array of ['project_id'=>X,'minimum_bid'=>Y].
 // Only allowed when no bids have been placed. Returns ['success'=>true] or ['success'=>false,'message'=>'...'].
-function updateAuction($conn, $auction_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $projects) {
+function updateAuction($conn, $auction_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $projects, $quantity = 1) {
 	$aid   = intval($auction_id);
 	$uid   = intval($user_id);
+	$qty   = max(1, intval($quantity));
 
 	// Verify ownership
 	$ar = $conn->query("SELECT user_id, completed, canceled FROM auctions WHERE id='$aid' LIMIT 1");
@@ -8872,9 +8874,9 @@ function updateAuction($conn, $auction_id, $user_id, $title, $description, $imag
 
 	if ($image_path !== '') {
 		$img  = $conn->real_escape_string($image_path);
-		$sql  = "UPDATE auctions SET title='$title', description='$desc', image_path='$img', asset_id='$aid_e', start_date='$sdate', end_date='$edate' WHERE id='$aid'";
+		$sql  = "UPDATE auctions SET title='$title', description='$desc', image_path='$img', asset_id='$aid_e', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$aid'";
 	} else {
-		$sql  = "UPDATE auctions SET title='$title', description='$desc', asset_id='$aid_e', start_date='$sdate', end_date='$edate' WHERE id='$aid'";
+		$sql  = "UPDATE auctions SET title='$title', description='$desc', asset_id='$aid_e', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$aid'";
 	}
 	if (!$conn->query($sql)) return ['success'=>false,'message'=>'Database error updating auction.'];
 
@@ -9017,7 +9019,7 @@ function getRaffle($conn, $raffle_id) {
 
 // Create a new raffle. $ticket_options is array of ['project_id'=>X,'cost'=>Y].
 // Returns new raffle id or false on error.
-function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options) {
+function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity = 1) {
 	$uid   = intval($user_id);
 	$title = $conn->real_escape_string($title);
 	$desc  = $conn->real_escape_string($description);
@@ -9025,9 +9027,10 @@ function createRaffle($conn, $user_id, $title, $description, $image_path, $asset
 	$aid   = $conn->real_escape_string($asset_id);
 	$sdate = $conn->real_escape_string($start_date);
 	$edate = $conn->real_escape_string($end_date);
+	$qty   = max(1, intval($quantity));
 
-	$sql = "INSERT INTO raffles (user_id, title, description, image_path, asset_id, start_date, end_date)
-	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$sdate', '$edate')";
+	$sql = "INSERT INTO raffles (user_id, title, description, image_path, asset_id, start_date, end_date, quantity)
+	        VALUES ('$uid', '$title', '$desc', '$img', '$aid', '$sdate', '$edate', '$qty')";
 	if (!$conn->query($sql)) return false;
 	$raffle_id = $conn->insert_id;
 
@@ -9041,9 +9044,10 @@ function createRaffle($conn, $user_id, $title, $description, $image_path, $asset
 
 // Update an existing raffle. $ticket_options is array of ['project_id'=>X,'cost'=>Y].
 // Only allowed when no active tickets have been sold. Returns ['success'=>true] or ['success'=>false,'message'=>'...'].
-function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options) {
+function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity = 1) {
 	$rid = intval($raffle_id);
 	$uid = intval($user_id);
+	$qty = max(1, intval($quantity));
 
 	// Verify ownership
 	$rr = $conn->query("SELECT user_id, completed, canceled FROM raffles WHERE id='$rid' LIMIT 1");
@@ -9064,9 +9068,9 @@ function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_
 
 	if ($image_path !== '') {
 		$img  = $conn->real_escape_string($image_path);
-		$sql  = "UPDATE raffles SET title='$title', description='$desc', image_path='$img', asset_id='$aid', start_date='$sdate', end_date='$edate' WHERE id='$rid'";
+		$sql  = "UPDATE raffles SET title='$title', description='$desc', image_path='$img', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
 	} else {
-		$sql  = "UPDATE raffles SET title='$title', description='$desc', asset_id='$aid', start_date='$sdate', end_date='$edate' WHERE id='$rid'";
+		$sql  = "UPDATE raffles SET title='$title', description='$desc', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
 	}
 	if (!$conn->query($sql)) return ['success'=>false,'message'=>'Database error updating raffle.'];
 

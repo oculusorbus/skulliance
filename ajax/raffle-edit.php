@@ -130,7 +130,8 @@ if ($image_path === '') {
     }
 }
 
-$result = updateRaffle($conn, $raffle_id, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $ticket_options);
+$quantity = max(1, intval($_POST['quantity'] ?? 1));
+$result   = updateRaffle($conn, $raffle_id, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity);
 $conn->close();
 
 json_exit($result);

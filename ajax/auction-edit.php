@@ -130,7 +130,8 @@ if ($image_path === '') {
     }
 }
 
-$result = updateAuction($conn, $auction_id, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects);
+$quantity = max(1, intval($_POST['quantity'] ?? 1));
+$result   = updateAuction($conn, $auction_id, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects, $quantity);
 $conn->close();
 
 json_exit($result);

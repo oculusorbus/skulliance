@@ -154,6 +154,11 @@ $now_ts = time();
       </div>
     </div>
 
+    <div class="form-row" id="r-qty-row" style="display:none;">
+      <label>Quantity *</label>
+      <input type="number" id="r-quantity" min="1" step="1" value="1" style="max-width:140px;" />
+    </div>
+
     <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
     <div class="currency-rows" id="r-currency-rows"></div>
     <button type="button" onclick="addRaffleCurrencyRow()" style="background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:6px;color:#a040ff;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
@@ -187,6 +192,11 @@ $now_ts = time();
       <div id="re-img-preview" style="display:none;margin-top:6px;">
         <img id="re-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
       </div>
+    </div>
+
+    <div class="form-row" id="re-qty-row" style="display:none;">
+      <label>Quantity *</label>
+      <input type="number" id="re-quantity" min="1" step="1" value="1" style="max-width:140px;" />
     </div>
 
     <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
@@ -339,7 +349,7 @@ function removeRaffleCurrencyRow(btn) {
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
-function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId) {
+function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId, quantityWrapperId) {
   var timer      = null;
   var assetInput = document.getElementById(assetInputId);
   var fileInput  = document.getElementById(fileInputId);
@@ -348,6 +358,14 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   var previewImg = document.getElementById(previewImgId);
   var ipfsHidden = document.getElementById(ipfsHiddenId);
   var titleInput = titleInputId ? document.getElementById(titleInputId) : null;
+  var qtyRow     = quantityWrapperId ? document.getElementById(quantityWrapperId) : null;
+  var qtyInput   = qtyRow ? qtyRow.querySelector('input[type=number]') : null;
+
+  function setQtyVisible(visible) {
+    if (!qtyRow) return;
+    qtyRow.style.display = visible ? '' : 'none';
+    if (!visible && qtyInput) qtyInput.value = 1;
+  }
 
   assetInput.addEventListener('input', function() {
     clearTimeout(timer);
@@ -355,7 +373,7 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
     ipfsHidden.value      = '';
     preview.style.display = 'none';
     status.style.display  = 'none';
-    if (!/^asset1[a-z0-9]{38}$/.test(val)) return;
+    if (!/^asset1[a-z0-9]{38}$/.test(val)) { setQtyVisible(false); return; }
     status.textContent   = 'Looking up asset…';
     status.style.color   = '#8899aa';
     status.style.display = 'block';
@@ -363,22 +381,25 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
       $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
         if (r.success) {
           if (titleInput && titleInput.value.trim() === '' && r.name) titleInput.value = r.name;
+          setQtyVisible(r.is_fungible);
           if (r.ipfs_raw) {
             ipfsHidden.value   = r.ipfs_raw;
             previewImg.src     = r.ipfs_url;
             previewImg.onload  = function() { preview.style.display = 'block'; };
             previewImg.onerror = function() { preview.style.display = 'none'; };
             status.textContent = 'Asset found — image and name pre-filled.';
-            status.style.color = '#00c8a0';
+            status.style.color = '#a040ff';
           } else {
             status.textContent = 'Asset found — please upload an image manually.';
             status.style.color = '#8899aa';
           }
         } else {
+          setQtyVisible(true);
           status.textContent = 'Asset not found — please fill in details manually.';
           status.style.color = '#8899aa';
         }
       }).fail(function() {
+        setQtyVisible(true);
         status.textContent = 'Lookup failed — please fill in details manually.';
         status.style.color = '#8899aa';
       });
@@ -406,8 +427,8 @@ var _fpCfg = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title');
-  setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title');
+  setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row');
+  setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row');
 
   flatpickr('#r-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#r-end-date',    _fpCfg);
@@ -445,6 +466,8 @@ function submitCreateRaffle() {
   fd.append('ticket_options', JSON.stringify(ticketOptions));
   fd.append('start_date', startDate);
   fd.append('end_date', endDate);
+  var rQtyRow = document.getElementById('r-qty-row');
+  fd.append('quantity', (rQtyRow && rQtyRow.style.display !== 'none') ? (parseInt(document.getElementById('r-quantity').value) || 1) : 1);
   if (imgFile) fd.append('image', imgFile);
   else { var ipfsUrl = document.getElementById('r-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 
@@ -508,6 +531,9 @@ function openEditRaffleModal(id) {
     rows.innerHTML = '';
     (r.ticket_options || []).forEach(function(o) { addRaffleEditCurrencyRow(o.project_id, o.cost); });
     if (rows.children.length === 0) addRaffleEditCurrencyRow();
+    var reQr = document.getElementById('re-qty-row');
+    var qty  = parseInt(r.quantity) || 1;
+    if (reQr) { reQr.style.display = qty > 1 ? '' : 'none'; document.getElementById('re-quantity').value = qty > 1 ? qty : 1; }
     document.getElementById('re-error').style.display = 'none';
     document.getElementById('edit-raffle-modal').classList.add('open');
   });
@@ -570,6 +596,8 @@ function submitEditRaffle() {
   fd.append('ticket_options', JSON.stringify(ticketOptions));
   fd.append('start_date', startDate);
   fd.append('end_date', endDate);
+  var reQtyRow = document.getElementById('re-qty-row');
+  fd.append('quantity', (reQtyRow && reQtyRow.style.display !== 'none') ? (parseInt(document.getElementById('re-quantity').value) || 1) : 1);
   if (imgFile) fd.append('image', imgFile);
   else { var ipfsUrl = document.getElementById('re-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 
