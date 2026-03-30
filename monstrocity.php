@@ -1351,7 +1351,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
-	          value: "vampireinvastion",
+	          value: "vampireinvasion",
 	          project: "Vampire Invasion",
 	          title: "Vampire Invasion",
 	          policyIds: "590048dda6a624c887c0466b178c16fff3dedc2aac5651a9e0fc41b6",
