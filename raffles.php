@@ -142,16 +142,18 @@ $now_ts = time();
 
     <div class="form-section-label">Prize Details</div>
     <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="r-asset-id" maxlength="44" placeholder="asset1..." /></div>
-    <div class="form-row"><label>Title *</label><input type="text" id="r-title" maxlength="255" placeholder="What are you raffling off?" /></div>
-    <div class="form-row"><label>Description</label><textarea id="r-desc" placeholder="Optional prize details…"></textarea></div>
-    <div class="form-row">
-      <label>Image Upload (optional — will auto-fetch from asset if left blank)</label>
+    <div id="r-img-status" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
+    <div id="r-img-preview" style="display:none;margin-top:6px;"><img id="r-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" /></div>
+
+    <div class="form-row" id="r-title-row" style="display:none;">
+      <label>Title *</label>
+      <input type="text" id="r-title" maxlength="255" placeholder="What are you raffling off?" />
+    </div>
+
+    <div class="form-row" id="r-image-row" style="display:none;">
+      <label>Image Upload</label>
       <input type="file" id="r-image" accept="image/png,image/gif,image/jpeg,image/webp" />
       <input type="hidden" id="r-ipfs-url" />
-      <div id="r-img-status" style="font-size:0.75rem;margin-top:5px;display:none;"></div>
-      <div id="r-img-preview" style="display:none;margin-top:6px;">
-        <img id="r-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
-      </div>
     </div>
 
     <div class="form-row" id="r-qty-row" style="display:none;">
@@ -182,16 +184,18 @@ $now_ts = time();
 
     <div class="form-section-label">Prize Details</div>
     <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="re-asset-id" maxlength="44" placeholder="asset1..." /></div>
-    <div class="form-row"><label>Title *</label><input type="text" id="re-title" maxlength="255" placeholder="What are you raffling off?" /></div>
-    <div class="form-row"><label>Description</label><textarea id="re-desc" placeholder="Optional prize details…"></textarea></div>
-    <div class="form-row">
-      <label>Replace Image (optional — will auto-fetch from asset if left blank)</label>
+    <div id="re-img-status" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
+    <div id="re-img-preview" style="display:none;margin-top:6px;"><img id="re-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" /></div>
+
+    <div class="form-row" id="re-title-row">
+      <label>Title *</label>
+      <input type="text" id="re-title" maxlength="255" placeholder="What are you raffling off?" />
+    </div>
+
+    <div class="form-row" id="re-image-row">
+      <label>Image Upload</label>
       <input type="file" id="re-image" accept="image/png,image/gif,image/jpeg,image/webp" />
       <input type="hidden" id="re-ipfs-url" />
-      <div id="re-img-status" style="font-size:0.75rem;margin-top:5px;display:none;"></div>
-      <div id="re-img-preview" style="display:none;margin-top:6px;">
-        <img id="re-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
-      </div>
     </div>
 
     <div class="form-row" id="re-qty-row" style="display:none;">
@@ -349,7 +353,7 @@ function removeRaffleCurrencyRow(btn) {
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
-function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId, quantityWrapperId) {
+function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId, quantityWrapperId, titleWrapperId, imageWrapperId) {
   var timer      = null;
   var assetInput = document.getElementById(assetInputId);
   var fileInput  = document.getElementById(fileInputId);
@@ -360,12 +364,16 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   var titleInput = titleInputId ? document.getElementById(titleInputId) : null;
   var qtyRow     = quantityWrapperId ? document.getElementById(quantityWrapperId) : null;
   var qtyInput   = qtyRow ? qtyRow.querySelector('input[type=number]') : null;
+  var titleWrap  = titleWrapperId ? document.getElementById(titleWrapperId) : null;
+  var imageWrap  = imageWrapperId ? document.getElementById(imageWrapperId) : null;
 
   function setQtyVisible(visible) {
     if (!qtyRow) return;
     qtyRow.style.display = visible ? '' : 'none';
     if (!visible && qtyInput) qtyInput.value = 1;
   }
+  function setTitleVisible(v) { if (titleWrap) titleWrap.style.display = v ? '' : 'none'; }
+  function setImageVisible(v) { if (imageWrap) imageWrap.style.display = v ? '' : 'none'; }
 
   assetInput.addEventListener('input', function() {
     clearTimeout(timer);
@@ -373,14 +381,24 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
     ipfsHidden.value      = '';
     preview.style.display = 'none';
     status.style.display  = 'none';
-    if (!/^asset1[a-z0-9]{38}$/.test(val)) { setQtyVisible(false); return; }
+    if (!/^asset1[a-z0-9]{38}$/.test(val)) {
+      setQtyVisible(false);
+      setTitleVisible(true);
+      setImageVisible(true);
+      return;
+    }
     status.textContent   = 'Looking up asset…';
     status.style.color   = '#8899aa';
     status.style.display = 'block';
     timer = setTimeout(function() {
       $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
         if (r.success) {
-          if (titleInput && titleInput.value.trim() === '' && r.name) titleInput.value = r.name;
+          if (r.name) {
+            if (titleInput && titleInput.value.trim() === '') titleInput.value = r.name;
+            setTitleVisible(false);
+          } else {
+            setTitleVisible(true);
+          }
           setQtyVisible(r.is_fungible);
           if (r.ipfs_raw) {
             ipfsHidden.value   = r.ipfs_raw;
@@ -389,17 +407,23 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
             previewImg.onerror = function() { preview.style.display = 'none'; };
             status.textContent = 'Asset found — image and name pre-filled.';
             status.style.color = '#a040ff';
+            setImageVisible(false);
           } else {
             status.textContent = 'Asset found — please upload an image manually.';
             status.style.color = '#8899aa';
+            setImageVisible(true);
           }
         } else {
           setQtyVisible(true);
+          setTitleVisible(true);
+          setImageVisible(true);
           status.textContent = 'Asset not found — please fill in details manually.';
           status.style.color = '#8899aa';
         }
       }).fail(function() {
         setQtyVisible(true);
+        setTitleVisible(true);
+        setImageVisible(true);
         status.textContent = 'Lookup failed — please fill in details manually.';
         status.style.color = '#8899aa';
       });
@@ -427,8 +451,8 @@ var _fpCfg = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row');
-  setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row');
+  setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row',  'r-title-row',  'r-image-row');
+  setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row', null, null);
 
   flatpickr('#r-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#r-end-date',    _fpCfg);
@@ -440,7 +464,6 @@ function submitCreateRaffle() {
   var err = document.getElementById('r-error');
   err.style.display = 'none';
   var title     = document.getElementById('r-title').value.trim();
-  var desc      = document.getElementById('r-desc').value.trim();
   var assetId   = document.getElementById('r-asset-id').value.trim();
   var startDate = document.getElementById('r-start-date').value;
   var endDate   = document.getElementById('r-end-date').value;
@@ -461,7 +484,6 @@ function submitCreateRaffle() {
 
   var fd = new FormData();
   fd.append('title', title);
-  fd.append('description', desc);
   fd.append('asset_id', assetId);
   fd.append('ticket_options', JSON.stringify(ticketOptions));
   fd.append('start_date', startDate);
@@ -520,7 +542,6 @@ function openEditRaffleModal(id) {
     if (!r.success) { openNotify(r.message || 'Could not load raffle data.'); return; }
     document.getElementById('re-raffle-id').value    = id;
     document.getElementById('re-title').value         = r.title || '';
-    document.getElementById('re-desc').value          = r.description || '';
     document.getElementById('re-asset-id').value      = r.asset_id || '';
     var fpStart = document.getElementById('re-start-date')._flatpickr;
     var fpEnd   = document.getElementById('re-end-date')._flatpickr;
@@ -569,7 +590,6 @@ function submitEditRaffle() {
   err.style.display = 'none';
   var raffleId   = document.getElementById('re-raffle-id').value;
   var title      = document.getElementById('re-title').value.trim();
-  var desc       = document.getElementById('re-desc').value.trim();
   var assetId    = document.getElementById('re-asset-id').value.trim();
   var startDate  = document.getElementById('re-start-date').value;
   var endDate    = document.getElementById('re-end-date').value;
@@ -591,7 +611,6 @@ function submitEditRaffle() {
   var fd = new FormData();
   fd.append('raffle_id', raffleId);
   fd.append('title', title);
-  fd.append('description', desc);
   fd.append('asset_id', assetId);
   fd.append('ticket_options', JSON.stringify(ticketOptions));
   fd.append('start_date', startDate);

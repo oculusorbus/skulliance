@@ -148,16 +148,18 @@ $now_ts = time();
 
     <div class="form-section-label">Item Details</div>
     <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="a-asset-id" maxlength="44" placeholder="asset1..." /></div>
-    <div class="form-row"><label>Title *</label><input type="text" id="a-title" maxlength="255" placeholder="What are you auctioning?" /></div>
-    <div class="form-row"><label>Description</label><textarea id="a-desc" placeholder="Optional details about the item…"></textarea></div>
-    <div class="form-row">
-      <label>Image Upload (optional — will auto-fetch from asset if left blank)</label>
+    <div id="a-img-status" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
+    <div id="a-img-preview" style="display:none;margin-top:6px;"><img id="a-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" /></div>
+
+    <div class="form-row" id="a-title-row" style="display:none;">
+      <label>Title *</label>
+      <input type="text" id="a-title" maxlength="255" placeholder="What are you auctioning?" />
+    </div>
+
+    <div class="form-row" id="a-image-row" style="display:none;">
+      <label>Image Upload</label>
       <input type="file" id="a-image" accept="image/png,image/gif,image/jpeg,image/webp" />
       <input type="hidden" id="a-ipfs-url" />
-      <div id="a-img-status" style="font-size:0.75rem;margin-top:5px;display:none;"></div>
-      <div id="a-img-preview" style="display:none;margin-top:6px;">
-        <img id="a-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
-      </div>
     </div>
 
     <div class="form-row" id="a-qty-row" style="display:none;">
@@ -188,16 +190,18 @@ $now_ts = time();
 
     <div class="form-section-label">Item Details</div>
     <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="ae-asset-id" maxlength="44" placeholder="asset1..." /></div>
-    <div class="form-row"><label>Title *</label><input type="text" id="ae-title" maxlength="255" placeholder="What are you auctioning?" /></div>
-    <div class="form-row"><label>Description</label><textarea id="ae-desc" placeholder="Optional details about the item…"></textarea></div>
-    <div class="form-row">
-      <label>Replace Image (optional — will auto-fetch from asset if left blank)</label>
+    <div id="ae-img-status" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
+    <div id="ae-img-preview" style="display:none;margin-top:6px;"><img id="ae-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" /></div>
+
+    <div class="form-row" id="ae-title-row">
+      <label>Title *</label>
+      <input type="text" id="ae-title" maxlength="255" placeholder="What are you auctioning?" />
+    </div>
+
+    <div class="form-row" id="ae-image-row">
+      <label>Image Upload</label>
       <input type="file" id="ae-image" accept="image/png,image/gif,image/jpeg,image/webp" />
       <input type="hidden" id="ae-ipfs-url" />
-      <div id="ae-img-status" style="font-size:0.75rem;margin-top:5px;display:none;"></div>
-      <div id="ae-img-preview" style="display:none;margin-top:6px;">
-        <img id="ae-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" />
-      </div>
     </div>
 
     <div class="form-row" id="ae-qty-row" style="display:none;">
@@ -356,7 +360,7 @@ function removeAuctionCurrencyRow(btn) {
 }
 
 // ── Asset IPFS auto-lookup ────────────────────────────────────────────────────
-function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId, quantityWrapperId) {
+function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previewImgId, ipfsHiddenId, titleInputId, quantityWrapperId, titleWrapperId, imageWrapperId) {
   var timer      = null;
   var assetInput = document.getElementById(assetInputId);
   var fileInput  = document.getElementById(fileInputId);
@@ -367,12 +371,16 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   var titleInput = titleInputId ? document.getElementById(titleInputId) : null;
   var qtyRow     = quantityWrapperId ? document.getElementById(quantityWrapperId) : null;
   var qtyInput   = qtyRow ? qtyRow.querySelector('input[type=number]') : null;
+  var titleWrap  = titleWrapperId ? document.getElementById(titleWrapperId) : null;
+  var imageWrap  = imageWrapperId ? document.getElementById(imageWrapperId) : null;
 
   function setQtyVisible(visible) {
     if (!qtyRow) return;
     qtyRow.style.display = visible ? '' : 'none';
     if (!visible && qtyInput) qtyInput.value = 1;
   }
+  function setTitleVisible(v) { if (titleWrap) titleWrap.style.display = v ? '' : 'none'; }
+  function setImageVisible(v) { if (imageWrap) imageWrap.style.display = v ? '' : 'none'; }
 
   assetInput.addEventListener('input', function() {
     clearTimeout(timer);
@@ -380,14 +388,24 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
     ipfsHidden.value      = '';
     preview.style.display = 'none';
     status.style.display  = 'none';
-    if (!/^asset1[a-z0-9]{38}$/.test(val)) { setQtyVisible(false); return; }
+    if (!/^asset1[a-z0-9]{38}$/.test(val)) {
+      setQtyVisible(false);
+      setTitleVisible(true);
+      setImageVisible(true);
+      return;
+    }
     status.textContent   = 'Looking up asset…';
     status.style.color   = '#8899aa';
     status.style.display = 'block';
     timer = setTimeout(function() {
       $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
         if (r.success) {
-          if (titleInput && titleInput.value.trim() === '' && r.name) titleInput.value = r.name;
+          if (r.name) {
+            if (titleInput && titleInput.value.trim() === '') titleInput.value = r.name;
+            setTitleVisible(false);
+          } else {
+            setTitleVisible(true);
+          }
           setQtyVisible(r.is_fungible);
           if (r.ipfs_raw) {
             ipfsHidden.value   = r.ipfs_raw;
@@ -396,17 +414,23 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
             previewImg.onerror = function() { preview.style.display = 'none'; };
             status.textContent = 'Asset found — image and name pre-filled.';
             status.style.color = '#00c8a0';
+            setImageVisible(false);
           } else {
             status.textContent = 'Asset found — please upload an image manually.';
             status.style.color = '#8899aa';
+            setImageVisible(true);
           }
         } else {
-          setQtyVisible(true); // show as fallback when lookup fails
+          setQtyVisible(true);
+          setTitleVisible(true);
+          setImageVisible(true);
           status.textContent = 'Asset not found — please fill in details manually.';
           status.style.color = '#8899aa';
         }
       }).fail(function() {
-        setQtyVisible(true); // show as fallback on error
+        setQtyVisible(true);
+        setTitleVisible(true);
+        setImageVisible(true);
         status.textContent = 'Lookup failed — please fill in details manually.';
         status.style.color = '#8899aa';
       });
@@ -434,8 +458,8 @@ var _fpCfg = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title',  'a-qty-row');
-  setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title', 'ae-qty-row');
+  setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title',  'a-qty-row',  'a-title-row',  'a-image-row');
+  setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title', 'ae-qty-row', null, null);
 
   flatpickr('#a-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#a-end-date',    _fpCfg);
@@ -447,7 +471,6 @@ function submitCreateAuction() {
   var err = document.getElementById('a-error');
   err.style.display = 'none';
   var title      = document.getElementById('a-title').value.trim();
-  var desc       = document.getElementById('a-desc').value.trim();
   var assetId    = document.getElementById('a-asset-id').value.trim();
   var startDate  = document.getElementById('a-start-date').value;
   var endDate    = document.getElementById('a-end-date').value;
@@ -468,7 +491,6 @@ function submitCreateAuction() {
 
   var fd = new FormData();
   fd.append('title', title);
-  fd.append('description', desc);
   fd.append('asset_id', assetId);
   fd.append('projects', JSON.stringify(projects));
   fd.append('start_date', startDate);
@@ -527,7 +549,6 @@ function openEditAuctionModal(id) {
     if (!r.success) { openNotify(r.message || 'Could not load auction data.'); return; }
     document.getElementById('ae-auction-id').value  = id;
     document.getElementById('ae-title').value        = r.title || '';
-    document.getElementById('ae-desc').value         = r.description || '';
     document.getElementById('ae-asset-id').value     = r.asset_id || '';
     var fpStart = document.getElementById('ae-start-date')._flatpickr;
     var fpEnd   = document.getElementById('ae-end-date')._flatpickr;
@@ -576,7 +597,6 @@ function submitEditAuction() {
   err.style.display = 'none';
   var auctionId  = document.getElementById('ae-auction-id').value;
   var title      = document.getElementById('ae-title').value.trim();
-  var desc       = document.getElementById('ae-desc').value.trim();
   var assetId    = document.getElementById('ae-asset-id').value.trim();
   var startDate  = document.getElementById('ae-start-date').value;
   var endDate    = document.getElementById('ae-end-date').value;
@@ -598,7 +618,6 @@ function submitEditAuction() {
   var fd = new FormData();
   fd.append('auction_id', auctionId);
   fd.append('title', title);
-  fd.append('description', desc);
   fd.append('asset_id', assetId);
   fd.append('projects', JSON.stringify(projects));
   fd.append('start_date', startDate);
