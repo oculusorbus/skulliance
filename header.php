@@ -72,8 +72,8 @@
 		    <div class="nav-dropdown-menu">
 		      <a href="dashboard.php">Dashboard</a>
 		      <a href="store.php">Store</a>
-		      <!--<a href="auctions.php">Auctions</a>
-		      <a href="raffles.php">Raffles</a>-->
+		      <a href="auctions.php">Auctions</a>
+		      <a href="raffles.php">Raffles</a>
 		      <a href="collections.php">Collections</a>
 		      <a href="gallery.php">Gallery</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
