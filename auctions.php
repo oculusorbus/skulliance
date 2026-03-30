@@ -72,7 +72,7 @@ $now_ts = time();
   <div class="main">
     <h2>Auctions</h2>
     <div class="content">
-      <p style="font-size:0.85rem;opacity:0.6;margin-bottom:4px;">Bid on rare items, NFTs, and prizes with your project points. Outbid others to claim the prize when the auction closes.</p>
+      <p style="font-size:0.85rem;opacity:0.6;margin-bottom:4px;">Bid on NFTs/FTs with your points. Outbid others to claim the prize when the auction closes.</p>
 
       <?php if ($member): ?>
       <div style="margin-bottom:16px;">

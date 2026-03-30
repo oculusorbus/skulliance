@@ -66,7 +66,7 @@ $now_ts = time();
   <div class="main">
     <h2>Raffles</h2>
     <div class="content">
-      <p style="font-size:0.85rem;opacity:0.6;margin-bottom:4px;">Buy tickets for a chance to win NFTs and prizes. The more tickets you hold, the better your odds.</p>
+      <p style="font-size:0.85rem;opacity:0.6;margin-bottom:4px;">Buy tickets for a chance to win NFTs/FTs. The more tickets you hold, the better your odds.</p>
 
       <?php if ($member): ?>
       <div style="margin-bottom:16px;">
