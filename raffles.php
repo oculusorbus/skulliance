@@ -133,10 +133,8 @@ $now_ts = time();
           <div class="raffle-card-footer">
             <button class="small-button" onclick="openTicketModal(<?php echo $r['id']; ?>)" style="width:100%;">Buy Tickets</button>
             <?php if ($is_owner && !$r['completed'] && !$r['canceled']): ?>
-            <button class="small-button small-button-danger" onclick="cancelRaffle(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;">Cancel Raffle</button>
-            <?php endif; ?>
-            <?php if ($is_owner && !$r['completed'] && !$r['canceled']): ?>
             <button class="small-button" onclick="openEditRaffleModal(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;">Edit Raffle</button>
+            <button class="small-button small-button-danger" onclick="cancelRaffle(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;">Cancel Raffle</button>
             <?php endif; ?>
           </div>
         </div>

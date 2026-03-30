@@ -136,10 +136,8 @@ $now_ts = time();
           <div class="auction-card-footer">
             <button class="small-button" onclick="openBidModal(<?php echo $a['id']; ?>)" style="width:100%;">View &amp; Bid</button>
             <?php if ($is_owner && !$a['completed'] && !$a['canceled']): ?>
-            <button class="small-button small-button-danger" onclick="cancelAuction(<?php echo $a['id']; ?>)" style="width:100%;margin-top:6px;">Cancel Auction</button>
-            <?php endif; ?>
-            <?php if ($is_owner && !$a['completed'] && !$a['canceled']): ?>
             <button class="small-button" onclick="openEditAuctionModal(<?php echo $a['id']; ?>)" style="width:100%;margin-top:6px;">Edit Auction</button>
+            <button class="small-button small-button-danger" onclick="cancelAuction(<?php echo $a['id']; ?>)" style="width:100%;margin-top:6px;">Cancel Auction</button>
             <?php endif; ?>
           </div>
         </div>
