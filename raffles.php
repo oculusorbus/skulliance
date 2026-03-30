@@ -544,7 +544,7 @@ function submitBuyTickets(raffle_id) {
     try { var r = JSON.parse(res); } catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
     if (r.success) { openNotify(r.message); setTimeout(function(){ openTicketModal(raffle_id); }, 800); }
     else { err.textContent = r.message || 'Purchase failed.'; err.style.display = 'block'; }
-  });
+  }, 'text');
 }
 
 // ── Edit Raffle Modal ─────────────────────────────────────────────────────────
@@ -653,7 +653,7 @@ function cancelRaffle(raffle_id) {
       try { var r = JSON.parse(res); } catch(e) { openNotify('Unexpected error.'); return; }
       if (r.success) { location.reload(); }
       else { openNotify(r.message || 'Could not cancel raffle.'); }
-    });
+    }, 'text');
   });
 }
 </script>

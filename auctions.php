@@ -539,7 +539,7 @@ function submitBid(auction_id) {
     catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
     if (r.success) { openBidModal(auction_id); }
     else { err.textContent = r.message || 'Bid failed.'; err.style.display = 'block'; }
-  });
+  }, 'text');
 }
 
 // ── Edit Auction Modal ────────────────────────────────────────────────────────
@@ -648,7 +648,7 @@ function cancelAuction(auction_id) {
       try { var r = JSON.parse(res); } catch(e) { openNotify('Unexpected error.'); return; }
       if (r.success) { location.reload(); }
       else { openNotify(r.message || 'Could not cancel auction.'); }
-    });
+    }, 'text');
   });
 }
 </script>
