@@ -8920,8 +8920,8 @@ function placeBid($conn, $auction_id, $user_id, $amount, $project_id) {
 	if ($current_bidder) {
 		$current_norm = floatval($auction['current_bid']) * getProjectNormalizedValue(intval($auction['current_bid_project_id']));
 		if ($new_norm < $current_norm * 1.05) {
-			$deficit = ($current_norm * 1.05) / getProjectNormalizedValue($pid);
-			return ['success'=>false,'message'=>'Bid must be at least ' . number_format($deficit, 2) . ' in that currency (5% above current bid).'];
+			$deficit = ceil(($current_norm * 1.05) / getProjectNormalizedValue($pid));
+			return ['success'=>false,'message'=>'Bid must be at least ' . number_format($deficit) . ' in that currency (5% above current bid).'];
 		}
 		// Refund current leader
 		updateBalance($conn, $current_bidder, intval($auction['current_bid_project_id']), floatval($auction['current_bid']));

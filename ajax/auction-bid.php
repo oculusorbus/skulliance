@@ -20,7 +20,7 @@ if (!isset($_SESSION['userData']['user_id'])) { ob_clean(); echo json_encode(['s
 
 $user_id    = intval($_SESSION['userData']['user_id']);
 $auction_id = intval($_POST['auction_id'] ?? 0);
-$amount     = floatval($_POST['amount'] ?? 0);
+$amount     = intval($_POST['amount'] ?? 0);
 $project_id = intval($_POST['project_id'] ?? 0);
 
 if (!$auction_id || $amount < 1 || !$project_id) {

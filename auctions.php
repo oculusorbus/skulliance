@@ -529,7 +529,7 @@ function closeBidModal() {
 }
 
 function submitBid(auction_id) {
-  var amt = parseFloat(document.getElementById('bid-amount').value);
+  var amt = parseInt(document.getElementById('bid-amount').value, 10);
   var pid = document.getElementById('bid-project-select').value;
   var err = document.getElementById('bid-error');
   err.style.display = 'none';
