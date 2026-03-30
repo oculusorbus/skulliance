@@ -124,6 +124,11 @@ $now_ts = time();
               <?php endif; ?>
               <a href="/staking/profile.php?username=<?php echo htmlspecialchars($r['creator_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($r['creator_name']); ?></a>
             </div>
+            <?php if (!empty($r['asset_id'])): ?>
+            <a href="https://pool.pm/<?php echo htmlspecialchars($r['asset_id']); ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;opacity:0.5;text-decoration:none;margin-top:2px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
+              <img src="https://pool.pm/pool.pm.svg" style="width:12px;height:12px;">View on pool.pm
+            </a>
+            <?php endif; ?>
           </div>
           <div class="raffle-card-footer">
             <button class="small-button" onclick="openTicketModal(<?php echo $r['id']; ?>)" style="width:100%;">Buy Tickets</button>
