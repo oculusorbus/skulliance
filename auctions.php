@@ -413,8 +413,8 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
             setTitleVisible(true);
           }
           setQtyVisible(r.is_fungible);
-          if (r.ipfs_raw) {
-            ipfsHidden.value   = r.ipfs_raw;
+          if (r.ipfs_url) {
+            ipfsHidden.value   = r.ipfs_raw || r.ipfs_url;
             previewImg.src     = r.ipfs_url;
             previewImg.onload  = function() { preview.style.display = 'block'; };
             previewImg.onerror = function() { preview.style.display = 'none'; };
