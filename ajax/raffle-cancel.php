@@ -79,7 +79,7 @@ if ($result['success'] && $raffle) {
         ($total > 0 ? " All **$total** ticket holder(s) have been refunded." : " No tickets had been purchased."),
         $img_url,
         'https://skulliance.io/staking/raffles.php',
-        'raffles', '', 'ff6b00'
+        'raffles', $img_url, 'ff6b00'
     );
 }
 

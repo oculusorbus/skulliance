@@ -155,5 +155,5 @@ discordmsg(
     "Ends: **$end_fmt**",
     $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
     'https://skulliance.io/staking/raffles.php',
-    'raffles', '', 'a040ff'
+    'raffles', $image_path ? 'https://skulliance.io/staking/' . $image_path : '', 'a040ff'
 );

@@ -55,7 +55,7 @@ if ($result['success'] && $auction) {
         ($prev_bidder && $prev_bid > 0 ? " The leading bid has been refunded." : " No bids had been placed."),
         $img_url,
         'https://skulliance.io/staking/auctions.php',
-        'auctions', '', 'ff6b00'
+        'auctions', $img_url, 'ff6b00'
     );
 }
 
