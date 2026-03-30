@@ -80,19 +80,6 @@ $conn->close();
   <div id="ticket-error" style="color:#ff6b6b;font-size:0.78rem;display:none;"></div>
   <button class="small-button" onclick="submitBuyTickets(<?php echo $raffle_id; ?>)">Buy Tickets</button>
 </div>
-<script>
-function updateRaffleTicketUI() {
-  var sel  = document.getElementById('raffle-project-select');
-  var opt  = sel.options[sel.selectedIndex];
-  var cost = parseInt(opt.dataset.cost, 10) || 0;
-  var qty  = parseInt(document.getElementById('ticket-qty').value, 10) || 1;
-  var cur  = opt.text.match(/\(([^)]+)\)/);
-  document.getElementById('raffle-cost-per').textContent = cost.toLocaleString();
-  document.getElementById('ticket-total').textContent = (cost * qty).toLocaleString();
-  document.getElementById('raffle-cur-label').textContent = cur ? cur[1] : '';
-}
-updateRaffleTicketUI();
-</script>
 <?php elseif ($upcoming): ?>
 <div style="font-size:0.82rem;opacity:0.5;">This raffle hasn't started yet.</div>
 <?php elseif ($is_closed): ?>

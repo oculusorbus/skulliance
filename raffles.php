@@ -509,11 +509,23 @@ function submitCreateRaffle() {
 }
 
 // ── Ticket Modal ──────────────────────────────────────────────────────────────
+function updateRaffleTicketUI() {
+  var sel = document.getElementById('raffle-project-select');
+  if (!sel) return;
+  var opt  = sel.options[sel.selectedIndex];
+  var cost = parseInt(opt.dataset.cost, 10) || 0;
+  var qty  = parseInt(document.getElementById('ticket-qty').value, 10) || 1;
+  var cur  = opt.text.match(/\(([^)]+)\)/);
+  document.getElementById('raffle-cost-per').textContent = cost.toLocaleString();
+  document.getElementById('ticket-total').textContent    = (cost * qty).toLocaleString();
+  document.getElementById('raffle-cur-label').textContent = cur ? cur[1] : '';
+}
 function openTicketModal(raffle_id) {
   document.getElementById('ticket-modal').classList.add('open');
   $.get('ajax/raffle-detail.php', { id: raffle_id }, function(html) {
     document.getElementById('ticket-modal-inner').innerHTML = html;
     updateCountdowns();
+    updateRaffleTicketUI();
   });
 }
 function closeTicketModal() {
