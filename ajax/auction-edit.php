@@ -48,7 +48,7 @@ $end_date = $dt->format('Y-m-d H:i:s');
 if (strtotime($end_date) <= time()) { json_exit(['success'=>false,'message'=>'End date must be in the future.']); }
 
 // Image upload
-$image_path = '';
+$image = '';
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['image'];
     if ($file['size'] > 50 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 50MB.']); }
@@ -86,11 +86,11 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $fname = uniqid('auction_', true) . '.' . $ext;
         move_uploaded_file($file['tmp_name'], $dir . $fname);
     }
-    $image_path = 'images/auctions/' . $fname;
+    $image = $fname;
 }
 
 // IPFS fallback: if no file uploaded, try the auto-fetched IPFS URL
-if ($image_path === '') {
+if ($image === '') {
     $ipfs_raw = trim($_POST['ipfs_url'] ?? '');
     if ($ipfs_raw !== '') {
         $clean_ipfs = str_replace('ipfs/', '', $ipfs_raw);
@@ -122,7 +122,7 @@ if ($image_path === '') {
                         $fname = uniqid('auction_', true) . '.' . ($ext_map[$mime] ?? 'jpg');
                         file_put_contents($dir . $fname, $body);
                     }
-                    $image_path = 'images/auctions/' . $fname;
+                    $image = $fname;
                 }
                 break;
             }
@@ -131,7 +131,7 @@ if ($image_path === '') {
 }
 
 $quantity = max(1, intval($_POST['quantity'] ?? 1));
-$result   = updateAuction($conn, $auction_id, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects, $quantity);
+$result   = updateAuction($conn, $auction_id, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $projects, $quantity);
 $conn->close();
 
 json_exit($result);

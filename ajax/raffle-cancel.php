@@ -48,7 +48,7 @@ $result = cancelRaffle($conn, $raffle_id, $user_id);
 
 if ($result['success'] && $raffle) {
     $title   = $raffle['title'] ?? '';
-    $img_url = !empty($raffle['image_path']) ? 'https://skulliance.io/staking/' . $raffle['image_path'] : '';
+    $img_url = !empty($raffle['image']) ? 'https://skulliance.io/staking/images/raffles/' . $raffle['image'] : '';
     $creator = $_SESSION['userData']['name'] ?? 'Unknown';
     $total   = count($buyers);
 

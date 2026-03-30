@@ -47,7 +47,7 @@ $end_date = $dt->format('Y-m-d H:i:s');
 if (strtotime($end_date) <= time()) { json_exit(['success'=>false,'message'=>'End date must be in the future.']); }
 
 // Image upload
-$image_path = '';
+$image = '';
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['image'];
     if ($file['size'] > 50 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 50MB.']); }
@@ -85,11 +85,11 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $fname = uniqid('raffle_', true) . '.' . $ext;
         move_uploaded_file($file['tmp_name'], $dir . $fname);
     }
-    $image_path = 'images/raffles/' . $fname;
+    $image = $fname;
 }
 
 // Asset image fallback: if no file uploaded, try the auto-fetched image URL
-if ($image_path === '') {
+if ($image === '') {
     $img_src = trim($_POST['ipfs_url'] ?? '');
     if ($img_src !== '') {
         // Build list of URLs to try: direct HTTP or IPFS gateways
@@ -132,7 +132,7 @@ if ($image_path === '') {
                         $fname = uniqid('raffle_', true) . '.' . ($ext_map[$mime] ?? 'jpg');
                         file_put_contents($dir . $fname, $body);
                     }
-                    $image_path = 'images/raffles/' . $fname;
+                    $image = $fname;
                 }
                 break;
             }
@@ -141,7 +141,7 @@ if ($image_path === '') {
 }
 
 $quantity  = max(1, intval($_POST['quantity'] ?? 1));
-$raffle_id = createRaffle($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity);
+$raffle_id = createRaffle($conn, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $ticket_options, $quantity);
 if (!$raffle_id) { json_exit(['success'=>false,'message'=>'Database error creating raffle.']); }
 
 // Build Discord labels before closing connection
@@ -164,7 +164,7 @@ discordmsg(
     "**$creator** started a new raffle!\n" .
     "Ticket Price: **" . implode(' / ', $opt_labels) . "**\n" .
     "Ends: **$end_fmt**",
-    $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
+    $image ? 'https://skulliance.io/staking/images/raffles/' . $image : '',
     'https://skulliance.io/staking/raffles.php',
-    'raffles', $image_path ? 'https://skulliance.io/staking/' . $image_path : '', 'a040ff'
+    'raffles', $image ? 'https://skulliance.io/staking/images/raffles/' . $image : '', 'a040ff'
 );

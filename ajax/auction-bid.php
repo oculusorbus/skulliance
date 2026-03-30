@@ -59,7 +59,7 @@ if ($result['success']) {
         }
     }
 
-    $a_img_url = !empty($auction['image_path']) ? 'https://skulliance.io/staking/' . $auction['image_path'] : '';
+    $a_img_url = !empty($auction['image']) ? 'https://skulliance.io/staking/images/auctions/' . $auction['image'] : '';
     discordmsg(
         '💰 New Bid: ' . ($auction['title'] ?? ''),
         "**$bidder_name** bid **" . number_format($amount) . " $cur** on **" . ($auction['title'] ?? '') . "**",

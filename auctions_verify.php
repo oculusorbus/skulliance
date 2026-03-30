@@ -39,7 +39,7 @@ if (!$result || $result->num_rows === 0) {
 while ($auction = $result->fetch_assoc()) {
     $aid              = intval($auction['id']);
     $title            = $auction['title'];
-    $img_url          = !empty($auction['image_path']) ? 'https://skulliance.io/staking/' . $auction['image_path'] : '';
+    $img_url          = !empty($auction['image']) ? 'https://skulliance.io/staking/images/auctions/' . $auction['image'] : '';
     $creator_id       = intval($auction['user_id']);
     $winner_id_stored = intval($auction['winner_id'] ?? 0);
     $prev_bidder      = intval($auction['current_bidder_id']);

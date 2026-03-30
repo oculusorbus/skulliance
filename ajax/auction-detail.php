@@ -32,7 +32,7 @@ foreach ($allowed as $p) {
     $balances[intval($p['project_id'] ?? $p['id'])] = ($bal === 'false') ? 0 : floatval($bal);
 }
 
-$has_img = !empty($auction['image_path']) && file_exists($auction['image_path']);
+$has_img = !empty($auction['image']) && file_exists(__DIR__ . '/../images/auctions/' . $auction['image']);
 // Resolve current bid currency label from already-loaded allowed projects list
 $cur_bid_label = '';
 $cur_bid_currency_lc = '';
@@ -44,7 +44,7 @@ foreach ($allowed as $ap) {
 $conn->close();
 ?>
 <?php if ($has_img): ?>
-<img class="auction-detail-img" src="<?php echo htmlspecialchars($auction['image_path']); ?>" alt="" />
+<img class="auction-detail-img" src="images/auctions/<?php echo htmlspecialchars($auction['image']); ?>" alt="" />
 <?php endif; ?>
 <div style="font-size:1rem;font-weight:bold;color:#e8eef4;"><?php echo htmlspecialchars($auction['title']); ?></div>
 

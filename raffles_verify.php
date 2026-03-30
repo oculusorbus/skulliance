@@ -36,7 +36,7 @@ if (!$result || $result->num_rows === 0) {
 while ($raffle = $result->fetch_assoc()) {
     $rid              = intval($raffle['id']);
     $title            = $raffle['title'];
-    $img_url          = !empty($raffle['image_path']) ? 'https://skulliance.io/staking/' . $raffle['image_path'] : '';
+    $img_url          = !empty($raffle['image']) ? 'https://skulliance.io/staking/images/raffles/' . $raffle['image'] : '';
     $creator_id       = intval($raffle['user_id']);
     $winner_id_stored = intval($raffle['winner_id'] ?? 0);
     $asset_id         = trim($raffle['asset_id'] ?? '');

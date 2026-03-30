@@ -47,7 +47,7 @@ json_exit([
     'asset_id'       => $raffle['asset_id'],
     'start_date'     => $start_fmt,
     'end_date'       => $end_fmt,
-    'image_path'     => $raffle['image_path'],
+    'image'     => $raffle['image'],
     'ticket_options' => $ticket_options,
     'quantity'       => intval($raffle['quantity'] ?? 1),
 ]);

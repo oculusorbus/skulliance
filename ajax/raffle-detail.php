@@ -26,11 +26,11 @@ foreach ($raffle['ticket_options'] as $opt) {
     $balances[$pid] = ($bal === 'false') ? 0 : floatval($bal);
 }
 
-$has_img = !empty($raffle['image_path']) && file_exists($raffle['image_path']);
+$has_img = !empty($raffle['image']) && file_exists(__DIR__ . '/../images/raffles/' . $raffle['image']);
 $conn->close();
 ?>
 <?php if ($has_img): ?>
-<img style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#0a1520;" src="<?php echo htmlspecialchars($raffle['image_path']); ?>" alt="" />
+<img style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#0a1520;" src="images/raffles/<?php echo htmlspecialchars($raffle['image']); ?>" alt="" />
 <?php endif; ?>
 <div style="font-size:1rem;font-weight:bold;color:#e8eef4;"><?php echo htmlspecialchars($raffle['title']); ?></div>
 

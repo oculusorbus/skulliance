@@ -8835,7 +8835,7 @@ function createAuction($conn, $user_id, $title, $description, $image_path, $asse
 	$edate = $conn->real_escape_string($end_date);
 	$qty   = max(1, intval($quantity));
 
-	$sql = "INSERT INTO auctions (user_id, title, image_path, asset_id, start_date, end_date, quantity)
+	$sql = "INSERT INTO auctions (user_id, title, image, asset_id, start_date, end_date, quantity)
 	        VALUES ('$uid', '$title', '$img', '$aid', '$sdate', '$edate', '$qty')";
 	if (!$conn->query($sql)) return false;
 	$auction_id = $conn->insert_id;
@@ -8874,7 +8874,7 @@ function updateAuction($conn, $auction_id, $user_id, $title, $description, $imag
 
 	if ($image_path !== '') {
 		$img  = $conn->real_escape_string($image_path);
-		$sql  = "UPDATE auctions SET title='$title', image_path='$img', asset_id='$aid_e', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$aid'";
+		$sql  = "UPDATE auctions SET title='$title', image='$img', asset_id='$aid_e', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$aid'";
 	} else {
 		$sql  = "UPDATE auctions SET title='$title', asset_id='$aid_e', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$aid'";
 	}
@@ -9029,7 +9029,7 @@ function createRaffle($conn, $user_id, $title, $description, $image_path, $asset
 	$edate = $conn->real_escape_string($end_date);
 	$qty   = max(1, intval($quantity));
 
-	$sql = "INSERT INTO raffles (user_id, title, image_path, asset_id, start_date, end_date, quantity)
+	$sql = "INSERT INTO raffles (user_id, title, image, asset_id, start_date, end_date, quantity)
 	        VALUES ('$uid', '$title', '$img', '$aid', '$sdate', '$edate', '$qty')";
 	if (!$conn->query($sql)) return false;
 	$raffle_id = $conn->insert_id;
@@ -9068,7 +9068,7 @@ function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_
 
 	if ($image_path !== '') {
 		$img  = $conn->real_escape_string($image_path);
-		$sql  = "UPDATE raffles SET title='$title', image_path='$img', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
+		$sql  = "UPDATE raffles SET title='$title', image='$img', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
 	} else {
 		$sql  = "UPDATE raffles SET title='$title', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
 	}

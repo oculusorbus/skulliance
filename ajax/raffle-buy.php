@@ -37,7 +37,7 @@ if ($result['success']) {
     $pr     = $conn->query("SELECT currency FROM projects WHERE id='$project_id' LIMIT 1");
     if ($pr && $pr->num_rows) $cur = strtoupper($pr->fetch_assoc()['currency']);
     $sold = intval($raffle['total_tickets_sold'] ?? 0);
-    $r_img_url = !empty($raffle['image_path']) ? 'https://skulliance.io/staking/' . $raffle['image_path'] : '';
+    $r_img_url = !empty($raffle['image']) ? 'https://skulliance.io/staking/images/raffles/' . $raffle['image'] : '';
     discordmsg(
         '🎟️ Ticket Purchase: ' . ($raffle['title'] ?? ''),
         "**$buyer** bought **$quantity** ticket(s) for **" . ($raffle['title'] ?? '') . "** using **$cur**\nTotal tickets sold: **$sold**",

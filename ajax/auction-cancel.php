@@ -28,7 +28,7 @@ $result  = cancelAuction($conn, $auction_id, $user_id);
 
 if ($result['success'] && $auction) {
     $title       = $auction['title'] ?? '';
-    $img_url     = !empty($auction['image_path']) ? 'https://skulliance.io/staking/' . $auction['image_path'] : '';
+    $img_url     = !empty($auction['image']) ? 'https://skulliance.io/staking/images/auctions/' . $auction['image'] : '';
     $creator     = $_SESSION['userData']['name'] ?? 'Unknown';
     $prev_bidder = intval($auction['current_bidder_id'] ?? 0);
     $prev_bid    = floatval($auction['current_bid'] ?? 0);

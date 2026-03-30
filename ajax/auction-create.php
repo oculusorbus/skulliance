@@ -47,7 +47,7 @@ $end_date = $dt->format('Y-m-d H:i:s');
 if (strtotime($end_date) <= time()) { json_exit(['success'=>false,'message'=>'End date must be in the future.']); }
 
 // Image upload
-$image_path = '';
+$image = '';
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['image'];
     if ($file['size'] > 50 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 50MB.']); }
@@ -85,11 +85,11 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $fname = uniqid('auction_', true) . '.' . $ext;
         move_uploaded_file($file['tmp_name'], $dir . $fname);
     }
-    $image_path = 'images/auctions/' . $fname;
+    $image = $fname;
 }
 
 // Asset image fallback: if no file uploaded, try the auto-fetched image URL
-if ($image_path === '') {
+if ($image === '') {
     $img_src = trim($_POST['ipfs_url'] ?? '');
     if ($img_src !== '') {
         // Build list of URLs to try: direct HTTP or IPFS gateways
@@ -132,7 +132,7 @@ if ($image_path === '') {
                         $fname = uniqid('auction_', true) . '.' . ($ext_map[$mime] ?? 'jpg');
                         file_put_contents($dir . $fname, $body);
                     }
-                    $image_path = 'images/auctions/' . $fname;
+                    $image = $fname;
                 }
                 break;
             }
@@ -141,7 +141,7 @@ if ($image_path === '') {
 }
 
 $quantity   = max(1, intval($_POST['quantity'] ?? 1));
-$auction_id = createAuction($conn, $user_id, $title, $desc, $image_path, $asset_id, $start_date, $end_date, $projects, $quantity);
+$auction_id = createAuction($conn, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $projects, $quantity);
 if (!$auction_id) { json_exit(['success'=>false,'message'=>'Database error creating auction.']); }
 
 // Build Discord labels before closing connection
@@ -164,7 +164,7 @@ discordmsg(
     "**$creator** listed a new auction!\n" .
     "Min Bid: **" . implode(' / ', $proj_labels) . "**\n" .
     "Ends: **$end_fmt**",
-    $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
+    $image ? 'https://skulliance.io/staking/images/auctions/' . $image : '',
     'https://skulliance.io/staking/auctions.php',
-    'auctions', $image_path ? 'https://skulliance.io/staking/' . $image_path : '', '00c8a0'
+    'auctions', $image ? 'https://skulliance.io/staking/images/auctions/' . $image : '', '00c8a0'
 );

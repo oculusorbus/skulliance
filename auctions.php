@@ -85,13 +85,13 @@ $now_ts = time();
       <?php else: ?>
       <div class="auctions-grid">
         <?php foreach ($auctions as $a):
-          $has_img   = !empty($a['image_path']) && file_exists($a['image_path']);
+          $has_img   = !empty($a['image']) && file_exists('images/auctions/' . $a['image']);
           $is_owner  = (isset($_SESSION['userData']['user_id']) && intval($a['user_id']) === intval($_SESSION['userData']['user_id']));
           $upcoming  = strtotime($a['start_date']) > $now_ts;
         ?>
         <div class="auction-card">
           <?php if ($has_img): ?>
-          <img class="auction-card-img" src="<?php echo htmlspecialchars($a['image_path']); ?>" alt="" />
+          <img class="auction-card-img" src="images/auctions/<?php echo htmlspecialchars($a['image']); ?>" alt="" />
           <?php else: ?>
           <div class="auction-card-img-placeholder">&#x1F3F7;</div>
           <?php endif; ?>

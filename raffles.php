@@ -79,7 +79,7 @@ $now_ts = time();
       <?php else: ?>
       <div class="raffles-grid">
         <?php foreach ($raffles as $r):
-          $has_img  = !empty($r['image_path']) && file_exists($r['image_path']);
+          $has_img  = !empty($r['image']) && file_exists('images/raffles/' . $r['image']);
           $is_owner = (isset($_SESSION['userData']['user_id']) && intval($r['user_id']) === intval($_SESSION['userData']['user_id']));
           $upcoming = strtotime($r['start_date']) > $now_ts;
           $sold     = intval($r['total_tickets_sold']);
@@ -87,7 +87,7 @@ $now_ts = time();
         ?>
         <div class="raffle-card">
           <?php if ($has_img): ?>
-          <img class="raffle-card-img" src="<?php echo htmlspecialchars($r['image_path']); ?>" alt="" />
+          <img class="raffle-card-img" src="images/raffles/<?php echo htmlspecialchars($r['image']); ?>" alt="" />
           <?php else: ?>
           <div class="raffle-card-img-placeholder">&#x1F3AB;</div>
           <?php endif; ?>
