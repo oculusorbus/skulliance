@@ -21,7 +21,7 @@ $now_ts = time();
 .raffle-card-desc { font-size:0.78rem; opacity:0.55; line-height:1.4; flex:1; }
 .raffle-stat-row { display:flex; align-items:center; justify-content:space-between; font-size:0.82rem; }
 .raffle-stat-label { opacity:0.5; }
-.raffle-stat-value { font-weight:bold; color:#a040ff; }
+.raffle-stat-value { font-weight:bold; color:#00c8a0; }
 .raffle-timer { font-size:0.75rem; opacity:0.5; }
 .raffle-upcoming-badge { font-size:0.72rem; background:rgba(255,200,0,0.12); border:1px solid rgba(255,200,0,0.25); border-radius:4px; padding:2px 7px; color:#ffc800; display:inline-block; margin-bottom:4px; }
 .raffle-card-footer { padding:10px 14px; border-top:1px solid rgba(255,255,255,0.05); }
