@@ -53,9 +53,9 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 	        "url"         => $url,
 	        "timestamp"   => $timestamp,
 	        "color"       => hexdec( $color ?: "000000" ),
-	        "image"       => ["url" => $imageurl],
 	        "thumbnail"   => ["url" => $thumbnail],
 	    ];
+	    if ($imageurl !== "") $embed["image"] = ["url" => $imageurl];
 	    if($author) $embed["author"] = $author;
 
 	    $msg = json_encode([
