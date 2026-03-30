@@ -1,7 +1,7 @@
 <?php
 include_once 'db.php';
 include_once 'message.php';
-include 'webhooks.php';
+include_once 'webhooks.php';
 require_once 'Bech32.php';
 
 use CardanoPhp\Bech32\Bech32;
