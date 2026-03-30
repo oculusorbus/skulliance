@@ -55,7 +55,15 @@ $conn->close();
     <span style="opacity:0.5;"><?php echo $upcoming ? 'Starts' : 'Ends'; ?></span>
     <span><span class="countdown" data-deadline="<?php echo strtotime($upcoming ? $raffle['start_date'] : $raffle['end_date']); ?>"></span></span>
   </div>
-  <div style="font-size:0.72rem;opacity:0.35;">By <?php echo htmlspecialchars($raffle['creator_name']); ?></div>
+  <div style="font-size:0.72rem;opacity:0.35;display:flex;align-items:center;gap:5px;">By
+    <?php
+      $cav  = $raffle['creator_avatar'] ?? '';
+      $cdis = $raffle['creator_discord'] ?? '';
+      $cname = htmlspecialchars($raffle['creator_name']);
+      if ($cdis && $cav) echo '<img src="https://cdn.discordapp.com/avatars/' . $cdis . '/' . $cav . '.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">';
+      echo '<a href="/staking/profile.php?username=' . $cname . '" style="color:inherit;text-decoration:underline;">' . $cname . '</a>';
+    ?>
+  </div>
 </div>
 
 <?php if (!$is_closed && !$ended && !$upcoming && !empty($raffle['ticket_options'])): ?>

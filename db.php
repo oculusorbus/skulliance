@@ -8764,7 +8764,7 @@ function getProjectNormalizedValue($project_id) {
 // Return all auctions (upcoming + active, not completed or canceled) with the current leading
 // bid derived from the bids table.
 function getActiveAuctions($conn) {
-	$sql = "SELECT a.*, u.username AS creator_name, u.discord_id AS creator_discord,
+	$sql = "SELECT a.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
 	               b.amount AS current_bid, b.project_id AS current_bid_project_id,
 	               b.user_id AS current_bidder_id,
 	               p.name AS current_bid_project_name, p.currency AS current_bid_currency
@@ -8786,7 +8786,7 @@ function getActiveAuctions($conn) {
 function getAuction($conn, $auction_id) {
 	$aid = intval($auction_id);
 	$result = $conn->query(
-		"SELECT a.*, u.username AS creator_name, u.discord_id AS creator_discord,
+		"SELECT a.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
 		        b.id AS leading_bid_id, b.amount AS current_bid, b.project_id AS current_bid_project_id,
 		        b.user_id AS current_bidder_id,
 		        p.name AS current_bid_project_name, p.currency AS current_bid_currency
@@ -8810,7 +8810,7 @@ function getAuction($conn, $auction_id) {
 
 	// Recent bids (for display)
 	$br = $conn->query(
-		"SELECT b.*, u.username AS bidder_name, p.name AS project_name, p.currency
+		"SELECT b.*, u.username AS bidder_name, u.discord_id AS bidder_discord, u.avatar AS bidder_avatar, p.name AS project_name, p.currency
 		 FROM bids b
 		 INNER JOIN users u ON u.id = b.user_id
 		 INNER JOIN projects p ON p.id = b.project_id
@@ -8962,7 +8962,7 @@ function cancelAuction($conn, $auction_id, $user_id) {
 
 // Return all raffles (upcoming + active, not completed or canceled) with total ticket counts.
 function getActiveRaffles($conn) {
-	$sql = "SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord,
+	$sql = "SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
 	               (SELECT COUNT(*) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 1) AS total_tickets_sold
 	        FROM raffles r
 	        INNER JOIN users u ON u.id = r.user_id
@@ -8986,7 +8986,7 @@ function getActiveRaffles($conn) {
 function getRaffle($conn, $raffle_id) {
 	$rid = intval($raffle_id);
 	$result = $conn->query(
-		"SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord
+		"SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar
 		 FROM raffles r
 		 INNER JOIN users u ON u.id = r.user_id
 		 WHERE r.id = $rid LIMIT 1"

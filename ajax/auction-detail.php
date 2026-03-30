@@ -68,7 +68,16 @@ $conn->close();
     <span style="opacity:0.5;"><?php echo $upcoming ? 'Launches' : 'Ends'; ?></span>
     <span><span class="countdown" data-deadline="<?php echo strtotime($upcoming ? $auction['start_date'] : $auction['end_date']); ?>"></span></span>
   </div>
-  <div style="font-size:0.75rem;opacity:0.4;">By <?php echo htmlspecialchars($auction['creator_name']); ?></div>
+  <div style="font-size:0.75rem;opacity:0.4;display:flex;align-items:center;gap:5px;">By
+    <?php
+      $cav = $auction['creator_avatar'] ?? '';
+      $cdis = $auction['creator_discord'] ?? '';
+      $cname = htmlspecialchars($auction['creator_name']);
+      $cuser = htmlspecialchars($auction['creator_name']);
+      if ($cdis && $cav) echo '<img src="https://cdn.discordapp.com/avatars/' . $cdis . '/' . $cav . '.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">';
+      echo '<a href="/staking/profile.php?username=' . $cuser . '" style="color:inherit;text-decoration:underline;">' . $cname . '</a>';
+    ?>
+  </div>
 </div>
 
 <?php if (!$is_closed && !$ended && !$upcoming): ?>
@@ -111,7 +120,12 @@ $conn->close();
   <div class="bid-history">
     <?php foreach ($auction['bids'] as $b): ?>
     <div class="bid-row">
-      <span><?php echo htmlspecialchars($b['bidder_name']); ?></span>
+      <span style="display:flex;align-items:center;gap:5px;">
+        <?php if (!empty($b['bidder_discord']) && !empty($b['bidder_avatar'])): ?>
+        <img src="https://cdn.discordapp.com/avatars/<?php echo $b['bidder_discord']; ?>/<?php echo $b['bidder_avatar']; ?>.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">
+        <?php endif; ?>
+        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($b['bidder_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($b['bidder_name']); ?></a>
+      </span>
       <span><?php echo number_format($b['amount']); ?> <?php echo strtoupper($b['currency']); ?></span>
       <span style="opacity:0.4;"><?php echo date('M j g:ia', strtotime($b['created_date'])); ?></span>
     </div>

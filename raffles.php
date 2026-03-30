@@ -113,7 +113,12 @@ $now_ts = time();
               Ends: <span class="countdown" data-deadline="<?php echo strtotime($r['end_date']); ?>"></span>
               <?php endif; ?>
             </div>
-            <div style="font-size:0.72rem;opacity:0.35;">By <?php echo htmlspecialchars($r['creator_name']); ?></div>
+            <div style="font-size:0.72rem;opacity:0.35;display:flex;align-items:center;gap:5px;">By
+              <?php if (!empty($r['creator_discord']) && !empty($r['creator_avatar'])): ?>
+              <img src="https://cdn.discordapp.com/avatars/<?php echo $r['creator_discord']; ?>/<?php echo $r['creator_avatar']; ?>.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;">
+              <?php endif; ?>
+              <a href="/staking/profile.php?username=<?php echo htmlspecialchars($r['creator_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($r['creator_name']); ?></a>
+            </div>
           </div>
           <div class="raffle-card-footer">
             <button class="small-button" onclick="openTicketModal(<?php echo $r['id']; ?>)" style="width:100%;">Buy Tickets</button>
