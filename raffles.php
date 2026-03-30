@@ -96,7 +96,6 @@ $now_ts = time();
             <div class="raffle-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="raffle-card-title"><?php echo htmlspecialchars($r['title']); ?></div>
-            <?php if ($r['description']): ?><div class="raffle-card-desc"><?php echo htmlspecialchars(mb_substr($r['description'],0,100)) . (mb_strlen($r['description'])>100?'…':''); ?></div><?php endif; ?>
             <?php if ($cheap): ?>
             <div class="raffle-stat-row">
               <span class="raffle-stat-label">Ticket Price</span>

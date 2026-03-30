@@ -32,7 +32,6 @@ $conn->close();
 <img style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#0a1520;" src="<?php echo htmlspecialchars($raffle['image_path']); ?>" alt="" />
 <?php endif; ?>
 <div style="font-size:1rem;font-weight:bold;color:#e8eef4;"><?php echo htmlspecialchars($raffle['title']); ?></div>
-<?php if ($raffle['description']): ?><div style="font-size:0.82rem;opacity:0.6;line-height:1.5;"><?php echo nl2br(htmlspecialchars($raffle['description'])); ?></div><?php endif; ?>
 
 <?php if ($upcoming): ?>
 <div style="background:rgba(255,200,0,0.1);border:1px solid rgba(255,200,0,0.25);border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#ffc800;">

@@ -100,7 +100,6 @@ $now_ts = time();
             <div class="auction-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="auction-card-title"><?php echo htmlspecialchars($a['title']); ?></div>
-            <?php if ($a['description']): ?><div class="auction-card-desc"><?php echo htmlspecialchars(mb_substr($a['description'],0,100)) . (mb_strlen($a['description'])>100?'…':''); ?></div><?php endif; ?>
             <div class="auction-bid-row">
               <span class="auction-bid-label">Current Bid</span>
               <span class="auction-bid-value">
