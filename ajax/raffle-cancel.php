@@ -1,8 +1,7 @@
 <?php
 include '../db.php';
 include '../message.php';
-include '../verify.php';
-include_once '../webhooks.php';
+include '../webhooks.php';
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
