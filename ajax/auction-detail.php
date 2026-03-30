@@ -10,11 +10,12 @@ if (!$auction_id) { echo '<p style="opacity:0.5;">Invalid auction.</p>'; exit; }
 $auction = getAuction($conn, $auction_id);
 if (!$auction) { echo '<p style="opacity:0.5;">Auction not found.</p>'; exit; }
 
-$user_id   = intval($_SESSION['userData']['user_id']);
-$is_closed = $auction['completed'] || $auction['canceled'];
-$ended     = strtotime($auction['end_date']) < time();
-$upcoming  = strtotime($auction['start_date']) > time();
-$is_leader = intval($auction['current_bidder_id']) === $user_id;
+$user_id    = intval($_SESSION['userData']['user_id']);
+$is_creator = $user_id === intval($auction['user_id']);
+$is_closed  = $auction['completed'] || $auction['canceled'];
+$ended      = strtotime($auction['end_date']) < time();
+$upcoming   = strtotime($auction['start_date']) > time();
+$is_leader  = intval($auction['current_bidder_id']) === $user_id;
 
 // Allowed project options for bid form
 $allowed = $auction['allowed_projects'];
@@ -82,7 +83,9 @@ $conn->close();
   </div>
 </div>
 
-<?php if (!$is_closed && !$ended && !$upcoming): ?>
+<?php if ($is_creator): ?>
+<div style="font-size:0.82rem;opacity:0.5;">You created this auction and cannot place bids.</div>
+<?php elseif (!$is_closed && !$ended && !$upcoming): ?>
 <div style="display:flex;flex-direction:column;gap:8px;">
   <div style="font-size:0.82rem;font-weight:bold;">Place a Bid</div>
   <div style="display:flex;gap:8px;">

@@ -10,10 +10,11 @@ if (!$raffle_id) { echo '<p style="opacity:0.5;">Invalid raffle.</p>'; exit; }
 $raffle = getRaffle($conn, $raffle_id);
 if (!$raffle) { echo '<p style="opacity:0.5;">Raffle not found.</p>'; exit; }
 
-$user_id   = intval($_SESSION['userData']['user_id']);
-$is_closed = $raffle['completed'] || $raffle['canceled'];
-$ended     = strtotime($raffle['end_date']) < time();
-$upcoming  = strtotime($raffle['start_date']) > time();
+$user_id    = intval($_SESSION['userData']['user_id']);
+$is_creator = $user_id === intval($raffle['user_id']);
+$is_closed  = $raffle['completed'] || $raffle['canceled'];
+$ended      = strtotime($raffle['end_date']) < time();
+$upcoming   = strtotime($raffle['start_date']) > time();
 $sold      = intval($raffle['total_tickets_sold']);
 $user_tickets = intval($raffle['user_tickets']);
 
@@ -66,7 +67,9 @@ $conn->close();
   </div>
 </div>
 
-<?php if (!$is_closed && !$ended && !$upcoming && !empty($raffle['ticket_options'])): ?>
+<?php if ($is_creator): ?>
+<div style="font-size:0.82rem;opacity:0.5;">You created this raffle and cannot buy tickets.</div>
+<?php elseif (!$is_closed && !$ended && !$upcoming && !empty($raffle['ticket_options'])): ?>
 <div style="display:flex;flex-direction:column;gap:8px;">
   <div style="font-size:0.82rem;font-weight:bold;">Buy Tickets</div>
   <select id="raffle-project-select" style="background:#0a1520;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e8eef4;padding:7px 9px;font-size:0.82rem;width:100%;">

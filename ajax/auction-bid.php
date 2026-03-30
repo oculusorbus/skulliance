@@ -28,6 +28,8 @@ if (!$auction_id || $amount < 1 || !$project_id) {
 }
 
 $auction_before = getAuction($conn, $auction_id);
+if ($auction_before && intval($auction_before['user_id']) === $user_id) { ob_clean(); echo json_encode(['success'=>false,'message'=>'You cannot bid on your own auction.']); exit; }
+
 $prev_bidder_id = $auction_before ? intval($auction_before['current_bidder_id']) : 0;
 $prev_bid_amt   = $auction_before ? floatval($auction_before['current_bid']) : 0;
 $prev_bid_pid   = $auction_before ? intval($auction_before['current_bid_project_id']) : 0;

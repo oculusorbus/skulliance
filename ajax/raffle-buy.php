@@ -25,6 +25,9 @@ $quantity   = intval($_POST['quantity'] ?? 1);
 
 if (!$raffle_id || !$project_id || $quantity < 1) { ob_clean(); echo json_encode(['success'=>false,'message'=>'Invalid request.']); exit; }
 
+$raffle_check = getRaffle($conn, $raffle_id);
+if ($raffle_check && intval($raffle_check['user_id']) === $user_id) { ob_clean(); echo json_encode(['success'=>false,'message'=>'You cannot buy tickets for your own raffle.']); exit; }
+
 $result = buyRaffleTickets($conn, $raffle_id, $user_id, $project_id, $quantity);
 
 if ($result['success']) {
