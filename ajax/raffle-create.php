@@ -152,8 +152,7 @@ discordmsg(
     '🎟️ New Raffle: ' . $title,
     "**$creator** started a new raffle!\n" .
     "Ticket Price: **" . implode(' / ', $opt_labels) . "**\n" .
-    "Ends: **$end_fmt**\n" .
-    ($desc ? "\n" . mb_substr($desc, 0, 150) . (mb_strlen($desc) > 150 ? '…' : '') : ''),
+    "Ends: **$end_fmt**",
     $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
     'https://skulliance.io/staking/raffles.php',
     'raffles', '', 'a040ff'

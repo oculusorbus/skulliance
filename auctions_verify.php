@@ -127,6 +127,11 @@ while ($auction = $result->fetch_assoc()) {
         $cur = 'pts';
         if ($pr && $pr->num_rows) { $row = $pr->fetch_assoc(); $cur = strtoupper($row['currency']); }
 
+        // Credit creator with winning bid points
+        updateBalance($conn, $creator_id, $prev_pid, $prev_bid);
+        logCredit($conn, $creator_id, $prev_bid, $prev_pid);
+        echo "  Credited creator (user_id=$creator_id) with " . number_format($prev_bid) . " $cur\n";
+
         // Mark winning bid as won; store winner_id on auction
         if ($winning_bid_id) $conn->query("UPDATE bids SET status=2 WHERE id='$winning_bid_id'");
         $conn->query("UPDATE auctions SET winner_id='$prev_bidder', completed=1, processing=0 WHERE id='$aid'");
@@ -135,9 +140,7 @@ while ($auction = $result->fetch_assoc()) {
         if ($winner && $winner['discord_id']) {
             $dm = "🎉 Congratulations! You won the auction for **{$title}**!\n\n" .
                   "Your winning bid: **" . number_format($prev_bid) . " $cur**\n" .
-                  ($asset_id !== ''
-                      ? "NFT Asset ID: `$asset_id`\n\n"
-                      : "\n") .
+                  ($asset_id !== '' ? "NFT Asset ID: `$asset_id`\n\n" : "\n") .
                   "Please contact the creator **{$auction['creator_name']}** in the Skulliance Discord to arrange delivery of your prize.\n\n" .
                   "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket.";
             sendDM($winner['discord_id'], $dm);
@@ -148,11 +151,10 @@ while ($auction = $result->fetch_assoc()) {
             $dm = "🔨 Your auction **{$title}** has ended!\n\n" .
                   "Winner: **{$winner_name}**\n" .
                   "Winning bid: **" . number_format($prev_bid) . " $cur**\n" .
-                  ($asset_id !== ''
-                      ? "NFT Asset ID: `$asset_id`\n\n"
-                      : "\n") .
-                  "Please send the prize to the winner via the Skulliance Discord. " .
-                  "Ensure your DMs from Skulliance members are open so the winner can contact you.";
+                  ($asset_id !== '' ? "NFT Asset ID: `$asset_id`\n\n" : "\n") .
+                  "**" . number_format($prev_bid) . " $cur** has been credited to your balance.\n\n" .
+                  "Please send the prize to **{$winner_name}** via the Skulliance Discord. " .
+                  "Ensure your DMs are open so the winner can contact you.";
             sendDM($auction['creator_discord'], $dm);
         }
 
@@ -160,15 +162,22 @@ while ($auction = $result->fetch_assoc()) {
         discordmsg(
             '🏆 Auction Ended: ' . $title,
             "**{$winner_name}** won **{$title}** with a bid of **" . number_format($prev_bid) . " $cur**!\n" .
-            "Creator: **{$auction['creator_name']}** — please arrange prize delivery in the Discord.",
+            "Creator: **{$auction['creator_name']}** — **" . number_format($prev_bid) . " $cur** sent to creator. Prize delivery in progress.",
             $img_url, 'https://skulliance.io/staking/auctions.php',
             'auctions', '', 'ffc800'
         );
 
         echo "  Winner: $winner_name — " . number_format($prev_bid) . " $cur\n";
     } else {
-        // No bids
+        // No bids — notify creator
         $conn->query("UPDATE auctions SET completed=1, processing=0 WHERE id='$aid'");
+
+        if ($auction['creator_discord']) {
+            sendDM($auction['creator_discord'],
+                "⏱️ Your auction **{$title}** ended with no bids. The listing has been closed."
+            );
+        }
+
         discordmsg(
             '⏱️ Auction Ended (No Bids): ' . $title,
             "**{$title}** by **{$auction['creator_name']}** ended with no bids.",

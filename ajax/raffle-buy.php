@@ -24,10 +24,10 @@ if ($result['success']) {
     if ($pr && $pr->num_rows) $cur = strtoupper($pr->fetch_assoc()['currency']);
     $sold = intval($raffle['total_tickets_sold'] ?? 0);
     discordmsg(
-        '🎟️ Ticket Purchase',
+        '🎟️ Ticket Purchase: ' . htmlspecialchars($raffle['title'] ?? ''),
         "**$buyer** bought **$quantity** ticket(s) for **" . htmlspecialchars($raffle['title'] ?? '') . "** using **$cur**\n" .
         "Total tickets sold: **$sold**",
-        '',
+        !empty($raffle['image_path']) ? 'https://skulliance.io/staking/' . $raffle['image_path'] : '',
         'https://skulliance.io/staking/raffles.php',
         'raffles', '', 'a040ff'
     );

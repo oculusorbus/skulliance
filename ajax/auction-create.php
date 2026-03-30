@@ -152,8 +152,7 @@ discordmsg(
     '🔨 New Auction: ' . $title,
     "**$creator** listed a new auction!\n" .
     "Min Bid: **" . implode(' / ', $proj_labels) . "**\n" .
-    "Ends: **$end_fmt**\n" .
-    ($desc ? "\n" . mb_substr($desc, 0, 150) . (mb_strlen($desc) > 150 ? '…' : '') : ''),
+    "Ends: **$end_fmt**",
     $image_path ? 'https://skulliance.io/staking/' . $image_path : '',
     'https://skulliance.io/staking/auctions.php',
     'auctions', '', '00c8a0'

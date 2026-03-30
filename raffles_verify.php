@@ -146,13 +146,20 @@ while ($raffle = $result->fetch_assoc()) {
     }
 
     if (empty($pool)) {
+        $conn->query("UPDATE raffles SET completed=1, processing=0 WHERE id='$rid'");
+
+        if ($raffle['creator_discord']) {
+            sendDM($raffle['creator_discord'],
+                "⏱️ Your raffle **{$title}** ended with no tickets sold. The listing has been closed."
+            );
+        }
+
         discordmsg(
             '🎟️ Raffle Ended (No Tickets): ' . $title,
             "**{$title}** by **{$raffle['creator_name']}** ended with no tickets sold.",
             $img_url, 'https://skulliance.io/staking/raffles.php',
             'raffles', '', '555555'
         );
-        $conn->query("UPDATE raffles SET completed=1, processing=0 WHERE id='$rid'");
         echo "  No tickets sold.\n";
         continue;
     }
@@ -163,6 +170,30 @@ while ($raffle = $result->fetch_assoc()) {
     $winner      = $wres ? $wres->fetch_assoc() : null;
     $winner_name = $winner ? $winner['name'] : 'Unknown';
 
+    // Credit creator with all ticket proceeds (per currency)
+    $cres = $conn->query(
+        "SELECT t.project_id, SUM(t.quantity) AS total_qty, rp.cost
+         FROM tickets t
+         INNER JOIN raffles_projects rp ON rp.raffle_id = t.raffle_id AND rp.project_id = t.project_id
+         WHERE t.raffle_id='$rid' AND t.status=1
+         GROUP BY t.project_id"
+    );
+    $payout_lines = [];
+    if ($cres) {
+        while ($crow = $cres->fetch_assoc()) {
+            $payout = intval($crow['total_qty']) * intval($crow['cost']);
+            if ($payout > 0) {
+                updateBalance($conn, $creator_id, intval($crow['project_id']), $payout);
+                logCredit($conn, $creator_id, $payout, intval($crow['project_id']));
+                $pres = $conn->query("SELECT currency FROM projects WHERE id='" . intval($crow['project_id']) . "' LIMIT 1");
+                $pcur = ($pres && $pres->num_rows) ? strtoupper($pres->fetch_assoc()['currency']) : 'pts';
+                $payout_lines[] = number_format($payout) . ' ' . $pcur;
+                echo "  Credited creator (user_id=$creator_id) with $payout $pcur\n";
+            }
+        }
+    }
+    $payout_str = !empty($payout_lines) ? implode(', ', $payout_lines) : 'none';
+
     // Update raffle record
     $conn->query("UPDATE raffles SET winner_id='$winning_uid', completed=1, processing=0 WHERE id='$rid'");
 
@@ -170,9 +201,7 @@ while ($raffle = $result->fetch_assoc()) {
     if ($winner && $winner['discord_id']) {
         $dm = "🎉 You won the raffle for **{$title}**!\n\n" .
               "You were drawn from **$total_sold** total ticket(s).\n" .
-              ($asset_id !== ''
-                  ? "NFT Asset ID: `$asset_id`\n\n"
-                  : "\n") .
+              ($asset_id !== '' ? "NFT Asset ID: `$asset_id`\n\n" : "\n") .
               "Please contact the creator **{$raffle['creator_name']}** in the Skulliance Discord to arrange delivery of your prize.\n\n" .
               "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket.";
         sendDM($winner['discord_id'], $dm);
@@ -183,11 +212,10 @@ while ($raffle = $result->fetch_assoc()) {
         $dm = "🎟️ Your raffle **{$title}** has ended!\n\n" .
               "Winner: **{$winner_name}**\n" .
               "Total tickets sold: **$total_sold**\n" .
-              ($asset_id !== ''
-                  ? "NFT Asset ID: `$asset_id`\n\n"
-                  : "\n") .
-              "Please send the prize to the winner via the Skulliance Discord. " .
-              "Ensure your DMs from Skulliance members are open so the winner can contact you.";
+              ($asset_id !== '' ? "NFT Asset ID: `$asset_id`\n\n" : "\n") .
+              "**$payout_str** has been credited to your balance.\n\n" .
+              "Please send the prize to **{$winner_name}** via the Skulliance Discord. " .
+              "Ensure your DMs are open so the winner can contact you.";
         sendDM($raffle['creator_discord'], $dm);
     }
 
@@ -196,12 +224,13 @@ while ($raffle = $result->fetch_assoc()) {
         '🏆 Raffle Winner: ' . $title,
         "🎉 **{$winner_name}** won **{$title}**!\n" .
         "Drawn from **$total_sold** ticket(s).\n" .
-        "Creator: **{$raffle['creator_name']}** — please arrange prize delivery.",
+        "Creator: **{$raffle['creator_name']}** — **$payout_str** sent to creator. Prize delivery in progress.",
         $img_url, 'https://skulliance.io/staking/raffles.php',
         'raffles', '', 'a040ff'
     );
 
     echo "  Winner: $winner_name (pool of $total_sold)\n";
+    echo "  Creator credited: $payout_str\n";
     echo "  Raffle #$rid marked completed.\n";
 }
 
