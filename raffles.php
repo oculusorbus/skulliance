@@ -541,7 +541,7 @@ function submitBuyTickets(raffle_id) {
   if (!qty || qty < 1) { err.textContent = 'Enter a valid quantity.'; err.style.display = 'block'; return; }
   if (!pid) { err.textContent = 'Select a currency.'; err.style.display = 'block'; return; }
   $.post('ajax/raffle-buy.php', { raffle_id: raffle_id, project_id: pid, quantity: qty }, function(res) {
-    try { var r = JSON.parse(res); } catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
+    var r; try { r = JSON.parse(res); } catch(e) { err.textContent = 'Server error: ' + String(res).replace(/<[^>]+>/g,'').trim().slice(0,200); err.style.display = 'block'; return; }
     if (r.success) { openNotify(r.message); setTimeout(function(){ openTicketModal(raffle_id); }, 800); }
     else { err.textContent = r.message || 'Purchase failed.'; err.style.display = 'block'; }
   }, 'text');
@@ -650,7 +650,7 @@ function submitEditRaffle() {
 function cancelRaffle(raffle_id) {
   openConfirm('Cancel this raffle? All ticket buyers will be fully refunded.', function() {
     $.post('ajax/raffle-cancel.php', { raffle_id: raffle_id }, function(res) {
-      try { var r = JSON.parse(res); } catch(e) { openNotify('Unexpected error.'); return; }
+      var r; try { r = JSON.parse(res); } catch(e) { openNotify('Server error: ' + String(res).replace(/<[^>]+>/g,'').trim().slice(0,200)); return; }
       if (r.success) { location.reload(); }
       else { openNotify(r.message || 'Could not cancel raffle.'); }
     }, 'text');

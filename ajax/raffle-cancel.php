@@ -1,20 +1,30 @@
 <?php
+ob_start();
 include '../db.php';
 include '../message.php';
 include '../webhooks.php';
+ini_set('display_errors', 0);
+
+register_shutdown_function(function() {
+    $err = error_get_last();
+    if ($err && ($err['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR))) {
+        while (ob_get_level() > 0) ob_end_clean();
+        if (!headers_sent()) header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Fatal: ' . $err['message'] . ' (' . basename($err['file']) . ':' . $err['line'] . ')']);
+    }
+});
+
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['userData']['user_id'])) { echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
+if (!isset($_SESSION['userData']['user_id'])) { ob_clean(); echo json_encode(['success'=>false,'message'=>'Not logged in.']); exit; }
 
 $user_id   = intval($_SESSION['userData']['user_id']);
 $raffle_id = intval($_POST['raffle_id'] ?? 0);
 
-if (!$raffle_id) { echo json_encode(['success'=>false,'message'=>'Invalid request.']); exit; }
+if (!$raffle_id) { ob_clean(); echo json_encode(['success'=>false,'message'=>'Invalid request.']); exit; }
 
-// Load raffle and ticket buyers before canceling so we can send refund DMs
 $raffle = getRaffle($conn, $raffle_id);
 
-// Capture unique buyers with their discord_ids and refund amounts before cancelRaffle wipes status
 $buyers = [];
 if ($raffle) {
     $costs = [];
@@ -42,12 +52,11 @@ if ($result['success'] && $raffle) {
     $creator = $_SESSION['userData']['name'] ?? 'Unknown';
     $total   = count($buyers);
 
-    // DM each unique ticket buyer about their refund
     foreach ($buyers as $buyer_uid => $purchases) {
         $ures = $conn->query("SELECT discord_id FROM users WHERE id='$buyer_uid' LIMIT 1");
         if (!$ures || !$ures->num_rows) continue;
         $urow = $ures->fetch_assoc();
-        if (!$urow['discord_id']) continue;
+        if (empty($urow['discord_id'])) continue;
 
         $refund_lines = [];
         foreach ($purchases as $p) {
@@ -64,8 +73,6 @@ if ($result['success'] && $raffle) {
         );
     }
 
-    $conn->close();
-
     discordmsg(
         '🚫 Raffle Canceled: ' . $title,
         "**$creator** canceled their raffle **{$title}**." .
@@ -74,8 +81,8 @@ if ($result['success'] && $raffle) {
         'https://skulliance.io/staking/raffles.php',
         'raffles', '', 'ff6b00'
     );
-} else {
-    $conn->close();
 }
 
+$conn->close();
+ob_clean();
 echo json_encode($result);

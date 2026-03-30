@@ -535,8 +535,7 @@ function submitBid(auction_id) {
   err.style.display = 'none';
   if (!amt || amt < 1) { err.textContent = 'Enter a valid bid amount.'; err.style.display = 'block'; return; }
   $.post('ajax/auction-bid.php', { auction_id: auction_id, amount: amt, project_id: pid }, function(res) {
-    try { var r = JSON.parse(res); }
-    catch(e) { err.textContent = 'Unexpected error.'; err.style.display = 'block'; return; }
+    var r; try { r = JSON.parse(res); } catch(e) { err.textContent = 'Server error: ' + String(res).replace(/<[^>]+>/g,'').trim().slice(0,200); err.style.display = 'block'; return; }
     if (r.success) { openBidModal(auction_id); }
     else { err.textContent = r.message || 'Bid failed.'; err.style.display = 'block'; }
   }, 'text');
@@ -645,7 +644,7 @@ function submitEditAuction() {
 function cancelAuction(auction_id) {
   openConfirm('Cancel this auction? Any current bid will be refunded.', function() {
     $.post('ajax/auction-cancel.php', { auction_id: auction_id }, function(res) {
-      try { var r = JSON.parse(res); } catch(e) { openNotify('Unexpected error.'); return; }
+      var r; try { r = JSON.parse(res); } catch(e) { openNotify('Server error: ' + String(res).replace(/<[^>]+>/g,'').trim().slice(0,200)); return; }
       if (r.success) { location.reload(); }
       else { openNotify(r.message || 'Could not cancel auction.'); }
     }, 'text');
