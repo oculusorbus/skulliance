@@ -74,7 +74,7 @@ $conn->close();
       $pid  = intval($opt['project_id']);
       $bal  = $balances[$pid] ?? 0;
     ?>
-    <option value="<?php echo $pid; ?>" data-cost="<?php echo intval($opt['cost']); ?>" data-bal="<?php echo $bal; ?>">
+    <option value="<?php echo $pid; ?>" data-cost="<?php echo intval($opt['cost']); ?>" data-bal="<?php echo $bal; ?>" data-currency="<?php echo strtolower($opt['currency']); ?>">
       <?php echo htmlspecialchars($opt['project_name']); ?> (<?php echo strtoupper($opt['currency']); ?>) — <?php echo number_format(intval($opt['cost'])); ?>/ticket — Bal: <?php echo number_format($bal); ?>
     </option>
     <?php endforeach; ?>

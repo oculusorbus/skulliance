@@ -525,10 +525,13 @@ function updateRaffleTicketUI() {
   var opt  = sel.options[sel.selectedIndex];
   var cost = parseInt(opt.dataset.cost, 10) || 0;
   var qty  = parseInt(document.getElementById('ticket-qty').value, 10) || 1;
-  var cur  = opt.text.match(/\(([^)]+)\)/);
+  var curLc = opt.dataset.currency || '';
+  var curUc = curLc.toUpperCase();
   document.getElementById('raffle-cost-per').textContent = cost.toLocaleString();
   document.getElementById('ticket-total').textContent    = (cost * qty).toLocaleString();
-  document.getElementById('raffle-cur-label').textContent = cur ? cur[1] : '';
+  document.getElementById('raffle-cur-label').innerHTML  = curLc
+    ? '<img src="icons/' + curLc + '.png" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;">' + curUc
+    : '';
 }
 function openTicketModal(raffle_id) {
   document.getElementById('ticket-modal').classList.add('open');
