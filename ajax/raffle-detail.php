@@ -40,7 +40,7 @@ $conn->close();
 </div>
 <?php endif; ?>
 
-<div style="display:flex;flex-direction:column;gap:6px;background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:8px;padding:12px;">
+<div style="display:flex;flex-direction:column;gap:6px;background:rgba(0,200,160,0.06);border:1px solid rgba(0,200,160,0.15);border-radius:8px;padding:12px;">
   <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
     <span style="opacity:0.5;">Tickets Sold</span>
     <span><?php echo $sold; ?></span>
