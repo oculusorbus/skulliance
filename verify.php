@@ -408,15 +408,6 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nf
 	return $payload;
 }
 
-function sendDM($discord_id, $message){
-	# Open the DM first
-	$newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
-	# Check if DM is created, if yes, let's send a message to this channel.
-	if(isset($newDM["id"])) {
-	    $newMessage = MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $message));
-	}
-}
-
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids, $nft_owners, $collections){
 	if(isset($image)){
 		// Dank Bit Fix
