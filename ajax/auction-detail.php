@@ -76,11 +76,19 @@ $conn->close();
   <div style="font-size:0.82rem;font-weight:bold;">Place a Bid</div>
   <div style="display:flex;gap:8px;">
     <select id="bid-project-select" style="background:#0a1520;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e8eef4;padding:7px 9px;font-size:0.82rem;flex:1;">
-      <?php foreach ($allowed as $p):
-        $apid = intval($p['project_id'] ?? $p['id']);
-        $bal  = $balances[$apid] ?? 0;
+      <?php
+        $has_current_bid = $auction['current_bid'] > 0;
+        $current_norm    = $has_current_bid
+            ? floatval($auction['current_bid']) * getProjectNormalizedValue(intval($auction['current_bid_project_id']))
+            : 0;
+        foreach ($allowed as $p):
+          $apid    = intval($p['project_id'] ?? $p['id']);
+          $bal     = $balances[$apid] ?? 0;
+          $min_bid = $has_current_bid
+              ? (int) ceil($current_norm * 1.05 / getProjectNormalizedValue($apid))
+              : max(1, intval($p['minimum_bid'] ?? 1));
       ?>
-      <option value="<?php echo $apid; ?>"><?php echo htmlspecialchars($p['name']); ?> (<?php echo strtoupper($p['currency']); ?>) — Bal: <?php echo number_format($bal); ?></option>
+      <option value="<?php echo $apid; ?>" data-minbid="<?php echo $min_bid; ?>"><?php echo htmlspecialchars($p['name']); ?> (<?php echo strtoupper($p['currency']); ?>) — Min: <?php echo number_format($min_bid); ?> — Bal: <?php echo number_format($bal); ?></option>
       <?php endforeach; ?>
     </select>
   </div>

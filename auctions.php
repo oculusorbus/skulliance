@@ -517,11 +517,23 @@ function submitCreateAuction() {
 }
 
 // ── Bid Modal ─────────────────────────────────────────────────────────────────
+function setMinBidFromSelect() {
+  var sel = document.getElementById('bid-project-select');
+  if (!sel) return;
+  var opt = sel.options[sel.selectedIndex];
+  var min = parseInt(opt.dataset.minbid, 10) || 1;
+  var inp = document.getElementById('bid-amount');
+  if (inp) { inp.value = min; inp.min = min; }
+}
+
 function openBidModal(auction_id) {
   document.getElementById('bid-modal').classList.add('open');
   $.get('ajax/auction-detail.php', { id: auction_id }, function(html) {
     document.getElementById('bid-modal-inner').innerHTML = html;
     updateCountdowns();
+    var sel = document.getElementById('bid-project-select');
+    if (sel) sel.addEventListener('change', setMinBidFromSelect);
+    setMinBidFromSelect();
   });
 }
 function closeBidModal() {
