@@ -120,7 +120,7 @@ $conn->close();
       $rank_colors = ['#ffd700','#c0c0c0','#cd7f32'];
       $rank_color  = $rank_colors[$i] ?? null;
     ?>
-    <div class="bid-row" style="<?php echo $is_you ? 'background:rgba(0,200,160,0.07);border-radius:5px;padding:3px 5px;margin:-3px -5px;' : ''; ?>">
+    <div class="bid-row" style="<?php echo $is_you ? 'background:rgba(0,200,160,0.12);' : ''; ?>">
       <span style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;">
         <?php if ($rank_color): ?>
         <span style="font-size:0.7rem;color:<?php echo $rank_color; ?>;font-weight:bold;flex-shrink:0;">#<?php echo $i+1; ?></span>

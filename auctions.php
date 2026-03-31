@@ -16,12 +16,13 @@ $now_ts = time();
 .auction-card { background:#0d1f2d; border:1px solid rgba(0,200,160,0.15); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; }
 .auction-card-img { width:100%; aspect-ratio:1/1; object-fit:cover; background:#111; }
 .auction-card-img-placeholder { width:100%; aspect-ratio:1/1; background:#0a1a26; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.2); font-size:2.5rem; }
-.auction-card-body { padding:14px; flex:1; display:flex; flex-direction:column; gap:8px; }
+.auction-card-body { padding:14px; flex:1; display:flex; flex-direction:column; gap:10px; }
 .auction-card-title { font-weight:bold; font-size:0.95rem; color:#e8eef4; }
 .auction-card-desc { font-size:0.78rem; opacity:0.55; line-height:1.4; flex:1; }
+.auction-stats-box { display:flex; flex-direction:column; gap:6px; background:rgba(0,200,160,0.05); border:1px solid rgba(0,200,160,0.13); border-radius:7px; padding:9px 11px; }
 .auction-bid-row { display:flex; align-items:center; justify-content:space-between; font-size:0.82rem; }
 .auction-bid-label { opacity:0.5; }
-.auction-bid-value { font-weight:bold; color:#00c8a0; }
+.auction-bid-value { font-weight:bold; color:#00c8a0; display:flex; align-items:center; gap:3px; }
 .auction-timer { font-size:0.75rem; opacity:0.5; }
 .auction-upcoming-badge { font-size:0.72rem; background:rgba(255,200,0,0.12); border:1px solid rgba(255,200,0,0.25); border-radius:4px; padding:2px 7px; color:#ffc800; display:inline-block; margin-bottom:4px; }
 .auction-card-footer { padding:10px 14px; border-top:1px solid rgba(255,255,255,0.05); }
@@ -48,7 +49,7 @@ $now_ts = time();
 .currency-row .rm-btn { flex-shrink:0; background:rgba(200,50,50,0.15); border:1px solid rgba(200,50,50,0.3); border-radius:5px; color:#ff6b6b; cursor:pointer; padding:6px 10px; font-size:0.78rem; white-space:nowrap; }
 
 .bid-modal-box { width:min(420px,95vw); }
-.bid-history { max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+.bid-history { max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
 .bid-row { display:flex; justify-content:space-between; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; }
 
 .auction-detail-img { width:100%; max-height:260px; object-fit:contain; border-radius:8px; background:#0a1520; }
@@ -100,26 +101,28 @@ $now_ts = time();
             <div class="auction-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="auction-card-title"><?php echo htmlspecialchars($a['title']); ?></div>
-            <div class="auction-bid-row">
-              <span class="auction-bid-label">Current Bid</span>
-              <span class="auction-bid-value">
-                <?php
-                  if ($a['current_bid'] > 0) {
-                    $cur_lc = strtolower($a['current_bid_currency'] ?: 'pts');
-                    echo '<img src="icons/' . $cur_lc . '.png" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;">';
-                    echo number_format($a['current_bid']) . ' ' . strtoupper($cur_lc);
-                  } else {
-                    echo 'No bids yet';
-                  }
-                ?>
-              </span>
-            </div>
-            <div class="auction-timer">
-              <?php if ($upcoming): ?>
-              Launches: <span class="countdown" data-deadline="<?php echo strtotime($a['start_date']); ?>"></span>
-              <?php else: ?>
-              Ends: <span class="countdown" data-deadline="<?php echo strtotime($a['end_date']); ?>"></span>
-              <?php endif; ?>
+            <div class="auction-stats-box">
+              <div class="auction-bid-row">
+                <span class="auction-bid-label">Current Bid</span>
+                <span class="auction-bid-value">
+                  <?php
+                    if ($a['current_bid'] > 0) {
+                      $cur_lc = strtolower($a['current_bid_currency'] ?: 'pts');
+                      echo '<img src="icons/' . $cur_lc . '.png" style="width:14px;height:14px;">';
+                      echo number_format($a['current_bid']) . ' ' . strtoupper($cur_lc);
+                    } else {
+                      echo 'No bids yet';
+                    }
+                  ?>
+                </span>
+              </div>
+              <div class="auction-timer">
+                <?php if ($upcoming): ?>
+                Launches: <span class="countdown" data-deadline="<?php echo strtotime($a['start_date']); ?>"></span>
+                <?php else: ?>
+                Ends: <span class="countdown" data-deadline="<?php echo strtotime($a['end_date']); ?>"></span>
+                <?php endif; ?>
+              </div>
             </div>
             <div style="font-size:0.72rem;opacity:0.35;display:flex;align-items:center;gap:5px;">By
               <?php if (!empty($a['creator_discord']) && !empty($a['creator_avatar'])): ?>
@@ -128,7 +131,7 @@ $now_ts = time();
               <a href="/staking/profile.php?username=<?php echo htmlspecialchars($a['creator_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($a['creator_name']); ?></a>
             </div>
             <?php if (!empty($a['asset_id'])): ?>
-            <a href="https://pool.pm/<?php echo htmlspecialchars($a['asset_id']); ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;opacity:0.5;text-decoration:none;margin-top:2px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
+            <a href="https://pool.pm/<?php echo htmlspecialchars($a['asset_id']); ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;opacity:0.5;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
               <img src="https://pool.pm/pool.pm.svg" style="width:12px;height:12px;">View on pool.pm
             </a>
             <?php endif; ?>
