@@ -89,50 +89,80 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image = $fname;
 }
 
-// Asset image fallback: if no file uploaded, try the auto-fetched image URL
+// Asset image fallback: if no file uploaded, query pool.pm with the asset_id
+// (same approach as asset-lookup.php — no dependency on client-sent hidden field)
 if ($image === '') {
-    $img_src = trim($_POST['ipfs_url'] ?? '');
-    if ($img_src !== '') {
-        if (preg_match('/^https?:\/\//', $img_src)) {
-            $urls = [$img_src];
-        } else {
-            $clean_ipfs = ltrim(str_replace('ipfs/', '', $img_src), '/');
-            $urls = [
-                'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs,
-                'https://cloudflare-ipfs.com/ipfs/'    . $clean_ipfs,
-                'https://ipfs.io/ipfs/'                . $clean_ipfs,
-            ];
+    $ch = curl_init('https://pool.pm/asset/' . $asset_id);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_HTTPHEADER     => ['Accept: application/json', 'User-Agent: Mozilla/5.0'],
+    ]);
+    $pm_body = curl_exec($ch);
+    $pm_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($pm_body && $pm_code === 200) {
+        $pm = json_decode($pm_body, true);
+        $raw_img = '';
+        if (!empty($pm['metadata']['image'])) {
+            $ri = $pm['metadata']['image'];
+            $raw_img = is_array($ri) ? implode('', $ri) : (string)$ri;
         }
-        foreach ($urls as $url) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>1, CURLOPT_FOLLOWLOCATION=>1, CURLOPT_TIMEOUT=>15,
-                CURLOPT_HTTPHEADER=>['User-Agent: Mozilla/5.0']]);
-            $body = curl_exec($ch);
-            $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            if ($body !== false && $code === 200) {
-                $finfo = new finfo(FILEINFO_MIME_TYPE);
-                $mime  = $finfo->buffer($body) ?: trim(explode(';', $ct)[0]);
-                $allowed_types = ['image/png','image/gif','image/jpeg','image/webp'];
-                if (in_array($mime, $allowed_types)) {
-                    $dir = __DIR__ . '/../images/auctions/';
-                    if (!is_dir($dir)) mkdir($dir, 0755, true);
-                    if (class_exists('Imagick')) {
-                        $imagick = new Imagick();
-                        $imagick->readImageBlob($body);
-                        if ($imagick->getImageWidth() > 1000) $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
-                        $imagick->setImageFormat('png');
-                        $fname = uniqid('auction_', true) . '.png';
-                        $imagick->writeImage($dir . $fname);
-                        $imagick->clear(); $imagick->destroy();
-                    } else {
-                        $ext_map = ['image/png'=>'png','image/gif'=>'gif','image/jpeg'=>'jpg','image/webp'=>'webp'];
-                        $fname = uniqid('auction_', true) . '.' . ($ext_map[$mime] ?? 'jpg');
-                        file_put_contents($dir . $fname, $body);
+        $img_src = '';
+        if ($raw_img !== '' && !str_starts_with($raw_img, 'data:')) {
+            if (str_starts_with($raw_img, 'ipfs://')) {
+                $clean   = ltrim(str_replace('ipfs/', '', substr($raw_img, 7)), '/');
+                $img_src = $clean;
+            } elseif (preg_match('/^https?:\/\//', $raw_img)) {
+                $img_src = $raw_img;
+            } else {
+                $img_src = $raw_img;
+            }
+        }
+        if ($img_src !== '') {
+            if (preg_match('/^https?:\/\//', $img_src)) {
+                $urls = [$img_src];
+            } else {
+                $clean_cid = ltrim(str_replace('ipfs/', '', $img_src), '/');
+                $urls = [
+                    'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_cid,
+                    'https://cloudflare-ipfs.com/ipfs/'    . $clean_cid,
+                    'https://ipfs.io/ipfs/'                . $clean_cid,
+                ];
+            }
+            foreach ($urls as $url) {
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>1, CURLOPT_FOLLOWLOCATION=>1, CURLOPT_TIMEOUT=>15,
+                    CURLOPT_HTTPHEADER=>['User-Agent: Mozilla/5.0']]);
+                $body = curl_exec($ch);
+                $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                if ($body !== false && $code === 200) {
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $mime  = $finfo->buffer($body) ?: trim(explode(';', $ct)[0]);
+                    $allowed_types = ['image/png','image/gif','image/jpeg','image/webp'];
+                    if (in_array($mime, $allowed_types)) {
+                        $dir = __DIR__ . '/../images/auctions/';
+                        if (!is_dir($dir)) mkdir($dir, 0755, true);
+                        if (class_exists('Imagick')) {
+                            $imagick = new Imagick();
+                            $imagick->readImageBlob($body);
+                            if ($imagick->getImageWidth() > 1000) $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
+                            $imagick->setImageFormat('png');
+                            $fname = uniqid('auction_', true) . '.png';
+                            $imagick->writeImage($dir . $fname);
+                            $imagick->clear(); $imagick->destroy();
+                        } else {
+                            $ext_map = ['image/png'=>'png','image/gif'=>'gif','image/jpeg'=>'jpg','image/webp'=>'webp'];
+                            $fname = uniqid('auction_', true) . '.' . ($ext_map[$mime] ?? 'jpg');
+                            file_put_contents($dir . $fname, $body);
+                        }
+                        $image = $fname;
+                        break;
                     }
-                    $image = $fname;
-                    break;
                 }
             }
         }
