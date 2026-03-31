@@ -48,6 +48,7 @@ if (strtotime($end_date) <= time()) { json_exit(['success'=>false,'message'=>'En
 
 // Image upload
 $image = '';
+$discord_img_url = '';
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['image'];
     if ($file['size'] > 50 * 1024 * 1024) { json_exit(['success'=>false,'message'=>'Image must be under 50MB.']); }
@@ -86,6 +87,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         move_uploaded_file($file['tmp_name'], $dir . $fname);
     }
     $image = $fname;
+    $discord_img_url = 'https://skulliance.io/staking/images/auctions/' . $fname;
 }
 
 // Asset image fallback: if no file uploaded, try the auto-fetched image URL
@@ -133,6 +135,7 @@ if ($image === '') {
                         file_put_contents($dir . $fname, $body);
                     }
                     $image = $fname;
+                    $discord_img_url = $url; // use the CDN/gateway URL Discord can fetch
                 }
                 break;
             }
@@ -164,7 +167,7 @@ discordmsg(
     "**$creator** listed a new auction!\n" .
     "Min Bid: **" . implode(' / ', $proj_labels) . "**\n" .
     "Ends: **$end_fmt**",
-    $image ? 'https://skulliance.io/staking/images/auctions/' . $image : '',
+    $discord_img_url,
     'https://skulliance.io/staking/auctions.php',
-    'auctions', $image ? 'https://skulliance.io/staking/images/auctions/' . $image : '', '00c8a0'
+    'auctions', $discord_img_url, '00c8a0'
 );
