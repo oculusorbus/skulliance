@@ -121,20 +121,19 @@ $conn->close();
       $rank_color  = $rank_colors[$i] ?? null;
     ?>
     <div class="bid-row" style="<?php echo $is_you ? 'background:rgba(0,200,160,0.12);' : ''; ?>">
-      <span style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;">
-        <?php if ($rank_color): ?>
-        <span style="font-size:0.7rem;color:<?php echo $rank_color; ?>;font-weight:bold;flex-shrink:0;">#<?php echo $i+1; ?></span>
-        <?php else: ?>
-        <span style="font-size:0.7rem;opacity:0.35;flex-shrink:0;">#<?php echo $i+1; ?></span>
-        <?php endif; ?>
+      <span style="display:flex;align-items:center;gap:5px;">
+        <span style="<?php echo $rank_color ? 'color:'.$rank_color.';font-weight:bold;' : 'opacity:0.35;'; ?>font-size:0.7rem;">#<?php echo $i+1; ?></span>
         <?php if (!empty($h['discord_id']) && !empty($h['avatar'])): ?>
-        <img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($h['discord_id']); ?>/<?php echo htmlspecialchars($h['avatar']); ?>.png" style="width:16px;height:16px;border-radius:50%;flex-shrink:0;">
+        <img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($h['discord_id']); ?>/<?php echo htmlspecialchars($h['avatar']); ?>.png" style="width:16px;height:16px;border-radius:50%;">
         <?php endif; ?>
-        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($h['username']); ?></a>
-        <?php if ($is_you): ?><span style="font-size:0.7rem;color:#00c8a0;flex-shrink:0;">(you)</span><?php endif; ?>
+        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($h['username']); ?></a>
+        <?php if ($is_you): ?><span style="font-size:0.7rem;color:#00c8a0;">(you)</span><?php endif; ?>
       </span>
-      <span style="font-size:0.82rem;font-weight:bold;flex-shrink:0;"><?php echo number_format($h_tickets); ?></span>
-      <span style="font-size:0.78rem;color:#00c8a0;flex-shrink:0;min-width:42px;text-align:right;"><?php echo $odds; ?>%</span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="font-weight:bold;"><?php echo number_format($h_tickets); ?></span>
+        <span style="opacity:0.4;">tickets</span>
+      </span>
+      <span style="color:#00c8a0;"><?php echo $odds; ?>%</span>
     </div>
     <?php endforeach; ?>
   </div>
