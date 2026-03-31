@@ -27,6 +27,17 @@ foreach ($raffle['ticket_options'] as $opt) {
 }
 
 $has_img = !empty($raffle['image']) && file_exists(__DIR__ . '/../images/raffles/' . $raffle['image']);
+
+// Ticket holders leaderboard: aggregated by user, ordered by ticket count desc
+$ticket_holders = [];
+$th = $conn->query("SELECT u.username, u.discord_id, u.avatar, SUM(t.quantity) AS tickets
+                    FROM tickets t
+                    INNER JOIN users u ON u.id = t.user_id
+                    WHERE t.raffle_id='$raffle_id' AND t.status=1
+                    GROUP BY t.user_id
+                    ORDER BY tickets DESC");
+if ($th) { while ($row = $th->fetch_assoc()) $ticket_holders[] = $row; }
+
 $conn->close();
 ?>
 <?php if ($has_img): ?>
@@ -96,4 +107,36 @@ $conn->close();
 <div style="font-size:0.82rem;color:#ff6b6b;opacity:0.7;">This raffle is closed.</div>
 <?php else: ?>
 <div style="font-size:0.82rem;opacity:0.5;">Raffle has ended. Awaiting draw.</div>
+<?php endif; ?>
+
+<?php if (!empty($ticket_holders)): ?>
+<div style="display:flex;flex-direction:column;gap:6px;">
+  <div style="font-size:0.78rem;font-weight:bold;opacity:0.7;">Ticket Holders</div>
+  <div class="bid-history">
+    <?php foreach ($ticket_holders as $i => $h):
+      $h_tickets = intval($h['tickets']);
+      $odds      = $sold > 0 ? round($h_tickets / $sold * 100, 1) : 0;
+      $is_you    = ($h['username'] === ($_SESSION['userData']['username'] ?? ''));
+      $rank_colors = ['#ffd700','#c0c0c0','#cd7f32'];
+      $rank_color  = $rank_colors[$i] ?? null;
+    ?>
+    <div class="bid-row" style="<?php echo $is_you ? 'background:rgba(0,200,160,0.07);border-radius:5px;padding:3px 5px;margin:-3px -5px;' : ''; ?>">
+      <span style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;">
+        <?php if ($rank_color): ?>
+        <span style="font-size:0.7rem;color:<?php echo $rank_color; ?>;font-weight:bold;flex-shrink:0;">#<?php echo $i+1; ?></span>
+        <?php else: ?>
+        <span style="font-size:0.7rem;opacity:0.35;flex-shrink:0;">#<?php echo $i+1; ?></span>
+        <?php endif; ?>
+        <?php if (!empty($h['discord_id']) && !empty($h['avatar'])): ?>
+        <img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($h['discord_id']); ?>/<?php echo htmlspecialchars($h['avatar']); ?>.png" style="width:16px;height:16px;border-radius:50%;flex-shrink:0;">
+        <?php endif; ?>
+        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($h['username']); ?></a>
+        <?php if ($is_you): ?><span style="font-size:0.7rem;color:#00c8a0;flex-shrink:0;">(you)</span><?php endif; ?>
+      </span>
+      <span style="font-size:0.82rem;font-weight:bold;flex-shrink:0;"><?php echo number_format($h_tickets); ?></span>
+      <span style="font-size:0.78rem;color:#00c8a0;flex-shrink:0;min-width:42px;text-align:right;"><?php echo $odds; ?>%</span>
+    </div>
+    <?php endforeach; ?>
+  </div>
+</div>
 <?php endif; ?>
