@@ -153,7 +153,7 @@ $now_ts = time();
     <div class="raffle-modal-title">Create Raffle</div>
 
     <div class="form-section-label">Prize Details</div>
-    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="r-asset-id" maxlength="44" placeholder="asset1..." /></div>
+    <div class="form-row"><label>Cardano Asset ID *</label><div style="display:flex;gap:6px;"><input type="text" id="r-asset-id" maxlength="44" placeholder="asset1..." style="flex:1;" /><button type="button" onclick="rAssetLookup.triggerLookup()" title="Re-query blockchain" style="background:rgba(0,200,160,0.1);border:1px solid rgba(0,200,160,0.25);border-radius:6px;color:#00c8a0;padding:0 10px;font-size:1rem;cursor:pointer;flex-shrink:0;">↺</button></div></div>
     <div id="r-img-status" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
     <div id="r-img-preview" style="display:none;margin-top:6px;"><img id="r-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" /></div>
 
@@ -195,7 +195,7 @@ $now_ts = time();
     <input type="hidden" id="re-raffle-id" />
 
     <div class="form-section-label">Prize Details</div>
-    <div class="form-row"><label>Cardano Asset ID *</label><input type="text" id="re-asset-id" maxlength="44" placeholder="asset1..." /></div>
+    <div class="form-row"><label>Cardano Asset ID *</label><div style="display:flex;gap:6px;"><input type="text" id="re-asset-id" maxlength="44" placeholder="asset1..." style="flex:1;" /><button type="button" onclick="reAssetLookup.triggerLookup()" title="Re-query blockchain" style="background:rgba(0,200,160,0.1);border:1px solid rgba(0,200,160,0.25);border-radius:6px;color:#00c8a0;padding:0 10px;font-size:1rem;cursor:pointer;flex-shrink:0;">↺</button></div></div>
     <div id="re-img-status" style="font-size:0.75rem;margin-top:4px;display:none;"></div>
     <div id="re-img-preview" style="display:none;margin-top:6px;"><img id="re-img-preview-img" style="max-width:80px;max-height:80px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);object-fit:cover;" /></div>
 
@@ -387,6 +387,51 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
   function setTitleVisible(v) { if (titleWrap) titleWrap.style.display = v ? '' : 'none'; }
   function setImageVisible(v) { if (imageWrap) imageWrap.style.display = v ? '' : 'none'; }
 
+  function doLookup(val) {
+    if (!/^asset1[a-z0-9]{38}$/.test(val)) return;
+    ipfsHidden.value      = '';
+    preview.style.display = 'none';
+    status.textContent   = 'Looking up asset…';
+    status.style.color   = '#8899aa';
+    status.style.display = 'block';
+    $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
+      if (r.success) {
+        if (r.name) {
+          if (titleInput && titleInput.value.trim() === '') titleInput.value = r.name;
+          setTitleVisible(false);
+        } else {
+          setTitleVisible(true);
+        }
+        setQtyVisible(r.is_fungible);
+        if (r.ipfs_url) {
+          ipfsHidden.value   = r.ipfs_raw || r.ipfs_url;
+          previewImg.src     = r.ipfs_url;
+          previewImg.onload  = function() { preview.style.display = 'block'; };
+          previewImg.onerror = function() { preview.style.display = 'none'; };
+          status.textContent = 'Asset found — image and name pre-filled.';
+          status.style.color = '#a040ff';
+          setImageVisible(false);
+        } else {
+          status.textContent = 'Asset found — please upload an image manually.';
+          status.style.color = '#8899aa';
+          setImageVisible(true);
+        }
+      } else {
+        setQtyVisible(true);
+        setTitleVisible(true);
+        setImageVisible(true);
+        status.textContent = 'Asset not found — please fill in details manually.';
+        status.style.color = '#8899aa';
+      }
+    }).fail(function() {
+      setQtyVisible(true);
+      setTitleVisible(true);
+      setImageVisible(true);
+      status.textContent = 'Lookup failed — please fill in details manually.';
+      status.style.color = '#8899aa';
+    });
+  }
+
   assetInput.addEventListener('input', function() {
     clearTimeout(timer);
     var val = this.value.trim();
@@ -399,47 +444,7 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
       setImageVisible(true);
       return;
     }
-    status.textContent   = 'Looking up asset…';
-    status.style.color   = '#8899aa';
-    status.style.display = 'block';
-    timer = setTimeout(function() {
-      $.getJSON('ajax/asset-lookup.php', { asset_id: val }, function(r) {
-        if (r.success) {
-          if (r.name) {
-            if (titleInput && titleInput.value.trim() === '') titleInput.value = r.name;
-            setTitleVisible(false);
-          } else {
-            setTitleVisible(true);
-          }
-          setQtyVisible(r.is_fungible);
-          if (r.ipfs_url) {
-            ipfsHidden.value   = r.ipfs_raw || r.ipfs_url;
-            previewImg.src     = r.ipfs_url;
-            previewImg.onload  = function() { preview.style.display = 'block'; };
-            previewImg.onerror = function() { preview.style.display = 'none'; };
-            status.textContent = 'Asset found — image and name pre-filled.';
-            status.style.color = '#a040ff';
-            setImageVisible(false);
-          } else {
-            status.textContent = 'Asset found — please upload an image manually.';
-            status.style.color = '#8899aa';
-            setImageVisible(true);
-          }
-        } else {
-          setQtyVisible(true);
-          setTitleVisible(true);
-          setImageVisible(true);
-          status.textContent = 'Asset not found — please fill in details manually.';
-          status.style.color = '#8899aa';
-        }
-      }).fail(function() {
-        setQtyVisible(true);
-        setTitleVisible(true);
-        setImageVisible(true);
-        status.textContent = 'Lookup failed — please fill in details manually.';
-        status.style.color = '#8899aa';
-      });
-    }, 600);
+    timer = setTimeout(function() { doLookup(val); }, 600);
   });
 
   fileInput.addEventListener('change', function() {
@@ -451,6 +456,8 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
       status.style.display  = 'block';
     }
   });
+
+  return { triggerLookup: function() { doLookup(assetInput.value.trim()); } };
 }
 
 var _fpCfg = {
@@ -463,8 +470,8 @@ var _fpCfg = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row',  'r-title-row',  'r-image-row');
-  setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row', null, null);
+  var rAssetLookup  = setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row',  'r-title-row',  'r-image-row');
+  var reAssetLookup = setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row', null, null);
 
   flatpickr('#r-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#r-end-date',    _fpCfg);
@@ -588,6 +595,7 @@ function openEditRaffleModal(id) {
     if (reQr) { reQr.style.display = qty > 1 ? '' : 'none'; document.getElementById('re-quantity').value = qty > 1 ? qty : 1; }
     document.getElementById('re-error').style.display = 'none';
     document.getElementById('edit-raffle-modal').classList.add('open');
+    reAssetLookup.triggerLookup();
   });
 }
 function closeEditRaffleModal() {

@@ -89,14 +89,22 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $image = $fname;
 }
 
-// IPFS fallback: if no file uploaded, try the auto-fetched IPFS URL
+// Asset image fallback: if no file uploaded, try the auto-fetched image URL
 if ($image === '') {
-    $ipfs_raw = trim($_POST['ipfs_url'] ?? '');
-    if ($ipfs_raw !== '') {
-        $clean_ipfs = str_replace('ipfs/', '', $ipfs_raw);
-        $gateways   = ['https://ipfs5.jpgstoreapis.com/ipfs/', 'https://cloudflare-ipfs.com/ipfs/', 'https://ipfs.io/ipfs/'];
-        foreach ($gateways as $gw) {
-            $ch = curl_init($gw . $clean_ipfs);
+    $img_src = trim($_POST['ipfs_url'] ?? '');
+    if ($img_src !== '') {
+        if (preg_match('/^https?:\/\//', $img_src)) {
+            $urls = [$img_src];
+        } else {
+            $clean_ipfs = ltrim(str_replace('ipfs/', '', $img_src), '/');
+            $urls = [
+                'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs,
+                'https://cloudflare-ipfs.com/ipfs/'    . $clean_ipfs,
+                'https://ipfs.io/ipfs/'                . $clean_ipfs,
+            ];
+        }
+        foreach ($urls as $url) {
+            $ch = curl_init($url);
             curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>1, CURLOPT_FOLLOWLOCATION=>1, CURLOPT_TIMEOUT=>15,
                 CURLOPT_HTTPHEADER=>['User-Agent: Mozilla/5.0']]);
             $body = curl_exec($ch);
@@ -104,7 +112,8 @@ if ($image === '') {
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
             if ($body !== false && $code === 200) {
-                $mime = trim(explode(';', $ct)[0]);
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime  = $finfo->buffer($body) ?: trim(explode(';', $ct)[0]);
                 $allowed_types = ['image/png','image/gif','image/jpeg','image/webp'];
                 if (in_array($mime, $allowed_types)) {
                     $dir = __DIR__ . '/../images/auctions/';
@@ -123,8 +132,8 @@ if ($image === '') {
                         file_put_contents($dir . $fname, $body);
                     }
                     $image = $fname;
+                    break;
                 }
-                break;
             }
         }
     }
