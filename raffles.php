@@ -16,12 +16,12 @@ $now_ts = time();
 .raffle-card { background:#0d1f2d; border:1px solid rgba(0,200,160,0.15); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; }
 .raffle-card-img { width:100%; aspect-ratio:1/1; object-fit:cover; background:#111; }
 .raffle-card-img-placeholder { width:100%; aspect-ratio:1/1; background:#0a1a26; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.2); font-size:2.5rem; }
-.raffle-card-body { padding:14px; flex:1; display:flex; flex-direction:column; gap:8px; }
+.raffle-card-body { padding:14px; flex:1; display:flex; flex-direction:column; gap:10px; }
 .raffle-card-title { font-weight:bold; font-size:0.95rem; color:#e8eef4; }
-.raffle-card-desc { font-size:0.78rem; opacity:0.55; line-height:1.4; flex:1; }
+.raffle-stats-box { display:flex; flex-direction:column; gap:6px; background:rgba(0,200,160,0.05); border:1px solid rgba(0,200,160,0.13); border-radius:7px; padding:9px 11px; }
 .raffle-stat-row { display:flex; align-items:center; justify-content:space-between; font-size:0.82rem; }
 .raffle-stat-label { opacity:0.5; }
-.raffle-stat-value { font-weight:bold; color:#00c8a0; }
+.raffle-stat-value { font-weight:bold; display:flex; align-items:center; gap:3px; }
 .raffle-timer { font-size:0.75rem; opacity:0.5; }
 .raffle-upcoming-badge { font-size:0.72rem; background:rgba(255,200,0,0.12); border:1px solid rgba(255,200,0,0.25); border-radius:4px; padding:2px 7px; color:#ffc800; display:inline-block; margin-bottom:4px; }
 .raffle-card-footer { padding:10px 14px; border-top:1px solid rgba(255,255,255,0.05); }
@@ -96,27 +96,29 @@ $now_ts = time();
             <div class="raffle-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="raffle-card-title"><?php echo htmlspecialchars($r['title']); ?></div>
-            <?php if ($cheap): ?>
-            <div class="raffle-stat-row">
-              <span class="raffle-stat-label">Ticket Price</span>
-              <span class="raffle-stat-value" style="display:flex;align-items:center;gap:3px;"><?php
+            <div class="raffle-stats-box">
+              <?php if ($cheap):
                 $rcur_lc = strtolower($cheap['currency']);
-                echo 'from ';
-                echo '<img src="icons/' . $rcur_lc . '.png" style="width:14px;height:14px;vertical-align:middle;">';
-                echo number_format($cheap['cost']) . ' ' . strtoupper($rcur_lc);
-              ?></span>
-            </div>
-            <?php endif; ?>
-            <div class="raffle-stat-row">
-              <span class="raffle-stat-label">Tickets Sold</span>
-              <span class="raffle-stat-value"><?php echo $sold; ?></span>
-            </div>
-            <div class="raffle-timer">
-              <?php if ($upcoming): ?>
-              Launches: <span class="countdown" data-deadline="<?php echo strtotime($r['start_date']); ?>"></span>
-              <?php else: ?>
-              Ends: <span class="countdown" data-deadline="<?php echo strtotime($r['end_date']); ?>"></span>
+              ?>
+              <div class="raffle-stat-row">
+                <span class="raffle-stat-label">Ticket Price</span>
+                <span class="raffle-stat-value">
+                  <img src="icons/<?php echo $rcur_lc; ?>.png" style="width:14px;height:14px;">
+                  from <?php echo number_format($cheap['cost']) . ' ' . strtoupper($rcur_lc); ?>
+                </span>
+              </div>
               <?php endif; ?>
+              <div class="raffle-stat-row">
+                <span class="raffle-stat-label">Tickets Sold</span>
+                <span class="raffle-stat-value"><?php echo number_format($sold); ?></span>
+              </div>
+              <div class="raffle-timer">
+                <?php if ($upcoming): ?>
+                Launches: <span class="countdown" data-deadline="<?php echo strtotime($r['start_date']); ?>"></span>
+                <?php else: ?>
+                Ends: <span class="countdown" data-deadline="<?php echo strtotime($r['end_date']); ?>"></span>
+                <?php endif; ?>
+              </div>
             </div>
             <div style="font-size:0.72rem;opacity:0.35;display:flex;align-items:center;gap:5px;">By
               <?php if (!empty($r['creator_discord']) && !empty($r['creator_avatar'])): ?>
@@ -125,7 +127,7 @@ $now_ts = time();
               <a href="/staking/profile.php?username=<?php echo htmlspecialchars($r['creator_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($r['creator_name']); ?></a>
             </div>
             <?php if (!empty($r['asset_id'])): ?>
-            <a href="https://pool.pm/<?php echo htmlspecialchars($r['asset_id']); ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;opacity:0.5;text-decoration:none;margin-top:2px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
+            <a href="https://pool.pm/<?php echo htmlspecialchars($r['asset_id']); ?>" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;opacity:0.5;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'">
               <img src="https://pool.pm/pool.pm.svg" style="width:12px;height:12px;">View on pool.pm
             </a>
             <?php endif; ?>
