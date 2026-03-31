@@ -121,14 +121,14 @@ $conn->close();
       $rank_color  = $rank_colors[$i] ?? null;
     ?>
     <div class="bid-row" style="<?php echo $is_you ? 'background:rgba(0,200,160,0.12);' : ''; ?>">
-      <span style="display:flex;align-items:center;gap:5px;">
+      <span style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;">
         <?php if (!empty($h['discord_id']) && !empty($h['avatar'])): ?>
-        <img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($h['discord_id']); ?>/<?php echo htmlspecialchars($h['avatar']); ?>.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">
+        <img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($h['discord_id']); ?>/<?php echo htmlspecialchars($h['avatar']); ?>.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;flex-shrink:0;">
         <?php endif; ?>
-        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($h['username']); ?></a>
+        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($h['username']); ?></a>
       </span>
-      <span><?php echo number_format($h_tickets); ?> tickets</span>
-      <span style="opacity:0.4;"><?php echo $odds; ?>%</span>
+      <span style="flex:0 0 80px;text-align:right;"><?php echo number_format($h_tickets); ?> tickets</span>
+      <span style="flex:0 0 36px;text-align:right;opacity:0.4;"><?php echo $odds; ?>%</span>
     </div>
     <?php endforeach; ?>
   </div>
