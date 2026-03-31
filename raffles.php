@@ -51,13 +51,13 @@ $now_ts = time();
 .flatpickr-calendar { background:#0e1e2e !important; border:1px solid rgba(255,255,255,0.12) !important; box-shadow:0 8px 32px rgba(0,0,0,0.5) !important; }
 .flatpickr-day { color:#c8d8e4 !important; }
 .flatpickr-day:hover, .flatpickr-day.prevMonthDay:hover, .flatpickr-day.nextMonthDay:hover { background:rgba(160,64,255,0.15) !important; border-color:transparent !important; }
-.flatpickr-day.selected, .flatpickr-day.selected:hover { background:#a040ff !important; border-color:#a040ff !important; color:#fff !important; }
-.flatpickr-day.today { border-color:#a040ff !important; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background:#00c8a0 !important; border-color:#00c8a0 !important; color:#fff !important; }
+.flatpickr-day.today { border-color:#00c8a0 !important; }
 .flatpickr-months, .flatpickr-weekdays, .flatpickr-time { background:#0e1e2e !important; }
 .flatpickr-current-month, .flatpickr-weekday, .numInputWrapper span { color:#c8d8e4 !important; }
 .flatpickr-prev-month svg, .flatpickr-next-month svg { fill:#c8d8e4 !important; }
 .flatpickr-time input, .flatpickr-time .flatpickr-am-pm { color:#c8d8e4 !important; background:#0a1520 !important; }
-.flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus { background:rgba(160,64,255,0.08) !important; }
+.flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus { background:rgba(0,200,160,0.08) !important; }
 .numInput { color:#c8d8e4 !important; background:#0a1520 !important; }
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -175,7 +175,7 @@ $now_ts = time();
 
     <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
     <div class="currency-rows" id="r-currency-rows"></div>
-    <button type="button" onclick="addRaffleCurrencyRow()" style="background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:6px;color:#a040ff;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
+    <button type="button" onclick="addRaffleCurrencyRow()" style="background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.2);border-radius:6px;color:#00c8a0;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
 
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
     <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="r-start-date" /></div>
@@ -217,7 +217,7 @@ $now_ts = time();
 
     <div class="form-section-label" style="margin-top:8px;">Ticket Prices by Currency *</div>
     <div class="currency-rows" id="re-currency-rows"></div>
-    <button type="button" onclick="addRaffleEditCurrencyRow()" style="background:rgba(160,64,255,0.08);border:1px solid rgba(160,64,255,0.2);border-radius:6px;color:#a040ff;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
+    <button type="button" onclick="addRaffleEditCurrencyRow()" style="background:rgba(0,200,160,0.08);border:1px solid rgba(0,200,160,0.2);border-radius:6px;color:#00c8a0;padding:6px 14px;font-size:0.8rem;cursor:pointer;align-self:flex-start;">+ Add Currency</button>
 
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
     <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="re-start-date" /></div>
@@ -409,7 +409,7 @@ function setupAssetLookup(assetInputId, fileInputId, statusId, previewId, previe
           previewImg.onload  = function() { preview.style.display = 'block'; };
           previewImg.onerror = function() { preview.style.display = 'none'; };
           status.textContent = 'Asset found — image and name pre-filled.';
-          status.style.color = '#a040ff';
+          status.style.color = '#00c8a0';
           setImageVisible(false);
         } else {
           status.textContent = 'Asset found — please upload an image manually.';
