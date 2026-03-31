@@ -62,7 +62,7 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
     popupImage.src = realmSrc;
     popupAvatar.src = avatarSrc;
     popupAvatar.onerror = function() { this.src = 'icons/skull.png'; };
-    popupUser.textContent = userName;
+    popupUser.innerHTML = '<a href="/staking/profile.php?username=' + encodeURIComponent(userName) + '" style="color:inherit;text-decoration:underline;" onclick="event.stopPropagation()">' + userName.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</a>';
     popupRealm.textContent = realmName;
 
     // Faction chip
