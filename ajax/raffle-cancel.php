@@ -73,13 +73,20 @@ if ($result['success'] && $raffle) {
         );
     }
 
+    $d_id          = $_SESSION['userData']['discord_id'] ?? '';
+    $d_avatar      = $_SESSION['userData']['avatar'] ?? '';
+    $cancel_author = [
+        'name'     => $creator,
+        'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
+        'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+    ];
     discordmsg(
         '🚫 Raffle Canceled: ' . $title,
         "**$creator** canceled their raffle **{$title}**." .
         ($total > 0 ? " All **$total** ticket holder(s) have been refunded." : " No tickets had been purchased."),
         $img_url,
         'https://skulliance.io/staking/raffles.php',
-        'raffles', $img_url, 'ff6b00'
+        'raffles', '', 'ff6b00', $cancel_author
     );
 }
 

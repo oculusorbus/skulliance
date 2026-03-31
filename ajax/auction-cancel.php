@@ -49,13 +49,20 @@ if ($result['success'] && $auction) {
         }
     }
 
+    $d_id          = $_SESSION['userData']['discord_id'] ?? '';
+    $d_avatar      = $_SESSION['userData']['avatar'] ?? '';
+    $cancel_author = [
+        'name'     => $creator,
+        'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
+        'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+    ];
     discordmsg(
         '🚫 Auction Canceled: ' . $title,
         "**$creator** canceled their auction **{$title}**." .
         ($prev_bidder && $prev_bid > 0 ? " The leading bid has been refunded." : " No bids had been placed."),
         $img_url,
         'https://skulliance.io/staking/auctions.php',
-        'auctions', $img_url, 'ff6b00'
+        'auctions', '', 'ff6b00', $cancel_author
     );
 }
 

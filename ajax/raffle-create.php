@@ -136,8 +136,9 @@ if ($image === '') {
                     }
                     $image = $fname;
                     $discord_img_url = $url; // use the CDN/gateway URL Discord can fetch
+                    break; // only break on successful save
                 }
-                break;
+                // MIME invalid (e.g. gateway returned HTML) — continue to next gateway
             }
         }
     }
@@ -147,8 +148,15 @@ $quantity  = max(1, intval($_POST['quantity'] ?? 1));
 $raffle_id = createRaffle($conn, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $ticket_options, $quantity);
 if (!$raffle_id) { json_exit(['success'=>false,'message'=>'Database error creating raffle.']); }
 
-// Build Discord labels before closing connection
+// Build Discord author + labels before closing connection
 $creator     = $_SESSION['userData']['name'] ?? 'Unknown';
+$d_id        = $_SESSION['userData']['discord_id'] ?? '';
+$d_avatar    = $_SESSION['userData']['avatar'] ?? '';
+$d_author    = [
+    'name'     => $creator,
+    'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
+    'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+];
 $end_fmt     = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
 $opt_labels  = [];
 foreach ($ticket_options as $opt) {
@@ -169,5 +177,5 @@ discordmsg(
     "Ends: **$end_fmt**",
     $discord_img_url,
     'https://skulliance.io/staking/raffles.php',
-    'raffles', $discord_img_url, 'a040ff'
+    'raffles', '', 'a040ff', $d_author
 );

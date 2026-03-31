@@ -37,13 +37,20 @@ if ($result['success']) {
     $pr     = $conn->query("SELECT currency FROM projects WHERE id='$project_id' LIMIT 1");
     if ($pr && $pr->num_rows) $cur = strtoupper($pr->fetch_assoc()['currency']);
     $sold = intval($raffle['total_tickets_sold'] ?? 0);
-    $r_img_url = !empty($raffle['image']) ? 'https://skulliance.io/staking/images/raffles/' . $raffle['image'] : '';
+    $r_img_url   = !empty($raffle['image']) ? 'https://skulliance.io/staking/images/raffles/' . $raffle['image'] : '';
+    $d_id        = $_SESSION['userData']['discord_id'] ?? '';
+    $d_avatar    = $_SESSION['userData']['avatar'] ?? '';
+    $buy_author  = [
+        'name'     => $buyer,
+        'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
+        'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+    ];
     discordmsg(
         '🎟️ Ticket Purchase: ' . ($raffle['title'] ?? ''),
         "**$buyer** bought **$quantity** ticket(s) for **" . ($raffle['title'] ?? '') . "** using **$cur**\nTotal tickets sold: **$sold**",
         $r_img_url,
         'https://skulliance.io/staking/raffles.php',
-        'raffles', $r_img_url, 'a040ff'
+        'raffles', '', 'a040ff', $buy_author
     );
 }
 

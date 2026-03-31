@@ -59,13 +59,20 @@ if ($result['success']) {
         }
     }
 
-    $a_img_url = !empty($auction['image']) ? 'https://skulliance.io/staking/images/auctions/' . $auction['image'] : '';
+    $a_img_url  = !empty($auction['image']) ? 'https://skulliance.io/staking/images/auctions/' . $auction['image'] : '';
+    $d_id       = $_SESSION['userData']['discord_id'] ?? '';
+    $d_avatar   = $_SESSION['userData']['avatar'] ?? '';
+    $bid_author = [
+        'name'     => $bidder_name,
+        'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
+        'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+    ];
     discordmsg(
         '💰 New Bid: ' . ($auction['title'] ?? ''),
         "**$bidder_name** bid **" . number_format($amount) . " $cur** on **" . ($auction['title'] ?? '') . "**",
         $a_img_url,
         'https://skulliance.io/staking/auctions.php',
-        'auctions', $a_img_url, '00c8a0'
+        'auctions', '', '00c8a0', $bid_author
     );
 }
 
