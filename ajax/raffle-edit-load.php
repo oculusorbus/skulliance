@@ -48,6 +48,7 @@ json_exit([
     'start_date'     => $start_fmt,
     'end_date'       => $end_fmt,
     'image'     => $raffle['image'],
-    'ticket_options' => $ticket_options,
-    'quantity'       => intval($raffle['quantity'] ?? 1),
+    'ticket_options'  => $ticket_options,
+    'quantity'        => intval($raffle['quantity'] ?? 1),
+    'ticket_minimum'  => max(1, intval($raffle['ticket_minimum'] ?? 1)),
 ]);

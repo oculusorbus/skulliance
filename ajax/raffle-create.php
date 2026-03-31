@@ -144,8 +144,9 @@ if ($image === '') {
     }
 }
 
-$quantity  = max(1, intval($_POST['quantity'] ?? 1));
-$raffle_id = createRaffle($conn, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $ticket_options, $quantity);
+$quantity       = max(1, intval($_POST['quantity'] ?? 1));
+$ticket_minimum = max(1, intval($_POST['ticket_minimum'] ?? 1));
+$raffle_id = createRaffle($conn, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $ticket_options, $quantity, $ticket_minimum);
 if (!$raffle_id) { json_exit(['success'=>false,'message'=>'Database error creating raffle.']); }
 
 // Build Discord author + labels before closing connection

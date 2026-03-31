@@ -169,8 +169,9 @@ if ($image === '') {
     }
 }
 
-$quantity = max(1, intval($_POST['quantity'] ?? 1));
-$result   = updateRaffle($conn, $raffle_id, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $ticket_options, $quantity);
+$quantity       = max(1, intval($_POST['quantity'] ?? 1));
+$ticket_minimum = max(1, intval($_POST['ticket_minimum'] ?? 1));
+$result   = updateRaffle($conn, $raffle_id, $user_id, $title, $desc, $image, $asset_id, $start_date, $end_date, $ticket_options, $quantity, $ticket_minimum);
 $conn->close();
 
 json_exit($result);

@@ -323,6 +323,56 @@ while ($raffle = $result->fetch_assoc()) {
         continue;
     }
 
+    // ── Check ticket minimum ──────────────────────────────────────────────────
+    $ticket_minimum = max(1, intval($raffle['ticket_minimum'] ?? 1));
+    if ($total_sold < $ticket_minimum) {
+        // Below minimum — refund all buyers with DMs, cancel raffle
+        $notified = [];
+        $tres_min = $conn->query("SELECT user_id, project_id, quantity FROM tickets WHERE raffle_id='$rid' AND status=1");
+        if ($tres_min) {
+            while ($t = $tres_min->fetch_assoc()) {
+                $tuid = intval($t['user_id']);
+                $tpid = intval($t['project_id']);
+                $tamt = ($costs[$tpid] ?? 0) * intval($t['quantity']);
+                if ($tamt > 0) {
+                    updateBalance($conn, $tuid, $tpid, $tamt);
+                    logCredit($conn, $tuid, $tamt, $tpid);
+                }
+                if (!in_array($tuid, $notified)) {
+                    $ures = $conn->query("SELECT discord_id FROM users WHERE id='$tuid' LIMIT 1");
+                    if ($ures && $ures->num_rows) {
+                        $urow = $ures->fetch_assoc();
+                        if ($urow['discord_id']) {
+                            sendDM($urow['discord_id'],
+                                "⏱️ The raffle **{$title}** ended without reaching the minimum ticket requirement " .
+                                "({$total_sold}/{$ticket_minimum} tickets sold).\n\n" .
+                                "Your tickets have been fully refunded."
+                            );
+                        }
+                    }
+                    $notified[] = $tuid;
+                }
+            }
+            $conn->query("UPDATE tickets SET status=0 WHERE raffle_id='$rid' AND status=1");
+        }
+        if ($raffle['creator_discord']) {
+            sendDM($raffle['creator_discord'],
+                "⏱️ Your raffle **{$title}** ended without meeting the minimum ticket requirement " .
+                "({$total_sold}/{$ticket_minimum} tickets sold).\n\n" .
+                "All ticket buyers have been refunded. The raffle has been closed."
+            );
+        }
+        discordmsg(
+            '🎟️ Raffle Canceled (Min. Not Met): ' . $title,
+            "**{$title}** by **{$raffle['creator_name']}** ended with only **{$total_sold}** of **{$ticket_minimum}** required tickets sold. All tickets have been refunded.",
+            $img_url, 'https://skulliance.io/staking/raffles.php',
+            'raffles', '', '555555'
+        );
+        $conn->query("UPDATE raffles SET canceled=1, processing=0 WHERE id='$rid'");
+        echo "  Ticket minimum not met ({$total_sold}/{$ticket_minimum}) — raffle #$rid canceled and refunded.\n";
+        continue;
+    }
+
     $winning_uid = $pool[array_rand($pool)];
     $wres        = $conn->query("SELECT username AS name, discord_id FROM users WHERE id='$winning_uid' LIMIT 1");
     $winner      = $wres ? $wres->fetch_assoc() : null;

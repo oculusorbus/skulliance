@@ -83,9 +83,10 @@ $now_ts = time();
         <?php foreach ($raffles as $r):
           $has_img  = !empty($r['image']) && file_exists('images/raffles/' . $r['image']);
           $is_owner = (isset($_SESSION['userData']['user_id']) && intval($r['user_id']) === intval($_SESSION['userData']['user_id']));
-          $upcoming = strtotime($r['start_date']) > $now_ts;
-          $sold     = intval($r['total_tickets_sold']);
-          $cheap    = $r['cheapest_ticket'];
+          $upcoming       = strtotime($r['start_date']) > $now_ts;
+          $sold           = intval($r['total_tickets_sold']);
+          $cheap          = $r['cheapest_ticket'];
+          $ticket_minimum = max(1, intval($r['ticket_minimum'] ?? 1));
         ?>
         <div class="raffle-card">
           <?php if ($has_img): ?>
@@ -114,6 +115,14 @@ $now_ts = time();
                 <span class="raffle-stat-label">Tickets Sold</span>
                 <span class="raffle-stat-value"><?php echo number_format($sold); ?></span>
               </div>
+              <?php if ($ticket_minimum > 1): ?>
+              <div class="raffle-stat-row">
+                <span class="raffle-stat-label">Min. Required</span>
+                <span class="raffle-stat-value" style="color:<?php echo $sold >= $ticket_minimum ? '#00c8a0' : '#ffc800'; ?>;">
+                  <?php echo number_format($sold); ?> / <?php echo number_format($ticket_minimum); ?>
+                </span>
+              </div>
+              <?php endif; ?>
               <div class="raffle-timer">
                 <?php if ($upcoming): ?>
                 Launches: <span class="countdown" data-deadline="<?php echo strtotime($r['start_date']); ?>"></span>
@@ -185,6 +194,12 @@ $now_ts = time();
     <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="r-start-date" /></div>
     <div class="form-row"><label>End Date *</label><input type="text" id="r-end-date" /></div>
 
+    <div class="form-section-label" style="margin-top:8px;">Requirements</div>
+    <div class="form-row">
+      <label>Minimum Tickets Required <span style="opacity:0.4;font-weight:normal;">(raffle cancels and refunds if not met)</span></label>
+      <input type="number" id="r-ticket-minimum" min="1" step="1" value="1" style="max-width:140px;" />
+    </div>
+
     <div id="r-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitCreateRaffle()" style="margin-top:4px;">Create Raffle</button>
   </div>
@@ -226,6 +241,12 @@ $now_ts = time();
     <div class="form-section-label" style="margin-top:8px;">Schedule</div>
     <div class="form-row"><label>Start Date (optional — leave blank to list immediately)</label><input type="text" id="re-start-date" /></div>
     <div class="form-row"><label>End Date *</label><input type="text" id="re-end-date" /></div>
+
+    <div class="form-section-label" style="margin-top:8px;">Requirements</div>
+    <div class="form-row">
+      <label>Minimum Tickets Required <span style="opacity:0.4;font-weight:normal;">(raffle cancels and refunds if not met)</span></label>
+      <input type="number" id="re-ticket-minimum" min="1" step="1" value="1" style="max-width:140px;" />
+    </div>
 
     <div id="re-error" style="color:#ff6b6b;font-size:0.82rem;display:none;"></div>
     <button class="small-button" onclick="submitEditRaffle()" style="margin-top:4px;">Save Changes</button>
@@ -515,6 +536,7 @@ function submitCreateRaffle() {
   fd.append('end_date', endDate);
   var rQtyRow = document.getElementById('r-qty-row');
   fd.append('quantity', (rQtyRow && rQtyRow.style.display !== 'none') ? (parseInt(document.getElementById('r-quantity').value) || 1) : 1);
+  fd.append('ticket_minimum', parseInt(document.getElementById('r-ticket-minimum').value) || 1);
   if (imgFile) fd.append('image', imgFile);
   else { var ipfsUrl = document.getElementById('r-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 
@@ -599,6 +621,7 @@ function openEditRaffleModal(id) {
     var reQr = document.getElementById('re-qty-row');
     var qty  = parseInt(r.quantity) || 1;
     if (reQr) { reQr.style.display = qty > 1 ? '' : 'none'; document.getElementById('re-quantity').value = qty > 1 ? qty : 1; }
+    document.getElementById('re-ticket-minimum').value = parseInt(r.ticket_minimum) || 1;
     document.getElementById('re-error').style.display = 'none';
     document.getElementById('edit-raffle-modal').classList.add('open');
     reAssetLookup.triggerLookup();
@@ -662,6 +685,7 @@ function submitEditRaffle() {
   fd.append('end_date', endDate);
   var reQtyRow = document.getElementById('re-qty-row');
   fd.append('quantity', (reQtyRow && reQtyRow.style.display !== 'none') ? (parseInt(document.getElementById('re-quantity').value) || 1) : 1);
+  fd.append('ticket_minimum', parseInt(document.getElementById('re-ticket-minimum').value) || 1);
   if (imgFile) fd.append('image', imgFile);
   else { var ipfsUrl = document.getElementById('re-ipfs-url').value; if (ipfsUrl) fd.append('ipfs_url', ipfsUrl); }
 

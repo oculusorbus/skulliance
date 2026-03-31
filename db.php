@@ -9019,7 +9019,7 @@ function getRaffle($conn, $raffle_id) {
 
 // Create a new raffle. $ticket_options is array of ['project_id'=>X,'cost'=>Y].
 // Returns new raffle id or false on error.
-function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity = 1) {
+function createRaffle($conn, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity = 1, $ticket_minimum = 1) {
 	$uid   = intval($user_id);
 	$title = $conn->real_escape_string($title);
 	$desc  = $conn->real_escape_string($description);
@@ -9028,9 +9028,10 @@ function createRaffle($conn, $user_id, $title, $description, $image_path, $asset
 	$sdate = $conn->real_escape_string($start_date);
 	$edate = $conn->real_escape_string($end_date);
 	$qty   = max(1, intval($quantity));
+	$tmin  = max(1, intval($ticket_minimum));
 
-	$sql = "INSERT INTO raffles (user_id, title, image, asset_id, start_date, end_date, quantity)
-	        VALUES ('$uid', '$title', '$img', '$aid', '$sdate', '$edate', '$qty')";
+	$sql = "INSERT INTO raffles (user_id, title, image, asset_id, start_date, end_date, quantity, ticket_minimum)
+	        VALUES ('$uid', '$title', '$img', '$aid', '$sdate', '$edate', '$qty', '$tmin')";
 	if (!$conn->query($sql)) return false;
 	$raffle_id = $conn->insert_id;
 
@@ -9044,10 +9045,11 @@ function createRaffle($conn, $user_id, $title, $description, $image_path, $asset
 
 // Update an existing raffle. $ticket_options is array of ['project_id'=>X,'cost'=>Y].
 // Only allowed when no active tickets have been sold. Returns ['success'=>true] or ['success'=>false,'message'=>'...'].
-function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity = 1) {
-	$rid = intval($raffle_id);
-	$uid = intval($user_id);
-	$qty = max(1, intval($quantity));
+function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_path, $asset_id, $start_date, $end_date, $ticket_options, $quantity = 1, $ticket_minimum = 1) {
+	$rid  = intval($raffle_id);
+	$uid  = intval($user_id);
+	$qty  = max(1, intval($quantity));
+	$tmin = max(1, intval($ticket_minimum));
 
 	// Verify ownership
 	$rr = $conn->query("SELECT user_id, completed, canceled FROM raffles WHERE id='$rid' LIMIT 1");
@@ -9068,9 +9070,9 @@ function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_
 
 	if ($image_path !== '') {
 		$img  = $conn->real_escape_string($image_path);
-		$sql  = "UPDATE raffles SET title='$title', image='$img', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
+		$sql  = "UPDATE raffles SET title='$title', image='$img', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty', ticket_minimum='$tmin' WHERE id='$rid'";
 	} else {
-		$sql  = "UPDATE raffles SET title='$title', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty' WHERE id='$rid'";
+		$sql  = "UPDATE raffles SET title='$title', asset_id='$aid', start_date='$sdate', end_date='$edate', quantity='$qty', ticket_minimum='$tmin' WHERE id='$rid'";
 	}
 	if (!$conn->query($sql)) return ['success'=>false,'message'=>'Database error updating raffle.'];
 
