@@ -473,9 +473,11 @@ var _fpCfg = {
   minDate:         'today',
 };
 
+var aAssetLookup  = null;
+var aeAssetLookup = null;
 document.addEventListener('DOMContentLoaded', function() {
-  var aAssetLookup  = setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title',  'a-qty-row',  'a-title-row',  'a-image-row');
-  var aeAssetLookup = setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title', 'ae-qty-row', null, null);
+  aAssetLookup  = setupAssetLookup('a-asset-id',  'a-image',  'a-img-status',  'a-img-preview',  'a-img-preview-img',  'a-ipfs-url',  'a-title',  'a-qty-row',  'a-title-row',  'a-image-row');
+  aeAssetLookup = setupAssetLookup('ae-asset-id', 'ae-image', 'ae-img-status', 'ae-img-preview', 'ae-img-preview-img', 'ae-ipfs-url', 'ae-title', 'ae-qty-row', null, null);
 
   flatpickr('#a-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#a-end-date',    _fpCfg);

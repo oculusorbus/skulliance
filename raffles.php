@@ -469,9 +469,11 @@ var _fpCfg = {
   minDate:         'today',
 };
 
+var rAssetLookup  = null;
+var reAssetLookup = null;
 document.addEventListener('DOMContentLoaded', function() {
-  var rAssetLookup  = setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row',  'r-title-row',  'r-image-row');
-  var reAssetLookup = setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row', null, null);
+  rAssetLookup  = setupAssetLookup('r-asset-id',  'r-image',  'r-img-status',  'r-img-preview',  'r-img-preview-img',  'r-ipfs-url',  'r-title',  'r-qty-row',  'r-title-row',  'r-image-row');
+  reAssetLookup = setupAssetLookup('re-asset-id', 're-image', 're-img-status', 're-img-preview', 're-img-preview-img', 're-ipfs-url', 're-title', 're-qty-row', null, null);
 
   flatpickr('#r-start-date',  Object.assign({}, _fpCfg, { minDate: null }));
   flatpickr('#r-end-date',    _fpCfg);
