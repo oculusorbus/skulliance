@@ -8963,7 +8963,7 @@ function cancelAuction($conn, $auction_id, $user_id) {
 // Return all raffles (upcoming + active, not completed or canceled) with total ticket counts.
 function getActiveRaffles($conn) {
 	$sql = "SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
-	               (SELECT COUNT(*) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 1) AS total_tickets_sold
+	               (SELECT COALESCE(SUM(t.quantity),0) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 1) AS total_tickets_sold
 	        FROM raffles r
 	        INNER JOIN users u ON u.id = r.user_id
 	        WHERE r.completed = 0 AND r.canceled = 0
