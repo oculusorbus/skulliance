@@ -27,7 +27,7 @@ $now_ts = time();
 .raffle-card-footer { padding:10px 14px; border-top:1px solid rgba(255,255,255,0.05); }
 .raffle-empty { opacity:0.5; text-align:center; padding:40px 0; }
 .bid-history { max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
-.bid-row { display:flex; align-items:center; justify-content:space-between; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; gap:8px; }
+.bid-row { display:flex; align-items:center; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; gap:8px; }
 
 .raffle-modal { display:none; position:fixed; inset:0; z-index:800; align-items:center; justify-content:center; }
 .raffle-modal.open { display:flex; }

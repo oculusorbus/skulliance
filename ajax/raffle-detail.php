@@ -127,8 +127,8 @@ $conn->close();
         <?php endif; ?>
         <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($h['username']); ?></a>
       </span>
-      <span style="flex:0 0 80px;text-align:right;"><?php echo number_format($h_tickets); ?> tickets</span>
-      <span style="flex:0 0 36px;text-align:right;opacity:0.4;"><?php echo $odds; ?>%</span>
+      <span style="flex:0 0 90px;text-align:right;"><?php echo number_format($h_tickets); ?> tickets</span>
+      <span style="flex:0 0 44px;text-align:right;opacity:0.4;"><?php echo $odds; ?>%</span>
     </div>
     <?php endforeach; ?>
   </div>

@@ -125,17 +125,17 @@ $conn->close();
   <div class="bid-history">
     <?php foreach ($auction['bids'] as $b): ?>
     <div class="bid-row">
-      <span style="display:flex;align-items:center;gap:5px;">
+      <span style="flex:1;min-width:0;display:flex;align-items:center;gap:5px;">
         <?php if (!empty($b['bidder_discord']) && !empty($b['bidder_avatar'])): ?>
-        <img src="https://cdn.discordapp.com/avatars/<?php echo $b['bidder_discord']; ?>/<?php echo $b['bidder_avatar']; ?>.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">
+        <img src="https://cdn.discordapp.com/avatars/<?php echo $b['bidder_discord']; ?>/<?php echo $b['bidder_avatar']; ?>.png" style="width:16px;height:16px;border-radius:50%;flex-shrink:0;">
         <?php endif; ?>
-        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($b['bidder_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($b['bidder_name']); ?></a>
+        <a href="/staking/profile.php?username=<?php echo htmlspecialchars($b['bidder_name']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($b['bidder_name']); ?></a>
       </span>
-      <span style="display:flex;align-items:center;gap:3px;">
-        <img src="icons/<?php echo strtolower($b['currency']); ?>.png" style="width:14px;height:14px;vertical-align:middle;">
+      <span style="flex:0 0 130px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:3px;">
+        <img src="icons/<?php echo strtolower($b['currency']); ?>.png" style="width:14px;height:14px;">
         <?php echo number_format($b['amount']); ?> <?php echo strtoupper($b['currency']); ?>
       </span>
-      <span style="opacity:0.4;"><?php echo date('M j g:ia', strtotime($b['created_date'])); ?></span>
+      <span style="flex:0 0 75px;text-align:right;opacity:0.4;"><?php echo date('M j g:ia', strtotime($b['created_date'])); ?></span>
     </div>
     <?php endforeach; ?>
   </div>
