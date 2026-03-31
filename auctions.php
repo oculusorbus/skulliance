@@ -50,7 +50,7 @@ $now_ts = time();
 
 .bid-modal-box { width:min(420px,95vw); }
 .bid-history { max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
-.bid-row { display:flex; justify-content:space-between; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; }
+.bid-row { display:flex; align-items:center; justify-content:space-between; font-size:0.78rem; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px; gap:8px; }
 
 .auction-detail-img { width:100%; max-height:260px; object-fit:contain; border-radius:8px; background:#0a1520; }
 
