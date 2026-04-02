@@ -572,8 +572,8 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 
 	<!-- Guide Modal -->
 	<div id="guide-modal-overlay" onclick="closeGuideModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;"></div>
-	<div id="guide-modal" style="display:none;position:fixed;inset:0;z-index:1001;overflow-y:auto;pointer-events:none;">
-		<div style="pointer-events:all;max-width:640px;margin:40px auto;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:28px 28px 20px;font-size:0.85rem;line-height:1.55;" onclick="event.stopPropagation()">
+	<div id="guide-modal" class="modal" style="display:none;z-index:1001;" onclick="closeGuideModal()">
+		<div class="raid-modal-content" style="max-width:640px;max-height:85vh;overflow-y:auto;font-size:0.85rem;line-height:1.55;" onclick="event.stopPropagation()">
 			<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
 				<h2 style="margin:0;font-size:1.1rem;letter-spacing:0.05em;color:#00c8a0;">Realm &amp; Raids Guide</h2>
 				<button class="raid-modal-close" onclick="closeGuideModal()" aria-label="Close">&times;</button>
@@ -648,7 +648,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<!-- Deployment Configuration Modal -->
 	<div id="deploy-config-overlay" onclick="closeDeployConfig()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1004;"></div>
 	<div id="deploy-config-modal" class="modal" style="display:none;z-index:1005;" role="dialog" aria-modal="true" onclick="closeDeployConfig()">
-		<div class="raid-modal-content" style="max-width:480px;" onclick="event.stopPropagation()">
+		<div class="raid-modal-content" style="max-width:480px;max-height:85vh;overflow-y:auto;" onclick="event.stopPropagation()">
 			<div class="raid-modal-header">
 				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Deployment Configuration</h2>
 				<button class="raid-modal-close" onclick="closeDeployConfig()" aria-label="Close">&times;</button>
