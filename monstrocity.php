@@ -1241,6 +1241,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			  extension: "png" // Applies only to character images
 	        },
 	        {
+	          value: "blackflag",
+	          project: "Black Flag",
+	          title: "Black Flag",
+	          policyIds: "b3dab69f7e6100849434fb1781e34bd12a916557f6231b8d2629b6f6",
+	          orientations: "Left",
+	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+			  background: true,
+			  extension: "png" // Applies only to character images
+	        },
+	        {
 	          value: "danketsu2",
 	          project: "Danketsu",
 	          title: "The Fourth",
