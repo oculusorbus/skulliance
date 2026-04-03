@@ -94,14 +94,16 @@ while ($auction = $result->fetch_assoc()) {
                 sendDM($winner['discord_id'],
                     "✅ Your auction prize for **{$title}** has been confirmed in your wallet!\n\n" .
                     "NFT Asset: `$asset_id`\n\n" .
-                    "Thank you for using Skulliance. Enjoy your prize!"
+                    "Thank you for using Skulliance. Enjoy your prize!",
+                    $img_url
                 );
             }
             if ($auction['creator_discord']) {
                 sendDM($auction['creator_discord'],
                     "✅ Delivery confirmed for **{$title}**!\n\n" .
                     "The NFT (`$asset_id`) has been verified in **{$winner_name}**'s wallet.\n\n" .
-                    "**" . number_format($prev_bid) . " $cur** has been credited to your balance."
+                    "**" . number_format($prev_bid) . " $cur** has been credited to your balance.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -127,13 +129,15 @@ while ($auction = $result->fetch_assoc()) {
             if ($winner && $winner['discord_id']) {
                 sendDM($winner['discord_id'],
                     "❌ The auction **{$title}** has been canceled — the creator did not deliver the NFT within the 30-day window.\n\n" .
-                    "Your bid of **" . number_format($prev_bid) . " $cur** has been fully refunded. Please open a support ticket if you need assistance."
+                    "Your bid of **" . number_format($prev_bid) . " $cur** has been fully refunded. Please open a support ticket if you need assistance.",
+                    $img_url
                 );
             }
             if ($auction['creator_discord']) {
                 sendDM($auction['creator_discord'],
                     "❌ Your auction **{$title}** has been automatically canceled because the NFT (`$asset_id`) was not confirmed in **{$winner_name}**'s wallet within 30 days.\n\n" .
-                    "The winner has been refunded. Please contact support if you believe this is an error."
+                    "The winner has been refunded. Please contact support if you believe this is an error.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -218,14 +222,16 @@ while ($auction = $result->fetch_assoc()) {
                     $cur = ($pr && $pr->num_rows) ? strtoupper($pr->fetch_assoc()['currency']) : 'pts';
                     sendDM($loser['discord_id'],
                         "❌ The auction **{$title}** was canceled because the creator could not verify ownership of the NFT at close time.\n\n" .
-                        "Your bid of **" . number_format($prev_bid) . " $cur** has been fully refunded."
+                        "Your bid of **" . number_format($prev_bid) . " $cur** has been fully refunded.",
+                        $img_url
                     );
                 }
             }
             if ($auction['creator_discord']) {
                 sendDM($auction['creator_discord'],
                     "❌ Your auction **{$title}** was automatically canceled because the NFT (asset: `$asset_id`) could not be found in your linked wallet at close time.\n\n" .
-                    "If this is an error, please contact support. Any bids have been refunded."
+                    "If this is an error, please contact support. Any bids have been refunded.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -255,6 +261,11 @@ while ($auction = $result->fetch_assoc()) {
             // ── NFT auction: save winner, wait for on-chain delivery ──────────
             $conn->query("UPDATE auctions SET winner_id='$prev_bidder', processing=0 WHERE id='$aid'");
 
+            $winner_address = getWinnerAddress($conn, $prev_bidder);
+            $addr_line = $winner_address
+                ? "Their receiving address:\n`{$winner_address}`"
+                : "⚠️ **{$winner_name}** has no linked Cardano wallet address — please contact them directly in Discord to obtain their address.";
+
             if ($winner && $winner['discord_id']) {
                 sendDM($winner['discord_id'],
                     "🎉 Congratulations! You won the auction for **{$title}**!\n\n" .
@@ -262,7 +273,8 @@ while ($auction = $result->fetch_assoc()) {
                     "NFT Asset: `$asset_id`\n\n" .
                     "The creator has been notified and has **30 days** to send the NFT to your linked Cardano wallet. " .
                     "Delivery will be confirmed automatically on-chain.\n\n" .
-                    "⚠️ If the NFT is not received within 30 days, the auction will be canceled and your bid refunded."
+                    "⚠️ If the NFT is not received within 30 days, the auction will be canceled and your bid refunded.",
+                    $img_url
                 );
             }
             if ($auction['creator_discord']) {
@@ -271,9 +283,10 @@ while ($auction = $result->fetch_assoc()) {
                     "Winner: **{$winner_name}**\n" .
                     "Winning bid: **" . number_format($prev_bid) . " $cur**\n" .
                     "NFT Asset: `$asset_id`\n\n" .
-                    "Please send the NFT to **{$winner_name}**'s linked Cardano wallet within **30 days**.\n" .
-                    "Your **" . number_format($prev_bid) . " $cur** will be credited once on-chain delivery is confirmed.\n\n" .
-                    "⚠️ If delivery is not confirmed within 30 days, the auction will be canceled and the winner refunded."
+                    $addr_line . "\n\n" .
+                    "Please send the NFT within **30 days**. Your **" . number_format($prev_bid) . " $cur** will be credited once on-chain delivery is confirmed.\n\n" .
+                    "⚠️ If delivery is not confirmed within 30 days, the auction will be canceled and the winner refunded.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -299,7 +312,8 @@ while ($auction = $result->fetch_assoc()) {
                     "🎉 Congratulations! You won the auction for **{$title}**!\n\n" .
                     "Your winning bid: **" . number_format($prev_bid) . " $cur**\n\n" .
                     "Please contact the creator **{$auction['creator_name']}** in the Skulliance Discord to arrange delivery of your prize.\n\n" .
-                    "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket."
+                    "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket.",
+                    $img_url
                 );
             }
             if ($auction['creator_discord']) {
@@ -308,7 +322,8 @@ while ($auction = $result->fetch_assoc()) {
                     "Winner: **{$winner_name}**\n" .
                     "Winning bid: **" . number_format($prev_bid) . " $cur**\n\n" .
                     "**" . number_format($prev_bid) . " $cur** has been credited to your balance.\n\n" .
-                    "Please arrange prize delivery with **{$winner_name}** via the Skulliance Discord."
+                    "Please arrange prize delivery with **{$winner_name}** via the Skulliance Discord.",
+                    $img_url
                 );
             }
             discordmsg(

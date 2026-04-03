@@ -9165,6 +9165,17 @@ function getCreatorStakeAddress($conn, $user_id) {
 	return null;
 }
 
+// Return the main receiving address (addr1...) for a user — for NFT delivery instructions.
+// Falls back to oldest wallet if no main is set.
+function getWinnerAddress($conn, $user_id) {
+	$uid = intval($user_id);
+	$res = $conn->query("SELECT address FROM wallets WHERE user_id='$uid' AND main='1' AND address != '' LIMIT 1");
+	if ($res && $res->num_rows) { $row = $res->fetch_assoc(); if (!empty($row['address'])) return $row['address']; }
+	$res = $conn->query("SELECT address FROM wallets WHERE user_id='$uid' AND address != '' ORDER BY id ASC LIMIT 1");
+	if ($res && $res->num_rows) { $row = $res->fetch_assoc(); return $row['address'] ?: null; }
+	return null;
+}
+
 // Verify a Cardano asset_id (policy_id[56] + hex_asset_name) is present in a stake address
 // via Koios v1 account_utxos. Returns true if found, false on not found or API error.
 // Verify a Cardano asset fingerprint (asset1...) is present in a stake address via Koios v1.

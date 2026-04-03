@@ -102,14 +102,16 @@ while ($raffle = $result->fetch_assoc()) {
                 sendDM($winner['discord_id'],
                     "✅ Your raffle prize for **{$title}** has been confirmed in your wallet!\n\n" .
                     "NFT Asset: `$asset_id`\n\n" .
-                    "Thank you for using Skulliance. Enjoy your prize!"
+                    "Thank you for using Skulliance. Enjoy your prize!",
+                    $img_url
                 );
             }
             if ($raffle['creator_discord']) {
                 sendDM($raffle['creator_discord'],
                     "✅ Delivery confirmed for your raffle **{$title}**!\n\n" .
                     "The NFT (`$asset_id`) has been verified in **{$winner_name}**'s wallet.\n\n" .
-                    "**$payout_str** has been credited to your balance."
+                    "**$payout_str** has been credited to your balance.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -147,7 +149,8 @@ while ($raffle = $result->fetch_assoc()) {
                             if ($urow['discord_id']) {
                                 sendDM($urow['discord_id'],
                                     "❌ The raffle **{$title}** has been canceled — the creator did not deliver the NFT within the 30-day window.\n\n" .
-                                    "Your tickets have been fully refunded."
+                                    "Your tickets have been fully refunded.",
+                                    $img_url
                                 );
                             }
                         }
@@ -162,7 +165,8 @@ while ($raffle = $result->fetch_assoc()) {
             if ($raffle['creator_discord']) {
                 sendDM($raffle['creator_discord'],
                     "❌ Your raffle **{$title}** has been automatically canceled because the NFT (`$asset_id`) was not confirmed in **{$winner_name}**'s wallet within 30 days.\n\n" .
-                    "All ticket buyers have been refunded. Please contact support if you believe this is an error."
+                    "All ticket buyers have been refunded. Please contact support if you believe this is an error.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -263,7 +267,8 @@ while ($raffle = $result->fetch_assoc()) {
                             if ($urow['discord_id']) {
                                 sendDM($urow['discord_id'],
                                     "❌ The raffle **{$title}** was canceled because the creator could not verify ownership of the NFT at close time.\n\n" .
-                                    "Your tickets have been fully refunded."
+                                    "Your tickets have been fully refunded.",
+                                    $img_url
                                 );
                             }
                         }
@@ -276,7 +281,8 @@ while ($raffle = $result->fetch_assoc()) {
             if ($raffle['creator_discord']) {
                 sendDM($raffle['creator_discord'],
                     "❌ Your raffle **{$title}** was automatically canceled because the NFT (asset: `$asset_id`) could not be found in your linked wallet at close time.\n\n" .
-                    "All ticket buyers have been refunded. If this is an error, please contact support."
+                    "All ticket buyers have been refunded. If this is an error, please contact support.",
+                    $img_url
                 );
             }
             discordmsg(
@@ -382,6 +388,11 @@ while ($raffle = $result->fetch_assoc()) {
         // ── NFT raffle: save winner, wait for on-chain delivery ───────────────
         $conn->query("UPDATE raffles SET winner_id='$winning_uid', processing=0 WHERE id='$rid'");
 
+        $winner_address = getWinnerAddress($conn, $winning_uid);
+        $addr_line = $winner_address
+            ? "Their receiving address:\n`{$winner_address}`"
+            : "⚠️ **{$winner_name}** has no linked Cardano wallet address — please contact them directly in Discord to obtain their address.";
+
         if ($winner && $winner['discord_id']) {
             sendDM($winner['discord_id'],
                 "🎉 You won the raffle for **{$title}**!\n\n" .
@@ -389,7 +400,8 @@ while ($raffle = $result->fetch_assoc()) {
                 "NFT Asset: `$asset_id`\n\n" .
                 "The creator has been notified and has **30 days** to send the NFT to your linked Cardano wallet. " .
                 "Delivery will be confirmed automatically on-chain.\n\n" .
-                "⚠️ If the NFT is not received within 30 days, the raffle will be canceled and all ticket buyers refunded."
+                "⚠️ If the NFT is not received within 30 days, the raffle will be canceled and all ticket buyers refunded.",
+                $img_url
             );
         }
         if ($raffle['creator_discord']) {
@@ -397,9 +409,10 @@ while ($raffle = $result->fetch_assoc()) {
                 "🎟️ Your raffle **{$title}** has ended!\n\n" .
                 "Winner: **{$winner_name}** (drawn from **$total_sold** ticket(s))\n" .
                 "NFT Asset: `$asset_id`\n\n" .
-                "Please send the NFT to **{$winner_name}**'s linked Cardano wallet within **30 days**.\n" .
-                "Your ticket proceeds will be credited once on-chain delivery is confirmed.\n\n" .
-                "⚠️ If delivery is not confirmed within 30 days, the raffle will be canceled and ticket buyers refunded."
+                $addr_line . "\n\n" .
+                "Please send the NFT within **30 days**. Your ticket proceeds will be credited once on-chain delivery is confirmed.\n\n" .
+                "⚠️ If delivery is not confirmed within 30 days, the raffle will be canceled and ticket buyers refunded.",
+                $img_url
             );
         }
         discordmsg(
@@ -444,7 +457,8 @@ while ($raffle = $result->fetch_assoc()) {
                 "🎉 You won the raffle for **{$title}**!\n\n" .
                 "You were drawn from **$total_sold** total ticket(s).\n\n" .
                 "Please contact the creator **{$raffle['creator_name']}** in the Skulliance Discord to arrange delivery of your prize.\n\n" .
-                "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket."
+                "⚠️ If you do not hear from the creator within 48 hours, please open a support ticket.",
+                $img_url
             );
         }
         if ($raffle['creator_discord']) {
@@ -452,7 +466,8 @@ while ($raffle = $result->fetch_assoc()) {
                 "🎟️ Your raffle **{$title}** has ended!\n\n" .
                 "Winner: **{$winner_name}** (drawn from **$total_sold** ticket(s))\n\n" .
                 "**$payout_str** has been credited to your balance.\n\n" .
-                "Please send the prize to **{$winner_name}** via the Skulliance Discord."
+                "Please send the prize to **{$winner_name}** via the Skulliance Discord.",
+                $img_url
             );
         }
         discordmsg(

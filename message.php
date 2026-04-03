@@ -31,10 +31,14 @@ function MakeRequest($endpoint, $data) {
     return json_decode($request, true);
 }
 
-function sendDM($discord_id, $message){
+function sendDM($discord_id, $message, $image_url = ''){
     $newDM = MakeRequest('/users/@me/channels', array("recipient_id" => $discord_id));
     if(isset($newDM["id"])) {
-        MakeRequest("/channels/".$newDM["id"]."/messages", array("content" => $message));
+        $payload = array("content" => $message);
+        if ($image_url !== '') {
+            $payload["embeds"] = array(array("image" => array("url" => $image_url)));
+        }
+        MakeRequest("/channels/".$newDM["id"]."/messages", $payload);
     }
 }
 ?>
