@@ -8767,11 +8767,14 @@ function getActiveAuctions($conn) {
 	$sql = "SELECT a.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
 	               b.amount AS current_bid, b.project_id AS current_bid_project_id,
 	               b.user_id AS current_bidder_id,
-	               p.name AS current_bid_project_name, p.currency AS current_bid_currency
+	               p.name AS current_bid_project_name, p.currency AS current_bid_currency,
+	               wu.username AS winner_name,
+	               (SELECT w.address FROM wallets w WHERE w.user_id = a.winner_id AND w.address != '' ORDER BY w.main DESC, w.id ASC LIMIT 1) AS winner_address
 	        FROM auctions a
 	        INNER JOIN users u ON u.id = a.user_id
 	        LEFT JOIN bids b ON b.auction_id = a.id AND b.status = 1
 	        LEFT JOIN projects p ON p.id = b.project_id
+	        LEFT JOIN users wu ON wu.id = a.winner_id
 	        WHERE a.completed = 0 AND a.canceled = 0
 	        ORDER BY a.start_date ASC, a.end_date ASC";
 	$result = $conn->query($sql);
@@ -8985,9 +8988,12 @@ function cancelAuction($conn, $auction_id, $user_id) {
 // Return all raffles (upcoming + active, not completed or canceled) with total ticket counts.
 function getActiveRaffles($conn) {
 	$sql = "SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
-	               (SELECT COALESCE(SUM(t.quantity),0) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 1) AS total_tickets_sold
+	               (SELECT COALESCE(SUM(t.quantity),0) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 1) AS total_tickets_sold,
+	               wu.username AS winner_name,
+	               (SELECT w.address FROM wallets w WHERE w.user_id = r.winner_id AND w.address != '' ORDER BY w.main DESC, w.id ASC LIMIT 1) AS winner_address
 	        FROM raffles r
 	        INNER JOIN users u ON u.id = r.user_id
+	        LEFT JOIN users wu ON wu.id = r.winner_id
 	        WHERE r.completed = 0 AND r.canceled = 0
 	        ORDER BY r.start_date ASC, r.end_date ASC";
 	$result = $conn->query($sql);

@@ -39,6 +39,19 @@ $th = $conn->query("SELECT u.username, u.discord_id, u.avatar, SUM(t.quantity) A
                     ORDER BY tickets DESC");
 if ($th) { while ($row = $th->fetch_assoc()) $ticket_holders[] = $row; }
 
+// Delivery tracking data (fetch before close)
+$delivery_winner_name = '';
+$delivery_winner_addr = '';
+$is_winner            = false;
+$delivery_days_left   = 0;
+if ($raffle['processing'] && $raffle['winner_id']) {
+    $dw_id  = intval($raffle['winner_id']);
+    $dw_res = $conn->query("SELECT username FROM users WHERE id='$dw_id' LIMIT 1");
+    $delivery_winner_name = ($dw_res && $dw_res->num_rows) ? $dw_res->fetch_assoc()['username'] : 'Unknown';
+    $delivery_winner_addr = getWinnerAddress($conn, $dw_id) ?? '';
+    $is_winner            = $user_id === $dw_id;
+    $delivery_days_left   = max(0, ceil(30 - (time() - strtotime($raffle['end_date'])) / 86400));
+}
 $conn->close();
 ?>
 <?php if ($has_img): ?>
@@ -87,7 +100,55 @@ $conn->close();
   </div>
 </div>
 
+<?php if ($raffle['processing'] && $raffle['winner_id']): ?>
 <?php if ($is_creator): ?>
+<div style="background:rgba(0,200,160,0.07);border:1px solid rgba(0,200,160,0.22);border-radius:8px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;">
+  <div style="font-size:0.85rem;font-weight:bold;color:#00c8a0;">&#x1F4E6; Pending NFT Delivery</div>
+  <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+    <span style="opacity:0.5;">Winner</span>
+    <a href="/staking/profile.php?username=<?php echo htmlspecialchars($delivery_winner_name); ?>" style="color:#e8eef4;text-decoration:underline;"><?php echo htmlspecialchars($delivery_winner_name); ?></a>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+    <span style="opacity:0.5;">Deadline</span>
+    <span style="color:<?php echo $delivery_days_left <= 7 ? '#ff6b6b' : ($delivery_days_left <= 14 ? '#ffc800' : '#e8eef4'); ?>;"><?php echo $delivery_days_left; ?> of 30 days remaining</span>
+  </div>
+  <?php if ($raffle['asset_id']): ?>
+  <div style="display:flex;flex-direction:column;gap:3px;">
+    <span style="opacity:0.5;font-size:0.78rem;">NFT Asset ID</span>
+    <div style="background:rgba(0,0,0,0.25);border-radius:5px;padding:6px 9px;font-family:monospace;font-size:0.72rem;word-break:break-all;line-height:1.5;"><?php echo htmlspecialchars($raffle['asset_id']); ?></div>
+  </div>
+  <?php endif; ?>
+  <?php if ($delivery_winner_addr): ?>
+  <div style="display:flex;flex-direction:column;gap:4px;">
+    <span style="opacity:0.5;font-size:0.78rem;">Send NFT to this address</span>
+    <div style="background:rgba(0,0,0,0.25);border-radius:5px;padding:7px 9px;font-family:monospace;font-size:0.7rem;word-break:break-all;line-height:1.6;"><?php echo htmlspecialchars($delivery_winner_addr); ?></div>
+    <button onclick="navigator.clipboard.writeText(<?php echo json_encode($delivery_winner_addr); ?>).then(function(){var b=document.getElementById('copy-raddr-btn');b.textContent='Copied!';setTimeout(function(){b.textContent='Copy Address'},1500)})" id="copy-raddr-btn" style="background:rgba(0,200,160,0.12);border:1px solid rgba(0,200,160,0.3);border-radius:5px;color:#00c8a0;font-size:0.75rem;padding:5px 12px;cursor:pointer;align-self:flex-start;">Copy Address</button>
+  </div>
+  <?php else: ?>
+  <div style="background:rgba(255,200,0,0.08);border:1px solid rgba(255,200,0,0.2);border-radius:6px;padding:8px 10px;font-size:0.78rem;color:#ffc800;">&#x26A0;&#xFE0F; <strong><?php echo htmlspecialchars($delivery_winner_name); ?></strong> has no linked Cardano wallet. Contact them directly in Discord to obtain their address.</div>
+  <?php endif; ?>
+</div>
+<?php elseif ($is_winner): ?>
+<div style="background:rgba(0,200,160,0.07);border:1px solid rgba(0,200,160,0.22);border-radius:8px;padding:13px 14px;display:flex;flex-direction:column;gap:8px;">
+  <div style="font-size:0.85rem;font-weight:bold;color:#00c8a0;">&#x1F3C6; You won this raffle!</div>
+  <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+    <span style="opacity:0.5;">Delivery window</span>
+    <span><?php echo $delivery_days_left; ?> of 30 days remaining</span>
+  </div>
+  <?php if ($raffle['asset_id']): ?>
+  <div style="display:flex;flex-direction:column;gap:3px;">
+    <span style="opacity:0.5;font-size:0.78rem;">NFT Asset ID</span>
+    <div style="background:rgba(0,0,0,0.25);border-radius:5px;padding:6px 9px;font-family:monospace;font-size:0.72rem;word-break:break-all;line-height:1.5;"><?php echo htmlspecialchars($raffle['asset_id']); ?></div>
+  </div>
+  <?php endif; ?>
+  <div style="font-size:0.75rem;opacity:0.55;">The creator has <?php echo $delivery_days_left; ?> days to send the NFT to your linked Cardano wallet. Delivery is verified automatically on-chain — you'll be notified once confirmed.</div>
+</div>
+<?php else: ?>
+<div style="background:rgba(0,200,160,0.05);border:1px solid rgba(0,200,160,0.12);border-radius:8px;padding:10px 13px;font-size:0.82rem;">
+  &#x1F3C6; Won by <a href="/staking/profile.php?username=<?php echo htmlspecialchars($delivery_winner_name); ?>" style="color:#00c8a0;text-decoration:underline;"><?php echo htmlspecialchars($delivery_winner_name); ?></a> — NFT delivery in progress (<?php echo $delivery_days_left; ?> days remaining).
+</div>
+<?php endif; ?>
+<?php elseif ($is_creator): ?>
 <div style="font-size:0.82rem;opacity:0.5;">You created this raffle and cannot buy tickets.</div>
 <?php elseif (!$is_closed && !$ended && !$upcoming && !empty($raffle['ticket_options'])): ?>
 <div style="display:flex;flex-direction:column;gap:8px;">

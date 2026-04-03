@@ -142,6 +142,61 @@ $now_ts = time();
                 <?php endif; ?>
               </div>
             </div>
+            <?php if ($in_delivery):
+              $sess_uid     = intval($_SESSION['userData']['user_id'] ?? 0);
+              $d_winner_id  = intval($r['winner_id'] ?? 0);
+              $d_is_winner  = $sess_uid === $d_winner_id;
+              $d_winner_nm  = htmlspecialchars($r['winner_name'] ?? 'Unknown');
+              $d_addr       = $r['winner_address'] ?? '';
+              $d_short_addr = $d_addr ? substr($d_addr, 0, 12) . '…' . substr($d_addr, -8) : '';
+              $d_asset      = $r['asset_id'] ?? '';
+              $d_short_asset= $d_asset ? substr($d_asset, 0, 10) . '…' . substr($d_asset, -6) : '';
+              $d_days_left  = max(0, ceil(30 - (time() - strtotime($r['end_date'])) / 86400));
+            ?>
+            <?php if ($is_owner): ?>
+            <div style="background:rgba(0,200,160,0.07);border:1px solid rgba(0,200,160,0.2);border-radius:6px;padding:9px 11px;font-size:0.78rem;display:flex;flex-direction:column;gap:5px;">
+              <div style="font-weight:bold;color:#00c8a0;margin-bottom:2px;">&#x1F4E6; Pending Delivery</div>
+              <div style="display:flex;justify-content:space-between;gap:6px;">
+                <span style="opacity:0.5;">Winner</span>
+                <a href="/staking/profile.php?username=<?php echo $d_winner_nm; ?>" style="color:#e8eef4;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo $d_winner_nm; ?></a>
+              </div>
+              <?php if ($d_asset): ?>
+              <div style="display:flex;justify-content:space-between;gap:6px;">
+                <span style="opacity:0.5;">Asset</span>
+                <span style="font-family:monospace;font-size:0.72rem;" title="<?php echo htmlspecialchars($d_asset); ?>"><?php echo htmlspecialchars($d_short_asset); ?></span>
+              </div>
+              <?php endif; ?>
+              <?php if ($d_addr): ?>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                <span style="opacity:0.5;flex-shrink:0;">Send to</span>
+                <span style="font-family:monospace;font-size:0.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:#00c8a0;" title="<?php echo htmlspecialchars($d_addr); ?>" onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($d_addr); ?>');this.textContent='Copied!';var s=this;setTimeout(function(){s.textContent='<?php echo htmlspecialchars($d_short_addr); ?>'},1500);"><?php echo htmlspecialchars($d_short_addr); ?></span>
+              </div>
+              <?php else: ?>
+              <div style="color:#ffc800;font-size:0.75rem;">&#x26A0;&#xFE0F; No wallet on file — contact winner in Discord</div>
+              <?php endif; ?>
+              <div style="display:flex;justify-content:space-between;gap:6px;">
+                <span style="opacity:0.5;">Deadline</span>
+                <span style="color:<?php echo $d_days_left <= 7 ? '#ff6b6b' : ($d_days_left <= 14 ? '#ffc800' : '#e8eef4'); ?>;"><?php echo $d_days_left; ?> days left</span>
+              </div>
+            </div>
+            <?php elseif ($d_is_winner): ?>
+            <div style="background:rgba(0,200,160,0.07);border:1px solid rgba(0,200,160,0.2);border-radius:6px;padding:9px 11px;font-size:0.78rem;display:flex;flex-direction:column;gap:5px;">
+              <div style="font-weight:bold;color:#00c8a0;">&#x1F3C6; You won this raffle!</div>
+              <?php if ($d_asset): ?>
+              <div style="display:flex;justify-content:space-between;gap:6px;">
+                <span style="opacity:0.5;">Asset</span>
+                <span style="font-family:monospace;font-size:0.72rem;" title="<?php echo htmlspecialchars($d_asset); ?>"><?php echo htmlspecialchars($d_short_asset); ?></span>
+              </div>
+              <?php endif; ?>
+              <div style="display:flex;justify-content:space-between;gap:6px;">
+                <span style="opacity:0.5;">Delivery</span>
+                <span><?php echo $d_days_left; ?> days remaining</span>
+              </div>
+            </div>
+            <?php else: ?>
+            <div style="font-size:0.75rem;opacity:0.5;">&#x1F3C6; Won by <a href="/staking/profile.php?username=<?php echo $d_winner_nm; ?>" style="color:inherit;text-decoration:underline;"><?php echo $d_winner_nm; ?></a> — delivery in progress</div>
+            <?php endif; ?>
+            <?php endif; ?>
             <div style="font-size:0.72rem;opacity:0.35;display:flex;align-items:center;gap:5px;">By
               <?php if (!empty($r['creator_discord']) && !empty($r['creator_avatar'])): ?>
               <img src="https://cdn.discordapp.com/avatars/<?php echo $r['creator_discord']; ?>/<?php echo $r['creator_avatar']; ?>.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;">
