@@ -13,7 +13,7 @@ set_time_limit(0);
 include 'db.php';
 include 'message.php';
 include 'verify.php';
-include 'webhooks.php';
+include_once 'webhooks.php';
 
 $now = date('Y-m-d H:i:s');
 
