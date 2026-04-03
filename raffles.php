@@ -5,7 +5,8 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
-$raffles = getActiveRaffles($conn);
+$raffles        = getActiveRaffles($conn);
+$raffle_history = getRecentRaffleHistory($conn, 30);
 $all_projects_res = $conn->query("SELECT id, name, currency, divider FROM projects ORDER BY id ASC");
 $all_projects = array();
 if ($all_projects_res) { while ($r = $all_projects_res->fetch_assoc()) $all_projects[] = $r; }
@@ -81,9 +82,11 @@ $now_ts = time();
       <?php else: ?>
       <div class="raffles-grid">
         <?php foreach ($raffles as $r):
-          $has_img  = !empty($r['image']) && file_exists('images/raffles/' . $r['image']);
-          $is_owner = (isset($_SESSION['userData']['user_id']) && intval($r['user_id']) === intval($_SESSION['userData']['user_id']));
+          $has_img        = !empty($r['image']) && file_exists('images/raffles/' . $r['image']);
+          $is_owner       = (isset($_SESSION['userData']['user_id']) && intval($r['user_id']) === intval($_SESSION['userData']['user_id']));
           $upcoming       = strtotime($r['start_date']) > $now_ts;
+          $ended          = !$upcoming && strtotime($r['end_date']) <= $now_ts;
+          $in_delivery    = !empty($r['processing']);
           $sold           = intval($r['total_tickets_sold']);
           $cheap          = $r['cheapest_ticket'];
           $ticket_minimum = max(1, intval($r['ticket_minimum'] ?? 1));
@@ -95,7 +98,11 @@ $now_ts = time();
           <div class="raffle-card-img-placeholder">&#x1F3AB;</div>
           <?php endif; ?>
           <div class="raffle-card-body">
-            <?php if ($upcoming): ?>
+            <?php if ($in_delivery): ?>
+            <div style="font-size:0.72rem;background:rgba(0,200,160,0.12);border:1px solid rgba(0,200,160,0.25);border-radius:4px;padding:2px 7px;color:#00c8a0;display:inline-block;margin-bottom:4px;">&#x1F4E6; Delivery Pending</div>
+            <?php elseif ($ended): ?>
+            <div style="font-size:0.72rem;background:rgba(255,150,0,0.12);border:1px solid rgba(255,150,0,0.25);border-radius:4px;padding:2px 7px;color:#ff9600;display:inline-block;margin-bottom:4px;">&#x23F3; Awaiting Draw</div>
+            <?php elseif ($upcoming): ?>
             <div class="raffle-upcoming-badge">Upcoming</div>
             <?php endif; ?>
             <div class="raffle-card-title"><?php echo htmlspecialchars($r['title']); ?></div>
@@ -124,7 +131,11 @@ $now_ts = time();
               </div>
               <?php endif; ?>
               <div class="raffle-timer">
-                <?php if ($upcoming): ?>
+                <?php if ($in_delivery): ?>
+                <span style="color:#00c8a0;">Winner drawn — NFT delivery in progress</span>
+                <?php elseif ($ended): ?>
+                <span style="color:#ff9600;">Ended <?php echo date('M j', strtotime($r['end_date'])); ?> — draw pending</span>
+                <?php elseif ($upcoming): ?>
                 Launches: <span class="countdown" data-deadline="<?php echo strtotime($r['start_date']); ?>"></span>
                 <?php else: ?>
                 Ends: <span class="countdown" data-deadline="<?php echo strtotime($r['end_date']); ?>"></span>
@@ -144,14 +155,41 @@ $now_ts = time();
             <?php endif; ?>
           </div>
           <div class="raffle-card-footer">
-            <button class="small-button" onclick="openTicketModal(<?php echo $r['id']; ?>)" style="width:100%;">Buy Tickets</button>
-            <?php if ($is_owner && !$r['completed'] && !$r['canceled']): ?>
+            <button class="small-button" onclick="openTicketModal(<?php echo $r['id']; ?>)" style="width:100%;"><?php echo ($ended || $in_delivery) ? 'View Details' : 'Buy Tickets'; ?></button>
+            <?php if ($is_owner && !$r['completed'] && !$r['canceled'] && !$in_delivery): ?>
+            <?php if (!$ended): ?>
             <button class="small-button" onclick="openEditRaffleModal(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;">Edit Raffle</button>
+            <?php endif; ?>
             <button class="small-button small-button-danger" onclick="cancelRaffle(<?php echo $r['id']; ?>)" style="width:100%;margin-top:6px;">Cancel Raffle</button>
             <?php endif; ?>
           </div>
         </div>
         <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
+
+      <?php if (!empty($raffle_history)): ?>
+      <div style="margin-top:28px;">
+        <button id="raffle-history-toggle" onclick="(function(btn){var l=document.getElementById('raffle-history-list');var open=l.style.display!=='none';l.style.display=open?'none':'block';btn.textContent=(open?'\u25bc':'\u25b2')+' Raffle History (<?php echo count($raffle_history); ?>)'})(this)" style="background:none;border:none;color:rgba(200,216,228,0.5);font-size:0.8rem;cursor:pointer;padding:0;letter-spacing:0.02em;">&#x25BC; Raffle History (<?php echo count($raffle_history); ?>)</button>
+        <div id="raffle-history-list" style="display:none;margin-top:10px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+          <?php foreach ($raffle_history as $h):
+            $h_completed = $h['completed'];
+            $h_canceled  = $h['canceled'];
+          ?>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.78rem;padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:5px;">
+            <span style="flex:0 0 16px;"><?php echo $h_completed ? '✅' : '❌'; ?></span>
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;"><?php echo htmlspecialchars($h['title']); ?></span>
+            <span style="flex:0 0 auto;opacity:0.45;font-size:0.72rem;white-space:nowrap;">
+              <?php if ($h_completed && $h['winner_name']): ?>Won by <?php echo htmlspecialchars($h['winner_name']);
+              elseif ($h_canceled): ?>Canceled
+              <?php else: ?>No tickets<?php endif; ?>
+            </span>
+            <span style="flex:0 0 70px;text-align:right;opacity:0.35;font-size:0.72rem;"><?php echo date('M j, Y', strtotime($h['end_date'])); ?></span>
+          </div>
+          <?php endforeach; ?>
+          </div>
+        </div>
       </div>
       <?php endif; ?>
     </div>

@@ -8782,6 +8782,26 @@ function getActiveAuctions($conn) {
 	return $rows;
 }
 
+// Return recent completed/canceled auctions for history display.
+function getRecentAuctionHistory($conn, $limit = 20) {
+	$lim = intval($limit);
+	$sql = "SELECT a.id, a.title, a.image, a.asset_id, a.end_date, a.completed, a.canceled,
+	               u.username AS creator_name,
+	               wu.username AS winner_name
+	        FROM auctions a
+	        INNER JOIN users u ON u.id = a.user_id
+	        LEFT JOIN users wu ON wu.id = a.winner_id
+	        WHERE a.completed = 1 OR a.canceled = 1
+	        ORDER BY a.end_date DESC
+	        LIMIT $lim";
+	$result = $conn->query($sql);
+	$rows = [];
+	if ($result && $result->num_rows > 0) {
+		while ($row = $result->fetch_assoc()) $rows[] = $row;
+	}
+	return $rows;
+}
+
 // Return a single auction by id with its accepted projects (including minimums) and recent bids.
 function getAuction($conn, $auction_id) {
 	$aid = intval($auction_id);
@@ -8861,6 +8881,7 @@ function updateAuction($conn, $auction_id, $user_id, $title, $description, $imag
 	$row = $ar->fetch_assoc();
 	if (intval($row['user_id']) !== $uid) return ['success'=>false,'message'=>'Not authorized.'];
 	if ($row['completed'] || $row['canceled']) return ['success'=>false,'message'=>'Auction is already closed.'];
+	if ($row['processing']) return ['success'=>false,'message'=>'Auction is in delivery tracking and cannot be edited.'];
 
 	// Verify zero bids
 	$br = $conn->query("SELECT COUNT(*) AS cnt FROM bids WHERE auction_id='$aid'");
@@ -8946,6 +8967,7 @@ function cancelAuction($conn, $auction_id, $user_id) {
 	$auction = getAuction($conn, $aid);
 	if (!$auction) return ['success'=>false,'message'=>'Auction not found.'];
 	if ($auction['completed'] || $auction['canceled']) return ['success'=>false,'message'=>'Auction already closed.'];
+	if ($auction['processing']) return ['success'=>false,'message'=>'A winner has been selected and NFT delivery is in progress. This auction cannot be canceled.'];
 	if (intval($auction['user_id']) !== $uid) return ['success'=>false,'message'=>'Not authorized.'];
 
 	// Refund current leader
@@ -8978,6 +9000,26 @@ function getActiveRaffles($conn) {
 			$row['cheapest_ticket'] = ($rp && $rp->num_rows) ? $rp->fetch_assoc() : null;
 			$rows[] = $row;
 		}
+	}
+	return $rows;
+}
+
+// Return recent completed/canceled raffles for history display.
+function getRecentRaffleHistory($conn, $limit = 20) {
+	$lim = intval($limit);
+	$sql = "SELECT r.id, r.title, r.image, r.asset_id, r.end_date, r.completed, r.canceled,
+	               u.username AS creator_name,
+	               wu.username AS winner_name
+	        FROM raffles r
+	        INNER JOIN users u ON u.id = r.user_id
+	        LEFT JOIN users wu ON wu.id = r.winner_id
+	        WHERE r.completed = 1 OR r.canceled = 1
+	        ORDER BY r.end_date DESC
+	        LIMIT $lim";
+	$result = $conn->query($sql);
+	$rows = [];
+	if ($result && $result->num_rows > 0) {
+		while ($row = $result->fetch_assoc()) $rows[] = $row;
 	}
 	return $rows;
 }
@@ -9057,6 +9099,7 @@ function updateRaffle($conn, $raffle_id, $user_id, $title, $description, $image_
 	$row = $rr->fetch_assoc();
 	if (intval($row['user_id']) !== $uid) return ['success'=>false,'message'=>'Not authorized.'];
 	if ($row['completed'] || $row['canceled']) return ['success'=>false,'message'=>'Raffle is already closed.'];
+	if ($row['processing']) return ['success'=>false,'message'=>'Raffle is in delivery tracking and cannot be edited.'];
 
 	// Verify zero active tickets
 	$tr = $conn->query("SELECT SUM(quantity) AS qty FROM tickets WHERE raffle_id='$rid' AND status=1");
@@ -9128,6 +9171,7 @@ function cancelRaffle($conn, $raffle_id, $user_id) {
 	$raffle = getRaffle($conn, $rid);
 	if (!$raffle) return ['success'=>false,'message'=>'Raffle not found.'];
 	if ($raffle['completed'] || $raffle['canceled']) return ['success'=>false,'message'=>'Raffle already closed.'];
+	if ($raffle['processing']) return ['success'=>false,'message'=>'A winner has been selected and NFT delivery is in progress. This raffle cannot be canceled.'];
 	if (intval($raffle['user_id']) !== $uid) return ['success'=>false,'message'=>'Not authorized.'];
 
 	// Build cost lookup from ticket_options
