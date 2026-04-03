@@ -211,8 +211,9 @@ while ($auction = $result2->fetch_assoc()) {
     $cur = ($pr && $pr->num_rows) ? strtoupper($pr->fetch_assoc()['currency']) : 'pts';
 
     // Check winner's wallet for the NFT
-    $winner_stake  = getCreatorStakeAddress($conn, $winner_id);
-    $nft_delivered = false;
+    $winner_stake   = getCreatorStakeAddress($conn, $winner_id);
+    $winner_address = getWinnerAddress($conn, $winner_id);
+    $nft_delivered  = false;
     if ($winner_stake) {
         echo "  Checking winner wallet $winner_stake for asset $asset_id…\n";
         $nft_delivered = verifyAssetInWallet($winner_stake, $asset_id);
@@ -288,32 +289,54 @@ while ($auction = $result2->fetch_assoc()) {
         echo "  Auction #$aid canceled (delivery timeout).\n";
 
     } else {
-        // ── Still within grace period — send milestone reminders (processing stays 1)
-        $creator_msg = null;
-        $winner_msg  = null;
+        // ── Daily creator reminder + milestone winner reminders (processing stays 1)
+        $day_num = max(1, round($days_elapsed));
 
-        if ($days_elapsed >= 28 && $days_elapsed < 29) {
-            $creator_msg = "⚠️ **Final warning** — only **{$days_remaining} days** left to deliver the NFT for **{$title}** to **{$winner_name}**.\n\nAsset: `$asset_id`\n\nIf delivery is not confirmed on-chain within 30 days of auction close, the auction will be canceled and the winner refunded.";
-            $winner_msg  = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT (`$asset_id`) to your wallet.";
-            echo "  Sent 28-day reminder.\n";
-        } elseif ($days_elapsed >= 21 && $days_elapsed < 22) {
-            $creator_msg = "⚠️ Reminder — **{$days_remaining} days** remaining to deliver the NFT for **{$title}** to **{$winner_name}**.\n\nAsset: `$asset_id`";
-            $winner_msg  = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT.";
-            echo "  Sent 21-day reminder.\n";
-        } elseif ($days_elapsed >= 14 && $days_elapsed < 15) {
-            $creator_msg = "⏰ Reminder — **{$days_remaining} days** remaining to deliver the NFT for **{$title}** to **{$winner_name}**.\n\nAsset: `$asset_id`";
-            $winner_msg  = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT.";
-            echo "  Sent 14-day reminder.\n";
-        } elseif ($days_elapsed >= 7 && $days_elapsed < 8) {
-            $creator_msg = "⏰ Reminder — **{$days_remaining} days** remaining to deliver the NFT for **{$title}** to **{$winner_name}**.\n\nPlease send `$asset_id` to **{$winner_name}**'s linked Cardano wallet as soon as possible.";
-            $winner_msg  = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT to your wallet.";
-            echo "  Sent 7-day reminder.\n";
+        // Urgency prefix scales with days remaining
+        if ($days_remaining <= 3) {
+            $urgency_prefix = "🚨 **CRITICAL — {$days_remaining} days left before auto-cancellation!**\n\n";
+        } elseif ($days_remaining <= 7) {
+            $urgency_prefix = "⚠️ **Urgent — only {$days_remaining} days remaining.**\n\n";
         } else {
-            echo "  Delivery pending (day " . round($days_elapsed) . " of 30).\n";
+            $urgency_prefix = "";
         }
 
-        if ($creator_msg && $auction['creator_discord']) sendDM($auction['creator_discord'], $creator_msg);
-        if ($winner_msg && $winner && $winner['discord_id']) sendDM($winner['discord_id'], $winner_msg);
+        $addr_block = $winner_address
+            ? "**Send to (winner's wallet):**\n`{$winner_address}`"
+            : "⚠️ **{$winner_name}** has no linked Cardano wallet on file. Contact them directly in Discord to obtain their address before your deadline.";
+
+        $creator_daily =
+            $urgency_prefix .
+            "⏰ **Auction Delivery Reminder — Day {$day_num} of 30**\n\n" .
+            "Your auction **{$title}** has a winner waiting for their NFT.\n\n" .
+            "**Winner:** {$winner_name}\n" .
+            "**NFT Asset ID:** `{$asset_id}`\n" .
+            "**Winning bid:** " . number_format($prev_bid) . " {$cur} _(paid to you upon confirmed delivery)_\n\n" .
+            $addr_block . "\n\n" .
+            "Once the NFT is confirmed on-chain in **{$winner_name}**'s wallet, your **" . number_format($prev_bid) . " {$cur}** will be credited automatically. " .
+            "If delivery is not confirmed within **{$days_remaining} days**, the auction will be auto-canceled and the winner refunded.";
+
+        if ($auction['creator_discord']) {
+            sendDM($auction['creator_discord'], $creator_daily, $img_url);
+        }
+        echo "  Sent daily creator reminder (day {$day_num} of 30, {$days_remaining} remaining).\n";
+
+        // Milestone reminders to winner at days 7, 14, 21, 28
+        $winner_msg = null;
+        if ($days_elapsed >= 28 && $days_elapsed < 29) {
+            $winner_msg = "⚠️ Final reminder: You won **{$title}**! The creator has only **{$days_remaining} days** left to deliver the NFT (`{$asset_id}`) to your wallet. If not confirmed on-chain within 30 days, the auction will be canceled and your bid refunded.";
+            echo "  Sent 28-day winner reminder.\n";
+        } elseif ($days_elapsed >= 21 && $days_elapsed < 22) {
+            $winner_msg = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT (`{$asset_id}`) to your wallet.";
+            echo "  Sent 21-day winner reminder.\n";
+        } elseif ($days_elapsed >= 14 && $days_elapsed < 15) {
+            $winner_msg = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT to your wallet.";
+            echo "  Sent 14-day winner reminder.\n";
+        } elseif ($days_elapsed >= 7 && $days_elapsed < 8) {
+            $winner_msg = "⏰ Reminder: You won **{$title}**! The creator has **{$days_remaining} days** remaining to deliver the NFT to your wallet.";
+            echo "  Sent 7-day winner reminder.\n";
+        }
+        if ($winner_msg && $winner && $winner['discord_id']) sendDM($winner['discord_id'], $winner_msg, $img_url);
     }
 }
 
