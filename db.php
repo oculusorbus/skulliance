@@ -9231,6 +9231,7 @@ function getWinnerAddress($conn, $user_id) {
 // Verify a Cardano asset fingerprint (asset1...) is present in a stake address via Koios v1.
 // Uses account_assets which returns fingerprints directly — no hex conversion needed.
 function verifyAssetInWallet($stake_address, $asset_fingerprint) {
+	if (empty($asset_fingerprint) || empty($stake_address)) return false;
 	$koios_bearer = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg';
 
 	$ch = curl_init('https://api.koios.rest/api/v1/account_assets');
