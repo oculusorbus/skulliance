@@ -18,7 +18,7 @@ include_once 'webhooks.php';
 $now = date('Y-m-d H:i:s');
 
 $result = $conn->query(
-    "SELECT a.*, u.name AS creator_name, u.discord_id AS creator_discord,
+    "SELECT a.*, u.username AS creator_name, u.discord_id AS creator_discord,
             b.id AS winning_bid_id, b.user_id AS current_bidder_id,
             b.amount AS current_bid, b.project_id AS current_bid_project_id
      FROM auctions a

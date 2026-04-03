@@ -18,7 +18,7 @@ include_once 'webhooks.php';
 $now = date('Y-m-d H:i:s');
 
 $result = $conn->query(
-    "SELECT r.*, u.name AS creator_name, u.discord_id AS creator_discord
+    "SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord
      FROM raffles r
      INNER JOIN users u ON u.id = r.user_id
      WHERE r.end_date <= '$now'
