@@ -9300,16 +9300,20 @@ function gauntletGetEffectiveProjectId($project_id) {
 	return rand(1, 6);
 }
 
-// Player win chance: active player always has advantage (50–90%)
-// Formula: opponent_win_chance = |p_eff - o_eff| * 10, capped 10–50%
-// Same project or Diamond Skull involved → 50/50
+// Player win chance based on circular weakness chain among core projects 1-6:
+//   6 beats 1, 5 beats 2, 4 beats 3, 2 beats 4, 1 beats 5, 3 beats 6
+// Strength matchup (player beats opponent): 70%
+// Weakness matchup (opponent beats player): 30%
+// Same project, neutral, or Diamond Skull involved: 50%
 function gauntletCalculateWinChance($player_eff, $opponent_eff) {
 	$p = intval($player_eff);
 	$o = intval($opponent_eff);
 	if ($p === 0 || $o === 0) return 50;
 	if ($p === $o)            return 50;
-	$opponent_chance = min(50, abs($p - $o) * 10);
-	return 100 - $opponent_chance;
+	$beats = [6=>1, 5=>2, 4=>3, 2=>4, 1=>5, 3=>6];
+	if (isset($beats[$p]) && $beats[$p] === $o) return 70;
+	if (isset($beats[$o]) && $beats[$o] === $p) return 30;
+	return 50;
 }
 
 // NFT IDs already played by user in any encounter this week
