@@ -1,7 +1,6 @@
 <?php
 include_once 'db.php';
 include 'skulliance.php';
-include 'header.php';
 
 $user_id = intval($_SESSION['userData']['user_id']);
 
@@ -12,7 +11,7 @@ function gauntletFlash($msg, $type = 'info') {
 	$_SESSION['gauntlet_flash'][] = ['msg' => $msg, 'type' => $type];
 }
 
-// ── POST action handling ────────────────────────────────────
+// ── POST action handling — must run before any output ───────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$action = $_POST['action'] ?? '';
 
@@ -58,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	header('Location: gauntlet.php');
 	exit;
 }
+
+include 'header.php';
 
 // ── Load state ──────────────────────────────────────────────
 $recent_run         = gauntletGetMostRecentRun($conn, $user_id);
