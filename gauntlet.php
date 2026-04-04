@@ -1,6 +1,7 @@
 <?php
 include_once 'db.php';
 include 'message.php';
+include 'verify.php';
 include 'skulliance.php';
 
 $user_id = intval($_SESSION['userData']['user_id']);
