@@ -1,12 +1,8 @@
 <?php
 include_once 'db.php';
 include_once 'webhooks.php';
+include 'skulliance.php';
 
-// ── Auth guard ──────────────────────────────────────────────
-if (!isset($_SESSION['userData']['user_id'])) {
-    header('Location: index.php');
-    exit;
-}
 $user_id = intval($_SESSION['userData']['user_id']);
 
 // ── Flash messages ───────────────────────────────────────────
@@ -42,9 +38,6 @@ $oauth_url = 'https://www.printful.com/oauth/authorize?'
         'state'         => $state,
         'response_type' => 'code',
     ]);
-
-extract($_SESSION['userData']);
-$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
 
 header('X-Accel-Buffering: no');
 include 'header.php';
