@@ -832,11 +832,10 @@ function startFight() {
 		i++;
 		if (statusEl && i < statuses.length) statusEl.textContent = statuses[i];
 	}, 750);
-	// Submit after animation completes
+	// Submit after animation completes — overlay stays visible during server wait
 	setTimeout(function() {
 		clearInterval(interval);
 		clearTimeout(timer1);
-		showLoader('Fighting…');
 		document.getElementById('fight-form').submit();
 	}, 2400);
 }
