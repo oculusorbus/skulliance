@@ -91,8 +91,15 @@ $consumable_effects = [
 	GAUNTLET_C_75     => '+3% win chance',
 	GAUNTLET_C_50     => '+2% win chance',
 	GAUNTLET_C_25     => '+1% win chance',
-	GAUNTLET_C_DOUBLE => '2× rewards',
-	GAUNTLET_C_RANDOM => 'random project reward',
+	GAUNTLET_C_DOUBLE => '2× rewards this fight',
+	GAUNTLET_C_RANDOM => 'reward paid in a random project currency',
+];
+// Odds bonus per consumable (0 = no odds effect)
+$consumable_bonuses = [
+	GAUNTLET_C_100 => 4,
+	GAUNTLET_C_75  => 3,
+	GAUNTLET_C_50  => 2,
+	GAUNTLET_C_25  => 1,
 ];
 
 // Consumable inventory for encounter resource panel (exclude Fast Forward)
@@ -190,6 +197,8 @@ if ($state === 'encounter') {
 .resource-item-name   { font-size: .8rem; color: rgba(255,255,255,.8); flex: 1; }
 .resource-item-qty    { font-size: .75rem; color: rgba(255,255,255,.4); }
 .resource-none        { font-size: .8rem; color: rgba(255,255,255,.25); padding: 6px 0; }
+.resource-effect      { display: block; font-size: .7rem; color: rgba(255,255,255,.35); margin-top: 2px; }
+.resource-item.selected .resource-effect { color: #00c8a0; }
 
 /* Action buttons */
 .btn-fight            { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; }
@@ -359,8 +368,8 @@ if ($state === 'encounter') {
 	</div>
 
 	<div class="odds-bar-wrap">
-		<div class="odds-pct <?php echo $odds_class; ?>"><?php echo $win_chance_display; ?>% win chance</div>
-		<div class="odds-label">Base odds before resources</div>
+		<div class="odds-pct <?php echo $odds_class; ?>" id="odds-pct"><?php echo $win_chance_display; ?>% win chance</div>
+		<div class="odds-label" id="odds-label">Base odds — select a resource to see its effect</div>
 		<div class="odds-bar"><div class="odds-bar-fill" id="odds-fill" style="width:<?php echo $win_chance_display; ?>%"></div></div>
 	</div>
 
@@ -416,12 +425,13 @@ if ($state === 'encounter') {
 				<?php foreach ($consumables_inv as $ci):
 					$icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $ci['name'])) . '.png';
 				?>
-				<div class="resource-item" onclick="selectResource('consumable', <?php echo intval($ci['consumable_id']); ?>, this)" data-type="consumable" data-id="<?php echo intval($ci['consumable_id']); ?>">
+				<?php $c_bonus = $consumable_bonuses[intval($ci['consumable_id'])] ?? 0; ?>
+				<div class="resource-item" onclick="selectResource('consumable', <?php echo intval($ci['consumable_id']); ?>, this)" data-type="consumable" data-id="<?php echo intval($ci['consumable_id']); ?>" data-bonus="<?php echo $c_bonus; ?>">
 					<img src="<?php echo htmlspecialchars($icon); ?>" onerror="this.style.display='none'">
 					<span class="resource-item-name">
 						<?php echo htmlspecialchars($ci['name']); ?>
 						<?php if (isset($consumable_effects[intval($ci['consumable_id'])])): ?>
-						<span style="color:rgba(255,255,255,.35); font-size:.7rem; margin-left:6px;"><?php echo $consumable_effects[intval($ci['consumable_id'])]; ?></span>
+						<span class="resource-effect"><?php echo $consumable_effects[intval($ci['consumable_id'])]; ?></span>
 						<?php endif; ?>
 					</span>
 					<span class="resource-item-qty">x<?php echo intval($ci['amount']); ?></span>
@@ -433,8 +443,11 @@ if ($state === 'encounter') {
 			<?php if (!empty($weapons_inv)): ?>
 			<div class="resource-section <?php echo empty($consumables_inv) ? 'active' : ''; ?>" id="tab-weapon">
 				<?php foreach ($weapons_inv as $wi): ?>
-				<div class="resource-item" onclick="selectResource('weapon', <?php echo intval($wi['item_id']); ?>, this)" data-type="weapon" data-id="<?php echo intval($wi['item_id']); ?>">
-					<span class="resource-item-name"><?php echo htmlspecialchars($wi['weapon_name']); ?> (Lv <?php echo intval($wi['weapon_level']); ?>)</span>
+				<div class="resource-item" onclick="selectResource('weapon', <?php echo intval($wi['item_id']); ?>, this)" data-type="weapon" data-id="<?php echo intval($wi['item_id']); ?>" data-bonus="<?php echo intval($wi['weapon_level']); ?>">
+					<span class="resource-item-name">
+						<?php echo htmlspecialchars($wi['weapon_name']); ?> (Lv <?php echo intval($wi['weapon_level']); ?>)
+						<span class="resource-effect">+<?php echo intval($wi['weapon_level']); ?>% win chance — consumed on use</span>
+					</span>
 					<span class="resource-item-qty">x<?php echo intval($wi['quantity']); ?></span>
 				</div>
 				<?php endforeach; ?>
@@ -444,8 +457,11 @@ if ($state === 'encounter') {
 			<?php if (!empty($armor_inv)): ?>
 			<div class="resource-section <?php echo (empty($consumables_inv) && empty($weapons_inv)) ? 'active' : ''; ?>" id="tab-armor">
 				<?php foreach ($armor_inv as $ai): ?>
-				<div class="resource-item" onclick="selectResource('armor', <?php echo intval($ai['item_id']); ?>, this)" data-type="armor" data-id="<?php echo intval($ai['item_id']); ?>">
-					<span class="resource-item-name"><?php echo htmlspecialchars($ai['armor_name']); ?> (Lv <?php echo intval($ai['armor_level']); ?>)</span>
+				<div class="resource-item" onclick="selectResource('armor', <?php echo intval($ai['item_id']); ?>, this)" data-type="armor" data-id="<?php echo intval($ai['item_id']); ?>" data-bonus="<?php echo intval($ai['armor_level']); ?>">
+					<span class="resource-item-name">
+						<?php echo htmlspecialchars($ai['armor_name']); ?> (Lv <?php echo intval($ai['armor_level']); ?>)
+						<span class="resource-effect">+<?php echo intval($ai['armor_level']); ?>% win chance — consumed on use</span>
+					</span>
 					<span class="resource-item-qty">x<?php echo intval($ai['quantity']); ?></span>
 				</div>
 				<?php endforeach; ?>
@@ -510,23 +526,43 @@ function pickCard(nftId) {
 	setTimeout(() => document.getElementById('pick-form').submit(), 120);
 }
 
+var gauntletBaseOdds = <?php echo isset($win_chance_display) ? intval($win_chance_display) : 0; ?>;
+
 // Resource selection — 1 per encounter across all types
 function selectResource(type, id, el) {
+	const alreadySelected = el.dataset.selected === '1';
 	// Deselect all
-	document.querySelectorAll('.resource-item').forEach(i => i.classList.remove('selected'));
+	document.querySelectorAll('.resource-item').forEach(i => { i.classList.remove('selected'); i.dataset.selected = '0'; });
 	document.getElementById('fight-consumable').value = 0;
 	document.getElementById('fight-weapon').value     = 0;
 	document.getElementById('fight-armor').value      = 0;
 	// Toggle: clicking selected item deselects it
-	const alreadySelected = el.dataset.selected === '1';
 	if (!alreadySelected) {
 		el.classList.add('selected');
 		el.dataset.selected = '1';
 		if (type === 'consumable') document.getElementById('fight-consumable').value = id;
 		if (type === 'weapon')     document.getElementById('fight-weapon').value     = id;
 		if (type === 'armor')      document.getElementById('fight-armor').value      = id;
-	} else {
-		el.dataset.selected = '0';
+	}
+	updateOddsDisplay();
+}
+
+function updateOddsDisplay() {
+	var sel = document.querySelector('.resource-item[data-selected="1"]');
+	var bonus = sel ? parseInt(sel.dataset.bonus || '0', 10) : 0;
+	var total = Math.min(100, gauntletBaseOdds + bonus);
+	var pct   = document.getElementById('odds-pct');
+	var fill  = document.getElementById('odds-fill');
+	var lbl   = document.getElementById('odds-label');
+	if (pct) {
+		pct.textContent = total + '% win chance';
+		pct.className   = 'odds-pct' + (total < 50 ? ' danger' : '');
+	}
+	if (fill) fill.style.width = total + '%';
+	if (lbl) {
+		if (bonus > 0)   lbl.textContent = 'Base ' + gauntletBaseOdds + '% + ' + bonus + '% from resource = ' + total + '%';
+		else if (sel)    lbl.textContent = 'Base ' + gauntletBaseOdds + '% — selected item does not affect odds';
+		else             lbl.textContent = 'Base odds — select a resource to see its effect';
 	}
 }
 
