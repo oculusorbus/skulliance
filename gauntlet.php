@@ -62,11 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$enc_cons    = [];
 					if ($enc_cons_r) while ($ecr = $enc_cons_r->fetch_assoc()) $enc_cons[] = intval($ecr['consumable_id']);
 					$is_dbl = in_array(GAUNTLET_C_DOUBLE, $enc_cons);
+					$tx_cur_r = $conn->query("SELECT p.currency FROM transactions t INNER JOIN projects p ON p.id = t.project_id WHERE t.gauntlet_encounter_id = $enc_id AND t.user_id = $user_id AND t.type = 'credit' LIMIT 1");
+					$actual_currency = ($tx_cur_r && $tx_cur_r->num_rows) ? $tx_cur_r->fetch_assoc()['currency'] : $rw['opponent_currency'];
 					$_SESSION['gauntlet_last_result'] = [
 						'outcome'    => 'win',
 						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
-						'currency'   => $rw['opponent_currency'],
-						'is_random'  => in_array(GAUNTLET_C_RANDOM, $enc_cons),
+						'currency'   => $actual_currency,
 						'win_number' => $wnum2,
 					];
 				}
@@ -369,13 +370,8 @@ if ($state === 'encounter') {
 		<div class="rr-title">Victory!</div>
 		<div class="rr-reward">
 			+<?php echo number_format($last_result['amount']); ?>
-			<?php if (!empty($last_result['is_random'])): ?>
-			<img src="icons/skull.png" onerror="this.src='icons/skull.png'" alt="">
-			<span>random</span>
-			<?php else: ?>
 			<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'" alt="">
 			<?php echo htmlspecialchars($last_result['currency']); ?>
-			<?php endif; ?>
 		</div>
 		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
 		<?php else: ?>
@@ -432,6 +428,7 @@ if ($state === 'encounter') {
 		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
 		       pp.currency AS player_currency,
 		       (SELECT GROUP_CONCAT(gec.consumable_id ORDER BY gec.id) FROM gauntlets_encounters_consumables gec WHERE gec.encounter_id = ge.id) AS consumable_ids,
+		       (SELECT p2.currency FROM transactions t2 INNER JOIN projects p2 ON p2.id = t2.project_id WHERE t2.gauntlet_encounter_id = ge.id AND t2.type = 'credit' LIMIT 1) AS actual_reward_currency,
 		       ge.weapon_id, ge.armor_id,
 		       ww.level AS weapon_level, aa.level AS armor_level,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
@@ -457,13 +454,13 @@ if ($state === 'encounter') {
 		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
 		$hr_cons      = $hr['consumable_ids'] ? array_map('intval', explode(',', $hr['consumable_ids'])) : [];
 		$is_double    = in_array(GAUNTLET_C_DOUBLE, $hr_cons);
-		$is_random    = in_array(GAUNTLET_C_RANDOM, $hr_cons);
 		if ($hr['outcome'] === 'win') $hist_win_count++;
 		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
 		$cons_bonus   = 0; foreach ($hr_cons as $hc) $cons_bonus += ($consumable_bonuses[$hc] ?? 0);
 		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
+		$actual_currency = $hr['actual_reward_currency'] ?: $hr['opponent_currency'];
 		if ($hr['outcome'] === 'win') {
-			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['opponent_currency']) . '.png';
+			$reward_icon  = 'icons/' . strtolower($actual_currency) . '.png';
 			$reward_label = '+' . $reward_amt;
 			$reward_class = 'win';
 		} else {
@@ -476,7 +473,7 @@ if ($state === 'encounter') {
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
 			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
 			<div class="history-meta">
-				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><?php if ($reward_icon): ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"><?php else: ?><span class="reward-random">random</span><?php endif; ?></div>
+				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"></div>
 				<div class="history-odds"><?php echo $effective_wc; ?>%</div>
 			</div>
 		</div>
@@ -498,13 +495,8 @@ if ($state === 'encounter') {
 	<?php if ($last_result && $last_result['outcome'] === 'win'): ?>
 	<div class="win-reward-banner">
 		<span class="win-reward-amount">+<?php echo number_format($last_result['amount']); ?></span>
-		<?php if (!empty($last_result['is_random'])): ?>
-		<img src="icons/skull.png" onerror="this.src='icons/skull.png'">
-		<span class="win-reward-currency">random project</span>
-		<?php else: ?>
 		<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'">
 		<span class="win-reward-currency"><?php echo htmlspecialchars($last_result['currency']); ?></span>
-		<?php endif; ?>
 	</div>
 	<?php endif; ?>
 	<div class="section-heading">Your Hand — Pick a Card to Fight</div>
@@ -709,6 +701,7 @@ if ($state === 'encounter') {
 		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
 		       pp.currency AS player_currency,
 		       (SELECT GROUP_CONCAT(gec.consumable_id ORDER BY gec.id) FROM gauntlets_encounters_consumables gec WHERE gec.encounter_id = ge.id) AS consumable_ids,
+		       (SELECT p2.currency FROM transactions t2 INNER JOIN projects p2 ON p2.id = t2.project_id WHERE t2.gauntlet_encounter_id = ge.id AND t2.type = 'credit' LIMIT 1) AS actual_reward_currency,
 		       ge.weapon_id, ge.armor_id,
 		       ww.level AS weapon_level, aa.level AS armor_level,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
@@ -734,13 +727,13 @@ if ($state === 'encounter') {
 		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
 		$hr_cons      = $hr['consumable_ids'] ? array_map('intval', explode(',', $hr['consumable_ids'])) : [];
 		$is_double    = in_array(GAUNTLET_C_DOUBLE, $hr_cons);
-		$is_random    = in_array(GAUNTLET_C_RANDOM, $hr_cons);
 		if ($hr['outcome'] === 'win') $hist_win_count++;
 		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
 		$cons_bonus   = 0; foreach ($hr_cons as $hc) $cons_bonus += ($consumable_bonuses[$hc] ?? 0);
 		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
+		$actual_currency = $hr['actual_reward_currency'] ?: $hr['opponent_currency'];
 		if ($hr['outcome'] === 'win') {
-			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['opponent_currency']) . '.png';
+			$reward_icon  = 'icons/' . strtolower($actual_currency) . '.png';
 			$reward_label = '+' . $reward_amt;
 			$reward_class = 'win';
 		} else {
@@ -753,7 +746,7 @@ if ($state === 'encounter') {
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
 			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
 			<div class="history-meta">
-				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><?php if ($reward_icon): ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"><?php else: ?><span class="reward-random">random</span><?php endif; ?></div>
+				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"></div>
 				<div class="history-odds"><?php echo $effective_wc; ?>%</div>
 			</div>
 		</div>
