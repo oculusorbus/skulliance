@@ -9379,7 +9379,7 @@ function gauntletStartRun($conn, $user_id) {
 	$used    = gauntletGetUsedNFTIdsThisWeek($conn, $uid);
 	$exclude = $used ? 'AND n.id NOT IN (' . implode(',', $used) . ')' : '';
 	$r = $conn->query("
-		SELECT n.id
+		SELECT n.id, c.project_id
 		FROM nfts n
 		INNER JOIN collections c ON c.id = n.collection_id
 		WHERE n.user_id = $uid $exclude
@@ -9391,8 +9391,9 @@ function gauntletStartRun($conn, $user_id) {
 	$run_id = intval($conn->insert_id);
 	if (!$run_id) return false;
 	while ($row = $r->fetch_assoc()) {
-		$nft_id = intval($row['id']);
-		$conn->query("INSERT INTO gauntlet_run_nfts (run_id, nft_id) VALUES ($run_id, $nft_id)");
+		$nft_id  = intval($row['id']);
+		$eff_id  = gauntletGetEffectiveProjectId(intval($row['project_id']));
+		$conn->query("INSERT INTO gauntlet_run_nfts (run_id, nft_id, effective_project_id) VALUES ($run_id, $nft_id, $eff_id)");
 	}
 	return $run_id;
 }
@@ -9488,21 +9489,17 @@ function gauntletStartEncounter($conn, $user_id, $run_id, $nft_id) {
 	$uid    = intval($user_id);
 	$rid    = intval($run_id);
 	$nft_id = intval($nft_id);
-	// Verify NFT is in this run's hand and belongs to user
+	// Verify NFT is in this run's hand, belongs to user, and read locked effective_project_id
 	$r = $conn->query("
-		SELECT grn.nft_id FROM gauntlet_run_nfts grn
+		SELECT grn.effective_project_id FROM gauntlet_run_nfts grn
 		INNER JOIN nfts n ON n.id = grn.nft_id
 		WHERE grn.run_id=$rid AND grn.nft_id=$nft_id AND n.user_id=$uid LIMIT 1
 	");
 	if (!$r || !$r->num_rows) return false;
+	$player_eff = intval($r->fetch_assoc()['effective_project_id']);
 	// Verify not already played in this run
 	$r2 = $conn->query("SELECT id FROM gauntlet_encounters WHERE run_id=$rid AND player_nft_id=$nft_id LIMIT 1");
 	if ($r2 && $r2->num_rows) return false;
-	// Get player's project id
-	$r3 = $conn->query("SELECT c.project_id FROM nfts n INNER JOIN collections c ON c.id=n.collection_id WHERE n.id=$nft_id LIMIT 1");
-	if (!$r3 || !$r3->num_rows) return false;
-	$player_project_id = intval($r3->fetch_assoc()['project_id']);
-	$player_eff        = gauntletGetEffectiveProjectId($player_project_id);
 	// Select opponent
 	$opponent = gauntletSelectOpponent($conn, $uid, $rid);
 	if (!$opponent) return false;
@@ -9532,15 +9529,12 @@ function gauntletFastForward($conn, $user_id, $encounter_id, $new_nft_id) {
 	if (!$r2 || !$r2->num_rows) return false;
 	// Verify user has Fast Forward
 	if (getCurrentAmount($conn, $uid, GAUNTLET_C_FF) < 1) return false;
-	// Verify new NFT is in hand and not already played
-	$r3 = $conn->query("SELECT id FROM gauntlet_run_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
+	// Verify new NFT is in hand, not already played, and read locked effective_project_id
+	$r3 = $conn->query("SELECT effective_project_id FROM gauntlet_run_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
 	if (!$r3 || !$r3->num_rows) return false;
+	$new_eff = intval($r3->fetch_assoc()['effective_project_id']);
 	$r4 = $conn->query("SELECT id FROM gauntlet_encounters WHERE run_id=$rid AND player_nft_id=$new_id AND id!=$enc_id LIMIT 1");
 	if ($r4 && $r4->num_rows) return false;
-	// Get new NFT project
-	$r5 = $conn->query("SELECT c.project_id FROM nfts n INNER JOIN collections c ON c.id=n.collection_id WHERE n.id=$new_id LIMIT 1");
-	if (!$r5 || !$r5->num_rows) return false;
-	$new_eff = gauntletGetEffectiveProjectId(intval($r5->fetch_assoc()['project_id']));
 	// Deduct FF consumable and update encounter
 	updateAmount($conn, $uid, GAUNTLET_C_FF, -1);
 	$conn->query("UPDATE gauntlet_encounters SET player_nft_id=$new_id, player_effective_project_id=$new_eff WHERE id=$enc_id");
