@@ -46,6 +46,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_id, $weapon_id, $armor_id);
 			if ($outcome === 'win') {
 				$run = gauntletGetActiveRun($conn, $user_id);
+				// Store reward details so pick_card screen can display them
+				$rw_r = $conn->query("
+					SELECT ge.consumable_id, op.currency AS opponent_currency
+					FROM gauntlet_encounters ge
+					INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
+					INNER JOIN collections oc ON oc.id = on2.collection_id
+					INNER JOIN projects op   ON op.id  = oc.project_id
+					WHERE ge.id = $enc_id LIMIT 1
+				");
+				if ($rw_r && $rw_r->num_rows) {
+					$rw = $rw_r->fetch_assoc();
+					$_SESSION['gauntlet_last_reward'] = [
+						'amount'    => GAUNTLET_WIN_REWARD * (intval($rw['consumable_id']) === GAUNTLET_C_DOUBLE ? 2 : 1),
+						'currency'  => $rw['opponent_currency'],
+						'is_random' => intval($rw['consumable_id']) === GAUNTLET_C_RANDOM,
+					];
+				}
 				if (!$run) gauntletFlash('Victory! You swept the gauntlet!', 'win');
 				else       gauntletFlash('Win! Pick your next card.', 'win');
 			} elseif ($outcome === 'loss') {
@@ -246,6 +263,12 @@ if ($state === 'encounter') {
 .history-odds         { font-size: .72rem; color: rgba(255,255,255,.25); text-align: right; }
 
 .section-heading      { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.3); margin: 24px 0 10px; }
+
+/* Win reward banner (pick_card state) */
+.win-reward-banner    { display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,200,160,.1); border: 1px solid rgba(0,200,160,.35); border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; }
+.win-reward-amount    { font-size: 1.5rem; font-weight: 700; color: #00c8a0; line-height: 1; }
+.win-reward-banner img { width: 30px; height: 30px; object-fit: contain; }
+.win-reward-currency  { font-size: .8rem; color: rgba(255,255,255,.4); }
 </style>
 
 <div class="row">
@@ -359,7 +382,21 @@ if ($state === 'encounter') {
 	// ── State: pick card ────────────────────────────────────
 	elseif ($state === 'pick_card'):
 		$wins = intval($run_stats['wins'] ?? 0);
+		$last_reward = $_SESSION['gauntlet_last_reward'] ?? null;
+		unset($_SESSION['gauntlet_last_reward']);
 	?>
+	<?php if ($last_reward): ?>
+	<div class="win-reward-banner">
+		<span class="win-reward-amount">+<?php echo intval($last_reward['amount']); ?></span>
+		<?php if ($last_reward['is_random']): ?>
+		<img src="icons/skull.png" onerror="this.src='icons/skull.png'">
+		<span class="win-reward-currency">random project</span>
+		<?php else: ?>
+		<img src="icons/<?php echo htmlspecialchars(strtolower($last_reward['currency'])); ?>.png" onerror="this.src='icons/skull.png'">
+		<span class="win-reward-currency"><?php echo htmlspecialchars($last_reward['currency']); ?></span>
+		<?php endif; ?>
+	</div>
+	<?php endif; ?>
 	<div class="section-heading">Your Hand — Pick a Card to Fight</div>
 	<div class="hand-grid">
 	<?php foreach ($hand as $card):
