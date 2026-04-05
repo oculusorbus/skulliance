@@ -476,31 +476,6 @@ if ($state === 'encounter') {
 		<div class="odds-bar"><div class="odds-bar-fill" id="odds-fill" style="width:<?php echo $win_chance_display; ?>%"></div></div>
 	</div>
 
-	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
-	<button class="btn-ff" onclick="toggleFF()" type="button">&#x21BA; Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
-	<div class="ff-overlay" id="ff-overlay">
-		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
-		<div class="ff-hand-grid">
-		<?php foreach ($ff_hand as $card):
-			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
-		?>
-			<div class="nft-card" onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)">
-				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-				<div class="nft-card-info">
-					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
-					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
-				</div>
-			</div>
-		<?php endforeach; ?>
-		</div>
-	</div>
-	<form method="POST" id="ff-form">
-		<input type="hidden" name="action" value="fast_forward">
-		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
-		<input type="hidden" name="new_nft_id" id="ff-new-nft-id" value="0">
-	</form>
-	<?php endif; ?>
-
 	<form method="POST" id="fight-form">
 		<input type="hidden" name="action" value="resolve_encounter">
 		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
@@ -582,6 +557,31 @@ if ($state === 'encounter') {
 			</div>
 		</div>
 	</form>
+
+	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
+	<button class="btn-ff" onclick="toggleFF()" type="button">&#x21BA; Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
+	<div class="ff-overlay" id="ff-overlay">
+		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
+		<div class="ff-hand-grid">
+		<?php foreach ($ff_hand as $card):
+			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
+		?>
+			<div class="nft-card" onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)">
+				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
+				<div class="nft-card-info">
+					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
+					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
+				</div>
+			</div>
+		<?php endforeach; ?>
+		</div>
+	</div>
+	<form method="POST" id="ff-form">
+		<input type="hidden" name="action" value="fast_forward">
+		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
+		<input type="hidden" name="new_nft_id" id="ff-new-nft-id" value="0">
+	</form>
+	<?php endif; ?>
 
 	<?php
 	// Encounter history for current run (resolved only)
