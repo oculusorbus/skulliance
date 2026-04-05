@@ -70,7 +70,13 @@ if ($balance === 'false' || floatval($balance) < $total_fee) {
 }
 
 // ── Build image URL for Printful ────────────────────────────
+// Ensure the image is locally cached so Printful gets a reliable URL.
+// getIPFS falls back to an IPFS gateway URL if not cached — fetch it now.
 $image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
+if (!str_starts_with($image_url, '/')) {
+    ensureNFTImageCached($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
+    $image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
+}
 if (str_starts_with($image_url, '/')) {
     $image_url = 'https://skulliance.io' . $image_url;
 }
@@ -229,10 +235,9 @@ if (!empty($created_product_ids)) {
 
 $all_success = count($created_product_ids) > 0;
 $response    = [
-    'success'   => $all_success,
-    'created'   => count($created_product_ids),
-    'errors'    => $errors,
-    'image_url' => $image_url,
+    'success'  => $all_success,
+    'created'  => count($created_product_ids),
+    'errors'   => $errors,
 ];
 if (!$all_success) {
     $response['error'] = 'No products were created. ' . implode(' ', $errors);
