@@ -5050,55 +5050,70 @@ function resetGauntlets($conn) {
 function checkActivityLeaderboard($conn, $period = 'ath') {
 	// Build per-table date filters based on period
 	if ($period === 'monthly') {
-		$dt = "DATE_FORMAT(CURDATE(),'%Y-%m-01')";
-		$f_t  = "AND t.date_created  >= $dt";
-		$f_m  = "AND m.created_date  >= $dt";
-		$f_ge = "AND ge.resolved_date >= $dt";
-		$f_r  = "AND r.created_date  >= $dt";
-		$f_e  = "AND e.date_created  >= $dt";
-		$f_ss = "AND ss.date_created >= $dt";
-		$f_s  = "AND s.date_created  >= $dt";
+		$dt   = "DATE_FORMAT(CURDATE(),'%Y-%m-01')";
+		$w_t  = "AND date_created  >= $dt";
+		$w_m  = "AND created_date  >= $dt";
+		$w_ge = "AND ge.resolved_date >= $dt";
+		$w_r  = "AND r.created_date  >= $dt";
+		$w_e  = "AND date_created  >= $dt";
+		$w_ss = "AND date_created  >= $dt";
+		$w_s  = "AND date_created  >= $dt";
 	} elseif ($period === 'weekly') {
-		$week_start = gauntletGetWeekStart();
-		$f_t  = "AND t.date_created  >= '$week_start'";
-		$f_m  = "AND m.created_date  >= '$week_start'";
-		$f_ge = "AND ge.resolved_date >= '$week_start'";
-		$f_r  = "AND r.created_date  >= '$week_start'";
-		$f_e  = "AND e.date_created  >= '$week_start'";
-		$f_ss = "AND ss.date_created >= '$week_start'";
-		$f_s  = "AND s.date_created  >= '$week_start'";
+		$week_start = $conn->real_escape_string(gauntletGetWeekStart());
+		$w_t  = "AND date_created  >= '$week_start'";
+		$w_m  = "AND created_date  >= '$week_start'";
+		$w_ge = "AND ge.resolved_date >= '$week_start'";
+		$w_r  = "AND r.created_date  >= '$week_start'";
+		$w_e  = "AND date_created  >= '$week_start'";
+		$w_ss = "AND date_created  >= '$week_start'";
+		$w_s  = "AND date_created  >= '$week_start'";
 	} else {
-		$f_t = $f_m = $f_ge = $f_r = $f_e = $f_ss = $f_s = '';
+		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = '';
 	}
 
+	// Pre-aggregate each source independently so MySQL groups before joining,
+	// rather than building a massive UNION ALL intermediate result set.
 	$sql = "
 		SELECT
 			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
-			SUM(CASE WHEN a.type='daily'       THEN 1 ELSE 0 END) AS daily_count,
-			SUM(CASE WHEN a.type='mission'     THEN 1 ELSE 0 END) AS mission_count,
-			SUM(CASE WHEN a.type='skullswap'   THEN 1 ELSE 0 END) AS skullswap_count,
-			SUM(CASE WHEN a.type='gauntlet'    THEN 1 ELSE 0 END) AS gauntlet_count,
-			SUM(CASE WHEN a.type='raid'        THEN 1 ELSE 0 END) AS raid_count,
-			SUM(CASE WHEN a.type='boss'        THEN 1 ELSE 0 END) AS boss_count,
-			SUM(CASE WHEN a.type='monstrocity' THEN 1 ELSE 0 END) AS monstrocity_count,
-			SUM(a.pts) AS total_pts
+			COALESCE(d.cnt,  0)                                          AS daily_count,
+			COALESCE(m.cnt,  0)                                          AS mission_count,
+			COALESCE(ss.cnt, 0)                                          AS skullswap_count,
+			COALESCE(g.cnt,  0)                                          AS gauntlet_count,
+			COALESCE(r.cnt,  0)                                          AS raid_count,
+			COALESCE(b.cnt,  0)                                          AS boss_count,
+			COALESCE(mo.cnt, 0)                                          AS monstrocity_count,
+			(COALESCE(d.cnt,0)*1  + COALESCE(m.cnt,0)*5  + COALESCE(ss.cnt,0)*5 +
+			 COALESCE(g.cnt,0)*5  + COALESCE(r.cnt,0)*15 + COALESCE(b.cnt,0)*25 +
+			 COALESCE(mo.cnt,0)*50) AS total_pts
 		FROM users u
-		INNER JOIN (
-			SELECT t.user_id,  'daily'       AS type, 1  AS pts FROM transactions t       WHERE t.bonus = 1 $f_t
-			UNION ALL
-			SELECT m.user_id,  'mission',              5         FROM missions m           WHERE m.status IN (1,2) $f_m
-			UNION ALL
-			SELECT ss.user_id, 'skullswap',            5         FROM scores ss WHERE ss.project_id = 0 $f_ss
-			UNION ALL
-			SELECT g.user_id,  'gauntlet',             5         FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $f_ge
-			UNION ALL
-			SELECT re.user_id, 'raid',                 15        FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $f_r
-			UNION ALL
-			SELECT e.user_id,  'boss',                 25        FROM encounters e $f_e
-			UNION ALL
-			SELECT s.user_id,  'monstrocity',          50        FROM scores s WHERE s.project_id = 36 $f_s
-		) a ON a.user_id = u.id
-		GROUP BY u.id
+		LEFT JOIN (
+			SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 $w_t GROUP BY user_id
+		) d  ON d.user_id  = u.id
+		LEFT JOIN (
+			SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id
+		) m  ON m.user_id  = u.id
+		LEFT JOIN (
+			SELECT user_id, COUNT(*) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id
+		) ss ON ss.user_id = u.id
+		LEFT JOIN (
+			SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge
+			INNER JOIN gauntlets g ON g.id = ge.run_id
+			WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id
+		) g  ON g.user_id  = u.id
+		LEFT JOIN (
+			SELECT re.user_id, COUNT(*) AS cnt FROM raids r
+			INNER JOIN realms re ON re.id = r.offense_id
+			WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id
+		) r  ON r.user_id  = u.id
+		LEFT JOIN (
+			SELECT user_id, COUNT(*) AS cnt FROM encounters $w_e GROUP BY user_id
+		) b  ON b.user_id  = u.id
+		LEFT JOIN (
+			SELECT user_id, COUNT(*) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id
+		) mo ON mo.user_id = u.id
+		WHERE (COALESCE(d.cnt,0) + COALESCE(m.cnt,0) + COALESCE(ss.cnt,0) +
+		       COALESCE(g.cnt,0) + COALESCE(r.cnt,0) + COALESCE(b.cnt,0) + COALESCE(mo.cnt,0)) > 0
 		ORDER BY total_pts DESC
 	";
 	$result = $conn->query($sql);
