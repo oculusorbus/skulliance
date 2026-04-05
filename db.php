@@ -9586,16 +9586,18 @@ function gauntletSelectOpponent($conn, $user_id, $run_id) {
 		SELECT n.id, n.user_id, n.name, n.ipfs, n.collection_id, c.project_id
 		FROM nfts n
 		INNER JOIN collections c ON c.id = n.collection_id
-		WHERE n.user_id != $uid AND n.user_id > 0 $proj_exclude
+		INNER JOIN users u       ON u.id = n.user_id
+		WHERE n.user_id != $uid AND n.user_id > 0 AND u.visibility = 1 $proj_exclude
 		ORDER BY RAND() LIMIT 1
 	");
 	if ($r && $r->num_rows) return $r->fetch_assoc();
-	// Fallback: any opponent
+	// Fallback: any opponent with visibility
 	$r = $conn->query("
 		SELECT n.id, n.user_id, n.name, n.ipfs, n.collection_id, c.project_id
 		FROM nfts n
 		INNER JOIN collections c ON c.id = n.collection_id
-		WHERE n.user_id != $uid AND n.user_id > 0
+		INNER JOIN users u       ON u.id = n.user_id
+		WHERE n.user_id != $uid AND n.user_id > 0 AND u.visibility = 1
 		ORDER BY RAND() LIMIT 1
 	");
 	if ($r && $r->num_rows) return $r->fetch_assoc();
