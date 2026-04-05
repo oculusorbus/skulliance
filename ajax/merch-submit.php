@@ -125,7 +125,9 @@ $variants_cache = [];
 
 foreach ($selected_types as $pt) {
     $printful_product_id = intval($pt['printful_product_id']);
-    $print_area = json_decode($pt['print_area_config'] ?? '{}', true);
+    $print_area_config = json_decode($pt['print_area_config'] ?? '{}', true);
+    $file_type  = $print_area_config['file_type'] ?? 'default';
+    $print_area = array_diff_key($print_area_config, ['file_type' => '']);
     if (empty($print_area)) {
         $print_area = ['top' => 0, 'left' => 0, 'width' => 1800, 'height' => 2400];
     }
@@ -153,7 +155,7 @@ foreach ($selected_types as $pt) {
             'variant_id'   => $v['id'],
             'retail_price' => number_format(floatval($pt['base_price']), 2, '.', ''),
             'files'        => [[
-                'type'      => 'front',
+                'type'      => $file_type,
                 'url'       => $image_url,
                 'position'  => $print_area,
             ]],
