@@ -41,10 +41,16 @@ if (!$nft_res || $nft_res->num_rows === 0) {
 }
 $nft = $nft_res->fetch_assoc();
 
-// ── Check for duplicate active listing ───────────────────────
-$dup_res = $conn->query("SELECT id FROM merch_products WHERE nft_id = $nft_id AND user_id = $user_id AND status = 'active' LIMIT 1");
-if ($dup_res && $dup_res->num_rows > 0) {
-    echo json_encode(['success' => false, 'error' => 'This NFT already has an active listing. Archive it first.']);
+// ── Filter out product types already actively listed for this NFT ────
+$pt_ids_safe = implode(',', $product_type_ids);
+$dup_res = $conn->query("SELECT product_type_id FROM merch_products WHERE nft_id = $nft_id AND user_id = $user_id AND status = 'active' AND product_type_id IN ($pt_ids_safe)");
+$already_listed = [];
+if ($dup_res) {
+    while ($row = $dup_res->fetch_assoc()) $already_listed[] = intval($row['product_type_id']);
+}
+$product_type_ids = array_values(array_diff($product_type_ids, $already_listed));
+if (empty($product_type_ids)) {
+    echo json_encode(['success' => false, 'error' => 'All selected product types already have active listings for this NFT.']);
     exit;
 }
 
