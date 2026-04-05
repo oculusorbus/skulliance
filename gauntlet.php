@@ -462,8 +462,8 @@ if ($state === 'encounter') {
 			$reward_label = '+' . $reward_amt;
 			$reward_class = 'win';
 		} else {
-			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['player_currency']) . '.png';
-			$reward_label = 'opp +' . $reward_amt;
+			$reward_icon  = 'icons/' . strtolower($hr['player_currency']) . '.png';
+			$reward_label = 'opp +' . GAUNTLET_WIN_REWARD;
 			$reward_class = 'loss';
 		}
 	?>
@@ -738,8 +738,8 @@ if ($state === 'encounter') {
 			$reward_label = '+' . $reward_amt;
 			$reward_class = 'win';
 		} else {
-			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['player_currency']) . '.png';
-			$reward_label = 'opp +' . $reward_amt;
+			$reward_icon  = 'icons/' . strtolower($hr['player_currency']) . '.png';
+			$reward_label = 'opp +' . GAUNTLET_WIN_REWARD;
 			$reward_class = 'loss';
 		}
 	?>
