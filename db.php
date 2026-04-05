@@ -5046,7 +5046,7 @@ function resetGauntlets($conn) {
 }
 
 // Check Activity Leaderboard — weighted aggregate across all platform features
-// Weights: daily claim=1, mission=5, gauntlet encounter=5, raid=15, boss battle=25, monstrocity session=50
+// Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5, raid=15, boss battle=25, monstrocity session=50
 function checkActivityLeaderboard($conn, $period = 'ath') {
 	// Build per-table date filters based on period
 	if ($period === 'monthly') {
@@ -5056,6 +5056,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$f_ge = "AND ge.resolved_date >= $dt";
 		$f_r  = "AND r.created_date  >= $dt";
 		$f_e  = "AND e.date_created  >= $dt";
+		$f_ss = "AND ss.date_created >= $dt";
 		$f_s  = "AND s.date_created  >= $dt";
 	} elseif ($period === 'weekly') {
 		$week_start = gauntletGetWeekStart();
@@ -5064,9 +5065,10 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$f_ge = "AND ge.resolved_date >= '$week_start'";
 		$f_r  = "AND r.created_date  >= '$week_start'";
 		$f_e  = "AND e.date_created  >= '$week_start'";
+		$f_ss = "AND ss.date_created >= '$week_start'";
 		$f_s  = "AND s.date_created  >= '$week_start'";
 	} else {
-		$f_t = $f_m = $f_ge = $f_r = $f_e = $f_s = '';
+		$f_t = $f_m = $f_ge = $f_r = $f_e = $f_ss = $f_s = '';
 	}
 
 	$sql = "
@@ -5074,6 +5076,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
 			SUM(CASE WHEN a.type='daily'       THEN 1 ELSE 0 END) AS daily_count,
 			SUM(CASE WHEN a.type='mission'     THEN 1 ELSE 0 END) AS mission_count,
+			SUM(CASE WHEN a.type='skullswap'   THEN 1 ELSE 0 END) AS skullswap_count,
 			SUM(CASE WHEN a.type='gauntlet'    THEN 1 ELSE 0 END) AS gauntlet_count,
 			SUM(CASE WHEN a.type='raid'        THEN 1 ELSE 0 END) AS raid_count,
 			SUM(CASE WHEN a.type='boss'        THEN 1 ELSE 0 END) AS boss_count,
@@ -5081,17 +5084,19 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 			SUM(a.pts) AS total_pts
 		FROM users u
 		INNER JOIN (
-			SELECT t.user_id, 'daily'       AS type, 1  AS pts FROM transactions t       WHERE t.bonus = 1 $f_t
+			SELECT t.user_id,  'daily'       AS type, 1  AS pts FROM transactions t       WHERE t.bonus = 1 $f_t
 			UNION ALL
-			SELECT m.user_id, 'mission',              5         FROM missions m           WHERE m.status IN (1,2) $f_m
+			SELECT m.user_id,  'mission',              5         FROM missions m           WHERE m.status IN (1,2) $f_m
 			UNION ALL
-			SELECT g.user_id, 'gauntlet',             5         FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $f_ge
+			SELECT ss.user_id, 'skullswap',            5         FROM scores ss WHERE ss.project_id = 0 $f_ss
 			UNION ALL
-			SELECT re.user_id,'raid',                 15        FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $f_r
+			SELECT g.user_id,  'gauntlet',             5         FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $f_ge
 			UNION ALL
-			SELECT e.user_id, 'boss',                 25        FROM encounters e $f_e
+			SELECT re.user_id, 'raid',                 15        FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $f_r
 			UNION ALL
-			SELECT s.user_id, 'monstrocity',          50        FROM scores s WHERE s.project_id = 36 $f_s
+			SELECT e.user_id,  'boss',                 25        FROM encounters e $f_e
+			UNION ALL
+			SELECT s.user_id,  'monstrocity',          50        FROM scores s WHERE s.project_id = 36 $f_s
 		) a ON a.user_id = u.id
 		GROUP BY u.id
 		ORDER BY total_pts DESC
@@ -5144,6 +5149,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 				'Points'    => number_format($row['total_pts']),
 				'Daily'     => number_format($row['daily_count']),
 				'Missions'  => number_format($row['mission_count']),
+				'Swaps'     => number_format($row['skullswap_count']),
 				'Gauntlets' => number_format($row['gauntlet_count']),
 				'Raids'     => number_format($row['raid_count']),
 				'Bosses'    => number_format($row['boss_count']),
