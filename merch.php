@@ -53,11 +53,55 @@ include 'header.php';
 $acct_res  = $conn->query("SELECT * FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
 $merch_acct = ($acct_res && $acct_res->num_rows) ? $acct_res->fetch_assoc() : null;
 
-$active_tab = $_GET['tab'] ?? 'nfts';
+$active_tab    = $_GET['tab'] ?? 'nfts';
+$filter_proj   = intval($_GET['project_id'] ?? 0);
+$filter_coll   = intval($_GET['collection_id'] ?? 0);
+$page          = max(1, intval($_GET['page'] ?? 1));
+$per_page      = 24;
+$offset        = ($page - 1) * $per_page;
 
-// Eligible NFTs: from licensed collections, owned by this user
+// Licensed projects and collections for filter dropdowns
+$filter_projects    = [];
+$filter_collections = [];
+if ($merch_acct) {
+    $fp_res = $conn->query("
+        SELECT DISTINCT projects.id, projects.name
+        FROM projects
+        INNER JOIN collections ON collections.project_id = projects.id
+        INNER JOIN nfts        ON nfts.collection_id     = collections.id
+        WHERE nfts.user_id = $user_id AND collections.merch_licensed = 1
+        ORDER BY projects.name ASC
+    ");
+    if ($fp_res) while ($row = $fp_res->fetch_assoc()) $filter_projects[] = $row;
+
+    $fc_where = $filter_proj ? "AND collections.project_id = $filter_proj" : '';
+    $fc_res = $conn->query("
+        SELECT DISTINCT collections.id, collections.name
+        FROM collections
+        INNER JOIN nfts ON nfts.collection_id = collections.id
+        WHERE nfts.user_id = $user_id AND collections.merch_licensed = 1 $fc_where
+        ORDER BY collections.name ASC
+    ");
+    if ($fc_res) while ($row = $fc_res->fetch_assoc()) $filter_collections[] = $row;
+}
+
+// Total count for pagination
+$total_nfts = 0;
 $eligible_nfts = [];
 if ($merch_acct) {
+    $where_extra = '';
+    if ($filter_proj) $where_extra .= " AND collections.project_id = $filter_proj";
+    if ($filter_coll) $where_extra .= " AND nfts.collection_id = $filter_coll";
+
+    $count_res = $conn->query("
+        SELECT COUNT(*) AS c FROM nfts
+        INNER JOIN collections ON collections.id = nfts.collection_id
+        WHERE nfts.user_id = $user_id AND collections.merch_licensed = 1 $where_extra
+    ");
+    if ($count_res) $total_nfts = intval($count_res->fetch_assoc()['c']);
+    $total_pages = max(1, ceil($total_nfts / $per_page));
+    if ($page > $total_pages) $page = $total_pages;
+
     $nft_res = $conn->query("
         SELECT nfts.id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
                collections.name AS collection_name, collections.project_id,
@@ -65,13 +109,13 @@ if ($merch_acct) {
         FROM nfts
         INNER JOIN collections ON collections.id = nfts.collection_id
         INNER JOIN projects    ON projects.id    = collections.project_id
-        WHERE nfts.user_id = $user_id
-          AND collections.merch_licensed = 1
+        WHERE nfts.user_id = $user_id AND collections.merch_licensed = 1 $where_extra
         ORDER BY collections.name ASC, nfts.name ASC
+        LIMIT $per_page OFFSET $offset
     ");
-    if ($nft_res) {
-        while ($row = $nft_res->fetch_assoc()) $eligible_nfts[] = $row;
-    }
+    if ($nft_res) while ($row = $nft_res->fetch_assoc()) $eligible_nfts[] = $row;
+} else {
+    $total_pages = 1;
 }
 
 // Active listings for this user
@@ -162,6 +206,14 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
 .product-type-select   { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 12px; }
 .product-type-btn      { padding:7px 14px; border-radius:6px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05); color:#e8eaed; cursor:pointer; font-size:.82rem; transition:background .15s,border-color .15s; }
 .product-type-btn.selected { background:rgba(0,200,160,.15); border-color:#00c8a0; color:#00c8a0; }
+.merch-filters         { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+.merch-select          { padding:7px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06); color:#e8eaed; font-size:.84rem; cursor:pointer; }
+.merch-select:focus    { outline:none; border-color:#00c8a0; }
+.merch-pagination      { display:flex; gap:6px; justify-content:center; align-items:center; margin-top:20px; flex-wrap:wrap; }
+.merch-page-btn        { padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#e8eaed; font-size:.82rem; cursor:pointer; text-decoration:none; transition:background .15s,border-color .15s; }
+.merch-page-btn:hover  { background:rgba(255,255,255,.1); }
+.merch-page-btn.active { background:rgba(0,200,160,.15); border-color:#00c8a0; color:#00c8a0; cursor:default; }
+.merch-page-btn.disabled { opacity:.35; pointer-events:none; }
 </style>
 
 <div class="row">
@@ -221,19 +273,40 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
 
   <!-- ── NFTs tab ───────────────────────────────────────── -->
   <div id="tab-nfts" style="display:<?php echo $active_tab === 'nfts' ? 'block' : 'none'; ?>">
+
+    <?php if (!empty($filter_projects)): ?>
+    <!-- Filters -->
+    <form method="get" action="merch.php" class="merch-filters" id="merch-filter-form">
+      <input type="hidden" name="tab" value="nfts">
+      <select name="project_id" class="merch-select" onchange="this.form.submit()">
+        <option value="0">All Projects</option>
+        <?php foreach ($filter_projects as $fp): ?>
+          <option value="<?php echo intval($fp['id']); ?>" <?php echo $filter_proj === intval($fp['id']) ? 'selected' : ''; ?>>
+            <?php echo htmlspecialchars($fp['name']); ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+      <select name="collection_id" class="merch-select" onchange="this.form.submit()">
+        <option value="0">All Collections</option>
+        <?php foreach ($filter_collections as $fc): ?>
+          <option value="<?php echo intval($fc['id']); ?>" <?php echo $filter_coll === intval($fc['id']) ? 'selected' : ''; ?>>
+            <?php echo htmlspecialchars($fc['name']); ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+      <span style="font-size:.8rem;color:rgba(255,255,255,.35);"><?php echo $total_nfts; ?> NFT<?php echo $total_nfts !== 1 ? 's' : ''; ?></span>
+    </form>
+    <?php endif; ?>
+
     <?php if (empty($eligible_nfts)): ?>
       <div style="text-align:center;padding:40px;color:rgba(255,255,255,.35);font-size:.88rem;">
         No eligible NFTs found. Only NFTs from licensed collections can be used for merch.
       </div>
     <?php else: ?>
-      <p style="font-size:.84rem;color:rgba(255,255,255,.4);margin-bottom:14px;">
-        Click an NFT to generate mockups and submit a listing.
-      </p>
       <div class="merch-nft-grid">
         <?php foreach ($eligible_nfts as $nft):
           $img_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
           if (str_starts_with($img_url, '/')) $img_url = 'https://skulliance.io' . $img_url;
-          // Check if already has active listing
           $already_listed = false;
           foreach ($listings as $l) {
               if (intval($l['nft_id']) === intval($nft['id']) && $l['status'] === 'active') { $already_listed = true; break; }
@@ -251,6 +324,26 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
         </div>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($total_pages > 1):
+        $base_url = 'merch.php?tab=nfts' . ($filter_proj ? '&project_id=' . $filter_proj : '') . ($filter_coll ? '&collection_id=' . $filter_coll : '');
+      ?>
+      <div class="merch-pagination">
+        <a href="<?php echo $base_url . '&page=' . max(1, $page - 1); ?>" class="merch-page-btn <?php echo $page <= 1 ? 'disabled' : ''; ?>">&lsaquo; Prev</a>
+        <?php
+        $start = max(1, $page - 2);
+        $end   = min($total_pages, $page + 2);
+        if ($start > 1) echo '<span class="merch-page-btn disabled">&hellip;</span>';
+        for ($i = $start; $i <= $end; $i++):
+        ?>
+          <a href="<?php echo $base_url . '&page=' . $i; ?>" class="merch-page-btn <?php echo $i === $page ? 'active' : ''; ?>"><?php echo $i; ?></a>
+        <?php endfor;
+        if ($end < $total_pages) echo '<span class="merch-page-btn disabled">&hellip;</span>';
+        ?>
+        <a href="<?php echo $base_url . '&page=' . min($total_pages, $page + 1); ?>" class="merch-page-btn <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">Next &rsaquo;</a>
+      </div>
+      <?php endif; ?>
+
     <?php endif; ?>
   </div>
 
