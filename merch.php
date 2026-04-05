@@ -124,10 +124,12 @@ $listings_res = $conn->query("
     SELECT mp.id, mp.nft_id, mp.printful_product_id, mp.status, mp.created_at,
            nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
            collections.name AS collection_name, collections.project_id,
+           mpt.name AS product_type_name,
            GROUP_CONCAT(mps.store_type ORDER BY mps.store_type SEPARATOR ', ') AS stores
     FROM merch_products mp
     INNER JOIN nfts        ON nfts.id        = mp.nft_id
     INNER JOIN collections ON collections.id = nfts.collection_id
+    LEFT JOIN  merch_product_types mpt ON mpt.id = mp.product_type_id
     LEFT JOIN  merch_product_stores mps ON mps.merch_product_id = mp.id
     WHERE mp.user_id = $user_id
     GROUP BY mp.id
@@ -362,7 +364,7 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
       <div class="merch-listing-row">
         <img src="<?php echo htmlspecialchars($img_url); ?>" alt="<?php echo htmlspecialchars($listing['nft_name']); ?>" loading="lazy">
         <div class="merch-listing-info">
-          <strong><?php echo htmlspecialchars($listing['nft_name']); ?></strong>
+          <strong><?php echo htmlspecialchars($listing['nft_name']); ?><?php if (!empty($listing['product_type_name'])): ?> <span style="font-weight:400;color:rgba(255,255,255,.45);font-size:.82em;">&mdash; <?php echo htmlspecialchars($listing['product_type_name']); ?></span><?php endif; ?></strong>
           <span><?php echo htmlspecialchars($listing['collection_name']); ?></span>
           <?php if (!empty($listing['stores'])): ?>
             <span style="display:block;margin-top:2px;">Stores: <?php echo htmlspecialchars($listing['stores']); ?></span>

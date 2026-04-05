@@ -76,15 +76,24 @@ if ($balance === 'false' || floatval($balance) < $total_fee) {
 }
 
 // ── Build image URL for Printful ────────────────────────────
-// Ensure the image is locally cached so Printful gets a reliable URL.
-// getIPFS falls back to an IPFS gateway URL if not cached — fetch it now.
-$image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
-if (!str_starts_with($image_url, '/')) {
+// Build site origin dynamically so it works on both test and production servers.
+$_proto      = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$_origin     = $_proto . '://' . $_SERVER['HTTP_HOST'];
+$_images_web = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/') . '/images/nfts/';
+
+$_img_dir  = __DIR__ . '/../images/nfts/' . $nft['project_id'] . '/' . $nft['collection_id'] . '/';
+$_img_glob = glob($_img_dir . md5($nft['ipfs']) . '.*');
+
+if (empty($_img_glob)) {
     ensureNFTImageCached($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
-    $image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
+    $_img_glob = glob($_img_dir . md5($nft['ipfs']) . '.*');
 }
-if (str_starts_with($image_url, '/')) {
-    $image_url = 'https://skulliance.io' . $image_url;
+
+if (!empty($_img_glob)) {
+    $image_url = $_origin . $_images_web . $nft['project_id'] . '/' . $nft['collection_id'] . '/' . basename($_img_glob[0]);
+} else {
+    // Last resort: IPFS gateway (Printful may or may not be able to fetch it)
+    $image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
 }
 
 // ── Build product title and description ──────────────────────
