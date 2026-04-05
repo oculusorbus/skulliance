@@ -825,7 +825,7 @@ function startFight() {
 		document.getElementById('fr-opp-card').classList.add('shaking');
 	}, 350);
 	// Cycle status text
-	var statuses = ['Crossing swords…', 'Rolling the dice…', 'The outcome is sealed…'];
+	var statuses = ['Crossing swords…', 'Rolling the dice…', 'The outcome is sealed…', 'Wait for it…'];
 	var statusEl = document.getElementById('fr-status');
 	var i = 0;
 	var interval = setInterval(function() {
