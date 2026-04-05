@@ -231,7 +231,7 @@ if ($state === 'encounter') {
 /* Action buttons */
 .btn-fight            { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; }
 .btn-fight:hover      { opacity: .85; }
-.btn-ff               { width: 100%; padding: 10px; font-size: .82rem; background: rgba(255,255,255,.07); color: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: all .15s; }
+.btn-ff               { width: 100%; padding: 10px; font-size: .82rem; background: rgba(255,255,255,.07); color: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; cursor: pointer; margin-top: 10px; margin-bottom: 10px; transition: all .15s; }
 .btn-ff:hover         { background: rgba(255,255,255,.12); }
 .btn-ff:disabled      { opacity: .3; cursor: default; }
 .btn-start            { padding: 14px 40px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; }
