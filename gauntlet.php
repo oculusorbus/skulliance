@@ -230,6 +230,14 @@ if ($state === 'encounter') {
 .history-badge.loss   { background: rgba(224,85,85,.2); color: #e05555; }
 .history-text         { font-size: .82rem; color: rgba(255,255,255,.7); flex: 1; }
 .history-odds         { font-size: .75rem; color: rgba(255,255,255,.3); }
+.history-opponent     { display: flex; align-items: center; gap: 6px; }
+.history-avatar       { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.history-opponent a   { color: #00c8a0; text-decoration: none; font-size: .75rem; }
+.history-opponent a:hover { text-decoration: underline; }
+.arena-opponent-user  { display: flex; align-items: center; gap: 6px; padding: 4px 10px 10px; }
+.arena-opponent-user img  { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+.arena-opponent-user a    { font-size: .75rem; color: #00c8a0; text-decoration: none; }
+.arena-opponent-user a:hover { text-decoration: underline; }
 
 .section-heading      { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.3); margin: 24px 0 10px; }
 </style>
@@ -288,12 +296,14 @@ if ($state === 'encounter') {
 	// Show encounter history for completed run
 	$hist_r = $conn->query("
 		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
-		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, ge.consumable_id, ge.weapon_id, ge.armor_id
+		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, ge.consumable_id, ge.weapon_id, ge.armor_id,
+		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
 		FROM gauntlet_encounters ge
 		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections oc ON oc.id = on2.collection_id
 		INNER JOIN projects op   ON op.id  = oc.project_id
+		LEFT JOIN  users ou      ON ou.id  = ge.opponent_user_id
 		WHERE ge.run_id = ".intval($recent_run['id'])." AND ge.outcome != 'pending'
 		ORDER BY ge.id ASC
 	");
@@ -306,7 +316,17 @@ if ($state === 'encounter') {
 	?>
 		<div class="history-row">
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
-			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)</div>
+			<div class="history-text">
+				vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)
+				<?php if (!empty($hr['opponent_username'])): ?>
+				<div class="history-opponent">
+					<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?>
+					<img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="">
+					<?php endif; ?>
+					<a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a>
+				</div>
+				<?php endif; ?>
+			</div>
 			<div class="history-odds">Base <?php echo $base_wc; ?>%</div>
 		</div>
 	<?php endwhile; ?>
@@ -364,7 +384,15 @@ if ($state === 'encounter') {
 			<div class="arena-card-label">Opponent</div>
 			<img src="<?php echo htmlspecialchars($opponent_img); ?>" alt="<?php echo htmlspecialchars($enc['opponent_nft_name']); ?>">
 			<div class="arena-card-name"><?php echo htmlspecialchars($enc['opponent_nft_name']); ?></div>
-			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?><?php if (!empty($enc['opponent_username'])): ?> &middot; <span style="color:rgba(255,255,255,.3)"><?php echo htmlspecialchars($enc['opponent_username']); ?></span><?php endif; ?></div>
+			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?></div>
+			<?php if (!empty($enc['opponent_username'])): ?>
+			<div class="arena-opponent-user">
+				<?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?>
+				<img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($enc['opponent_discord_id']); ?>/<?php echo htmlspecialchars($enc['opponent_avatar']); ?>.png" alt="">
+				<?php endif; ?>
+				<a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>"><?php echo htmlspecialchars($enc['opponent_username']); ?></a>
+			</div>
+			<?php endif; ?>
 		</div>
 	</div>
 
@@ -478,12 +506,14 @@ if ($state === 'encounter') {
 	// Encounter history for current run (resolved only)
 	$hist_r = $conn->query("
 		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
-		       on2.name AS opponent_nft_name, op.name AS opponent_project_name
+		       on2.name AS opponent_nft_name, op.name AS opponent_project_name,
+		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
 		FROM gauntlet_encounters ge
 		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections oc ON oc.id = on2.collection_id
 		INNER JOIN projects op   ON op.id  = oc.project_id
+		LEFT JOIN  users ou      ON ou.id  = ge.opponent_user_id
 		WHERE ge.run_id = ".intval($active_run['id'])." AND ge.outcome != 'pending'
 		ORDER BY ge.id ASC
 	");
@@ -496,7 +526,17 @@ if ($state === 'encounter') {
 	?>
 		<div class="history-row">
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
-			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)</div>
+			<div class="history-text">
+				vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)
+				<?php if (!empty($hr['opponent_username'])): ?>
+				<div class="history-opponent">
+					<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?>
+					<img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="">
+					<?php endif; ?>
+					<a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a>
+				</div>
+				<?php endif; ?>
+			</div>
 			<div class="history-odds">Base <?php echo $base_wc; ?>%</div>
 		</div>
 	<?php endwhile; ?>

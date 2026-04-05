@@ -9434,7 +9434,9 @@ function gauntletGetPendingEncounter($conn, $run_id) {
 		       oc.project_id AS opponent_project_id_real,
 		       pp.name      AS player_project_name,
 		       op.name      AS opponent_project_name,
-		       ou.username  AS opponent_username
+		       ou.username   AS opponent_username,
+		       ou.discord_id AS opponent_discord_id,
+		       ou.avatar     AS opponent_avatar
 		FROM gauntlet_encounters ge
 		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
