@@ -183,8 +183,14 @@ if ($state === 'encounter') {
 
 /* Encounter arena */
 .arena                { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 24px; }
-@media (max-width: 600px) { .arena { grid-template-columns: 1fr; } }
 .arena-vs             { display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: rgba(255,255,255,.3); padding-top: 40px; }
+@media (max-width: 600px) {
+	.arena { gap: 8px; }
+	.arena-vs { font-size: 1rem; padding-top: 30px; }
+	.arena-card-label { font-size: .6rem; padding: 6px 6px 2px; }
+	.arena-card-name  { font-size: .72rem; padding: 0 6px 3px; }
+	.arena-card-project, .arena-card-user { font-size: .65rem; padding: 0 6px 6px; }
+}
 .arena-card           { background: #002f44; border: 2px solid rgba(255,255,255,.1); border-radius: 10px; overflow: hidden; }
 .arena-card.player    { border-color: #00c8a0; }
 .arena-card img       { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
