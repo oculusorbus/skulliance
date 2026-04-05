@@ -318,6 +318,10 @@ function filterPolicies(criteria){
 
 function filterLeaderboard(criteria){
 	document.getElementById('filterby').value = criteria;
+	if (criteria === 'activity-ath' || criteria === 'activity-monthly' || criteria === 'activity-weekly') {
+		var el = document.getElementById('filtered-content');
+		if (el) el.innerHTML = '<p style="text-align:center;padding:40px 0;opacity:.7;">Calculating activity scores…</p>';
+	}
 	document.getElementById("filterLeaderboardForm").submit();
 }
 

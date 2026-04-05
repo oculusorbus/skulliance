@@ -1001,6 +1001,11 @@ function filterLeaderboard($page){
 				<option value="streaks">All Streaks</option>
 				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
+			<optgroup label="Activity">
+				<option value="activity-ath">All-Time Activity</option>
+				<option value="activity-monthly">'.date('F').' Activity</option>
+				<option value="activity-weekly">Weekly Activity</option>
+			</optgroup>
 			<optgroup label="Diamond Skulls">
 				<option value="15">Delegations</option>
 			</optgroup>

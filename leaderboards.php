@@ -189,7 +189,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" &&
 				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" &&
 				           $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets"):
+				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -261,6 +262,18 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Weekly Gauntlets";
 				        $filterby = "weekly-gauntlets";
 				        break;
+				    case ($filterby == "activity-ath"):
+				        $title = "All-Time Activity";
+				        $filterby = "activity-ath";
+				        break;
+				    case ($filterby == "activity-monthly"):
+				        $title = date("F") . " Activity";
+				        $filterby = "activity-monthly";
+				        break;
+				    case ($filterby == "activity-weekly"):
+				        $title = "Weekly Activity";
+				        $filterby = "activity-weekly";
+				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
 				?>
@@ -276,7 +289,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" &&
 				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" &&
 				              $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets"):
+				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -327,6 +341,15 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "weekly-gauntlets"):
 				            checkGauntletsLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "activity-ath"):
+				            checkActivityLeaderboard($conn, 'ath');
+				            break;
+				        case ($filterby == "activity-monthly"):
+				            checkActivityLeaderboard($conn, 'monthly');
+				            break;
+				        case ($filterby == "activity-weekly"):
+				            checkActivityLeaderboard($conn, 'weekly');
 				            break;
 				    }
 				    $table_html = ob_get_clean();
