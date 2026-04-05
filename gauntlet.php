@@ -233,10 +233,16 @@ if ($state === 'encounter') {
 .history-badge.win    { background: rgba(0,200,160,.2); color: #00c8a0; }
 .history-badge.loss   { background: rgba(224,85,85,.2); color: #e05555; }
 .history-text         { font-size: .82rem; color: rgba(255,255,255,.7); flex: 1; }
-.history-odds         { font-size: .75rem; color: rgba(255,255,255,.3); }
 .history-avatar       { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin: 0 3px 0 6px; }
 .history-text a       { color: #00c8a0; text-decoration: none; font-size: .78rem; }
 .history-text a:hover { text-decoration: underline; }
+.history-meta         { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.history-reward       { display: flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.history-reward.win   { color: #00c8a0; }
+.history-reward.loss  { color: rgba(224,85,85,.75); }
+.history-reward img   { width: 14px; height: 14px; object-fit: contain; vertical-align: middle; }
+.history-reward .reward-random { font-size: .65rem; color: rgba(255,255,255,.3); }
+.history-odds         { font-size: .72rem; color: rgba(255,255,255,.25); text-align: right; }
 
 .section-heading      { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.3); margin: 24px 0 10px; }
 </style>
@@ -295,10 +301,15 @@ if ($state === 'encounter') {
 	// Show encounter history for completed run
 	$hist_r = $conn->query("
 		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
-		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, ge.consumable_id, ge.weapon_id, ge.armor_id,
+		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
+		       pp.currency AS player_currency,
+		       ge.consumable_id, ge.weapon_id, ge.armor_id,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
 		FROM gauntlet_encounters ge
 		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
+		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
+		INNER JOIN collections pc ON pc.id = pn.collection_id
+		INNER JOIN projects pp   ON pp.id  = pc.project_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections oc ON oc.id = on2.collection_id
 		INNER JOIN projects op   ON op.id  = oc.project_id
@@ -311,12 +322,27 @@ if ($state === 'encounter') {
 	<div class="section-heading">Run History</div>
 	<div class="history-list">
 	<?php while ($hr = $hist_r->fetch_assoc()):
-		$base_wc = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
+		$base_wc    = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
+		$is_double  = intval($hr['consumable_id']) === GAUNTLET_C_DOUBLE;
+		$is_random  = intval($hr['consumable_id']) === GAUNTLET_C_RANDOM;
+		$reward_amt = GAUNTLET_WIN_REWARD * ($is_double ? 2 : 1);
+		if ($hr['outcome'] === 'win') {
+			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['opponent_currency']) . '.png';
+			$reward_label = '+' . $reward_amt;
+			$reward_class = 'win';
+		} else {
+			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['player_currency']) . '.png';
+			$reward_label = 'opp +' . $reward_amt;
+			$reward_class = 'loss';
+		}
 	?>
 		<div class="history-row">
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
 			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
-			<div class="history-odds">Base <?php echo $base_wc; ?>%</div>
+			<div class="history-meta">
+				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><?php if ($reward_icon): ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"><?php else: ?><span class="reward-random">random</span><?php endif; ?></div>
+				<div class="history-odds"><?php echo $base_wc; ?>%</div>
+			</div>
 		</div>
 	<?php endwhile; ?>
 	</div>
@@ -506,10 +532,15 @@ if ($state === 'encounter') {
 	// Encounter history for current run (resolved only)
 	$hist_r = $conn->query("
 		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
-		       on2.name AS opponent_nft_name, op.name AS opponent_project_name,
+		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
+		       pp.currency AS player_currency,
+		       ge.consumable_id,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
 		FROM gauntlet_encounters ge
 		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
+		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
+		INNER JOIN collections pc ON pc.id = pn.collection_id
+		INNER JOIN projects pp   ON pp.id  = pc.project_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections oc ON oc.id = on2.collection_id
 		INNER JOIN projects op   ON op.id  = oc.project_id
@@ -522,12 +553,27 @@ if ($state === 'encounter') {
 	<div class="section-heading">This Run</div>
 	<div class="history-list">
 	<?php while ($hr = $hist_r->fetch_assoc()):
-		$base_wc = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
+		$base_wc    = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
+		$is_double  = intval($hr['consumable_id']) === GAUNTLET_C_DOUBLE;
+		$is_random  = intval($hr['consumable_id']) === GAUNTLET_C_RANDOM;
+		$reward_amt = GAUNTLET_WIN_REWARD * ($is_double ? 2 : 1);
+		if ($hr['outcome'] === 'win') {
+			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['opponent_currency']) . '.png';
+			$reward_label = '+' . $reward_amt;
+			$reward_class = 'win';
+		} else {
+			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['player_currency']) . '.png';
+			$reward_label = 'opp +' . $reward_amt;
+			$reward_class = 'loss';
+		}
 	?>
 		<div class="history-row">
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
 			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
-			<div class="history-odds">Base <?php echo $base_wc; ?>%</div>
+			<div class="history-meta">
+				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><?php if ($reward_icon): ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"><?php else: ?><span class="reward-random">random</span><?php endif; ?></div>
+				<div class="history-odds"><?php echo $base_wc; ?>%</div>
+			</div>
 		</div>
 	<?php endwhile; ?>
 	</div>
