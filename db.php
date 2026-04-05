@@ -9587,7 +9587,7 @@ function gauntletSelectOpponent($conn, $user_id, $run_id) {
 		FROM nfts n
 		INNER JOIN collections c ON c.id = n.collection_id
 		INNER JOIN users u       ON u.id = n.user_id
-		WHERE n.user_id != $uid AND n.user_id > 0 AND u.visibility != 1 $proj_exclude
+		WHERE n.user_id != $uid AND n.user_id > 0 AND u.visibility = 2 $proj_exclude
 		ORDER BY RAND() LIMIT 1
 	");
 	if ($r && $r->num_rows) return $r->fetch_assoc();
@@ -9597,7 +9597,7 @@ function gauntletSelectOpponent($conn, $user_id, $run_id) {
 		FROM nfts n
 		INNER JOIN collections c ON c.id = n.collection_id
 		INNER JOIN users u       ON u.id = n.user_id
-		WHERE n.user_id != $uid AND n.user_id > 0 AND u.visibility != 1
+		WHERE n.user_id != $uid AND n.user_id > 0 AND u.visibility = 2
 		ORDER BY RAND() LIMIT 1
 	");
 	if ($r && $r->num_rows) return $r->fetch_assoc();
