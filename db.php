@@ -3662,9 +3662,9 @@ function burn($conn, $balance, $project_id){
 
 
 // Log a specific user credit for nightly rewards
-function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id=0) {
-	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id, raid_id)
-	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."', '".$raid_id."')";
+function logCredit($conn, $user_id, $amount, $project_id, $crafting=0, $bonus=0, $mission_id=0, $location_id=0, $raid_id=0, $gauntlet_encounter_id=0) {
+	$sql = "INSERT INTO transactions (type, user_id, amount, project_id, crafting, bonus, mission_id, location_id, raid_id, gauntlet_encounter_id)
+	VALUES ('credit', '".$user_id."', '".$amount."', '".$project_id."', '".$crafting."', '".$bonus."', '".$mission_id."', '".$location_id."', '".$raid_id."', '".$gauntlet_encounter_id."')";
 
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
@@ -9753,7 +9753,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$reward = ($wnum * 100) * ($double_reward ? 2 : 1);
 		if ($opponent_project_id > 0) {
 			updateBalance($conn, $uid, $opponent_project_id, $reward);
-			logCredit($conn, $uid, $reward, $opponent_project_id);
+			logCredit($conn, $uid, $reward, $opponent_project_id, 0, 0, 0, 0, 0, $enc_id);
 		}
 	} else {
 		// Opponent passively earns a fixed amount in player's project currency
@@ -9761,7 +9761,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$opp_uid = intval($enc['opponent_user_id']);
 		if ($player_project_id > 0 && $opp_uid > 0) {
 			updateBalance($conn, $opp_uid, $player_project_id, $reward);
-			logCredit($conn, $opp_uid, $reward, $player_project_id);
+			logCredit($conn, $opp_uid, $reward, $player_project_id, 0, 0, 0, 0, 0, $enc_id);
 		}
 	}
 	// Webhook — encounter resolved
