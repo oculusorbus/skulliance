@@ -328,19 +328,22 @@ if ($state === 'encounter') {
 @keyframes fr-shake { from { transform: translateX(-4px) rotate(-2deg); } to { transform: translateX(4px) rotate(2deg); } }
 @keyframes fr-pulse { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.25); } }
 
-/* Result reveal overlay (post-fight, auto-fades) */
-#result-reveal { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; pointer-events: none; animation: rr-in .35s ease forwards, rr-out .6s ease 2s forwards; }
-#result-reveal.win  { background: rgba(0,200,160,.1); }
-#result-reveal.loss { background: rgba(224,85,85,.1); }
-.rr-icon    { font-size: 4.5rem; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .1s both; }
-.rr-title   { font-size: 2.5rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .2s both; }
+/* Result reveal overlay (post-fight modal) */
+#result-reveal { position: fixed; inset: 0; z-index: 9998; background: rgba(7,17,29,.97); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer; animation: rr-in .3s ease forwards; }
+#result-reveal.hiding { animation: rr-out .4s ease forwards; }
+.rr-accent  { position: absolute; inset: 0; pointer-events: none; }
+#result-reveal.win  .rr-accent { box-shadow: inset 0 0 120px rgba(0,200,160,.18); }
+#result-reveal.loss .rr-accent { box-shadow: inset 0 0 120px rgba(224,85,85,.18); }
+.rr-icon    { font-size: 5rem; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .15s both; }
+.rr-title   { font-size: 2.8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .25s both; }
 #result-reveal.win  .rr-title { color: #00c8a0; }
 #result-reveal.loss .rr-title { color: #e05555; }
-.rr-reward  { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 700; color: #00c8a0; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .3s both; }
-.rr-reward img { width: 30px; height: 30px; object-fit: contain; }
-.rr-win-num { font-size: .78rem; color: rgba(255,255,255,.4); letter-spacing: .1em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .4s both; }
+.rr-reward  { display: flex; align-items: center; gap: 10px; font-size: 1.6rem; font-weight: 700; color: #00c8a0; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .35s both; }
+.rr-reward img { width: 32px; height: 32px; object-fit: contain; }
+.rr-win-num { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .12em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .45s both; }
+.rr-dismiss { font-size: .72rem; color: rgba(255,255,255,.2); letter-spacing: .1em; text-transform: uppercase; margin-top: 8px; animation: rr-pop .45s ease .8s both; }
 @keyframes rr-in  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes rr-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes rr-out { from { opacity: 1; } to { opacity: 0; pointer-events: none; } }
 @keyframes rr-pop { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
 </style>
 
@@ -356,7 +359,8 @@ if ($state === 'encounter') {
 	<?php endforeach; ?>
 
 	<?php if ($last_result): ?>
-	<div id="result-reveal" class="<?php echo $last_result['outcome'] === 'win' ? 'win' : 'loss'; ?>">
+	<div id="result-reveal" class="<?php echo $last_result['outcome'] === 'win' ? 'win' : 'loss'; ?>" onclick="dismissResult()">
+		<div class="rr-accent"></div>
 		<?php if ($last_result['outcome'] === 'win'): ?>
 		<div class="rr-icon">⚔️</div>
 		<div class="rr-title">Victory!</div>
@@ -375,6 +379,7 @@ if ($state === 'encounter') {
 		<div class="rr-icon">💀</div>
 		<div class="rr-title">Defeated</div>
 		<?php endif; ?>
+		<div class="rr-dismiss">Tap to continue</div>
 	</div>
 	<?php endif; ?>
 
@@ -793,6 +798,21 @@ document.querySelectorAll('form[method="POST"]').forEach(function(f) {
 		showLoader(msg);
 	});
 });
+
+// Result reveal — auto-dismiss after 4s or on tap
+(function(){
+	var rr = document.getElementById('result-reveal');
+	if (!rr) return;
+	var t = setTimeout(dismissResult, 4000);
+	rr._autoTimer = t;
+})();
+function dismissResult() {
+	var rr = document.getElementById('result-reveal');
+	if (!rr || rr.classList.contains('hiding')) return;
+	clearTimeout(rr._autoTimer);
+	rr.classList.add('hiding');
+	setTimeout(function(){ rr.style.display = 'none'; }, 400);
+}
 
 // Fight animation — show suspense overlay, then submit
 function startFight() {
