@@ -33,17 +33,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 merchFlash('Could not connect: ' . $verify['error'], 'error');
             }
         }
-        header('Location: merchandising.php');
+        header('Location: merch.php');
         exit;
 
     } elseif ($action === 'disconnect_printful') {
         $conn->query("DELETE FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
         merchFlash('Printful account disconnected.', 'info');
-        header('Location: merchandising.php');
+        header('Location: merch.php');
         exit;
     }
 
-    header('Location: merchandising.php');
+    header('Location: merch.php');
     exit;
 }
 
@@ -202,6 +202,8 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
 .product-type-btn.selected { background:rgba(0,200,160,.15); border-color:#00c8a0; color:#00c8a0; }
 </style>
 
+<div class="row">
+<div class="main">
 <div class="merch-section">
   <h1 style="margin-bottom:6px;">&#127758; Merchandise</h1>
   <p style="color:rgba(255,255,255,.45);font-size:.88rem;margin-bottom:20px;">
@@ -218,7 +220,7 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
     <div style="font-size:2.5rem;margin-bottom:10px;">&#128279;</div>
     <h2>Connect Printful</h2>
     <p>Enter your Printful API key to link your account. Your key is encrypted and stored securely. Skulliance will create products on your behalf — all revenue goes directly to your Etsy or TikTok Shop.</p>
-    <form method="post" action="merchandising.php">
+    <form method="post" action="merch.php">
       <input type="hidden" name="action" value="connect_printful">
       <input type="text" name="api_key" class="merch-input" placeholder="Printful API Key" autocomplete="off" required>
       <button type="submit" class="small-button" style="width:100%;margin-top:4px;">Connect Account</button>
@@ -241,7 +243,7 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
         <?php endforeach; ?>
       <?php endif; ?>
     </div>
-    <form method="post" action="merchandising.php" style="margin:0;">
+    <form method="post" action="merch.php" style="margin:0;">
       <input type="hidden" name="action" value="disconnect_printful">
       <button type="submit" class="small-button" style="background:rgba(220,50,50,.15);color:#f87171;border-color:rgba(220,50,50,.3);font-size:.76rem;padding:5px 12px;"
         onclick="return confirm('Disconnect Printful account?')">Disconnect</button>
@@ -327,7 +329,9 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
   </div>
 
   <?php endif; ?>
-</div>
+</div><!-- .merch-section -->
+</div><!-- .main -->
+</div><!-- .row -->
 
 <!-- ── Merch Submit Modal ───────────────────────────────────── -->
 <div id="merch-modal-overlay" onclick="closeMerchModal()"></div>
@@ -347,7 +351,7 @@ function switchTab(tab) {
     document.querySelectorAll('.merch-tab').forEach(function(t,i){ t.classList.toggle('active', ['nfts','listings'][i] === tab); });
     document.getElementById('tab-nfts').style.display      = tab === 'nfts'     ? 'block' : 'none';
     document.getElementById('tab-listings').style.display  = tab === 'listings' ? 'block' : 'none';
-    history.replaceState(null, '', 'merchandising.php?tab=' + tab);
+    history.replaceState(null, '', 'merch.php?tab=' + tab);
 }
 
 function openMerchModal(nftId, collectionId, projectId, nftName, collectionName, currency) {
@@ -554,4 +558,10 @@ function escHtml(str) {
 }
 </script>
 
+<div class="footer">
+	<p>Skulliance<br>Copyright &copy; <span id="year"></span></p>
+</div>
+</div>
+</div>
+</body>
 <?php $conn->close(); ?>

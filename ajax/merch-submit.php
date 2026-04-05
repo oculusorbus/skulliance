@@ -218,7 +218,7 @@ if (!empty($created_product_ids)) {
         '&#127758; New Merch Listing',
         "{$mention} listed **{$nft['nft_name']}** ({$nft['collection_name']}) — " . count($created_product_ids) . " product(s) submitted.",
         $nft_img_url,
-        'https://skulliance.io/staking/merchandising.php',
+        'https://skulliance.io/staking/merch.php',
         'general',
         $avatar_url
     );
