@@ -533,7 +533,7 @@ if ($state === 'encounter') {
 				<?php else: ?>
 				<div class="resource-empty">
 					<div class="resource-empty-title">No consumables in your inventory.</div>
-					<div class="resource-empty-body">Embark on <a href="missions.php">Missions</a> to earn consumable items, or claim them from the Factory in your <a href="realms.php">Realm</a>.</div>
+					<div class="resource-empty-body">Earn consumables by claiming your daily rewards, embarking on <a href="missions.php">Missions</a>, or claiming from the Factory in your <a href="realms.php">Realm</a>.</div>
 				</div>
 				<?php endif; ?>
 			</div>
