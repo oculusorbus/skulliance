@@ -45,6 +45,82 @@ if(isset($_POST['discord_id']) && isset($_POST['rank']) && isset($_POST['project
 	}
 }
 
+// ── Merchandise encryption helpers ─────────────────────────
+// IMPORTANT: Replace MERCH_ENCRYPT_KEY with a real random 32-character secret
+// and store it in credentials/db_credentials.php or a dedicated config file.
+// Never commit the real key to version control.
+if (!defined('MERCH_ENCRYPT_KEY')) {
+    define('MERCH_ENCRYPT_KEY',    'REPLACE_ME_32_CHAR_SECRET_KEY_XX'); // TODO: set real key
+}
+define('MERCH_ENCRYPT_CIPHER', 'AES-256-CBC');
+
+function merchEncrypt($data) {
+    $iv = openssl_random_pseudo_bytes(16);
+    return base64_encode($iv . openssl_encrypt($data, MERCH_ENCRYPT_CIPHER, MERCH_ENCRYPT_KEY, 0, $iv));
+}
+
+function merchDecrypt($data) {
+    $raw = base64_decode($data);
+    $iv  = substr($raw, 0, 16);
+    return openssl_decrypt(substr($raw, 16), MERCH_ENCRYPT_CIPHER, MERCH_ENCRYPT_KEY, 0, $iv);
+}
+
+// ── Merch: archive all active listings for an NFT that left wallet ──
+function verifyMerchListings($conn) {
+    // Find active merch listings where the NFT is no longer owned by the listing's user
+    $sql = "
+        SELECT mp.id AS listing_id, mp.printful_product_id, mp.user_id,
+               ma.printful_api_key_encrypted,
+               nfts.name AS nft_name, collections.name AS collection_name,
+               users.discord_id
+        FROM merch_products mp
+        INNER JOIN nfts        ON nfts.id        = mp.nft_id
+        INNER JOIN collections ON collections.id = nfts.collection_id
+        INNER JOIN merch_accounts ma ON ma.user_id = mp.user_id
+        LEFT JOIN  users        ON users.id       = mp.user_id
+        WHERE mp.status = 'active'
+          AND nfts.user_id != mp.user_id
+    ";
+    $result = $conn->query($sql);
+    if (!$result || $result->num_rows === 0) return;
+
+    while ($row = $result->fetch_assoc()) {
+        $listing_id  = intval($row['listing_id']);
+        $pf_prod_id  = intval($row['printful_product_id']);
+        $api_key     = merchDecrypt($row['printful_api_key_encrypted']);
+        $discord_id  = $row['discord_id'] ?? '';
+
+        // Delete from Printful
+        if ($pf_prod_id > 0 && !empty($api_key)) {
+            $ch = curl_init('https://api.printful.com/store/products/' . $pf_prod_id);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $api_key, 'Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_exec($ch);
+            curl_close($ch);
+        }
+
+        // Archive in DB
+        $conn->query("UPDATE merch_products SET status = 'archived', updated_at = NOW() WHERE id = $listing_id LIMIT 1");
+        $conn->query("UPDATE merch_product_stores SET status = 'archived' WHERE merch_product_id = $listing_id");
+
+        // Discord notification
+        if ($discord_id) {
+            $mention     = "<@{$discord_id}>";
+            $nft_name    = $row['nft_name'];
+            $coll_name   = $row['collection_name'];
+            discordmsg(
+                '&#127758; Merch Listing Archived',
+                "{$mention} Your merch listing for **{$nft_name}** ({$coll_name}) has been archived because the NFT is no longer in your wallet.",
+                '',
+                'https://skulliance.io/staking/merchandise.php',
+                'general'
+            );
+        }
+    }
+}
+
 // Verify NFTs required for Membership
 function verifyMembershipNFTs($conn, $roles){
 	$sql = "SELECT DISTINCT projects.id AS project_id FROM nfts INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE nfts.user_id='".$_SESSION['userData']['user_id']."' AND project_id IN('7','6','5','4','3','2','1')";
