@@ -4929,6 +4929,121 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 }
 
 
+// Check Gauntlets Leaderboard
+// Ranks by sweeps (all 3 wins, no loss in a run) → total wins → fewest losses
+function checkGauntletsLeaderboard($conn, $weekly=false, $rewards=false) {
+	$carbon    = 25000;
+	$max_wins  = GAUNTLET_MAX_WINS;
+	$where     = ($weekly || $rewards) ? "WHERE g.reward = 0" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			SUM(CASE WHEN stats.wins >= $max_wins AND stats.losses = 0 THEN 1 ELSE 0 END) AS sweeps,
+			SUM(stats.wins)   AS wins,
+			SUM(stats.losses) AS losses
+		FROM gauntlets g
+		INNER JOIN users u ON u.id = g.user_id
+		INNER JOIN (
+			SELECT run_id,
+			       SUM(outcome = 'win')  AS wins,
+			       SUM(outcome = 'loss') AS losses
+			FROM gauntlets_encounters
+			WHERE outcome != 'pending'
+			GROUP BY run_id
+		) stats ON stats.run_id = g.id
+		$where
+		GROUP BY u.id
+		ORDER BY sweeps DESC, wins DESC, losses ASC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			// Composite score tuple for tie-detection
+			$score = [$row['sweeps'], $row['wins'], $row['losses']];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['sweeps']) . ' sweeps · ' . number_format($row['wins']) . 'W',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight   = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url  = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html   = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col  = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
+			$stats       = [
+				'Sweeps' => number_format($row['sweeps']),
+				'Wins'   => number_format($row['wins']),
+				'Losses' => number_format($row['losses']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Sweeps: " . $row['sweeps'] . ", Wins: " . $row['wins'] . ", Losses: " . $row['losses'] . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			resetGauntlets($conn);
+			discordmsg("⚔️ Weekly Gauntlet Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($weekly || $rewards) ? "for the week" : "";
+		echo "<p>No Gauntlet runs have been completed yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="gauntlets"><input type="submit" class="small-button" value="View All Gauntlets Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+function resetGauntlets($conn) {
+	$sql = "UPDATE gauntlets SET reward = 1 WHERE reward = 0";
+	if ($conn->query($sql) !== TRUE) {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Check Monstrocity Leaderboard
 function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 	$claw = 30000;

@@ -184,11 +184,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 			<div class="col1of3" style="max-width:900px;margin:0 auto;flex:1 1 100%;">
 				<?php
 				switch (true) {
-				    case ($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" && 
-				           $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" && 
-				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" && 
-				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" && 
-						   $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
+				    case ($filterby != null && $filterby != 0 && $filterby != "missions" && $filterby != "monthly" &&
+				           $filterby != "streaks" && $filterby != "monthly-streaks" && $filterby != "raids" &&
+				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" &&
+				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" &&
+				           $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
+				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -252,6 +253,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = date("F") . " Monstrocity";
 				        $filterby = "monthly-monstrocity";
 				        break;
+				    case ($filterby == "gauntlets"):
+				        $title = "All Gauntlets";
+				        $filterby = "gauntlets";
+				        break;
+				    case ($filterby == "weekly-gauntlets"):
+				        $title = "Weekly Gauntlets";
+				        $filterby = "weekly-gauntlets";
+				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
 				?>
@@ -262,11 +271,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				    $leaderboard_top3 = [];
 				    ob_start();
 				    switch (true) {
-				        case ($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" && 
-				              $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" && 
-				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" && 
-				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" && 
-							  $filterby != "monstrocity" && $filterby != "monthly-monstrocity"):
+				        case ($filterby != "missions" && $filterby != "monthly" && $filterby != "streaks" &&
+				              $filterby != "monthly-streaks" && $filterby != "raids" && $filterby != "monthly-raids" &&
+				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" &&
+				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" &&
+				              $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
+				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -311,6 +321,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "monthly-monstrocity"):
 				            checkMonstrocityLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "gauntlets"):
+				            checkGauntletsLeaderboard($conn);
+				            break;
+				        case ($filterby == "weekly-gauntlets"):
+				            checkGauntletsLeaderboard($conn, true);
 				            break;
 				    }
 				    $table_html = ob_get_clean();

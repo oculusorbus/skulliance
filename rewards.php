@@ -40,4 +40,7 @@ if(isset($_GET['bosses'])){
 if(isset($_GET['monstrocity'])){
 	checkMonstrocityLeaderboard($conn, false, true);
 }
+if(isset($_GET['gauntlets'])){
+	checkGauntletsLeaderboard($conn, false, true);
+}
 ?>
