@@ -110,7 +110,7 @@
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
 		      <a href="gauntlets.php">Gauntlets</a>
-		      <a href="merchandise.php">Merch</a>
+		      <a href="merchandising.php">Merch</a>
 		      <a href="monstrocity.php" target="_blank">Match 3 RPG</a>
 		      <a href="monstrocity.php#boss" target="_blank">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>

@@ -114,7 +114,7 @@ function verifyMerchListings($conn) {
                 '&#127758; Merch Listing Archived',
                 "{$mention} Your merch listing for **{$nft_name}** ({$coll_name}) has been archived because the NFT is no longer in your wallet.",
                 '',
-                'https://skulliance.io/staking/merchandise.php',
+                'https://skulliance.io/staking/merchandising.php',
                 'general'
             );
         }

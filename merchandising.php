@@ -33,17 +33,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 merchFlash('Could not connect: ' . $verify['error'], 'error');
             }
         }
-        header('Location: merchandise.php');
+        header('Location: merchandising.php');
         exit;
 
     } elseif ($action === 'disconnect_printful') {
         $conn->query("DELETE FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
         merchFlash('Printful account disconnected.', 'info');
-        header('Location: merchandise.php');
+        header('Location: merchandising.php');
         exit;
     }
 
-    header('Location: merchandise.php');
+    header('Location: merchandising.php');
     exit;
 }
 
@@ -218,7 +218,7 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
     <div style="font-size:2.5rem;margin-bottom:10px;">&#128279;</div>
     <h2>Connect Printful</h2>
     <p>Enter your Printful API key to link your account. Your key is encrypted and stored securely. Skulliance will create products on your behalf — all revenue goes directly to your Etsy or TikTok Shop.</p>
-    <form method="post" action="merchandise.php">
+    <form method="post" action="merchandising.php">
       <input type="hidden" name="action" value="connect_printful">
       <input type="text" name="api_key" class="merch-input" placeholder="Printful API Key" autocomplete="off" required>
       <button type="submit" class="small-button" style="width:100%;margin-top:4px;">Connect Account</button>
@@ -241,7 +241,7 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
         <?php endforeach; ?>
       <?php endif; ?>
     </div>
-    <form method="post" action="merchandise.php" style="margin:0;">
+    <form method="post" action="merchandising.php" style="margin:0;">
       <input type="hidden" name="action" value="disconnect_printful">
       <button type="submit" class="small-button" style="background:rgba(220,50,50,.15);color:#f87171;border-color:rgba(220,50,50,.3);font-size:.76rem;padding:5px 12px;"
         onclick="return confirm('Disconnect Printful account?')">Disconnect</button>
@@ -347,7 +347,7 @@ function switchTab(tab) {
     document.querySelectorAll('.merch-tab').forEach(function(t,i){ t.classList.toggle('active', ['nfts','listings'][i] === tab); });
     document.getElementById('tab-nfts').style.display      = tab === 'nfts'     ? 'block' : 'none';
     document.getElementById('tab-listings').style.display  = tab === 'listings' ? 'block' : 'none';
-    history.replaceState(null, '', 'merchandise.php?tab=' + tab);
+    history.replaceState(null, '', 'merchandising.php?tab=' + tab);
 }
 
 function openMerchModal(nftId, collectionId, projectId, nftName, collectionName, currency) {
