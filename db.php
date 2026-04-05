@@ -9546,12 +9546,11 @@ function gauntletFastForward($conn, $user_id, $encounter_id, $new_nft_id) {
 }
 
 // Apply resources, roll the dice, record outcome, award points
-function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id = 0, $weapon_id = 0, $armor_id = 0) {
-	$uid           = intval($user_id);
-	$enc_id        = intval($encounter_id);
-	$consumable_id = intval($consumable_id);
-	$weapon_id     = intval($weapon_id);
-	$armor_id      = intval($armor_id);
+function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_ids = [], $weapon_id = 0, $armor_id = 0) {
+	$uid       = intval($user_id);
+	$enc_id    = intval($encounter_id);
+	$weapon_id = intval($weapon_id);
+	$armor_id  = intval($armor_id);
 	// Load encounter
 	$r = $conn->query("SELECT * FROM gauntlets_encounters WHERE id=$enc_id AND outcome='pending' LIMIT 1");
 	if (!$r || !$r->num_rows) return false;
@@ -9563,21 +9562,27 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$peff_r     = $conn->query("SELECT effective_project_id FROM gauntlets_nfts WHERE run_id=".intval($enc['run_id'])." AND nft_id=".intval($enc['player_nft_id'])." LIMIT 1");
 	$player_eff = ($peff_r && $peff_r->num_rows) ? intval($peff_r->fetch_assoc()['effective_project_id']) : 0;
 	$win_chance = gauntletCalculateWinChance($player_eff, intval($enc['opponent_effective_project_id']));
-	$double_reward = false;
-	$random_reward = false;
-	// Apply consumable (1 max; FF handled separately, not stored here)
-	if ($consumable_id > 0 && $consumable_id != GAUNTLET_C_FF && getCurrentAmount($conn, $uid, $consumable_id) > 0) {
-		switch ($consumable_id) {
-			case GAUNTLET_C_100:    $win_chance = min(100, $win_chance + 4);    updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_75:     $win_chance = min(100, $win_chance + 3);    updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_50:     $win_chance = min(100, $win_chance + 2);    updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_25:     $win_chance = min(100, $win_chance + 1);    updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_DOUBLE: $double_reward = true;                     updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_RANDOM: $random_reward = true;                     updateAmount($conn, $uid, $consumable_id, -1); break;
-			default: $consumable_id = 0;
+	$double_reward      = false;
+	$random_reward      = false;
+	$used_consumable_ids = [];
+	// Apply each consumable (FF handled separately, not stored here)
+	foreach ((array)$consumable_ids as $cid) {
+		$cid = intval($cid);
+		if ($cid <= 0 || $cid === GAUNTLET_C_FF) continue;
+		if (getCurrentAmount($conn, $uid, $cid) < 1) continue;
+		$valid = false;
+		switch ($cid) {
+			case GAUNTLET_C_100:    $win_chance = min(100, $win_chance + 4); $valid = true; break;
+			case GAUNTLET_C_75:     $win_chance = min(100, $win_chance + 3); $valid = true; break;
+			case GAUNTLET_C_50:     $win_chance = min(100, $win_chance + 2); $valid = true; break;
+			case GAUNTLET_C_25:     $win_chance = min(100, $win_chance + 1); $valid = true; break;
+			case GAUNTLET_C_DOUBLE: $double_reward = true;  $valid = true; break;
+			case GAUNTLET_C_RANDOM: $random_reward = true;  $valid = true; break;
 		}
-	} else {
-		$consumable_id = 0;
+		if ($valid) {
+			updateAmount($conn, $uid, $cid, -1);
+			$used_consumable_ids[] = $cid;
+		}
 	}
 	// Apply weapon (+level% to win chance)
 	if ($weapon_id > 0 && getCurrentGear($conn, $uid, 'weapon', $weapon_id) > 0) {
@@ -9599,15 +9604,18 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$roll    = rand(1, 100);
 	$outcome = ($roll <= $win_chance) ? 'win' : 'loss';
 	// Build SET clause for nullable IDs
-	$c_sql = $consumable_id ? $consumable_id : 'NULL';
-	$w_sql = $weapon_id     ? $weapon_id     : 'NULL';
-	$a_sql = $armor_id      ? $armor_id      : 'NULL';
+	$w_sql = $weapon_id ? $weapon_id : 'NULL';
+	$a_sql = $armor_id  ? $armor_id  : 'NULL';
 	$conn->query("
 		UPDATE gauntlets_encounters
-		SET consumable_id=$c_sql, weapon_id=$w_sql, armor_id=$a_sql,
+		SET weapon_id=$w_sql, armor_id=$a_sql,
 		    outcome='$outcome', resolved_date=NOW()
 		WHERE id=$enc_id
 	");
+	// Record consumables used in the junction table
+	foreach ($used_consumable_ids as $ucid) {
+		$conn->query("INSERT INTO gauntlets_encounters_consumables (encounter_id, consumable_id) VALUES ($enc_id, $ucid)");
+	}
 	// Determine reward project IDs
 	$pr = $conn->query("SELECT c.project_id FROM nfts n INNER JOIN collections c ON c.id=n.collection_id WHERE n.id=".intval($enc['player_nft_id'])." LIMIT 1");
 	$player_project_id   = ($pr && $pr->num_rows) ? intval($pr->fetch_assoc()['project_id']) : 0;
@@ -9668,9 +9676,13 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$wh_currency     = ($wh_curr_r && $wh_curr_r->num_rows) ? $wh_curr_r->fetch_assoc()['currency'] : '';
 	// Items used
 	$wh_items = [];
-	if ($consumable_id > 0) { $ci_r = $conn->query("SELECT name FROM consumables WHERE id=$consumable_id LIMIT 1"); if ($ci_r && $ci_r->num_rows) $wh_items[] = $ci_r->fetch_assoc()['name']; }
-	if ($weapon_id > 0)     { $wi_r = $conn->query("SELECT name FROM weapons WHERE id=$weapon_id LIMIT 1");     if ($wi_r && $wi_r->num_rows) $wh_items[] = $wi_r->fetch_assoc()['name']; }
-	if ($armor_id > 0)      { $ai_r = $conn->query("SELECT name FROM armor WHERE id=$armor_id LIMIT 1");       if ($ai_r && $ai_r->num_rows) $wh_items[] = $ai_r->fetch_assoc()['name']; }
+	if (!empty($used_consumable_ids)) {
+		$cids_sql = implode(',', array_map('intval', $used_consumable_ids));
+		$ci_r = $conn->query("SELECT name FROM consumables WHERE id IN ($cids_sql)");
+		if ($ci_r) while ($ci_row = $ci_r->fetch_assoc()) $wh_items[] = $ci_row['name'];
+	}
+	if ($weapon_id > 0) { $wi_r = $conn->query("SELECT name FROM weapons WHERE id=$weapon_id LIMIT 1"); if ($wi_r && $wi_r->num_rows) $wh_items[] = $wi_r->fetch_assoc()['name']; }
+	if ($armor_id > 0)  { $ai_r = $conn->query("SELECT name FROM armor WHERE id=$armor_id LIMIT 1");   if ($ai_r && $ai_r->num_rows) $wh_items[] = $ai_r->fetch_assoc()['name']; }
 	// Run progress
 	$wh_stats_r  = $conn->query("SELECT SUM(outcome='win') AS wins, SUM(outcome='loss') AS losses FROM gauntlets_encounters WHERE run_id=".intval($enc['run_id']));
 	$wh_stats    = ($wh_stats_r && $wh_stats_r->num_rows) ? $wh_stats_r->fetch_assoc() : ['wins' => 0, 'losses' => 0];

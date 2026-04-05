@@ -38,16 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 	} elseif ($action === 'resolve_encounter') {
-		$enc_id       = intval($_POST['encounter_id']  ?? 0);
-		$consumable_id = intval($_POST['consumable_id'] ?? 0);
-		$weapon_id    = intval($_POST['weapon_id']     ?? 0);
-		$armor_id     = intval($_POST['armor_id']      ?? 0);
+		$enc_id         = intval($_POST['encounter_id'] ?? 0);
+		$consumable_ids = array_values(array_unique(array_map('intval', array_filter((array)($_POST['consumable_ids'] ?? [])))));
+		$weapon_id      = intval($_POST['weapon_id']    ?? 0);
+		$armor_id       = intval($_POST['armor_id']     ?? 0);
 		if ($enc_id > 0) {
-			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_id, $weapon_id, $armor_id);
+			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_ids, $weapon_id, $armor_id);
 			if ($outcome === 'win') {
 				$run  = gauntletGetActiveRun($conn, $user_id);
 				$rw_r = $conn->query("
-					SELECT ge.run_id, ge.consumable_id, op.currency AS opponent_currency
+					SELECT ge.run_id, op.currency AS opponent_currency
 					FROM gauntlets_encounters ge
 					INNER JOIN nfts on2       ON on2.id = ge.opponent_nft_id
 					INNER JOIN collections oc ON oc.id  = on2.collection_id
@@ -58,12 +58,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$rw      = $rw_r->fetch_assoc();
 					$wnum_r2 = $conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters WHERE run_id=".intval($rw['run_id'])." AND outcome='win'");
 					$wnum2   = ($wnum_r2 && $wnum_r2->num_rows) ? intval($wnum_r2->fetch_assoc()['c']) : 1;
-					$is_dbl  = intval($rw['consumable_id']) === GAUNTLET_C_DOUBLE;
+					$enc_cons_r  = $conn->query("SELECT consumable_id FROM gauntlets_encounters_consumables WHERE encounter_id=$enc_id");
+					$enc_cons    = [];
+					if ($enc_cons_r) while ($ecr = $enc_cons_r->fetch_assoc()) $enc_cons[] = intval($ecr['consumable_id']);
+					$is_dbl = in_array(GAUNTLET_C_DOUBLE, $enc_cons);
 					$_SESSION['gauntlet_last_result'] = [
 						'outcome'    => 'win',
 						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
 						'currency'   => $rw['opponent_currency'],
-						'is_random'  => intval($rw['consumable_id']) === GAUNTLET_C_RANDOM,
+						'is_random'  => in_array(GAUNTLET_C_RANDOM, $enc_cons),
 						'win_number' => $wnum2,
 					];
 				}
@@ -428,7 +431,8 @@ if ($state === 'encounter') {
 		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
 		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
 		       pp.currency AS player_currency,
-		       ge.consumable_id, ge.weapon_id, ge.armor_id,
+		       (SELECT GROUP_CONCAT(gec.consumable_id ORDER BY gec.id) FROM gauntlets_encounters_consumables gec WHERE gec.encounter_id = ge.id) AS consumable_ids,
+		       ge.weapon_id, ge.armor_id,
 		       ww.level AS weapon_level, aa.level AS armor_level,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
 		FROM gauntlets_encounters ge
@@ -451,11 +455,12 @@ if ($state === 'encounter') {
 	<div class="history-list">
 	<?php $hist_win_count = 0; while ($hr = $hist_r->fetch_assoc()):
 		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
-		$is_double    = intval($hr['consumable_id']) === GAUNTLET_C_DOUBLE;
-		$is_random    = intval($hr['consumable_id']) === GAUNTLET_C_RANDOM;
+		$hr_cons      = $hr['consumable_ids'] ? array_map('intval', explode(',', $hr['consumable_ids'])) : [];
+		$is_double    = in_array(GAUNTLET_C_DOUBLE, $hr_cons);
+		$is_random    = in_array(GAUNTLET_C_RANDOM, $hr_cons);
 		if ($hr['outcome'] === 'win') $hist_win_count++;
 		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
-		$cons_bonus   = $consumable_bonuses[intval($hr['consumable_id'])] ?? 0;
+		$cons_bonus   = 0; foreach ($hr_cons as $hc) $cons_bonus += ($consumable_bonuses[$hc] ?? 0);
 		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
 		if ($hr['outcome'] === 'win') {
 			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['opponent_currency']) . '.png';
@@ -574,9 +579,8 @@ if ($state === 'encounter') {
 	<form method="POST" id="fight-form">
 		<input type="hidden" name="action" value="resolve_encounter">
 		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
-		<input type="hidden" name="consumable_id" id="fight-consumable" value="0">
-		<input type="hidden" name="weapon_id"     id="fight-weapon"    value="0">
-		<input type="hidden" name="armor_id"      id="fight-armor"     value="0">
+		<input type="hidden" name="weapon_id" id="fight-weapon" value="0">
+		<input type="hidden" name="armor_id"  id="fight-armor"  value="0">
 		<button type="button" class="btn-fight" onclick="startFight()">&#x2694; Fight!</button>
 	</form>
 
@@ -704,7 +708,8 @@ if ($state === 'encounter') {
 		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
 		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
 		       pp.currency AS player_currency,
-		       ge.consumable_id, ge.weapon_id, ge.armor_id,
+		       (SELECT GROUP_CONCAT(gec.consumable_id ORDER BY gec.id) FROM gauntlets_encounters_consumables gec WHERE gec.encounter_id = ge.id) AS consumable_ids,
+		       ge.weapon_id, ge.armor_id,
 		       ww.level AS weapon_level, aa.level AS armor_level,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
 		FROM gauntlets_encounters ge
@@ -727,11 +732,12 @@ if ($state === 'encounter') {
 	<div class="history-list">
 	<?php $hist_win_count = 0; while ($hr = $hist_r->fetch_assoc()):
 		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
-		$is_double    = intval($hr['consumable_id']) === GAUNTLET_C_DOUBLE;
-		$is_random    = intval($hr['consumable_id']) === GAUNTLET_C_RANDOM;
+		$hr_cons      = $hr['consumable_ids'] ? array_map('intval', explode(',', $hr['consumable_ids'])) : [];
+		$is_double    = in_array(GAUNTLET_C_DOUBLE, $hr_cons);
+		$is_random    = in_array(GAUNTLET_C_RANDOM, $hr_cons);
 		if ($hr['outcome'] === 'win') $hist_win_count++;
 		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
-		$cons_bonus   = $consumable_bonuses[intval($hr['consumable_id'])] ?? 0;
+		$cons_bonus   = 0; foreach ($hr_cons as $hc) $cons_bonus += ($consumable_bonuses[$hc] ?? 0);
 		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
 		if ($hr['outcome'] === 'win') {
 			$reward_icon  = $is_random ? null : 'icons/' . strtolower($hr['opponent_currency']) . '.png';
@@ -818,8 +824,16 @@ function dismissResult() {
 
 // Fight animation — show suspense overlay, then submit
 function startFight() {
+	// Inject consumable_ids[] hidden inputs for all selected consumables
+	var form = document.getElementById('fight-form');
+	form.querySelectorAll('input[name="consumable_ids[]"]').forEach(function(el) { el.remove(); });
+	document.querySelectorAll('.resource-item[data-type="consumable"][data-selected="1"]').forEach(function(el) {
+		var inp = document.createElement('input');
+		inp.type = 'hidden'; inp.name = 'consumable_ids[]'; inp.value = el.dataset.id;
+		form.appendChild(inp);
+	});
 	var overlay = document.getElementById('fight-reveal-overlay');
-	if (!overlay) { document.getElementById('fight-form').submit(); return; }
+	if (!overlay) { form.submit(); return; }
 	overlay.classList.add('active');
 	// Shake both cards after a short beat
 	var timer1 = setTimeout(function() {
@@ -853,25 +867,29 @@ function pickCard(nftId) {
 
 var gauntletBaseOdds = <?php echo isset($win_chance_display) ? intval($win_chance_display) : 0; ?>;
 
-// Resource selection — 1 per type; types are independent
+// Resource selection — consumables are multi-select (toggle); weapon/armor are single-select
 function selectResource(type, id, el) {
 	const alreadySelected = el.dataset.selected === '1';
-	// Deselect all items of this type only
-	document.querySelectorAll('.resource-item[data-type="' + type + '"]').forEach(i => { i.classList.remove('selected'); i.dataset.selected = '0'; });
-	if (!alreadySelected) {
-		el.classList.add('selected');
-		el.dataset.selected = '1';
-		if (type === 'consumable') document.getElementById('fight-consumable').value = id;
-		if (type === 'weapon')     document.getElementById('fight-weapon').value     = id;
-		if (type === 'armor')      document.getElementById('fight-armor').value      = id;
+	if (type === 'consumable') {
+		// Toggle this consumable independently
+		el.classList.toggle('selected', !alreadySelected);
+		el.dataset.selected = alreadySelected ? '0' : '1';
 	} else {
-		if (type === 'consumable') document.getElementById('fight-consumable').value = 0;
-		if (type === 'weapon')     document.getElementById('fight-weapon').value     = 0;
-		if (type === 'armor')      document.getElementById('fight-armor').value      = 0;
+		// Weapon/armor: radio-style (1 per type)
+		document.querySelectorAll('.resource-item[data-type="' + type + '"]').forEach(i => { i.classList.remove('selected'); i.dataset.selected = '0'; });
+		if (!alreadySelected) {
+			el.classList.add('selected');
+			el.dataset.selected = '1';
+			if (type === 'weapon') document.getElementById('fight-weapon').value = id;
+			if (type === 'armor')  document.getElementById('fight-armor').value  = id;
+		} else {
+			if (type === 'weapon') document.getElementById('fight-weapon').value = 0;
+			if (type === 'armor')  document.getElementById('fight-armor').value  = 0;
+		}
 	}
-	// Update tab dot indicator
+	// Update tab dot indicator — lit if any item of this type is selected
 	var tabBtn = document.getElementById('tab-btn-' + type);
-	if (tabBtn) tabBtn.classList.toggle('has-selection', !alreadySelected);
+	if (tabBtn) tabBtn.classList.toggle('has-selection', document.querySelectorAll('.resource-item[data-type="' + type + '"][data-selected="1"]').length > 0);
 	updateOddsDisplay();
 }
 
