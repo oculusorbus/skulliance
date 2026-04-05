@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				// Store reward details so pick_card screen can display them
 				$rw_r = $conn->query("
 					SELECT ge.consumable_id, op.currency AS opponent_currency
-					FROM gauntlet_encounters ge
+					FROM gauntlets_encounters ge
 					INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 					INNER JOIN collections oc ON oc.id = on2.collection_id
 					INNER JOIN projects op   ON op.id  = oc.project_id
@@ -329,8 +329,8 @@ if ($state === 'encounter') {
 		       pp.currency AS player_currency,
 		       ge.consumable_id, ge.weapon_id, ge.armor_id,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
-		FROM gauntlet_encounters ge
-		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
+		FROM gauntlets_encounters ge
+		INNER JOIN gauntlets_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
 		INNER JOIN collections pc ON pc.id = pn.collection_id
 		INNER JOIN projects pp   ON pp.id  = pc.project_id
@@ -574,8 +574,8 @@ if ($state === 'encounter') {
 		       pp.currency AS player_currency,
 		       ge.consumable_id,
 		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
-		FROM gauntlet_encounters ge
-		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
+		FROM gauntlets_encounters ge
+		INNER JOIN gauntlets_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
 		INNER JOIN collections pc ON pc.id = pn.collection_id
 		INNER JOIN projects pp   ON pp.id  = pc.project_id

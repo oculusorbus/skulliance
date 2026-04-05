@@ -9322,8 +9322,8 @@ function gauntletGetUsedNFTIdsThisWeek($conn, $user_id) {
 	$week_start = gauntletGetWeekStart();
 	$r = $conn->query("
 		SELECT DISTINCT ge.player_nft_id
-		FROM gauntlet_encounters ge
-		INNER JOIN gauntlet_runs gr ON gr.id = ge.run_id
+		FROM gauntlets_encounters ge
+		INNER JOIN gauntlets gr ON gr.id = ge.run_id
 		WHERE gr.user_id = $uid AND ge.created_date >= '$week_start'
 	");
 	$ids = [];
@@ -9334,9 +9334,9 @@ function gauntletGetUsedNFTIdsThisWeek($conn, $user_id) {
 // True if run has a resolved loss OR 3 resolved wins
 function gauntletIsRunOver($conn, $run_id) {
 	$rid = intval($run_id);
-	$r = $conn->query("SELECT id FROM gauntlet_encounters WHERE run_id=$rid AND outcome='loss' AND resolved_date IS NOT NULL LIMIT 1");
+	$r = $conn->query("SELECT id FROM gauntlets_encounters WHERE run_id=$rid AND outcome='loss' AND resolved_date IS NOT NULL LIMIT 1");
 	if ($r && $r->num_rows) return true;
-	$r = $conn->query("SELECT COUNT(*) AS w FROM gauntlet_encounters WHERE run_id=$rid AND outcome='win' AND resolved_date IS NOT NULL");
+	$r = $conn->query("SELECT COUNT(*) AS w FROM gauntlets_encounters WHERE run_id=$rid AND outcome='win' AND resolved_date IS NOT NULL");
 	if ($r && intval($r->fetch_assoc()['w']) >= GAUNTLET_MAX_WINS) return true;
 	return false;
 }
@@ -9344,7 +9344,7 @@ function gauntletIsRunOver($conn, $run_id) {
 // Most recent run for user regardless of state (for results display)
 function gauntletGetMostRecentRun($conn, $user_id) {
 	$uid = intval($user_id);
-	$r   = $conn->query("SELECT * FROM gauntlet_runs WHERE user_id=$uid ORDER BY id DESC LIMIT 1");
+	$r   = $conn->query("SELECT * FROM gauntlets WHERE user_id=$uid ORDER BY id DESC LIMIT 1");
 	if ($r && $r->num_rows) return $r->fetch_assoc();
 	return null;
 }
@@ -9365,7 +9365,7 @@ function gauntletGetRunStats($conn, $run_id) {
 			COUNT(*) AS total,
 			SUM(CASE WHEN outcome='win'  THEN 1 ELSE 0 END) AS wins,
 			SUM(CASE WHEN outcome='loss' THEN 1 ELSE 0 END) AS losses
-		FROM gauntlet_encounters
+		FROM gauntlets_encounters
 		WHERE run_id=$rid AND outcome != 'pending'
 	");
 	if ($r) return $r->fetch_assoc();
@@ -9387,13 +9387,13 @@ function gauntletStartRun($conn, $user_id) {
 		LIMIT " . GAUNTLET_HAND_SIZE . "
 	");
 	if (!$r || !$r->num_rows) return false;
-	$conn->query("INSERT INTO gauntlet_runs (user_id) VALUES ($uid)");
+	$conn->query("INSERT INTO gauntlets (user_id) VALUES ($uid)");
 	$run_id = intval($conn->insert_id);
 	if (!$run_id) return false;
 	while ($row = $r->fetch_assoc()) {
 		$nft_id  = intval($row['id']);
 		$eff_id  = gauntletGetEffectiveProjectId(intval($row['project_id']));
-		$conn->query("INSERT INTO gauntlet_run_nfts (run_id, nft_id, effective_project_id) VALUES ($run_id, $nft_id, $eff_id)");
+		$conn->query("INSERT INTO gauntlets_nfts (run_id, nft_id, effective_project_id) VALUES ($run_id, $nft_id, $eff_id)");
 	}
 	return $run_id;
 }
@@ -9401,13 +9401,13 @@ function gauntletStartRun($conn, $user_id) {
 // Hand NFTs for a run with a 'played' flag for NFTs already in encounters
 function gauntletGetHand($conn, $run_id) {
 	$rid = intval($run_id);
-	$played_r = $conn->query("SELECT player_nft_id FROM gauntlet_encounters WHERE run_id=$rid");
+	$played_r = $conn->query("SELECT player_nft_id FROM gauntlets_encounters WHERE run_id=$rid");
 	$played   = [];
 	if ($played_r) while ($row = $played_r->fetch_assoc()) $played[] = intval($row['player_nft_id']);
 	$r = $conn->query("
 		SELECT n.id, n.name, n.ipfs, n.collection_id, c.project_id,
 		       p.name AS project_name, p.currency
-		FROM gauntlet_run_nfts grn
+		FROM gauntlets_nfts grn
 		INNER JOIN nfts n        ON n.id   = grn.nft_id
 		INNER JOIN collections c ON c.id   = n.collection_id
 		INNER JOIN projects p    ON p.id   = c.project_id
@@ -9437,8 +9437,8 @@ function gauntletGetPendingEncounter($conn, $run_id) {
 		       ou.username   AS opponent_username,
 		       ou.discord_id AS opponent_discord_id,
 		       ou.avatar     AS opponent_avatar
-		FROM gauntlet_encounters ge
-		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
+		FROM gauntlets_encounters ge
+		INNER JOIN gauntlets_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections pc ON pc.id = pn.collection_id
@@ -9460,7 +9460,7 @@ function gauntletSelectOpponent($conn, $user_id, $run_id) {
 	$used_projects = [];
 	$r = $conn->query("
 		SELECT DISTINCT c.project_id
-		FROM gauntlet_encounters ge
+		FROM gauntlets_encounters ge
 		INNER JOIN nfts n        ON n.id = ge.opponent_nft_id
 		INNER JOIN collections c ON c.id = n.collection_id
 		WHERE ge.run_id = $rid
@@ -9495,14 +9495,14 @@ function gauntletStartEncounter($conn, $user_id, $run_id, $nft_id) {
 	$nft_id = intval($nft_id);
 	// Verify NFT is in this run's hand, belongs to user, and read locked effective_project_id
 	$r = $conn->query("
-		SELECT grn.effective_project_id FROM gauntlet_run_nfts grn
+		SELECT grn.effective_project_id FROM gauntlets_nfts grn
 		INNER JOIN nfts n ON n.id = grn.nft_id
 		WHERE grn.run_id=$rid AND grn.nft_id=$nft_id AND n.user_id=$uid LIMIT 1
 	");
 	if (!$r || !$r->num_rows) return false;
 	$player_eff = intval($r->fetch_assoc()['effective_project_id']);
 	// Verify not already played in this run
-	$r2 = $conn->query("SELECT id FROM gauntlet_encounters WHERE run_id=$rid AND player_nft_id=$nft_id LIMIT 1");
+	$r2 = $conn->query("SELECT id FROM gauntlets_encounters WHERE run_id=$rid AND player_nft_id=$nft_id LIMIT 1");
 	if ($r2 && $r2->num_rows) return false;
 	// Select opponent
 	$opponent = gauntletSelectOpponent($conn, $uid, $rid);
@@ -9511,7 +9511,7 @@ function gauntletStartEncounter($conn, $user_id, $run_id, $nft_id) {
 	$opp_nft_id   = intval($opponent['id']);
 	$opp_user_id  = intval($opponent['user_id']);
 	$conn->query("
-		INSERT INTO gauntlet_encounters
+		INSERT INTO gauntlets_encounters
 		(run_id, player_nft_id, opponent_user_id, opponent_nft_id, opponent_effective_project_id)
 		VALUES ($rid, $nft_id, $opp_user_id, $opp_nft_id, $opp_eff)
 	");
@@ -9524,24 +9524,24 @@ function gauntletFastForward($conn, $user_id, $encounter_id, $new_nft_id) {
 	$enc_id = intval($encounter_id);
 	$new_id = intval($new_nft_id);
 	// Get pending encounter
-	$r = $conn->query("SELECT * FROM gauntlet_encounters WHERE id=$enc_id AND outcome='pending' LIMIT 1");
+	$r = $conn->query("SELECT * FROM gauntlets_encounters WHERE id=$enc_id AND outcome='pending' LIMIT 1");
 	if (!$r || !$r->num_rows) return false;
 	$enc = $r->fetch_assoc();
 	$rid = intval($enc['run_id']);
 	// Verify user owns the run
-	$r2 = $conn->query("SELECT id FROM gauntlet_runs WHERE id=$rid AND user_id=$uid LIMIT 1");
+	$r2 = $conn->query("SELECT id FROM gauntlets WHERE id=$rid AND user_id=$uid LIMIT 1");
 	if (!$r2 || !$r2->num_rows) return false;
 	// Verify user has Fast Forward
 	if (getCurrentAmount($conn, $uid, GAUNTLET_C_FF) < 1) return false;
 	// Verify new NFT is in hand, not already played, and read locked effective_project_id
-	$r3 = $conn->query("SELECT effective_project_id FROM gauntlet_run_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
+	$r3 = $conn->query("SELECT effective_project_id FROM gauntlets_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
 	if (!$r3 || !$r3->num_rows) return false;
 	$new_eff = intval($r3->fetch_assoc()['effective_project_id']);
-	$r4 = $conn->query("SELECT id FROM gauntlet_encounters WHERE run_id=$rid AND player_nft_id=$new_id AND id!=$enc_id LIMIT 1");
+	$r4 = $conn->query("SELECT id FROM gauntlets_encounters WHERE run_id=$rid AND player_nft_id=$new_id AND id!=$enc_id LIMIT 1");
 	if ($r4 && $r4->num_rows) return false;
 	// Deduct FF consumable and update encounter
 	updateAmount($conn, $uid, GAUNTLET_C_FF, -1);
-	$conn->query("UPDATE gauntlet_encounters SET player_nft_id=$new_id WHERE id=$enc_id");
+	$conn->query("UPDATE gauntlets_encounters SET player_nft_id=$new_id WHERE id=$enc_id");
 	return true;
 }
 
@@ -9553,14 +9553,14 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$weapon_id     = intval($weapon_id);
 	$armor_id      = intval($armor_id);
 	// Load encounter
-	$r = $conn->query("SELECT * FROM gauntlet_encounters WHERE id=$enc_id AND outcome='pending' LIMIT 1");
+	$r = $conn->query("SELECT * FROM gauntlets_encounters WHERE id=$enc_id AND outcome='pending' LIMIT 1");
 	if (!$r || !$r->num_rows) return false;
 	$enc = $r->fetch_assoc();
 	// Verify run belongs to user
-	$r2 = $conn->query("SELECT id FROM gauntlet_runs WHERE id=".intval($enc['run_id'])." AND user_id=$uid LIMIT 1");
+	$r2 = $conn->query("SELECT id FROM gauntlets WHERE id=".intval($enc['run_id'])." AND user_id=$uid LIMIT 1");
 	if (!$r2 || !$r2->num_rows) return false;
 	// Base win chance — read player effective_project_id from locked hand record
-	$peff_r     = $conn->query("SELECT effective_project_id FROM gauntlet_run_nfts WHERE run_id=".intval($enc['run_id'])." AND nft_id=".intval($enc['player_nft_id'])." LIMIT 1");
+	$peff_r     = $conn->query("SELECT effective_project_id FROM gauntlets_nfts WHERE run_id=".intval($enc['run_id'])." AND nft_id=".intval($enc['player_nft_id'])." LIMIT 1");
 	$player_eff = ($peff_r && $peff_r->num_rows) ? intval($peff_r->fetch_assoc()['effective_project_id']) : 0;
 	$win_chance = gauntletCalculateWinChance($player_eff, intval($enc['opponent_effective_project_id']));
 	$double_reward = false;
@@ -9603,7 +9603,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$w_sql = $weapon_id     ? $weapon_id     : 'NULL';
 	$a_sql = $armor_id      ? $armor_id      : 'NULL';
 	$conn->query("
-		UPDATE gauntlet_encounters
+		UPDATE gauntlets_encounters
 		SET consumable_id=$c_sql, weapon_id=$w_sql, armor_id=$a_sql,
 		    outcome='$outcome', resolved_date=NOW()
 		WHERE id=$enc_id
