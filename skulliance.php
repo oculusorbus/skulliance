@@ -971,37 +971,37 @@ function filterLeaderboard($page){
 				<option value="activity-monthly">'.date('F').' Activity</option>
 				<option value="activity-weekly">Weekly Activity</option>
 			</optgroup>
-			<optgroup label="Factions">
-				<option value="factions">All Factions</option>
-				<option value="monthly-factions">'.date('F').' Factions</option>
-			</optgroup>
-			<optgroup label="Raids">
-				<option value="raids">All Raids</option>
-				<option value="monthly-raids">'.date('F').' Raids</option>
+			<optgroup label="Daily Rewards">
+				<option value="streaks">All Streaks</option>
+				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
 			<optgroup label="Missions">
 				<option value="missions">All Missions</option>
 				<option value="monthly">'.date('F').' Missions</option>
 			</optgroup>
-			<optgroup label="Skull Swaps">
-				<option value="swaps">All Skull Swaps</option>
-				<option value="weekly-swaps">Weekly Skull Swaps</option>
+			<optgroup label="Raids">
+				<option value="raids">All Raids</option>
+				<option value="monthly-raids">'.date('F').' Raids</option>
 			</optgroup>
-			<optgroup label="Boss Battles">
-				<option value="bosses">All Boss Battles</option>
-				<option value="weekly-bosses">Weekly Boss Battles</option>
+			<optgroup label="Factions">
+				<option value="factions">All Factions</option>
+				<option value="monthly-factions">'.date('F').' Factions</option>
 			</optgroup>
 			<optgroup label="Gauntlets">
 				<option value="gauntlets">All Gauntlets</option>
 				<option value="weekly-gauntlets">Weekly Gauntlets</option>
 			</optgroup>
+			<optgroup label="Skull Swaps">
+				<option value="swaps">All Skull Swaps</option>
+				<option value="weekly-swaps">Weekly Skull Swaps</option>
+			</optgroup>
 			<optgroup label="Monstrocity">
 				<option value="monstrocity">All Monstrocity</option>
 				<option value="monthly-monstrocity">'.date('F').' Monstrocity</option>
 			</optgroup>
-			<optgroup label="Daily Rewards">
-				<option value="streaks">All Streaks</option>
-				<option value="monthly-streaks">'.date('F').' Streaks</option>
+			<optgroup label="Boss Battles">
+				<option value="bosses">All Boss Battles</option>
+				<option value="weekly-bosses">Weekly Boss Battles</option>
 			</optgroup>
 			<optgroup label="Diamond Skulls">
 				<option value="15">Delegations</option>
