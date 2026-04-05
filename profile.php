@@ -43,45 +43,6 @@ $profile_avatar = "https://cdn.discordapp.com/avatars/{$profile_user['discord_id
 $display_name   = htmlspecialchars($profile_user['username']);
 $member_since   = date('M Y', strtotime($profile_user['date_created']));
 
-// Build basic OG tags from what we already know — flush to browser before heavy queries
-$og_title = "{$display_name}'s Skulliance Profile";
-$og_url   = "https://www.skulliance.io/staking/profile.php?username=" . urlencode($profile_user['username']);
-$extra_head = "
-<meta property='og:type'        content='profile' />
-<meta property='og:site_name'   content='Skulliance' />
-<meta property='og:title'       content='" . htmlspecialchars($og_title, ENT_QUOTES) . "' />
-<meta property='og:description' content='Skulliance community player profile.' />
-<meta property='og:image'       content='https://www.skulliance.io/staking/images/og.jpg' />
-<meta property='og:url'         content='" . htmlspecialchars($og_url, ENT_QUOTES) . "' />
-<meta name='twitter:card'  content='summary_large_image' />
-<meta name='twitter:title' content='" . htmlspecialchars($og_title, ENT_QUOTES) . "' />
-<meta name='twitter:image' content='https://www.skulliance.io/staking/images/og.jpg' />
-";
-header('X-Accel-Buffering: no');
-include 'header.php';
-?>
-<style>
-#profile-loader {
-    position: fixed; inset: 0;
-    background: #07111d;
-    z-index: 9999;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 20px;
-    transition: opacity 0.5s ease;
-}
-#profile-loader.fade-out { opacity: 0; pointer-events: none; }
-@keyframes pl-bar { to { width: 90%; } }
-.pl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
-.pl-bar      { height: 100%; background: #00c8a0; width: 0%; animation: pl-bar 10s ease-out forwards; }
-.pl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
-</style>
-<div id="profile-loader">
-    <div style="font-size:3rem;">&#x1F480;</div>
-    <div class="pl-bar-wrap"><div class="pl-bar"></div></div>
-    <div class="pl-text">Loading Profile</div>
-</div>
-<?php if (ob_get_level() > 0) { ob_flush(); flush(); }
-
 // ── Missions ───────────────────────────────────────────────────────────────
 
 $mis_r = $conn->query("SELECT
@@ -575,7 +536,57 @@ $is_member   = $core_count >= 3;
 
 // ── Open Graph / Twitter Card meta tags ───────────────────────────────────
 
+$og_title = "{$display_name}'s Skulliance Profile";
+$og_parts = [];
+if ($missions_completed > 0) $og_parts[] = "⚔️ {$missions_completed} missions";
+if ($raid_wins > 0)          $og_parts[] = "🏰 {$raid_wins} raid wins";
+if ($boss_dealt > 0)         $og_parts[] = "☠️ " . number_format($boss_dealt) . " boss damage";
+if ($mono_best_score > 0)    $og_parts[] = "🎮 " . number_format($mono_best_score) . " Match 3";
+if ($swap_best_score > 0)    $og_parts[] = "💀 " . number_format($swap_best_score) . " Skull Swap";
+$og_description = implode(' · ', $og_parts) ?: "Skulliance community player profile.";
+$og_image = "https://www.skulliance.io/staking/images/og.jpg";
+if ($realm_theme_id) {
+    $og_image = "https://www.skulliance.io/staking/images/themes/{$realm_theme_id}.jpg";
+}
+$og_url = "https://www.skulliance.io/staking/profile.php?username=" . urlencode($profile_user['username']);
+
+$extra_head = "
+<meta property='og:type'        content='profile' />
+<meta property='og:site_name'   content='Skulliance' />
+<meta property='og:title'       content='" . htmlspecialchars($og_title, ENT_QUOTES) . "' />
+<meta property='og:description' content='" . htmlspecialchars($og_description, ENT_QUOTES) . "' />
+<meta property='og:image'       content='" . htmlspecialchars($og_image, ENT_QUOTES) . "' />
+<meta property='og:url'         content='" . htmlspecialchars($og_url, ENT_QUOTES) . "' />
+<meta name='twitter:card'        content='summary_large_image' />
+<meta name='twitter:title'       content='" . htmlspecialchars($og_title, ENT_QUOTES) . "' />
+<meta name='twitter:description' content='" . htmlspecialchars($og_description, ENT_QUOTES) . "' />
+<meta name='twitter:image'       content='" . htmlspecialchars($og_image, ENT_QUOTES) . "' />
+";
+
+header('X-Accel-Buffering: no');
+include 'header.php';
 ?>
+<style>
+#profile-loader {
+    position: fixed; inset: 0;
+    background: #07111d;
+    z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    transition: opacity 0.5s ease;
+}
+#profile-loader.fade-out { opacity: 0; pointer-events: none; }
+@keyframes pl-bar { to { width: 90%; } }
+.pl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.pl-bar      { height: 100%; background: #00c8a0; width: 0%; animation: pl-bar 10s ease-out forwards; }
+.pl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
+</style>
+<div id="profile-loader">
+    <div style="font-size:3rem;">&#x1F480;</div>
+    <div class="pl-bar-wrap"><div class="pl-bar"></div></div>
+    <div class="pl-text">Loading Profile</div>
+</div>
+<?php if (ob_get_level() > 0) { ob_flush(); flush(); } ?>
 <style>
 /* ── Profile Page ────────────────────────────────────────────────────────── */
 
