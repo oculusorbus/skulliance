@@ -9515,33 +9515,7 @@ function gauntletStartEncounter($conn, $user_id, $run_id, $nft_id) {
 		(run_id, player_nft_id, opponent_user_id, opponent_nft_id, opponent_effective_project_id)
 		VALUES ($rid, $nft_id, $opp_user_id, $opp_nft_id, $opp_eff)
 	");
-	$enc_insert_id = intval($conn->insert_id);
-	// Webhook — encounter begins
-	$wh_username = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
-	$wh_discord  = $_SESSION['userData']['discord_id'] ?? '';
-	$wh_avatar   = $_SESSION['userData']['avatar']     ?? '';
-	$wh_mention  = $wh_discord ? "<@$wh_discord>" : $wh_username;
-	$wh_ava_url  = ($wh_discord && $wh_avatar) ? "https://cdn.discordapp.com/avatars/$wh_discord/$wh_avatar.png" : "";
-	$wh_profile  = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_username);
-	$wh_pnft_r   = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id WHERE n.id=$nft_id LIMIT 1");
-	$wh_pnft     = ($wh_pnft_r && $wh_pnft_r->num_rows) ? $wh_pnft_r->fetch_assoc() : [];
-	$wh_player_img = !empty($wh_pnft) ? getIPFS($wh_pnft['ipfs'], $wh_pnft['collection_id'], $wh_pnft['project_id']) : "";
-	$wh_onft_r   = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name, u.username AS opp_username, u.discord_id AS opp_discord FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id INNER JOIN users u ON u.id=n.user_id WHERE n.id=$opp_nft_id LIMIT 1");
-	$wh_onft     = ($wh_onft_r && $wh_onft_r->num_rows) ? $wh_onft_r->fetch_assoc() : [];
-	$wh_opp_uname   = $wh_onft['opp_username'] ?? 'Unknown';
-	$wh_opp_discord = $wh_onft['opp_discord']  ?? '';
-	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord>" : $wh_opp_uname;
-	$wh_win_chance  = gauntletCalculateWinChance($player_eff, $opp_eff);
-	$wh_wins_r   = $conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters WHERE run_id=$rid AND outcome='win'");
-	$wh_wins_so_far = ($wh_wins_r && $wh_wins_r->num_rows) ? intval($wh_wins_r->fetch_assoc()['c']) : 0;
-	$wh_desc  = $wh_mention . " steps into the arena!\n\n";
-	$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
-	$wh_desc .= "💀 **Opponent:** " . ($wh_onft['name'] ?? 'Unknown') . " (" . ($wh_onft['project_name'] ?? '') . ")\n";
-	$wh_desc .= "👤 **Defending:** $wh_opp_mention\n";
-	$wh_desc .= "🎯 **Base Win Chance:** $wh_win_chance%\n";
-	$wh_desc .= "🏆 **Progress:** $wh_wins_so_far / " . GAUNTLET_MAX_WINS . " wins";
-	discordmsg("🃏 Encounter Begins", $wh_desc, $wh_player_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, "FF9900", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
-	return $enc_insert_id;
+	return intval($conn->insert_id);
 }
 
 // Swap player's card mid-encounter using a Fast Forward consumable
