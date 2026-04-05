@@ -43,8 +43,6 @@ $oauth_url = 'https://www.printful.com/oauth/authorize?'
         'response_type' => 'code',
     ]);
 
-echo $oauth_url; exit;
-
 header('X-Accel-Buffering: no');
 include 'header.php';
 

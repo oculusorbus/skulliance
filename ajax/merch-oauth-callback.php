@@ -59,7 +59,7 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'code'          => $code,
     'client_id'     => PRINTFUL_CLIENT_ID,
     'client_secret' => PRINTFUL_CLIENT_SECRET,
-    'redirect_uri'  => PRINTFUL_REDIRECT_URI,
+    'redirect_url'  => PRINTFUL_REDIRECT_URI,
 ]));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_TIMEOUT, 15);
