@@ -9822,7 +9822,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		if ($random_reward) $wh_desc .= " *(Random Currency)*";
 		$wh_desc .= "\n🏆 **Win #$wh_wins** of " . GAUNTLET_MAX_WINS;
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	} else {
 		$wh_desc  = $wh_mention . " was defeated by $wh_opp_mention — run ends here.\n\n";
 		$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
@@ -9831,7 +9831,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$wh_desc .= "💰 **Opponent Earns:** " . number_format($reward) . " $wh_currency\n";
 		$wh_desc .= "🏆 **Final Record:** $wh_wins win" . ($wh_wins !== 1 ? "s" : "") . " / " . intval($wh_stats['losses']) . " loss" . (intval($wh_stats['losses']) !== 1 ? "es" : "");
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	}
 	return $outcome;
 }
