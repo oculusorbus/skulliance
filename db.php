@@ -5025,7 +5025,7 @@ function checkGauntletsLeaderboard($conn, $weekly=false, $rewards=false) {
 
 		if ($rewards) {
 			resetGauntlets($conn);
-			discordmsg("⚔️ Weekly Gauntlet Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+			discordmsg("⚔️ Weekly Gauntlet Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php", "gauntlet", "", "FFD700");
 		}
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();
