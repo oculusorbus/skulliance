@@ -85,6 +85,16 @@ $gear_inventory = ($state === 'encounter') ? getGearInventory($conn, $user_id) :
 $weapons_inv = array_filter($gear_inventory, fn($g) => $g['type'] === 'weapon' && $g['quantity'] > 0);
 $armor_inv   = array_filter($gear_inventory, fn($g) => $g['type'] === 'armor'  && $g['quantity'] > 0);
 
+// Effect labels shown in resource panel
+$consumable_effects = [
+	GAUNTLET_C_100    => '+4% win chance',
+	GAUNTLET_C_75     => '+3% win chance',
+	GAUNTLET_C_50     => '+2% win chance',
+	GAUNTLET_C_25     => '+1% win chance',
+	GAUNTLET_C_DOUBLE => '2× rewards',
+	GAUNTLET_C_RANDOM => 'random project reward',
+];
+
 // Consumable inventory for encounter resource panel (exclude Fast Forward)
 $consumables_inv = [];
 if ($state === 'encounter') {
@@ -407,7 +417,12 @@ if ($state === 'encounter') {
 				?>
 				<div class="resource-item" onclick="selectResource('consumable', <?php echo intval($ci['consumable_id']); ?>, this)" data-type="consumable" data-id="<?php echo intval($ci['consumable_id']); ?>">
 					<img src="<?php echo htmlspecialchars($icon); ?>" onerror="this.style.display='none'">
-					<span class="resource-item-name"><?php echo htmlspecialchars($ci['name']); ?></span>
+					<span class="resource-item-name">
+						<?php echo htmlspecialchars($ci['name']); ?>
+						<?php if (isset($consumable_effects[intval($ci['consumable_id'])])): ?>
+						<span style="color:rgba(255,255,255,.35); font-size:.7rem; margin-left:6px;"><?php echo $consumable_effects[intval($ci['consumable_id'])]; ?></span>
+						<?php endif; ?>
+					</span>
 					<span class="resource-item-qty">x<?php echo intval($ci['amount']); ?></span>
 				</div>
 				<?php endforeach; ?>

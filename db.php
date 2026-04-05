@@ -9568,10 +9568,10 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	// Apply consumable (1 max; FF handled separately, not stored here)
 	if ($consumable_id > 0 && $consumable_id != GAUNTLET_C_FF && getCurrentAmount($conn, $uid, $consumable_id) > 0) {
 		switch ($consumable_id) {
-			case GAUNTLET_C_100:    $win_chance = 100;                         updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_75:     $win_chance = max($win_chance, 75);        updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_50:     $win_chance = max($win_chance, 50);        updateAmount($conn, $uid, $consumable_id, -1); break;
-			case GAUNTLET_C_25:     $win_chance = max($win_chance, 25);        updateAmount($conn, $uid, $consumable_id, -1); break;
+			case GAUNTLET_C_100:    $win_chance = min(100, $win_chance + 4);    updateAmount($conn, $uid, $consumable_id, -1); break;
+			case GAUNTLET_C_75:     $win_chance = min(100, $win_chance + 3);    updateAmount($conn, $uid, $consumable_id, -1); break;
+			case GAUNTLET_C_50:     $win_chance = min(100, $win_chance + 2);    updateAmount($conn, $uid, $consumable_id, -1); break;
+			case GAUNTLET_C_25:     $win_chance = min(100, $win_chance + 1);    updateAmount($conn, $uid, $consumable_id, -1); break;
 			case GAUNTLET_C_DOUBLE: $double_reward = true;                     updateAmount($conn, $uid, $consumable_id, -1); break;
 			case GAUNTLET_C_RANDOM: $random_reward = true;                     updateAmount($conn, $uid, $consumable_id, -1); break;
 			default: $consumable_id = 0;
