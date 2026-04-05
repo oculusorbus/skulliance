@@ -4405,7 +4405,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 			$last_month = date('F', strtotime('last month'));
 			$title = $last_month." Raids Leaderboard Results";
 			$imageurl = "";
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "raids");
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		renderLeaderboardList($lb_rows);
 		if($fireworks){
@@ -4557,7 +4557,7 @@ function checkFactionsLeaderboard($conn, $monthly=false, $rewards=false){
 			$last_month = date('F', strtotime('last month'));
 			$title = $last_month." Factions Leaderboard Results";
 			$imageurl = "";
-			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking", "realms");
+			discordmsg($title, $description, $imageurl, "https://skulliance.io/staking");
 		}
 		renderLeaderboardList($lb_rows);
 		if($fireworks){
@@ -5025,7 +5025,7 @@ function checkGauntletsLeaderboard($conn, $weekly=false, $rewards=false) {
 
 		if ($rewards) {
 			resetGauntlets($conn);
-			discordmsg("⚔️ Weekly Gauntlet Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php", "gauntlet", "", "FFD700");
+			discordmsg("⚔️ Weekly Gauntlet Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
 		}
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();
