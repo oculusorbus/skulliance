@@ -449,11 +449,12 @@ if ($state === 'encounter') {
 	?>
 	<div class="section-heading">Run History</div>
 	<div class="history-list">
-	<?php while ($hr = $hist_r->fetch_assoc()):
+	<?php $hist_win_count = 0; while ($hr = $hist_r->fetch_assoc()):
 		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
 		$is_double    = intval($hr['consumable_id']) === GAUNTLET_C_DOUBLE;
 		$is_random    = intval($hr['consumable_id']) === GAUNTLET_C_RANDOM;
-		$reward_amt   = GAUNTLET_WIN_REWARD * ($is_double ? 2 : 1);
+		if ($hr['outcome'] === 'win') $hist_win_count++;
+		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
 		$cons_bonus   = $consumable_bonuses[intval($hr['consumable_id'])] ?? 0;
 		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
 		if ($hr['outcome'] === 'win') {
@@ -724,11 +725,12 @@ if ($state === 'encounter') {
 	?>
 	<div class="section-heading">This Run</div>
 	<div class="history-list">
-	<?php while ($hr = $hist_r->fetch_assoc()):
+	<?php $hist_win_count = 0; while ($hr = $hist_r->fetch_assoc()):
 		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
 		$is_double    = intval($hr['consumable_id']) === GAUNTLET_C_DOUBLE;
 		$is_random    = intval($hr['consumable_id']) === GAUNTLET_C_RANDOM;
-		$reward_amt   = GAUNTLET_WIN_REWARD * ($is_double ? 2 : 1);
+		if ($hr['outcome'] === 'win') $hist_win_count++;
+		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
 		$cons_bonus   = $consumable_bonuses[intval($hr['consumable_id'])] ?? 0;
 		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
 		if ($hr['outcome'] === 'win') {
