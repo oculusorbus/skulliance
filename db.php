@@ -9622,15 +9622,19 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 			else                    $player_project_id   = $rp;
 		}
 	}
-	$reward = GAUNTLET_WIN_REWARD * ($double_reward ? 2 : 1);
+	$reward = 0;
 	if ($outcome === 'win') {
-		// Player wins: earns points in opponent's project currency
+		// Escalating reward: win #1=100, #2=200, #3=300
+		$wnum_r = $conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters WHERE run_id=".intval($enc['run_id'])." AND outcome='win'");
+		$wnum   = ($wnum_r && $wnum_r->num_rows) ? intval($wnum_r->fetch_assoc()['c']) : 1;
+		$reward = ($wnum * 100) * ($double_reward ? 2 : 1);
 		if ($opponent_project_id > 0) {
 			updateBalance($conn, $uid, $opponent_project_id, $reward);
 			logCredit($conn, $uid, $reward, $opponent_project_id);
 		}
 	} else {
-		// Opponent passively wins: earns points in player's project currency
+		// Opponent passively earns a fixed amount in player's project currency
+		$reward  = GAUNTLET_WIN_REWARD;
 		$opp_uid = intval($enc['opponent_user_id']);
 		if ($player_project_id > 0 && $opp_uid > 0) {
 			updateBalance($conn, $opp_uid, $player_project_id, $reward);
@@ -9689,7 +9693,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$wh_desc .= "💰 **Reward:** " . number_format($reward) . " $wh_currency";
 		if ($double_reward) $wh_desc .= " *(2× Double Reward!)*";
 		if ($random_reward) $wh_desc .= " *(Random Currency)*";
-		$wh_desc .= "\n🏆 **Run:** $wh_wins / " . GAUNTLET_MAX_WINS . " wins";
+		$wh_desc .= "\n🏆 **Win #$wh_wins** of " . GAUNTLET_MAX_WINS;
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
 		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	} else {

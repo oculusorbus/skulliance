@@ -45,27 +45,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($enc_id > 0) {
 			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_id, $weapon_id, $armor_id);
 			if ($outcome === 'win') {
-				$run = gauntletGetActiveRun($conn, $user_id);
-				// Store reward details so pick_card screen can display them
+				$run  = gauntletGetActiveRun($conn, $user_id);
 				$rw_r = $conn->query("
-					SELECT ge.consumable_id, op.currency AS opponent_currency
+					SELECT ge.run_id, ge.consumable_id, op.currency AS opponent_currency
 					FROM gauntlets_encounters ge
-					INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
-					INNER JOIN collections oc ON oc.id = on2.collection_id
-					INNER JOIN projects op   ON op.id  = oc.project_id
+					INNER JOIN nfts on2       ON on2.id = ge.opponent_nft_id
+					INNER JOIN collections oc ON oc.id  = on2.collection_id
+					INNER JOIN projects op    ON op.id  = oc.project_id
 					WHERE ge.id = $enc_id LIMIT 1
 				");
 				if ($rw_r && $rw_r->num_rows) {
-					$rw = $rw_r->fetch_assoc();
-					$_SESSION['gauntlet_last_reward'] = [
-						'amount'    => GAUNTLET_WIN_REWARD * (intval($rw['consumable_id']) === GAUNTLET_C_DOUBLE ? 2 : 1),
-						'currency'  => $rw['opponent_currency'],
-						'is_random' => intval($rw['consumable_id']) === GAUNTLET_C_RANDOM,
+					$rw      = $rw_r->fetch_assoc();
+					$wnum_r2 = $conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters WHERE run_id=".intval($rw['run_id'])." AND outcome='win'");
+					$wnum2   = ($wnum_r2 && $wnum_r2->num_rows) ? intval($wnum_r2->fetch_assoc()['c']) : 1;
+					$is_dbl  = intval($rw['consumable_id']) === GAUNTLET_C_DOUBLE;
+					$_SESSION['gauntlet_last_result'] = [
+						'outcome'    => 'win',
+						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
+						'currency'   => $rw['opponent_currency'],
+						'is_random'  => intval($rw['consumable_id']) === GAUNTLET_C_RANDOM,
+						'win_number' => $wnum2,
 					];
 				}
 				if (!$run) gauntletFlash('Victory! You swept the gauntlet!', 'win');
 				else       gauntletFlash('Win! Pick your next card.', 'win');
 			} elseif ($outcome === 'loss') {
+				$_SESSION['gauntlet_last_result'] = ['outcome' => 'loss'];
 				gauntletFlash('Defeat. Your run ends here.', 'loss');
 			} else {
 				gauntletFlash('Something went wrong. Please try again.', 'error');
@@ -121,6 +126,10 @@ else                        $state = 'pick_card';
 // Collect flash messages
 $flashes = $_SESSION['gauntlet_flash'];
 $_SESSION['gauntlet_flash'] = [];
+
+// Result reveal (set during POST, consumed once on next GET)
+$last_result = $_SESSION['gauntlet_last_result'] ?? null;
+unset($_SESSION['gauntlet_last_result']);
 
 // Gear inventory for encounter resource panel
 $gear_inventory = ($state === 'encounter') ? getGearInventory($conn, $user_id) : [];
@@ -305,6 +314,34 @@ if ($state === 'encounter') {
 .win-reward-amount    { font-size: 1.5rem; font-weight: 700; color: #00c8a0; line-height: 1; }
 .win-reward-banner img { width: 30px; height: 30px; object-fit: contain; }
 .win-reward-currency  { font-size: .8rem; color: rgba(255,255,255,.4); }
+
+/* Fight animation overlay (pre-submit suspense) */
+#fight-reveal-overlay { position: fixed; inset: 0; background: rgba(7,17,29,.97); z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+#fight-reveal-overlay.active { opacity: 1; pointer-events: auto; }
+.fr-arena   { display: flex; align-items: center; gap: 28px; }
+.fr-card    { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.fr-card .nft-img { width: 130px; height: 130px; border-radius: 10px; object-fit: cover; }
+.fr-card.shaking  { animation: fr-shake .12s ease-in-out infinite alternate; }
+.fr-label   { font-size: .68rem; color: rgba(255,255,255,.35); letter-spacing: .12em; text-transform: uppercase; }
+.fr-vs      { font-size: 3rem; animation: fr-pulse .9s ease-in-out infinite; }
+.fr-status  { font-size: .82rem; color: rgba(255,255,255,.4); letter-spacing: .08em; }
+@keyframes fr-shake { from { transform: translateX(-4px) rotate(-2deg); } to { transform: translateX(4px) rotate(2deg); } }
+@keyframes fr-pulse { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.25); } }
+
+/* Result reveal overlay (post-fight, auto-fades) */
+#result-reveal { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; pointer-events: none; animation: rr-in .35s ease forwards, rr-out .6s ease 2s forwards; }
+#result-reveal.win  { background: rgba(0,200,160,.1); }
+#result-reveal.loss { background: rgba(224,85,85,.1); }
+.rr-icon    { font-size: 4.5rem; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .1s both; }
+.rr-title   { font-size: 2.5rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .2s both; }
+#result-reveal.win  .rr-title { color: #00c8a0; }
+#result-reveal.loss .rr-title { color: #e05555; }
+.rr-reward  { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: 700; color: #00c8a0; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .3s both; }
+.rr-reward img { width: 30px; height: 30px; object-fit: contain; }
+.rr-win-num { font-size: .78rem; color: rgba(255,255,255,.4); letter-spacing: .1em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .4s both; }
+@keyframes rr-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rr-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes rr-pop { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
 </style>
 
 <div class="row">
@@ -317,6 +354,29 @@ if ($state === 'encounter') {
 	<?php foreach ($flashes as $f): ?>
 		<div class="flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
 	<?php endforeach; ?>
+
+	<?php if ($last_result): ?>
+	<div id="result-reveal" class="<?php echo $last_result['outcome'] === 'win' ? 'win' : 'loss'; ?>">
+		<?php if ($last_result['outcome'] === 'win'): ?>
+		<div class="rr-icon">⚔️</div>
+		<div class="rr-title">Victory!</div>
+		<div class="rr-reward">
+			+<?php echo number_format($last_result['amount']); ?>
+			<?php if (!empty($last_result['is_random'])): ?>
+			<img src="icons/skull.png" onerror="this.src='icons/skull.png'" alt="">
+			<span>random</span>
+			<?php else: ?>
+			<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'" alt="">
+			<?php echo htmlspecialchars($last_result['currency']); ?>
+			<?php endif; ?>
+		</div>
+		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
+		<?php else: ?>
+		<div class="rr-icon">💀</div>
+		<div class="rr-title">Defeated</div>
+		<?php endif; ?>
+	</div>
+	<?php endif; ?>
 
 	<?php if ($recent_run): ?>
 	<div class="run-progress">
@@ -423,18 +483,16 @@ if ($state === 'encounter') {
 	// ── State: pick card ────────────────────────────────────
 	elseif ($state === 'pick_card'):
 		$wins = intval($run_stats['wins'] ?? 0);
-		$last_reward = $_SESSION['gauntlet_last_reward'] ?? null;
-		unset($_SESSION['gauntlet_last_reward']);
 	?>
-	<?php if ($last_reward): ?>
+	<?php if ($last_result && $last_result['outcome'] === 'win'): ?>
 	<div class="win-reward-banner">
-		<span class="win-reward-amount">+<?php echo intval($last_reward['amount']); ?></span>
-		<?php if ($last_reward['is_random']): ?>
+		<span class="win-reward-amount">+<?php echo number_format($last_result['amount']); ?></span>
+		<?php if (!empty($last_result['is_random'])): ?>
 		<img src="icons/skull.png" onerror="this.src='icons/skull.png'">
 		<span class="win-reward-currency">random project</span>
 		<?php else: ?>
-		<img src="icons/<?php echo htmlspecialchars(strtolower($last_reward['currency'])); ?>.png" onerror="this.src='icons/skull.png'">
-		<span class="win-reward-currency"><?php echo htmlspecialchars($last_reward['currency']); ?></span>
+		<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'">
+		<span class="win-reward-currency"><?php echo htmlspecialchars($last_result['currency']); ?></span>
 		<?php endif; ?>
 	</div>
 	<?php endif; ?>
@@ -513,8 +571,23 @@ if ($state === 'encounter') {
 		<input type="hidden" name="consumable_id" id="fight-consumable" value="0">
 		<input type="hidden" name="weapon_id"     id="fight-weapon"    value="0">
 		<input type="hidden" name="armor_id"      id="fight-armor"     value="0">
-		<button type="submit" class="btn-fight">&#x2694; Fight!</button>
+		<button type="button" class="btn-fight" onclick="startFight()">&#x2694; Fight!</button>
 	</form>
+
+	<div id="fight-reveal-overlay">
+		<div class="fr-arena">
+			<div class="fr-card" id="fr-player-card">
+				<img class="nft-img" id="fr-player-img" src="<?php echo htmlspecialchars($player_img); ?>" alt="" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
+				<div class="fr-label">You</div>
+			</div>
+			<div class="fr-vs">⚔️</div>
+			<div class="fr-card" id="fr-opp-card">
+				<img class="nft-img" id="fr-opp-img" src="<?php echo htmlspecialchars($opponent_img); ?>" alt="" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
+				<div class="fr-label">Opponent</div>
+			</div>
+		</div>
+		<div class="fr-status" id="fr-status">Crossing swords…</div>
+	</div>
 
 	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
 	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
@@ -711,16 +784,42 @@ function showLoader(msg) {
 	if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
 })();
 
-// Show loader on every form submission for instant visual feedback
+// Show loader on every form submission (fight-form excluded — handled by startFight animation)
 document.querySelectorAll('form[method="POST"]').forEach(function(f) {
+	if (f.id === 'fight-form') return;
 	f.addEventListener('submit', function() {
 		var action = (f.querySelector('[name="action"]') || {}).value || '';
-		var msg = action === 'resolve_encounter' ? 'Fighting…'
-		        : action === 'fast_forward'       ? 'Swapping Card…'
-		        : 'Loading Gauntlet';
+		var msg = action === 'fast_forward' ? 'Swapping Card…' : 'Loading Gauntlet';
 		showLoader(msg);
 	});
 });
+
+// Fight animation — show suspense overlay, then submit
+function startFight() {
+	var overlay = document.getElementById('fight-reveal-overlay');
+	if (!overlay) { document.getElementById('fight-form').submit(); return; }
+	overlay.classList.add('active');
+	// Shake both cards after a short beat
+	var timer1 = setTimeout(function() {
+		document.getElementById('fr-player-card').classList.add('shaking');
+		document.getElementById('fr-opp-card').classList.add('shaking');
+	}, 350);
+	// Cycle status text
+	var statuses = ['Crossing swords…', 'Rolling the dice…', 'The outcome is sealed…'];
+	var statusEl = document.getElementById('fr-status');
+	var i = 0;
+	var interval = setInterval(function() {
+		i++;
+		if (statusEl && i < statuses.length) statusEl.textContent = statuses[i];
+	}, 750);
+	// Submit after animation completes
+	setTimeout(function() {
+		clearInterval(interval);
+		clearTimeout(timer1);
+		showLoader('Fighting…');
+		document.getElementById('fight-form').submit();
+	}, 2400);
+}
 
 // Pick card from hand
 function pickCard(nftId) {
