@@ -138,10 +138,11 @@ foreach ($selected_types as $pt) {
     $printful_product_id = intval($pt['printful_product_id']);
     $print_area_config = json_decode($pt['print_area_config'] ?? '{}', true);
     $file_type  = $print_area_config['file_type'] ?? 'default';
-    $print_area = array_diff_key($print_area_config, ['file_type' => '']);
-    if (empty($print_area)) {
-        $print_area = ['top' => 0, 'left' => 0, 'width' => 1800, 'height' => 2400];
-    }
+    // Only pass position override if explicitly configured (top/left/width/height all present)
+    $pos_keys   = ['top', 'left', 'width', 'height'];
+    $print_area = (count(array_intersect_key($print_area_config, array_flip($pos_keys))) === 4)
+        ? array_intersect_key($print_area_config, array_flip($pos_keys))
+        : null;
 
     // Fetch variants once per printful_product_id (no store context needed for catalog lookup)
     if (!isset($variants_cache[$printful_product_id])) {
@@ -162,14 +163,12 @@ foreach ($selected_types as $pt) {
 
     $sync_variants = [];
     foreach ($variants_to_use as $v) {
+        $file_entry = ['type' => $file_type, 'url' => $image_url];
+        if ($print_area !== null) $file_entry['position'] = $print_area;
         $sync_variants[] = [
             'variant_id'   => $v['id'],
             'retail_price' => number_format(floatval($pt['base_price']), 2, '.', ''),
-            'files'        => [[
-                'type'      => $file_type,
-                'url'       => $image_url,
-                'position'  => $print_area,
-            ]],
+            'files'        => [$file_entry],
         ];
     }
 
@@ -240,9 +239,10 @@ if (!empty($created_product_ids)) {
 
 $all_success = count($created_product_ids) > 0;
 $response    = [
-    'success'  => $all_success,
-    'created'  => count($created_product_ids),
-    'errors'   => $errors,
+    'success'   => $all_success,
+    'created'   => count($created_product_ids),
+    'errors'    => $errors,
+    'image_url' => $image_url,
 ];
 if (!$all_success) {
     $response['error'] = 'No products were created. ' . implode(' ', $errors);
