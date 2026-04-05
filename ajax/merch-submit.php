@@ -168,7 +168,8 @@ foreach ($selected_types as $pt) {
             'product_type_id'     => $pt['id'],
         ];
     } else {
-        $errors[] = 'Failed to create ' . $pt['name'] . ' on Printful.';
+        $pf_error = $create_data['error']['message'] ?? $create_data['result'] ?? json_encode($create_data);
+        $errors[] = 'Failed to create ' . $pt['name'] . ' on Printful: ' . $pf_error;
     }
 }
 
