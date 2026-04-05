@@ -5074,13 +5074,13 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 	// Run each source as its own fast GROUP BY query, then merge in PHP.
 	// Avoids cross-table joins on the massive transactions table.
 	$sources = [
-		'daily'       => ["SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 $w_t GROUP BY user_id",                                                                               1],
+		'daily'       => ["SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 AND amount = 30 $w_t GROUP BY user_id",                                                                1],
 		'mission'     => ["SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id",                                                                             5],
-		'skullswap'   => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id",                                                                            5],
-		'gauntlet'    => ["SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id",      5],
-		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                       15],
-		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                      25],
-		'monstrocity' => ["SELECT user_id, COUNT(*) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                              50],
+		'skullswap'   => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id",                                                                         5],
+		'gauntlet'    => ["SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id",     5],
+		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
+		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
+		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
 	];
 
 	// $activity[user_id] = ['daily'=>0, 'mission'=>0, ..., 'total_pts'=>0]
