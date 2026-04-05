@@ -37,7 +37,7 @@ $_SESSION['merch_oauth_state'] = $state_token;
 $oauth_url = 'https://www.printful.com/oauth/authorize?'
     . http_build_query([
         'client_id'     => PRINTFUL_CLIENT_ID,
-        'redirect_uri'  => PRINTFUL_REDIRECT_URI,
+        'redirect_url'  => PRINTFUL_REDIRECT_URI,
         'scope'         => 'orders products',
         'state'         => $state,
         'response_type' => 'code',
