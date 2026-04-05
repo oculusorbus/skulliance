@@ -318,6 +318,16 @@ function filterPolicies(criteria){
 
 function filterLeaderboard(criteria){
 	document.getElementById('filterby').value = criteria;
+	var loader = document.getElementById('lb-loader');
+	if (loader) {
+		var bar = loader.querySelector('.lb-loader-bar');
+		if (bar) { var nb = bar.cloneNode(true); bar.parentNode.replaceChild(nb, bar); }
+		var txt = loader.querySelector('.lb-loader-text');
+		if (txt) txt.textContent = 'Loading Leaderboard';
+		loader.classList.remove('fade-out');
+		loader.style.display = 'flex';
+		loader.style.opacity = '1';
+	}
 	document.getElementById("filterLeaderboardForm").submit();
 }
 

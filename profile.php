@@ -563,9 +563,30 @@ $extra_head = "
 <meta name='twitter:image'       content='" . htmlspecialchars($og_image, ENT_QUOTES) . "' />
 ";
 
+header('X-Accel-Buffering: no');
 include 'header.php';
 ?>
-
+<style>
+#profile-loader {
+    position: fixed; inset: 0;
+    background: #07111d;
+    z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    transition: opacity 0.5s ease;
+}
+#profile-loader.fade-out { opacity: 0; pointer-events: none; }
+@keyframes pl-bar { to { width: 90%; } }
+.pl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.pl-bar      { height: 100%; background: #00c8a0; width: 0%; animation: pl-bar 10s ease-out forwards; }
+.pl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
+</style>
+<div id="profile-loader">
+    <div style="font-size:3rem;">&#x1F480;</div>
+    <div class="pl-bar-wrap"><div class="pl-bar"></div></div>
+    <div class="pl-text">Loading Profile</div>
+</div>
+<?php if (ob_get_level() > 0) { ob_flush(); flush(); } ?>
 <style>
 /* ── Profile Page ────────────────────────────────────────────────────────── */
 
@@ -2053,4 +2074,10 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <?php $conn->close(); ?>
+<script>
+(function(){
+    var loader = document.getElementById('profile-loader');
+    if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+})();
+</script>
 </html>

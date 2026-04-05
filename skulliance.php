@@ -843,7 +843,7 @@ $project_names[5] = "Kimosabe Art";
 $project_names[6] = "Crypties";
 
 $nft_id = "";
-if(isset($_POST['nft_id'])){
+if(isset($_POST['nft_id']) && isset($_POST['delegate_nft'])){
 	if($member == true){
 		$nft_id = $_POST['nft_id'];
 		$project_id = getNFTProjectID($conn, $nft_id);
@@ -966,43 +966,48 @@ function filterLeaderboard($page){
 	<div id="filter-nfts">
 		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
-			<optgroup label="Projects">
-				<option value="0">All Projects</option>
-			</optgroup>
-			<optgroup label="Factions">
-				<option value="factions">All Factions</option>
-				<option value="monthly-factions">'.date('F').' Factions</option>
-			</optgroup>
-			<optgroup label="Raids">
-				<option value="raids">All Raids</option>
-				<option value="monthly-raids">'.date('F').' Raids</option>
-			</optgroup>
-			<optgroup label="Missions">
-				<option value="missions">All Missions</option>
-				<option value="monthly">'.date('F').' Missions</option>
-			</optgroup>
-			<optgroup label="Skull Swaps">
-				<option value="swaps">All Skull Swaps</option>
-				<option value="weekly-swaps">Weekly Skull Swaps</option>
-			</optgroup>
-			<optgroup label="Boss Battles">
-				<option value="bosses">All Boss Battles</option>
-				<option value="weekly-bosses">Weekly Boss Battles</option>
-			</optgroup>
-			<optgroup label="Gauntlets">
-				<option value="gauntlets">All Gauntlets</option>
-				<option value="weekly-gauntlets">Weekly Gauntlets</option>
-			</optgroup>
-			<optgroup label="Monstrocity">
-				<option value="monstrocity">All Monstrocity</option>
-				<option value="monthly-monstrocity">'.date('F').' Monstrocity</option>
+			<optgroup label="Activity">
+				<option value="activity-ath">All-Time Activity</option>
+				<option value="activity-monthly">'.date('F').' Activity</option>
+				<option value="activity-weekly">Weekly Activity</option>
 			</optgroup>
 			<optgroup label="Daily Rewards">
 				<option value="streaks">All Streaks</option>
 				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
+			<optgroup label="Missions">
+				<option value="missions">All Missions</option>
+				<option value="monthly">'.date('F').' Missions</option>
+			</optgroup>
+			<optgroup label="Raids">
+				<option value="raids">All Raids</option>
+				<option value="monthly-raids">'.date('F').' Raids</option>
+			</optgroup>
+			<optgroup label="Factions">
+				<option value="factions">All Factions</option>
+				<option value="monthly-factions">'.date('F').' Factions</option>
+			</optgroup>
+			<optgroup label="Gauntlets">
+				<option value="gauntlets">All Gauntlets</option>
+				<option value="weekly-gauntlets">Weekly Gauntlets</option>
+			</optgroup>
+			<optgroup label="Skull Swaps">
+				<option value="swaps">All Skull Swaps</option>
+				<option value="weekly-swaps">Weekly Skull Swaps</option>
+			</optgroup>
+			<optgroup label="Monstrocity">
+				<option value="monstrocity">All Monstrocity</option>
+				<option value="monthly-monstrocity">'.date('F').' Monstrocity</option>
+			</optgroup>
+			<optgroup label="Boss Battles">
+				<option value="bosses">All Boss Battles</option>
+				<option value="weekly-bosses">Weekly Boss Battles</option>
+			</optgroup>
 			<optgroup label="Diamond Skulls">
 				<option value="15">Delegations</option>
+			</optgroup>
+			<optgroup label="Projects">
+				<option value="0">All Projects</option>
 			</optgroup>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){

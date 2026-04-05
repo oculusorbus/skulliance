@@ -2,8 +2,31 @@
 include 'db.php';
 include 'webhooks.php';
 include 'skulliance.php';
+// Tell nginx not to buffer — lets the loader flush to the browser before heavy queries run
+header('X-Accel-Buffering: no');
 include 'header.php';
 ?>
+<style>
+#lb-loader {
+	position: fixed; inset: 0;
+	background: #07111d;
+	z-index: 9999;
+	display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 20px;
+	transition: opacity 0.5s ease;
+}
+#lb-loader.fade-out { opacity: 0; pointer-events: none; }
+@keyframes lb-bar { to { width: 90%; } }
+.lb-loader-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.lb-loader-bar      { height: 100%; background: #00c8a0; width: 0%; animation: lb-bar 12s ease-out forwards; }
+.lb-loader-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
+</style>
+<div id="lb-loader">
+	<div style="font-size:3rem;">&#x1F3C6;</div>
+	<div class="lb-loader-bar-wrap"><div class="lb-loader-bar"></div></div>
+	<div class="lb-loader-text">Loading Leaderboard</div>
+</div>
+<?php if (ob_get_level() > 0) { ob_flush(); flush(); } ?>
 <style>
 /* overflow:hidden (not clip) creates a BFC that fully contains negative-margin children */
 .podium-bleed-clip { overflow: hidden; }
@@ -189,11 +212,16 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" &&
 				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" &&
 				           $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets"):
+				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
-				    case ($filterby == null || $filterby == 0):
+				    case ($filterby === "" || $filterby === null):
+				        $title = "All-Time Activity";
+				        $filterby = "activity-ath";
+				        break;
+				    case ($filterby == 0):
 				        $title = "All Projects";
 				        $filterby = 0;
 				        break;
@@ -261,6 +289,18 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Weekly Gauntlets";
 				        $filterby = "weekly-gauntlets";
 				        break;
+				    case ($filterby == "activity-ath"):
+				        $title = "All-Time Activity";
+				        $filterby = "activity-ath";
+				        break;
+				    case ($filterby == "activity-monthly"):
+				        $title = date("F") . " Activity";
+				        $filterby = "activity-monthly";
+				        break;
+				    case ($filterby == "activity-weekly"):
+				        $title = "Weekly Activity";
+				        $filterby = "activity-weekly";
+				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
 				?>
@@ -276,7 +316,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" &&
 				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" &&
 				              $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets"):
+				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -328,6 +369,15 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        case ($filterby == "weekly-gauntlets"):
 				            checkGauntletsLeaderboard($conn, true);
 				            break;
+				        case ($filterby == "activity-ath"):
+				            checkActivityLeaderboard($conn, 'ath');
+				            break;
+				        case ($filterby == "activity-monthly"):
+				            checkActivityLeaderboard($conn, 'monthly');
+				            break;
+				        case ($filterby == "activity-weekly"):
+				            checkActivityLeaderboard($conn, 'weekly');
+				            break;
 				    }
 				    $table_html = ob_get_clean();
 				    $project_theme_override = null;
@@ -357,4 +407,11 @@ if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script>
+// Fade out loader once page is fully rendered
+(function(){
+	var loader = document.getElementById('lb-loader');
+	if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+})();
+</script>
 </html>

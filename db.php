@@ -3191,6 +3191,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				?>
 				<form id="coreProjectsForm" action="diamond-skulls.php#diamond-skull" method="post">
 				  <input type="hidden" id="nft_id" name="nft_id" value="<?php echo $row["nfts_id"];?>">
+				  <input type="hidden" name="delegate_nft" value="1">
 				  <input type="submit" value="Delegate" class="small-button">
 				</form>
 				<?php
@@ -5118,6 +5119,138 @@ function resetGauntlets($conn) {
 	if ($conn->query($sql) !== TRUE) {
 		echo "Error: " . $sql . "<br>" . $conn->error;
 	}
+}
+
+// Check Activity Leaderboard — weighted aggregate across all platform features
+// Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5, raid=15, boss battle=25, monstrocity session=50
+function checkActivityLeaderboard($conn, $period = 'ath') {
+	// Build date filters per period
+	if ($period === 'monthly') {
+		$dt   = date('Y-m-01');
+		$w_t  = "AND date_created  >= '$dt'";
+		$w_m  = "AND created_date  >= '$dt'";
+		$w_ge = "AND ge.resolved_date >= '$dt'";
+		$w_r  = "AND r.created_date >= '$dt'";
+		$w_e  = "AND date_created  >= '$dt'";
+		$w_ss = "AND date_created  >= '$dt'";
+		$w_s  = "AND date_created  >= '$dt'";
+	} elseif ($period === 'weekly') {
+		$ws   = $conn->real_escape_string(gauntletGetWeekStart());
+		$w_t  = "AND date_created  >= '$ws'";
+		$w_m  = "AND created_date  >= '$ws'";
+		$w_ge = "AND ge.resolved_date >= '$ws'";
+		$w_r  = "AND r.created_date >= '$ws'";
+		$w_e  = "AND date_created  >= '$ws'";
+		$w_ss = "AND date_created  >= '$ws'";
+		$w_s  = "AND date_created  >= '$ws'";
+	} else {
+		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = '';
+	}
+
+	// Run each source as its own fast GROUP BY query, then merge in PHP.
+	// Avoids cross-table joins on the massive transactions table.
+	$sources = [
+		'daily'       => ["SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 AND amount = 30 $w_t GROUP BY user_id",                                                                1],
+		'mission'     => ["SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id",                                                                             5],
+		'skullswap'   => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id",                                                                         5],
+		'gauntlet'    => ["SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id",     5],
+		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
+		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
+		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
+	];
+
+	// $activity[user_id] = ['daily'=>0, 'mission'=>0, ..., 'total_pts'=>0]
+	$activity = [];
+	foreach ($sources as $key => [$query, $weight]) {
+		$res = $conn->query($query);
+		if (!$res) continue;
+		while ($row = $res->fetch_assoc()) {
+			$uid = intval($row['user_id']);
+			if (!isset($activity[$uid])) {
+				$activity[$uid] = ['daily'=>0,'mission'=>0,'skullswap'=>0,'gauntlet'=>0,'raid'=>0,'boss'=>0,'monstrocity'=>0,'total_pts'=>0];
+			}
+			$cnt = intval($row['cnt']);
+			$activity[$uid][$key]       += $cnt;
+			$activity[$uid]['total_pts'] += $cnt * $weight;
+		}
+	}
+
+	if (empty($activity)) {
+		$scope = $period === 'weekly' ? ' for the week' : ($period === 'monthly' ? ' for the month' : '');
+		echo "<p>No activity recorded$scope.</p>";
+		return;
+	}
+
+	// Sort by total_pts descending
+	uasort($activity, function($a, $b) { return $b['total_pts'] - $a['total_pts']; });
+
+	// Fetch user details for everyone who appears
+	$uid_list = implode(',', array_keys($activity));
+	$users_r  = $conn->query("SELECT id, username, discord_id, avatar, visibility FROM users WHERE id IN ($uid_list)");
+	$users    = [];
+	while ($u = $users_r->fetch_assoc()) $users[intval($u['id'])] = $u;
+
+	$result = true; // signal to rendering block below
+
+	$fireworks          = false;
+	$leaderboardCounter = 0;
+	$last_score         = null;
+	$third_score        = null;
+	$lb_rows            = [];
+
+	foreach ($activity as $uid => $data) {
+		if (!isset($users[$uid])) continue;
+		$u     = $users[$uid];
+		$score = intval($data['total_pts']);
+		$leaderboardCounter++;
+
+		if ($leaderboardCounter <= 3) {
+			global $leaderboard_top3;
+			$leaderboard_top3[] = [
+				'username'   => $u['username'],
+				'discord_id' => $u['discord_id'],
+				'avatar'     => $u['avatar'],
+				'visibility' => $u['visibility'],
+				'score'      => number_format($score) . ' pts',
+			];
+		}
+
+		$trophy = "";
+		if ($leaderboardCounter == 1) {
+			$trophy = "first";
+		} elseif ($leaderboardCounter == 2) {
+			$trophy = ($last_score !== $score) ? "second" : "first";
+			if ($last_score === $score) $leaderboardCounter--;
+		} elseif ($leaderboardCounter == 3) {
+			if ($last_score !== $score) { $trophy = "third"; $third_score = $score; }
+			else { $trophy = "second"; $leaderboardCounter--; }
+		} elseif ($leaderboardCounter > 3 && $third_score === $score) {
+			$trophy = "third"; $leaderboardCounter--;
+		} elseif ($leaderboardCounter > 3 && $last_score === $score) {
+			$leaderboardCounter--;
+		}
+
+		if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $uid) $fireworks = true;
+
+		$highlight  = isset($_SESSION['userData']['user_id']) && $uid == $_SESSION['userData']['user_id'];
+		$avatar_url = "https://cdn.discordapp.com/avatars/" . $u['discord_id'] . "/" . $u['avatar'] . ".jpg";
+		$name_html  = "<a href='profile.php?username=" . urlencode($u['username']) . "'>" . htmlspecialchars($u['username']) . "</a>";
+		$stats = [
+			'Points'    => number_format($data['total_pts']),
+			'Daily'     => number_format($data['daily']),
+			'Missions'  => number_format($data['mission']),
+			'Swaps'     => number_format($data['skullswap']),
+			'Gauntlets' => number_format($data['gauntlet']),
+			'Raids'     => number_format($data['raid']),
+			'Bosses'    => number_format($data['boss']),
+			'M3RPG'     => number_format($data['monstrocity']),
+		];
+		$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
+		$last_score = $score;
+	}
+
+	renderLeaderboardList($lb_rows);
+	if ($fireworks) fireworks();
 }
 
 // Check Monstrocity Leaderboard

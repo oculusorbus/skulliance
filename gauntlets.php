@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (!$run_id) gauntletFlash('No available NFTs to draw a hand. Use your NFTs in staking first.', 'error');
 
 	} elseif ($action === 'start_encounter') {
-		$nft_id  = intval($_POST['nft_id'] ?? 0);
+		$nft_id  = intval($_POST['gauntlet_pick_nft_id'] ?? 0);
 		$run     = gauntletGetActiveRun($conn, $user_id);
 		if ($run && $nft_id > 0) {
 			$result = gauntletStartEncounter($conn, $user_id, intval($run['id']), $nft_id);
@@ -516,7 +516,7 @@ if ($state === 'encounter') {
 	</div>
 	<form method="POST" id="pick-form">
 		<input type="hidden" name="action" value="start_encounter">
-		<input type="hidden" name="nft_id" id="pick-nft-id" value="0">
+		<input type="hidden" name="gauntlet_pick_nft_id" id="pick-nft-id" value="0">
 	</form>
 
 	<?php
