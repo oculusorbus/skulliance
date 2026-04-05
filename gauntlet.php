@@ -205,7 +205,7 @@ if ($state === 'encounter') {
 .odds-pct.danger      { color: #e05555; }
 
 /* Resource panel */
-.resource-panel       { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+.resource-panel       { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 14px; margin-top: 14px; margin-bottom: 20px; }
 .resource-title       { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.35); margin-bottom: 10px; }
 .resource-tabs        { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .resource-tab         { padding: 4px 12px; border-radius: 4px; font-size: .78rem; cursor: pointer; background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid transparent; transition: all .15s; position: relative; }
@@ -498,6 +498,8 @@ if ($state === 'encounter') {
 		<input type="hidden" name="weapon_id"     id="fight-weapon"    value="0">
 		<input type="hidden" name="armor_id"      id="fight-armor"     value="0">
 
+		<button type="submit" class="btn-fight">&#x2694; Fight!</button>
+
 		<?php if (!empty($consumables_inv) || !empty($weapons_inv) || !empty($armor_inv)): ?>
 		<div class="resource-panel">
 			<div class="resource-title">Deploy Resources (optional — 1 per category)</div>
@@ -562,8 +564,6 @@ if ($state === 'encounter') {
 			<?php endif; ?>
 		</div>
 		<?php endif; ?>
-
-		<button type="submit" class="btn-fight">&#x2694; Fight!</button>
 	</form>
 
 	<?php
