@@ -2732,6 +2732,48 @@ function removeUser($conn, $user_id){
 }
 
 // Render IPFS
+// Fetch and cache a single NFT image from IPFS if not already locally cached.
+// Returns true if the image is now cached, false on failure.
+function ensureNFTImageCached($ipfs, $collection_id, $project_id) {
+    if (empty($ipfs) || $project_id <= 0) return false;
+    if (str_contains($ipfs, 'data:image/svg+xml;base64')) return true; // inline, no file needed
+
+    $dir = __DIR__ . '/images/nfts/' . intval($project_id) . '/' . intval($collection_id) . '/';
+    $md5 = md5($ipfs);
+
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    if (!empty(glob($dir . $md5 . '.*'))) return true; // already cached
+
+    $clean = preg_replace('#^ipfs/#', '', $ipfs);
+    $gateways = [
+        'https://ipfs5.jpgstoreapis.com/ipfs/',
+        'https://cloudflare-ipfs.com/ipfs/',
+        'https://ipfs.io/ipfs/',
+        'https://dweb.link/ipfs/',
+    ];
+
+    foreach ($gateways as $gw) {
+        $ch = curl_init($gw . $clean);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['User-Agent: Mozilla/5.0']);
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($body === false || $code <= 0 || $code >= 400) continue;
+
+        $mime    = trim(explode(';', $ct)[0]);
+        $ext_map = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/svg+xml' => 'svg', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+        $ext     = $ext_map[$mime] ?? 'jpg';
+
+        if (file_put_contents($dir . $md5 . '.' . $ext, $body) !== false) return true;
+    }
+    return false;
+}
+
 function getIPFS($ipfs, $collection_id, $project_id = 0){
 	if(str_contains($ipfs, "data:image/svg+xml;base64")){
 		return $ipfs;
