@@ -77,7 +77,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	exit;
 }
 
+// Tell nginx not to buffer this response so the loader flushes to the browser immediately
+header('X-Accel-Buffering: no');
 include 'header.php';
+?>
+<style>
+#gauntlet-loader {
+	position: fixed; inset: 0;
+	background: #07111d;
+	z-index: 9999;
+	display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 20px;
+	transition: opacity 0.5s ease;
+}
+#gauntlet-loader.fade-out { opacity: 0; pointer-events: none; }
+@keyframes lb { to { width:90%; } }
+.loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden; }
+.loader-bar      { height:100%;background:#00c8a0;width:0%;animation:lb 9s ease-out forwards; }
+.loader-text     { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
+</style>
+<div id="gauntlet-loader">
+	<div style="font-size:3rem;animation:lp 1.2s ease-in-out infinite;">&#x2694;</div>
+	<div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+	<div class="loader-text">Loading Gauntlet</div>
+</div>
+<?php
+if (ob_get_level() > 0) { ob_flush(); flush(); }
 
 // ── Load state ──────────────────────────────────────────────
 $recent_run         = gauntletGetMostRecentRun($conn, $user_id);
@@ -665,6 +690,11 @@ if ($state === 'encounter') {
 <?php $conn->close(); ?>
 <script>
 document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
+// Fade out page loader now that DOM is fully rendered
+(function(){
+	var loader = document.getElementById('gauntlet-loader');
+	if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+})();
 
 // Pick card from hand
 function pickCard(nftId) {
