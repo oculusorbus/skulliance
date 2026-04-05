@@ -9263,7 +9263,7 @@ function verifyAssetInWallet($stake_address, $asset_fingerprint) {
 
 define('GAUNTLET_HAND_SIZE',   6);
 define('GAUNTLET_MAX_WINS',    3);
-define('GAUNTLET_WIN_REWARD', 25);
+define('GAUNTLET_WIN_REWARD', 100);
 
 // Consumable IDs
 define('GAUNTLET_C_100',    1); // 100% Success
