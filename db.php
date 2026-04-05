@@ -9651,6 +9651,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	// Opponent NFT + user
 	$wh_onft_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name, u.username AS opp_username, u.discord_id AS opp_discord, u.avatar AS opp_avatar FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id INNER JOIN users u ON u.id=n.user_id WHERE n.id=".intval($enc['opponent_nft_id'])." LIMIT 1");
 	$wh_onft      = ($wh_onft_r && $wh_onft_r->num_rows) ? $wh_onft_r->fetch_assoc() : [];
+	$wh_opp_img   = !empty($wh_onft) ? getIPFS($wh_onft['ipfs'], $wh_onft['collection_id'], $wh_onft['project_id']) : "";
 	$wh_opp_uname  = $wh_onft['opp_username'] ?? 'Unknown';
 	$wh_opp_discord = $wh_onft['opp_discord']  ?? '';
 	$wh_opp_avatar  = $wh_onft['opp_avatar']   ?? '';
@@ -9690,7 +9691,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		if ($random_reward) $wh_desc .= " *(Random Currency)*";
 		$wh_desc .= "\n🏆 **Run:** $wh_wins / " . GAUNTLET_MAX_WINS . " wins";
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg($wh_title, $wh_desc, $wh_player_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	} else {
 		$wh_desc  = $wh_mention . " was defeated by $wh_opp_mention — run ends here.\n\n";
 		$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
@@ -9699,7 +9700,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$wh_desc .= "💰 **Opponent Earns:** " . number_format($reward) . " $wh_currency\n";
 		$wh_desc .= "🏆 **Final Record:** $wh_wins win" . ($wh_wins !== 1 ? "s" : "") . " / " . intval($wh_stats['losses']) . " loss" . (intval($wh_stats['losses']) !== 1 ? "es" : "");
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_player_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	}
 	return $outcome;
 }
