@@ -31,8 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ── Build OAuth authorization URL ───────────────────────────
-$state = bin2hex(random_bytes(16));
-$_SESSION['merch_oauth_state'] = $state;
+$state_token = bin2hex(random_bytes(16));
+$state       = $state_token . '.' . $user_id;
+$_SESSION['merch_oauth_state'] = $state_token;
 $oauth_url = 'https://www.printful.com/oauth/authorize?'
     . http_build_query([
         'client_id'     => PRINTFUL_CLIENT_ID,

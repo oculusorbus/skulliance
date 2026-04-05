@@ -7,13 +7,6 @@
  */
 include '../db.php';
 
-// ── Auth guard ──────────────────────────────────────────────
-if (!isset($_SESSION['userData']['user_id'])) {
-    header('Location: ../index.php');
-    exit;
-}
-$user_id = intval($_SESSION['userData']['user_id']);
-
 // ── Flash helper ─────────────────────────────────────────────
 if (!isset($_SESSION['merch_flash'])) $_SESSION['merch_flash'] = [];
 function cbFlash($msg, $type = 'info') {
@@ -21,11 +14,23 @@ function cbFlash($msg, $type = 'info') {
 }
 
 // ── Validate state parameter ─────────────────────────────────
-$state         = $_GET['state'] ?? '';
+// State format: {random_token}.{user_id}
+$state_param   = $_GET['state'] ?? '';
+$state_parts   = explode('.', $state_param, 2);
+$state_token   = $state_parts[0] ?? '';
+$user_id       = intval($state_parts[1] ?? 0);
 $session_state = $_SESSION['merch_oauth_state'] ?? '';
 unset($_SESSION['merch_oauth_state']);
 
-if (empty($state) || empty($session_state) || !hash_equals($session_state, $state)) {
+if (empty($state_token) || empty($session_state) || !hash_equals($session_state, $state_token) || $user_id < 1) {
+    // Fall back to session user_id if state parsing fails but user is logged in
+    if (isset($_SESSION['userData']['user_id']) && $user_id < 1) {
+        $user_id = intval($_SESSION['userData']['user_id']);
+    }
+    if ($user_id < 1) {
+        header('Location: ../index.php');
+        exit;
+    }
     cbFlash('OAuth state mismatch. Please try connecting again.', 'error');
     header('Location: ../merch.php');
     exit;
