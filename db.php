@@ -9775,11 +9775,13 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	// Player NFT
 	$wh_pnft_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id WHERE n.id=".intval($enc['player_nft_id'])." LIMIT 1");
 	$wh_pnft      = ($wh_pnft_r && $wh_pnft_r->num_rows) ? $wh_pnft_r->fetch_assoc() : [];
-	$wh_player_img = !empty($wh_pnft) ? getIPFS($wh_pnft['ipfs'], $wh_pnft['collection_id'], $wh_pnft['project_id']) : "";
+	$wh_player_cached = __DIR__ . '/images/nfts/' . intval($enc['player_nft_id']) . '.jpg';
+	$wh_player_img    = file_exists($wh_player_cached) ? 'https://skulliance.io/staking/images/nfts/' . intval($enc['player_nft_id']) . '.jpg' : '';
 	// Opponent NFT + user
 	$wh_onft_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name, u.username AS opp_username, u.discord_id AS opp_discord, u.avatar AS opp_avatar FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id INNER JOIN users u ON u.id=n.user_id WHERE n.id=".intval($enc['opponent_nft_id'])." LIMIT 1");
 	$wh_onft      = ($wh_onft_r && $wh_onft_r->num_rows) ? $wh_onft_r->fetch_assoc() : [];
-	$wh_opp_img   = !empty($wh_onft) ? getIPFS($wh_onft['ipfs'], $wh_onft['collection_id'], $wh_onft['project_id']) : "";
+	$wh_opp_cached = __DIR__ . '/images/nfts/' . intval($enc['opponent_nft_id']) . '.jpg';
+	$wh_opp_img    = file_exists($wh_opp_cached) ? 'https://skulliance.io/staking/images/nfts/' . intval($enc['opponent_nft_id']) . '.jpg' : '';
 	$wh_opp_uname  = $wh_onft['opp_username'] ?? 'Unknown';
 	$wh_opp_discord = $wh_onft['opp_discord']  ?? '';
 	$wh_opp_avatar  = $wh_onft['opp_avatar']   ?? '';
