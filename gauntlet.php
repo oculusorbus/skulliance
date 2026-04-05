@@ -170,10 +170,10 @@ if ($state === 'encounter') {
 .arena-card           { background: #002f44; border: 2px solid rgba(255,255,255,.1); border-radius: 10px; overflow: hidden; }
 .arena-card.player    { border-color: #00c8a0; }
 .arena-card img       { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-.arena-card-label     { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); padding: 8px 10px 2px; }
-.arena-card-name      { font-size: .82rem; font-weight: 600; color: #fff; padding: 0 10px 4px; }
-.arena-card-project   { font-size: .72rem; color: rgba(255,255,255,.45); padding: 0 10px 4px; }
-.arena-card-user      { display: flex; align-items: center; gap: 5px; padding: 0 10px 10px; }
+.arena-card-label     { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); padding: 8px 10px 2px; text-align: center; }
+.arena-card-name      { font-size: .82rem; font-weight: 600; color: #fff; padding: 0 10px 4px; text-align: center; }
+.arena-card-project   { font-size: .72rem; color: rgba(255,255,255,.45); padding: 0 10px 4px; text-align: center; }
+.arena-card-user      { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 10px 10px; }
 .arena-card-user img  { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .arena-card-user a    { font-size: .72rem; color: #00c8a0; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .arena-card-user a:hover { text-decoration: underline; }
@@ -362,7 +362,7 @@ if ($state === 'encounter') {
 		$odds_class   = $win_chance_display >= 50 ? '' : 'danger';
 	?>
 	<?php
-		$player_username   = $_SESSION['userData']['username']   ?? '';
+		$player_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : ($_SESSION['userData']['name'] ?? '');
 		$player_discord_id = $_SESSION['userData']['discord_id'] ?? '';
 		$player_avatar     = $_SESSION['userData']['avatar']     ?? '';
 	?>
