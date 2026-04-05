@@ -233,10 +233,6 @@ if ($state === 'encounter') {
 .history-avatar       { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin: 0 3px 0 6px; }
 .history-text a       { color: #00c8a0; text-decoration: none; font-size: .78rem; }
 .history-text a:hover { text-decoration: underline; }
-.arena-opponent-user  { display: flex; align-items: center; gap: 6px; padding: 4px 10px 10px; }
-.arena-opponent-user img  { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
-.arena-opponent-user a    { font-size: .75rem; color: #00c8a0; text-decoration: none; }
-.arena-opponent-user a:hover { text-decoration: underline; }
 
 .section-heading      { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.3); margin: 24px 0 10px; }
 </style>
@@ -373,15 +369,7 @@ if ($state === 'encounter') {
 			<div class="arena-card-label">Opponent</div>
 			<img src="<?php echo htmlspecialchars($opponent_img); ?>" alt="<?php echo htmlspecialchars($enc['opponent_nft_name']); ?>" onerror="this.src='icons/skull.png'">
 			<div class="arena-card-name"><?php echo htmlspecialchars($enc['opponent_nft_name']); ?></div>
-			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?></div>
-			<?php if (!empty($enc['opponent_username'])): ?>
-			<div class="arena-opponent-user">
-				<?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?>
-				<img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($enc['opponent_discord_id']); ?>/<?php echo htmlspecialchars($enc['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'">
-				<?php endif; ?>
-				<a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>"><?php echo htmlspecialchars($enc['opponent_username']); ?></a>
-			</div>
-			<?php endif; ?>
+			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?><?php if (!empty($enc['opponent_username'])): ?> &middot; <?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?><img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($enc['opponent_discord_id']); ?>/<?php echo htmlspecialchars($enc['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'" style="width:14px;height:14px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>" style="color:#00c8a0;text-decoration:none;font-size:.72rem;"><?php echo htmlspecialchars($enc['opponent_username']); ?></a><?php endif; ?></div>
 		</div>
 	</div>
 
