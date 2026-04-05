@@ -177,7 +177,7 @@ foreach ($selected_types as $pt) {
         $ps_store_type = $conn->real_escape_string($ps['store_type'] ?? 'store');
 
         $create_data      = printfulApiCall($conn, $user_id, 'POST', '/store/products', $product_payload, $ps_store_id ?: null);
-        $printful_prod_id = $create_data['result']['sync_product']['id'] ?? null;
+        $printful_prod_id = $create_data['result']['id'] ?? ($create_data['result']['sync_product']['id'] ?? null);
 
         if ($printful_prod_id) {
             $created_product_ids[] = [
