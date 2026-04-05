@@ -966,8 +966,10 @@ function filterLeaderboard($page){
 	<div id="filter-nfts">
 		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
-			<optgroup label="Projects">
-				<option value="0">All Projects</option>
+			<optgroup label="Activity">
+				<option value="activity-ath">All-Time Activity</option>
+				<option value="activity-monthly">'.date('F').' Activity</option>
+				<option value="activity-weekly">Weekly Activity</option>
 			</optgroup>
 			<optgroup label="Factions">
 				<option value="factions">All Factions</option>
@@ -1001,13 +1003,11 @@ function filterLeaderboard($page){
 				<option value="streaks">All Streaks</option>
 				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
-			<optgroup label="Activity">
-				<option value="activity-ath">All-Time Activity</option>
-				<option value="activity-monthly">'.date('F').' Activity</option>
-				<option value="activity-weekly">Weekly Activity</option>
-			</optgroup>
 			<optgroup label="Diamond Skulls">
 				<option value="15">Delegations</option>
+			</optgroup>
+			<optgroup label="Projects">
+				<option value="0">All Projects</option>
 			</optgroup>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){

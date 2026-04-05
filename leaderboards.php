@@ -218,8 +218,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = $project["name"];
 				        break;
 				    case ($filterby == null || $filterby == 0):
-				        $title = "All Projects";
-				        $filterby = 0;
+				        $title = "All-Time Activity";
+				        $filterby = "activity-ath";
 				        break;
 				    case ($filterby == "missions"):
 				        $title = "All Missions";
