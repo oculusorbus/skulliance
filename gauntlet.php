@@ -486,7 +486,7 @@ if ($state === 'encounter') {
 	</form>
 
 	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
-	<button class="btn-ff" onclick="toggleFF()" type="button">&#x21BA; Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
+	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
 	<div class="ff-overlay" id="ff-overlay">
 		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
 		<div class="ff-hand-grid">
@@ -545,8 +545,11 @@ if ($state === 'encounter') {
 
 			<div class="resource-section" id="tab-weapon">
 				<?php if (!empty($weapons_inv)): ?>
-				<?php foreach ($weapons_inv as $wi): ?>
+				<?php foreach ($weapons_inv as $wi):
+					$w_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $wi['weapon_name'])) . '.png';
+				?>
 				<div class="resource-item" onclick="selectResource('weapon', <?php echo intval($wi['item_id']); ?>, this)" data-type="weapon" data-id="<?php echo intval($wi['item_id']); ?>" data-bonus="<?php echo intval($wi['weapon_level']); ?>">
+					<img src="<?php echo htmlspecialchars($w_icon); ?>" onerror="this.style.display='none'">
 					<span class="resource-item-name">
 						<?php echo htmlspecialchars($wi['weapon_name']); ?> (Lv <?php echo intval($wi['weapon_level']); ?>)
 						<span class="resource-effect">+<?php echo intval($wi['weapon_level']); ?>% win chance — consumed on use</span>
@@ -564,8 +567,11 @@ if ($state === 'encounter') {
 
 			<div class="resource-section" id="tab-armor">
 				<?php if (!empty($armor_inv)): ?>
-				<?php foreach ($armor_inv as $ai): ?>
+				<?php foreach ($armor_inv as $ai):
+					$a_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $ai['armor_name'])) . '.png';
+				?>
 				<div class="resource-item" onclick="selectResource('armor', <?php echo intval($ai['item_id']); ?>, this)" data-type="armor" data-id="<?php echo intval($ai['item_id']); ?>" data-bonus="<?php echo intval($ai['armor_level']); ?>">
+					<img src="<?php echo htmlspecialchars($a_icon); ?>" onerror="this.style.display='none'">
 					<span class="resource-item-name">
 						<?php echo htmlspecialchars($ai['armor_name']); ?> (Lv <?php echo intval($ai['armor_level']); ?>)
 						<span class="resource-effect">+<?php echo intval($ai['armor_level']); ?>% win chance — consumed on use</span>
