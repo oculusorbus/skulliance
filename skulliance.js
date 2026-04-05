@@ -318,9 +318,15 @@ function filterPolicies(criteria){
 
 function filterLeaderboard(criteria){
 	document.getElementById('filterby').value = criteria;
-	if (criteria === 'activity-ath' || criteria === 'activity-monthly' || criteria === 'activity-weekly') {
-		var el = document.getElementById('filtered-content');
-		if (el) el.innerHTML = '<p style="text-align:center;padding:40px 0;opacity:.7;">Calculating activity scores…</p>';
+	var loader = document.getElementById('lb-loader');
+	if (loader) {
+		var bar = loader.querySelector('.lb-loader-bar');
+		if (bar) { var nb = bar.cloneNode(true); bar.parentNode.replaceChild(nb, bar); }
+		var txt = loader.querySelector('.lb-loader-text');
+		if (txt) txt.textContent = 'Loading Leaderboard';
+		loader.classList.remove('fade-out');
+		loader.style.display = 'flex';
+		loader.style.opacity = '1';
 	}
 	document.getElementById("filterLeaderboardForm").submit();
 }

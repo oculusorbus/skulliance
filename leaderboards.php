@@ -2,8 +2,31 @@
 include 'db.php';
 include 'webhooks.php';
 include 'skulliance.php';
+// Tell nginx not to buffer — lets the loader flush to the browser before heavy queries run
+header('X-Accel-Buffering: no');
 include 'header.php';
 ?>
+<style>
+#lb-loader {
+	position: fixed; inset: 0;
+	background: #07111d;
+	z-index: 9999;
+	display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 20px;
+	transition: opacity 0.5s ease;
+}
+#lb-loader.fade-out { opacity: 0; pointer-events: none; }
+@keyframes lb-bar { to { width: 90%; } }
+.lb-loader-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.lb-loader-bar      { height: 100%; background: #00c8a0; width: 0%; animation: lb-bar 12s ease-out forwards; }
+.lb-loader-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
+</style>
+<div id="lb-loader">
+	<div style="font-size:3rem;">&#x1F3C6;</div>
+	<div class="lb-loader-bar-wrap"><div class="lb-loader-bar"></div></div>
+	<div class="lb-loader-text">Loading Leaderboard</div>
+</div>
+<?php if (ob_get_level() > 0) { ob_flush(); flush(); } ?>
 <style>
 /* overflow:hidden (not clip) creates a BFC that fully contains negative-margin children */
 .podium-bleed-clip { overflow: hidden; }
@@ -380,4 +403,11 @@ if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script>
+// Fade out loader once page is fully rendered
+(function(){
+	var loader = document.getElementById('lb-loader');
+	if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+})();
+</script>
 </html>
