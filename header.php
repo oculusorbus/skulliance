@@ -41,6 +41,56 @@
   <?php if(isset($extra_head)) echo $extra_head; ?>
 </head>
 <body>
+<!-- Global navigation loader — shown when clicking any internal link -->
+<style>
+#nav-loader {
+    position: fixed; inset: 0;
+    background: #07111d;
+    z-index: 99999;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    opacity: 0; transition: opacity .25s ease;
+}
+#nav-loader.active { opacity: 1; }
+@keyframes nl-bar { to { width: 90%; } }
+.nl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.nl-bar      { height: 100%; background: #00c8a0; width: 0%; }
+.nl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
+</style>
+<div id="nav-loader">
+    <div style="font-size:3rem;">&#x1F480;</div>
+    <div class="nl-bar-wrap"><div class="nl-bar"></div></div>
+    <div class="nl-text">Loading&hellip;</div>
+</div>
+<script>
+(function(){
+    function showNavLoader() {
+        var el = document.getElementById('nav-loader');
+        if (!el) return;
+        var bar = el.querySelector('.nl-bar');
+        if (bar) { var nb = bar.cloneNode(true); nb.style.animation = 'nl-bar 12s ease-out forwards'; bar.parentNode.replaceChild(nb, bar); }
+        el.style.display = 'flex';
+        requestAnimationFrame(function(){ el.classList.add('active'); });
+    }
+    document.addEventListener('click', function(e) {
+        var a = e.target.closest('a[href]');
+        if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        var href = a.getAttribute('href');
+        if (!href || href.charAt(0) === '#' || href.indexOf('javascript') === 0) return;
+        // Only internal links
+        var isInternal = href.charAt(0) === '/' || href.charAt(0) === '.' ||
+                         (!href.match(/^https?:\/\//) || href.indexOf(window.location.hostname) !== -1);
+        if (isInternal && a.target !== '_blank') showNavLoader();
+    });
+    // Hide if browser restores page from bfcache
+    window.addEventListener('pageshow', function(e) {
+        if (e.persisted) {
+            var el = document.getElementById('nav-loader');
+            if (el) { el.classList.remove('active'); setTimeout(function(){ el.style.display='none'; }, 300); }
+        }
+    });
+})();
+</script>
 	<div class="container">
 		<div id="burger-menu">
 			<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
