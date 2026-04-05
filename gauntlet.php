@@ -277,9 +277,10 @@ if ($state === 'encounter') {
 	<?php
 	// Show encounter history for completed run
 	$hist_r = $conn->query("
-		SELECT ge.outcome, ge.player_effective_project_id, ge.opponent_effective_project_id,
+		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
 		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, ge.consumable_id, ge.weapon_id, ge.armor_id
 		FROM gauntlet_encounters ge
+		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections oc ON oc.id = on2.collection_id
 		INNER JOIN projects op   ON op.id  = oc.project_id
@@ -459,9 +460,10 @@ if ($state === 'encounter') {
 	<?php
 	// Encounter history for current run (resolved only)
 	$hist_r = $conn->query("
-		SELECT ge.outcome, ge.player_effective_project_id, ge.opponent_effective_project_id,
+		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
 		       on2.name AS opponent_nft_name, op.name AS opponent_project_name
 		FROM gauntlet_encounters ge
+		INNER JOIN gauntlet_run_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
 		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
 		INNER JOIN collections oc ON oc.id = on2.collection_id
 		INNER JOIN projects op   ON op.id  = oc.project_id
