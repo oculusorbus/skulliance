@@ -9431,15 +9431,14 @@ function gauntletCalculateWinChance($player_eff, $opponent_eff) {
 	return 50;
 }
 
-// NFT IDs already played by user in any encounter this week
-function gauntletGetUsedNFTIdsThisWeek($conn, $user_id) {
-	$uid        = intval($user_id);
-	$week_start = gauntletGetWeekStart();
+// NFT IDs already played by user in any unrewarded gauntlet run
+function gauntletGetUsedNFTIds($conn, $user_id) {
+	$uid = intval($user_id);
 	$r = $conn->query("
 		SELECT DISTINCT ge.player_nft_id
 		FROM gauntlets_encounters ge
 		INNER JOIN gauntlets gr ON gr.id = ge.run_id
-		WHERE gr.user_id = $uid AND ge.created_date >= '$week_start'
+		WHERE gr.user_id = $uid AND gr.reward = 0
 	");
 	$ids = [];
 	if ($r) while ($row = $r->fetch_assoc()) $ids[] = intval($row['player_nft_id']);
@@ -9491,7 +9490,7 @@ function gauntletGetRunStats($conn, $run_id) {
 // Excludes NFTs already played this week
 function gauntletStartRun($conn, $user_id) {
 	$uid     = intval($user_id);
-	$used    = gauntletGetUsedNFTIdsThisWeek($conn, $uid);
+	$used    = gauntletGetUsedNFTIds($conn, $uid);
 	$exclude = $used ? 'AND n.id NOT IN (' . implode(',', $used) . ')' : '';
 	$r = $conn->query("
 		SELECT n.id, c.project_id
