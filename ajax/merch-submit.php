@@ -48,14 +48,13 @@ if ($dup_res && $dup_res->num_rows > 0) {
     exit;
 }
 
-// ── Get Printful API key ─────────────────────────────────────
-$acct_res = $conn->query("SELECT printful_api_key_encrypted, connected_stores FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
+// ── Get Printful account ─────────────────────────────────────
+$acct_res = $conn->query("SELECT connected_stores FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
 if (!$acct_res || $acct_res->num_rows === 0) {
     echo json_encode(['success' => false, 'error' => 'No Printful account connected.']);
     exit;
 }
-$acct    = $acct_res->fetch_assoc();
-$api_key = merchDecrypt($acct['printful_api_key_encrypted']);
+$acct = $acct_res->fetch_assoc();
 
 // ── Get listing fee ──────────────────────────────────────────
 $fee_res  = $conn->query("SELECT fee_amount FROM merch_listing_fees WHERE project_id = $project_id LIMIT 1");
@@ -129,13 +128,7 @@ foreach ($selected_types as $pt) {
 
     // Build sync_variants — we need at least one variant from the product
     // First, get available variants from Printful
-    $var_ch = curl_init('https://api.printful.com/products/' . $printful_product_id);
-    curl_setopt($var_ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $api_key, 'Content-Type: application/json']);
-    curl_setopt($var_ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($var_ch, CURLOPT_TIMEOUT, 12);
-    $var_resp = curl_exec($var_ch);
-    curl_close($var_ch);
-    $var_data     = json_decode($var_resp, true);
+    $var_data     = printfulApiCall($conn, $user_id, 'GET', '/products/' . $printful_product_id);
     $all_variants = $var_data['result']['variants'] ?? [];
     // Take up to first 4 variants to keep it manageable
     $variants_to_use = array_slice($all_variants, 0, 4);
@@ -166,20 +159,10 @@ foreach ($selected_types as $pt) {
         'sync_variants' => $sync_variants,
     ]);
 
-    $create_ch = curl_init('https://api.printful.com/store/products');
-    curl_setopt($create_ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $api_key, 'Content-Type: application/json']);
-    curl_setopt($create_ch, CURLOPT_POST, 1);
-    curl_setopt($create_ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($create_ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($create_ch, CURLOPT_TIMEOUT, 20);
-    $create_resp = curl_exec($create_ch);
-    $create_http = curl_getinfo($create_ch, CURLINFO_HTTP_CODE);
-    curl_close($create_ch);
+    $create_data      = printfulApiCall($conn, $user_id, 'POST', '/store/products', json_decode($payload, true));
+    $printful_prod_id = $create_data['result']['sync_product']['id'] ?? null;
 
-    $create_data       = json_decode($create_resp, true);
-    $printful_prod_id  = $create_data['result']['sync_product']['id'] ?? null;
-
-    if ($create_http === 200 && $printful_prod_id) {
+    if ($printful_prod_id) {
         $created_product_ids[] = [
             'printful_product_id' => $printful_prod_id,
             'product_type_id'     => $pt['id'],

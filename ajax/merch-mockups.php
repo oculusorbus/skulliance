@@ -38,15 +38,14 @@ if (!$nft_res || $nft_res->num_rows === 0) {
 }
 $nft = $nft_res->fetch_assoc();
 
-// ── Get user's Printful API key ──────────────────────────────
-$acct_res = $conn->query("SELECT printful_api_key_encrypted, connected_stores FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
+// ── Get user's Printful account ──────────────────────────────
+$acct_res = $conn->query("SELECT connected_stores FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
 if (!$acct_res || $acct_res->num_rows === 0) {
     echo json_encode(['success' => false, 'error' => 'No Printful account connected.']);
     exit;
 }
-$acct    = $acct_res->fetch_assoc();
-$api_key = merchDecrypt($acct['printful_api_key_encrypted']);
-$stores  = json_decode($acct['connected_stores'], true) ?: [];
+$acct   = $acct_res->fetch_assoc();
+$stores = json_decode($acct['connected_stores'], true) ?: [];
 
 // ── Build image URL for Printful ────────────────────────────
 $image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
@@ -83,40 +82,23 @@ foreach ($product_types as $pt) {
         $print_area = ['top' => 0, 'left' => 0, 'width' => 1800, 'height' => 2400];
     }
 
-    $payload = json_encode([
-        'variant_ids' => [$pt['default_variant_id'] ?? null],  // null = Printful picks first
-        'format'      => 'jpg',
-        'files'       => [[
+    $payload_arr = [
+        'format' => 'jpg',
+        'files'  => [[
             'placement' => 'front',
             'image_url' => $image_url,
             'position'  => $print_area,
         ]],
-    ]);
+    ];
+    if (!empty($pt['default_variant_id'])) {
+        $payload_arr['variant_ids'] = [intval($pt['default_variant_id'])];
+    }
 
-    // Remove null variant_ids
-    $payload_arr = json_decode($payload, true);
-    $payload_arr['variant_ids'] = array_values(array_filter($payload_arr['variant_ids']));
-    if (empty($payload_arr['variant_ids'])) unset($payload_arr['variant_ids']);
-    $payload = json_encode($payload_arr);
-
-    $ch = curl_init('https://api.printful.com/mockup-generator/create-task/' . $printful_product_id);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $api_key,
-        'Content-Type: application/json',
-    ]);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    $resp = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $resp_data = json_decode($resp, true);
-    if ($http === 200 && !empty($resp_data['result']['task_key'])) {
+    $resp_data = printfulApiCall($conn, $user_id, 'POST', '/mockup-generator/create-task/' . $printful_product_id, $payload_arr);
+    if ($resp_data && !empty($resp_data['result']['task_key'])) {
         $tasks[] = [
-            'task_key'     => $resp_data['result']['task_key'],
-            'product_name' => $pt['name'],
+            'task_key'        => $resp_data['result']['task_key'],
+            'product_name'    => $pt['name'],
             'product_type_id' => $pt['id'],
         ];
     }
@@ -133,16 +115,7 @@ if (!empty($tasks)) {
         if ($poll > 0) sleep($poll_wait);
         $still_pending = [];
         foreach ($pending as $task) {
-            $ch = curl_init('https://api.printful.com/mockup-generator/task?task_key=' . urlencode($task['task_key']));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Authorization: Bearer ' . $api_key,
-                'Content-Type: application/json',
-            ]);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            $resp = curl_exec($ch);
-            curl_close($ch);
-            $resp_data = json_decode($resp, true);
+            $resp_data = printfulApiCall($conn, $user_id, 'GET', '/mockup-generator/task?task_key=' . urlencode($task['task_key']));
             $status = $resp_data['result']['status'] ?? 'waiting';
             if ($status === 'completed' && !empty($resp_data['result']['mockups'])) {
                 foreach ($resp_data['result']['mockups'] as $m) {

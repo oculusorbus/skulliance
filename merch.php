@@ -15,28 +15,11 @@ function merchFlash($msg, $type = 'info') {
     $_SESSION['merch_flash'][] = ['msg' => $msg, 'type' => $type];
 }
 
-// ── POST handling (connect / disconnect) ─────────────────────
+// ── POST handling (disconnect only — connect is now OAuth) ───
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'connect_printful') {
-        $api_key = trim($_POST['api_key'] ?? '');
-        if (empty($api_key)) {
-            merchFlash('API key is required.', 'error');
-        } else {
-            // Verify via Printful and save — delegate to AJAX for JSON response
-            // Here we call the AJAX logic inline for a POST-redirect-GET flow
-            $verify = printfulVerifyAndSave($conn, $user_id, $api_key);
-            if ($verify['success']) {
-                merchFlash('Printful account connected successfully!', 'success');
-            } else {
-                merchFlash('Could not connect: ' . $verify['error'], 'error');
-            }
-        }
-        header('Location: merch.php');
-        exit;
-
-    } elseif ($action === 'disconnect_printful') {
+    if ($action === 'disconnect_printful') {
         $conn->query("DELETE FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
         merchFlash('Printful account disconnected.', 'info');
         header('Location: merch.php');
@@ -47,42 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ── Inline helper used by POST handler ──────────────────────
-function printfulVerifyAndSave($conn, $user_id, $api_key) {
-    $ch = curl_init('https://api.printful.com/stores');
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $api_key,
-        'Content-Type: application/json',
+// ── Build OAuth authorization URL ───────────────────────────
+$state = bin2hex(random_bytes(16));
+$_SESSION['merch_oauth_state'] = $state;
+$oauth_url = 'https://www.printful.com/oauth/authorize?'
+    . http_build_query([
+        'client_id'     => PRINTFUL_CLIENT_ID,
+        'redirect_uri'  => PRINTFUL_REDIRECT_URI,
+        'scope'         => 'orders products',
+        'state'         => $state,
+        'response_type' => 'code',
     ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    $resp = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($http !== 200) {
-        return ['success' => false, 'error' => 'Invalid API key or Printful API error (HTTP ' . $http . ').'];
-    }
-    $data = json_decode($resp, true);
-    if (empty($data['result'])) {
-        return ['success' => false, 'error' => 'No stores found in this Printful account.'];
-    }
-
-    $stores      = json_encode($data['result']);
-    $enc_key     = merchEncrypt($api_key);
-    $enc_key_esc = $conn->real_escape_string($enc_key);
-    $stores_esc  = $conn->real_escape_string($stores);
-
-    // Upsert
-    $existing = $conn->query("SELECT id FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
-    if ($existing && $existing->num_rows > 0) {
-        $conn->query("UPDATE merch_accounts SET printful_api_key_encrypted='$enc_key_esc', connected_stores='$stores_esc', updated_at=NOW() WHERE user_id=$user_id LIMIT 1");
-    } else {
-        $conn->query("INSERT INTO merch_accounts (user_id, printful_api_key_encrypted, connected_stores) VALUES ($user_id, '$enc_key_esc', '$stores_esc')");
-    }
-
-    return ['success' => true, 'stores' => $data['result']];
-}
 
 header('X-Accel-Buffering: no');
 include 'header.php';
@@ -215,18 +173,14 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
   <?php endforeach; ?>
 
   <?php if ($state === 'no_account'): ?>
-  <!-- ── No account: connect form ───────────────────────── -->
+  <!-- ── No account: OAuth connect ──────────────────────── -->
   <div class="merch-connect-box">
     <div style="font-size:2.5rem;margin-bottom:10px;">&#128279;</div>
     <h2>Connect Printful</h2>
-    <p>Enter your Printful API key to link your account. Your key is encrypted and stored securely. Skulliance will create products on your behalf — all revenue goes directly to your Etsy or TikTok Shop.</p>
-    <form method="post" action="merch.php">
-      <input type="hidden" name="action" value="connect_printful">
-      <input type="text" name="api_key" class="merch-input" placeholder="Printful API Key" autocomplete="off" required>
-      <button type="submit" class="small-button" style="width:100%;margin-top:4px;">Connect Account</button>
-    </form>
+    <p>Authorize Skulliance to access your Printful account. You will be redirected to Printful to approve the connection. Skulliance will create products on your behalf — all revenue goes directly to your Etsy or TikTok Shop.</p>
+    <a href="<?php echo htmlspecialchars($oauth_url); ?>" class="small-button" style="display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;margin-top:4px;">Connect with Printful</a>
     <p style="font-size:.76rem;margin-top:16px;color:rgba(255,255,255,.3);">
-      Get your API key from <a href="https://www.printful.com/dashboard/settings/api" target="_blank" style="color:#00c8a0;">Printful &rarr; Settings &rarr; API</a>
+      You will be redirected to Printful to authorize access.
     </p>
   </div>
 

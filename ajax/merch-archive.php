@@ -38,32 +38,44 @@ if ($listing['status'] === 'archived') {
     exit;
 }
 
-// ── Get Printful API key ─────────────────────────────────────
-$acct_res = $conn->query("SELECT printful_api_key_encrypted FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
-if (!$acct_res || $acct_res->num_rows === 0) {
+// ── Verify Printful account exists ───────────────────────────
+$acct_check = $conn->query("SELECT id FROM merch_accounts WHERE user_id = $user_id LIMIT 1");
+if (!$acct_check || $acct_check->num_rows === 0) {
     echo json_encode(['success' => false, 'error' => 'No Printful account connected.']);
     exit;
 }
-$acct    = $acct_res->fetch_assoc();
-$api_key = merchDecrypt($acct['printful_api_key_encrypted']);
 
 // ── Delete from Printful ─────────────────────────────────────
 $printful_product_id = intval($listing['printful_product_id']);
 $pf_error = null;
 
 if ($printful_product_id > 0) {
-    $ch = curl_init('https://api.printful.com/store/products/' . $printful_product_id);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $api_key, 'Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 12);
-    $resp = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    // 200 = deleted, 404 = already gone — both are fine
-    if ($http !== 200 && $http !== 404) {
-        $pf_error = 'Printful deletion returned HTTP ' . $http . '. DB status still updated.';
+    // printfulApiCall returns false on non-2xx; 404 is also acceptable (already deleted)
+    // We use _printfulCurl directly so we can inspect the HTTP code for 404 tolerance.
+    $acct_row = $conn->query("SELECT printful_access_token, printful_refresh_token, token_expires_at FROM merch_accounts WHERE user_id=$user_id LIMIT 1")->fetch_assoc();
+    $needs_refresh = (!empty($acct_row['token_expires_at']) && strtotime($acct_row['token_expires_at']) <= time());
+    if ($needs_refresh) {
+        $token = printfulRefreshToken($conn, $user_id, $acct_row['printful_refresh_token']);
+    } else {
+        $token = merchDecrypt($acct_row['printful_access_token']);
+    }
+    if ($token) {
+        $del_result = _printfulCurl('DELETE', '/store/products/' . $printful_product_id, $token);
+        $http = $del_result['http'];
+        // 200 = deleted, 404 = already gone — both are fine
+        if ($http !== 200 && $http !== 404) {
+            // Retry once after refresh on 401
+            if ($http === 401 && !empty($acct_row['printful_refresh_token'])) {
+                $token = printfulRefreshToken($conn, $user_id, $acct_row['printful_refresh_token']);
+                if ($token) {
+                    $del_result = _printfulCurl('DELETE', '/store/products/' . $printful_product_id, $token);
+                    $http = $del_result['http'];
+                }
+            }
+            if ($http !== 200 && $http !== 404) {
+                $pf_error = 'Printful deletion returned HTTP ' . $http . '. DB status still updated.';
+            }
+        }
     }
 }
 

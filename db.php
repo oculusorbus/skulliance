@@ -54,6 +54,18 @@ if (!defined('MERCH_ENCRYPT_KEY')) {
 }
 define('MERCH_ENCRYPT_CIPHER', 'AES-256-CBC');
 
+// ── Printful OAuth credentials ──────────────────────────────
+// Define these in credentials/db_credentials.php with your real values.
+if (!defined('PRINTFUL_CLIENT_ID')) {
+    define('PRINTFUL_CLIENT_ID',     'your-printful-client-id');
+}
+if (!defined('PRINTFUL_CLIENT_SECRET')) {
+    define('PRINTFUL_CLIENT_SECRET', 'your-printful-client-secret');
+}
+if (!defined('PRINTFUL_REDIRECT_URI')) {
+    define('PRINTFUL_REDIRECT_URI',  'https://skulliance.io/staking/ajax/merch-oauth-callback.php');
+}
+
 function merchEncrypt($data) {
     $iv = openssl_random_pseudo_bytes(16);
     return base64_encode($iv . openssl_encrypt($data, MERCH_ENCRYPT_CIPHER, MERCH_ENCRYPT_KEY, 0, $iv));
@@ -65,12 +77,103 @@ function merchDecrypt($data) {
     return openssl_decrypt(substr($raw, 16), MERCH_ENCRYPT_CIPHER, MERCH_ENCRYPT_KEY, 0, $iv);
 }
 
+// ── Printful token refresh ──────────────────────────────────
+function printfulRefreshToken($conn, $user_id, $refresh_token_enc) {
+    $refresh_token = merchDecrypt($refresh_token_enc);
+    $ch = curl_init('https://www.printful.com/oauth/token');
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type'    => 'refresh_token',
+        'refresh_token' => $refresh_token,
+        'client_id'     => PRINTFUL_CLIENT_ID,
+        'client_secret' => PRINTFUL_CLIENT_SECRET,
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    $resp = curl_exec($ch);
+    curl_close($ch);
+    $data = json_decode($resp, true);
+    if (empty($data['access_token'])) return false;
+    $new_access  = merchEncrypt($data['access_token']);
+    $new_refresh = !empty($data['refresh_token']) ? merchEncrypt($data['refresh_token']) : $refresh_token_enc;
+    $expires_at  = date('Y-m-d H:i:s', time() + intval($data['expires_in'] ?? 3600));
+    $uid = intval($user_id);
+    $na  = $conn->real_escape_string($new_access);
+    $nr  = $conn->real_escape_string($new_refresh);
+    $conn->query("UPDATE merch_accounts SET printful_access_token='$na', printful_refresh_token='$nr', token_expires_at='$expires_at', updated_at=NOW() WHERE user_id=$uid LIMIT 1");
+    return $data['access_token'];
+}
+
+// ── Printful API call with auto-refresh ────────────────────
+function printfulApiCall($conn, $user_id, $method, $endpoint, $payload = null) {
+    $uid     = intval($user_id);
+    $acct_res = $conn->query("SELECT printful_access_token, printful_refresh_token, token_expires_at FROM merch_accounts WHERE user_id=$uid LIMIT 1");
+    if (!$acct_res || $acct_res->num_rows === 0) return false;
+    $acct = $acct_res->fetch_assoc();
+
+    // Refresh if expired
+    $token = null;
+    $needs_refresh = (!empty($acct['token_expires_at']) && strtotime($acct['token_expires_at']) <= time());
+    if ($needs_refresh) {
+        $token = printfulRefreshToken($conn, $uid, $acct['printful_refresh_token']);
+        if (!$token) return false;
+    } else {
+        $token = merchDecrypt($acct['printful_access_token']);
+    }
+
+    $result = _printfulCurl($method, $endpoint, $token, $payload);
+
+    // Retry once on 401 with a fresh token
+    if ($result['http'] === 401 && !empty($acct['printful_refresh_token'])) {
+        $token = printfulRefreshToken($conn, $uid, $acct['printful_refresh_token']);
+        if (!$token) return false;
+        $result = _printfulCurl($method, $endpoint, $token, $payload);
+    }
+
+    if ($result['http'] >= 200 && $result['http'] < 300) {
+        return json_decode($result['body'], true);
+    }
+    return false;
+}
+
+function _printfulCurl($method, $endpoint, $token, $payload = null) {
+    $url = 'https://api.printful.com' . $endpoint;
+    $ch  = curl_init($url);
+    $headers = [
+        'Authorization: Bearer ' . $token,
+        'Content-Type: application/json',
+    ];
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+
+    $method = strtoupper($method);
+    if ($method === 'POST') {
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, is_string($payload) ? $payload : json_encode($payload));
+    } elseif ($method === 'DELETE') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+    } elseif ($method === 'GET') {
+        // default
+    } else {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        if ($payload !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, is_string($payload) ? $payload : json_encode($payload));
+        }
+    }
+
+    $body = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return ['http' => $http, 'body' => $body];
+}
+
 // ── Merch: archive all active listings for an NFT that left wallet ──
 function verifyMerchListings($conn) {
     // Find active merch listings where the NFT is no longer owned by the listing's user
     $sql = "
         SELECT mp.id AS listing_id, mp.printful_product_id, mp.user_id,
-               ma.printful_api_key_encrypted,
+               ma.printful_access_token,
                nfts.name AS nft_name, collections.name AS collection_name,
                users.discord_id
         FROM merch_products mp
@@ -87,7 +190,7 @@ function verifyMerchListings($conn) {
     while ($row = $result->fetch_assoc()) {
         $listing_id  = intval($row['listing_id']);
         $pf_prod_id  = intval($row['printful_product_id']);
-        $api_key     = merchDecrypt($row['printful_api_key_encrypted']);
+        $api_key     = merchDecrypt($row['printful_access_token']);
         $discord_id  = $row['discord_id'] ?? '';
 
         // Delete from Printful
