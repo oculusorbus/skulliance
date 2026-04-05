@@ -3115,6 +3115,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 				?>
 				<form id="coreProjectsForm" action="diamond-skulls.php#diamond-skull" method="post">
 				  <input type="hidden" id="nft_id" name="nft_id" value="<?php echo $row["nfts_id"];?>">
+				  <input type="hidden" name="delegate_nft" value="1">
 				  <input type="submit" value="Delegate" class="small-button">
 				</form>
 				<?php

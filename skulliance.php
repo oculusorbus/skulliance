@@ -843,7 +843,7 @@ $project_names[5] = "Kimosabe Art";
 $project_names[6] = "Crypties";
 
 $nft_id = "";
-if(isset($_POST['nft_id'])){
+if(isset($_POST['nft_id']) && isset($_POST['delegate_nft'])){
 	if($member == true){
 		$nft_id = $_POST['nft_id'];
 		$project_id = getNFTProjectID($conn, $nft_id);
