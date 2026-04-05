@@ -172,7 +172,11 @@ if ($state === 'encounter') {
 .arena-card img       { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
 .arena-card-label     { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); padding: 8px 10px 2px; }
 .arena-card-name      { font-size: .82rem; font-weight: 600; color: #fff; padding: 0 10px 4px; }
-.arena-card-project   { font-size: .72rem; color: rgba(255,255,255,.45); padding: 0 10px 10px; }
+.arena-card-project   { font-size: .72rem; color: rgba(255,255,255,.45); padding: 0 10px 4px; }
+.arena-card-user      { display: flex; align-items: center; gap: 5px; padding: 0 10px 10px; }
+.arena-card-user img  { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.arena-card-user a    { font-size: .72rem; color: #00c8a0; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arena-card-user a:hover { text-decoration: underline; }
 
 /* Odds display */
 .odds-bar-wrap        { margin-bottom: 20px; }
@@ -357,19 +361,38 @@ if ($state === 'encounter') {
 		$opponent_img = getIPFS($enc['opponent_ipfs'], $enc['opponent_collection_id'], $enc['opponent_project_id_real']);
 		$odds_class   = $win_chance_display >= 50 ? '' : 'danger';
 	?>
+	<?php
+		$player_username   = $_SESSION['userData']['username']   ?? '';
+		$player_discord_id = $_SESSION['userData']['discord_id'] ?? '';
+		$player_avatar     = $_SESSION['userData']['avatar']     ?? '';
+	?>
 	<div class="arena">
 		<div class="arena-card player">
 			<div class="arena-card-label">Your Card</div>
 			<img src="<?php echo htmlspecialchars($player_img); ?>" alt="<?php echo htmlspecialchars($enc['player_nft_name']); ?>" onerror="this.src='icons/skull.png'">
 			<div class="arena-card-name"><?php echo htmlspecialchars($enc['player_nft_name']); ?></div>
 			<div class="arena-card-project"><?php echo htmlspecialchars($enc['player_project_name']); ?></div>
+			<div class="arena-card-user">
+				<?php if (!empty($player_discord_id) && !empty($player_avatar)): ?>
+				<img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($player_discord_id); ?>/<?php echo htmlspecialchars($player_avatar); ?>.png" alt="" onerror="this.src='icons/skull.png'">
+				<?php endif; ?>
+				<a href="profile.php?username=<?php echo urlencode($player_username); ?>"><?php echo htmlspecialchars($player_username); ?></a>
+			</div>
 		</div>
 		<div class="arena-vs">VS</div>
 		<div class="arena-card">
 			<div class="arena-card-label">Opponent</div>
 			<img src="<?php echo htmlspecialchars($opponent_img); ?>" alt="<?php echo htmlspecialchars($enc['opponent_nft_name']); ?>" onerror="this.src='icons/skull.png'">
 			<div class="arena-card-name"><?php echo htmlspecialchars($enc['opponent_nft_name']); ?></div>
-			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?><?php if (!empty($enc['opponent_username'])): ?> &middot; <?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?><img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($enc['opponent_discord_id']); ?>/<?php echo htmlspecialchars($enc['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'" style="width:14px;height:14px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>" style="color:#00c8a0;text-decoration:none;font-size:.72rem;"><?php echo htmlspecialchars($enc['opponent_username']); ?></a><?php endif; ?></div>
+			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?></div>
+			<div class="arena-card-user">
+				<?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?>
+				<img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($enc['opponent_discord_id']); ?>/<?php echo htmlspecialchars($enc['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'">
+				<?php endif; ?>
+				<?php if (!empty($enc['opponent_username'])): ?>
+				<a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>"><?php echo htmlspecialchars($enc['opponent_username']); ?></a>
+				<?php endif; ?>
+			</div>
 		</div>
 	</div>
 
