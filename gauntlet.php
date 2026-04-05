@@ -625,7 +625,7 @@ if ($state === 'encounter') {
 	<?php endif; ?>
 
 	<div class="resource-panel">
-			<div class="resource-title">Deploy Resources (optional — 1 per category)</div>
+			<div class="resource-title">Deploy Resources (optional — stack items, 1 weapon &amp; 1 armor)</div>
 			<div class="resource-tabs">
 				<div class="resource-tab active" id="tab-btn-consumable" onclick="switchTab('consumable', this)">Items</div>
 				<div class="resource-tab" id="tab-btn-weapon" onclick="switchTab('weapon', this)">Weapons</div>
