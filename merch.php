@@ -43,6 +43,9 @@ $oauth_url = 'https://www.printful.com/oauth/authorize?'
         'response_type' => 'code',
     ]);
 
+extract($_SESSION['userData']);
+$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+
 header('X-Accel-Buffering: no');
 include 'header.php';
 
@@ -516,6 +519,7 @@ function escHtml(str) {
 <div class="footer">
 	<p>Skulliance<br>Copyright &copy; <span id="year"></span></p>
 </div>
+<script>document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());</script>
 </div>
 </div>
 </body>
