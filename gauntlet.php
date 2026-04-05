@@ -186,8 +186,9 @@ if ($state === 'encounter') {
 .resource-panel       { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 14px; margin-bottom: 20px; }
 .resource-title       { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.35); margin-bottom: 10px; }
 .resource-tabs        { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.resource-tab         { padding: 4px 12px; border-radius: 4px; font-size: .78rem; cursor: pointer; background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid transparent; transition: all .15s; }
+.resource-tab         { padding: 4px 12px; border-radius: 4px; font-size: .78rem; cursor: pointer; background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid transparent; transition: all .15s; position: relative; }
 .resource-tab.active  { background: rgba(0,200,160,.15); color: #00c8a0; border-color: #00c8a0; }
+.resource-tab.has-selection::after { content: ''; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: #00c8a0; }
 .resource-section     { display: none; }
 .resource-section.active { display: block; }
 .resource-item        { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; margin-bottom: 6px; transition: all .15s; }
@@ -407,16 +408,16 @@ if ($state === 'encounter') {
 
 		<?php if (!empty($consumables_inv) || !empty($weapons_inv) || !empty($armor_inv)): ?>
 		<div class="resource-panel">
-			<div class="resource-title">Deploy a Resource (optional — 1 per fight)</div>
+			<div class="resource-title">Deploy Resources (optional — 1 per category)</div>
 			<div class="resource-tabs">
 				<?php if (!empty($consumables_inv)): ?>
-				<div class="resource-tab active" onclick="switchTab('consumable', this)">Items</div>
+				<div class="resource-tab active" id="tab-btn-consumable" onclick="switchTab('consumable', this)">Items</div>
 				<?php endif; ?>
 				<?php if (!empty($weapons_inv)): ?>
-				<div class="resource-tab <?php echo empty($consumables_inv) ? 'active' : ''; ?>" onclick="switchTab('weapon', this)">Weapons</div>
+				<div class="resource-tab <?php echo empty($consumables_inv) ? 'active' : ''; ?>" id="tab-btn-weapon" onclick="switchTab('weapon', this)">Weapons</div>
 				<?php endif; ?>
 				<?php if (!empty($armor_inv)): ?>
-				<div class="resource-tab <?php echo (empty($consumables_inv) && empty($weapons_inv)) ? 'active' : ''; ?>" onclick="switchTab('armor', this)">Armor</div>
+				<div class="resource-tab <?php echo (empty($consumables_inv) && empty($weapons_inv)) ? 'active' : ''; ?>" id="tab-btn-armor" onclick="switchTab('armor', this)">Armor</div>
 				<?php endif; ?>
 			</div>
 
@@ -528,28 +529,35 @@ function pickCard(nftId) {
 
 var gauntletBaseOdds = <?php echo isset($win_chance_display) ? intval($win_chance_display) : 0; ?>;
 
-// Resource selection — 1 per encounter across all types
+// Resource selection — 1 per type; types are independent
 function selectResource(type, id, el) {
 	const alreadySelected = el.dataset.selected === '1';
-	// Deselect all
-	document.querySelectorAll('.resource-item').forEach(i => { i.classList.remove('selected'); i.dataset.selected = '0'; });
-	document.getElementById('fight-consumable').value = 0;
-	document.getElementById('fight-weapon').value     = 0;
-	document.getElementById('fight-armor').value      = 0;
-	// Toggle: clicking selected item deselects it
+	// Deselect all items of this type only
+	document.querySelectorAll('.resource-item[data-type="' + type + '"]').forEach(i => { i.classList.remove('selected'); i.dataset.selected = '0'; });
 	if (!alreadySelected) {
 		el.classList.add('selected');
 		el.dataset.selected = '1';
 		if (type === 'consumable') document.getElementById('fight-consumable').value = id;
 		if (type === 'weapon')     document.getElementById('fight-weapon').value     = id;
 		if (type === 'armor')      document.getElementById('fight-armor').value      = id;
+	} else {
+		if (type === 'consumable') document.getElementById('fight-consumable').value = 0;
+		if (type === 'weapon')     document.getElementById('fight-weapon').value     = 0;
+		if (type === 'armor')      document.getElementById('fight-armor').value      = 0;
 	}
+	// Update tab dot indicator
+	var tabBtn = document.getElementById('tab-btn-' + type);
+	if (tabBtn) tabBtn.classList.toggle('has-selection', !alreadySelected);
 	updateOddsDisplay();
 }
 
 function updateOddsDisplay() {
-	var sel = document.querySelector('.resource-item[data-selected="1"]');
-	var bonus = sel ? parseInt(sel.dataset.bonus || '0', 10) : 0;
+	var bonus = 0;
+	var anySelected = false;
+	document.querySelectorAll('.resource-item[data-selected="1"]').forEach(function(sel) {
+		bonus += parseInt(sel.dataset.bonus || '0', 10);
+		anySelected = true;
+	});
 	var total = Math.min(100, gauntletBaseOdds + bonus);
 	var pct   = document.getElementById('odds-pct');
 	var fill  = document.getElementById('odds-fill');
@@ -560,9 +568,9 @@ function updateOddsDisplay() {
 	}
 	if (fill) fill.style.width = total + '%';
 	if (lbl) {
-		if (bonus > 0)   lbl.textContent = 'Base ' + gauntletBaseOdds + '% + ' + bonus + '% from resource = ' + total + '%';
-		else if (sel)    lbl.textContent = 'Base ' + gauntletBaseOdds + '% — selected item does not affect odds';
-		else             lbl.textContent = 'Base odds — select a resource to see its effect';
+		if (bonus > 0)      lbl.textContent = 'Base ' + gauntletBaseOdds + '% + ' + bonus + '% from resources = ' + total + '%';
+		else if (anySelected) lbl.textContent = 'Base ' + gauntletBaseOdds + '% — selected items do not affect odds';
+		else                lbl.textContent = 'Base odds — select resources to see their effect';
 	}
 }
 
