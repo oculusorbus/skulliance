@@ -220,6 +220,11 @@ if ($state === 'encounter') {
 .resource-item-name   { font-size: .8rem; color: rgba(255,255,255,.8); flex: 1; }
 .resource-item-qty    { font-size: .75rem; color: rgba(255,255,255,.4); }
 .resource-none        { font-size: .8rem; color: rgba(255,255,255,.25); padding: 6px 0; }
+.resource-empty       { padding: 8px 2px 4px; }
+.resource-empty-title { font-size: .8rem; color: rgba(255,255,255,.3); margin-bottom: 5px; }
+.resource-empty-body  { font-size: .78rem; color: rgba(255,255,255,.2); line-height: 1.5; }
+.resource-empty-body a { color: rgba(0,200,160,.6); text-decoration: none; }
+.resource-empty-body a:hover { color: #00c8a0; text-decoration: underline; }
 .resource-effect      { display: block; font-size: .7rem; color: rgba(255,255,255,.35); margin-top: 2px; }
 .resource-item.selected .resource-effect { color: #00c8a0; }
 
@@ -500,27 +505,20 @@ if ($state === 'encounter') {
 
 		<button type="submit" class="btn-fight">&#x2694; Fight!</button>
 
-		<?php if (!empty($consumables_inv) || !empty($weapons_inv) || !empty($armor_inv)): ?>
 		<div class="resource-panel">
 			<div class="resource-title">Deploy Resources (optional — 1 per category)</div>
 			<div class="resource-tabs">
-				<?php if (!empty($consumables_inv)): ?>
 				<div class="resource-tab active" id="tab-btn-consumable" onclick="switchTab('consumable', this)">Items</div>
-				<?php endif; ?>
-				<?php if (!empty($weapons_inv)): ?>
-				<div class="resource-tab <?php echo empty($consumables_inv) ? 'active' : ''; ?>" id="tab-btn-weapon" onclick="switchTab('weapon', this)">Weapons</div>
-				<?php endif; ?>
-				<?php if (!empty($armor_inv)): ?>
-				<div class="resource-tab <?php echo (empty($consumables_inv) && empty($weapons_inv)) ? 'active' : ''; ?>" id="tab-btn-armor" onclick="switchTab('armor', this)">Armor</div>
-				<?php endif; ?>
+				<div class="resource-tab" id="tab-btn-weapon" onclick="switchTab('weapon', this)">Weapons</div>
+				<div class="resource-tab" id="tab-btn-armor" onclick="switchTab('armor', this)">Armor</div>
 			</div>
 
-			<?php if (!empty($consumables_inv)): ?>
 			<div class="resource-section active" id="tab-consumable">
+				<?php if (!empty($consumables_inv)): ?>
 				<?php foreach ($consumables_inv as $ci):
 					$icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $ci['name'])) . '.png';
+					$c_bonus = $consumable_bonuses[intval($ci['consumable_id'])] ?? 0;
 				?>
-				<?php $c_bonus = $consumable_bonuses[intval($ci['consumable_id'])] ?? 0; ?>
 				<div class="resource-item" onclick="selectResource('consumable', <?php echo intval($ci['consumable_id']); ?>, this)" data-type="consumable" data-id="<?php echo intval($ci['consumable_id']); ?>" data-bonus="<?php echo $c_bonus; ?>">
 					<img src="<?php echo htmlspecialchars($icon); ?>" onerror="this.style.display='none'">
 					<span class="resource-item-name">
@@ -532,11 +530,16 @@ if ($state === 'encounter') {
 					<span class="resource-item-qty">x<?php echo intval($ci['amount']); ?></span>
 				</div>
 				<?php endforeach; ?>
+				<?php else: ?>
+				<div class="resource-empty">
+					<div class="resource-empty-title">No consumables in your inventory.</div>
+					<div class="resource-empty-body">Embark on <a href="missions.php">Missions</a> to earn consumable items, or claim them from the Factory in your <a href="realms.php">Realm</a>.</div>
+				</div>
+				<?php endif; ?>
 			</div>
-			<?php endif; ?>
 
-			<?php if (!empty($weapons_inv)): ?>
-			<div class="resource-section <?php echo empty($consumables_inv) ? 'active' : ''; ?>" id="tab-weapon">
+			<div class="resource-section" id="tab-weapon">
+				<?php if (!empty($weapons_inv)): ?>
 				<?php foreach ($weapons_inv as $wi): ?>
 				<div class="resource-item" onclick="selectResource('weapon', <?php echo intval($wi['item_id']); ?>, this)" data-type="weapon" data-id="<?php echo intval($wi['item_id']); ?>" data-bonus="<?php echo intval($wi['weapon_level']); ?>">
 					<span class="resource-item-name">
@@ -546,11 +549,16 @@ if ($state === 'encounter') {
 					<span class="resource-item-qty">x<?php echo intval($wi['quantity']); ?></span>
 				</div>
 				<?php endforeach; ?>
+				<?php else: ?>
+				<div class="resource-empty">
+					<div class="resource-empty-title">No weapons in your inventory.</div>
+					<div class="resource-empty-body">Claim weapons from the Armory in your <a href="realms.php">Realm</a>. Tip: equip gear to your Gauntlet cards first — once soldiers are auto-equipped, that gear is no longer available here.</div>
+				</div>
+				<?php endif; ?>
 			</div>
-			<?php endif; ?>
 
-			<?php if (!empty($armor_inv)): ?>
-			<div class="resource-section <?php echo (empty($consumables_inv) && empty($weapons_inv)) ? 'active' : ''; ?>" id="tab-armor">
+			<div class="resource-section" id="tab-armor">
+				<?php if (!empty($armor_inv)): ?>
 				<?php foreach ($armor_inv as $ai): ?>
 				<div class="resource-item" onclick="selectResource('armor', <?php echo intval($ai['item_id']); ?>, this)" data-type="armor" data-id="<?php echo intval($ai['item_id']); ?>" data-bonus="<?php echo intval($ai['armor_level']); ?>">
 					<span class="resource-item-name">
@@ -560,10 +568,14 @@ if ($state === 'encounter') {
 					<span class="resource-item-qty">x<?php echo intval($ai['quantity']); ?></span>
 				</div>
 				<?php endforeach; ?>
+				<?php else: ?>
+				<div class="resource-empty">
+					<div class="resource-empty-title">No armor in your inventory.</div>
+					<div class="resource-empty-body">Claim armor from the Armory in your <a href="realms.php">Realm</a>. Tip: equip gear to your Gauntlet cards first — once soldiers are auto-equipped, that gear is no longer available here.</div>
+				</div>
+				<?php endif; ?>
 			</div>
-			<?php endif; ?>
 		</div>
-		<?php endif; ?>
 	</form>
 
 	<?php
