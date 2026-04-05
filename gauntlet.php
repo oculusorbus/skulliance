@@ -158,6 +158,7 @@ if ($state === 'encounter') {
 .nft-card.played      { opacity: .35; cursor: default; pointer-events: none; }
 .nft-card.selected    { border-color: #00c8a0; box-shadow: 0 0 12px rgba(0,200,160,.35); }
 .nft-card img         { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.nft-img              { background: url('icons/skull.png') center/40% no-repeat rgba(0,0,0,.15); }
 .nft-card-info        { padding: 8px 10px; }
 .nft-card-name        { font-size: .78rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nft-card-project     { font-size: .7rem; color: rgba(255,255,255,.4); margin-top: 2px; }
@@ -366,7 +367,7 @@ if ($state === 'encounter') {
 	?>
 		<div class="nft-card <?php echo $card['played'] ? 'played' : ''; ?>" onclick="pickCard(<?php echo intval($card['id']); ?>)">
 			<?php if ($card['played']): ?><span class="played-label">Used</span><?php endif; ?>
-			<img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" loading="lazy" onerror="this.src='icons/skull.png'">
+			<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" loading="lazy" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
 			<div class="nft-card-info">
 				<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
 				<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
@@ -395,7 +396,7 @@ if ($state === 'encounter') {
 	<div class="arena">
 		<div class="arena-card player">
 			<div class="arena-card-label">Your Card</div>
-			<img src="<?php echo htmlspecialchars($player_img); ?>" alt="<?php echo htmlspecialchars($enc['player_nft_name']); ?>" onerror="this.src='icons/skull.png'">
+			<img class="nft-img" src="<?php echo htmlspecialchars($player_img); ?>" alt="<?php echo htmlspecialchars($enc['player_nft_name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
 			<div class="arena-card-name"><?php echo htmlspecialchars($enc['player_nft_name']); ?></div>
 			<div class="arena-card-project"><?php echo htmlspecialchars($enc['player_project_name']); ?></div>
 			<div class="arena-card-user">
@@ -408,7 +409,7 @@ if ($state === 'encounter') {
 		<div class="arena-vs">VS</div>
 		<div class="arena-card">
 			<div class="arena-card-label">Opponent</div>
-			<img src="<?php echo htmlspecialchars($opponent_img); ?>" alt="<?php echo htmlspecialchars($enc['opponent_nft_name']); ?>" onerror="this.src='icons/skull.png'">
+			<img class="nft-img" src="<?php echo htmlspecialchars($opponent_img); ?>" alt="<?php echo htmlspecialchars($enc['opponent_nft_name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
 			<div class="arena-card-name"><?php echo htmlspecialchars($enc['opponent_nft_name']); ?></div>
 			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?></div>
 			<div class="arena-card-user">
@@ -437,7 +438,7 @@ if ($state === 'encounter') {
 			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
 		?>
 			<div class="nft-card" onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)">
-				<img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onerror="this.src='icons/skull.png'">
+				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
 				<div class="nft-card-info">
 					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
 					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
