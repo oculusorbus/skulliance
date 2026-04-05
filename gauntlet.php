@@ -690,17 +690,44 @@ if ($state === 'encounter') {
 <?php $conn->close(); ?>
 <script>
 document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
+
+// Show loader overlay (used before form submissions for immediate feedback)
+function showLoader(msg) {
+	var loader = document.getElementById('gauntlet-loader');
+	if (!loader) return;
+	var txt = loader.querySelector('.loader-text');
+	if (txt && msg) txt.textContent = msg;
+	// Reset bar animation by replacing the element
+	var bar = loader.querySelector('.loader-bar');
+	if (bar) { var nb = bar.cloneNode(true); bar.parentNode.replaceChild(nb, bar); }
+	loader.classList.remove('fade-out');
+	loader.style.display = 'flex';
+	loader.style.opacity = '1';
+}
+
 // Fade out page loader now that DOM is fully rendered
 (function(){
 	var loader = document.getElementById('gauntlet-loader');
 	if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
 })();
 
+// Show loader on every form submission for instant visual feedback
+document.querySelectorAll('form[method="POST"]').forEach(function(f) {
+	f.addEventListener('submit', function() {
+		var action = (f.querySelector('[name="action"]') || {}).value || '';
+		var msg = action === 'resolve_encounter' ? 'Fighting…'
+		        : action === 'fast_forward'       ? 'Swapping Card…'
+		        : 'Loading Gauntlet';
+		showLoader(msg);
+	});
+});
+
 // Pick card from hand
 function pickCard(nftId) {
 	document.querySelectorAll('.nft-card').forEach(c => c.classList.remove('selected'));
 	event.currentTarget.classList.add('selected');
 	document.getElementById('pick-nft-id').value = nftId;
+	showLoader('Loading Gauntlet');
 	setTimeout(() => document.getElementById('pick-form').submit(), 120);
 }
 
@@ -768,6 +795,7 @@ function toggleFF() {
 
 function submitFF(encId, newNftId) {
 	document.getElementById('ff-new-nft-id').value = newNftId;
+	showLoader('Swapping Card…');
 	document.getElementById('ff-form').submit();
 }
 </script>
