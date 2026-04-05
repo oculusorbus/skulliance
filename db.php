@@ -105,7 +105,7 @@ function printfulRefreshToken($conn, $user_id, $refresh_token_enc) {
 }
 
 // ── Printful API call with auto-refresh ────────────────────
-function printfulApiCall($conn, $user_id, $method, $endpoint, $payload = null) {
+function printfulApiCall($conn, $user_id, $method, $endpoint, $payload = null, $store_id = null) {
     $uid     = intval($user_id);
     $acct_res = $conn->query("SELECT printful_access_token, printful_refresh_token, token_expires_at FROM merch_accounts WHERE user_id=$uid LIMIT 1");
     if (!$acct_res || $acct_res->num_rows === 0) return false;
@@ -121,28 +121,31 @@ function printfulApiCall($conn, $user_id, $method, $endpoint, $payload = null) {
         $token = merchDecrypt($acct['printful_access_token']);
     }
 
-    $result = _printfulCurl($method, $endpoint, $token, $payload);
+    $result = _printfulCurl($method, $endpoint, $token, $payload, $store_id);
 
     // Retry once on 401 with a fresh token
     if ($result['http'] === 401 && !empty($acct['printful_refresh_token'])) {
         $token = printfulRefreshToken($conn, $uid, $acct['printful_refresh_token']);
         if (!$token) return false;
-        $result = _printfulCurl($method, $endpoint, $token, $payload);
+        $result = _printfulCurl($method, $endpoint, $token, $payload, $store_id);
     }
 
     if ($result['http'] >= 200 && $result['http'] < 300) {
         return json_decode($result['body'], true);
     }
-    return false;
+    return ['_error' => true, '_http' => $result['http'], '_body' => $result['body']];
 }
 
-function _printfulCurl($method, $endpoint, $token, $payload = null) {
+function _printfulCurl($method, $endpoint, $token, $payload = null, $store_id = null) {
     $url = 'https://api.printful.com' . $endpoint;
     $ch  = curl_init($url);
     $headers = [
         'Authorization: Bearer ' . $token,
         'Content-Type: application/json',
     ];
+    if ($store_id) {
+        $headers[] = 'X-PF-Store-Id: ' . intval($store_id);
+    }
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_TIMEOUT, 20);

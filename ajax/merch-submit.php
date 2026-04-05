@@ -116,8 +116,12 @@ updateBalance($conn, $user_id, $project_id, -$total_fee);
 logDebit($conn, $user_id, 0, $total_fee, $project_id);
 
 // ── Create products on Printful ──────────────────────────────
+// Each product type × store gets its own Printful product (required by Public App OAuth)
 $created_product_ids = [];
 $errors = [];
+
+// Cache variants per printful_product_id to avoid redundant API calls
+$variants_cache = [];
 
 foreach ($selected_types as $pt) {
     $printful_product_id = intval($pt['printful_product_id']);
@@ -126,15 +130,20 @@ foreach ($selected_types as $pt) {
         $print_area = ['top' => 0, 'left' => 0, 'width' => 1800, 'height' => 2400];
     }
 
-    // Build sync_variants — we need at least one variant from the product
-    // First, get available variants from Printful
-    $var_data     = printfulApiCall($conn, $user_id, 'GET', '/products/' . $printful_product_id);
-    $all_variants = $var_data['result']['variants'] ?? [];
-    // Take up to first 4 variants to keep it manageable
-    $variants_to_use = array_slice($all_variants, 0, 4);
+    // Fetch variants once per printful_product_id (no store context needed for catalog lookup)
+    if (!isset($variants_cache[$printful_product_id])) {
+        $var_data = printfulApiCall($conn, $user_id, 'GET', '/products/' . $printful_product_id);
+        if (!$var_data || !empty($var_data['_error'])) {
+            $ve = isset($var_data['_error']) ? 'HTTP ' . $var_data['_http'] . ': ' . $var_data['_body'] : 'no response';
+            $errors[] = 'Could not load variants for ' . $pt['name'] . ': ' . $ve;
+            continue;
+        }
+        $variants_cache[$printful_product_id] = array_slice($var_data['result']['variants'] ?? [], 0, 4);
+    }
+    $variants_to_use = $variants_cache[$printful_product_id];
 
     if (empty($variants_to_use)) {
-        $errors[] = 'Could not load variants for ' . $pt['name'];
+        $errors[] = 'No variants found for ' . $pt['name'];
         continue;
     }
 
@@ -151,41 +160,49 @@ foreach ($selected_types as $pt) {
         ];
     }
 
-    $payload = json_encode([
+    $product_payload = [
         'sync_product' => [
             'name'        => $product_title . ' (' . $pt['name'] . ')',
             'description' => $product_desc,
         ],
         'sync_variants' => $sync_variants,
-    ]);
+    ];
 
-    $create_data      = printfulApiCall($conn, $user_id, 'POST', '/store/products', json_decode($payload, true));
-    $printful_prod_id = $create_data['result']['sync_product']['id'] ?? null;
+    // Create one Printful product per store (Public App requires X-PF-Store-Id context)
+    $stores_to_use = !empty($publish_stores) ? $publish_stores : [['store_id' => 0, 'store_type' => 'store']];
+    foreach ($stores_to_use as $ps) {
+        $ps_store_id   = intval($ps['store_id']);
+        $ps_store_type = $conn->real_escape_string($ps['store_type'] ?? 'store');
 
-    if ($printful_prod_id) {
-        $created_product_ids[] = [
-            'printful_product_id' => $printful_prod_id,
-            'product_type_id'     => $pt['id'],
-        ];
-    } else {
-        $pf_error = $create_data['error']['message'] ?? $create_data['result'] ?? json_encode($create_data);
-        $errors[] = 'Failed to create ' . $pt['name'] . ' on Printful: ' . $pf_error;
+        $create_data      = printfulApiCall($conn, $user_id, 'POST', '/store/products', $product_payload, $ps_store_id ?: null);
+        $printful_prod_id = $create_data['result']['sync_product']['id'] ?? null;
+
+        if ($printful_prod_id) {
+            $created_product_ids[] = [
+                'printful_product_id' => $printful_prod_id,
+                'product_type_id'     => $pt['id'],
+                'store_id'            => $ps_store_id,
+                'store_type'          => $ps_store_type,
+            ];
+        } else {
+            $pf_error = isset($create_data['_error'])
+                ? 'HTTP ' . $create_data['_http'] . ': ' . $create_data['_body']
+                : json_encode($create_data);
+            $errors[] = 'Failed to create ' . $pt['name'] . ' (store ' . $ps_store_id . '): ' . $pf_error;
+        }
     }
 }
 
 // ── Insert DB records ────────────────────────────────────────
 $nft_id_esc = $nft_id;
 foreach ($created_product_ids as $cp) {
-    $pf_id = intval($cp['printful_product_id']);
-    $conn->query("INSERT INTO merch_products (nft_id, user_id, printful_product_id, status) VALUES ($nft_id_esc, $user_id, $pf_id, 'active')");
+    $pf_id      = intval($cp['printful_product_id']);
+    $pt_id      = intval($cp['product_type_id']);
+    $cp_store   = intval($cp['store_id']);
+    $cp_stype   = $cp['store_type'];
+    $conn->query("INSERT INTO merch_products (nft_id, user_id, printful_product_id, product_type_id, status) VALUES ($nft_id_esc, $user_id, $pf_id, $pt_id, 'active')");
     $merch_product_db_id = intval($conn->insert_id);
-
-    // Insert store junction rows
-    foreach ($publish_stores as $ps) {
-        $store_id   = intval($ps['store_id']);
-        $store_type = $ps['store_type'];
-        $conn->query("INSERT INTO merch_product_stores (merch_product_id, store_type, store_id, status) VALUES ($merch_product_db_id, '$store_type', $store_id, 'active')");
-    }
+    $conn->query("INSERT INTO merch_product_stores (merch_product_id, store_type, store_id, status) VALUES ($merch_product_db_id, '$cp_stype', $cp_store, 'active')");
 }
 
 // ── Discord webhook notification ─────────────────────────────
