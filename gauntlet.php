@@ -133,7 +133,7 @@ if ($state === 'encounter') {
 <style>
 /* ── Gauntlet page ── */
 .gauntlet-wrap        { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
-.gauntlet-title       { font-size: 2rem; font-weight: 700; color: #fff; letter-spacing: .05em; margin-bottom: 4px; }
+.gauntlet-title       { font-size: 2rem; font-weight: 700; color: #00c8a0; letter-spacing: .05em; margin-bottom: 4px; text-transform: uppercase; }
 .gauntlet-subtitle    { color: rgba(255,255,255,.45); font-size: .85rem; margin-bottom: 24px; }
 
 /* Run progress bar */
