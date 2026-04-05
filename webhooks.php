@@ -38,6 +38,8 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			$webhook = getRafflesWebhook();
 		}else if($channel == "delegations"){
 			$webhook = getDelegationsWebhook();
+		}else if($channel == "gauntlet"){
+			$webhook = getGauntletsWebhook();
 		}else{
 			$webhook = getWebhook();
 		}

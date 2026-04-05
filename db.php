@@ -9395,6 +9395,20 @@ function gauntletStartRun($conn, $user_id) {
 		$eff_id  = gauntletGetEffectiveProjectId(intval($row['project_id']));
 		$conn->query("INSERT INTO gauntlets_nfts (run_id, nft_id, effective_project_id) VALUES ($run_id, $nft_id, $eff_id)");
 	}
+	// Webhook — run started
+	$wh_username  = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$wh_discord   = $_SESSION['userData']['discord_id'] ?? '';
+	$wh_avatar    = $_SESSION['userData']['avatar']     ?? '';
+	$wh_mention   = $wh_discord ? "<@$wh_discord>" : $wh_username;
+	$wh_ava_url   = ($wh_discord && $wh_avatar) ? "https://cdn.discordapp.com/avatars/$wh_discord/$wh_avatar.png" : "";
+	$wh_profile   = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_username);
+	$wh_hand_r    = $conn->query("SELECT n.ipfs, n.collection_id, c.project_id FROM gauntlets_nfts grn INNER JOIN nfts n ON n.id=grn.nft_id INNER JOIN collections c ON c.id=n.collection_id WHERE grn.run_id=$run_id ORDER BY RAND() LIMIT 1");
+	$wh_nft_img   = "";
+	if ($wh_hand_r && $wh_hand_r->num_rows) { $wh_nr = $wh_hand_r->fetch_assoc(); $wh_nft_img = getIPFS($wh_nr['ipfs'], $wh_nr['collection_id'], $wh_nr['project_id']); }
+	$wh_desc  = $wh_mention . " has entered the Gauntlet!\n\n";
+	$wh_desc .= "🃏 **Cards Drawn:** " . GAUNTLET_HAND_SIZE . "\n";
+	$wh_desc .= "🏆 **Goal:** Win " . GAUNTLET_MAX_WINS . " encounters to sweep the Gauntlet";
+	discordmsg("⚔️ Gauntlet Run Started", $wh_desc, $wh_nft_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_ava_url, "00C8A0", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	return $run_id;
 }
 
@@ -9515,7 +9529,33 @@ function gauntletStartEncounter($conn, $user_id, $run_id, $nft_id) {
 		(run_id, player_nft_id, opponent_user_id, opponent_nft_id, opponent_effective_project_id)
 		VALUES ($rid, $nft_id, $opp_user_id, $opp_nft_id, $opp_eff)
 	");
-	return intval($conn->insert_id);
+	$enc_insert_id = intval($conn->insert_id);
+	// Webhook — encounter begins
+	$wh_username = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$wh_discord  = $_SESSION['userData']['discord_id'] ?? '';
+	$wh_avatar   = $_SESSION['userData']['avatar']     ?? '';
+	$wh_mention  = $wh_discord ? "<@$wh_discord>" : $wh_username;
+	$wh_ava_url  = ($wh_discord && $wh_avatar) ? "https://cdn.discordapp.com/avatars/$wh_discord/$wh_avatar.png" : "";
+	$wh_profile  = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_username);
+	$wh_pnft_r   = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id WHERE n.id=$nft_id LIMIT 1");
+	$wh_pnft     = ($wh_pnft_r && $wh_pnft_r->num_rows) ? $wh_pnft_r->fetch_assoc() : [];
+	$wh_player_img = !empty($wh_pnft) ? getIPFS($wh_pnft['ipfs'], $wh_pnft['collection_id'], $wh_pnft['project_id']) : "";
+	$wh_onft_r   = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name, u.username AS opp_username, u.discord_id AS opp_discord FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id INNER JOIN users u ON u.id=n.user_id WHERE n.id=$opp_nft_id LIMIT 1");
+	$wh_onft     = ($wh_onft_r && $wh_onft_r->num_rows) ? $wh_onft_r->fetch_assoc() : [];
+	$wh_opp_uname   = $wh_onft['opp_username'] ?? 'Unknown';
+	$wh_opp_discord = $wh_onft['opp_discord']  ?? '';
+	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord>" : $wh_opp_uname;
+	$wh_win_chance  = gauntletCalculateWinChance($player_eff, $opp_eff);
+	$wh_wins_r   = $conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters WHERE run_id=$rid AND outcome='win'");
+	$wh_wins_so_far = ($wh_wins_r && $wh_wins_r->num_rows) ? intval($wh_wins_r->fetch_assoc()['c']) : 0;
+	$wh_desc  = $wh_mention . " steps into the arena!\n\n";
+	$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
+	$wh_desc .= "💀 **Opponent:** " . ($wh_onft['name'] ?? 'Unknown') . " (" . ($wh_onft['project_name'] ?? '') . ")\n";
+	$wh_desc .= "👤 **Defending:** $wh_opp_mention\n";
+	$wh_desc .= "🎯 **Base Win Chance:** $wh_win_chance%\n";
+	$wh_desc .= "🏆 **Progress:** $wh_wins_so_far / " . GAUNTLET_MAX_WINS . " wins";
+	discordmsg("🃏 Encounter Begins", $wh_desc, $wh_player_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_ava_url, "FF9900", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+	return $enc_insert_id;
 }
 
 // Swap player's card mid-encounter using a Fast Forward consumable
@@ -9542,6 +9582,27 @@ function gauntletFastForward($conn, $user_id, $encounter_id, $new_nft_id) {
 	// Deduct FF consumable and update encounter
 	updateAmount($conn, $uid, GAUNTLET_C_FF, -1);
 	$conn->query("UPDATE gauntlets_encounters SET player_nft_id=$new_id WHERE id=$enc_id");
+	// Webhook — card swapped
+	$wh_username = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$wh_discord  = $_SESSION['userData']['discord_id'] ?? '';
+	$wh_avatar   = $_SESSION['userData']['avatar']     ?? '';
+	$wh_mention  = $wh_discord ? "<@$wh_discord>" : $wh_username;
+	$wh_ava_url  = ($wh_discord && $wh_avatar) ? "https://cdn.discordapp.com/avatars/$wh_discord/$wh_avatar.png" : "";
+	$wh_profile  = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_username);
+	$wh_old_r    = $conn->query("SELECT n.name FROM nfts n WHERE n.id=".intval($enc['player_nft_id'])." LIMIT 1");
+	$wh_old_name = ($wh_old_r && $wh_old_r->num_rows) ? $wh_old_r->fetch_assoc()['name'] : 'Unknown';
+	$wh_new_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id FROM nfts n INNER JOIN collections c ON c.id=n.collection_id WHERE n.id=$new_id LIMIT 1");
+	$wh_new      = ($wh_new_r && $wh_new_r->num_rows) ? $wh_new_r->fetch_assoc() : [];
+	$wh_new_img  = !empty($wh_new) ? getIPFS($wh_new['ipfs'], $wh_new['collection_id'], $wh_new['project_id']) : "";
+	$wh_opp_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name, ou.username AS opp_username FROM gauntlets_encounters ge INNER JOIN nfts n ON n.id=ge.opponent_nft_id INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id INNER JOIN users ou ON ou.id=ge.opponent_user_id WHERE ge.id=$enc_id LIMIT 1");
+	$wh_opp      = ($wh_opp_r && $wh_opp_r->num_rows) ? $wh_opp_r->fetch_assoc() : [];
+	$wh_new_eff  = gauntletCalculateWinChance($new_eff, intval($enc['opponent_effective_project_id']));
+	$wh_desc  = $wh_mention . " used a **Fast Forward** to swap their card!\n\n";
+	$wh_desc .= "🔄 **Swapped Out:** $wh_old_name\n";
+	$wh_desc .= "🃏 **New Card:** " . ($wh_new['name'] ?? 'Unknown') . "\n";
+	$wh_desc .= "💀 **Still Facing:** " . ($wh_opp['name'] ?? 'Unknown') . " (" . ($wh_opp['project_name'] ?? '') . ") — " . ($wh_opp['opp_username'] ?? 'Unknown') . "\n";
+	$wh_desc .= "🎯 **New Win Chance:** $wh_new_eff%";
+	discordmsg("⏩ Card Swapped", $wh_desc, $wh_new_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_ava_url, "4A90D9", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	return true;
 }
 
@@ -9636,6 +9697,70 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 			updateBalance($conn, $opp_uid, $player_project_id, $reward);
 			logCredit($conn, $opp_uid, $reward, $player_project_id);
 		}
+	}
+	// Webhook — encounter resolved
+	$wh_username  = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$wh_discord   = $_SESSION['userData']['discord_id'] ?? '';
+	$wh_avatar    = $_SESSION['userData']['avatar']     ?? '';
+	$wh_mention   = $wh_discord ? "<@$wh_discord>" : $wh_username;
+	$wh_ava_url   = ($wh_discord && $wh_avatar) ? "https://cdn.discordapp.com/avatars/$wh_discord/$wh_avatar.png" : "";
+	$wh_profile   = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_username);
+	// Player NFT
+	$wh_pnft_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id WHERE n.id=".intval($enc['player_nft_id'])." LIMIT 1");
+	$wh_pnft      = ($wh_pnft_r && $wh_pnft_r->num_rows) ? $wh_pnft_r->fetch_assoc() : [];
+	$wh_player_img = !empty($wh_pnft) ? getIPFS($wh_pnft['ipfs'], $wh_pnft['collection_id'], $wh_pnft['project_id']) : "";
+	// Opponent NFT + user
+	$wh_onft_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name, u.username AS opp_username, u.discord_id AS opp_discord, u.avatar AS opp_avatar FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id INNER JOIN users u ON u.id=n.user_id WHERE n.id=".intval($enc['opponent_nft_id'])." LIMIT 1");
+	$wh_onft      = ($wh_onft_r && $wh_onft_r->num_rows) ? $wh_onft_r->fetch_assoc() : [];
+	$wh_opp_uname  = $wh_onft['opp_username'] ?? 'Unknown';
+	$wh_opp_discord = $wh_onft['opp_discord']  ?? '';
+	$wh_opp_avatar  = $wh_onft['opp_avatar']   ?? '';
+	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord>" : $wh_opp_uname;
+	$wh_opp_ava_url = ($wh_opp_discord && $wh_opp_avatar) ? "https://cdn.discordapp.com/avatars/$wh_opp_discord/$wh_opp_avatar.png" : "";
+	$wh_opp_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_opp_uname);
+	// Reward currency name
+	$wh_reward_proj  = ($outcome === 'win') ? $opponent_project_id : $player_project_id;
+	$wh_curr_r       = $conn->query("SELECT currency FROM projects WHERE id=$wh_reward_proj LIMIT 1");
+	$wh_currency     = ($wh_curr_r && $wh_curr_r->num_rows) ? $wh_curr_r->fetch_assoc()['currency'] : '';
+	// Items used
+	$wh_items = [];
+	if ($consumable_id > 0) { $ci_r = $conn->query("SELECT name FROM consumables WHERE id=$consumable_id LIMIT 1"); if ($ci_r && $ci_r->num_rows) $wh_items[] = $ci_r->fetch_assoc()['name']; }
+	if ($weapon_id > 0)     { $wi_r = $conn->query("SELECT name FROM weapons WHERE id=$weapon_id LIMIT 1");     if ($wi_r && $wi_r->num_rows) $wh_items[] = $wi_r->fetch_assoc()['name']; }
+	if ($armor_id > 0)      { $ai_r = $conn->query("SELECT name FROM armor WHERE id=$armor_id LIMIT 1");       if ($ai_r && $ai_r->num_rows) $wh_items[] = $ai_r->fetch_assoc()['name']; }
+	// Run progress
+	$wh_stats_r  = $conn->query("SELECT SUM(outcome='win') AS wins, SUM(outcome='loss') AS losses FROM gauntlets_encounters WHERE run_id=".intval($enc['run_id']));
+	$wh_stats    = ($wh_stats_r && $wh_stats_r->num_rows) ? $wh_stats_r->fetch_assoc() : ['wins' => 0, 'losses' => 0];
+	$wh_wins     = intval($wh_stats['wins']);
+	$wh_swept    = ($outcome === 'win' && $wh_wins >= GAUNTLET_MAX_WINS);
+	if ($outcome === 'win') {
+		if ($wh_swept) {
+			$wh_title = "🏆 Gauntlet Swept!";
+			$wh_intro = $wh_mention . " swept the Gauntlet — undefeated!\n\n";
+			$wh_color = "FFD700";
+		} else {
+			$wh_title = "⚔️ Gauntlet Victory!";
+			$wh_intro = $wh_mention . " defeated " . $wh_opp_mention . "!\n\n";
+			$wh_color = "00C8A0";
+		}
+		$wh_desc  = $wh_intro;
+		$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
+		$wh_desc .= "💀 **Defeated:** " . ($wh_onft['name'] ?? 'Unknown') . " (" . ($wh_onft['project_name'] ?? '') . ") — [$wh_opp_uname]($wh_opp_profile)\n";
+		$wh_desc .= "🎯 **Odds:** $win_chance%\n";
+		$wh_desc .= "💰 **Reward:** " . number_format($reward) . " $wh_currency";
+		if ($double_reward) $wh_desc .= " *(2× Double Reward!)*";
+		if ($random_reward) $wh_desc .= " *(Random Currency)*";
+		$wh_desc .= "\n🏆 **Run:** $wh_wins / " . GAUNTLET_MAX_WINS . " wins";
+		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
+		discordmsg($wh_title, $wh_desc, $wh_player_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_ava_url, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+	} else {
+		$wh_desc  = $wh_mention . " was defeated by $wh_opp_mention — run ends here.\n\n";
+		$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
+		$wh_desc .= "💀 **Victor:** " . ($wh_onft['name'] ?? 'Unknown') . " (" . ($wh_onft['project_name'] ?? '') . ") — [$wh_opp_uname]($wh_opp_profile)\n";
+		$wh_desc .= "🎯 **Odds:** $win_chance%\n";
+		$wh_desc .= "💰 **Opponent Earns:** " . number_format($reward) . " $wh_currency\n";
+		$wh_desc .= "🏆 **Final Record:** $wh_wins win" . ($wh_wins !== 1 ? "s" : "") . " / " . intval($wh_stats['losses']) . " loss" . (intval($wh_stats['losses']) !== 1 ? "es" : "");
+		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
+		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_player_img, "https://skulliance.io/staking/gauntlet.php", "gauntlet", $wh_ava_url, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
 	}
 	return $outcome;
 }
