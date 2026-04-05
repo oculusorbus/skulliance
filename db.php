@@ -5167,7 +5167,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 			'Gauntlets' => number_format($data['gauntlet']),
 			'Raids'     => number_format($data['raid']),
 			'Bosses'    => number_format($data['boss']),
-			'M3'        => number_format($data['monstrocity']),
+			'M3RPG'     => number_format($data['monstrocity']),
 		];
 		$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
 		$last_score = $score;
