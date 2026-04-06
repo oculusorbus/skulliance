@@ -366,8 +366,13 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
         </div>
         <span class="merch-status-badge <?php echo $status_class; ?>"><?php echo ucfirst($listing['status']); ?></span>
         <?php if ($listing['status'] === 'active'): ?>
-        <button class="small-button" style="background:rgba(220,50,50,.12);color:#f87171;border-color:rgba(220,50,50,.25);font-size:.76rem;padding:5px 12px;"
-          onclick="archiveListing(<?php echo intval($listing['id']); ?>, this)">Archive</button>
+          <button class="small-button" style="background:rgba(220,50,50,.12);color:#f87171;border-color:rgba(220,50,50,.25);font-size:.76rem;padding:5px 12px;"
+            onclick="archiveListing(<?php echo intval($listing['id']); ?>, this)">Archive</button>
+        <?php elseif ($listing['status'] === 'archived'): ?>
+          <button class="small-button" style="background:rgba(0,200,160,.1);color:#00c8a0;border-color:rgba(0,200,160,.25);font-size:.76rem;padding:5px 12px;"
+            onclick="relistListing(<?php echo intval($listing['id']); ?>, this)">Relist</button>
+          <button class="small-button" style="background:rgba(220,50,50,.08);color:#f87171;border-color:rgba(220,50,50,.2);font-size:.76rem;padding:5px 12px;"
+            onclick="deleteListing(<?php echo intval($listing['id']); ?>, this)">Delete</button>
         <?php endif; ?>
       </div>
       <?php endforeach; ?>
@@ -561,6 +566,58 @@ function submitMerchListing(nftId, projectId, nftName, collectionName, currency)
                 });
         }
     );
+}
+
+function relistListing(listingId, btn) {
+    openConfirm('Relist this product on Printful? No fee will be charged.', function() {
+        btn.disabled    = true;
+        btn.textContent = 'Relisting…';
+        var body = new URLSearchParams();
+        body.append('listing_id', listingId);
+        fetch('ajax/merch-relist.php', { method:'POST', body: body })
+            .then(function(r){ return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    openNotify('Listing relisted successfully!');
+                    setTimeout(function(){ location.reload(); }, 1200);
+                } else {
+                    btn.disabled    = false;
+                    btn.textContent = 'Relist';
+                    openNotify(data.error || 'Could not relist.');
+                }
+            })
+            .catch(function() {
+                btn.disabled    = false;
+                btn.textContent = 'Relist';
+                openNotify('Network error. Please try again.');
+            });
+    });
+}
+
+function deleteListing(listingId, btn) {
+    openConfirm('Permanently delete this listing? This cannot be undone.', function() {
+        btn.disabled    = true;
+        btn.textContent = 'Deleting…';
+        var body = new URLSearchParams();
+        body.append('listing_id', listingId);
+        fetch('ajax/merch-delete.php', { method:'POST', body: body })
+            .then(function(r){ return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    openNotify('Listing deleted.');
+                    setTimeout(function(){ location.reload(); }, 1200);
+                } else {
+                    btn.disabled    = false;
+                    btn.textContent = 'Delete';
+                    openNotify(data.error || 'Could not delete listing.');
+                }
+            })
+            .catch(function() {
+                btn.disabled    = false;
+                btn.textContent = 'Delete';
+                openNotify('Network error. Please try again.');
+            });
+    });
 }
 
 function archiveListing(listingId, btn) {
