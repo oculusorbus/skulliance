@@ -206,6 +206,26 @@ foreach ($selected_types as $pt) {
         $printful_prod_id = $create_data['result']['id'] ?? ($create_data['result']['sync_product']['id'] ?? null);
 
         if ($printful_prod_id) {
+            // Printful doesn't auto-set thumbnail_url for standalone stores.
+            // Fetch the product back — Printful generates a preview file almost
+            // immediately. Use its preview_url to explicitly set the thumbnail.
+            sleep(2);
+            $pd = printfulApiCall($conn, $user_id, 'GET', '/store/products/' . $printful_prod_id, null, $ps_store_id ?: null);
+            $thumb_cdn = null;
+            foreach ($pd['result']['sync_variants'] ?? [] as $sv) {
+                foreach ($sv['files'] ?? [] as $f) {
+                    if ($f['type'] === 'preview' && !empty($f['preview_url'])) {
+                        $thumb_cdn = $f['preview_url'];
+                        break 2;
+                    }
+                }
+            }
+            if ($thumb_cdn) {
+                printfulApiCall($conn, $user_id, 'PUT', '/store/products/' . $printful_prod_id, [
+                    'sync_product' => ['thumbnail_url' => $thumb_cdn],
+                ], $ps_store_id ?: null);
+            }
+
             $created_product_ids[] = [
                 'printful_product_id' => $printful_prod_id,
                 'product_type_id'     => $pt['id'],

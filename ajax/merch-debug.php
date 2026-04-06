@@ -67,12 +67,26 @@ $store_id    = $store_row ? intval($store_row['store_id']) : null;
 
 $pf_product  = printfulApiCall($conn, $user_id, 'GET', '/store/products/' . $pf_id, null, $store_id);
 
-// Optional: patch thumbnail if ?fix=1 is passed
+// Optional: patch thumbnail from Printful's own generated preview_url if ?fix=1
 $fix_result = null;
 if (!empty($_GET['fix'])) {
-    $fix_result = printfulApiCall($conn, $user_id, 'PUT', '/store/products/' . $pf_id, [
-        'sync_product' => ['thumbnail_url' => $image_url],
-    ], $store_id);
+    $thumb_cdn = null;
+    foreach ($pf_product['result']['sync_variants'] ?? [] as $sv) {
+        foreach ($sv['files'] ?? [] as $f) {
+            if ($f['type'] === 'preview' && !empty($f['preview_url'])) {
+                $thumb_cdn = $f['preview_url'];
+                break 2;
+            }
+        }
+    }
+    if ($thumb_cdn) {
+        $fix_result = printfulApiCall($conn, $user_id, 'PUT', '/store/products/' . $pf_id, [
+            'sync_product' => ['thumbnail_url' => $thumb_cdn],
+        ], $store_id);
+        $fix_result['_used_url'] = $thumb_cdn;
+    } else {
+        $fix_result = ['error' => 'No preview_url found yet — Printful may still be generating it. Try again in a minute.'];
+    }
 }
 
 echo json_encode([
