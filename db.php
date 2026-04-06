@@ -173,10 +173,48 @@ function _printfulCurl($method, $endpoint, $token, $payload = null, $store_id = 
 
 // ── Merch: archive all active listings for an NFT that left wallet ──
 function verifyMerchListings($conn) {
-    // Find active merch listings where the NFT is no longer owned by the listing's user
+    // ── 1. Archive listings where the NFT left the wallet ────────
     $sql = "
         SELECT mp.id AS listing_id, mp.printful_product_id, mp.user_id,
-               ma.printful_access_token,
+               nfts.name AS nft_name, collections.name AS collection_name,
+               users.discord_id
+        FROM merch_products mp
+        INNER JOIN nfts        ON nfts.id        = mp.nft_id
+        INNER JOIN collections ON collections.id = nfts.collection_id
+        LEFT JOIN  users        ON users.id       = mp.user_id
+        WHERE mp.status = 'active'
+          AND nfts.user_id != mp.user_id
+    ";
+    $result = $conn->query($sql);
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $listing_id = intval($row['listing_id']);
+            $pf_prod_id = intval($row['printful_product_id']);
+            $discord_id = $row['discord_id'] ?? '';
+
+            if ($pf_prod_id > 0) {
+                $store_r = $conn->query("SELECT store_id FROM merch_product_stores WHERE merch_product_id = $listing_id LIMIT 1");
+                $store_id = ($store_r && $sr = $store_r->fetch_assoc()) ? intval($sr['store_id']) : null;
+                printfulApiCall($conn, $row['user_id'], 'DELETE', '/store/products/' . $pf_prod_id, null, $store_id);
+            }
+
+            $conn->query("UPDATE merch_products SET status = 'archived', updated_at = NOW() WHERE id = $listing_id LIMIT 1");
+            $conn->query("UPDATE merch_product_stores SET status = 'archived' WHERE merch_product_id = $listing_id");
+
+            if ($discord_id) {
+                discordmsg(
+                    '&#127758; Merch Listing Archived',
+                    "<@{$discord_id}> Your merch listing for **{$row['nft_name']}** ({$row['collection_name']}) has been archived because the NFT is no longer in your wallet.",
+                    '', 'https://skulliance.io/staking/merch.php', 'general'
+                );
+            }
+        }
+    }
+
+    // ── 2. Archive listings where the product was deleted on Printful ──
+    // Checks active listings against Printful; 404 = deleted by user, auto-archive.
+    $sql2 = "
+        SELECT mp.id AS listing_id, mp.printful_product_id, mp.user_id,
                nfts.name AS nft_name, collections.name AS collection_name,
                users.discord_id
         FROM merch_products mp
@@ -185,44 +223,33 @@ function verifyMerchListings($conn) {
         INNER JOIN merch_accounts ma ON ma.user_id = mp.user_id
         LEFT JOIN  users        ON users.id       = mp.user_id
         WHERE mp.status = 'active'
-          AND nfts.user_id != mp.user_id
+          AND mp.printful_product_id > 0
     ";
-    $result = $conn->query($sql);
-    if (!$result || $result->num_rows === 0) return;
+    $result2 = $conn->query($sql2);
+    if ($result2) {
+        while ($row = $result2->fetch_assoc()) {
+            $listing_id = intval($row['listing_id']);
+            $pf_prod_id = intval($row['printful_product_id']);
 
-    while ($row = $result->fetch_assoc()) {
-        $listing_id  = intval($row['listing_id']);
-        $pf_prod_id  = intval($row['printful_product_id']);
-        $api_key     = merchDecrypt($row['printful_access_token']);
-        $discord_id  = $row['discord_id'] ?? '';
+            $store_r  = $conn->query("SELECT store_id FROM merch_product_stores WHERE merch_product_id = $listing_id LIMIT 1");
+            $store_id = ($store_r && $sr = $store_r->fetch_assoc()) ? intval($sr['store_id']) : null;
 
-        // Delete from Printful
-        if ($pf_prod_id > 0 && !empty($api_key)) {
-            $ch = curl_init('https://api.printful.com/store/products/' . $pf_prod_id);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $api_key, 'Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_exec($ch);
-            curl_close($ch);
-        }
+            $check = printfulApiCall($conn, $row['user_id'], 'GET', '/store/products/' . $pf_prod_id, null, $store_id);
 
-        // Archive in DB
-        $conn->query("UPDATE merch_products SET status = 'archived', updated_at = NOW() WHERE id = $listing_id LIMIT 1");
-        $conn->query("UPDATE merch_product_stores SET status = 'archived' WHERE merch_product_id = $listing_id");
+            // 404 or explicit error with 404 code = product gone from Printful
+            if (!empty($check['_error']) && $check['_http'] === 404) {
+                $conn->query("UPDATE merch_products SET status = 'archived', updated_at = NOW() WHERE id = $listing_id LIMIT 1");
+                $conn->query("UPDATE merch_product_stores SET status = 'archived' WHERE merch_product_id = $listing_id");
 
-        // Discord notification
-        if ($discord_id) {
-            $mention     = "<@{$discord_id}>";
-            $nft_name    = $row['nft_name'];
-            $coll_name   = $row['collection_name'];
-            discordmsg(
-                '&#127758; Merch Listing Archived',
-                "{$mention} Your merch listing for **{$nft_name}** ({$coll_name}) has been archived because the NFT is no longer in your wallet.",
-                '',
-                'https://skulliance.io/staking/merch.php',
-                'general'
-            );
+                $discord_id = $row['discord_id'] ?? '';
+                if ($discord_id) {
+                    discordmsg(
+                        '&#127758; Merch Listing Archived',
+                        "<@{$discord_id}> Your merch listing for **{$row['nft_name']}** ({$row['collection_name']}) has been archived because the product was removed from Printful.",
+                        '', 'https://skulliance.io/staking/merch.php', 'general'
+                    );
+                }
+            }
         }
     }
 }
