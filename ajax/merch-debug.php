@@ -1,0 +1,71 @@
+<?php
+/**
+ * ajax/merch-debug.php
+ * Debug endpoint — checks Printful product status and image URL reachability.
+ * GET: listing_id (merch_products.id)
+ */
+include '../db.php';
+header('Content-Type: application/json');
+
+if (!isset($_SESSION['userData']['user_id'])) {
+    echo json_encode(['error' => 'Not authenticated.']); exit;
+}
+$user_id    = intval($_SESSION['userData']['user_id']);
+$listing_id = intval($_GET['listing_id'] ?? 0);
+
+if ($listing_id <= 0) {
+    echo json_encode(['error' => 'listing_id required.']); exit;
+}
+
+// Get listing from DB
+$res = $conn->query("
+    SELECT mp.*, nfts.ipfs, nfts.collection_id, collections.project_id
+    FROM merch_products mp
+    INNER JOIN nfts        ON nfts.id        = mp.nft_id
+    INNER JOIN collections ON collections.id = nfts.collection_id
+    WHERE mp.id = $listing_id AND mp.user_id = $user_id
+    LIMIT 1
+");
+if (!$res || $res->num_rows === 0) {
+    echo json_encode(['error' => 'Listing not found.']); exit;
+}
+$listing = $res->fetch_assoc();
+$pf_id   = intval($listing['printful_product_id']);
+
+// Build image URL the same way merch-submit.php does
+$image_url = getIPFS($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
+if (!str_starts_with($image_url, '/')) {
+    ensureNFTImageCached($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
+    $image_url = getIPFS($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
+}
+if (str_starts_with($image_url, '/')) {
+    $image_url = 'https://skulliance.io' . $image_url;
+}
+
+// Test if image URL is reachable
+$ch = curl_init($image_url);
+curl_setopt($ch, CURLOPT_NOBODY, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_exec($ch);
+$img_http        = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$img_final_url   = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+$img_content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+curl_close($ch);
+
+// Fetch Printful product status
+$pf_product = printfulApiCall($conn, $user_id, 'GET', '/store/products/' . $pf_id);
+
+echo json_encode([
+    'listing_id'          => $listing_id,
+    'printful_product_id' => $pf_id,
+    'image_url'           => $image_url,
+    'image_http_status'   => $img_http,
+    'image_final_url'     => $img_final_url,
+    'image_content_type'  => $img_content_type,
+    'printful_product'    => $pf_product,
+], JSON_PRETTY_PRINT);
+
+$conn->close();
+?>
