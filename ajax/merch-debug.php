@@ -10,6 +10,12 @@ header('Content-Type: application/json');
 if (!isset($_SESSION['userData']['user_id'])) {
     echo json_encode(['error' => 'Not authenticated.']); exit;
 }
+
+// Restrict to admin only
+$_admin_ids = [772831523899965440]; // Oculus Orbus discord ID — extend as needed
+if (!in_array(intval($_SESSION['userData']['discord_id'] ?? 0), $_admin_ids)) {
+    echo json_encode(['error' => 'Forbidden.']); exit;
+}
 $user_id    = intval($_SESSION['userData']['user_id']);
 $listing_id = intval($_GET['listing_id'] ?? 0);
 

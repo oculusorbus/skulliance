@@ -239,10 +239,9 @@ if (!empty($created_product_ids)) {
 
 $all_success = count($created_product_ids) > 0;
 $response    = [
-    'success'   => $all_success,
-    'created'   => count($created_product_ids),
-    'errors'    => $errors,
-    'image_url' => $image_url,
+    'success'  => $all_success,
+    'created'  => count($created_product_ids),
+    'errors'   => $errors,
 ];
 if (!$all_success) {
     $response['error'] = 'No products were created. ' . implode(' ', $errors);
