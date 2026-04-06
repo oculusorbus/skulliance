@@ -110,7 +110,6 @@
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
 		      <a href="gauntlets.php">Gauntlets</a>
-		      <a href="merch.php">Merch</a>
 		      <a href="monstrocity.php" target="_blank">Match 3 RPG</a>
 		      <a href="monstrocity.php#boss" target="_blank">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
@@ -127,6 +126,7 @@
 		      <a href="auctions.php">Auctions</a>
 		      <a href="raffles.php">Raffles</a>
 		      <a href="collections.php">Collections</a>
+		      <a href="merch.php">Merch</a>
 		      <a href="gallery.php">Gallery</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
 		      <a href="skulliverse.php">Skulliverse</a>
