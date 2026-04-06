@@ -114,7 +114,7 @@ if ($merch_acct) {
 // Active listings for this user
 $listings = [];
 $listings_res = $conn->query("
-    SELECT mp.id, mp.nft_id, mp.printful_product_id, mp.status, mp.created_at,
+    SELECT mp.id, mp.nft_id, mp.printful_product_id, mp.mockup_url, mp.status, mp.created_at,
            nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
            collections.name AS collection_name, collections.project_id,
            mpt.name AS product_type_name,
@@ -350,8 +350,12 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
       </div>
     <?php else: ?>
       <?php foreach ($listings as $listing):
-        $img_url = getIPFS($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
-        if (str_starts_with($img_url, '/')) $img_url = 'https://skulliance.io' . $img_url;
+        if (!empty($listing['mockup_url'])) {
+            $img_url = $listing['mockup_url'];
+        } else {
+            $img_url = getIPFS($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
+            if (str_starts_with($img_url, '/')) $img_url = 'https://skulliance.io' . $img_url;
+        }
         $status_class = 'merch-status-' . $listing['status'];
       ?>
       <div class="merch-listing-row">

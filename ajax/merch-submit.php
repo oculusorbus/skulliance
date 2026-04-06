@@ -83,13 +83,15 @@ $image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
 
 // ── Pre-upload image to Printful Files API ───────────────────
 // Uploading first lets Printful process the file and generate thumbnails properly.
-$pf_file_id     = null;
-$pf_file_upload = printfulApiCall($conn, $user_id, 'POST', '/files', [
+$pf_file_id      = null;
+$pf_preview_url  = null;
+$pf_file_upload  = printfulApiCall($conn, $user_id, 'POST', '/files', [
     'url'      => $image_url,
     'filename' => md5($nft['ipfs']) . '.jpg',
 ]);
 if (!empty($pf_file_upload['result']['id'])) {
-    $pf_file_id = intval($pf_file_upload['result']['id']);
+    $pf_file_id     = intval($pf_file_upload['result']['id']);
+    $pf_preview_url = $pf_file_upload['result']['preview_url'] ?? null;
 }
 
 // ── Build product title and description ──────────────────────
@@ -231,7 +233,8 @@ foreach ($created_product_ids as $cp) {
     $pt_id      = intval($cp['product_type_id']);
     $cp_store   = intval($cp['store_id']);
     $cp_stype   = $cp['store_type'];
-    $conn->query("INSERT INTO merch_products (nft_id, user_id, printful_product_id, product_type_id, status) VALUES ($nft_id_esc, $user_id, $pf_id, $pt_id, 'active')");
+    $mockup_url_esc = $pf_preview_url ? "'" . $conn->real_escape_string($pf_preview_url) . "'" : 'NULL';
+    $conn->query("INSERT INTO merch_products (nft_id, user_id, printful_product_id, product_type_id, mockup_url, status) VALUES ($nft_id_esc, $user_id, $pf_id, $pt_id, $mockup_url_esc, 'active')");
     $merch_product_db_id = intval($conn->insert_id);
     $conn->query("INSERT INTO merch_product_stores (merch_product_id, store_type, store_id, status) VALUES ($merch_product_db_id, '$cp_stype', $cp_store, 'active')");
 }

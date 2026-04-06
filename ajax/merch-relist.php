@@ -59,13 +59,15 @@ $clean_ipfs = str_replace('ipfs/', '', $listing['ipfs']);
 $image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
 
 // ── Pre-upload image to Printful Files API ────────────────────
-$pf_file_id = null;
+$pf_file_id     = null;
+$pf_preview_url = null;
 $upload = printfulApiCall($conn, $user_id, 'POST', '/files', [
     'url'      => $image_url,
     'filename' => md5($listing['ipfs']) . '.jpg',
 ]);
 if (!empty($upload['result']['id'])) {
-    $pf_file_id = intval($upload['result']['id']);
+    $pf_file_id     = intval($upload['result']['id']);
+    $pf_preview_url = $upload['result']['preview_url'] ?? null;
 }
 
 // ── Build print area / file type ─────────────────────────────
@@ -129,7 +131,8 @@ if (!$new_pf_id) {
 
 // ── Update DB record ──────────────────────────────────────────
 $new_pf_id = intval($new_pf_id);
-$conn->query("UPDATE merch_products SET printful_product_id = $new_pf_id, status = 'active', updated_at = NOW() WHERE id = $listing_id LIMIT 1");
+$mockup_url_esc = $pf_preview_url ? "'" . $conn->real_escape_string($pf_preview_url) . "'" : 'NULL';
+$conn->query("UPDATE merch_products SET printful_product_id = $new_pf_id, mockup_url = $mockup_url_esc, status = 'active', updated_at = NOW() WHERE id = $listing_id LIMIT 1");
 $conn->query("UPDATE merch_product_stores SET status = 'active' WHERE merch_product_id = $listing_id");
 
 echo json_encode(['success' => true]);
