@@ -25,8 +25,6 @@ if(isset($_GET['verify'])){
 	verifyNFTs($conn, $addresses, $policies, $asset_ids);
 	// Deactivate soldiers whose NFT is no longer owned by the realm's user and return their gear to inventory
 	verifyRealmSoldiers($conn);
-	// Archive merch listings for NFTs that have left the holder's wallet
-	verifyMerchListings($conn);
 	// Get project percentages for Diamond Skull delegations
 	$percentages = array();
 	$percentages = getProjectDelegationPercentages($conn);
