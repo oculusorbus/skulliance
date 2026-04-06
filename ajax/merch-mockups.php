@@ -47,11 +47,9 @@ if (!$acct_res || $acct_res->num_rows === 0) {
 $acct   = $acct_res->fetch_assoc();
 $stores = json_decode($acct['connected_stores'], true) ?: [];
 
-// ── Build image URL for Printful ────────────────────────────
-$image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
-if (str_starts_with($image_url, '/')) {
-    $image_url = 'https://skulliance.io' . $image_url;
-}
+// ── Build image URL — use full-res IPFS, not scaled cache ────
+$clean_ipfs = str_replace('ipfs/', '', $nft['ipfs']);
+$image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
 
 // ── Get active product types ─────────────────────────────────
 $pt_res = $conn->query("SELECT * FROM merch_product_types WHERE active = 1 ORDER BY name ASC");
@@ -77,22 +75,34 @@ foreach ($product_types as $pt) {
 $tasks = [];
 foreach ($product_types as $pt) {
     $printful_product_id = intval($pt['printful_product_id']);
-    $print_area = json_decode($pt['print_area_config'] ?? '{}', true);
-    if (empty($print_area)) {
-        $print_area = ['top' => 0, 'left' => 0, 'width' => 1800, 'height' => 2400];
+    $print_area_config = json_decode($pt['print_area_config'] ?? '{}', true);
+    $placement         = $print_area_config['file_type'] ?? 'default';
+    $default_color     = $print_area_config['default_color'] ?? 'Black';
+
+    // Get a variant ID matching the default color for a realistic mockup
+    $variant_ids = [];
+    $cat_data    = printfulApiCall($conn, $user_id, 'GET', '/products/' . intval($pt['printful_product_id']));
+    if (!empty($cat_data['result']['variants'])) {
+        foreach ($cat_data['result']['variants'] as $v) {
+            if (strcasecmp($v['color'] ?? '', $default_color) === 0) {
+                $variant_ids[] = $v['id'];
+                if (count($variant_ids) >= 1) break;
+            }
+        }
+        if (empty($variant_ids)) {
+            $variant_ids = [$cat_data['result']['variants'][0]['id']];
+        }
     }
 
+    // Omit position — let Printful scale/fill the print area by default
     $payload_arr = [
-        'format' => 'jpg',
-        'files'  => [[
-            'placement' => 'front',
+        'format'      => 'jpg',
+        'variant_ids' => $variant_ids,
+        'files'       => [[
+            'placement' => $placement,
             'image_url' => $image_url,
-            'position'  => $print_area,
         ]],
     ];
-    if (!empty($pt['default_variant_id'])) {
-        $payload_arr['variant_ids'] = [intval($pt['default_variant_id'])];
-    }
 
     $resp_data = printfulApiCall($conn, $user_id, 'POST', '/mockup-generator/create-task/' . $printful_product_id, $payload_arr);
     if ($resp_data && !empty($resp_data['result']['task_key'])) {
