@@ -54,14 +54,9 @@ if (!$acct_res || $acct_res->num_rows === 0) {
 }
 
 // ── Build image URL ───────────────────────────────────────────
-$image_url = getIPFS($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
-if (!str_starts_with($image_url, '/')) {
-    ensureNFTImageCached($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
-    $image_url = getIPFS($listing['ipfs'], $listing['collection_id'], $listing['project_id']);
-}
-if (str_starts_with($image_url, '/')) {
-    $image_url = 'https://skulliance.io' . $image_url;
-}
+// Use full-resolution IPFS URL — cached images are scaled down to 1000px.
+$clean_ipfs = str_replace('ipfs/', '', $listing['ipfs']);
+$image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
 
 // ── Pre-upload image to Printful Files API ────────────────────
 $pf_file_id = null;
@@ -87,7 +82,10 @@ $var_data = printfulApiCall($conn, $user_id, 'GET', '/products/' . $pf_catalog_i
 if (!$var_data || !empty($var_data['_error'])) {
     echo json_encode(['success' => false, 'error' => 'Could not load variants from Printful.']); exit;
 }
-$variants_to_use = array_slice($var_data['result']['variants'] ?? [], 0, 4);
+$all_variants    = $var_data['result']['variants'] ?? [];
+$default_color   = $print_area_config['default_color'] ?? 'White';
+$white_vars      = array_values(array_filter($all_variants, fn($v) => strcasecmp($v['color'] ?? '', $default_color) === 0));
+$variants_to_use = !empty($white_vars) ? $white_vars : array_slice($all_variants, 0, 4);
 if (empty($variants_to_use)) {
     echo json_encode(['success' => false, 'error' => 'No variants found for this product type.']); exit;
 }

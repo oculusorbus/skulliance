@@ -76,21 +76,14 @@ if ($balance === 'false' || floatval($balance) < $total_fee) {
 }
 
 // ── Build image URL for Printful ────────────────────────────
-// Ensure locally cached so Printful gets a stable skulliance.io URL.
-$image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
-if (!str_starts_with($image_url, '/')) {
-    ensureNFTImageCached($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
-    $image_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
-}
-if (str_starts_with($image_url, '/')) {
-    $image_url = 'https://skulliance.io' . $image_url;
-}
+// Use the full-resolution IPFS URL for print quality.
+// The cached skulliance.io image is scaled down to 1000px — unsuitable for print.
+$clean_ipfs = str_replace('ipfs/', '', $nft['ipfs']);
+$image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
 
 // ── Pre-upload image to Printful Files API ───────────────────
 // Uploading first lets Printful process the file and generate thumbnails properly.
-// We store the Printful file ID in the session cache to avoid re-uploading
-// the same image across multiple product types in one submission.
-$pf_file_id  = null;
+$pf_file_id     = null;
 $pf_file_upload = printfulApiCall($conn, $user_id, 'POST', '/files', [
     'url'      => $image_url,
     'filename' => md5($nft['ipfs']) . '.jpg',
@@ -165,7 +158,11 @@ foreach ($selected_types as $pt) {
             $errors[] = 'Could not load variants for ' . $pt['name'] . ': ' . $ve;
             continue;
         }
-        $variants_cache[$printful_product_id] = array_slice($var_data['result']['variants'] ?? [], 0, 4);
+        $all_variants  = $var_data['result']['variants'] ?? [];
+        // Prefer white variants (best neutral for NFT art); fall back to first 4
+        $default_color = $print_area_config['default_color'] ?? 'White';
+        $white_vars    = array_values(array_filter($all_variants, fn($v) => strcasecmp($v['color'] ?? '', $default_color) === 0));
+        $variants_cache[$printful_product_id] = !empty($white_vars) ? $white_vars : array_slice($all_variants, 0, 4);
     }
     $variants_to_use = $variants_cache[$printful_product_id];
 
