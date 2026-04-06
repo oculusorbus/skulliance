@@ -86,6 +86,19 @@ if (str_starts_with($image_url, '/')) {
     $image_url = 'https://skulliance.io' . $image_url;
 }
 
+// ── Pre-upload image to Printful Files API ───────────────────
+// Uploading first lets Printful process the file and generate thumbnails properly.
+// We store the Printful file ID in the session cache to avoid re-uploading
+// the same image across multiple product types in one submission.
+$pf_file_id  = null;
+$pf_file_upload = printfulApiCall($conn, $user_id, 'POST', '/files', [
+    'url'      => $image_url,
+    'filename' => md5($nft['ipfs']) . '.jpg',
+]);
+if (!empty($pf_file_upload['result']['id'])) {
+    $pf_file_id = intval($pf_file_upload['result']['id']);
+}
+
 // ── Build product title and description ──────────────────────
 $product_title = $nft['nft_name'] . ' — ' . $nft['collection_name'] . ' | Skulliance';
 $product_desc  = 'Official merch featuring ' . $nft['nft_name'] . ' from the ' . $nft['collection_name'] . ' collection on the Skulliance platform. Art submitted by the verified NFT holder.';
@@ -163,7 +176,10 @@ foreach ($selected_types as $pt) {
 
     $sync_variants = [];
     foreach ($variants_to_use as $v) {
-        $file_entry = ['type' => $file_type, 'url' => $image_url];
+        // Use pre-uploaded file ID when available — ensures Printful generates thumbnails
+        $file_entry = $pf_file_id
+            ? ['type' => $file_type, 'id' => $pf_file_id]
+            : ['type' => $file_type, 'url' => $image_url];
         if ($print_area !== null) $file_entry['position'] = $print_area;
         $sync_variants[] = [
             'variant_id'   => $v['id'],
@@ -174,9 +190,8 @@ foreach ($selected_types as $pt) {
 
     $product_payload = [
         'sync_product' => [
-            'name'          => $product_title . ' (' . $pt['name'] . ')',
-            'description'   => $product_desc,
-            'thumbnail_url' => $image_url,
+            'name'        => $product_title . ' (' . $pt['name'] . ')',
+            'description' => $product_desc,
         ],
         'sync_variants' => $sync_variants,
     ];
