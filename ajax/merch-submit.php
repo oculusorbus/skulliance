@@ -176,15 +176,21 @@ foreach ($selected_types as $pt) {
 
     $sync_variants = [];
     foreach ($variants_to_use as $v) {
-        // Use pre-uploaded file ID when available — ensures Printful generates thumbnails
-        $file_entry = $pf_file_id
+        // Print file (used for production)
+        $print_file = $pf_file_id
             ? ['type' => $file_type, 'id' => $pf_file_id]
             : ['type' => $file_type, 'url' => $image_url];
-        if ($print_area !== null) $file_entry['position'] = $print_area;
+        if ($print_area !== null) $print_file['position'] = $print_area;
+
+        // Mockup file (controls the product thumbnail in Printful's dashboard)
+        $mockup_file = $pf_file_id
+            ? ['type' => 'mockup', 'id' => $pf_file_id]
+            : ['type' => 'mockup', 'url' => $image_url];
+
         $sync_variants[] = [
             'variant_id'   => $v['id'],
             'retail_price' => number_format(floatval($pt['base_price']), 2, '.', ''),
-            'files'        => [$file_entry],
+            'files'        => [$print_file, $mockup_file],
         ];
     }
 
@@ -206,26 +212,6 @@ foreach ($selected_types as $pt) {
         $printful_prod_id = $create_data['result']['id'] ?? ($create_data['result']['sync_product']['id'] ?? null);
 
         if ($printful_prod_id) {
-            // Printful doesn't auto-set thumbnail_url for standalone stores.
-            // Fetch the product back — Printful generates a preview file almost
-            // immediately. Use its preview_url to explicitly set the thumbnail.
-            sleep(2);
-            $pd = printfulApiCall($conn, $user_id, 'GET', '/store/products/' . $printful_prod_id, null, $ps_store_id ?: null);
-            $thumb_cdn = null;
-            foreach ($pd['result']['sync_variants'] ?? [] as $sv) {
-                foreach ($sv['files'] ?? [] as $f) {
-                    if ($f['type'] === 'preview' && !empty($f['preview_url'])) {
-                        $thumb_cdn = $f['preview_url'];
-                        break 2;
-                    }
-                }
-            }
-            if ($thumb_cdn) {
-                printfulApiCall($conn, $user_id, 'PUT', '/store/products/' . $printful_prod_id, [
-                    'sync_product' => ['thumbnail_url' => $thumb_cdn],
-                ], $ps_store_id ?: null);
-            }
-
             $created_product_ids[] = [
                 'printful_product_id' => $printful_prod_id,
                 'product_type_id'     => $pt['id'],
