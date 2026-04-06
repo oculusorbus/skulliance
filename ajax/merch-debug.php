@@ -61,15 +61,28 @@ $img_content_type = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 curl_close($ch);
 
 // Fetch Printful product status
-$pf_product = printfulApiCall($conn, $user_id, 'GET', '/store/products/' . $pf_id);
+$store_res   = $conn->query("SELECT store_id FROM merch_product_stores WHERE merch_product_id = $listing_id LIMIT 1");
+$store_row   = $store_res ? $store_res->fetch_assoc() : null;
+$store_id    = $store_row ? intval($store_row['store_id']) : null;
+
+$pf_product  = printfulApiCall($conn, $user_id, 'GET', '/store/products/' . $pf_id, null, $store_id);
+
+// Optional: patch thumbnail if ?fix=1 is passed
+$fix_result = null;
+if (!empty($_GET['fix'])) {
+    $fix_result = printfulApiCall($conn, $user_id, 'PUT', '/store/products/' . $pf_id, [
+        'sync_product' => ['thumbnail_url' => $image_url],
+    ], $store_id);
+}
 
 echo json_encode([
     'listing_id'          => $listing_id,
     'printful_product_id' => $pf_id,
+    'store_id'            => $store_id,
     'image_url'           => $image_url,
     'image_http_status'   => $img_http,
-    'image_final_url'     => $img_final_url,
     'image_content_type'  => $img_content_type,
+    'fix_result'          => $fix_result,
     'printful_product'    => $pf_product,
 ], JSON_PRETTY_PRINT);
 

@@ -174,8 +174,9 @@ foreach ($selected_types as $pt) {
 
     $product_payload = [
         'sync_product' => [
-            'name'        => $product_title . ' (' . $pt['name'] . ')',
-            'description' => $product_desc,
+            'name'          => $product_title . ' (' . $pt['name'] . ')',
+            'description'   => $product_desc,
+            'thumbnail_url' => $image_url,
         ],
         'sync_variants' => $sync_variants,
     ];
