@@ -160,7 +160,7 @@ foreach ($selected_types as $pt) {
         }
         $all_variants  = $var_data['result']['variants'] ?? [];
         // Prefer white variants (best neutral for NFT art); fall back to first 4
-        $default_color = $print_area_config['default_color'] ?? 'White';
+        $default_color = $print_area_config['default_color'] ?? 'Black';
         $white_vars    = array_values(array_filter($all_variants, fn($v) => strcasecmp($v['color'] ?? '', $default_color) === 0));
         $variants_cache[$printful_product_id] = !empty($white_vars) ? $white_vars : array_slice($all_variants, 0, 4);
     }

@@ -83,7 +83,7 @@ if (!$var_data || !empty($var_data['_error'])) {
     echo json_encode(['success' => false, 'error' => 'Could not load variants from Printful.']); exit;
 }
 $all_variants    = $var_data['result']['variants'] ?? [];
-$default_color   = $print_area_config['default_color'] ?? 'White';
+$default_color   = $print_area_config['default_color'] ?? 'Black';
 $white_vars      = array_values(array_filter($all_variants, fn($v) => strcasecmp($v['color'] ?? '', $default_color) === 0));
 $variants_to_use = !empty($white_vars) ? $white_vars : array_slice($all_variants, 0, 4);
 if (empty($variants_to_use)) {
