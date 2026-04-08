@@ -2322,7 +2322,17 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .location-info { flex: 1; min-width: 0; }
 .location-info strong { display: block; font-size: 0.82rem; color: #00c8a0; text-transform: uppercase; letter-spacing: 0.04em; }
 .location-meta { font-size: 0.75rem; color: #7a9eb0; line-height: 1.6; }
-.location-action { flex-shrink: 0; text-align: right; }
+.location-action {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    min-width: 120px;
+}
+.location-action .small-button { width: 100%; box-sizing: border-box; text-align: center; }
+.loc-upgrade-wrap { display: flex; flex-direction: column; gap: 4px; }
+.loc-need-msg { font-size: 0.7rem; color: #7a9eb0; text-align: right; line-height: 1.4; }
 .loc-status-labels { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; min-height: 0; }
 .rc-col-content .loc-status-labels { justify-content: center; }
 .loc-status-tag { font-size: 0.68rem; color: #00c8a0; background: rgba(0,200,160,0.1); border: 1px solid rgba(0,200,160,0.3); border-radius: 4px; padding: 1px 5px; line-height: 1.5; }
@@ -3198,10 +3208,20 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .loc-stock-row { margin-top: 14px; }
 }
 @media (max-width: 700px) {
-    /* Drop the upgrade action to its own row so location-info gets full width for pills */
     .location-row { flex-wrap: wrap; }
-    .location-action { flex-basis: 100%; text-align: left; padding-left: calc(52px + 12px); }
-    .location-action .loc-modal-btn { float: right; }
+    .location-action {
+        flex-basis: 100%;
+        min-width: 0;
+        padding-left: calc(52px + 12px);
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+    }
+    .loc-upgrade-wrap { flex: 1 1 auto; flex-direction: row; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .loc-upgrade-wrap .small-button { flex: 1 1 auto; width: auto; }
+    .loc-modal-btn { flex-shrink: 0; width: auto !important; }
+    .loc-need-msg { flex-basis: 100%; text-align: left; }
 }
 
 /* ── Raid Target Cards ───────────────────────────────────────────────────── */
