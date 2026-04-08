@@ -6425,6 +6425,9 @@ function retreatRaid($conn, $raid_id){
 	// Get realm/user info for webhook before deleting
 	$retreat_info_res = $conn->query("SELECT off_r.name AS off_name, off_u.username AS off_username, off_u.discord_id AS off_discord, off_u.avatar AS off_avatar, def_r.name AS def_name, def_r.theme_id AS def_theme_id, def_u.username AS def_username, def_u.discord_id AS def_discord FROM raids ra INNER JOIN realms off_r ON off_r.id = ra.offense_id INNER JOIN users off_u ON off_u.id = off_r.user_id INNER JOIN realms def_r ON def_r.id = ra.defense_id INNER JOIN users def_u ON def_u.id = def_r.user_id WHERE ra.id='".$raid_id."'");
 	$ri = $retreat_info_res ? $retreat_info_res->fetch_assoc() : null;
+	// Return soldiers to reserve — no gear degradation on retreat (no combat occurred)
+	$conn->query("UPDATE soldiers SET location = 1 WHERE id IN (SELECT soldier_id FROM raids_soldiers WHERE raid_id = '".$raid_id."' AND side = 'offense') AND location = 3");
+	$conn->query("DELETE FROM raids_soldiers WHERE raid_id='".$raid_id."'");
 	$conn->query("DELETE FROM raids_consumables WHERE raid_id='".$raid_id."'");
 	$conn->query("DELETE FROM raids WHERE id='".$raid_id."'");
 	if($ri){
