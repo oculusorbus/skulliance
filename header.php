@@ -23,6 +23,9 @@
 	  		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
 	  		document.getElementById("navbar").classList.add('show-menu');
 	  		document.getElementById("navbar").classList.remove('hide-menu');
+	  		// Auto-expand Play section — most-used on mobile, saves one tap
+	  		var playMenu = document.querySelector('.nav-dropdown.navbar-first .nav-dropdown-menu');
+	  		if(playMenu) playMenu.classList.add('open');
 	  	}else{
 	  		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
 	  		document.getElementById("navbar").classList.add('hide-menu');
@@ -69,8 +72,10 @@
         if (!el) return;
         var bar = el.querySelector('.nl-bar');
         if (bar) { var nb = bar.cloneNode(true); nb.style.animation = 'nl-bar 12s ease-out forwards'; bar.parentNode.replaceChild(nb, bar); }
+        el.style.transition = 'none';
+        el.style.opacity = '1';
         el.style.display = 'flex';
-        requestAnimationFrame(function(){ el.classList.add('active'); });
+        el.classList.add('active');
     }
     document.addEventListener('click', function(e) {
         var a = e.target.closest('a[href]');
@@ -93,7 +98,7 @@
             }
             showNavLoader();
             var dest = a.href;
-            setTimeout(function(){ window.location.href = dest; }, 20);
+            setTimeout(function(){ window.location.href = dest; }, 50);
         }
     });
     // Hide if browser restores page from bfcache
