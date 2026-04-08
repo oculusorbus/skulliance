@@ -1011,6 +1011,11 @@ $conn->close();
     pointer-events:none;
 }
 #raid-anim-result.visible { opacity:1; transform:translateX(-50%) translateY(0) scale(1); pointer-events:auto; }
+/* ── Realm and location glows ────────────────────────────────── */
+.rla-realm-win  .rla-realm-img { filter:drop-shadow(0 0 14px rgba(0,200,160,.95)); transition:filter .6s ease; }
+.rla-realm-lose .rla-realm-img { filter:drop-shadow(0 0 14px rgba(255,60,60,.9));  transition:filter .6s ease; }
+.rla-glow-green img { filter:drop-shadow(0 0 8px rgba(0,200,160,.9)); transition:filter .6s ease; }
+.rla-glow-red   img { filter:drop-shadow(0 0 8px rgba(255,60,60,.9)); transition:filter .6s ease; }
 
 .rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
 .rla-result-badge.rla-victory { color:#00c8a0; }
@@ -2058,7 +2063,7 @@ $conn->close();
 			var sh  = loc.has_shield ? ' rla-shielded' : '';
 			var src = (_locModalIcons && _locModalIcons[loc.location_id])
 				? _locModalIcons[loc.location_id] : 'icons/skull.png';
-			return '<div class="rla-loc-icon' + sh + '" title="' + _escHtml(loc.name) + '">'
+			return '<div class="rla-loc-icon' + sh + '" data-loc-name="' + _escHtml(loc.name) + '" title="' + _escHtml(loc.name) + '">'
 				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
 				+ '</div>';
 		}
@@ -2079,9 +2084,10 @@ $conn->close();
 			return html + '</div>';
 		}
 		function portalHtml(loc) {
-			var sh  = (loc && loc.has_shield) ? ' rla-shielded' : '';
-			var src = (_locModalIcons && _locModalIcons[1]) ? _locModalIcons[1] : 'icons/skull.png';
-			return '<div class="rla-portal-icon' + sh + '">'
+			var sh   = (loc && loc.has_shield) ? ' rla-shielded' : '';
+			var name = (loc && loc.name) ? loc.name : 'portal';
+			var src  = (_locModalIcons && _locModalIcons[1]) ? _locModalIcons[1] : 'icons/skull.png';
+			return '<div class="rla-portal-icon' + sh + '" data-loc-name="' + _escHtml(name) + '">'
 				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
 				+ '<div class="rla-portal-label">Portal</div>'
 				+ '</div>';
@@ -2302,6 +2308,27 @@ $conn->close();
 		}, afterDeaths);
 		_raidAnim.timers.push(t3);
 
+		// Phase 3.5a — attackers shake (last attack before retreating)
+		var tAtk = setTimeout(function(){
+			document.querySelectorAll('#rla-march-col .rla-soldier').forEach(function(el){
+				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
+			});
+		}, afterDeaths + 200);
+		_raidAnim.timers.push(tAtk);
+
+		// Phase 3.5b — defenders + realm + locs react to final attack
+		var tDef = setTimeout(function(){
+			document.querySelectorAll('#rla-defender .rla-soldiers-col:not(#rla-march-col) .rla-soldier').forEach(function(el){
+				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
+			});
+			var defRealm = document.querySelector('#rla-defender .rla-realm-wrap');
+			if (defRealm) { defRealm.classList.remove('rla-crash'); void defRealm.offsetWidth; defRealm.classList.add('rla-crash'); }
+			document.querySelectorAll('#rla-defender .rla-loc-col').forEach(function(el){
+				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
+			});
+		}, afterDeaths + 500);
+		_raidAnim.timers.push(tDef);
+
 		// Phase 4 — march back through portals (same mechanics as retreat)
 		var marchPortal = document.querySelector('#rla-defender .rla-portal-icon');
 		var marchers    = document.querySelectorAll('#rla-march-col .rla-soldier');
@@ -2374,6 +2401,24 @@ $conn->close();
 			}
 		}, afterMarch);
 		_raidAnim.timers.push(t5);
+
+		// Phase 5.5 — realm image glows + location upgrade/downgrade glows
+		var t55 = setTimeout(function(){
+			// Winning realm glows green, losing realm glows red
+			var atkWon = (resultData.outcome == 1);
+			var atkWrap = document.querySelector('#rla-attacker .rla-realm-wrap');
+			var defWrap = document.querySelector('#rla-defender .rla-realm-wrap');
+			if (atkWrap) atkWrap.classList.add(atkWon ? 'rla-realm-win' : 'rla-realm-lose');
+			if (defWrap) defWrap.classList.add(atkWon ? 'rla-realm-lose' : 'rla-realm-win');
+
+			// Location upgrade (credit=green) / downgrade (debit=red)
+			(resultData.location_changes || []).forEach(function(c){
+				var side = c.faction === 'offense' ? '#rla-attacker' : '#rla-defender';
+				var el   = document.querySelector(side + ' [data-loc-name="' + c.location_name + '"]');
+				if (el) el.classList.add(c.type === 'credit' ? 'rla-glow-green' : 'rla-glow-red');
+			});
+		}, afterMarch + 600);
+		_raidAnim.timers.push(t55);
 	}
 
 	function _buildResultCardHtml(resultData) {
@@ -2439,6 +2484,9 @@ $conn->close();
 			if (overlay)    { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
 			if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 			if (statusEl)   { statusEl.style.color = ''; }
+			overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
+				el.classList.remove('rla-realm-win','rla-realm-lose','rla-glow-green','rla-glow-red');
+			});
 			if (fn) fn(html);
 		}
 	}
@@ -2456,6 +2504,9 @@ $conn->close();
 		if (overlay)    { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
 		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 		if (statusEl)   { statusEl.style.color = ''; }
+		overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
+			el.classList.remove('rla-realm-win','rla-realm-lose','rla-glow-green','rla-glow-red');
+		});
 		_tryApplyRaidResult();
 	}
 
