@@ -975,9 +975,15 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 	echo "</div>";
 }
 
-// See if user has qualifying NFTs for a particular mission
+// See if user has qualifying NFTs for a particular mission that are not already on an active mission
 function checkMissionInventory($conn, $project_id){
-	$sql = "SELECT nfts.id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE collections.project_id = '".$project_id."' AND user_id = '".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT nfts.id FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id WHERE collections.project_id = '".$project_id."' AND nfts.user_id = '".$_SESSION['userData']['user_id']."'
+		AND nfts.asset_id NOT IN (
+			SELECT nfts2.asset_id FROM missions_nfts
+			INNER JOIN nfts nfts2 ON nfts2.id = missions_nfts.nft_id
+			INNER JOIN missions ON missions.id = missions_nfts.mission_id
+			WHERE missions.status = '0' AND missions.user_id = '".$_SESSION['userData']['user_id']."'
+		)";
 	
 	$result = $conn->query($sql);
 	
