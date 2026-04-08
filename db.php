@@ -7072,7 +7072,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				. "<span class='rc-section-label'>" . strtoupper($type) . " " . strtoupper($status) . "</span>"
 				. "</div>";
 			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container" style="display:'.$display.'">';
-			if ($status == "completed") {
+			if ($status == "completed" || $status == "pending") {
 				$final_output .= "<div class='rc-anim-all-row'><button class='small-button' onclick='showAllRaidAnimations(this)'>&#9654; Play All</button></div>";
 			}
 			$status = "";
@@ -7198,7 +7198,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					}
 				}
 				$rows[$decimal] = "";
-				$rows[$decimal] .= "<div class='rc-card' id='raid-row-".$row['raid_id']."'" . ($status == "Completed" ? " data-raid-id='".$row['raid_id']."'" : "") . ">";
+				$rows[$decimal] .= "<div class='rc-card' id='raid-row-".$row['raid_id']."' data-raid-id='".$row['raid_id']."'>";
 				// Progress bar
 				$rows[$decimal] .= "<div class='rc-progress-bar'><div class='rc-progress-fill' style='width:".$_rc_pct."%'></div></div>";
 				// Realm name — full-width centered row so it sits over the column divider
@@ -7242,13 +7242,16 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= $_raid_logs['defense'];
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "</div>"; // rc-card-body
-				// Retreat button (outgoing pending only)
-				if($type == 'outgoing' && $date > time()){
-					$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
-				}
-				// Replay animation button (completed raids)
+				// Action buttons
 				if($status == "Completed"){
 					$rows[$decimal] .= "<div class='rc-action-row'><button class='small-button' onclick='showRaidResultAnimation(".$row['raid_id'].")'>&#9654; Replay</button></div>";
+				} else {
+					$_view_btn = "<button class='small-button' onclick='showRaidViewAnimation(".$row['raid_id'].")'>&#9654; View</button>";
+					if($type == 'outgoing' && $date > time()){
+						$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/>$_view_btn</div>";
+					} else {
+						$rows[$decimal] .= "<div class='rc-action-row'>$_view_btn</div>";
+					}
 				}
 				$rows[$decimal] .= "</div>"; // rc-card
 			}

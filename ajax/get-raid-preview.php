@@ -20,7 +20,7 @@ if (!isset($_SESSION['userData']['user_id'])) {
 $raid_id = intval($_GET['raid_id'] ?? 0);
 if ($raid_id > 0) {
     $uid     = intval($_SESSION['userData']['user_id']);
-    $rr      = $conn->query("SELECT r.offense_id, r.defense_id FROM raids r INNER JOIN realms rl ON rl.id = r.offense_id WHERE r.id = $raid_id AND rl.user_id = $uid LIMIT 1");
+    $rr      = $conn->query("SELECT r.offense_id, r.defense_id FROM raids r INNER JOIN realms ro ON ro.id = r.offense_id INNER JOIN realms rd ON rd.id = r.defense_id WHERE r.id = $raid_id AND (ro.user_id = $uid OR rd.user_id = $uid) LIMIT 1");
     if (!$rr || $rr->num_rows === 0) { echo json_encode(['success'=>false,'error'=>'Raid not found']); exit; }
     $rrow       = $rr->fetch_assoc();
     $offense_id = intval($rrow['offense_id']);

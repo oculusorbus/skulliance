@@ -1909,7 +1909,7 @@ $conn->close();
 	 * Shared between raid launch (direction='raid'), retreat (direction='retreat'),
 	 * and completed-raid replay (direction='result').
 	 * Public:   showRaidAnimation(), showRetreatAnimation(), showRaidResultAnimation(),
-	 *           showAllRaidAnimations()
+	 *           showRaidViewAnimation(), showAllRaidAnimations()
 	 * Internal: _startPortalAnim, _renderPortalSides, _runPortalSequence,
 	 *           _runResultSequence, _buildResultCardHtml
 	 * ─────────────────────────────────────────────────────────────────────── */
@@ -1927,19 +1927,26 @@ $conn->close();
 		_startPortalAnim({ raidId:raidId, direction:'result', applyFn:applyFn || null });
 	}
 
+	function showRaidViewAnimation(raidId, applyFn) {
+		_startPortalAnim({ raidId:raidId, direction:'raid', applyFn:applyFn || null });
+	}
+
 	function showAllRaidAnimations(btn) {
 		var container = btn.closest('[id$="-raids-container"]');
 		if (!container) return;
 		var cards = container.querySelectorAll('[data-raid-id]');
 		var ids = [];
 		cards.forEach(function(c){ ids.push(parseInt(c.dataset.raidId, 10)); });
-		_playRaidResultQueue(ids);
+		var isCompleted = container.id.indexOf('-completed-') !== -1;
+		_playRaidAnimQueue(ids, isCompleted);
 	}
 
-	function _playRaidResultQueue(ids) {
+	function _playRaidAnimQueue(ids, isCompleted) {
 		if (!ids.length) return;
 		var id = ids.shift();
-		showRaidResultAnimation(id, function(){ setTimeout(function(){ _playRaidResultQueue(ids); }, 400); });
+		var next = function(){ setTimeout(function(){ _playRaidAnimQueue(ids, isCompleted); }, 400); };
+		if (isCompleted) { showRaidResultAnimation(id, next); }
+		else             { showRaidViewAnimation(id, next); }
 	}
 
 	function _startPortalAnim(config) {
