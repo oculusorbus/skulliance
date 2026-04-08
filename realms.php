@@ -777,7 +777,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <!-- ── Raid Launch Animation Overlay ───────────────────────── -->
 <div id="raid-anim-overlay" aria-hidden="true">
 	<div id="raid-anim-field">
-		<div id="raid-anim-loading" class="rla-loading">&#8635; Preparing raid&hellip;</div>
+		<div id="raid-anim-loading" class="rla-loading">Preparing raid&hellip;</div>
 		<div id="rla-attacker" class="rla-side" style="display:none"></div>
 		<div id="rla-defender" class="rla-side" style="display:none"></div>
 	</div>
