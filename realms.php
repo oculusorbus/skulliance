@@ -941,7 +941,7 @@ $conn->close();
 .rla-portal-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
 .rla-portal-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:.05em; text-transform:uppercase; }
 .rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; }
-.rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; }
+.rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; background:url('icons/skull.png') center/cover no-repeat; }
 .rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
 .rla-def .rla-soldier img { opacity:.75; }
 .rla-status {
