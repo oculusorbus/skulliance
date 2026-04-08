@@ -2054,9 +2054,12 @@ $conn->close();
 			var raidersCol = document.getElementById('rla-raiders-col');
 			var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-raiders-col)');
 			var defEl      = document.getElementById('rla-defender');
-			// Always shake the raiders and the entire defender realm
+			// Always shake the raiders and defender realm innards
+			// (target inner elements to avoid conflict with .rla-side transition:transform)
 			if (raidersCol) raidersCol.classList.add('rla-crash');
-			if (defEl) defEl.classList.add('rla-crash');
+			if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col, .rla-portal-icon').forEach(function(el){
+				el.classList.add('rla-crash');
+			});
 			if (defSoldierCount > 0 && defSolCol) {
 				statusEl.textContent = '\u2694\uFE0F Battle Begins!';
 			} else {
