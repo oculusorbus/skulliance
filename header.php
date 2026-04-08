@@ -126,7 +126,6 @@
 		      <a href="auctions.php">Auctions</a>
 		      <a href="raffles.php">Raffles</a>
 		      <a href="collections.php">Collections</a>
-		      <a href="merch.php">Merch</a>
 		      <a href="gallery.php">Gallery</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
 		      <a href="skulliverse.php">Skulliverse</a>
