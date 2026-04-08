@@ -1909,13 +1909,14 @@ $conn->close();
 			return '<div class="rla-loc-col">' + locs.map(locIconHtml).join('') + '</div>';
 		}
 		function soldierColHtml(soldiers) {
-			if (!soldiers || !soldiers.length) return '';
 			var html = '<div class="rla-soldiers-col">';
-			soldiers.forEach(function(s){
-				html += '<div class="rla-soldier">'
-					+ '<img src="' + _escHtml(s.img_url) + '" onerror="this.src=\'icons/skull.png\'" title="' + _escHtml(s.name) + '">'
-					+ '</div>';
-			});
+			if (soldiers && soldiers.length) {
+				soldiers.forEach(function(s){
+					html += '<div class="rla-soldier">'
+						+ '<img src="' + _escHtml(s.img_url) + '" onerror="this.src=\'icons/skull.png\'" title="' + _escHtml(s.name) + '">'
+						+ '</div>';
+				});
+			}
 			return html + '</div>';
 		}
 		function portalHtml(loc) {
