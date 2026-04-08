@@ -713,7 +713,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<h2 style="margin:0;font-size:1rem;">Select Soldiers for Raid</h2>
 				<button class="raid-modal-close" onclick="closeRaidSoldierModal()" aria-label="Close">&times;</button>
 			</div>
-			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to <?php echo intval($levels[1]); ?> trained soldiers from your Barracks (Portal level <?php echo intval($levels[1]); ?>). Their equipped weapon and armor will go on this raid.</p>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to <?php echo min(intval($levels[1]), 10); ?> trained soldiers from your Barracks (max 10 per raid). Their equipped weapon and armor will go on this raid.</p>
 			<div id="raid-soldiers-grid"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
 				<span id="raid-soldiers-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 / 10 selected</span>
@@ -1095,7 +1095,7 @@ $conn->close();
 
 	/* ── RAID SOLDIER SELECTION ──────────────────────────── */
 	// Intercept openRaidConsumablesModal to show soldier picker first
-	var _portalLevel              = <?php echo intval($levels[1]); ?>;
+	var _portalLevel              = Math.min(<?php echo intval($levels[1]); ?>, 10);
 	var _nftProjectTree           = <?php echo json_encode($nft_project_tree); ?>;
 	var _barracksOpenSlots        = <?php echo intval($barracks_slots_open); ?>;
 	var _raidSoldierSelectedIds   = [];
