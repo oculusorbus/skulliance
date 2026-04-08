@@ -998,19 +998,20 @@ $conn->close();
 }
 .rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
 .rla-dead img { filter:drop-shadow(0 0 6px rgba(255,40,40,.95)) brightness(.65) grayscale(.2); }
-/* ── Result card — sits above skip buttons, clear of the battlefield portals ── */
+/* ── Result card — position:absolute, top set by JS to sit just below status text ── */
 #raid-anim-result {
     position:absolute; z-index:2;
-    bottom:80px; left:50%;
+    left:50%;
     display:flex; flex-direction:column; align-items:center; gap:7px;
     padding:13px 22px; background:rgba(7,17,29,.92);
     border:1px solid rgba(0,200,160,.22); border-radius:12px;
     min-width:180px; max-width:310px;
-    opacity:0; transform:translateX(-50%) translateY(10px) scale(.82);
+    opacity:0; transform:translateX(-50%) translateY(8px) scale(.82);
     transition:opacity .45s ease, transform .45s ease;
     pointer-events:none;
 }
 #raid-anim-result.visible { opacity:1; transform:translateX(-50%) translateY(0) scale(1); pointer-events:auto; }
+
 .rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
 .rla-result-badge.rla-victory { color:#00c8a0; }
 .rla-result-badge.rla-defeat  { color:#ff5c5c; }
@@ -2362,9 +2363,11 @@ $conn->close();
 			statusEl.textContent = won ? '\uD83C\uDFC6 Victory!' : '\uD83D\uDCA5 Defeated';
 			statusEl.style.color  = won ? '#00c8a0' : '#ff5c5c';
 
-			// Show result summary card
+			// Show result summary card just below the status text
 			var resultCard = document.getElementById('raid-anim-result');
 			if (resultCard) {
+				var statusRect = statusEl.getBoundingClientRect();
+				resultCard.style.top = (statusRect.bottom + 10) + 'px';
 				resultCard.innerHTML = _buildResultCardHtml(resultData);
 				void resultCard.offsetWidth; // force reflow so transition fires
 				resultCard.classList.add('visible');
