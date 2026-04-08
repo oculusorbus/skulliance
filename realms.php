@@ -2032,13 +2032,17 @@ $conn->close();
 					el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
 					el.style.opacity    = '0';
 				}
-				// Exit defender portal simultaneously — query lazily, pop visible, animate transform only
-				var raider = document.querySelectorAll('#rla-raiders-col .rla-soldier')[i];
-				if (raider) {
-					raider.style.opacity    = '1';
-					raider.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
-					raider.style.transform  = 'translate(0,0) scale(1)';
-				}
+				// Exit defender portal with a short travel delay — not instantaneous, but fast
+				var rIdx = i;
+				var tEmerge = setTimeout(function(){
+					var raider = document.querySelectorAll('#rla-raiders-col .rla-soldier')[rIdx];
+					if (raider) {
+						raider.style.opacity    = '1';
+						raider.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
+						raider.style.transform  = 'translate(0,0) scale(1)';
+					}
+				}, 300);
+				_raidAnim.timers.push(tEmerge);
 			}, 1200 + i * 320);
 			_raidAnim.timers.push(t);
 		});
