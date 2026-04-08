@@ -83,21 +83,12 @@ if ($attacker) $attacker['soldiers'] = $attack_soldiers;
 // ── Defender realm ───────────────────────────────────────────
 $defender = buildRealmData($conn, $defense_id);
 
-// Tower soldiers (location = 2)
+// Tower soldiers — use the same authoritative function the Tower UI uses
 $tower_soldiers = [];
 if ($defender) {
-    $sol_res = $conn->query("
-        SELECT s.id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id
-        FROM soldiers s
-        INNER JOIN nfts         ON nfts.id         = s.nft_id
-        INNER JOIN collections  ON collections.id  = nfts.collection_id
-        INNER JOIN projects     ON projects.id     = collections.project_id
-        WHERE s.realm_id = $defense_id AND s.location = 2 AND s.active = 1 AND s.dead IS NULL
-        LIMIT 12
-    ");
-    if ($sol_res) while ($row = $sol_res->fetch_assoc()) {
+    foreach (getTowerGarrison($conn, $defense_id) as $row) {
         $tower_soldiers[] = [
-            'id'      => intval($row['id']),
+            'id'      => intval($row['soldier_id']),
             'name'    => $row['nft_name'],
             'img_url' => absoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
         ];
