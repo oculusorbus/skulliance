@@ -2053,10 +2053,12 @@ $conn->close();
 			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
 			var raidersCol = document.getElementById('rla-raiders-col');
 			var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-raiders-col)');
-			if (defSoldierCount > 0 && raidersCol && defSolCol) {
+			var defEl      = document.getElementById('rla-defender');
+			// Always shake the raiders and the entire defender realm
+			if (raidersCol) raidersCol.classList.add('rla-crash');
+			if (defEl) defEl.classList.add('rla-crash');
+			if (defSoldierCount > 0 && defSolCol) {
 				statusEl.textContent = '\u2694\uFE0F Battle Begins!';
-				raidersCol.classList.add('rla-crash');
-				defSolCol.classList.add('rla-crash');
 			} else {
 				statusEl.textContent = '\uD83D\uDC80 Realm Breached!';
 			}
