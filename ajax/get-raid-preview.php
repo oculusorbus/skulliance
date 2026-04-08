@@ -35,6 +35,10 @@ function buildRealmData($conn, $realm_id) {
     $realm = $res->fetch_assoc();
 
     $locations = getRealmLocationsWithShields($conn, $realm_id);
+    foreach ($locations as &$loc) {
+        $loc['icon'] = 'icons/locations/' . $loc['name'] . '.png';
+    }
+    unset($loc);
 
     return [
         'realm_id'  => $realm_id,
