@@ -1430,18 +1430,37 @@ function retreatRaid(raidId){
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/retreat-raid.php?raid_id='+raidId, true);
 		xhttp.send();
-		xhttp.onreadystatechange = function(){
-			if(xhttp.readyState == XMLHttpRequest.DONE){
-				try{
-					var resp = JSON.parse(xhttp.responseText);
+		if (typeof showRetreatAnimation === 'function') {
+			showRetreatAnimation(raidId, function(responseText) {
+				try {
+					var resp = JSON.parse(responseText);
 					if(resp.error){ alert(resp.error); if(btn) btn.disabled = false; return; }
 					var row = document.getElementById('raid-row-'+raidId);
 					var progress = document.getElementById('raid-progress-'+raidId);
 					if(row) row.remove();
 					if(progress) progress.remove();
 				} catch(e){ alert('Error retreating raid'); if(btn) btn.disabled = false; }
-			}
-		};
+			});
+			xhttp.onreadystatechange = function(){
+				if(xhttp.readyState == XMLHttpRequest.DONE){
+					if (typeof _portalAnimGotResponse === 'function') _portalAnimGotResponse(xhttp.responseText);
+				}
+			};
+		} else {
+			// Fallback: no animation available (e.g. page without animation engine)
+			xhttp.onreadystatechange = function(){
+				if(xhttp.readyState == XMLHttpRequest.DONE){
+					try{
+						var resp = JSON.parse(xhttp.responseText);
+						if(resp.error){ alert(resp.error); if(btn) btn.disabled = false; return; }
+						var row = document.getElementById('raid-row-'+raidId);
+						var progress = document.getElementById('raid-progress-'+raidId);
+						if(row) row.remove();
+						if(progress) progress.remove();
+					} catch(e){ alert('Error retreating raid'); if(btn) btn.disabled = false; }
+				}
+			};
+		}
 	});
 }
 

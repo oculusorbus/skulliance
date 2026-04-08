@@ -1872,17 +1872,29 @@ $conn->close();
 	}
 
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
-	/* ── RAID LAUNCH ANIMATION ───────────────────────────── */
-	var _raidAnim = { done:false, html:null, applyFn:null, timers:[] };
+	/* ── PORTAL ANIMATION ENGINE ─────────────────────────────────────────────
+	 * Shared between raid launch (direction='raid') and retreat (direction='retreat').
+	 * Public:   showRaidAnimation(), showRetreatAnimation()
+	 * Internal: _startPortalAnim, _renderPortalSides, _runPortalSequence
+	 * ─────────────────────────────────────────────────────────────────────── */
+	var _raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
 
 	function showRaidAnimation(defId, soldierIds, applyFn) {
-		_raidAnim = { done:false, html:null, applyFn:applyFn, timers:[] };
+		_startPortalAnim({ defId:defId, soldierIds:soldierIds, direction:'raid', applyFn:applyFn });
+	}
 
-		var overlay = document.getElementById('raid-anim-overlay');
-		var loading = document.getElementById('raid-anim-loading');
-		var atk     = document.getElementById('rla-attacker');
-		var def     = document.getElementById('rla-defender');
-		var statusEl= document.getElementById('raid-anim-status');
+	function showRetreatAnimation(raidId, applyFn) {
+		_startPortalAnim({ raidId:raidId, direction:'retreat', applyFn:applyFn });
+	}
+
+	function _startPortalAnim(config) {
+		_raidAnim = { done:false, html:null, applyFn:config.applyFn, timers:[], direction:config.direction };
+
+		var overlay  = document.getElementById('raid-anim-overlay');
+		var loading  = document.getElementById('raid-anim-loading');
+		var atk      = document.getElementById('rla-attacker');
+		var def      = document.getElementById('rla-defender');
+		var statusEl = document.getElementById('raid-anim-status');
 
 		loading.style.display = 'flex';
 		atk.style.display = 'none'; def.style.display = 'none';
@@ -1891,36 +1903,36 @@ $conn->close();
 		overlay.style.display = 'flex';
 		requestAnimationFrame(function(){ overlay.classList.add('active'); });
 
-		var soldierParam = soldierIds.map(function(id){ return '&soldiers[]=' + id; }).join('');
-		fetch('ajax/get-raid-preview.php?defense_id=' + defId + soldierParam)
+		var url = config.raidId
+			? 'ajax/get-raid-preview.php?raid_id=' + config.raidId
+			: 'ajax/get-raid-preview.php?defense_id=' + config.defId
+				+ (config.soldierIds || []).map(function(id){ return '&soldiers[]=' + id; }).join('');
+
+		fetch(url)
 			.then(function(r){ return r.json(); })
 			.then(function(data){
 				if (!data.success || !data.attacker || !data.defender) return;
 				loading.style.display = 'none';
-				_renderRaidAnimSides(data.attacker, data.defender);
-				_runRaidAnimSequence(soldierIds.length, (data.defender.soldiers || []).length);
+				var soldierCount    = (data.attacker.soldiers || []).length;
+				var defSoldierCount = (data.defender.soldiers || []).length;
+				_renderPortalSides(data.attacker, data.defender, config.direction);
+				_runPortalSequence(soldierCount, defSoldierCount, config.direction);
+				var minTime  = 1200 + soldierCount * 320 + 650 + 1200;
+				var minTimer = setTimeout(function(){ _raidAnim.done = true; _tryApplyRaidResult(); }, minTime);
+				_raidAnim.timers.push(minTimer);
 			})
 			.catch(function(){});
-
-		// march and emerge are tandem; allow time for full shake sequence + brief hold
-		var minTime = 1200 + soldierIds.length * 320 + 650 + 1200;
-		var minTimer = setTimeout(function(){
-			_raidAnim.done = true;
-			_tryApplyRaidResult();
-		}, minTime);
-		_raidAnim.timers.push(minTimer);
 	}
 
 	function _escHtml(s) {
 		return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 	}
 
-	function _renderRaidAnimSides(attacker, defender) {
+	function _renderPortalSides(attacker, defender, direction) {
 		function locIconHtml(loc) {
 			var sh  = loc.has_shield ? ' rla-shielded' : '';
 			var src = (_locModalIcons && _locModalIcons[loc.location_id])
-				? _locModalIcons[loc.location_id]
-				: 'icons/skull.png';
+				? _locModalIcons[loc.location_id] : 'icons/skull.png';
 			return '<div class="rla-loc-icon' + sh + '" title="' + _escHtml(loc.name) + '">'
 				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
 				+ '</div>';
@@ -1929,8 +1941,8 @@ $conn->close();
 			if (!locs || !locs.length) return '';
 			return '<div class="rla-loc-col">' + locs.map(locIconHtml).join('') + '</div>';
 		}
-		function soldierColHtml(soldiers) {
-			var html = '<div class="rla-soldiers-col">';
+		function soldierColHtml(soldiers, id) {
+			var html = '<div class="rla-soldiers-col"' + (id ? ' id="' + id + '"' : '') + '>';
 			if (soldiers && soldiers.length) {
 				soldiers.forEach(function(s){
 					html += '<div class="rla-soldier">'
@@ -1941,10 +1953,10 @@ $conn->close();
 			return html + '</div>';
 		}
 		function portalHtml(loc) {
-			var sh      = (loc && loc.has_shield) ? ' rla-shielded' : '';
-			var portalSrc = (_locModalIcons && _locModalIcons[1]) ? _locModalIcons[1] : 'icons/skull.png';
+			var sh  = (loc && loc.has_shield) ? ' rla-shielded' : '';
+			var src = (_locModalIcons && _locModalIcons[1]) ? _locModalIcons[1] : 'icons/skull.png';
 			return '<div class="rla-portal-icon' + sh + '">'
-				+ '<img src="' + portalSrc + '" onerror="this.src=\'icons/skull.png\'">'
+				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
 				+ '<div class="rla-portal-label">Portal</div>'
 				+ '</div>';
 		}
@@ -1965,30 +1977,53 @@ $conn->close();
 		var atkEl = document.getElementById('rla-attacker');
 		var defEl = document.getElementById('rla-defender');
 
-		atkEl.className = 'rla-side rla-atk';
-		atkEl.innerHTML = locColHtml(atkDef)
-			+ realmWrapHtml(attacker)
-			+ locColHtml(atkOff)
-			+ soldierColHtml(attacker.soldiers)
-			+ '<div class="rla-soldiers-col"></div>'
-			+ portalHtml(atkPortal);
+		if (direction === 'raid') {
+			// Soldiers march from attacker into atk portal; transit emerges at def portal
+			atkEl.className = 'rla-side rla-atk';
+			atkEl.innerHTML = locColHtml(atkDef)
+				+ realmWrapHtml(attacker)
+				+ locColHtml(atkOff)
+				+ soldierColHtml(attacker.soldiers, 'rla-march-col')
+				+ '<div class="rla-soldiers-col"></div>'
+				+ portalHtml(atkPortal);
 
-		defEl.className = 'rla-side rla-def';
-		defEl.innerHTML = portalHtml(defPortal)
-			+ '<div id="rla-raiders-col" class="rla-soldiers-col"></div>'
-			+ soldierColHtml(defender.soldiers)
-			+ locColHtml(defDef)
-			+ realmWrapHtml(defender)
-			+ locColHtml(defOff);
+			defEl.className = 'rla-side rla-def';
+			defEl.innerHTML = portalHtml(defPortal)
+				+ '<div id="rla-transit-col" class="rla-soldiers-col"></div>'
+				+ soldierColHtml(defender.soldiers)
+				+ locColHtml(defDef)
+				+ realmWrapHtml(defender)
+				+ locColHtml(defOff);
+		} else {
+			// Retreat: soldiers march from defender into def portal; transit emerges at atk portal
+			atkEl.className = 'rla-side rla-atk';
+			atkEl.innerHTML = locColHtml(atkDef)
+				+ realmWrapHtml(attacker)
+				+ locColHtml(atkOff)
+				+ '<div id="rla-transit-col" class="rla-soldiers-col"></div>'
+				+ '<div class="rla-soldiers-col"></div>'
+				+ portalHtml(atkPortal);
+
+			defEl.className = 'rla-side rla-def';
+			defEl.innerHTML = portalHtml(defPortal)
+				+ soldierColHtml(attacker.soldiers, 'rla-march-col')
+				+ soldierColHtml(defender.soldiers)
+				+ locColHtml(defDef)
+				+ realmWrapHtml(defender)
+				+ locColHtml(defOff);
+		}
 
 		atkEl.style.display = 'flex'; defEl.style.display = 'flex';
 
-		// Pre-populate raiders column and pin each to defender portal center
-		// before the reveal so they're ready the moment marching starts.
+		// Transit portal: where transit soldiers are pinned before emerging
+		var transitPortalEl = direction === 'raid'
+			? defEl.querySelector('.rla-portal-icon')
+			: atkEl.querySelector('.rla-portal-icon');
+
+		// Frame N: populate transit col and pin each soldier to transit portal
 		requestAnimationFrame(function(){
-			var defPortalEl = defEl.querySelector('.rla-portal-icon');
-			var raidersCol  = document.getElementById('rla-raiders-col');
-			if (defPortalEl && raidersCol && attacker.soldiers) {
+			var transitCol = document.getElementById('rla-transit-col');
+			if (transitPortalEl && transitCol && attacker.soldiers) {
 				attacker.soldiers.forEach(function(s){
 					var div = document.createElement('div');
 					div.className = 'rla-soldier';
@@ -1997,11 +2032,11 @@ $conn->close();
 					img.src = s.img_url || 'icons/skull.png';
 					img.onerror = function(){ this.src = 'icons/skull.png'; };
 					div.appendChild(img);
-					raidersCol.appendChild(div);
+					transitCol.appendChild(div);
 				});
 				requestAnimationFrame(function(){
-					var pr = defPortalEl.getBoundingClientRect();
-					raidersCol.querySelectorAll('.rla-soldier').forEach(function(el){
+					var pr = transitPortalEl.getBoundingClientRect();
+					transitCol.querySelectorAll('.rla-soldier').forEach(function(el){
 						var sr = el.getBoundingClientRect();
 						var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
 						var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
@@ -2021,27 +2056,27 @@ $conn->close();
 		});
 	}
 
-	function _runRaidAnimSequence(soldierCount, defSoldierCount) {
+	function _runPortalSequence(soldierCount, defSoldierCount, direction) {
 		var statusEl = document.getElementById('raid-anim-status');
+		var isRaid   = direction === 'raid';
 
-		// ── Phase 1: Raid launched status ────────────────────────
+		// Phase 1: opening status
 		var t1 = setTimeout(function(){
 			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
-			statusEl.textContent = '\u2694\uFE0F Raid Launched!';
+			statusEl.textContent = isRaid ? '\u2694\uFE0F Raid Launched!' : '\uD83C\uDFF3\uFE0F Retreating\u2026';
 		}, 700);
 		_raidAnim.timers.push(t1);
 
-		// ── Phase 2: Each soldier marches in AND their raider emerges simultaneously ──
-		// Raiders are populated asynchronously in a double-rAF inside _renderRaidAnimSides,
-		// so query them lazily inside each timeout (fires 1200ms+ later, long after rAF).
-		var marchers    = document.querySelectorAll('#rla-attacker .rla-soldier');
-		var atkPortalEl = document.querySelector('#rla-attacker .rla-portal-icon');
+		// Phase 2: march + tandem emerge (500ms portal travel delay)
+		var marchPortalSel = isRaid ? '#rla-attacker .rla-portal-icon' : '#rla-defender .rla-portal-icon';
+		var marchers       = document.querySelectorAll('#rla-march-col .rla-soldier');
+		var marchPortal    = document.querySelector(marchPortalSel);
 
 		marchers.forEach(function(el, i){
 			var t = setTimeout(function(){
-				// Enter attacker portal
+				// Enter march portal
 				var sr = el.getBoundingClientRect();
-				var pr = atkPortalEl ? atkPortalEl.getBoundingClientRect() : null;
+				var pr = marchPortal ? marchPortal.getBoundingClientRect() : null;
 				if (pr) {
 					var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
 					var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
@@ -2049,14 +2084,14 @@ $conn->close();
 					el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
 					el.style.opacity    = '0';
 				}
-				// Exit defender portal with a short travel delay — not instantaneous, but fast
+				// Exit transit portal after travel delay
 				var rIdx = i;
 				var tEmerge = setTimeout(function(){
-					var raider = document.querySelectorAll('#rla-raiders-col .rla-soldier')[rIdx];
-					if (raider) {
-						raider.style.opacity    = '1';
-						raider.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
-						raider.style.transform  = 'translate(0,0) scale(1)';
+					var transit = document.querySelectorAll('#rla-transit-col .rla-soldier')[rIdx];
+					if (transit) {
+						transit.style.opacity    = '1';
+						transit.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
+						transit.style.transform  = 'translate(0,0) scale(1)';
 					}
 				}, 500);
 				_raidAnim.timers.push(tEmerge);
@@ -2064,39 +2099,43 @@ $conn->close();
 			_raidAnim.timers.push(t);
 		});
 
-		// ── Phase 3: Crash or breach after last soldier arrives ──
+		// Phase 3: end sequence
 		var afterMarch = 1200 + marchers.length * 320 + 650;
 		var t2 = setTimeout(function(){
 			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
-			var raidersCol = document.getElementById('rla-raiders-col');
-			var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-raiders-col)');
-			var defEl      = document.getElementById('rla-defender');
-			// Attackers shake first, then defenders react
-			if (raidersCol) raidersCol.classList.add('rla-crash');
-			if (defSoldierCount > 0 && defSolCol) {
-				statusEl.textContent = '\u2694\uFE0F Battle Begins!';
+
+			if (isRaid) {
+				var transitCol = document.getElementById('rla-transit-col');
+				var defEl      = document.getElementById('rla-defender');
+				var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-transit-col):not(#rla-march-col)');
+				// Attackers shake first
+				if (transitCol) transitCol.classList.add('rla-crash');
+				statusEl.textContent = defSoldierCount > 0 ? '\u2694\uFE0F Battle Begins!' : '\uD83D\uDC80 Realm Breached!';
+				// Defenders react 180ms later
+				var tReact = setTimeout(function(){
+					if (defSolCol) defSolCol.classList.add('rla-crash');
+					if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col').forEach(function(el){
+						el.classList.add('rla-crash');
+					});
+				}, 180);
+				_raidAnim.timers.push(tReact);
 			} else {
-				statusEl.textContent = '\uD83D\uDC80 Realm Breached!';
+				statusEl.textContent = '\u2705 Soldiers Returned!';
 			}
-			var tReact = setTimeout(function(){
-				if (defSolCol) defSolCol.classList.add('rla-crash');
-				if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col').forEach(function(el){
-					el.classList.add('rla-crash');
-				});
-			}, 180);
-			_raidAnim.timers.push(tReact);
 		}, afterMarch);
 		_raidAnim.timers.push(t2);
 	}
 
-	function _raidAnimGotResponse(html) {
+	function _portalAnimGotResponse(html) {
 		_raidAnim.html = html;
 		_tryApplyRaidResult();
 	}
+	// Alias so existing XHR callbacks in this file continue to work
+	var _raidAnimGotResponse = _portalAnimGotResponse;
 
 	function _tryApplyRaidResult() {
 		if (_raidAnim.html !== null && _raidAnim.done) {
-			var fn = _raidAnim.applyFn;
+			var fn   = _raidAnim.applyFn;
 			var html = _raidAnim.html;
 			dismissRaidAnimation();
 			if (fn) fn(html);
@@ -2108,7 +2147,7 @@ $conn->close();
 		overlay.classList.remove('active');
 		var timers = _raidAnim.timers.slice();
 		timers.forEach(clearTimeout);
-		_raidAnim = { done:false, html:null, applyFn:null, timers:[] };
+		_raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
 		setTimeout(function(){ overlay.style.display = 'none'; }, 350);
 	}
 

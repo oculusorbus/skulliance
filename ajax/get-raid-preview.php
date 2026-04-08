@@ -14,17 +14,27 @@ if (!isset($_SESSION['userData']['user_id'])) {
     echo json_encode(['success' => false]); exit;
 }
 
-$defense_id  = intval($_GET['defense_id'] ?? 0);
-$soldier_ids = (isset($_GET['soldiers']) && is_array($_GET['soldiers']))
-    ? array_map('intval', $_GET['soldiers']) : [];
-
-if ($defense_id <= 0) {
-    echo json_encode(['success' => false, 'error' => 'Invalid defense_id']); exit;
-}
-
-$offense_id = getRealmID($conn);
-if (!$offense_id) {
-    echo json_encode(['success' => false, 'error' => 'No realm']); exit;
+// Support two input modes:
+// 1. raid_id  — retreat path: look up defense_id + soldier_ids from the raid record
+// 2. defense_id + soldiers[] — raid launch path (existing behaviour)
+$raid_id = intval($_GET['raid_id'] ?? 0);
+if ($raid_id > 0) {
+    $uid     = intval($_SESSION['userData']['user_id']);
+    $rr      = $conn->query("SELECT r.offense_id, r.defense_id FROM raids r INNER JOIN realms rl ON rl.id = r.offense_id WHERE r.id = $raid_id AND rl.user_id = $uid LIMIT 1");
+    if (!$rr || $rr->num_rows === 0) { echo json_encode(['success'=>false,'error'=>'Raid not found']); exit; }
+    $rrow       = $rr->fetch_assoc();
+    $offense_id = intval($rrow['offense_id']);
+    $defense_id = intval($rrow['defense_id']);
+    $sr         = $conn->query("SELECT soldier_id FROM raids_soldiers WHERE raid_id = $raid_id AND side = 'offense'");
+    $soldier_ids = [];
+    if ($sr) { while ($row = $sr->fetch_assoc()) $soldier_ids[] = intval($row['soldier_id']); }
+} else {
+    $defense_id  = intval($_GET['defense_id'] ?? 0);
+    $soldier_ids = (isset($_GET['soldiers']) && is_array($_GET['soldiers']))
+        ? array_map('intval', $_GET['soldiers']) : [];
+    if ($defense_id <= 0) { echo json_encode(['success'=>false,'error'=>'Invalid defense_id']); exit; }
+    $offense_id = getRealmID($conn);
+    if (!$offense_id) { echo json_encode(['success'=>false,'error'=>'No realm']); exit; }
 }
 
 // ── Helper: build realm data ─────────────────────────────────
