@@ -55,12 +55,11 @@ function absoluteIPFS($ipfs, $collection_id, $project_id) {
     return $url ?: 'icons/skull.png';
 }
 
-// ── Attacker realm ───────────────────────────────────────────
-$attacker = buildRealmData($conn, $offense_id);
+// ── Fetch soldiers first — before location queries touch the connection ──
 
-// Selected attacking soldiers
+// Attacking soldiers (by selected ID)
 $attack_soldiers = [];
-if (!empty($soldier_ids) && $attacker) {
+if (!empty($soldier_ids)) {
     $ids_safe = implode(',', $soldier_ids);
     $sol_res  = $conn->query("
         SELECT s.id, nfts.name AS nft_name, nfts.ipfs, nfts.collection_id, projects.id AS project_id
@@ -70,30 +69,33 @@ if (!empty($soldier_ids) && $attacker) {
         INNER JOIN projects     ON projects.id     = collections.project_id
         WHERE s.id IN ($ids_safe) AND s.realm_id = $offense_id
     ");
-    if ($sol_res) while ($row = $sol_res->fetch_assoc()) {
-        $attack_soldiers[] = [
-            'id'      => intval($row['id']),
-            'name'    => $row['nft_name'],
-            'img_url' => absoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
-        ];
+    if ($sol_res) {
+        while ($row = $sol_res->fetch_assoc()) {
+            $attack_soldiers[] = [
+                'id'      => intval($row['id']),
+                'name'    => $row['nft_name'],
+                'img_url' => absoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
+            ];
+        }
+        $sol_res->free();
     }
 }
-if ($attacker) $attacker['soldiers'] = $attack_soldiers;
 
-// ── Defender realm ───────────────────────────────────────────
+// Tower garrison — same function the Tower UI uses
+$tower_soldiers = [];
+foreach (getTowerGarrison($conn, $defense_id) as $row) {
+    $tower_soldiers[] = [
+        'id'      => intval($row['soldier_id']),
+        'name'    => $row['nft_name'],
+        'img_url' => absoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
+    ];
+}
+
+// ── Realm data (location + shield queries) ───────────────────
+$attacker = buildRealmData($conn, $offense_id);
 $defender = buildRealmData($conn, $defense_id);
 
-// Tower soldiers — use the same authoritative function the Tower UI uses
-$tower_soldiers = [];
-if ($defender) {
-    foreach (getTowerGarrison($conn, $defense_id) as $row) {
-        $tower_soldiers[] = [
-            'id'      => intval($row['soldier_id']),
-            'name'    => $row['nft_name'],
-            'img_url' => absoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
-        ];
-    }
-}
+if ($attacker) $attacker['soldiers'] = $attack_soldiers;
 if ($defender) $defender['soldiers'] = $tower_soldiers;
 
 echo json_encode([
