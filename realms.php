@@ -940,7 +940,7 @@ $conn->close();
 .rla-portal-icon img { width:38px; height:38px; object-fit:contain; display:block; }
 .rla-portal-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
 .rla-portal-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:.05em; text-transform:uppercase; }
-.rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; }
+.rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; min-width:58px; }
 .rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; background:url('icons/skull.png') center/cover no-repeat; }
 .rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
 .rla-def .rla-soldier img { opacity:.75; }
@@ -1960,6 +1960,7 @@ $conn->close();
 
 		defEl.className = 'rla-side rla-def';
 		defEl.innerHTML = portalHtml(defPortal)
+			+ '<div id="rla-raiders-col" class="rla-soldiers-col"></div>'
 			+ soldierColHtml(defender.soldiers)
 			+ locColHtml(defDef)
 			+ realmWrapHtml(defender)
@@ -2017,26 +2018,21 @@ $conn->close();
 			var emergeDur    = soldierCount * 320 + 650; // last soldier fully arrived
 			var t3 = setTimeout(function(){
 				var defPortalEl = document.querySelector('#rla-defender .rla-portal-icon');
-				if (!defPortalEl) return;
+				var raidersCol  = document.getElementById('rla-raiders-col');
+				if (!defPortalEl || !raidersCol) return;
 
-				var raidersCol = document.createElement('div');
-				raidersCol.id  = 'rla-raiders-col';
-				raidersCol.className = 'rla-soldiers-col';
-				raidersCol.style.visibility = 'hidden'; // hide until positions measured
-
-				// Clone images from now-invisible attacker soldiers
+				// Populate the pre-reserved slot with attacker soldier images (opacity:0)
 				document.querySelectorAll('#rla-attacker .rla-soldier').forEach(function(el){
 					var img = el.querySelector('img');
 					var soldierDiv = document.createElement('div');
 					soldierDiv.className = 'rla-soldier';
+					soldierDiv.style.opacity = '0';
 					var newImg = document.createElement('img');
 					newImg.src = img ? img.src : 'icons/skull.png';
 					newImg.onerror = function(){ this.src = 'icons/skull.png'; };
 					soldierDiv.appendChild(newImg);
 					raidersCol.appendChild(soldierDiv);
 				});
-
-				defPortalEl.insertAdjacentElement('afterend', raidersCol);
 
 				// Frame N: pin every soldier to portal center (no transition yet)
 				requestAnimationFrame(function(){
@@ -2051,7 +2047,6 @@ $conn->close();
 						el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
 						el.style.opacity    = '0';
 					});
-					raidersCol.style.visibility = '';
 
 					// Frame N+1: initial state committed — stagger each soldier to its grid slot
 					requestAnimationFrame(function(){
