@@ -2311,7 +2311,7 @@ $conn->close();
 				el.classList.add('rla-dying');
 				var tImg = setTimeout(function(){
 					var img = el.querySelector('img');
-					if (img) { img.src = 'icons/skull.png'; img.onerror = null; }
+					if (img) { img.src = 'icons/skull.png'; img.onerror = null; img.style.filter = 'drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.6) grayscale(.25)'; }
 					el.classList.remove('rla-dying');
 					el.classList.add('rla-dead');
 				}, 420);
@@ -2354,7 +2354,7 @@ $conn->close();
 						if (isDead) {
 							// Dead soldiers arrive home already as skulls, still glowing
 							var tImg = transit.querySelector('img');
-							if (tImg) { tImg.src = 'icons/skull.png'; tImg.onerror = null; }
+							if (tImg) { tImg.src = 'icons/skull.png'; tImg.onerror = null; tImg.style.filter = 'drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.6) grayscale(.25)'; }
 							transit.classList.add('rla-dead');
 						}
 						transit.style.opacity    = '1';
