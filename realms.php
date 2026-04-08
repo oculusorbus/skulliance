@@ -1885,8 +1885,8 @@ $conn->close();
 			})
 			.catch(function(){});
 
-		// march and emerge are tandem, so total = march stagger + transition + crash buffer
-		var minTime = 1200 + soldierIds.length * 320 + 650 + 800;
+		// march and emerge are tandem; allow time for full shake sequence + brief hold
+		var minTime = 1200 + soldierIds.length * 320 + 650 + 1800;
 		var minTimer = setTimeout(function(){
 			_raidAnim.done = true;
 			_tryApplyRaidResult();
