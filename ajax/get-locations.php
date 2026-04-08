@@ -111,6 +111,10 @@ if($realm_status){
 							echo "<input id='points-button-".$location_id."' class='small-button' type='button' value='".$points_multiplier."x Pts' onclick=\"togglePointsButtons('disable');pointsOption(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.")\"".">";
 						}
 					}else{ echo $status[$location_id]; }
+					$loc_modal_map = array(1=>'Manage Portal',2=>'Manage Armory',3=>'Manage Tower',4=>'Manage Barracks',5=>'Manage Factory',6=>'Manage Crypt',7=>'Manage Mine');
+					if(isset($loc_modal_map[$location_id])){
+						echo "<br><input class='small-button loc-modal-btn' type='button' value='".$loc_modal_map[$location_id]."' onclick='openLocationModal(".$location_id.")' style='margin-top:4px;'>";
+					}
 					?>
 					</div>
 				</div>
