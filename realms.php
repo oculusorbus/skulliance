@@ -911,11 +911,7 @@ $conn->close();
     display:flex; flex-direction:row; align-items:center; justify-content:center;
     gap:0; width:100%; max-width:900px; padding:0 10px; box-sizing:border-box;
 }
-.rla-loading {
-    color:rgba(255,255,255,.4); font-size:.9rem; letter-spacing:.08em;
-    animation:rla-spin 1.4s linear infinite; display:flex; align-items:center; gap:8px;
-}
-@keyframes rla-spin { to { transform:rotate(360deg); } }
+.rla-loading { display:none; }
 .rla-side {
     display:flex; flex-direction:row; align-items:center; justify-content:center;
     gap:6px; flex:1; opacity:0; transition:opacity .5s ease, transform .5s ease;
@@ -944,15 +940,9 @@ $conn->close();
 .rla-portal-icon img { width:38px; height:38px; object-fit:contain; display:block; }
 .rla-portal-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
 .rla-portal-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:.05em; text-transform:uppercase; }
-.rla-soldiers-col { display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
-.rla-soldier { width:32px; height:32px; border-radius:5px; overflow:hidden; flex-shrink:0; }
+.rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; }
+.rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; }
 .rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
-.rla-soldier.marching { animation:rla-march .65s ease-in forwards; }
-@keyframes rla-march {
-    0%   { transform:translateX(0)   scale(1);    opacity:1; }
-    65%  { transform:translateX(36px) scale(.88);  opacity:.7; }
-    100% { transform:translateX(64px) scale(.65);  opacity:0; }
-}
 .rla-def .rla-soldier img { opacity:.75; }
 .rla-status {
     font-size:1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
@@ -1987,13 +1977,24 @@ $conn->close();
 		}, 700);
 		_raidAnim.timers.push(t1);
 
-		var marchers = document.querySelectorAll('#rla-attacker .rla-soldier');
+		var marchers  = document.querySelectorAll('#rla-attacker .rla-soldier');
+		var portalEl  = document.querySelector('#rla-attacker .rla-portal-icon');
 		marchers.forEach(function(el, i){
-			var t = setTimeout(function(){ el.classList.add('marching'); }, 1200 + i * 380);
+			var t = setTimeout(function(){
+				var sr = el.getBoundingClientRect();
+				var pr = portalEl ? portalEl.getBoundingClientRect() : null;
+				if (pr) {
+					var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
+					var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
+					el.style.transition = 'transform .6s ease-in, opacity .45s ease-in .18s';
+					el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
+					el.style.opacity    = '0';
+				}
+			}, 1200 + i * 320);
 			_raidAnim.timers.push(t);
 		});
 
-		var afterMarch = 1200 + soldierCount * 380 + 700;
+		var afterMarch = 1200 + marchers.length * 320 + 700;
 		var t2 = setTimeout(function(){
 			statusEl.style.animation = 'none';
 			void statusEl.offsetWidth;
