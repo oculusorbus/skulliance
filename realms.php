@@ -2015,8 +2015,9 @@ $conn->close();
 		_raidAnim.timers.push(t1);
 
 		// ── Phase 2: Each soldier marches in AND their raider emerges simultaneously ──
+		// Raiders are populated asynchronously in a double-rAF inside _renderRaidAnimSides,
+		// so query them lazily inside each timeout (fires 1200ms+ later, long after rAF).
 		var marchers    = document.querySelectorAll('#rla-attacker .rla-soldier');
-		var raiders     = document.querySelectorAll('#rla-raiders-col .rla-soldier');
 		var atkPortalEl = document.querySelector('#rla-attacker .rla-portal-icon');
 
 		marchers.forEach(function(el, i){
@@ -2031,8 +2032,8 @@ $conn->close();
 					el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
 					el.style.opacity    = '0';
 				}
-				// Exit defender portal simultaneously — pop visible immediately, only animate transform
-				var raider = raiders[i];
+				// Exit defender portal simultaneously — query lazily, pop visible, animate transform only
+				var raider = document.querySelectorAll('#rla-raiders-col .rla-soldier')[i];
 				if (raider) {
 					raider.style.opacity    = '1';
 					raider.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
