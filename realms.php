@@ -902,14 +902,22 @@ $conn->close();
 
 /* ── Raid Launch Animation ───────────────────────────────────── */
 #raid-anim-overlay {
-    position:fixed; inset:0; background:rgba(7,17,29,.97); z-index:2000;
+    position:fixed; inset:0; z-index:2000;
+    background-color:#07111d;
+    background-image: url('images/darkworld.png');
+    background-size:cover; background-position:center;
     display:none; flex-direction:column; align-items:center; justify-content:center;
     gap:16px; opacity:0; transition:opacity .3s ease;
+}
+#raid-anim-overlay::before {
+    content:''; position:absolute; inset:0;
+    background:rgba(7,17,29,.78); pointer-events:none;
 }
 #raid-anim-overlay.active { opacity:1; }
 #raid-anim-field {
     display:flex; flex-direction:row; align-items:center; justify-content:center;
     gap:0; width:100%; max-width:900px; padding:0 10px; box-sizing:border-box;
+    position:relative; z-index:1;
 }
 .rla-loading { display:none; }
 .rla-side {
@@ -948,6 +956,7 @@ $conn->close();
     font-size:1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
     color:#00c8a0; min-height:1.4em; text-align:center;
     animation:rla-status-pop .35s cubic-bezier(.18,.89,.32,1.28) both;
+    position:relative; z-index:1;
 }
 @keyframes rla-status-pop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
 @keyframes rla-crash { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-6px,-2px)} 30%{transform:translate(6px,2px)} 45%{transform:translate(-5px,1px)} 60%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)} }
@@ -956,6 +965,7 @@ $conn->close();
     background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
     padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
     letter-spacing:.06em; text-transform:uppercase; transition:color .15s,border-color .15s;
+    position:relative; z-index:1;
 }
 .rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
 @media (max-width:600px) {
