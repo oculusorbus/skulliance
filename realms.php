@@ -950,6 +950,8 @@ $conn->close();
     animation:rla-status-pop .35s cubic-bezier(.18,.89,.32,1.28) both;
 }
 @keyframes rla-status-pop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+@keyframes rla-crash { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-6px,-2px)} 30%{transform:translate(6px,2px)} 45%{transform:translate(-5px,1px)} 60%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)} }
+.rla-crash { animation: rla-crash .5s ease both; }
 .rla-skip-btn {
     background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
     padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
@@ -1879,14 +1881,15 @@ $conn->close();
 				if (!data.success || !data.attacker || !data.defender) return;
 				loading.style.display = 'none';
 				_renderRaidAnimSides(data.attacker, data.defender);
-				_runRaidAnimSequence(soldierIds.length);
+				_runRaidAnimSequence(soldierIds.length, (data.defender.soldiers || []).length);
 			})
 			.catch(function(){});
 
+		var afterMarch = 1200 + soldierIds.length * 320 + 700;
 		var minTimer = setTimeout(function(){
 			_raidAnim.done = true;
 			_tryApplyRaidResult();
-		}, 4800);
+		}, afterMarch + 2200);
 		_raidAnim.timers.push(minTimer);
 	}
 
@@ -1967,23 +1970,23 @@ $conn->close();
 		});
 	}
 
-	function _runRaidAnimSequence(soldierCount) {
+	function _runRaidAnimSequence(soldierCount, defSoldierCount) {
 		var statusEl = document.getElementById('raid-anim-status');
 
+		// ── Phase 1: Raid launched status ────────────────────────
 		var t1 = setTimeout(function(){
-			statusEl.style.animation = 'none';
-			void statusEl.offsetWidth;
-			statusEl.style.animation = '';
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
 			statusEl.textContent = '\u2694\uFE0F Raid Launched!';
 		}, 700);
 		_raidAnim.timers.push(t1);
 
-		var marchers  = document.querySelectorAll('#rla-attacker .rla-soldier');
-		var portalEl  = document.querySelector('#rla-attacker .rla-portal-icon');
+		// ── Phase 2: Attackers march into attacker portal ─────────
+		var marchers = document.querySelectorAll('#rla-attacker .rla-soldier');
+		var atkPortalEl = document.querySelector('#rla-attacker .rla-portal-icon');
 		marchers.forEach(function(el, i){
 			var t = setTimeout(function(){
 				var sr = el.getBoundingClientRect();
-				var pr = portalEl ? portalEl.getBoundingClientRect() : null;
+				var pr = atkPortalEl ? atkPortalEl.getBoundingClientRect() : null;
 				if (pr) {
 					var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
 					var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
@@ -1996,13 +1999,67 @@ $conn->close();
 		});
 
 		var afterMarch = 1200 + marchers.length * 320 + 700;
+
+		// ── Phase 3: "Approaching" status ────────────────────────
 		var t2 = setTimeout(function(){
-			statusEl.style.animation = 'none';
-			void statusEl.offsetWidth;
-			statusEl.style.animation = '';
-			statusEl.textContent = '\uD83C\uDF00 Raiders are en route\u2026';
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+			statusEl.textContent = '\uD83C\uDF00 Raiders approaching\u2026';
 		}, afterMarch);
 		_raidAnim.timers.push(t2);
+
+		// ── Phase 4: Raiders emerge from defender portal ──────────
+		if (soldierCount > 0) {
+			var emergeStart = afterMarch + 600;
+			var t3 = setTimeout(function(){
+				var defPortalEl = document.querySelector('#rla-defender .rla-portal-icon');
+				if (!defPortalEl) return;
+
+				var raidersCol = document.createElement('div');
+				raidersCol.id  = 'rla-raiders-col';
+				raidersCol.className = 'rla-soldiers-col';
+				raidersCol.style.cssText = 'opacity:0; transform:scale(0.15) translateX(-20px); transition:opacity .5s ease, transform .6s cubic-bezier(.18,.89,.32,1.1);';
+
+				// Clone images from now-invisible attacker soldiers
+				document.querySelectorAll('#rla-attacker .rla-soldier').forEach(function(el){
+					var img = el.querySelector('img');
+					var soldierDiv = document.createElement('div');
+					soldierDiv.className = 'rla-soldier';
+					var newImg = document.createElement('img');
+					newImg.src = img ? img.src : 'icons/skull.png';
+					newImg.onerror = function(){ this.src = 'icons/skull.png'; };
+					soldierDiv.appendChild(newImg);
+					raidersCol.appendChild(soldierDiv);
+				});
+
+				defPortalEl.insertAdjacentElement('afterend', raidersCol);
+
+				// Trigger emerge animation
+				requestAnimationFrame(function(){
+					setTimeout(function(){
+						raidersCol.style.opacity   = '1';
+						raidersCol.style.transform = 'scale(1) translateX(0)';
+					}, 30);
+				});
+			}, emergeStart);
+			_raidAnim.timers.push(t3);
+
+			// ── Phase 5: Crash into defenders (or breach) ────────
+			var crashStart = emergeStart + 700;
+			var t4 = setTimeout(function(){
+				statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+				var raidersCol = document.getElementById('rla-raiders-col');
+				var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-raiders-col)');
+
+				if (defSoldierCount > 0 && raidersCol && defSolCol) {
+					statusEl.textContent = '\u2694\uFE0F Battle Begins!';
+					raidersCol.classList.add('rla-crash');
+					defSolCol.classList.add('rla-crash');
+				} else {
+					statusEl.textContent = '\uD83D\uDC80 Realm Breached!';
+				}
+			}, crashStart);
+			_raidAnim.timers.push(t4);
+		}
 	}
 
 	function _raidAnimGotResponse(html) {
