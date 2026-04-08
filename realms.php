@@ -2038,31 +2038,31 @@ $conn->close();
 
 				defPortalEl.insertAdjacentElement('afterend', raidersCol);
 
-				// Measure grid positions, then launch each soldier from portal center
+				// Frame N: pin every soldier to portal center (no transition yet)
 				requestAnimationFrame(function(){
 					var pr       = defPortalEl.getBoundingClientRect();
 					var soldiers = raidersCol.querySelectorAll('.rla-soldier');
 
-					// Place every soldier at portal (no transition yet)
 					soldiers.forEach(function(el){
 						var sr = el.getBoundingClientRect();
 						var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
 						var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
+						el.style.transition = 'none';
 						el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
 						el.style.opacity    = '0';
-						el.style.transition = 'none';
 					});
-
 					raidersCol.style.visibility = '';
 
-					// Stagger each soldier out to its grid position
-					soldiers.forEach(function(el, i){
-						var t = setTimeout(function(){
-							el.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1), opacity .4s ease .08s';
-							el.style.transform  = 'translate(0,0) scale(1)';
-							el.style.opacity    = '1';
-						}, 30 + i * 320);
-						_raidAnim.timers.push(t);
+					// Frame N+1: initial state committed — stagger each soldier to its grid slot
+					requestAnimationFrame(function(){
+						soldiers.forEach(function(el, i){
+							var t = setTimeout(function(){
+								el.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1), opacity .4s ease .08s';
+								el.style.transform  = 'translate(0,0) scale(1)';
+								el.style.opacity    = '1';
+							}, i * 320);
+							_raidAnim.timers.push(t);
+						});
 					});
 				});
 			}, emergeStart);
