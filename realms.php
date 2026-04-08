@@ -1883,8 +1883,8 @@ $conn->close();
 		_startPortalAnim({ defId:defId, soldierIds:soldierIds, direction:'raid', applyFn:applyFn });
 	}
 
-	function showRetreatAnimation(raidId, applyFn) {
-		_startPortalAnim({ raidId:raidId, direction:'retreat', applyFn:applyFn });
+	function showRetreatAnimation(raidId, applyFn, onReady) {
+		_startPortalAnim({ raidId:raidId, direction:'retreat', applyFn:applyFn, onReady:onReady });
 	}
 
 	function _startPortalAnim(config) {
@@ -1896,6 +1896,7 @@ $conn->close();
 		var def      = document.getElementById('rla-defender');
 		var statusEl = document.getElementById('raid-anim-status');
 
+		loading.textContent = (config.direction === 'retreat' ? 'Preparing retreat\u2026' : 'Preparing raid\u2026');
 		loading.style.display = 'flex';
 		atk.style.display = 'none'; def.style.display = 'none';
 		atk.innerHTML = ''; def.innerHTML = '';
@@ -1917,6 +1918,7 @@ $conn->close();
 				var defSoldierCount = (data.defender.soldiers || []).length;
 				_renderPortalSides(data.attacker, data.defender, config.direction);
 				_runPortalSequence(soldierCount, defSoldierCount, config.direction);
+				if (config.onReady) config.onReady();
 				var minTime  = 1200 + soldierCount * 320 + 650 + 1200;
 				var minTimer = setTimeout(function(){ _raidAnim.done = true; _tryApplyRaidResult(); }, minTime);
 				_raidAnim.timers.push(minTimer);
@@ -2137,18 +2139,25 @@ $conn->close();
 		if (_raidAnim.html !== null && _raidAnim.done) {
 			var fn   = _raidAnim.applyFn;
 			var html = _raidAnim.html;
-			dismissRaidAnimation();
+			var overlay = document.getElementById('raid-anim-overlay');
+			var timers = _raidAnim.timers.slice();
+			timers.forEach(clearTimeout);
+			_raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
+			if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
 			if (fn) fn(html);
 		}
 	}
 
 	function dismissRaidAnimation() {
+		// Preserve applyFn/html so skip still processes the result when XHR responds
+		var savedFn   = _raidAnim.applyFn;
+		var savedHtml = _raidAnim.html;
 		var overlay = document.getElementById('raid-anim-overlay');
-		overlay.classList.remove('active');
 		var timers = _raidAnim.timers.slice();
 		timers.forEach(clearTimeout);
-		_raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
-		setTimeout(function(){ overlay.style.display = 'none'; }, 350);
+		_raidAnim = { done:true, html:savedHtml, applyFn:savedFn, timers:[], direction:'raid' };
+		if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+		_tryApplyRaidResult();
 	}
 
 	function claimRealmLogs(types) {

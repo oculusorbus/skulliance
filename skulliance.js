@@ -1427,10 +1427,19 @@ function retreatRaid(raidId){
 	openConfirm("Are you sure you want to retreat this raid?\r\n\r\nAll consumables used will be returned to your inventory.", function(){
 		var btn = document.querySelector('#raid-row-'+raidId+' input[type=button]');
 		if(btn) btn.disabled = true;
-		var xhttp = new XMLHttpRequest();
-		xhttp.open('GET', 'ajax/retreat-raid.php?raid_id='+raidId, true);
-		xhttp.send();
+		function fireRetreatXhr() {
+			var xhttp = new XMLHttpRequest();
+			xhttp.open('GET', 'ajax/retreat-raid.php?raid_id='+raidId, true);
+			xhttp.onreadystatechange = function(){
+				if(xhttp.readyState == XMLHttpRequest.DONE){
+					if (typeof _portalAnimGotResponse === 'function') _portalAnimGotResponse(xhttp.responseText);
+				}
+			};
+			xhttp.send();
+		}
 		if (typeof showRetreatAnimation === 'function') {
+			// Fire the retreat XHR only after preview data loads so soldiers still
+			// exist in the DB when get-raid-preview.php queries them.
 			showRetreatAnimation(raidId, function(responseText) {
 				try {
 					var resp = JSON.parse(responseText);
@@ -1440,14 +1449,11 @@ function retreatRaid(raidId){
 					if(row) row.remove();
 					if(progress) progress.remove();
 				} catch(e){ alert('Error retreating raid'); if(btn) btn.disabled = false; }
-			});
-			xhttp.onreadystatechange = function(){
-				if(xhttp.readyState == XMLHttpRequest.DONE){
-					if (typeof _portalAnimGotResponse === 'function') _portalAnimGotResponse(xhttp.responseText);
-				}
-			};
+			}, fireRetreatXhr);
 		} else {
 			// Fallback: no animation available (e.g. page without animation engine)
+			var xhttp = new XMLHttpRequest();
+			xhttp.open('GET', 'ajax/retreat-raid.php?raid_id='+raidId, true);
 			xhttp.onreadystatechange = function(){
 				if(xhttp.readyState == XMLHttpRequest.DONE){
 					try{
@@ -1460,6 +1466,7 @@ function retreatRaid(raidId){
 					} catch(e){ alert('Error retreating raid'); if(btn) btn.disabled = false; }
 				}
 			};
+			xhttp.send();
 		}
 	});
 }
