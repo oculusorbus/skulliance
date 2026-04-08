@@ -2054,10 +2054,10 @@ $conn->close();
 			var raidersCol = document.getElementById('rla-raiders-col');
 			var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-raiders-col)');
 			var defEl      = document.getElementById('rla-defender');
-			// Always shake the raiders and defender realm innards
-			// (target inner elements to avoid conflict with .rla-side transition:transform)
+			// Always shake raiders, defender soldiers, realm, and locations — not the portal
 			if (raidersCol) raidersCol.classList.add('rla-crash');
-			if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col, .rla-portal-icon').forEach(function(el){
+			if (defSolCol)  defSolCol.classList.add('rla-crash');
+			if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col').forEach(function(el){
 				el.classList.add('rla-crash');
 			});
 			if (defSoldierCount > 0 && defSolCol) {
