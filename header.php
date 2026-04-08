@@ -23,6 +23,9 @@
 	  		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
 	  		document.getElementById("navbar").classList.add('show-menu');
 	  		document.getElementById("navbar").classList.remove('hide-menu');
+	  		// Auto-expand Play section — most-used on mobile, saves one tap
+	  		var playMenu = document.querySelector('.nav-dropdown.navbar-first .nav-dropdown-menu');
+	  		if(playMenu) playMenu.classList.add('open');
 	  	}else{
 	  		document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
 	  		document.getElementById("navbar").classList.add('hide-menu');
@@ -69,8 +72,10 @@
         if (!el) return;
         var bar = el.querySelector('.nl-bar');
         if (bar) { var nb = bar.cloneNode(true); nb.style.animation = 'nl-bar 12s ease-out forwards'; bar.parentNode.replaceChild(nb, bar); }
+        el.style.transition = 'none';
+        el.style.opacity = '1';
         el.style.display = 'flex';
-        requestAnimationFrame(function(){ el.classList.add('active'); });
+        el.classList.add('active');
     }
     document.addEventListener('click', function(e) {
         var a = e.target.closest('a[href]');
@@ -80,7 +85,21 @@
         // Only internal links
         var isInternal = href.charAt(0) === '/' || href.charAt(0) === '.' ||
                          (!href.match(/^https?:\/\//) || href.indexOf(window.location.hostname) !== -1);
-        if (isInternal && a.target !== '_blank') showNavLoader();
+        if (isInternal && a.target !== '_blank') {
+            // Prevent default so we can flush DOM changes before navigating.
+            // Mobile browsers won't repaint between classList changes and navigation
+            // unless we yield back to the rendering engine first.
+            e.preventDefault();
+            var navbar = document.getElementById('navbar');
+            if (navbar && navbar.classList.contains('show-menu')) {
+                navbar.classList.remove('show-menu');
+                var icon = document.getElementById('burger-icon');
+                if (icon) icon.src = 'https://www.skulliance.io/staking/images/menu.png';
+            }
+            showNavLoader();
+            var dest = a.href;
+            setTimeout(function(){ window.location.href = dest; }, 50);
+        }
     });
     // Hide if browser restores page from bfcache
     window.addEventListener('pageshow', function(e) {
@@ -126,7 +145,6 @@
 		      <a href="auctions.php">Auctions</a>
 		      <a href="raffles.php">Raffles</a>
 		      <a href="collections.php">Collections</a>
-		      <a href="merch.php">Merch</a>
 		      <a href="gallery.php">Gallery</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
 		      <a href="skulliverse.php">Skulliverse</a>

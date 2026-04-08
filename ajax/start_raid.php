@@ -20,10 +20,16 @@ if(isset($_GET['defense_id']) && isset($_GET['duration'])){
 				}
 			}
 		}
-		// Require at least one soldier
+		// Require at least one soldier; cap at min(portal_level, 10)
 		$soldier_ids = (isset($_GET['soldiers']) && is_array($_GET['soldiers'])) ? array_map('intval', $_GET['soldiers']) : array();
 		if (empty($soldier_ids)) {
 			echo "No soldiers selected. Enlist and train soldiers in your Barracks before raiding.";
+			$conn->close(); exit;
+		}
+		$portal_level   = intval(getRealmLocationLevel($conn, $realm_id, 1));
+		$max_soldiers   = min($portal_level, 10);
+		if (count($soldier_ids) > $max_soldiers) {
+			echo "Too many soldiers selected. Maximum " . $max_soldiers . " per raid.";
 			$conn->close(); exit;
 		}
 		$raid_id = startRaid($conn, $_GET['defense_id'], $_GET['duration'], $consumables);

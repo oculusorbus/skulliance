@@ -713,7 +713,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<h2 style="margin:0;font-size:1rem;">Select Soldiers for Raid</h2>
 				<button class="raid-modal-close" onclick="closeRaidSoldierModal()" aria-label="Close">&times;</button>
 			</div>
-			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to <?php echo intval($levels[1]); ?> trained soldiers from your Barracks (Portal level <?php echo intval($levels[1]); ?>). Their equipped weapon and armor will go on this raid.</p>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to <?php echo min(intval($levels[1]), 10); ?> trained soldiers from your Barracks (max 10 per raid). Their equipped weapon and armor will go on this raid.</p>
 			<div id="raid-soldiers-grid"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
 				<span id="raid-soldiers-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 / 10 selected</span>
@@ -773,6 +773,18 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 
 </div>
 </div>
+
+<!-- ── Raid Launch Animation Overlay ───────────────────────── -->
+<div id="raid-anim-overlay" aria-hidden="true">
+	<div id="raid-anim-field">
+		<div id="raid-anim-loading" class="rla-loading">Preparing raid&hellip;</div>
+		<div id="rla-attacker" class="rla-side" style="display:none"></div>
+		<div id="rla-defender" class="rla-side" style="display:none"></div>
+	</div>
+	<div id="raid-anim-status" class="rla-status"></div>
+	<button class="rla-skip-btn" onclick="dismissRaidAnimation()">Skip</button>
+</div>
+
 </body>
 <?php
 getFactionsRealmsMapData($conn);
@@ -887,6 +899,87 @@ $conn->close();
 .deploy-tier-btn { flex:1; padding:6px 4px; font-size:0.78rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; cursor:pointer; transition:background 0.15s,border-color 0.15s; }
 .deploy-tier-btn:hover { background:rgba(255,255,255,0.1); }
 .deploy-tier-btn.active { background:rgba(0,200,160,0.18); border-color:#00c8a0; color:#00c8a0; font-weight:bold; }
+
+/* ── Raid Launch Animation ───────────────────────────────────── */
+#raid-anim-overlay {
+    position:fixed; inset:0; z-index:2000;
+    background-color:#07111d;
+    background-image: url('images/darkworld.png');
+    background-size:cover; background-position:center;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; opacity:0; transition:opacity .3s ease;
+}
+#raid-anim-overlay::before {
+    content:''; position:absolute; inset:0;
+    background:rgba(7,17,29,.78); pointer-events:none;
+}
+#raid-anim-overlay.active { opacity:1; }
+#raid-anim-field {
+    display:flex; flex-direction:row; align-items:center; justify-content:center;
+    gap:0; width:100%; max-width:900px; padding:0 10px; box-sizing:border-box;
+    position:relative; z-index:1;
+}
+.rla-loading { display:none; }
+.rla-side {
+    display:flex; flex-direction:row; align-items:center; justify-content:center;
+    gap:6px; flex:1; opacity:0; transition:opacity .5s ease, transform .5s ease;
+}
+.rla-side.rla-atk { transform:translateX(-20px); }
+.rla-side.rla-def { transform:translateX(20px); }
+.rla-side.revealed { opacity:1; transform:translateX(0); }
+.rla-realm-wrap {
+    display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0;
+}
+.rla-realm-img {
+    width:90px; height:90px; object-fit:cover; border-radius:8px;
+    border:1px solid rgba(255,255,255,.12);
+}
+.rla-realm-name {
+    font-size:.62rem; color:rgba(255,255,255,.45); text-align:center;
+    max-width:90px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.rla-loc-col { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+.rla-loc-icon { width:26px; height:26px; border-radius:5px; overflow:hidden; flex-shrink:0; }
+.rla-loc-icon img { width:100%; height:100%; object-fit:cover; display:block; }
+.rla-loc-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
+.rla-portal-icon {
+    display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0;
+}
+.rla-portal-icon img { width:38px; height:38px; object-fit:contain; display:block; }
+.rla-portal-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
+.rla-portal-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:.05em; text-transform:uppercase; }
+.rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; min-width:58px; }
+.rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; background:url('icons/skull.png') center/cover no-repeat; }
+.rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
+.rla-def .rla-soldier img { opacity:.75; }
+.rla-status {
+    font-size:1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:#00c8a0; min-height:1.4em; text-align:center;
+    animation:rla-status-pop .35s cubic-bezier(.18,.89,.32,1.28) both;
+    position:relative; z-index:1;
+}
+@keyframes rla-status-pop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+@keyframes rla-crash { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-6px,-2px)} 30%{transform:translate(6px,2px)} 45%{transform:translate(-5px,1px)} 60%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)} }
+.rla-crash { animation: rla-crash .5s ease both; }
+.rla-skip-btn {
+    background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
+    padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
+    letter-spacing:.06em; text-transform:uppercase; transition:color .15s,border-color .15s;
+    position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:1;
+}
+.rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
+@media (max-width:600px) {
+    #raid-anim-field { padding:0 4px; }
+    .rla-side { gap:3px; }
+    .rla-realm-img { width:46px; height:46px; }
+    .rla-realm-name { max-width:46px; font-size:.52rem; }
+    .rla-portal-icon img { width:22px; height:22px; }
+    .rla-portal-label { font-size:.46rem; }
+    .rla-soldiers-col { grid-template-columns:repeat(1, 18px); min-width:18px; gap:1px; }
+    .rla-soldier { width:18px; height:18px; }
+    .rla-loc-col { gap:3px; }
+    .rla-loc-icon { width:14px; height:14px; border-radius:3px; }
+}
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -1002,7 +1095,7 @@ $conn->close();
 
 	/* ── RAID SOLDIER SELECTION ──────────────────────────── */
 	// Intercept openRaidConsumablesModal to show soldier picker first
-	var _portalLevel              = <?php echo intval($levels[1]); ?>;
+	var _portalLevel              = Math.min(<?php echo intval($levels[1]); ?>, 10);
 	var _nftProjectTree           = <?php echo json_encode($nft_project_tree); ?>;
 	var _barracksOpenSlots        = <?php echo intval($barracks_slots_open); ?>;
 	var _raidSoldierSelectedIds   = [];
@@ -1233,16 +1326,19 @@ $conn->close();
 			var savedIds = allEl.dataset.savedIds ? allEl.dataset.savedIds.split(',').map(Number).filter(Boolean) : [];
 			var consumablesParam = '';
 			savedIds.forEach(function(id) { consumablesParam += '&consumables[]=' + id; });
+			var capturedSoldierIds = _raidSoldierSelectedIds.slice();
 			_raidSoldierSelectedIds = [];
 			var xhttp = new XMLHttpRequest();
 			xhttp.open('GET', 'ajax/start_raid.php?defense_id=' + defId + '&duration=' + dur + consumablesParam + soldiersParam, true);
 			xhttp.send();
+			showRaidAnimation(defId, capturedSoldierIds, function(data) {
+				var conRow = document.getElementById('raid-con-row-' + defId);
+				if (conRow) conRow.style.display = 'none';
+				if (data != '' && btn) btn.outerHTML = data;
+			});
 			xhttp.onreadystatechange = function() {
 				if (xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200) {
-					var data = xhttp.responseText;
-					var conRow = document.getElementById('raid-con-row-' + defId);
-					if (conRow) conRow.style.display = 'none';
-					if (data != '' && btn) btn.outerHTML = data;
+					_raidAnimGotResponse(xhttp.responseText);
 				}
 			};
 		} else {
@@ -1270,17 +1366,20 @@ $conn->close();
 		if (saveParam) _updateAllRaidConfigCheckboxes(savedCids);
 		var soldiersParam = '';
 		_raidSoldierSelectedIds.forEach(function(sid) { soldiersParam += '&soldiers[]=' + sid; });
+		var capturedSoldierIds = _raidSoldierSelectedIds.slice();
 		closeRaidConsumablesModal();
 		var raidButton = document.getElementById('raid-btn-' + defenseID);
 		var xhttp = new XMLHttpRequest();
 		xhttp.open('GET', 'ajax/start_raid.php?defense_id=' + defenseID + '&duration=' + duration + consumablesParam + saveParam + soldiersParam, true);
 		xhttp.send();
+		showRaidAnimation(defenseID, capturedSoldierIds, function(data) {
+			var conRow = document.getElementById('raid-con-row-' + defenseID);
+			if (conRow) conRow.style.display = 'none';
+			if (data != '' && raidButton) raidButton.outerHTML = data;
+		});
 		xhttp.onreadystatechange = function() {
 			if (xhttp.readyState == XMLHttpRequest.DONE && xhttp.status == 200) {
-				var data = xhttp.responseText;
-				var conRow = document.getElementById('raid-con-row-' + defenseID);
-				if (conRow) conRow.style.display = 'none';
-				if (data != '' && raidButton) raidButton.outerHTML = data;
+				_raidAnimGotResponse(xhttp.responseText);
 			}
 		};
 		_raidSoldierSelectedIds = [];
@@ -1773,6 +1872,294 @@ $conn->close();
 	}
 
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
+	/* ── PORTAL ANIMATION ENGINE ─────────────────────────────────────────────
+	 * Shared between raid launch (direction='raid') and retreat (direction='retreat').
+	 * Public:   showRaidAnimation(), showRetreatAnimation()
+	 * Internal: _startPortalAnim, _renderPortalSides, _runPortalSequence
+	 * ─────────────────────────────────────────────────────────────────────── */
+	var _raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
+
+	function showRaidAnimation(defId, soldierIds, applyFn) {
+		_startPortalAnim({ defId:defId, soldierIds:soldierIds, direction:'raid', applyFn:applyFn });
+	}
+
+	function showRetreatAnimation(raidId, applyFn, onReady) {
+		_startPortalAnim({ raidId:raidId, direction:'retreat', applyFn:applyFn, onReady:onReady });
+	}
+
+	function _startPortalAnim(config) {
+		_raidAnim = { done:false, html:null, applyFn:config.applyFn, timers:[], direction:config.direction };
+
+		var overlay  = document.getElementById('raid-anim-overlay');
+		var loading  = document.getElementById('raid-anim-loading');
+		var atk      = document.getElementById('rla-attacker');
+		var def      = document.getElementById('rla-defender');
+		var statusEl = document.getElementById('raid-anim-status');
+
+		loading.textContent = (config.direction === 'retreat' ? 'Preparing retreat\u2026' : 'Preparing raid\u2026');
+		loading.style.display = 'flex';
+		atk.style.display = 'none'; def.style.display = 'none';
+		atk.innerHTML = ''; def.innerHTML = '';
+		statusEl.textContent = '';
+		overlay.style.display = 'flex';
+		requestAnimationFrame(function(){ overlay.classList.add('active'); });
+
+		var url = config.raidId
+			? 'ajax/get-raid-preview.php?raid_id=' + config.raidId
+			: 'ajax/get-raid-preview.php?defense_id=' + config.defId
+				+ (config.soldierIds || []).map(function(id){ return '&soldiers[]=' + id; }).join('');
+
+		fetch(url)
+			.then(function(r){ return r.json(); })
+			.then(function(data){
+				if (!data.success || !data.attacker || !data.defender) return;
+				loading.style.display = 'none';
+				var soldierCount    = (data.attacker.soldiers || []).length;
+				var defSoldierCount = (data.defender.soldiers || []).length;
+				_renderPortalSides(data.attacker, data.defender, config.direction);
+				_runPortalSequence(soldierCount, defSoldierCount, config.direction);
+				if (config.onReady) config.onReady();
+				var minTime  = 1200 + soldierCount * 320 + 650 + 1200;
+				var minTimer = setTimeout(function(){ _raidAnim.done = true; _tryApplyRaidResult(); }, minTime);
+				_raidAnim.timers.push(minTimer);
+			})
+			.catch(function(){});
+	}
+
+	function _escHtml(s) {
+		return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+	}
+
+	function _renderPortalSides(attacker, defender, direction) {
+		function locIconHtml(loc) {
+			var sh  = loc.has_shield ? ' rla-shielded' : '';
+			var src = (_locModalIcons && _locModalIcons[loc.location_id])
+				? _locModalIcons[loc.location_id] : 'icons/skull.png';
+			return '<div class="rla-loc-icon' + sh + '" title="' + _escHtml(loc.name) + '">'
+				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
+				+ '</div>';
+		}
+		function locColHtml(locs) {
+			if (!locs || !locs.length) return '';
+			return '<div class="rla-loc-col">' + locs.map(locIconHtml).join('') + '</div>';
+		}
+		function soldierColHtml(soldiers, id) {
+			var html = '<div class="rla-soldiers-col"' + (id ? ' id="' + id + '"' : '') + '>';
+			if (soldiers && soldiers.length) {
+				soldiers.forEach(function(s){
+					html += '<div class="rla-soldier">'
+						+ '<img src="' + _escHtml(s.img_url) + '" onerror="this.src=\'icons/skull.png\'" title="' + _escHtml(s.name) + '">'
+						+ '</div>';
+				});
+			}
+			return html + '</div>';
+		}
+		function portalHtml(loc) {
+			var sh  = (loc && loc.has_shield) ? ' rla-shielded' : '';
+			var src = (_locModalIcons && _locModalIcons[1]) ? _locModalIcons[1] : 'icons/skull.png';
+			return '<div class="rla-portal-icon' + sh + '">'
+				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
+				+ '<div class="rla-portal-label">Portal</div>'
+				+ '</div>';
+		}
+		function realmWrapHtml(realm) {
+			return '<div class="rla-realm-wrap">'
+				+ '<img class="rla-realm-img" src="images/themes/' + _escHtml(realm.theme_id) + '.jpg" onerror="this.src=\'icons/skull.png\'">'
+				+ '<div class="rla-realm-name">' + _escHtml(realm.name) + '</div>'
+				+ '</div>';
+		}
+
+		var atkDef    = attacker.locations.filter(function(l){ return l.location_type==='defense'; });
+		var atkOff    = attacker.locations.filter(function(l){ return l.location_type==='offense' && l.location_id!=1; });
+		var atkPortal = attacker.locations.find(function(l){ return l.location_id==1; });
+		var defDef    = defender.locations.filter(function(l){ return l.location_type==='defense'; });
+		var defOff    = defender.locations.filter(function(l){ return l.location_type==='offense' && l.location_id!=1; });
+		var defPortal = defender.locations.find(function(l){ return l.location_id==1; });
+
+		var atkEl = document.getElementById('rla-attacker');
+		var defEl = document.getElementById('rla-defender');
+
+		if (direction === 'raid') {
+			// Soldiers march from attacker into atk portal; transit emerges at def portal
+			atkEl.className = 'rla-side rla-atk';
+			atkEl.innerHTML = locColHtml(atkDef)
+				+ realmWrapHtml(attacker)
+				+ locColHtml(atkOff)
+				+ soldierColHtml(attacker.soldiers, 'rla-march-col')
+				+ '<div class="rla-soldiers-col"></div>'
+				+ portalHtml(atkPortal);
+
+			defEl.className = 'rla-side rla-def';
+			defEl.innerHTML = portalHtml(defPortal)
+				+ '<div id="rla-transit-col" class="rla-soldiers-col"></div>'
+				+ soldierColHtml(defender.soldiers)
+				+ locColHtml(defDef)
+				+ realmWrapHtml(defender)
+				+ locColHtml(defOff);
+		} else {
+			// Retreat: soldiers march from defender into def portal; transit emerges at atk portal
+			atkEl.className = 'rla-side rla-atk';
+			atkEl.innerHTML = locColHtml(atkDef)
+				+ realmWrapHtml(attacker)
+				+ locColHtml(atkOff)
+				+ '<div id="rla-transit-col" class="rla-soldiers-col"></div>'
+				+ '<div class="rla-soldiers-col"></div>'
+				+ portalHtml(atkPortal);
+
+			defEl.className = 'rla-side rla-def';
+			defEl.innerHTML = portalHtml(defPortal)
+				+ soldierColHtml(attacker.soldiers, 'rla-march-col')
+				+ soldierColHtml(defender.soldiers)
+				+ locColHtml(defDef)
+				+ realmWrapHtml(defender)
+				+ locColHtml(defOff);
+		}
+
+		atkEl.style.display = 'flex'; defEl.style.display = 'flex';
+
+		// Transit portal: where transit soldiers are pinned before emerging
+		var transitPortalEl = direction === 'raid'
+			? defEl.querySelector('.rla-portal-icon')
+			: atkEl.querySelector('.rla-portal-icon');
+
+		// Frame N: populate transit col and pin each soldier to transit portal
+		requestAnimationFrame(function(){
+			var transitCol = document.getElementById('rla-transit-col');
+			if (transitPortalEl && transitCol && attacker.soldiers) {
+				attacker.soldiers.forEach(function(s){
+					var div = document.createElement('div');
+					div.className = 'rla-soldier';
+					div.style.cssText = 'opacity:0; transition:none;';
+					var img = document.createElement('img');
+					img.src = s.img_url || 'icons/skull.png';
+					img.onerror = function(){ this.src = 'icons/skull.png'; };
+					div.appendChild(img);
+					transitCol.appendChild(div);
+				});
+				requestAnimationFrame(function(){
+					var pr = transitPortalEl.getBoundingClientRect();
+					transitCol.querySelectorAll('.rla-soldier').forEach(function(el){
+						var sr = el.getBoundingClientRect();
+						var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
+						var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
+						el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
+					});
+					setTimeout(function(){
+						atkEl.classList.add('revealed');
+						defEl.classList.add('revealed');
+					}, 30);
+				});
+			} else {
+				setTimeout(function(){
+					atkEl.classList.add('revealed');
+					defEl.classList.add('revealed');
+				}, 30);
+			}
+		});
+	}
+
+	function _runPortalSequence(soldierCount, defSoldierCount, direction) {
+		var statusEl = document.getElementById('raid-anim-status');
+		var isRaid   = direction === 'raid';
+
+		// Phase 1: opening status
+		var t1 = setTimeout(function(){
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+			statusEl.textContent = isRaid ? '\u2694\uFE0F Raid Launched!' : '\uD83C\uDFF3\uFE0F Retreating\u2026';
+		}, 700);
+		_raidAnim.timers.push(t1);
+
+		// Phase 2: march + tandem emerge (500ms portal travel delay)
+		var marchPortalSel = isRaid ? '#rla-attacker .rla-portal-icon' : '#rla-defender .rla-portal-icon';
+		var marchers       = document.querySelectorAll('#rla-march-col .rla-soldier');
+		var marchPortal    = document.querySelector(marchPortalSel);
+
+		marchers.forEach(function(el, i){
+			var t = setTimeout(function(){
+				// Enter march portal
+				var sr = el.getBoundingClientRect();
+				var pr = marchPortal ? marchPortal.getBoundingClientRect() : null;
+				if (pr) {
+					var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
+					var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
+					el.style.transition = 'transform .6s ease-in, opacity .45s ease-in .18s';
+					el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
+					el.style.opacity    = '0';
+				}
+				// Exit transit portal after travel delay
+				var rIdx = i;
+				var tEmerge = setTimeout(function(){
+					var transit = document.querySelectorAll('#rla-transit-col .rla-soldier')[rIdx];
+					if (transit) {
+						transit.style.opacity    = '1';
+						transit.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
+						transit.style.transform  = 'translate(0,0) scale(1)';
+					}
+				}, 500);
+				_raidAnim.timers.push(tEmerge);
+			}, 1200 + i * 320);
+			_raidAnim.timers.push(t);
+		});
+
+		// Phase 3: end sequence
+		var afterMarch = 1200 + marchers.length * 320 + 650;
+		var t2 = setTimeout(function(){
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+
+			if (isRaid) {
+				var transitCol = document.getElementById('rla-transit-col');
+				var defEl      = document.getElementById('rla-defender');
+				var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-transit-col):not(#rla-march-col)');
+				// Attackers shake first
+				if (transitCol) transitCol.classList.add('rla-crash');
+				statusEl.textContent = defSoldierCount > 0 ? '\u2694\uFE0F Battle Begins!' : '\uD83D\uDC80 Realm Breached!';
+				// Defenders react 180ms later
+				var tReact = setTimeout(function(){
+					if (defSolCol) defSolCol.classList.add('rla-crash');
+					if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col').forEach(function(el){
+						el.classList.add('rla-crash');
+					});
+				}, 180);
+				_raidAnim.timers.push(tReact);
+			} else {
+				statusEl.textContent = '\u2705 Soldiers Returned!';
+			}
+		}, afterMarch);
+		_raidAnim.timers.push(t2);
+	}
+
+	function _portalAnimGotResponse(html) {
+		_raidAnim.html = html;
+		_tryApplyRaidResult();
+	}
+	// Alias so existing XHR callbacks in this file continue to work
+	var _raidAnimGotResponse = _portalAnimGotResponse;
+
+	function _tryApplyRaidResult() {
+		if (_raidAnim.html !== null && _raidAnim.done) {
+			var fn   = _raidAnim.applyFn;
+			var html = _raidAnim.html;
+			var overlay = document.getElementById('raid-anim-overlay');
+			var timers = _raidAnim.timers.slice();
+			timers.forEach(clearTimeout);
+			_raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
+			if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+			if (fn) fn(html);
+		}
+	}
+
+	function dismissRaidAnimation() {
+		// Preserve applyFn/html so skip still processes the result when XHR responds
+		var savedFn   = _raidAnim.applyFn;
+		var savedHtml = _raidAnim.html;
+		var overlay = document.getElementById('raid-anim-overlay');
+		var timers = _raidAnim.timers.slice();
+		timers.forEach(clearTimeout);
+		_raidAnim = { done:true, html:savedHtml, applyFn:savedFn, timers:[], direction:'raid' };
+		if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+		_tryApplyRaidResult();
+	}
+
 	function claimRealmLogs(types) {
 		$.ajax({
 			url: 'ajax/claim-realm-logs.php',
