@@ -969,9 +969,16 @@ $conn->close();
 }
 .rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
 @media (max-width:600px) {
-    .rla-loc-col, .rla-soldiers-col { display:none; }
-    .rla-realm-img { width:70px; height:70px; }
-    .rla-portal-icon img { width:28px; height:28px; }
+    #raid-anim-field { padding:0 4px; }
+    .rla-side { gap:3px; }
+    .rla-realm-img { width:46px; height:46px; }
+    .rla-realm-name { max-width:46px; font-size:.52rem; }
+    .rla-portal-icon img { width:22px; height:22px; }
+    .rla-portal-label { font-size:.46rem; }
+    .rla-soldiers-col { grid-template-columns:repeat(1, 18px); min-width:18px; gap:1px; }
+    .rla-soldier { width:18px; height:18px; }
+    .rla-loc-col { gap:3px; }
+    .rla-loc-icon { width:14px; height:14px; border-radius:3px; }
 }
 </style>
 <script type='text/javascript'>
