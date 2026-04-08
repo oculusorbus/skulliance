@@ -1906,9 +1906,12 @@ $conn->close();
 
 	function _renderRaidAnimSides(attacker, defender) {
 		function locIconHtml(loc) {
-			var sh = loc.has_shield ? ' rla-shielded' : '';
+			var sh  = loc.has_shield ? ' rla-shielded' : '';
+			var src = (_locModalIcons && _locModalIcons[loc.location_id])
+				? _locModalIcons[loc.location_id]
+				: 'icons/skull.png';
 			return '<div class="rla-loc-icon' + sh + '" title="' + _escHtml(loc.name) + '">'
-				+ '<img src="' + _escHtml(loc.icon) + '" onerror="this.src=\'icons/skull.png\'">'
+				+ '<img src="' + src + '" onerror="this.src=\'icons/skull.png\'">'
 				+ '</div>';
 		}
 		function locColHtml(locs) {
@@ -1926,9 +1929,10 @@ $conn->close();
 			return html + '</div>';
 		}
 		function portalHtml(loc) {
-			var sh = (loc && loc.has_shield) ? ' rla-shielded' : '';
+			var sh      = (loc && loc.has_shield) ? ' rla-shielded' : '';
+			var portalSrc = (_locModalIcons && _locModalIcons[1]) ? _locModalIcons[1] : 'icons/skull.png';
 			return '<div class="rla-portal-icon' + sh + '">'
-				+ '<img src="icons/locations/Portal.png" onerror="this.src=\'icons/skull.png\'">'
+				+ '<img src="' + portalSrc + '" onerror="this.src=\'icons/skull.png\'">'
 				+ '<div class="rla-portal-label">Portal</div>'
 				+ '</div>';
 		}
