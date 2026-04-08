@@ -2278,6 +2278,27 @@ $conn->close();
 		}, 400);
 		_raidAnim.timers.push(t1);
 
+		// Phase 1.5a — attackers shake (final strike before deaths)
+		var tAtk = setTimeout(function(){
+			document.querySelectorAll('#rla-march-col .rla-soldier').forEach(function(el){
+				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
+			});
+		}, 600);
+		_raidAnim.timers.push(tAtk);
+
+		// Phase 1.5b — defenders + realm + locs react
+		var tDef = setTimeout(function(){
+			document.querySelectorAll('#rla-defender .rla-soldiers-col:not(#rla-march-col) .rla-soldier').forEach(function(el){
+				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
+			});
+			var defRealm = document.querySelector('#rla-defender .rla-realm-wrap');
+			if (defRealm) { defRealm.classList.remove('rla-crash'); void defRealm.offsetWidth; defRealm.classList.add('rla-crash'); }
+			document.querySelectorAll('#rla-defender .rla-loc-col').forEach(function(el){
+				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
+			});
+		}, 900);
+		_raidAnim.timers.push(tDef);
+
 		// Phase 2 — death sequence: each soldier shakes, image becomes skull, red glow persists
 		allDeaths.forEach(function(soldier, i){
 			var tDeath = setTimeout(function(){
@@ -2307,27 +2328,6 @@ $conn->close();
 			statusEl.style.color = '';
 		}, afterDeaths);
 		_raidAnim.timers.push(t3);
-
-		// Phase 3.5a — attackers shake (last attack before retreating)
-		var tAtk = setTimeout(function(){
-			document.querySelectorAll('#rla-march-col .rla-soldier').forEach(function(el){
-				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
-			});
-		}, afterDeaths + 200);
-		_raidAnim.timers.push(tAtk);
-
-		// Phase 3.5b — defenders + realm + locs react to final attack
-		var tDef = setTimeout(function(){
-			document.querySelectorAll('#rla-defender .rla-soldiers-col:not(#rla-march-col) .rla-soldier').forEach(function(el){
-				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
-			});
-			var defRealm = document.querySelector('#rla-defender .rla-realm-wrap');
-			if (defRealm) { defRealm.classList.remove('rla-crash'); void defRealm.offsetWidth; defRealm.classList.add('rla-crash'); }
-			document.querySelectorAll('#rla-defender .rla-loc-col').forEach(function(el){
-				el.classList.remove('rla-crash'); void el.offsetWidth; el.classList.add('rla-crash');
-			});
-		}, afterDeaths + 500);
-		_raidAnim.timers.push(tDef);
 
 		// Phase 4 — march back through portals (same mechanics as retreat)
 		var marchPortal = document.querySelector('#rla-defender .rla-portal-icon');
