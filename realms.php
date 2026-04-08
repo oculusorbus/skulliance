@@ -2041,7 +2041,7 @@ $conn->close();
 						raider.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
 						raider.style.transform  = 'translate(0,0) scale(1)';
 					}
-				}, 300);
+				}, 500);
 				_raidAnim.timers.push(tEmerge);
 			}, 1200 + i * 320);
 			_raidAnim.timers.push(t);
