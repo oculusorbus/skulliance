@@ -965,7 +965,7 @@ $conn->close();
     background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
     padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
     letter-spacing:.06em; text-transform:uppercase; transition:color .15s,border-color .15s;
-    position:relative; z-index:1;
+    position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:1;
 }
 .rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
 @media (max-width:600px) {
