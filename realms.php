@@ -997,7 +997,7 @@ $conn->close();
     90%  { transform:translate(-2px,-1px) scale(1.03); }
 }
 .rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
-.rla-dead img { filter:drop-shadow(0 0 6px rgba(255,40,40,.95)) brightness(.65) grayscale(.2); }
+.rla-dead { filter:drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.62) grayscale(.25); }
 /* ── Result card — position:absolute, top set by JS to sit just below status text ── */
 #raid-anim-result {
     position:absolute; z-index:2;
@@ -2311,9 +2311,10 @@ $conn->close();
 				el.classList.add('rla-dying');
 				var tImg = setTimeout(function(){
 					var img = el.querySelector('img');
-					if (img) { img.src = 'icons/skull.png'; img.onerror = null; img.style.filter = 'drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.6) grayscale(.25)'; }
+					if (img) { img.src = 'icons/skull.png'; img.onerror = null; }
 					el.classList.remove('rla-dying');
 					el.classList.add('rla-dead');
+					el.style.filter = 'drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.62) grayscale(.25)';
 				}, 420);
 				_raidAnim.timers.push(tImg);
 			}, 1200 + i * DEATH_MS);
@@ -2354,8 +2355,9 @@ $conn->close();
 						if (isDead) {
 							// Dead soldiers arrive home already as skulls, still glowing
 							var tImg = transit.querySelector('img');
-							if (tImg) { tImg.src = 'icons/skull.png'; tImg.onerror = null; tImg.style.filter = 'drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.6) grayscale(.25)'; }
+							if (tImg) { tImg.src = 'icons/skull.png'; tImg.onerror = null; }
 							transit.classList.add('rla-dead');
+							transit.style.filter = 'drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.62) grayscale(.25)';
 						}
 						transit.style.opacity    = '1';
 						transit.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
