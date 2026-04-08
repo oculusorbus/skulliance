@@ -2054,17 +2054,20 @@ $conn->close();
 			var raidersCol = document.getElementById('rla-raiders-col');
 			var defSolCol  = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-raiders-col)');
 			var defEl      = document.getElementById('rla-defender');
-			// Always shake raiders, defender soldiers, realm, and locations — not the portal
+			// Attackers shake first, then defenders react
 			if (raidersCol) raidersCol.classList.add('rla-crash');
-			if (defSolCol)  defSolCol.classList.add('rla-crash');
-			if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col').forEach(function(el){
-				el.classList.add('rla-crash');
-			});
 			if (defSoldierCount > 0 && defSolCol) {
 				statusEl.textContent = '\u2694\uFE0F Battle Begins!';
 			} else {
 				statusEl.textContent = '\uD83D\uDC80 Realm Breached!';
 			}
+			var tReact = setTimeout(function(){
+				if (defSolCol) defSolCol.classList.add('rla-crash');
+				if (defEl) defEl.querySelectorAll('.rla-realm-wrap, .rla-loc-col').forEach(function(el){
+					el.classList.add('rla-crash');
+				});
+			}, 180);
+			_raidAnim.timers.push(tReact);
 		}, afterMarch);
 		_raidAnim.timers.push(t2);
 	}
