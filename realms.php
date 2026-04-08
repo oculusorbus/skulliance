@@ -1956,6 +1956,7 @@ $conn->close();
 			+ realmWrapHtml(attacker)
 			+ locColHtml(atkOff)
 			+ soldierColHtml(attacker.soldiers)
+			+ '<div class="rla-soldiers-col"></div>'
 			+ portalHtml(atkPortal);
 
 		defEl.className = 'rla-side rla-def';
