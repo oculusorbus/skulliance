@@ -783,7 +783,10 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 	<div id="raid-anim-status" class="rla-status"></div>
 	<div id="raid-anim-result" class="rla-result-card"></div>
-	<button class="rla-skip-btn" onclick="dismissRaidAnimation()">Skip</button>
+	<div class="rla-btn-row">
+		<button class="rla-skip-btn" onclick="dismissRaidAnimation()">Skip</button>
+		<button id="rla-skip-all-btn" class="rla-skip-btn" style="display:none" onclick="skipAllRaidAnimations()">Skip All</button>
+	</div>
 </div>
 
 </body>
@@ -962,11 +965,14 @@ $conn->close();
 @keyframes rla-status-pop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
 @keyframes rla-crash { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-6px,-2px)} 30%{transform:translate(6px,2px)} 45%{transform:translate(-5px,1px)} 60%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)} }
 .rla-crash { animation: rla-crash .5s ease both; }
+.rla-btn-row {
+    position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+    display:flex; gap:10px; z-index:1;
+}
 .rla-skip-btn {
     background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
     padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
     letter-spacing:.06em; text-transform:uppercase; transition:color .15s,border-color .15s;
-    position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:1;
 }
 .rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
 @media (max-width:600px) {
@@ -992,18 +998,19 @@ $conn->close();
 }
 .rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
 .rla-dead img { filter:drop-shadow(0 0 6px rgba(255,40,40,.95)) brightness(.65) grayscale(.2); }
-/* ── Result card ─────────────────────────────────────────────── */
+/* ── Result card — absolutely overlaid so it never shifts the battlefield ── */
 #raid-anim-result {
-    position:relative; z-index:1;
+    position:absolute; z-index:2;
+    top:50%; left:50%;
     display:flex; flex-direction:column; align-items:center; gap:7px;
     padding:13px 22px; background:rgba(7,17,29,.92);
     border:1px solid rgba(0,200,160,.22); border-radius:12px;
     min-width:180px; max-width:310px;
-    opacity:0; transform:scale(.82) translateY(10px);
+    opacity:0; transform:translate(-50%,-44%) scale(.82);
     transition:opacity .45s ease, transform .45s ease;
     pointer-events:none;
 }
-#raid-anim-result.visible { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
+#raid-anim-result.visible { opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:auto; }
 .rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
 .rla-result-badge.rla-victory { color:#00c8a0; }
 .rla-result-badge.rla-defeat  { color:#ff5c5c; }
@@ -1914,6 +1921,7 @@ $conn->close();
 	 *           _runResultSequence, _buildResultCardHtml
 	 * ─────────────────────────────────────────────────────────────────────── */
 	var _raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
+	var _raidAnimQueue = null; // { ids:[], isCompleted:bool } when a Play All sequence is active
 
 	function showRaidAnimation(defId, soldierIds, applyFn) {
 		_startPortalAnim({ defId:defId, soldierIds:soldierIds, direction:'raid', applyFn:applyFn });
@@ -1942,11 +1950,28 @@ $conn->close();
 	}
 
 	function _playRaidAnimQueue(ids, isCompleted) {
-		if (!ids.length) return;
+		if (!ids.length) {
+			_raidAnimQueue = null;
+			_updateSkipAllBtn(false);
+			return;
+		}
+		_raidAnimQueue = { ids: ids, isCompleted: isCompleted };
+		_updateSkipAllBtn(true);
 		var id = ids.shift();
 		var next = function(){ setTimeout(function(){ _playRaidAnimQueue(ids, isCompleted); }, 400); };
 		if (isCompleted) { showRaidResultAnimation(id, next); }
 		else             { showRaidViewAnimation(id, next); }
+	}
+
+	function skipAllRaidAnimations() {
+		if (_raidAnimQueue) { _raidAnimQueue.ids.length = 0; } // empty queue so next callback exits
+		_updateSkipAllBtn(false);
+		dismissRaidAnimation();
+	}
+
+	function _updateSkipAllBtn(show) {
+		var btn = document.getElementById('rla-skip-all-btn');
+		if (btn) btn.style.display = show ? 'inline-block' : 'none';
 	}
 
 	function _startPortalAnim(config) {
@@ -1999,6 +2024,8 @@ $conn->close();
 						defenders:        data.defender.soldiers || [],
 					};
 					_raidAnim.html = ''; // no separate XHR needed — signal ready immediately
+				} else if (config.direction === 'raid' && config.raidId) {
+					_raidAnim.html = ''; // view-only replay — no start_raid XHR will fire
 				}
 
 				_renderPortalSides(data.attacker, data.defender, config.direction);

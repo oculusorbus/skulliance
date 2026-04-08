@@ -7246,11 +7246,11 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				if($status == "Completed"){
 					$rows[$decimal] .= "<div class='rc-action-row'><button class='small-button' onclick='showRaidResultAnimation(".$row['raid_id'].")'>&#9654; Replay</button></div>";
 				} else {
-					$_view_btn = "<button class='small-button' onclick='showRaidViewAnimation(".$row['raid_id'].")'>&#9654; View</button>";
+					$_replay_btn = "<button class='small-button' onclick='showRaidViewAnimation(".$row['raid_id'].")'>&#9654; Replay</button>";
 					if($type == 'outgoing' && $date > time()){
-						$rows[$decimal] .= "<div class='rc-action-row'><input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/>$_view_btn</div>";
+						$rows[$decimal] .= "<div class='rc-action-col'>$_replay_btn<input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
 					} else {
-						$rows[$decimal] .= "<div class='rc-action-row'>$_view_btn</div>";
+						$rows[$decimal] .= "<div class='rc-action-row'>$_replay_btn</div>";
 					}
 				}
 				$rows[$decimal] .= "</div>"; // rc-card
