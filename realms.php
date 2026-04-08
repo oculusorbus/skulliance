@@ -2369,10 +2369,10 @@ $conn->close();
 			_raidAnim.timers.push(tMarch);
 		});
 
-		// Phase 5 — dead attackers disappear (sent to crypt), show result card
+		// Phase 5 — dead soldiers on both sides disappear (sent to crypt), show result card
 		var afterMarch = afterDeaths + 1200 + soldierCount * 320 + 650;
 		var t5 = setTimeout(function(){
-			// Fade out dead soldiers at home realm — they go to the crypt
+			// Fade out dead attackers at their home realm (transit-col)
 			marchers.forEach(function(marchEl, idx){
 				var sid    = marchEl.dataset ? marchEl.dataset.soldierId : null;
 				var isDead = deadAtk.some(function(s){ return String(s.id) === String(sid); });
@@ -2382,6 +2382,16 @@ $conn->close();
 					transit.style.transition = 'opacity .7s ease, transform .7s ease';
 					transit.style.opacity    = '0';
 					transit.style.transform  = 'scale(.25) translateY(-10px)';
+				}
+			});
+
+			// Fade out dead defenders at their realm — they go to the crypt too
+			deadDef.forEach(function(s){
+				var el = document.querySelector('#rla-defender .rla-soldiers-col:not(#rla-march-col) [data-soldier-id="' + s.id + '"]');
+				if (el) {
+					el.style.transition = 'opacity .7s ease, transform .7s ease';
+					el.style.opacity    = '0';
+					el.style.transform  = 'scale(.25) translateY(-10px)';
 				}
 			});
 
