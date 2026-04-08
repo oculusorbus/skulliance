@@ -998,19 +998,19 @@ $conn->close();
 }
 .rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
 .rla-dead img { filter:drop-shadow(0 0 6px rgba(255,40,40,.95)) brightness(.65) grayscale(.2); }
-/* ── Result card — absolutely overlaid so it never shifts the battlefield ── */
+/* ── Result card — sits above skip buttons, clear of the battlefield portals ── */
 #raid-anim-result {
     position:absolute; z-index:2;
-    top:50%; left:50%;
+    bottom:80px; left:50%;
     display:flex; flex-direction:column; align-items:center; gap:7px;
     padding:13px 22px; background:rgba(7,17,29,.92);
     border:1px solid rgba(0,200,160,.22); border-radius:12px;
     min-width:180px; max-width:310px;
-    opacity:0; transform:translate(-50%,-44%) scale(.82);
+    opacity:0; transform:translateX(-50%) translateY(10px) scale(.82);
     transition:opacity .45s ease, transform .45s ease;
     pointer-events:none;
 }
-#raid-anim-result.visible { opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:auto; }
+#raid-anim-result.visible { opacity:1; transform:translateX(-50%) translateY(0) scale(1); pointer-events:auto; }
 .rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
 .rla-result-badge.rla-victory { color:#00c8a0; }
 .rla-result-badge.rla-defeat  { color:#ff5c5c; }
@@ -2394,9 +2394,10 @@ $conn->close();
 			.filter(function(c){ return c.faction === myFaction; })
 			.forEach(function(c){
 				var sign = c.type === 'debit' ? '\u2212' : '+';
+				var _locLabel = c.location_name.charAt(0).toUpperCase() + c.location_name.slice(1);
 				html += '<div class="rla-result-row">'
 				      + '<img class="rla-result-icon" src="icons/locations/' + _escHtml(c.location_name) + '.png" onerror="this.src=\'icons/skull.png\'">'
-				      + '<span>' + sign + c.amount + ' ' + _escHtml(c.location_name) + ' Lv</span></div>';
+				      + '<span>' + sign + c.amount + ' ' + _escHtml(_locLabel) + ' Lv</span></div>';
 			});
 
 		// Soldier death counts summary
