@@ -2376,8 +2376,7 @@ $conn->close();
 	function _buildResultCardHtml(resultData) {
 		var won = (resultData.outcome == 1 && resultData.perspective === 'outgoing')
 		       || (resultData.outcome == 2 && resultData.perspective === 'incoming');
-		var html = '<div class="rla-result-badge ' + (won ? 'rla-victory' : 'rla-defeat') + '">'
-		         + (won ? '\uD83C\uDFC6 Victory' : '\uD83D\uDCA5 Defeat') + '</div>';
+		var html = '';
 
 		// Loot (only exists when offense wins)
 		if (resultData.loot && resultData.outcome == 1) {
