@@ -782,6 +782,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		<div id="rla-defender" class="rla-side" style="display:none"></div>
 	</div>
 	<div id="raid-anim-status" class="rla-status"></div>
+	<div id="raid-anim-result" class="rla-result-card"></div>
 	<button class="rla-skip-btn" onclick="dismissRaidAnimation()">Skip</button>
 </div>
 
@@ -980,6 +981,38 @@ $conn->close();
     .rla-loc-col { gap:3px; }
     .rla-loc-icon { width:14px; height:14px; border-radius:3px; }
 }
+/* ── Result replay: soldier deaths ──────────────────────────── */
+@keyframes rla-death-shake {
+    0%,100% { transform:translate(0,0) scale(1); }
+    10%  { transform:translate(-4px,-2px) scale(1.14); }
+    30%  { transform:translate( 4px, 3px) scale(1.20); }
+    50%  { transform:translate(-4px,-1px) scale(1.14); }
+    70%  { transform:translate( 3px, 2px) scale(1.07); }
+    90%  { transform:translate(-2px,-1px) scale(1.03); }
+}
+.rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
+.rla-dead img { filter:drop-shadow(0 0 6px rgba(255,40,40,.95)) brightness(.65) grayscale(.2); }
+/* ── Result card ─────────────────────────────────────────────── */
+#raid-anim-result {
+    position:relative; z-index:1;
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    padding:13px 22px; background:rgba(7,17,29,.92);
+    border:1px solid rgba(0,200,160,.22); border-radius:12px;
+    min-width:180px; max-width:310px;
+    opacity:0; transform:scale(.82) translateY(10px);
+    transition:opacity .45s ease, transform .45s ease;
+    pointer-events:none;
+}
+#raid-anim-result.visible { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
+.rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
+.rla-result-badge.rla-victory { color:#00c8a0; }
+.rla-result-badge.rla-defeat  { color:#ff5c5c; }
+.rla-result-row { display:flex; align-items:center; gap:7px; font-size:.78rem; color:rgba(255,255,255,.82); }
+.rla-result-deaths { color:rgba(255,90,90,.80); font-size:.72rem; }
+.rla-result-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; }
+.rla-result-divider { width:100%; height:1px; background:rgba(255,255,255,.08); margin:3px 0; }
+/* ── Play All button row ─────────────────────────────────────── */
+.rc-anim-all-row { display:flex; justify-content:flex-end; padding:4px 0 6px; }
 </style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
@@ -1873,9 +1906,12 @@ $conn->close();
 
 	/* ── REALM LOG CLAIM ──────────────────────────────────── */
 	/* ── PORTAL ANIMATION ENGINE ─────────────────────────────────────────────
-	 * Shared between raid launch (direction='raid') and retreat (direction='retreat').
-	 * Public:   showRaidAnimation(), showRetreatAnimation()
-	 * Internal: _startPortalAnim, _renderPortalSides, _runPortalSequence
+	 * Shared between raid launch (direction='raid'), retreat (direction='retreat'),
+	 * and completed-raid replay (direction='result').
+	 * Public:   showRaidAnimation(), showRetreatAnimation(), showRaidResultAnimation(),
+	 *           showAllRaidAnimations()
+	 * Internal: _startPortalAnim, _renderPortalSides, _runPortalSequence,
+	 *           _runResultSequence, _buildResultCardHtml
 	 * ─────────────────────────────────────────────────────────────────────── */
 	var _raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
 
@@ -1887,27 +1923,55 @@ $conn->close();
 		_startPortalAnim({ raidId:raidId, direction:'retreat', applyFn:applyFn, onReady:onReady });
 	}
 
+	function showRaidResultAnimation(raidId, applyFn) {
+		_startPortalAnim({ raidId:raidId, direction:'result', applyFn:applyFn || null });
+	}
+
+	function showAllRaidAnimations(btn) {
+		var container = btn.closest('[id$="-raids-container"]');
+		if (!container) return;
+		var cards = container.querySelectorAll('[data-raid-id]');
+		var ids = [];
+		cards.forEach(function(c){ ids.push(parseInt(c.dataset.raidId, 10)); });
+		_playRaidResultQueue(ids);
+	}
+
+	function _playRaidResultQueue(ids) {
+		if (!ids.length) return;
+		var id = ids.shift();
+		showRaidResultAnimation(id, function(){ setTimeout(function(){ _playRaidResultQueue(ids); }, 400); });
+	}
+
 	function _startPortalAnim(config) {
 		_raidAnim = { done:false, html:null, applyFn:config.applyFn, timers:[], direction:config.direction };
 
-		var overlay  = document.getElementById('raid-anim-overlay');
-		var loading  = document.getElementById('raid-anim-loading');
-		var atk      = document.getElementById('rla-attacker');
-		var def      = document.getElementById('rla-defender');
-		var statusEl = document.getElementById('raid-anim-status');
+		var overlay    = document.getElementById('raid-anim-overlay');
+		var loading    = document.getElementById('raid-anim-loading');
+		var atk        = document.getElementById('rla-attacker');
+		var def        = document.getElementById('rla-defender');
+		var statusEl   = document.getElementById('raid-anim-status');
+		var resultCard = document.getElementById('raid-anim-result');
 
-		loading.textContent = (config.direction === 'retreat' ? 'Preparing retreat\u2026' : 'Preparing raid\u2026');
+		loading.textContent = config.direction === 'result'  ? 'Loading replay\u2026'
+		                    : config.direction === 'retreat' ? 'Preparing retreat\u2026'
+		                    : 'Preparing raid\u2026';
 		loading.style.display = 'flex';
 		atk.style.display = 'none'; def.style.display = 'none';
 		atk.innerHTML = ''; def.innerHTML = '';
-		statusEl.textContent = '';
+		statusEl.textContent = ''; statusEl.style.color = '';
+		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 		overlay.style.display = 'flex';
 		requestAnimationFrame(function(){ overlay.classList.add('active'); });
 
-		var url = config.raidId
-			? 'ajax/get-raid-preview.php?raid_id=' + config.raidId
-			: 'ajax/get-raid-preview.php?defense_id=' + config.defId
-				+ (config.soldierIds || []).map(function(id){ return '&soldiers[]=' + id; }).join('');
+		var url;
+		if (config.direction === 'result') {
+			url = 'ajax/get-raid-result.php?raid_id=' + config.raidId;
+		} else {
+			url = config.raidId
+				? 'ajax/get-raid-preview.php?raid_id=' + config.raidId
+				: 'ajax/get-raid-preview.php?defense_id=' + config.defId
+					+ (config.soldierIds || []).map(function(id){ return '&soldiers[]=' + id; }).join('');
+		}
 
 		fetch(url)
 			.then(function(r){ return r.json(); })
@@ -1916,10 +1980,34 @@ $conn->close();
 				loading.style.display = 'none';
 				var soldierCount    = (data.attacker.soldiers || []).length;
 				var defSoldierCount = (data.defender.soldiers || []).length;
+
+				var resultData = null;
+				if (config.direction === 'result') {
+					resultData = {
+						outcome:          data.outcome,
+						perspective:      data.perspective,
+						loot:             data.loot,
+						location_changes: data.location_changes || [],
+						attackers:        data.attacker.soldiers || [],
+						defenders:        data.defender.soldiers || [],
+					};
+					_raidAnim.html = ''; // no separate XHR needed — signal ready immediately
+				}
+
 				_renderPortalSides(data.attacker, data.defender, config.direction);
-				_runPortalSequence(soldierCount, defSoldierCount, config.direction);
+				_runPortalSequence(soldierCount, defSoldierCount, config.direction, resultData);
 				if (config.onReady) config.onReady();
-				var minTime  = 1200 + soldierCount * 320 + 650 + 1200;
+
+				var minTime;
+				if (config.direction === 'result') {
+					var deadCount   = resultData.attackers.filter(function(s){ return s.dead; }).length
+					                + resultData.defenders.filter(function(s){ return s.dead; }).length;
+					var afterDeaths = 1200 + deadCount * 700 + 300;
+					var afterMarch  = afterDeaths + 1200 + soldierCount * 320 + 650;
+					minTime = afterMarch + 3500;
+				} else {
+					minTime = 1200 + soldierCount * 320 + 650 + 1200;
+				}
 				var minTimer = setTimeout(function(){ _raidAnim.done = true; _tryApplyRaidResult(); }, minTime);
 				_raidAnim.timers.push(minTimer);
 			})
@@ -1947,7 +2035,8 @@ $conn->close();
 			var html = '<div class="rla-soldiers-col"' + (id ? ' id="' + id + '"' : '') + '>';
 			if (soldiers && soldiers.length) {
 				soldiers.forEach(function(s){
-					html += '<div class="rla-soldier">'
+					var sidAttr = s.id ? ' data-soldier-id="' + s.id + '"' : '';
+					html += '<div class="rla-soldier"' + sidAttr + '>'
 						+ '<img src="' + _escHtml(s.img_url) + '" onerror="this.src=\'icons/skull.png\'" title="' + _escHtml(s.name) + '">'
 						+ '</div>';
 				});
@@ -2029,6 +2118,7 @@ $conn->close();
 				attacker.soldiers.forEach(function(s){
 					var div = document.createElement('div');
 					div.className = 'rla-soldier';
+					if (s.id) div.dataset.soldierId = s.id;
 					div.style.cssText = 'opacity:0; transition:none;';
 					var img = document.createElement('img');
 					img.src = s.img_url || 'icons/skull.png';
@@ -2058,7 +2148,8 @@ $conn->close();
 		});
 	}
 
-	function _runPortalSequence(soldierCount, defSoldierCount, direction) {
+	function _runPortalSequence(soldierCount, defSoldierCount, direction, resultData) {
+		if (direction === 'result') { _runResultSequence(soldierCount, resultData); return; }
 		var statusEl = document.getElementById('raid-anim-status');
 		var isRaid   = direction === 'raid';
 
@@ -2128,6 +2219,169 @@ $conn->close();
 		_raidAnim.timers.push(t2);
 	}
 
+	/* ── Completed-raid result sequence ─────────────────────────────────────
+	 * Phases: open → deaths (shake+skull+glow) → soldiers return → dead disappear → card
+	 * ──────────────────────────────────────────────────────────────────────── */
+	function _runResultSequence(soldierCount, resultData) {
+		var statusEl  = document.getElementById('raid-anim-status');
+		var deadAtk   = (resultData.attackers || []).filter(function(s){ return s.dead; });
+		var deadDef   = (resultData.defenders || []).filter(function(s){ return s.dead; });
+		var allDeaths = deadAtk.concat(deadDef);
+		var DEATH_MS  = 700;
+
+		// Phase 1 — opening status
+		var t1 = setTimeout(function(){
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+			statusEl.textContent = '\u2694\uFE0F Battle Complete';
+			statusEl.style.color = '';
+		}, 400);
+		_raidAnim.timers.push(t1);
+
+		// Phase 2 — death sequence: each soldier shakes, image becomes skull, red glow persists
+		allDeaths.forEach(function(soldier, i){
+			var tDeath = setTimeout(function(){
+				// Attackers are in march-col; defenders in their own col (not march-col)
+				var el = document.querySelector(
+					'#rla-march-col [data-soldier-id="' + soldier.id + '"],' +
+					'#rla-defender .rla-soldiers-col:not(#rla-march-col) [data-soldier-id="' + soldier.id + '"]'
+				);
+				if (!el) return;
+				el.classList.add('rla-dying');
+				var tImg = setTimeout(function(){
+					var img = el.querySelector('img');
+					if (img) { img.src = 'icons/skull.png'; img.onerror = null; }
+					el.classList.remove('rla-dying');
+					el.classList.add('rla-dead');
+				}, 420);
+				_raidAnim.timers.push(tImg);
+			}, 1200 + i * DEATH_MS);
+			_raidAnim.timers.push(tDeath);
+		});
+
+		// Phase 3 — soldiers return status
+		var afterDeaths = 1200 + allDeaths.length * DEATH_MS + 300;
+		var t3 = setTimeout(function(){
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+			statusEl.textContent = '\uD83C\uDFF3\uFE0F Soldiers Returning\u2026';
+			statusEl.style.color = '';
+		}, afterDeaths);
+		_raidAnim.timers.push(t3);
+
+		// Phase 4 — march back through portals (same mechanics as retreat)
+		var marchPortal = document.querySelector('#rla-defender .rla-portal-icon');
+		var marchers    = document.querySelectorAll('#rla-march-col .rla-soldier');
+
+		marchers.forEach(function(el, i){
+			var sid    = el.dataset ? el.dataset.soldierId : null;
+			var isDead = deadAtk.some(function(s){ return String(s.id) === String(sid); });
+
+			var tMarch = setTimeout(function(){
+				var sr = el.getBoundingClientRect();
+				var pr = marchPortal ? marchPortal.getBoundingClientRect() : null;
+				if (pr) {
+					var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
+					var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
+					el.style.transition = 'transform .6s ease-in, opacity .45s ease-in .18s';
+					el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
+					el.style.opacity    = '0';
+				}
+				var rIdx = i;
+				var tEmerge = setTimeout(function(){
+					var transit = document.querySelectorAll('#rla-transit-col .rla-soldier')[rIdx];
+					if (transit) {
+						if (isDead) {
+							// Dead soldiers arrive home already as skulls, still glowing
+							var tImg = transit.querySelector('img');
+							if (tImg) { tImg.src = 'icons/skull.png'; tImg.onerror = null; }
+							transit.classList.add('rla-dead');
+						}
+						transit.style.opacity    = '1';
+						transit.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1)';
+						transit.style.transform  = 'translate(0,0) scale(1)';
+					}
+				}, 500);
+				_raidAnim.timers.push(tEmerge);
+			}, afterDeaths + 1200 + i * 320);
+			_raidAnim.timers.push(tMarch);
+		});
+
+		// Phase 5 — dead attackers disappear (sent to crypt), show result card
+		var afterMarch = afterDeaths + 1200 + soldierCount * 320 + 650;
+		var t5 = setTimeout(function(){
+			// Fade out dead soldiers at home realm — they go to the crypt
+			marchers.forEach(function(marchEl, idx){
+				var sid    = marchEl.dataset ? marchEl.dataset.soldierId : null;
+				var isDead = deadAtk.some(function(s){ return String(s.id) === String(sid); });
+				if (!isDead) return;
+				var transit = document.querySelectorAll('#rla-transit-col .rla-soldier')[idx];
+				if (transit) {
+					transit.style.transition = 'opacity .7s ease, transform .7s ease';
+					transit.style.opacity    = '0';
+					transit.style.transform  = 'scale(.25) translateY(-10px)';
+				}
+			});
+
+			// Outcome
+			var won = (resultData.outcome == 1 && resultData.perspective === 'outgoing')
+			       || (resultData.outcome == 2 && resultData.perspective === 'incoming');
+			statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
+			statusEl.textContent = won ? '\uD83C\uDFC6 Victory!' : '\uD83D\uDCA5 Defeated';
+			statusEl.style.color  = won ? '#00c8a0' : '#ff5c5c';
+
+			// Show result summary card
+			var resultCard = document.getElementById('raid-anim-result');
+			if (resultCard) {
+				resultCard.innerHTML = _buildResultCardHtml(resultData);
+				void resultCard.offsetWidth; // force reflow so transition fires
+				resultCard.classList.add('visible');
+			}
+		}, afterMarch);
+		_raidAnim.timers.push(t5);
+	}
+
+	function _buildResultCardHtml(resultData) {
+		var won = (resultData.outcome == 1 && resultData.perspective === 'outgoing')
+		       || (resultData.outcome == 2 && resultData.perspective === 'incoming');
+		var html = '<div class="rla-result-badge ' + (won ? 'rla-victory' : 'rla-defeat') + '">'
+		         + (won ? '\uD83C\uDFC6 Victory' : '\uD83D\uDCA5 Defeat') + '</div>';
+
+		// Loot (only exists when offense wins)
+		if (resultData.loot && resultData.outcome == 1) {
+			var sign     = resultData.perspective === 'outgoing' ? '+' : '\u2212';
+			var amt      = Number(resultData.loot.amount).toLocaleString();
+			var currency = (resultData.loot.currency || '').toUpperCase();
+			html += '<div class="rla-result-row">'
+			      + '<img class="rla-result-icon" src="icons/' + currency.toLowerCase() + '.png" onerror="this.src=\'icons/skull.png\'">'
+			      + '<span>' + sign + amt + ' ' + _escHtml(currency) + '</span></div>';
+		}
+
+		// Location changes relevant to the current player's faction
+		var myFaction = resultData.perspective === 'outgoing' ? 'offense' : 'defense';
+		(resultData.location_changes || [])
+			.filter(function(c){ return c.faction === myFaction; })
+			.forEach(function(c){
+				var sign = c.type === 'debit' ? '\u2212' : '+';
+				html += '<div class="rla-result-row">'
+				      + '<img class="rla-result-icon" src="icons/locations/' + _escHtml(c.location_name) + '.png" onerror="this.src=\'icons/skull.png\'">'
+				      + '<span>' + sign + c.amount + ' ' + _escHtml(c.location_name) + ' Lv</span></div>';
+			});
+
+		// Soldier death counts summary
+		var atkDeaths = (resultData.attackers || []).filter(function(s){ return s.dead; }).length;
+		var defDeaths = (resultData.defenders || []).filter(function(s){ return s.dead; }).length;
+		if (atkDeaths > 0 || defDeaths > 0) {
+			html += '<div class="rla-result-divider"></div>';
+			if (atkDeaths > 0)
+				html += '<div class="rla-result-row rla-result-deaths">\u2620\uFE0F '
+				      + atkDeaths + ' Attacker' + (atkDeaths > 1 ? 's' : '') + ' to Crypt</div>';
+			if (defDeaths > 0)
+				html += '<div class="rla-result-row rla-result-deaths">\u2620\uFE0F '
+				      + defDeaths + ' Defender' + (defDeaths > 1 ? 's' : '') + ' to Crypt</div>';
+		}
+
+		return html;
+	}
+
 	function _portalAnimGotResponse(html) {
 		_raidAnim.html = html;
 		_tryApplyRaidResult();
@@ -2137,13 +2391,17 @@ $conn->close();
 
 	function _tryApplyRaidResult() {
 		if (_raidAnim.html !== null && _raidAnim.done) {
-			var fn   = _raidAnim.applyFn;
-			var html = _raidAnim.html;
-			var overlay = document.getElementById('raid-anim-overlay');
+			var fn         = _raidAnim.applyFn;
+			var html       = _raidAnim.html;
+			var overlay    = document.getElementById('raid-anim-overlay');
+			var resultCard = document.getElementById('raid-anim-result');
+			var statusEl   = document.getElementById('raid-anim-status');
 			var timers = _raidAnim.timers.slice();
 			timers.forEach(clearTimeout);
 			_raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
-			if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+			if (overlay)    { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+			if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
+			if (statusEl)   { statusEl.style.color = ''; }
 			if (fn) fn(html);
 		}
 	}
@@ -2152,11 +2410,15 @@ $conn->close();
 		// Preserve applyFn/html so skip still processes the result when XHR responds
 		var savedFn   = _raidAnim.applyFn;
 		var savedHtml = _raidAnim.html;
-		var overlay = document.getElementById('raid-anim-overlay');
+		var overlay    = document.getElementById('raid-anim-overlay');
+		var resultCard = document.getElementById('raid-anim-result');
+		var statusEl   = document.getElementById('raid-anim-status');
 		var timers = _raidAnim.timers.slice();
 		timers.forEach(clearTimeout);
 		_raidAnim = { done:true, html:savedHtml, applyFn:savedFn, timers:[], direction:'raid' };
-		if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+		if (overlay)    { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
+		if (statusEl)   { statusEl.style.color = ''; }
 		_tryApplyRaidResult();
 	}
 
