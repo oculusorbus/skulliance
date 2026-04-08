@@ -1885,11 +1885,15 @@ $conn->close();
 			})
 			.catch(function(){});
 
-		var afterMarch = 1200 + soldierIds.length * 320 + 700;
+		var afterMarch  = 1200 + soldierIds.length * 320 + 700;
+		// emerge: +600 wait, +soldierCount*320 stagger, +650 last transition, +600 crash buffer
+		var minTime = soldierIds.length > 0
+			? afterMarch + 600 + soldierIds.length * 320 + 650 + 800
+			: afterMarch + 2200;
 		var minTimer = setTimeout(function(){
 			_raidAnim.done = true;
 			_tryApplyRaidResult();
-		}, afterMarch + 2200);
+		}, minTime);
 		_raidAnim.timers.push(minTimer);
 	}
 
@@ -2007,9 +2011,10 @@ $conn->close();
 		}, afterMarch);
 		_raidAnim.timers.push(t2);
 
-		// ── Phase 4: Raiders emerge from defender portal ──────────
+		// ── Phase 4: Raiders emerge from defender portal (staggered, mirroring march-in) ──
 		if (soldierCount > 0) {
-			var emergeStart = afterMarch + 600;
+			var emergeStart  = afterMarch + 600;
+			var emergeDur    = soldierCount * 320 + 650; // last soldier fully arrived
 			var t3 = setTimeout(function(){
 				var defPortalEl = document.querySelector('#rla-defender .rla-portal-icon');
 				if (!defPortalEl) return;
@@ -2017,7 +2022,7 @@ $conn->close();
 				var raidersCol = document.createElement('div');
 				raidersCol.id  = 'rla-raiders-col';
 				raidersCol.className = 'rla-soldiers-col';
-				raidersCol.style.cssText = 'opacity:0; transform:scale(0.15) translateX(-20px); transition:opacity .5s ease, transform .6s cubic-bezier(.18,.89,.32,1.1);';
+				raidersCol.style.visibility = 'hidden'; // hide until positions measured
 
 				// Clone images from now-invisible attacker soldiers
 				document.querySelectorAll('#rla-attacker .rla-soldier').forEach(function(el){
@@ -2033,18 +2038,38 @@ $conn->close();
 
 				defPortalEl.insertAdjacentElement('afterend', raidersCol);
 
-				// Trigger emerge animation
+				// Measure grid positions, then launch each soldier from portal center
 				requestAnimationFrame(function(){
-					setTimeout(function(){
-						raidersCol.style.opacity   = '1';
-						raidersCol.style.transform = 'scale(1) translateX(0)';
-					}, 30);
+					var pr       = defPortalEl.getBoundingClientRect();
+					var soldiers = raidersCol.querySelectorAll('.rla-soldier');
+
+					// Place every soldier at portal (no transition yet)
+					soldiers.forEach(function(el){
+						var sr = el.getBoundingClientRect();
+						var dx = Math.round((pr.left + pr.width  / 2) - (sr.left + sr.width  / 2));
+						var dy = Math.round((pr.top  + pr.height / 2) - (sr.top  + sr.height / 2));
+						el.style.transform  = 'translate(' + dx + 'px,' + dy + 'px) scale(.15)';
+						el.style.opacity    = '0';
+						el.style.transition = 'none';
+					});
+
+					raidersCol.style.visibility = '';
+
+					// Stagger each soldier out to its grid position
+					soldiers.forEach(function(el, i){
+						var t = setTimeout(function(){
+							el.style.transition = 'transform .6s cubic-bezier(.18,.89,.32,1.1), opacity .4s ease .08s';
+							el.style.transform  = 'translate(0,0) scale(1)';
+							el.style.opacity    = '1';
+						}, 30 + i * 320);
+						_raidAnim.timers.push(t);
+					});
 				});
 			}, emergeStart);
 			_raidAnim.timers.push(t3);
 
 			// ── Phase 5: Crash into defenders (or breach) ────────
-			var crashStart = emergeStart + 700;
+			var crashStart = emergeStart + emergeDur;
 			var t4 = setTimeout(function(){
 				statusEl.style.animation = 'none'; void statusEl.offsetWidth; statusEl.style.animation = '';
 				var raidersCol = document.getElementById('rla-raiders-col');
