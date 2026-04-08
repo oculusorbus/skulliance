@@ -1886,7 +1886,7 @@ $conn->close();
 			.catch(function(){});
 
 		// march and emerge are tandem; allow time for full shake sequence + brief hold
-		var minTime = 1200 + soldierIds.length * 320 + 650 + 1800;
+		var minTime = 1200 + soldierIds.length * 320 + 650 + 1200;
 		var minTimer = setTimeout(function(){
 			_raidAnim.done = true;
 			_tryApplyRaidResult();
