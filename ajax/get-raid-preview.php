@@ -60,9 +60,7 @@ function buildRealmData($conn, $realm_id) {
 
 // ── Helper: fully-qualified image URL ───────────────────────
 function absoluteIPFS($ipfs, $collection_id, $project_id) {
-    $url = getIPFS($ipfs, $collection_id, $project_id);
-    if ($url && $url[0] === '/') $url = 'https://skulliance.io/staking' . $url;
-    return $url ?: 'icons/skull.png';
+    return getIPFS($ipfs, $collection_id, $project_id) ?: 'icons/skull.png';
 }
 
 // ── Fetch soldiers first — before location queries touch the connection ──
