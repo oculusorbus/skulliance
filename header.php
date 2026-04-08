@@ -81,15 +81,19 @@
         var isInternal = href.charAt(0) === '/' || href.charAt(0) === '.' ||
                          (!href.match(/^https?:\/\//) || href.indexOf(window.location.hostname) !== -1);
         if (isInternal && a.target !== '_blank') {
-            // Close mobile menu immediately so the loader isn't obscured during its fade-in
+            // Prevent default so we can flush DOM changes before navigating.
+            // Mobile browsers won't repaint between classList changes and navigation
+            // unless we yield back to the rendering engine first.
+            e.preventDefault();
             var navbar = document.getElementById('navbar');
             if (navbar && navbar.classList.contains('show-menu')) {
                 navbar.classList.remove('show-menu');
-                navbar.classList.add('hide-menu');
                 var icon = document.getElementById('burger-icon');
                 if (icon) icon.src = 'https://www.skulliance.io/staking/images/menu.png';
             }
             showNavLoader();
+            var dest = a.href;
+            setTimeout(function(){ window.location.href = dest; }, 20);
         }
     });
     // Hide if browser restores page from bfcache
