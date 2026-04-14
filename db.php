@@ -7252,12 +7252,20 @@ function getRaids($conn, $type, $status="pending", $history=false){
 						$_rc_outcome_badge = ($type == 'outgoing') ? 'Defeat' : 'Victory';
 					}
 				}
+				$_cur_year = date('Y');
+				$_date_fmt = function($ts) use ($_cur_year) {
+					return date('Y', $ts) == $_cur_year ? date('M j', $ts) : date('M j, Y', $ts);
+				};
+				$_raid_date_label = ($status == "Completed")
+					? 'Completed ' . $_date_fmt($date)
+					: 'Initiated ' . $_date_fmt(strtotime($row['created_date']));
 				$rows[$decimal] = "";
 				$rows[$decimal] .= "<div class='rc-card' id='raid-row-".$row['raid_id']."' data-raid-id='".$row['raid_id']."'>";
 				// Progress bar
 				$rows[$decimal] .= "<div class='rc-progress-bar'><div class='rc-progress-fill' style='width:".$_rc_pct."%'></div></div>";
 				// Realm name — full-width centered row so it sits over the column divider
 				$rows[$decimal] .= "<div class='rc-card-realm'>".ucfirst($row['realm_name'])."</div>";
+				$rows[$decimal] .= "<div class='rc-card-date'>".$_raid_date_label."</div>";
 				// Header: theme image, user info, countdown/badge
 				$rows[$decimal] .= "<div class='rc-card-header'>";
 				$rows[$decimal] .= "<img class='rc-theme-img' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg'>";
