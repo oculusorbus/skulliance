@@ -6658,6 +6658,28 @@ function getRealms($conn, $sort, $group){
 					$output[$key] .= "</div>"; // rtc-locations
 				}
 
+				// Tower garrison
+				$_garrison = getTowerGarrison($conn, $row['realm_id']);
+				$_garrison_count = count($_garrison);
+				$output[$key] .= "<div class='rtc-garrison'>";
+				$output[$key] .= "<div class='rtc-garrison-header'>";
+				$output[$key] .= "<span class='rtc-garrison-label'>Tower</span>";
+				$output[$key] .= "<span class='rtc-garrison-count'>".$_garrison_count."/10</span>";
+				$output[$key] .= "</div>";
+				if($_garrison_count > 0){
+					$output[$key] .= "<div class='rtc-garrison-grid'>";
+					foreach($_garrison as $_sol){
+						$_img_url = getIPFS($_sol['ipfs'], $_sol['collection_id'], $_sol['project_id']);
+						$output[$key] .= "<div class='rtc-garrison-slot'>";
+						$output[$key] .= "<img src='".$_img_url."' loading='lazy' alt='".htmlspecialchars($_sol['nft_name'])."' onerror='this.remove()'>";
+						$output[$key] .= "</div>";
+					}
+					$output[$key] .= "</div>";
+				}else{
+					$output[$key] .= "<span class='rtc-garrison-empty'>Undefended</span>";
+				}
+				$output[$key] .= "</div>";
+
 				// Wealth
 				$output[$key] .= "<div class='rtc-wealth'>";
 				$output[$key] .= "<span class='rtc-total-pts'>".number_format(array_sum($balances))." pts</span>";
