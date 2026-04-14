@@ -987,6 +987,38 @@ $conn->close();
     .rla-loc-col { gap:3px; }
     .rla-loc-icon { width:14px; height:14px; border-radius:3px; }
 }
+@media (min-width:1200px) {
+    #raid-anim-overlay { gap:22px; }
+    #raid-anim-field { max-width:1140px; }
+    .rla-side { gap:8px; }
+    .rla-realm-img { width:114px; height:114px; }
+    .rla-realm-name { max-width:114px; font-size:.7rem; }
+    .rla-loc-col { gap:7px; }
+    .rla-loc-icon { width:32px; height:32px; }
+    .rla-portal-icon img { width:48px; height:48px; }
+    .rla-soldiers-col { grid-template-columns:repeat(2, 36px); min-width:74px; gap:3px; }
+    .rla-soldier { width:36px; height:36px; border-radius:5px; }
+    .rla-status { font-size:1.2rem; }
+    #raid-anim-result { min-width:220px; max-width:380px; padding:16px 28px; }
+    .rla-result-row { font-size:.88rem; }
+    .rla-result-icon { width:18px; height:18px; }
+}
+@media (min-width:1600px) {
+    #raid-anim-overlay { gap:28px; }
+    #raid-anim-field { max-width:1500px; }
+    .rla-side { gap:12px; }
+    .rla-realm-img { width:144px; height:144px; border-radius:10px; }
+    .rla-realm-name { max-width:144px; font-size:.82rem; }
+    .rla-loc-col { gap:9px; }
+    .rla-loc-icon { width:40px; height:40px; border-radius:7px; }
+    .rla-portal-icon img { width:62px; height:62px; }
+    .rla-soldiers-col { grid-template-columns:repeat(2, 46px); min-width:94px; gap:5px; }
+    .rla-soldier { width:46px; height:46px; border-radius:6px; }
+    .rla-status { font-size:1.45rem; }
+    #raid-anim-result { min-width:270px; max-width:460px; padding:18px 32px; gap:9px; }
+    .rla-result-row { font-size:1rem; }
+    .rla-result-icon { width:20px; height:20px; }
+}
 /* ── Result replay: soldier deaths ──────────────────────────── */
 @keyframes rla-death-shake {
     0%,100% { transform:translate(0,0) scale(1); }
