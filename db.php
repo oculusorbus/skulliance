@@ -2736,6 +2736,7 @@ function removeUsers($conn){
 	$sql = "
 		UPDATE nfts SET user_id = 0
 		WHERE collection_id != 16
+		AND id NOT IN (SELECT nft_id FROM diamond_skulls)
 		AND user_id IN (
 			SELECT user_id FROM (
 				SELECT id AS user_id FROM users

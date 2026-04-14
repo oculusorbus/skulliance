@@ -235,11 +235,14 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 											// Limit update to 1 record and only for NFTs with no current owner
 											updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
-										// If someone already has ownership — Diamond Skull NFTs use force-update to handle
-										// the circular dependency (DS NFTs are never zeroed by removeUsers).
+										// If someone already has ownership — Diamond Skull and delegated NFTs use
+										// force-update (never zeroed by removeUsers to avoid circular dependency).
 										// All other NFTs with existing owners are RFTs and get a new DB entry.
 										}else{
-											if(isset($collections[$tokenresponsedata->policy_id]) && $collections[$tokenresponsedata->policy_id] == 16){
+											$fp_esc = $conn->real_escape_string($tokenresponsedata->fingerprint);
+											$is_protected = (isset($collections[$tokenresponsedata->policy_id]) && $collections[$tokenresponsedata->policy_id] == 16)
+												|| ($conn->query("SELECT 1 FROM nfts n JOIN diamond_skulls ds ON ds.nft_id = n.id WHERE n.asset_id = '$fp_esc' LIMIT 1")->num_rows > 0);
+											if($is_protected){
 												forceUpdateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 												$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
 											}else{
@@ -445,10 +448,14 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 				// Limit update to 1 record and only for NFTs with no current owner
 				updateNFT($conn, $fingerprint, $user_id);
 				$nft_owners[] = $user_id."-".$fingerprint;
-			// If someone already has ownership — Diamond Skull NFTs use force-update;
-			// all others are RFTs and get a new DB entry.
+			// If someone already has ownership — Diamond Skull and delegated NFTs use
+			// force-update (never zeroed by removeUsers to avoid circular dependency).
+			// All other NFTs with existing owners are RFTs and get a new DB entry.
 			}else{
-				if(isset($collections[$policy_id]) && $collections[$policy_id] == 16){
+				$fp_esc = $conn->real_escape_string($fingerprint);
+				$is_protected = (isset($collections[$policy_id]) && $collections[$policy_id] == 16)
+					|| ($conn->query("SELECT 1 FROM nfts n JOIN diamond_skulls ds ON ds.nft_id = n.id WHERE n.asset_id = '$fp_esc' LIMIT 1")->num_rows > 0);
+				if($is_protected){
 					forceUpdateNFT($conn, $fingerprint, $user_id);
 					$nft_owners[] = $user_id."-".$fingerprint;
 				}else{
