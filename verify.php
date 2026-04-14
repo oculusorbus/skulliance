@@ -22,7 +22,9 @@ if(isset($_GET['verify'])){
 	$asset_ids = array();
 	$asset_ids = getNFTAssetIDs($conn);
 	// Verify all NFTs from wallets in the DB
-	verifyNFTs($conn, $addresses, $policies, $asset_ids);
+	$nft_owners = verifyNFTs($conn, $addresses, $policies, $asset_ids);
+	// Zero out protected NFTs (Diamond Skulls + delegated) whose owner's wallet was processed but the NFT wasn't found
+	cleanupOrphanedProtectedNFTs($conn, $addresses, $nft_owners);
 	// Deactivate soldiers whose NFT is no longer owned by the realm's user and return their gear to inventory
 	verifyRealmSoldiers($conn);
 	// Get project percentages for Diamond Skull delegations
@@ -235,11 +237,21 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 											// Limit update to 1 record and only for NFTs with no current owner
 											updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
-										// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+										// If someone already has ownership — Diamond Skull and delegated NFTs use
+										// force-update (never zeroed by removeUsers to avoid circular dependency).
+										// All other NFTs with existing owners are RFTs and get a new DB entry.
 										}else{
-											$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
-											$asset_ids = $payload["asset_ids"];
-											$nft_owners = $payload["nft_owners"];
+											$fp_esc = $conn->real_escape_string($tokenresponsedata->fingerprint);
+											$is_protected = (isset($collections[$tokenresponsedata->policy_id]) && $collections[$tokenresponsedata->policy_id] == 16)
+												|| ($conn->query("SELECT 1 FROM nfts n JOIN diamond_skulls ds ON ds.nft_id = n.id WHERE n.asset_id = '$fp_esc' LIMIT 1")->num_rows > 0);
+											if($is_protected){
+												forceUpdateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+												$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
+											}else{
+												$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
+												$asset_ids = $payload["asset_ids"];
+												$nft_owners = $payload["nft_owners"];
+											}
 										}
 									}else{
 										$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
@@ -291,6 +303,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			exit();
 		}
 	}*/
+	return $nft_owners;
 }
 
 function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections){
@@ -438,12 +451,22 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 				// Limit update to 1 record and only for NFTs with no current owner
 				updateNFT($conn, $fingerprint, $user_id);
 				$nft_owners[] = $user_id."-".$fingerprint;
-			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+			// If someone already has ownership — Diamond Skull and delegated NFTs use
+			// force-update (never zeroed by removeUsers to avoid circular dependency).
+			// All other NFTs with existing owners are RFTs and get a new DB entry.
 			}else{
-				//$collection_id = getCollectionId($conn, $policy_id);
-				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
-				$asset_ids[$last_id] = $fingerprint;
-				$nft_owners[] = $user_id."-".$fingerprint;
+				$fp_esc = $conn->real_escape_string($fingerprint);
+				$is_protected = (isset($collections[$policy_id]) && $collections[$policy_id] == 16)
+					|| ($conn->query("SELECT 1 FROM nfts n JOIN diamond_skulls ds ON ds.nft_id = n.id WHERE n.asset_id = '$fp_esc' LIMIT 1")->num_rows > 0);
+				if($is_protected){
+					forceUpdateNFT($conn, $fingerprint, $user_id);
+					$nft_owners[] = $user_id."-".$fingerprint;
+				}else{
+					//$collection_id = getCollectionId($conn, $policy_id);
+					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
+					$asset_ids[$last_id] = $fingerprint;
+					$nft_owners[] = $user_id."-".$fingerprint;
+				}
 			}
 		}else{
 			//$collection_id = getCollectionId($conn, $policy_id);
