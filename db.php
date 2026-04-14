@@ -2681,6 +2681,51 @@ function forceUpdateNFT($conn, $asset_id, $user_id) {
 	$conn->query("UPDATE nfts SET user_id='$user_id' WHERE asset_id='$asset_id' LIMIT 1");
 }
 
+// Zero out protected NFTs (Diamond Skulls + delegated) whose owner's wallet was
+// processed this verification run but the NFT was not found in any wallet.
+// This closes the gap left by never zeroing protected NFTs: if a skull or
+// delegated NFT was sold/moved to an unregistered wallet, we detect it here.
+function cleanupOrphanedProtectedNFTs($conn, $addresses, $nft_owners) {
+    if (empty($addresses)) return;
+
+    // Resolve stake addresses to user_ids for the processed wallets
+    $addr_safe = array_map([$conn, 'real_escape_string'], $addresses);
+    $addr_list = "'" . implode("','", $addr_safe) . "'";
+    $uid_res = $conn->query("SELECT DISTINCT user_id FROM wallets WHERE stake_address IN ($addr_list) AND user_id != 0");
+    if (!$uid_res || $uid_res->num_rows === 0) return;
+    $processed_uids = [];
+    while ($row = $uid_res->fetch_assoc()) $processed_uids[] = intval($row['user_id']);
+    $uid_list = implode(',', $processed_uids);
+
+    // Get all protected NFTs currently owned by processed users
+    $result = $conn->query("
+        SELECT n.id, n.asset_id, n.user_id
+        FROM nfts n
+        WHERE n.user_id IN ($uid_list)
+          AND n.user_id != 0
+          AND (
+              n.collection_id = 16
+              OR EXISTS (SELECT 1 FROM diamond_skulls ds WHERE ds.nft_id = n.id)
+          )
+    ");
+    if (!$result) return;
+
+    // Any protected NFT whose user_id-asset_id pair wasn't confirmed during
+    // this run means the NFT was not found in any processed wallet — zero it.
+    $to_zero = [];
+    while ($row = $result->fetch_assoc()) {
+        $key = $row['user_id'] . '-' . $row['asset_id'];
+        if (!in_array($key, $nft_owners)) {
+            $to_zero[] = intval($row['id']);
+        }
+    }
+
+    if (!empty($to_zero)) {
+        $ids = implode(',', $to_zero);
+        $conn->query("UPDATE nfts SET user_id = 0 WHERE id IN ($ids)");
+    }
+}
+
 // Check if NFT is already owned by user
 function checkNFTOwner($conn, $asset_id, $user_id){
 	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."' AND user_id = '".$user_id."'";

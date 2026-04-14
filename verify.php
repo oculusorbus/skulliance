@@ -22,7 +22,9 @@ if(isset($_GET['verify'])){
 	$asset_ids = array();
 	$asset_ids = getNFTAssetIDs($conn);
 	// Verify all NFTs from wallets in the DB
-	verifyNFTs($conn, $addresses, $policies, $asset_ids);
+	$nft_owners = verifyNFTs($conn, $addresses, $policies, $asset_ids);
+	// Zero out protected NFTs (Diamond Skulls + delegated) whose owner's wallet was processed but the NFT wasn't found
+	cleanupOrphanedProtectedNFTs($conn, $addresses, $nft_owners);
 	// Deactivate soldiers whose NFT is no longer owned by the realm's user and return their gear to inventory
 	verifyRealmSoldiers($conn);
 	// Get project percentages for Diamond Skull delegations
@@ -301,6 +303,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			exit();
 		}
 	}*/
+	return $nft_owners;
 }
 
 function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nft_owners, $collections){
