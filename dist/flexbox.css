@@ -3393,28 +3393,18 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .rtc-loc-shielded .rtc-loc-name { color: #f5a623; }
 .rtc-shield-badge { font-size: 0.68rem; line-height: 1; margin-left: 1px; }
 
-/* Tower garrison */
-.rtc-garrison {
-    padding: 9px 14px 11px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.rtc-garrison-header {
+/* Tower garrison — inline after defense pills */
+.rtc-garrison-row {
     display: flex;
     align-items: center;
-    gap: 7px;
-    margin-bottom: 8px;
-}
-.rtc-garrison-label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    opacity: 0.55;
-    color: #fff;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 7px;
 }
 .rtc-garrison-count {
     font-size: 0.65rem;
     color: rgba(255,255,255,0.3);
+    flex-shrink: 0;
 }
 .rtc-garrison-grid {
     display: flex;
