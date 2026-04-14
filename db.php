@@ -6659,7 +6659,6 @@ function getRealms($conn, $sort, $group){
 						// Garrison slots inline after defense pills
 						if($_type === 'defense'){
 							$output[$key] .= "<div class='rtc-garrison-row'>";
-							$output[$key] .= "<span class='rtc-garrison-count'>".$_garrison_count."/10</span>";
 							if($_garrison_count > 0){
 								$output[$key] .= "<div class='rtc-garrison-grid'>";
 								foreach($_garrison as $_sol){
@@ -6672,6 +6671,7 @@ function getRealms($conn, $sort, $group){
 							}else{
 								$output[$key] .= "<span class='rtc-garrison-empty'>Undefended</span>";
 							}
+							$output[$key] .= "<span class='rtc-garrison-count'>".$_garrison_count."/10</span>";
 							$output[$key] .= "</div>";
 						}
 						$output[$key] .= "</div>"; // rtc-loc-category
