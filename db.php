@@ -2568,10 +2568,9 @@ function getAddressesDiscord($conn) {
 // Get all addresses 
 function getAllAddresses($conn){
 	$sql = "
-		-- Active users: logged in within the last month
+		-- All registered users (restriction lifted for full recovery verification)
 		SELECT DISTINCT w.stake_address FROM wallets w
 		JOIN users u ON u.id = w.user_id
-		WHERE u.last_login >= NOW() - INTERVAL 1 MONTH
 
 		UNION
 
@@ -2732,7 +2731,7 @@ function checkAvailableNFT($conn, $asset_id){
 function removeUsers($conn){
 	// Only clear NFT ownership for users who are about to be re-verified:
 	// active users (logged in within last month), Diamond Skull owners, and delegators.
-	// Inactive users retain their NFT associations for leaderboard history.
+	// Restriction lifted for full recovery verification — clears all users.
 	// Derived table wrapper required because legs 2+3 reference nfts, the table being updated.
 	$sql = "
 		UPDATE nfts SET user_id = 0
@@ -2740,7 +2739,6 @@ function removeUsers($conn){
 		AND user_id IN (
 			SELECT user_id FROM (
 				SELECT id AS user_id FROM users
-				WHERE last_login >= NOW() - INTERVAL 1 MONTH
 
 				UNION
 
