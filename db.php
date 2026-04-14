@@ -2674,6 +2674,14 @@ function updateNFT($conn, $asset_id, $user_id) {
 	}
 }
 
+// Force-update NFT ownership regardless of current owner — used for Diamond Skull NFTs
+// which are never zeroed by removeUsers to avoid the circular dependency in getAllAddresses Leg 2.
+function forceUpdateNFT($conn, $asset_id, $user_id) {
+	$asset_id = $conn->real_escape_string($asset_id);
+	$user_id  = intval($user_id);
+	$conn->query("UPDATE nfts SET user_id='$user_id' WHERE asset_id='$asset_id' LIMIT 1");
+}
+
 // Check if NFT is already owned by user
 function checkNFTOwner($conn, $asset_id, $user_id){
 	$sql = "SELECT ipfs FROM nfts WHERE asset_id='".$asset_id."' AND user_id = '".$user_id."'";
@@ -2728,7 +2736,8 @@ function removeUsers($conn){
 	// Derived table wrapper required because legs 2+3 reference nfts, the table being updated.
 	$sql = "
 		UPDATE nfts SET user_id = 0
-		WHERE user_id IN (
+		WHERE collection_id != 16
+		AND user_id IN (
 			SELECT user_id FROM (
 				SELECT id AS user_id FROM users
 				WHERE last_login >= NOW() - INTERVAL 1 MONTH

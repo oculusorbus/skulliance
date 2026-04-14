@@ -235,11 +235,18 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 											// Limit update to 1 record and only for NFTs with no current owner
 											updateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
 											$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
-										// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+										// If someone already has ownership — Diamond Skull NFTs use force-update to handle
+										// the circular dependency (DS NFTs are never zeroed by removeUsers).
+										// All other NFTs with existing owners are RFTs and get a new DB entry.
 										}else{
-											$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
-											$asset_ids = $payload["asset_ids"];
-											$nft_owners = $payload["nft_owners"];
+											if(isset($collections[$tokenresponsedata->policy_id]) && $collections[$tokenresponsedata->policy_id] == 16){
+												forceUpdateNFT($conn, $tokenresponsedata->fingerprint, $user_id);
+												$nft_owners[] = $user_id."-".$tokenresponsedata->fingerprint;
+											}else{
+												$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
+												$asset_ids = $payload["asset_ids"];
+												$nft_owners = $payload["nft_owners"];
+											}
 										}
 									}else{
 										$payload = processNFTMetadata($conn, $tokenresponsedata, $nft_address, $asset_ids, $nft_owners, $collections);
@@ -438,12 +445,18 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 				// Limit update to 1 record and only for NFTs with no current owner
 				updateNFT($conn, $fingerprint, $user_id);
 				$nft_owners[] = $user_id."-".$fingerprint;
-			// If someone already has ownership, it's an RFT and we need to create a new entry for an additional owner
+			// If someone already has ownership — Diamond Skull NFTs use force-update;
+			// all others are RFTs and get a new DB entry.
 			}else{
-				//$collection_id = getCollectionId($conn, $policy_id);
-				$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
-				$asset_ids[$last_id] = $fingerprint;
-				$nft_owners[] = $user_id."-".$fingerprint;
+				if(isset($collections[$policy_id]) && $collections[$policy_id] == 16){
+					forceUpdateNFT($conn, $fingerprint, $user_id);
+					$nft_owners[] = $user_id."-".$fingerprint;
+				}else{
+					//$collection_id = getCollectionId($conn, $policy_id);
+					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
+					$asset_ids[$last_id] = $fingerprint;
+					$nft_owners[] = $user_id."-".$fingerprint;
+				}
 			}
 		}else{
 			//$collection_id = getCollectionId($conn, $policy_id);
