@@ -2957,7 +2957,7 @@ function checkDiamondSkullProjectAvailability($conn, $diamond_skull_id, $project
 
 // Add Diamond Skull NFT Association
 function addDiamondSkullNFT($conn, $diamond_skull_id, $nft_id){
-	$sql = "INSERT INTO diamond_skulls (diamond_skull_id, nft_id)
+	$sql = "INSERT IGNORE INTO diamond_skulls (diamond_skull_id, nft_id)
 	VALUES ('".$diamond_skull_id."', '".$nft_id."')";
 
 	if ($conn->query($sql) === TRUE) {
@@ -3086,7 +3086,7 @@ function sendDiamondSkullNFTNotification($conn, $diamond_skull_id, $nft_id, $act
 
 // Get total delegations for Diamond Skulls
 function getDiamondSkullTotals($conn){
-	$sql = "SELECT diamond_skull_id, nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT diamond_skull_id, nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id GROUP BY diamond_skull_id, nft_id, project_id";
 	$result = $conn->query($sql);
 	
 	$diamond_skull_totals = array();
@@ -3111,7 +3111,7 @@ function getDiamondSkullTotals($conn){
 
 // Get total delegations for Project
 function getProjectDelegationTotals($conn){
-	$sql = "SELECT nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT nft_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON projects.id = collections.project_id GROUP BY nft_id, project_id";
 	$result = $conn->query($sql);
 	
 	$project_delegation_totals = array();
@@ -3732,7 +3732,7 @@ function deployDiamondSkullRewards($conn, $percentages){
 	}
 	
 	// Track Rewards by User ID for Delegators AND Diamond Skull Owners
-	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id";
+	$sql = "SELECT diamond_skull_id, nft_id, rate, user_id, project_id FROM diamond_skulls INNER JOIN nfts ON nfts.id = diamond_skulls.nft_id INNER JOIN collections ON collections.id = nfts.collection_id INNER JOIN projects ON projects.id = collections.project_id GROUP BY diamond_skull_id, nft_id";
 	$result = $conn->query($sql);
 	
 	$delegator_rewards = array();
