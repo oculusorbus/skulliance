@@ -2028,7 +2028,7 @@ $conn->close();
 		_raidAnimQueue = { ids: ids, isCompleted: isCompleted };
 		_updateSkipAllBtn(true);
 		var id = ids.shift();
-		var next = function(){ setTimeout(function(){ _playRaidAnimQueue(ids, isCompleted); }, 400); };
+		var next = function(){ setTimeout(function(){ _playRaidAnimQueue(ids, isCompleted); }, 50); };
 		if (isCompleted) { showRaidResultAnimation(id, next); }
 		else             { showRaidViewAnimation(id, next); }
 	}
@@ -2063,7 +2063,9 @@ $conn->close();
 		statusEl.textContent = ''; statusEl.style.color = '';
 		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 		overlay.style.display = 'flex';
-		requestAnimationFrame(function(){ overlay.classList.add('active'); });
+		if (!overlay.classList.contains('active')) {
+			requestAnimationFrame(function(){ overlay.classList.add('active'); });
+		}
 
 		var url;
 		if (config.direction === 'result') {
@@ -2557,7 +2559,10 @@ $conn->close();
 			var timers = _raidAnim.timers.slice();
 			timers.forEach(clearTimeout);
 			_raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
-			if (overlay)    { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+			// Keep overlay visible when a Play All queue is active — avoids flash between animations
+			if (!_raidAnimQueue) {
+				if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+			}
 			if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 			if (statusEl)   { statusEl.style.color = ''; }
 			overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
