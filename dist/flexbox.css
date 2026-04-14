@@ -3387,6 +3387,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     background: rgba(245,166,35,0.1);
     border-color: rgba(245,166,35,0.4);
 }
+.rtc-loc-pill-icon { width: 14px; height: 14px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
 .rtc-loc-level { font-weight: bold; color: #fff; margin-right: 1px; }
 .rtc-loc-name { color: #7a9eb0; }
 .rtc-loc-shielded .rtc-loc-name { color: #f5a623; }

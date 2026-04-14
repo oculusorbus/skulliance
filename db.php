@@ -6647,6 +6647,7 @@ function getRealms($conn, $sort, $group){
 						foreach($_group as $_loc){
 							$_sc = $_loc['has_shield'] ? ' rtc-loc-shielded' : '';
 							$output[$key] .= "<div class='rtc-loc-pill".$_sc."'>";
+							$output[$key] .= "<img class='rtc-loc-pill-icon' src='/staking/icons/locations/".htmlspecialchars($_loc['name']).".png' onerror='this.style.display=\"none\"'>";
 							$output[$key] .= "<span class='rtc-loc-level'>".$_loc['level']."</span>";
 							$output[$key] .= "<span class='rtc-loc-name'>".ucfirst($_loc['name'])."</span>";
 							if($_loc['has_shield']) $output[$key] .= "<span class='rtc-shield-badge' title='Shielded'>&#x1F6E1;</span>";
