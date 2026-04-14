@@ -955,7 +955,7 @@ $conn->close();
 .rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; min-width:58px; }
 .rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; background:url('icons/skull.png') center/cover no-repeat; }
 .rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
-.rla-def .rla-soldier img { opacity:.75; }
+.rla-def .rla-soldier { opacity:.75; }
 .rla-status {
     font-size:1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
     color:#00c8a0; min-height:1.4em; text-align:center;
