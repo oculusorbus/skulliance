@@ -92,11 +92,13 @@ if ($atk_sr) {
     }
 }
 
-// ── Defending soldiers: dead ones from raids_soldiers + current live garrison ─
-$dead_def_ids   = [];
-$dead_defenders = [];
-$def_dead_sr = $conn->query("
-    SELECT rs.soldier_id,
+// ── Defending soldiers: full historical record from raids_soldiers ────────────
+// All garrison soldiers (dead and alive) are written to raids_soldiers at raid
+// resolution time, so getTowerGarrison is not needed and would include
+// replacement soldiers added after the raid.
+$defense_soldiers = [];
+$def_sr = $conn->query("
+    SELECT rs.soldier_id, rs.dead,
            nfts.name AS nft_name, nfts.ipfs, nfts.collection_id,
            projects.id AS project_id
     FROM raids_soldiers rs
@@ -104,31 +106,18 @@ $def_dead_sr = $conn->query("
     INNER JOIN nfts          ON nfts.id = s.nft_id
     INNER JOIN collections   ON collections.id  = nfts.collection_id
     INNER JOIN projects      ON projects.id     = collections.project_id
-    WHERE rs.raid_id = $raid_id AND rs.side = 'defense' AND rs.dead = 1
+    WHERE rs.raid_id = $raid_id AND rs.side = 'defense'
 ");
-if ($def_dead_sr) {
-    while ($row = $def_dead_sr->fetch_assoc()) {
-        $dead_defenders[] = [
+if ($def_sr) {
+    while ($row = $def_sr->fetch_assoc()) {
+        $defense_soldiers[] = [
             'id'      => intval($row['soldier_id']),
             'name'    => $row['nft_name'],
             'img_url' => rrAbsoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
-            'dead'    => true,
+            'dead'    => (bool)(int)$row['dead'],
         ];
-        $dead_def_ids[] = intval($row['soldier_id']);
     }
 }
-
-// Current live tower garrison (survivors)
-$live_defenders = [];
-foreach (getTowerGarrison($conn, $defense_id) as $row) {
-    $live_defenders[] = [
-        'id'      => intval($row['soldier_id']),
-        'name'    => $row['nft_name'],
-        'img_url' => rrAbsoluteIPFS($row['ipfs'], $row['collection_id'], $row['project_id']),
-        'dead'    => false,
-    ];
-}
-$defense_soldiers = array_merge($dead_defenders, $live_defenders);
 
 // ── Loot ──────────────────────────────────────────────────────────────────────
 $loot = null;
