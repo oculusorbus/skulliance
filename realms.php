@@ -2591,7 +2591,12 @@ $conn->close();
 		var timers = _raidAnim.timers.slice();
 		timers.forEach(clearTimeout);
 		_raidAnim = { done:true, html:savedHtml, applyFn:savedFn, timers:[], direction:'raid' };
-		if (overlay)    { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+		// If more animations are queued, keep the overlay open — the next animation
+		// starts immediately and hiding+reopening just creates an unwanted flash.
+		var moreQueued = _raidAnimQueue && _raidAnimQueue.ids.length > 0;
+		if (!moreQueued) {
+			if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
+		}
 		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 		if (statusEl)   { statusEl.style.color = ''; }
 		overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
