@@ -7123,8 +7123,8 @@ function getRaids($conn, $type, $status="pending", $history=false){
 		}else{
 			$limit = "";
 		}
-		$sql = "SELECT raids.id AS raid_id, outcome, realms.name AS realm_name, theme_id, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar 
-			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY raids.id DESC ".$limit;
+		$sql = "SELECT raids.id AS raid_id, outcome, realms.name AS realm_name, theme_id, my_realm.theme_id AS my_theme_id, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar
+			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id INNER JOIN realms AS my_realm ON my_realm.id = raids.".$id2." WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY raids.id DESC ".$limit;
 		$result = $conn->query($sql);
 		
 		// Handle Toggle Sessions
@@ -7310,16 +7310,23 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				// incoming: col1=attacker(opponent), col2=defender(session)
 				$_col1_avatar = ($type == 'outgoing') ? $_sess_avatar_url : $_opp_avatar_url;
 				$_col2_avatar = ($type == 'outgoing') ? $_opp_avatar_url : $_sess_avatar_url;
+				// outgoing: col1=my theme (attacker), col2=opponent theme (defender)
+				// incoming: col1=opponent theme (attacker), col2=my theme (defender)
+				$_col1_theme = ($type == 'outgoing') ? $row['my_theme_id'] : $row['theme_id'];
+				$_col2_theme = ($type == 'outgoing') ? $row['theme_id'] : $row['my_theme_id'];
+				$_col_bg = function($tid) {
+					return "background:linear-gradient(rgba(13,32,53,.78),rgba(13,32,53,.78)),url('images/themes/".intval($tid).".jpg') center/cover no-repeat;";
+				};
 				// Body: two result columns
 				$_raid_logs = ($status == "Completed") ? getRaidLogsDisplay($conn, $row['raid_id']) : array('offense' => '', 'defense' => '');
 				$rows[$decimal] .= "<div class='rc-card-body'>";
-				$rows[$decimal] .= "<div class='rc-col'>";
+				$rows[$decimal] .= "<div class='rc-col' style='".$_col_bg($_col1_theme)."'>";
 				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col1_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results1." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$offense_results."</div>";
 				$rows[$decimal] .= $_raid_logs['offense'];
 				$rows[$decimal] .= "</div>";
-				$rows[$decimal] .= "<div class='rc-col'>";
+				$rows[$decimal] .= "<div class='rc-col' style='".$_col_bg($_col2_theme)."'>";
 				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col2_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results2." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
