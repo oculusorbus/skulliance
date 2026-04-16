@@ -1068,8 +1068,9 @@ $conn->close();
     left:50%;
     display:flex; flex-direction:column; align-items:center; gap:7px;
     padding:13px 22px; background:rgba(7,17,29,.92);
-    border:1px solid rgba(0,200,160,.22); border-radius:12px;
+    border:1px solid rgba(0,200,160,.28); border-radius:12px;
     min-width:180px; max-width:310px;
+    overflow:hidden;
     opacity:0; transform:translateX(-50%) translateY(8px) scale(.82);
     transition:opacity .45s ease, transform .45s ease;
     pointer-events:none;
@@ -2068,7 +2069,7 @@ $conn->close();
 		atk.style.display = 'none'; def.style.display = 'none';
 		atk.innerHTML = ''; def.innerHTML = '';
 		statusEl.textContent = ''; statusEl.style.color = '';
-		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
+		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); resultCard.style.backgroundImage = ''; resultCard.style.backgroundSize = ''; resultCard.style.backgroundPosition = ''; }
 		overlay.style.display = 'flex';
 		if (!overlay.classList.contains('active')) {
 			requestAnimationFrame(function(){ overlay.classList.add('active'); });
@@ -2102,6 +2103,8 @@ $conn->close();
 						location_changes: data.location_changes || [],
 						attackers:        data.attacker.soldiers || [],
 						defenders:        data.defender.soldiers || [],
+						atk_theme_id:     data.attacker.theme_id,
+						def_theme_id:     data.defender.theme_id,
 					};
 					_raidAnim.html = ''; // no separate XHR needed — signal ready immediately
 				} else if (config.direction === 'raid' && config.raidId) {
@@ -2482,6 +2485,12 @@ $conn->close();
 				var statusRect = statusEl.getBoundingClientRect();
 				resultCard.style.top = (statusRect.bottom + 10) + 'px';
 				resultCard.innerHTML = _buildResultCardHtml(resultData);
+				var myThemeId = resultData.perspective === 'outgoing' ? resultData.atk_theme_id : resultData.def_theme_id;
+				if (myThemeId) {
+					resultCard.style.backgroundImage = 'linear-gradient(rgba(7,17,29,.80),rgba(7,17,29,.80)),url(\'images/themes/'+myThemeId+'.jpg\')';
+					resultCard.style.backgroundSize = 'cover';
+					resultCard.style.backgroundPosition = 'center';
+				}
 				void resultCard.offsetWidth; // force reflow so transition fires
 				resultCard.classList.add('visible');
 			}
@@ -2571,7 +2580,7 @@ $conn->close();
 			if (!_raidAnimQueue) {
 				if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
 			}
-			if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
+			if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); resultCard.style.backgroundImage = ''; resultCard.style.backgroundSize = ''; resultCard.style.backgroundPosition = ''; }
 			if (statusEl)   { statusEl.style.color = ''; }
 			overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
 				el.classList.remove('rla-realm-win','rla-realm-lose','rla-glow-green','rla-glow-red');
@@ -2597,7 +2606,7 @@ $conn->close();
 		if (!moreQueued) {
 			if (overlay) { overlay.classList.remove('active'); setTimeout(function(){ overlay.style.display='none'; }, 350); }
 		}
-		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
+		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); resultCard.style.backgroundImage = ''; resultCard.style.backgroundSize = ''; resultCard.style.backgroundPosition = ''; }
 		if (statusEl)   { statusEl.style.color = ''; }
 		overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
 			el.classList.remove('rla-realm-win','rla-realm-lose','rla-glow-green','rla-glow-red');
