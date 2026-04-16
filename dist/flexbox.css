@@ -2335,6 +2335,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .loc-need-msg { font-size: 0.7rem; color: #7a9eb0; text-align: right; line-height: 1.4; }
 .loc-status-labels { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; min-height: 0; }
 .rc-col-content .loc-status-labels { flex-direction: column; align-items: center; }
+.rc-col-content .loc-status-tag { background: rgba(0,0,0,0.45); border-color: rgba(0,200,160,0.55); color: #00e8bc; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
 .loc-status-tag { font-size: 0.68rem; color: #00c8a0; background: rgba(0,200,160,0.1); border: 1px solid rgba(0,200,160,0.3); border-radius: 4px; padding: 1px 5px; line-height: 1.5; }
 
 /* ── Location consumable system ─────────────────────────────────────────── */
@@ -2624,7 +2625,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .rc-col {
     flex: 1;
     padding: 12px 14px;
-    border-right: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255,255,255,0.10);
     min-width: 0;
 }
 .rc-col:last-child { border-right: none; }
@@ -2634,20 +2635,23 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     height: 32px;
     border-radius: 50%;
     margin: 0 auto 8px;
-    border: 2px solid rgba(0,200,160,0.2);
+    border: 2px solid rgba(255,255,255,0.35);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.7);
 }
 .rc-col-label {
     display: block;
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #7a9eb0;
+    color: rgba(255,255,255,0.55);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
     margin-bottom: 6px;
     text-align: center;
 }
 .rc-col-content {
     font-size: 0.84rem;
-    color: #c8dce8;
+    color: #ffffff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
     line-height: 1.5;
     text-align: center;
 }
@@ -2682,8 +2686,8 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    opacity: 0.45;
-    color: #7a9eb0;
+    color: rgba(255,255,255,0.45);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
     margin-bottom: 4px;
 }
 .rc-log-row {
@@ -2691,11 +2695,12 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     align-items: center;
     gap: 5px;
     font-size: 0.72rem;
-    color: #c8dce8;
+    color: #e8f4fc;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
     padding: 2px 0;
 }
 .rc-log-row.rc-log-dead {
-    opacity: 0.4;
+    opacity: 0.45;
     text-decoration: line-through;
 }
 .rc-log-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
