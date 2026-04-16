@@ -7123,7 +7123,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 		}else{
 			$limit = "";
 		}
-		$sql = "SELECT raids.id AS raid_id, outcome, realms.name AS realm_name, theme_id, my_realm.theme_id AS my_theme_id, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar
+		$sql = "SELECT raids.id AS raid_id, outcome, realms.name AS realm_name, realms.theme_id AS theme_id, my_realm.theme_id AS my_theme_id, raids.duration AS duration, raids.created_date AS created_date, username, discord_id, avatar
 			    FROM raids INNER JOIN realms ON realms.id = raids.".$id1." INNER JOIN users ON users.id = realms.user_id INNER JOIN realms AS my_realm ON my_realm.id = raids.".$id2." WHERE ".$id2." = '".$realm_id."' AND outcome ".$outcome_operator." ORDER BY raids.id DESC ".$limit;
 		$result = $conn->query($sql);
 		
