@@ -1992,6 +1992,7 @@ $conn->close();
 	 * ─────────────────────────────────────────────────────────────────────── */
 	var _raidAnim = { done:false, html:null, applyFn:null, timers:[], direction:'raid' };
 	var _raidAnimQueue = null; // { ids:[], isCompleted:bool } when a Play All sequence is active
+	var _raidAnimGen   = 0;    // incremented on each new animation + on dismiss to cancel in-flight fetches
 
 	function showRaidAnimation(defId, soldierIds, applyFn) {
 		_startPortalAnim({ defId:defId, soldierIds:soldierIds, direction:'raid', applyFn:applyFn });
@@ -2045,7 +2046,13 @@ $conn->close();
 	}
 
 	function _startPortalAnim(config) {
+		var myGen = ++_raidAnimGen;
 		_raidAnim = { done:false, html:null, applyFn:config.applyFn, timers:[], direction:config.direction };
+		// Replay directions carry no XHR payload — mark html ready immediately so
+		// skip can advance the queue without waiting for the fetch to resolve.
+		if (config.direction === 'result' || (config.direction === 'raid' && config.raidId)) {
+			_raidAnim.html = '';
+		}
 
 		var overlay    = document.getElementById('raid-anim-overlay');
 		var loading    = document.getElementById('raid-anim-loading');
@@ -2080,6 +2087,7 @@ $conn->close();
 		fetch(url)
 			.then(function(r){ return r.json(); })
 			.then(function(data){
+				if (_raidAnimGen !== myGen) return; // skip was pressed — abort silently
 				if (!data.success || !data.attacker || !data.defender) return;
 				loading.style.display = 'none';
 				var soldierCount    = (data.attacker.soldiers || []).length;
@@ -2573,6 +2581,7 @@ $conn->close();
 	}
 
 	function dismissRaidAnimation() {
+		++_raidAnimGen; // cancel any in-flight fetch so it won't schedule new timers
 		// Preserve applyFn/html so skip still processes the result when XHR responds
 		var savedFn   = _raidAnim.applyFn;
 		var savedHtml = _raidAnim.html;
