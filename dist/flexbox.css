@@ -2627,6 +2627,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     padding: 12px 14px;
     border-right: 1px solid rgba(255,255,255,0.10);
     min-width: 0;
+    aspect-ratio: 4 / 3;
 }
 .rc-col:last-child { border-right: none; }
 .rc-col-avatar {
