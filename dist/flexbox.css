@@ -2687,7 +2687,7 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .rc-pill-failure { border-color: rgba(255,60,60,0.6);   color: #ff6b6b; }
 .rc-pill-gain    { border-color: rgba(0,200,160,0.45);  color: #00c8a0; }
 .rc-pill-loss    { border-color: rgba(255,60,60,0.45);  color: #ff5c5c; }
-.rc-pill-dead    { border-color: rgba(255,60,60,0.25);  color: rgba(255,100,100,0.55); text-decoration: line-through; font-weight: 400; }
+.rc-pill-dead    { border-color: rgba(255,60,60,0.25);  color: rgba(255,100,100,0.55); font-weight: 400; }
 .rc-pill-gear    { border-color: rgba(255,165,0,0.45);  color: rgba(255,190,60,0.9); }
 .rc-pill-neutral { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.75); }
 /* Action row (retreat button) */
