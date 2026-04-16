@@ -7315,18 +7315,18 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$_col1_theme = ($type == 'outgoing') ? $row['my_theme_id'] : $row['theme_id'];
 				$_col2_theme = ($type == 'outgoing') ? $row['theme_id'] : $row['my_theme_id'];
 				$_col_bg = function($tid) {
-					return "background:linear-gradient(rgba(13,32,53,.78),rgba(13,32,53,.78)),url('images/themes/".intval($tid).".jpg') center/cover no-repeat;";
+					return "background:linear-gradient(rgba(13,32,53,.78),rgba(13,32,53,.78)),url(images/themes/".intval($tid).".jpg) center/cover no-repeat;";
 				};
 				// Body: two result columns
 				$_raid_logs = ($status == "Completed") ? getRaidLogsDisplay($conn, $row['raid_id']) : array('offense' => '', 'defense' => '');
 				$rows[$decimal] .= "<div class='rc-card-body'>";
-				$rows[$decimal] .= "<div class='rc-col' style='".$_col_bg($_col1_theme)."'>";
+				$rows[$decimal] .= "<div class='rc-col' style=\"".$_col_bg($_col1_theme)."\">";
 				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col1_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results1." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$offense_results."</div>";
 				$rows[$decimal] .= $_raid_logs['offense'];
 				$rows[$decimal] .= "</div>";
-				$rows[$decimal] .= "<div class='rc-col' style='".$_col_bg($_col2_theme)."'>";
+				$rows[$decimal] .= "<div class='rc-col' style=\"".$_col_bg($_col2_theme)."\">";
 				$rows[$decimal] .= "<img class='rc-col-avatar' src='".$_col2_avatar."' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";'>";
 				$rows[$decimal] .= "<span class='rc-col-label'>".$results2." Results</span>";
 				$rows[$decimal] .= "<div class='rc-col-content'>".$defense_results."</div>";
