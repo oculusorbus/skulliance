@@ -7185,8 +7185,8 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$adj_threshold      = $defense_threshold + $defender_boost - $attacker_boost;
 					if($adj_threshold < 1)  $adj_threshold = 1;
 					if($adj_threshold > 99) $adj_threshold = 99;
-					$defense_results = round($adj_threshold, 2)."%";
-					$offense_results = round(100 - $adj_threshold, 2)."%";
+					$defense_results = "<span class='rc-pill rc-pill-neutral'>".round($adj_threshold, 2)."% Win</span>";
+					$offense_results = "<span class='rc-pill rc-pill-neutral'>".round(100 - $adj_threshold, 2)."% Win</span>";
 					// Build offense status tags from raid consumables
 					$raid_cons = getRaidConsumablesList($conn, $row['raid_id']);
 					$_boost_map = array(1=>4, 2=>3, 3=>2, 4=>1);
@@ -7202,19 +7202,11 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$_expected_duration = max(2, (int)ceil($defense/$offense));
 					if(intval($row['duration']) < $_expected_duration) array_unshift($_off_tags, 'Fast Forward');
 					if($_off_s_boost > 0) array_unshift($_off_tags, '+'.$_off_s_boost.'% Success');
-					if(!empty($_off_tags)){
-						$offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
-						foreach($_off_tags as $_t) $offense_results .= "<span class='loc-status-tag'>".$_t."</span>";
-						$offense_results .= "</div>";
-					}
+					foreach($_off_tags as $_t) $offense_results .= "<span class='rc-pill rc-pill-neutral'>".$_t."</span>";
 					// Build defense status tags from defender's location boost
 					$_def_tags = array();
 					if($defender_boost > 0) $_def_tags[] = '+'.$defender_boost.'% Defense';
-					if(!empty($_def_tags)){
-						$defense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
-						foreach($_def_tags as $_t) $defense_results .= "<span class='loc-status-tag'>".$_t."</span>";
-						$defense_results .= "</div>";
-					}
+					foreach($_def_tags as $_t) $defense_results .= "<span class='rc-pill rc-pill-neutral'>".$_t."</span>";
 				}else{
 					$time_message = "0d 0h 0m 0s";
 					$status = "Completed";
@@ -7228,25 +7220,21 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$_has_rr  = in_array(7, $_raid_cons_comp);
 					// Offense Success
 					if($outcome == 1){
-						$offense_results = "<strong style='color:#00c8a0'>Success</strong><br>";
-						$offense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
+						$offense_results = "<span class='rc-pill rc-pill-success'>Victory</span>";
+						$offense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "offense");
 						$_off_comp_tags = array();
 						if($_has_dr) $_off_comp_tags[] = 'Double Rewards (1000 cap)';
 						if($_has_rr) $_off_comp_tags[] = 'Random Reward';
-						if(!empty($_off_comp_tags)){
-							$offense_results .= "<div class='loc-status-labels' style='margin-top:4px;'>";
-							foreach($_off_comp_tags as $_t) $offense_results .= "<span class='loc-status-tag'>".$_t."</span>";
-							$offense_results .= "</div>";
-						}
-						$defense_results = "<strong style='color:#ff5c5c'>Failure</strong><br>";
-						$defense_results .= "<br>".getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
+						foreach($_off_comp_tags as $_t) $offense_results .= "<span class='rc-pill rc-pill-neutral'>".$_t."</span>";
+						$defense_results = "<span class='rc-pill rc-pill-failure'>Defeat</span>";
+						$defense_results .= getRaidProjectBalanceAmount($conn, $row['raid_id'], "defense");
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 					// Defense Success
 					else if($outcome == 2){
-						$offense_results = "<strong style='color:#ff5c5c'>Failure</strong><br>";
+						$offense_results = "<span class='rc-pill rc-pill-failure'>Defeat</span>";
 						$offense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "offense");
-						$defense_results = "<strong style='color:#00c8a0'>Success</strong><br>";
+						$defense_results = "<span class='rc-pill rc-pill-success'>Victory</span>";
 						$defense_results .= getRaidLocationLevelAmount($conn, $row['raid_id'], "defense");
 					}
 				}
@@ -7611,12 +7599,12 @@ function getRaidLocationLevelAmount($conn, $raid_id, $faction){
 	$location_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$location_results .= "<br>".(($row["type"] == "debit")?"-":"+").$row["amount"]." ".ucfirst($row["location_name"]);
+			$sign        = ($row["type"] == "debit") ? "-" : "+";
+			$color_class = ($row["type"] == "debit") ? "rc-pill rc-pill-loss" : "rc-pill rc-pill-gain";
+			$location_results .= "<span class='".$color_class."'>".$sign.$row["amount"]." ".ucfirst($row["location_name"])."</span>";
 		}
-	}else{
-		
 	}
-	return $location_results."<br>";
+	return $location_results;
 }
 
 function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
@@ -7626,10 +7614,10 @@ function getRaidProjectBalanceAmount($conn, $raid_id, $faction){
 	$project_results = "";
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			$project_results .= (($faction == "defense")?"-":"+").number_format($row["amount"])." ".($row["project_currency"]);
+			$sign        = ($faction == "defense") ? "-" : "+";
+			$color_class = ($faction == "defense") ? "rc-pill rc-pill-loss" : "rc-pill rc-pill-gain";
+			$project_results .= "<span class='".$color_class."'>".$sign.number_format($row["amount"])." ".($row["project_currency"])."</span>";
 		}
-	}else{
-		
 	}
 	return $project_results;
 }
@@ -9306,9 +9294,9 @@ function getRaidLogsDisplay($conn, $raid_id) {
 		foreach (array('offense' => $offense, 'defense' => $defense) as $side => $names) {
 			if (empty($names)) continue;
 			$count = count($names);
-			$html  = "<br>-" . $count . " Soldier" . ($count > 1 ? "s" : "");
+			$html  = "<span class='rc-pill rc-pill-loss'>-" . $count . " Soldier" . ($count > 1 ? "s" : "") . "</span>";
 			foreach ($names as $name) {
-				$html .= "<br><span style='opacity:0.4;font-size:0.8rem;'>" . htmlspecialchars($name) . "</span>";
+				$html .= "<span class='rc-pill rc-pill-dead'>" . htmlspecialchars($name) . "</span>";
 			}
 			$out[$side] .= $html;
 		}
@@ -9323,11 +9311,11 @@ function getRaidLogsDisplay($conn, $raid_id) {
 			if ($row['weapon_degraded'] && $row['weapon_name']) $pieces[] = "Lv" . intval($row['weapon_level']) . " " . htmlspecialchars($row['weapon_name']);
 			if ($row['armor_degraded']  && $row['armor_name'])  $pieces[] = "Lv" . intval($row['armor_level'])  . " " . htmlspecialchars($row['armor_name']);
 			if (!empty($pieces)) {
-				$gear_lines[] = "<br><span style='opacity:0.4;font-size:0.8rem;'>" . htmlspecialchars($row['nft_name']) . ": " . implode(', ', $pieces) . "</span>";
+				$gear_lines[] = "<span class='rc-pill rc-pill-gear'>" . htmlspecialchars($row['nft_name']) . ": " . implode(', ', $pieces) . "</span>";
 			}
 		}
 		if (!empty($gear_lines)) {
-			$out['offense'] .= "<br>-" . count($gear_lines) . " Gear Degraded";
+			$out['offense'] .= "<span class='rc-pill rc-pill-gear'>-" . count($gear_lines) . " Gear Degraded</span>";
 			foreach ($gear_lines as $line) $out['offense'] .= $line;
 		}
 	}

@@ -2624,7 +2624,11 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 .rc-col {
     flex: 1;
-    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 10px;
     border-right: 1px solid rgba(255,255,255,0.10);
     min-width: 0;
     aspect-ratio: 4 / 3;
@@ -2635,28 +2639,57 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    margin: 0 auto 8px;
+    flex-shrink: 0;
     border: 2px solid rgba(255,255,255,0.35);
     box-shadow: 0 1px 6px rgba(0,0,0,0.7);
 }
 .rc-col-label {
-    display: block;
-    font-size: 0.6rem;
+    display: inline-block;
+    font-size: 0.58rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.07em;
+    color: rgba(255,255,255,0.65);
     text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-    margin-bottom: 6px;
-    text-align: center;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 2px 10px;
+    flex-shrink: 0;
 }
 .rc-col-content {
-    font-size: 0.84rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    font-size: 0.82rem;
     color: #ffffff;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-    line-height: 1.5;
-    text-align: center;
 }
-.rc-col-content strong { font-size: 0.9rem; }
+/* ── Result pill system ──────────────────────────────────── */
+.rc-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.95);
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rc-pill-success { border-color: rgba(0,200,160,0.6);  color: #00e8bc; }
+.rc-pill-failure { border-color: rgba(255,60,60,0.6);   color: #ff6b6b; }
+.rc-pill-gain    { border-color: rgba(0,200,160,0.45);  color: #00c8a0; }
+.rc-pill-loss    { border-color: rgba(255,60,60,0.45);  color: #ff5c5c; }
+.rc-pill-dead    { border-color: rgba(255,60,60,0.25);  color: rgba(255,100,100,0.55); text-decoration: line-through; font-weight: 400; }
+.rc-pill-gear    { border-color: rgba(255,165,0,0.45);  color: rgba(255,190,60,0.9); }
+.rc-pill-neutral { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.75); }
 /* Action row (retreat button) */
 .rc-action-row {
     padding: 8px 14px;
