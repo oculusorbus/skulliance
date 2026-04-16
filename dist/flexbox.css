@@ -3222,10 +3222,11 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 /* Mobile: stack columns */
 @media (max-width: 500px) {
     .rc-card-body { flex-direction: column; }
-    .rc-col { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .rc-col { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); aspect-ratio: auto; padding: 10px 10px; }
     .rc-col:last-child { border-bottom: none; }
     .rc-card-header { gap: 10px; }
     .rc-theme-img { width: 40px; height: 40px; }
+    .rc-pill { font-size: 0.7rem; padding: 2px 9px; }
 }
 
 .raid-modal-footer {
