@@ -455,6 +455,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          this.gameOver = false;
          this.isDetonating = false;
          this.isGrandFinale = false;
+         this.gameToken = null;
+         this.fetchGameToken();
 
          this.allIcons = <?php
             $icon_res = $conn->query("SELECT DISTINCT LOWER(currency) AS currency FROM projects WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != '' ORDER BY currency ASC");
@@ -537,8 +539,25 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          }
      }
 
+     fetchGameToken() {
+         var self = this;
+         var xhr = new XMLHttpRequest();
+         xhr.open('GET', 'ajax/start-swap-game.php', true);
+         xhr.onreadystatechange = function() {
+             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                 try {
+                     var data = JSON.parse(xhr.responseText);
+                     if (data.success) self.gameToken = data.token;
+                 } catch(e) {}
+             }
+         };
+         xhr.send();
+     }
+
      resetGame() {
          console.log('Resetting game...');
+         this.gameToken = null;
+         this.fetchGameToken();
          this.score = 0;
          this.matchCount = 0;
          this.gameOver = false;
@@ -990,7 +1009,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
 	 saveSwapScore(score) {
 	     var xhttp = new XMLHttpRequest();
-	     xhttp.open('GET', 'ajax/save-swap-score.php?score=' + score, true);
+	     xhttp.open('GET', 'ajax/save-swap-score.php?score=' + score + '&token=' + encodeURIComponent(this.gameToken || ''), true);
 	     xhttp.send();
 	     xhttp.onreadystatechange = function() {
 	         if (xhttp.readyState == XMLHttpRequest.DONE) {
