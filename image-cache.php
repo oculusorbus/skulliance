@@ -160,7 +160,7 @@ function printSummary(int $existing, int $cached, int $skipped, int $errors, int
     echo "\n--- Done ---\n";
     echo "Already cached : $existing\n";
     echo "Newly cached   : $cached\n";
-    echo "Skipped (video): $skipped\n";
+    echo "Skipped        : $skipped\n";
     echo "Errors         : $errors\n";
     echo "Total          : $total\n";
 }
@@ -178,6 +178,20 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = 
     }
     $dir = $base_path . $project_id . '/' . $collection_id . '/';
     $md5 = md5($ipfs);
+
+    // ── Skip obviously malformed CIDs before any network activity ─────────────
+    // Each failed fetch burns 4 gateways × 2 retries × 30s = 240s. Minter
+    // placeholder strings ("OG30ImageCID") and mangled URIs from non-IPFS
+    // schemes (ar://, https://) will never resolve — don't waste the budget.
+    // Preserves data:image/svg+xml;base64 URIs (always >= 46 chars) and both
+    // CIDv0 (Qm…, exactly 46 chars) and CIDv1 (b…/baf…, 50+ chars).
+    if (!str_contains($ipfs, 'data:image/svg+xml;base64')) {
+        $cid_check = trim($clean_check);
+        if (strlen($cid_check) < 46 || stripos($cid_check, 'ImageCID') !== false) {
+            echo "  {$prefix}[SKIP]   Malformed CID '$cid_check' (collection $collection_id)\n";
+            return 'skipped';
+        }
+    }
 
     // ── On-chain SVG: save directly from base64 data, no HTTP fetch needed ──
     if (str_contains($ipfs, 'data:image/svg+xml;base64')) {
