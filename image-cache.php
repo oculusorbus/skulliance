@@ -220,15 +220,27 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = 
     // ── Fetch with gateway fallback and retry ────────────────────────────────
     $clean_ipfs = str_replace('ipfs/', '', $ipfs);
 
-    // Rotate gateway order by worker ID so each worker hits a different primary
-    $gateways = [
-        'https://ipfs5.jpgstoreapis.com/ipfs/',
-        'https://cloudflare-ipfs.com/ipfs/',
-        'https://ipfs.io/ipfs/',
-        'https://dweb.link/ipfs/',
+    // jpg.store CDN is the fastest option and still live until 2026-05-23 —
+    // pin it at position 0 so every worker hits it first, maximizing cached
+    // hits before the shutdown. After May 23, remove it from this list.
+    $primary_gateway = 'https://ipfs5.jpgstoreapis.com/ipfs/';
+
+    // Rotate fallback order by worker ID so each worker hits a different
+    // public gateway second, spreading load and reducing rate-limit hits.
+    $fallback_gateways = [
+        'https://nftstorage.link/ipfs/',      // nft.storage — NFT-focused, fast
+        'https://w3s.link/ipfs/',             // web3.storage
+        'https://gateway.pinata.cloud/ipfs/', // Pinata public
+        'https://4everland.io/ipfs/',         // 4everland
+        'https://ipfs.io/ipfs/',              // Protocol Labs
+        'https://dweb.link/ipfs/',            // Protocol Labs alt host
     ];
-    $offset   = $wid % count($gateways);
-    $gateways = array_merge(array_slice($gateways, $offset), array_slice($gateways, 0, $offset));
+    $offset            = $wid % count($fallback_gateways);
+    $fallback_gateways = array_merge(
+        array_slice($fallback_gateways, $offset),
+        array_slice($fallback_gateways, 0, $offset)
+    );
+    $gateways = array_merge([$primary_gateway], $fallback_gateways);
 
     $body         = false;
     $content_type = '';
@@ -241,7 +253,8 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = 
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // fail fast on dead hosts
+            curl_setopt($ch, CURLOPT_TIMEOUT, 45);        // cold DHT fetches need headroom
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
@@ -261,8 +274,8 @@ function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = 
                 break 2; // success — stop trying gateways
             }
 
-            // Transient failure — pause briefly before retry or next gateway
-            if ($attempt === 1) usleep(500000); // 0.5s between retries
+            // Transient failure — back off before retry or next gateway
+            if ($attempt === 1) usleep(1000000); // 1s between retries
         }
     }
 
