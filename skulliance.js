@@ -1719,7 +1719,10 @@ function _healNFTSend(nftId) {
     method: 'POST',
     data: { nft_id: nftId },
     dataType: 'json',
-    timeout: 20000
+    // 30s = server's 12s race budget + worst-case queue behind one other
+    // in-flight heal (also 12s) + transit. Under 30s the queueing artifact
+    // can't cause a spurious client timeout.
+    timeout: 30000
   });
   _healNFTXHRs.push(xhr);
   xhr.done(function (resp) {
