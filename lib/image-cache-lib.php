@@ -138,57 +138,52 @@ function _doCacheFetch(
     $content_type = '';
     $http_code    = 0;
     $tried_url    = '';
-    $fetch_start  = microtime(true);
+    $web_mode     = $max_fetch_seconds > 0;
 
-    // Web mode (budget set): single attempt per gateway with a tight 5s timeout
-    // so we can cycle through several gateways inside a small budget. CLI mode
-    // (budget = 0): two attempts per gateway with 45s timeout for max coverage.
-    $web_mode             = $max_fetch_seconds > 0;
-    $max_attempts         = $web_mode ? 1 : 2;
-    $per_request_ceiling  = $web_mode ? 5 : 45;
-    $connect_timeout      = $web_mode ? 5 : 10;
-
-    foreach ($gateways as $gateway) {
-        if ($web_mode) {
-            $elapsed = microtime(true) - $fetch_start;
-            if ($elapsed >= $max_fetch_seconds) {
-                return ['status' => 'error', 'url' => null,
-                        'message' => $emit("[ERROR] Fetch budget exceeded after " . round($elapsed, 1) . "s for $clean_ipfs")];
-            }
+    if ($web_mode) {
+        // Race all gateways concurrently — first valid response wins, losers
+        // get aborted. Big latency win when jpg.store is slow/missing on a CID
+        // but a fallback gateway has it fast.
+        $race = _fetchRace($gateways, $clean_ipfs, $max_fetch_seconds, $emit);
+        if (!$race['ok']) {
+            return ['status' => 'error', 'url' => null, 'message' => $race['message']];
         }
-        $url = $gateway . $clean_ipfs;
-        for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
-            // Cap per-request timeout to remaining budget so a single slow
-            // gateway can't consume the entire allotment. Floor at 3s.
-            $per_request_timeout = $per_request_ceiling;
-            if ($web_mode) {
-                $remaining = $max_fetch_seconds - (microtime(true) - $fetch_start);
-                $per_request_timeout = max(3, min($per_request_ceiling, (int) $remaining));
-            }
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connect_timeout);
-            curl_setopt($ch, CURLOPT_TIMEOUT, $per_request_timeout);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                'Accept-Language: en-US,en;q=0.9',
-                'Referer: https://www.jpg.store/',
-            ]);
-            $resp = curl_exec($ch);
-            $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+        $body         = $race['body'];
+        $content_type = $race['mime']; // already stripped of charset
+        $http_code    = 200;
+        $tried_url    = $race['url'];
+    } else {
+        // Sequential fallback for CLI nightly: 2 attempts per gateway × 45s
+        // timeout for maximum coverage across the 19k+ NFT catalog. Racing in
+        // CLI would 7× public-gateway request volume and risk rate-limit hits.
+        foreach ($gateways as $gateway) {
+            $url = $gateway . $clean_ipfs;
+            for ($attempt = 1; $attempt <= 2; $attempt++) {
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                    'Accept-Language: en-US,en;q=0.9',
+                    'Referer: https://www.jpg.store/',
+                ]);
+                $resp = curl_exec($ch);
+                $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
 
-            if ($resp !== false && $code > 0 && $code < 400) {
-                $body         = $resp;
-                $content_type = $ct;
-                $http_code    = $code;
-                $tried_url    = $url;
-                break 2;
+                if ($resp !== false && $code > 0 && $code < 400) {
+                    $body         = $resp;
+                    $content_type = $ct;
+                    $http_code    = $code;
+                    $tried_url    = $url;
+                    break 2;
+                }
+                if ($attempt === 1) usleep(1000000);
             }
-            if ($attempt < $max_attempts) usleep(1000000);
         }
     }
 
@@ -261,4 +256,93 @@ function _doCacheFetch(
         return ['status' => 'error', 'url' => null,
                 'message' => $emit("[ERROR] Imagick failed for $tried_url: " . $e->getMessage())];
     }
+}
+
+// ── Concurrent gateway race ──────────────────────────────────────────────────
+// Fires all gateway requests in parallel via curl_multi_*. First handle that
+// returns 2xx with an image-ish content-type wins; remaining handles get
+// aborted to free their connections. Total wall time is bounded by
+// $budget_seconds — beyond that, whatever's still in flight is dropped.
+//
+// Returns ['ok' => true, 'body' => ..., 'mime' => ..., 'url' => ...]
+//      or ['ok' => false, 'message' => ...]
+function _fetchRace(array $gateways, string $clean_ipfs, int $budget_seconds, callable $emit): array {
+    $mh      = curl_multi_init();
+    $handles = []; // keyed by spl_object_id of the curl handle
+    $headers = [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language: en-US,en;q=0.9',
+        'Referer: https://www.jpg.store/',
+    ];
+    foreach ($gateways as $gateway) {
+        $url = $gateway . $clean_ipfs;
+        $ch  = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $budget_seconds);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_multi_add_handle($mh, $ch);
+        $handles[spl_object_id($ch)] = ['ch' => $ch, 'url' => $url];
+    }
+
+    $start  = microtime(true);
+    $winner = null;
+    $running = null;
+
+    do {
+        $exec_status = curl_multi_exec($mh, $running);
+        if ($exec_status > CURLM_OK) break;
+
+        // Drain completed handles; first valid 2xx with image-ish mime wins
+        while (($info = curl_multi_info_read($mh)) !== false) {
+            $ch     = $info['handle'];
+            $key    = spl_object_id($ch);
+            $h_info = $handles[$key] ?? null;
+            if (!$h_info) continue;
+
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+
+            if ($info['result'] === CURLE_OK && $code > 0 && $code < 400) {
+                $body = curl_multi_getcontent($ch);
+                $mime = trim(explode(';', (string) $ct)[0]);
+                $is_skip_mime = str_starts_with($mime, 'video/')
+                             || str_starts_with($mime, 'audio/')
+                             || str_starts_with($mime, 'application/');
+                if (!$is_skip_mime && $body !== '' && $body !== false) {
+                    $winner = ['body' => $body, 'mime' => $mime, 'url' => $h_info['url']];
+                    break 2;
+                }
+            }
+
+            // This handle is done with non-success — clean it up but keep racing
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+            unset($handles[$key]);
+        }
+
+        // Total budget guard
+        if ((microtime(true) - $start) >= $budget_seconds) break;
+
+        // Wait briefly for activity (avoid busy-loop)
+        if ($running > 0) {
+            curl_multi_select($mh, 0.5);
+        }
+    } while ($running > 0);
+
+    // Cleanup any handles still in the multi (winner's handle plus any losers
+    // that never finished). Aborts in-flight transfers.
+    foreach ($handles as $h) {
+        @curl_multi_remove_handle($mh, $h['ch']);
+        @curl_close($h['ch']);
+    }
+    curl_multi_close($mh);
+
+    if ($winner) {
+        return ['ok' => true] + $winner;
+    }
+    return ['ok' => false,
+            'message' => $emit("[ERROR] All gateways failed (raced) for $clean_ipfs")];
 }
