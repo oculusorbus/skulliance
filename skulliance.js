@@ -1733,6 +1733,8 @@ function _healNFTSend(nftId) {
       (_healNFTInFlight[nftId] || []).forEach(function (el) { el.src = resp.url; });
     } else {
       console.warn('[healNFT] nft ' + nftId + ': server returned failure', resp);
+      // Show a manual upload affordance as last-resort recovery (dashboard only)
+      (_healNFTInFlight[nftId] || []).forEach(function (el) { _offerNFTUpload(el, nftId); });
     }
   }).fail(function (xhr, textStatus, errorThrown) {
     if (textStatus === 'abort') return; // navigating away — not an error
@@ -1741,10 +1743,81 @@ function _healNFTSend(nftId) {
     if (xhr.responseText) {
       console.error('[healNFT] nft ' + nftId + ': server response body:', xhr.responseText);
     }
+    (_healNFTInFlight[nftId] || []).forEach(function (el) { _offerNFTUpload(el, nftId); });
   }).always(function () {
     delete _healNFTInFlight[nftId];
     _healNFTActive--;
     _healNFTDrain();
+  });
+}
+
+// ── Manual upload fallback (dashboard only) ─────────────────────────────────
+// When auto-heal exhausts every gateway and still can't recover an image, the
+// dashboard surfaces an "Upload Image" affordance so the NFT owner can supply
+// their own copy. The file gets resized + saved to the same on-disk path the
+// cache script would have used, so getIPFS()'s local-first lookup picks it up
+// from then on. Owner-only on the server side; the URL gate here just keeps
+// the affordance from appearing on pages where it'd be confusing.
+function _offerNFTUpload(img, nftId) {
+  if (!img || !nftId) return;
+  if (window.location.pathname.indexOf('dashboard.php') === -1) return;
+  var wrap = img.parentElement;
+  if (!wrap || wrap.querySelector('.nft-upload-btn')) return;
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'nft-upload-btn';
+  btn.title = 'Upload your own image for this NFT';
+  btn.textContent = 'Upload Image';
+  btn.style.cssText = 'display:block;margin:4px auto 0;padding:3px 10px;font-size:0.7rem;' +
+                      'background:#00c8a0;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:600;';
+
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml';
+  fileInput.style.display = 'none';
+
+  btn.addEventListener('click', function () { fileInput.click(); });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files.length) _uploadNFTImage(img, nftId, fileInput.files[0], btn);
+  });
+
+  wrap.appendChild(btn);
+  wrap.appendChild(fileInput);
+}
+
+function _uploadNFTImage(img, nftId, file, btn) {
+  btn.disabled = true;
+  var origLabel = btn.textContent;
+  btn.textContent = 'Uploading…';
+  var fd = new FormData();
+  fd.append('nft_id', nftId);
+  fd.append('image', file);
+  $.ajax({
+    url: '/staking/ajax/upload-nft-image.php',
+    method: 'POST',
+    data: fd,
+    processData: false,
+    contentType: false,
+    dataType: 'json',
+    timeout: 60000
+  }).done(function (resp) {
+    if (resp && resp.success && resp.url) {
+      console.log('%c[upload] nft ' + nftId + ': SUCCESS — ' + resp.url, 'color: #00c8a0');
+      img.onerror = null;
+      img.src = resp.url;
+      _healNFTResolved[nftId] = resp.url;
+      btn.remove();
+      if (btn.nextSibling && btn.nextSibling.type === 'file') btn.nextSibling.remove();
+    } else {
+      console.error('[upload] nft ' + nftId + ': server returned failure', resp);
+      btn.textContent = '⚠ ' + (resp && resp.message ? resp.message : 'Upload failed');
+      setTimeout(function () { btn.disabled = false; btn.textContent = origLabel; }, 3000);
+    }
+  }).fail(function (xhr, status, err) {
+    console.error('[upload] nft ' + nftId + ': AJAX failed — HTTP ' + xhr.status, status, err, xhr.responseText);
+    btn.textContent = '⚠ Upload failed';
+    setTimeout(function () { btn.disabled = false; btn.textContent = origLabel; }, 3000);
   });
 }
 
