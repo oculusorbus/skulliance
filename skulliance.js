@@ -1689,6 +1689,12 @@ function healNFT(img, nftId) {
   // Avoid infinite onError loops if even the placeholder 404s
   img.onerror = null;
   img.src = '/staking/icons/skull.png';
+  // Auto-heal is dashboard-only. On every other page, just show the
+  // placeholder — kicking off heal AJAX from raids/leaderboards/profile/etc
+  // can saturate PHP-FPM workers and stall page loads when many broken
+  // images appear at once. Dashboard owners get the heal + manual-upload
+  // affordance because they have direct interest in fixing their own NFTs.
+  if (window.location.pathname.indexOf('dashboard.php') === -1) return;
   if (_healNFTResolved[nftId]) {
     console.log('[healNFT] nft ' + nftId + ': using already-resolved url', _healNFTResolved[nftId]);
     img.src = _healNFTResolved[nftId];
