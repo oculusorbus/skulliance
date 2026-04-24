@@ -60,14 +60,13 @@ if ($nft_id < 1) {
 
 // Never trust a client-supplied IPFS hash — look it up from the DB so this
 // endpoint can only be used to cache NFTs the platform already knows about.
-$stmt = $conn->prepare("SELECT n.ipfs, n.collection_id, c.project_id
-                        FROM nfts n JOIN collections c ON c.id = n.collection_id
-                        WHERE n.id = ? LIMIT 1");
-$stmt->bind_param('i', $nft_id);
-$stmt->execute();
-$res = $stmt->get_result();
-$row = $res ? $res->fetch_assoc() : null;
-$stmt->close();
+// $nft_id is intval'd above so safe to concatenate. mysqli on this server
+// is built without mysqlnd, so get_result() is unavailable — stick with the
+// codebase's standard string-concat + query() pattern.
+$res = $conn->query("SELECT n.ipfs, n.collection_id, c.project_id
+                     FROM nfts n JOIN collections c ON c.id = n.collection_id
+                     WHERE n.id = " . $nft_id . " LIMIT 1");
+$row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
 
 if (!$row) {
     ob_clean();
