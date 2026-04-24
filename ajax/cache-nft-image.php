@@ -83,7 +83,9 @@ try {
         null,     // default base_path (dirname(__DIR__ of lib) . '/images/nfts/')
         false,    // not verbose — no stdout in web context
         0,
-        null
+        null,
+        12        // max_fetch_seconds — leaves headroom for Imagick + network
+                  // inside the client's 20s AJAX timeout
     );
 } catch (Throwable $e) {
     ob_clean();

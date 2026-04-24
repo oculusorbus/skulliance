@@ -20,7 +20,8 @@ function cacheNFTImage(
     ?string $base_path = null,
     bool $verbose = false,
     int $wid = 0,
-    ?string $label = null
+    ?string $label = null,
+    int $max_fetch_seconds = 0
 ): array {
     if ($base_path === null) {
         $base_path = dirname(__DIR__) . '/images/nfts/';
@@ -95,7 +96,7 @@ function cacheNFTImage(
     @file_put_contents($lock_path, (string) time());
 
     try {
-        return _doCacheFetch($ipfs, $collection_id, $project_id, $dir, $md5, $web_base, $wid, $emit);
+        return _doCacheFetch($ipfs, $collection_id, $project_id, $dir, $md5, $web_base, $wid, $emit, $max_fetch_seconds);
     } finally {
         @unlink($lock_path);
     }
@@ -109,7 +110,8 @@ function _doCacheFetch(
     string $md5,
     string $web_base,
     int $wid,
-    callable $emit
+    callable $emit,
+    int $max_fetch_seconds = 0
 ): array {
     // ── Fetch with gateway fallback and retry ────────────────────────────────
     $clean_ipfs = str_replace('ipfs/', '', $ipfs);
@@ -136,15 +138,35 @@ function _doCacheFetch(
     $content_type = '';
     $http_code    = 0;
     $tried_url    = '';
+    $fetch_start  = microtime(true);
 
     foreach ($gateways as $gateway) {
+        // Web callers pass a total time budget ($max_fetch_seconds) so a single
+        // broken-image request doesn't tie up a PHP-FPM worker for minutes
+        // grinding through 7 gateways × 2 retries. CLI (nightly) passes 0 =
+        // unlimited to maximize cache coverage.
+        if ($max_fetch_seconds > 0) {
+            $elapsed = microtime(true) - $fetch_start;
+            if ($elapsed >= $max_fetch_seconds) {
+                return ['status' => 'error', 'url' => null,
+                        'message' => $emit("[ERROR] Fetch budget exceeded after " . round($elapsed, 1) . "s for $clean_ipfs")];
+            }
+        }
         $url = $gateway . $clean_ipfs;
         for ($attempt = 1; $attempt <= 2; $attempt++) {
+            // Cap per-request timeout to remaining budget so we don't burn the
+            // whole budget on one slow gateway. Floor at 3s to avoid curl
+            // giving up before a healthy gateway has a chance to respond.
+            $per_request_timeout = 45;
+            if ($max_fetch_seconds > 0) {
+                $remaining = $max_fetch_seconds - (microtime(true) - $fetch_start);
+                $per_request_timeout = max(3, min(45, (int) $remaining));
+            }
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $per_request_timeout);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
