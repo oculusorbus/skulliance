@@ -1767,24 +1767,30 @@ function _offerNFTUpload(img, nftId) {
     console.log('[upload-btn] nft ' + nftId + ': bail — pathname is "' + window.location.pathname + '" (not dashboard.php)');
     return;
   }
-  var wrap = img.parentElement;
-  if (!wrap) {
-    console.log('[upload-btn] nft ' + nftId + ': bail — img has no parentElement');
+  // The .nft-image span typically has overflow:hidden / fixed dimensions —
+  // appending a button there hides it. Walk up to the card-level container
+  // (.nft-data / .diamond-data / .nft / .diamond) where the button will be
+  // visible below the image in normal block flow.
+  var card = img.closest('.nft-data, .diamond-data, .nft, .diamond') || img.parentElement;
+  if (!card) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — no card container found');
     return;
   }
-  if (wrap.querySelector('.nft-upload-btn')) {
-    console.log('[upload-btn] nft ' + nftId + ': bail — button already exists in', wrap);
+  if (card.querySelector('.nft-upload-btn[data-nft-id="' + nftId + '"]')) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — button already exists in', card);
     return;
   }
-  console.log('[upload-btn] nft ' + nftId + ': injecting button into', wrap);
+  console.log('[upload-btn] nft ' + nftId + ': injecting button into', card);
 
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'nft-upload-btn';
+  btn.dataset.nftId = nftId;
   btn.title = 'Upload your own image for this NFT';
   btn.textContent = 'Upload Image';
-  btn.style.cssText = 'display:block;margin:4px auto 0;padding:3px 10px;font-size:0.7rem;' +
-                      'background:#00c8a0;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:600;';
+  btn.style.cssText = 'display:block;margin:6px auto;padding:4px 12px;font-size:0.7rem;' +
+                      'background:#00c8a0;color:#000;border:none;border-radius:4px;cursor:pointer;' +
+                      'font-weight:600;position:relative;z-index:5;';
 
   var fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -1796,8 +1802,8 @@ function _offerNFTUpload(img, nftId) {
     if (fileInput.files.length) _uploadNFTImage(img, nftId, fileInput.files[0], btn);
   });
 
-  wrap.appendChild(btn);
-  wrap.appendChild(fileInput);
+  card.appendChild(btn);
+  card.appendChild(fileInput);
 }
 
 function _uploadNFTImage(img, nftId, file, btn) {
