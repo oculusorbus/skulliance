@@ -1670,10 +1670,19 @@ function skullSubmitBtn(btn) {
 // the image. On success, swaps the placeholder for the newly-cached local URL.
 // On failure the placeholder stays.
 //
-// Deduped per page load: if the same nft_id is shown 50 times, we fire one
-// AJAX request and swap every image sharing that id when it resolves.
+// Dedup + throttle: same nft_id rendered 50× fires one request; a maximum of
+// 2 requests run concurrently so a page with many broken images doesn't
+// saturate the browser's per-host connection pool or the server's PHP-FPM
+// workers — either of which would make navigations queue behind stale cache
+// attempts. Pending requests are aborted on page unload so a refresh or link
+// click is never held up by them.
 var _healNFTInFlight = {};
 var _healNFTResolved = {};
+var _healNFTQueue    = [];
+var _healNFTActive   = 0;
+var _healNFTXHRs     = [];
+var _healNFTMaxConcurrent = 2;
+
 function healNFT(img, nftId) {
   if (!img || !nftId) return;
   var failedSrc = img.src;
@@ -1690,15 +1699,30 @@ function healNFT(img, nftId) {
     _healNFTInFlight[nftId].push(img);
     return;
   }
-  console.log('[healNFT] nft ' + nftId + ': triggering cache — failed src was ' + failedSrc);
+  console.log('[healNFT] nft ' + nftId + ': queued (failed src ' + failedSrc + ')');
   _healNFTInFlight[nftId] = [img];
-  $.ajax({
+  _healNFTQueue.push(nftId);
+  _healNFTDrain();
+}
+
+function _healNFTDrain() {
+  while (_healNFTActive < _healNFTMaxConcurrent && _healNFTQueue.length > 0) {
+    _healNFTSend(_healNFTQueue.shift());
+  }
+}
+
+function _healNFTSend(nftId) {
+  _healNFTActive++;
+  console.log('[healNFT] nft ' + nftId + ': triggering cache');
+  var xhr = $.ajax({
     url: '/staking/ajax/cache-nft-image.php',
     method: 'POST',
     data: { nft_id: nftId },
     dataType: 'json',
     timeout: 20000
-  }).done(function (resp) {
+  });
+  _healNFTXHRs.push(xhr);
+  xhr.done(function (resp) {
     if (resp && resp.success && resp.url) {
       console.log('%c[healNFT] nft ' + nftId + ': SUCCESS — status=' + resp.status + ' url=' + resp.url,
                   'color: #00c8a0');
@@ -1708,6 +1732,7 @@ function healNFT(img, nftId) {
       console.warn('[healNFT] nft ' + nftId + ': server returned failure', resp);
     }
   }).fail(function (xhr, textStatus, errorThrown) {
+    if (textStatus === 'abort') return; // navigating away — not an error
     console.error('[healNFT] nft ' + nftId + ': AJAX failed — ' +
                   'HTTP ' + xhr.status + ' (' + textStatus + (errorThrown ? ', ' + errorThrown : '') + ')');
     if (xhr.responseText) {
@@ -1715,5 +1740,18 @@ function healNFT(img, nftId) {
     }
   }).always(function () {
     delete _healNFTInFlight[nftId];
+    _healNFTActive--;
+    _healNFTDrain();
   });
 }
+
+// On navigation/refresh, abort any pending cache attempts so the new page
+// request isn't queued behind them in the browser's per-host connection pool.
+// The server's 5-min lock file remains in place so the attempt picks up the
+// next time someone hits that broken image.
+$(window).on('beforeunload', function() {
+  _healNFTQueue.length = 0;
+  _healNFTXHRs.forEach(function (xhr) {
+    try { if (xhr && xhr.readyState !== 4) xhr.abort(); } catch(e) {}
+  });
+});
