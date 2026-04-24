@@ -153,36 +153,48 @@ function _doCacheFetch(
         $http_code    = 200;
         $tried_url    = $race['url'];
     } else {
-        // Sequential fallback for CLI nightly: 2 attempts per gateway × 45s
-        // timeout for maximum coverage across the 19k+ NFT catalog. Racing in
-        // CLI would 7× public-gateway request volume and risk rate-limit hits.
-        foreach ($gateways as $gateway) {
-            $url = $gateway . $clean_ipfs;
-            for ($attempt = 1; $attempt <= 2; $attempt++) {
-                $ch = curl_init($url);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 45);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                    'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                    'Accept-Language: en-US,en;q=0.9',
-                    'Referer: https://www.jpg.store/',
-                ]);
-                $resp = curl_exec($ch);
-                $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
+        // CLI hybrid: try jpg.store sequentially first (it serves ~90% of
+        // hits, fastest path with no concurrent-download memory spike), then
+        // race the 6 fallback gateways only when jpg.store misses. This keeps
+        // public-gateway request volume proportional to misses (small) while
+        // collapsing the multi-minute sequential miss path down to ~one
+        // gateway-time worth of latency.
+        $jpg_url = $primary_gateway . $clean_ipfs;
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $ch = curl_init($jpg_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                'Accept-Language: en-US,en;q=0.9',
+                'Referer: https://www.jpg.store/',
+            ]);
+            $resp = curl_exec($ch);
+            $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-                if ($resp !== false && $code > 0 && $code < 400) {
-                    $body         = $resp;
-                    $content_type = $ct;
-                    $http_code    = $code;
-                    $tried_url    = $url;
-                    break 2;
-                }
-                if ($attempt === 1) usleep(1000000);
+            if ($resp !== false && $code > 0 && $code < 400) {
+                $body         = $resp;
+                $content_type = $ct;
+                $http_code    = $code;
+                $tried_url    = $jpg_url;
+                break;
+            }
+            if ($attempt === 1) usleep(1000000);
+        }
+
+        // jpg.store missed — race the public-gateway fallbacks
+        if ($body === false || $http_code === 0 || $http_code >= 400) {
+            $race = _fetchRace($fallback_gateways, $clean_ipfs, 45, $emit, 10);
+            if ($race['ok']) {
+                $body         = $race['body'];
+                $content_type = $race['mime'];
+                $http_code    = 200;
+                $tried_url    = $race['url'];
             }
         }
     }
@@ -266,7 +278,7 @@ function _doCacheFetch(
 //
 // Returns ['ok' => true, 'body' => ..., 'mime' => ..., 'url' => ...]
 //      or ['ok' => false, 'message' => ...]
-function _fetchRace(array $gateways, string $clean_ipfs, int $budget_seconds, callable $emit): array {
+function _fetchRace(array $gateways, string $clean_ipfs, int $budget_seconds, callable $emit, int $connect_timeout = 5): array {
     $mh      = curl_multi_init();
     $handles = []; // keyed by spl_object_id of the curl handle
     $headers = [
@@ -280,7 +292,7 @@ function _fetchRace(array $gateways, string $clean_ipfs, int $budget_seconds, ca
         $ch  = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connect_timeout);
         curl_setopt($ch, CURLOPT_TIMEOUT, $budget_seconds);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_multi_add_handle($mh, $ch);
