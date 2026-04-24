@@ -140,12 +140,16 @@ function _doCacheFetch(
     $tried_url    = '';
     $fetch_start  = microtime(true);
 
+    // Web mode (budget set): single attempt per gateway with a tight 5s timeout
+    // so we can cycle through several gateways inside a small budget. CLI mode
+    // (budget = 0): two attempts per gateway with 45s timeout for max coverage.
+    $web_mode             = $max_fetch_seconds > 0;
+    $max_attempts         = $web_mode ? 1 : 2;
+    $per_request_ceiling  = $web_mode ? 5 : 45;
+    $connect_timeout      = $web_mode ? 5 : 10;
+
     foreach ($gateways as $gateway) {
-        // Web callers pass a total time budget ($max_fetch_seconds) so a single
-        // broken-image request doesn't tie up a PHP-FPM worker for minutes
-        // grinding through 7 gateways × 2 retries. CLI (nightly) passes 0 =
-        // unlimited to maximize cache coverage.
-        if ($max_fetch_seconds > 0) {
+        if ($web_mode) {
             $elapsed = microtime(true) - $fetch_start;
             if ($elapsed >= $max_fetch_seconds) {
                 return ['status' => 'error', 'url' => null,
@@ -153,19 +157,18 @@ function _doCacheFetch(
             }
         }
         $url = $gateway . $clean_ipfs;
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            // Cap per-request timeout to remaining budget so we don't burn the
-            // whole budget on one slow gateway. Floor at 3s to avoid curl
-            // giving up before a healthy gateway has a chance to respond.
-            $per_request_timeout = 45;
-            if ($max_fetch_seconds > 0) {
+        for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
+            // Cap per-request timeout to remaining budget so a single slow
+            // gateway can't consume the entire allotment. Floor at 3s.
+            $per_request_timeout = $per_request_ceiling;
+            if ($web_mode) {
                 $remaining = $max_fetch_seconds - (microtime(true) - $fetch_start);
-                $per_request_timeout = max(3, min(45, (int) $remaining));
+                $per_request_timeout = max(3, min($per_request_ceiling, (int) $remaining));
             }
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connect_timeout);
             curl_setopt($ch, CURLOPT_TIMEOUT, $per_request_timeout);
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -185,7 +188,7 @@ function _doCacheFetch(
                 $tried_url    = $url;
                 break 2;
             }
-            if ($attempt === 1) usleep(1000000);
+            if ($attempt < $max_attempts) usleep(1000000);
         }
     }
 
