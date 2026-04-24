@@ -1,9 +1,9 @@
 <?php
 ob_start();
-include '../db.php';
-require_once __DIR__ . '/../lib/image-cache-lib.php';
 ini_set('display_errors', 0);
 
+// Register BEFORE includes so a missing/broken lib or db.php still returns
+// JSON instead of a bare 500 page.
 register_shutdown_function(function() {
     $err = error_get_last();
     if ($err && ($err['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR))) {
@@ -12,6 +12,9 @@ register_shutdown_function(function() {
         echo json_encode(['success' => false, 'message' => 'Fatal: ' . $err['message'] . ' (' . basename($err['file']) . ':' . $err['line'] . ')']);
     }
 });
+
+include '../db.php';
+require_once __DIR__ . '/../lib/image-cache-lib.php';
 
 header('Content-Type: application/json');
 
