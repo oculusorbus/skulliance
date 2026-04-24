@@ -1819,15 +1819,20 @@ function _uploadNFTImage(img, nftId, file, btn) {
   var fd = new FormData();
   fd.append('nft_id', nftId);
   fd.append('image', file);
-  $.ajax({
+  console.log('[upload] nft ' + nftId + ': starting (' + file.name + ', ' + Math.round(file.size / 1024) + ' KB, ' + file.type + ')');
+  var xhr = $.ajax({
     url: '/staking/ajax/upload-nft-image.php',
     method: 'POST',
     data: fd,
     processData: false,
     contentType: false,
     dataType: 'json',
-    timeout: 60000
-  }).done(function (resp) {
+    timeout: 30000
+  });
+  // Track so beforeunload can abort it — otherwise an in-flight upload holds
+  // a browser connection slot and a refresh stalls until the XHR resolves.
+  _healNFTXHRs.push(xhr);
+  xhr.done(function (resp) {
     if (resp && resp.success && resp.url) {
       console.log('%c[upload] nft ' + nftId + ': SUCCESS — ' + resp.url, 'color: #00c8a0');
       img.onerror = null;
@@ -1836,14 +1841,17 @@ function _uploadNFTImage(img, nftId, file, btn) {
       btn.remove();
       if (btn.nextSibling && btn.nextSibling.type === 'file') btn.nextSibling.remove();
     } else {
-      console.error('[upload] nft ' + nftId + ': server returned failure', resp);
-      btn.textContent = '⚠ ' + (resp && resp.message ? resp.message : 'Upload failed');
-      setTimeout(function () { btn.disabled = false; btn.textContent = origLabel; }, 3000);
+      var msg = (resp && resp.message) ? resp.message : 'Upload failed';
+      console.error('[upload] nft ' + nftId + ': server returned failure: ' + msg, resp);
+      btn.textContent = '⚠ ' + msg;
+      setTimeout(function () { btn.disabled = false; btn.textContent = origLabel; }, 4000);
     }
   }).fail(function (xhr, status, err) {
-    console.error('[upload] nft ' + nftId + ': AJAX failed — HTTP ' + xhr.status, status, err, xhr.responseText);
-    btn.textContent = '⚠ Upload failed';
-    setTimeout(function () { btn.disabled = false; btn.textContent = origLabel; }, 3000);
+    if (status === 'abort') return;
+    console.error('[upload] nft ' + nftId + ': AJAX failed — HTTP ' + xhr.status + ' (' + status + ')', err);
+    if (xhr.responseText) console.error('[upload] nft ' + nftId + ': server response body:', xhr.responseText);
+    btn.textContent = '⚠ ' + (status === 'timeout' ? 'Upload timed out' : 'Upload failed (HTTP ' + xhr.status + ')');
+    setTimeout(function () { btn.disabled = false; btn.textContent = origLabel; }, 4000);
   });
 }
 
