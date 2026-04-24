@@ -1759,10 +1759,24 @@ function _healNFTSend(nftId) {
 // from then on. Owner-only on the server side; the URL gate here just keeps
 // the affordance from appearing on pages where it'd be confusing.
 function _offerNFTUpload(img, nftId) {
-  if (!img || !nftId) return;
-  if (window.location.pathname.indexOf('dashboard.php') === -1) return;
+  if (!img || !nftId) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — missing img or nftId');
+    return;
+  }
+  if (window.location.pathname.indexOf('dashboard.php') === -1) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — pathname is "' + window.location.pathname + '" (not dashboard.php)');
+    return;
+  }
   var wrap = img.parentElement;
-  if (!wrap || wrap.querySelector('.nft-upload-btn')) return;
+  if (!wrap) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — img has no parentElement');
+    return;
+  }
+  if (wrap.querySelector('.nft-upload-btn')) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — button already exists in', wrap);
+    return;
+  }
+  console.log('[upload-btn] nft ' + nftId + ': injecting button into', wrap);
 
   var btn = document.createElement('button');
   btn.type = 'button';
