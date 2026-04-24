@@ -1676,11 +1676,21 @@ var _healNFTInFlight = {};
 var _healNFTResolved = {};
 function healNFT(img, nftId) {
   if (!img || !nftId) return;
+  var failedSrc = img.src;
   // Avoid infinite onError loops if even the placeholder 404s
   img.onerror = null;
   img.src = '/staking/icons/skull.png';
-  if (_healNFTResolved[nftId]) { img.src = _healNFTResolved[nftId]; return; }
-  if (_healNFTInFlight[nftId]) { _healNFTInFlight[nftId].push(img); return; }
+  if (_healNFTResolved[nftId]) {
+    console.log('[healNFT] nft ' + nftId + ': using already-resolved url', _healNFTResolved[nftId]);
+    img.src = _healNFTResolved[nftId];
+    return;
+  }
+  if (_healNFTInFlight[nftId]) {
+    console.log('[healNFT] nft ' + nftId + ': attaching to in-flight request');
+    _healNFTInFlight[nftId].push(img);
+    return;
+  }
+  console.log('[healNFT] nft ' + nftId + ': triggering cache — failed src was ' + failedSrc);
   _healNFTInFlight[nftId] = [img];
   $.ajax({
     url: '/staking/ajax/cache-nft-image.php',
@@ -1690,8 +1700,18 @@ function healNFT(img, nftId) {
     timeout: 20000
   }).done(function (resp) {
     if (resp && resp.success && resp.url) {
+      console.log('%c[healNFT] nft ' + nftId + ': SUCCESS — status=' + resp.status + ' url=' + resp.url,
+                  'color: #00c8a0');
       _healNFTResolved[nftId] = resp.url;
       (_healNFTInFlight[nftId] || []).forEach(function (el) { el.src = resp.url; });
+    } else {
+      console.warn('[healNFT] nft ' + nftId + ': server returned failure', resp);
+    }
+  }).fail(function (xhr, textStatus, errorThrown) {
+    console.error('[healNFT] nft ' + nftId + ': AJAX failed — ' +
+                  'HTTP ' + xhr.status + ' (' + textStatus + (errorThrown ? ', ' + errorThrown : '') + ')');
+    if (xhr.responseText) {
+      console.error('[healNFT] nft ' + nftId + ': server response body:', xhr.responseText);
     }
   }).always(function () {
     delete _healNFTInFlight[nftId];
