@@ -1663,3 +1663,37 @@ function skullSubmitBtn(btn) {
     });
   }, 0);
 }
+
+// ── NFT image self-heal ─────────────────────────────────────────────────────
+// Called from <img onError> on NFT images. Drops in the skull placeholder
+// immediately so the user sees something, then asks the server to try caching
+// the image. On success, swaps the placeholder for the newly-cached local URL.
+// On failure the placeholder stays.
+//
+// Deduped per page load: if the same nft_id is shown 50 times, we fire one
+// AJAX request and swap every image sharing that id when it resolves.
+var _healNFTInFlight = {};
+var _healNFTResolved = {};
+function healNFT(img, nftId) {
+  if (!img || !nftId) return;
+  // Avoid infinite onError loops if even the placeholder 404s
+  img.onerror = null;
+  img.src = '/staking/icons/skull.png';
+  if (_healNFTResolved[nftId]) { img.src = _healNFTResolved[nftId]; return; }
+  if (_healNFTInFlight[nftId]) { _healNFTInFlight[nftId].push(img); return; }
+  _healNFTInFlight[nftId] = [img];
+  $.ajax({
+    url: '/staking/ajax/cache-nft-image.php',
+    method: 'POST',
+    data: { nft_id: nftId },
+    dataType: 'json',
+    timeout: 20000
+  }).done(function (resp) {
+    if (resp && resp.success && resp.url) {
+      _healNFTResolved[nftId] = resp.url;
+      (_healNFTInFlight[nftId] || []).forEach(function (el) { el.src = resp.url; });
+    }
+  }).always(function () {
+    delete _healNFTInFlight[nftId];
+  });
+}

@@ -1,5 +1,6 @@
 <?php
 include_once 'db.php';
+require_once __DIR__ . '/lib/image-cache-lib.php';
 
 set_time_limit(0);
 ini_set('memory_limit', '512M');
@@ -139,7 +140,16 @@ printSummary($existing, $cached, $skipped, $errors, $total);
 
 function safeCache(array $row, string $base_path, ?string $label, int $wid): string {
     try {
-        return cacheNFTImage($row['ipfs'], $row['collection_id'], $row['project_id'], $base_path, $label, $wid);
+        $result = cacheNFTImage(
+            (string) $row['ipfs'],
+            (int) $row['collection_id'],
+            (int) $row['project_id'],
+            $base_path,
+            true,    // verbose — keep CLI echo output
+            $wid,
+            $label
+        );
+        return $result['status'];
     } catch (Throwable $e) {
         $prefix = $label ? "$label " : '';
         echo "  {$prefix}[ERROR] Caught exception for NFT {$row['id']}: " . $e->getMessage() . "\n";
@@ -166,196 +176,6 @@ function printSummary(int $existing, int $cached, int $skipped, int $errors, int
 }
 
 
-// ─── Core caching function ───────────────────────────────────────────────────
-
-function cacheNFTImage($ipfs, $collection_id, $project_id, $base_path, $label = null, $wid = 0) {
-    $prefix = $label ? "$label " : '';
-
-    $clean_check = str_replace('ipfs/', '', $ipfs);
-    if (empty(trim($clean_check))) {
-        echo "  {$prefix}[SKIP]   Empty IPFS hash for collection $collection_id\n";
-        return 'skipped';
-    }
-    $dir = $base_path . $project_id . '/' . $collection_id . '/';
-    $md5 = md5($ipfs);
-
-    // ── Skip obviously malformed CIDs before any network activity ─────────────
-    // Each failed fetch burns 4 gateways × 2 retries × 30s = 240s. Minter
-    // placeholder strings ("OG30ImageCID") and mangled URIs from non-IPFS
-    // schemes (ar://, https://) will never resolve — don't waste the budget.
-    // Preserves data:image/svg+xml;base64 URIs (always >= 46 chars) and both
-    // CIDv0 (Qm…, exactly 46 chars) and CIDv1 (b…/baf…, 50+ chars).
-    if (!str_contains($ipfs, 'data:image/svg+xml;base64')) {
-        $cid_check = trim($clean_check);
-        if (strlen($cid_check) < 46 || stripos($cid_check, 'ImageCID') !== false) {
-            echo "  {$prefix}[SKIP]   Malformed CID '$cid_check' (collection $collection_id)\n";
-            return 'skipped';
-        }
-    }
-
-    // ── On-chain SVG: save directly from base64 data, no HTTP fetch needed ──
-    if (str_contains($ipfs, 'data:image/svg+xml;base64')) {
-        $filepath = $dir . $md5 . '.svg';
-        if (file_exists($filepath)) return 'exists';
-        if (!is_dir($dir)) mkdir($dir, 0755, true);
-        $comma = strpos($ipfs, ',');
-        if ($comma === false) {
-            echo "  {$prefix}[ERROR] Malformed SVG data URI for md5 $md5\n";
-            return 'error';
-        }
-        $svg = base64_decode(substr($ipfs, $comma + 1));
-        if (file_put_contents($filepath, $svg) !== false) {
-            echo "  {$prefix}[SVG]    $filepath\n";
-            return 'cached';
-        }
-        echo "  {$prefix}[ERROR] Could not write SVG $filepath\n";
-        return 'error';
-    }
-
-    // ── Check if already cached (any extension) ──────────────────────────────
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    $existing = glob($dir . $md5 . '.*');
-    if (!empty($existing)) return 'exists';
-
-    // ── Fetch with gateway fallback and retry ────────────────────────────────
-    $clean_ipfs = str_replace('ipfs/', '', $ipfs);
-
-    // jpg.store CDN is the fastest option and still live until 2026-05-23 —
-    // pin it at position 0 so every worker hits it first, maximizing cached
-    // hits before the shutdown. After May 23, remove it from this list.
-    $primary_gateway = 'https://ipfs5.jpgstoreapis.com/ipfs/';
-
-    // Rotate fallback order by worker ID so each worker hits a different
-    // public gateway second, spreading load and reducing rate-limit hits.
-    $fallback_gateways = [
-        'https://nftstorage.link/ipfs/',      // nft.storage — NFT-focused, fast
-        'https://w3s.link/ipfs/',             // web3.storage
-        'https://gateway.pinata.cloud/ipfs/', // Pinata public
-        'https://4everland.io/ipfs/',         // 4everland
-        'https://ipfs.io/ipfs/',              // Protocol Labs
-        'https://dweb.link/ipfs/',            // Protocol Labs alt host
-    ];
-    $offset            = $wid % count($fallback_gateways);
-    $fallback_gateways = array_merge(
-        array_slice($fallback_gateways, $offset),
-        array_slice($fallback_gateways, 0, $offset)
-    );
-    $gateways = array_merge([$primary_gateway], $fallback_gateways);
-
-    $body         = false;
-    $content_type = '';
-    $http_code    = 0;
-    $tried_url    = '';
-
-    foreach ($gateways as $gateway) {
-        $url = $gateway . $clean_ipfs;
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // fail fast on dead hosts
-            curl_setopt($ch, CURLOPT_TIMEOUT, 45);        // cold DHT fetches need headroom
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                'Accept-Language: en-US,en;q=0.9',
-                'Referer: https://www.jpg.store/',
-            ]);
-            $resp      = curl_exec($ch);
-            $ct        = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-            $code      = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($resp !== false && $code > 0 && $code < 400) {
-                $body         = $resp;
-                $content_type = $ct;
-                $http_code    = $code;
-                $tried_url    = $url;
-                break 2; // success — stop trying gateways
-            }
-
-            // Transient failure — back off before retry or next gateway
-            if ($attempt === 1) usleep(1000000); // 1s between retries
-        }
-    }
-
-    if ($body === false || $http_code === 0) {
-        echo "  {$prefix}[ERROR] All gateways failed for $clean_ipfs\n";
-        return 'error';
-    }
-    if ($http_code >= 400) {
-        echo "  {$prefix}[ERROR] HTTP $http_code fetching $tried_url (mime: $content_type)\n";
-        return 'error';
-    }
-
-    // Strip charset suffix if present (e.g. "image/jpeg; charset=...")
-    $mime = trim(explode(';', $content_type)[0]);
-
-    // ── Skip video and non-image content ─────────────────────────────────────
-    $skip_types = ['video/', 'audio/', 'application/'];
-    foreach ($skip_types as $type) {
-        if (str_starts_with($mime, $type)) {
-            echo "  {$prefix}[SKIP]   $url ($mime)\n";
-            return 'skipped';
-        }
-    }
-
-    // ── Determine file extension ──────────────────────────────────────────────
-    $ext_map = [
-        'image/jpeg'    => 'jpg',
-        'image/png'     => 'png',
-        'image/gif'     => 'gif',
-        'image/svg+xml' => 'svg',
-        'image/webp'    => 'webp',
-    ];
-    $ext = $ext_map[$mime] ?? 'jpg';
-
-    // ── SVG served by JPGStore: save directly, no Imagick needed ─────────────
-    if ($ext === 'svg') {
-        $filepath = $dir . $md5 . '.svg';
-        if (file_put_contents($filepath, $body) !== false) {
-            echo "  {$prefix}[SVG]    $filepath\n";
-            return 'cached';
-        }
-        echo "  {$prefix}[ERROR] Could not write SVG $filepath\n";
-        return 'error';
-    }
-
-    // ── Resize and save with Imagick ──────────────────────────────────────────
-    $filepath = $dir . $md5 . '.' . $ext;
-
-    try {
-        $imagick = new Imagick();
-        $imagick->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024); // 256MB cap
-        $imagick->setResourceLimit(Imagick::RESOURCETYPE_MAP, 256 * 1024 * 1024);
-        $imagick->readImageBlob($body);
-
-        $width = $imagick->getImageWidth();
-
-        if ($width > 1000) {
-            if ($ext === 'gif') {
-                // Resize each frame of animated GIF
-                $imagick = $imagick->coalesceImages();
-                foreach ($imagick as $frame) {
-                    $frame->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
-                }
-                $imagick = $imagick->deconstructImages();
-            } else {
-                $imagick->resizeImage(1000, 0, Imagick::FILTER_LANCZOS, 1);
-            }
-        }
-
-        // writeImages handles both single frames and multi-frame GIFs
-        $imagick->writeImages($filepath, true);
-        $imagick->clear();
-        $imagick->destroy();
-
-        echo "  {$prefix}[CACHED] $filepath\n";
-        return 'cached';
-
-    } catch (Exception $e) {
-        echo "  {$prefix}[ERROR] Imagick failed for $url: " . $e->getMessage() . "\n";
-        return 'error';
-    }
-}
+// cacheNFTImage() lives in lib/image-cache-lib.php — shared between this
+// CLI worker pool and the ajax/cache-nft-image.php self-heal endpoint.
 ?>

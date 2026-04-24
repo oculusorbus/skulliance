@@ -1451,7 +1451,7 @@ function getInventory($conn, $project_id, $quest_id) {
 			}else{
 				?><input style='float:right' type='button' id='button-<?php echo $row["id"]; ?>' class='small-button' value='Select' onclick='processMissionNFT(this.value, <?php echo $row["id"]; ?>, <?php echo $row["rate"]; ?>);'/>&nbsp;<?php
 			}
-			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $project_id), true);
+			echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $project_id), true, $row["id"]);
 			echo substr($row["asset_name"], 0, 12)." (+".$row["rate"]."%)";
 			echo "</li>";
 		}
@@ -2880,7 +2880,7 @@ function getIPFS($ipfs, $collection_id, $project_id = 0){
 }
 
 // Render IPFS
-function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
+function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false, $nft_id=0){
 	$class = "";
 	if($icon){
 		$class = "class='icon' ";
@@ -2888,17 +2888,14 @@ function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false){
 	if(!str_contains($ipfs, "data:image/svg+xml;base64")){
 		$ipfs = str_replace("ipfs/", "", $ipfs);
 	}
-	if($collection_id == 4 || $collection_id == 23){
-		// Resource intensive IPFS code, disabled to save server resources, swapped for fallback skull icon
-		// onError='this.src=\"image.php?ipfs=".$ipfs."\";'
-		return "<span class='nft-image'><img ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
-	}else if($collection_id == 20 || $collection_id == 21 || $collection_id == 30 || $collection_id == 42){
-		return "<span class='nft-image'><img ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
-	}else if($collection_id == 260){
-		return "<span class='nft-image'><img style='min-height:165px' ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
-	}else{
-		return "<span class='nft-image'><img ".$class." loading='lazy' onError='this.src=\"/staking/icons/skull.png\";' src='".$ipfs_format."'/></span>";
-	}
+	// When nft_id is known, swap the direct skull-fallback for a self-heal call
+	// that kicks the cache script, swaps in the newly-cached local image on
+	// success, and falls back to the skull icon if caching fails.
+	$on_error = $nft_id > 0
+		? "healNFT(this, ".intval($nft_id).");"
+		: "this.src=\"/staking/icons/skull.png\";";
+	$style = ($collection_id == 260) ? "style='min-height:165px' " : "";
+	return "<span class='nft-image'><img ".$style.$class." loading='lazy' onError='".$on_error."' src='".$ipfs_format."'/></span>";
 }
 
 // Get NFTs associated with a Diamond Skull
@@ -2916,7 +2913,7 @@ function getDiamondSkullNFTs($conn, $diamond_skull_id, $project_id, $projects, $
 		$nftcounter++;
 	    echo "<div class='diamond'><div class='diamond-data'>";
 		echo "<span class='nft-name'>".substr($row["asset_name"], 0, 19)."</span>";
-		echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $project_id));
+		echo renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $project_id), false, $row["nfts_id"]);
 		echo "<span class='nft-level'><strong>".$row["username"]."</strong></span>";
 		echo "<span class='nft-level'><br><strong>".$row["rate"]." CARBON</strong></span>";
 		if($_SESSION['userData']['user_id'] == $row["user_id"] || $diamond_skull_owner == true){
@@ -3351,7 +3348,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		    	echo "<div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".$row["nfts_name"]."</span>";
-			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]))."</a>";
+			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]), false, $row["nfts_id"])."</a>";
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
