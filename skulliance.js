@@ -1664,97 +1664,21 @@ function skullSubmitBtn(btn) {
   }, 0);
 }
 
-// ── NFT image self-heal ─────────────────────────────────────────────────────
-// Called from <img onError> on NFT images. Drops in the skull placeholder
-// immediately so the user sees something, then asks the server to try caching
-// the image. On success, swaps the placeholder for the newly-cached local URL.
-// On failure the placeholder stays.
-//
-// Dedup + throttle: same nft_id rendered 50× fires one request; a maximum of
-// 2 requests run concurrently so a page with many broken images doesn't
-// saturate the browser's per-host connection pool or the server's PHP-FPM
-// workers — either of which would make navigations queue behind stale cache
-// attempts. Pending requests are aborted on page unload so a refresh or link
-// click is never held up by them.
-var _healNFTInFlight = {};
+// State retained for the manual upload flow below: _healNFTXHRs tracks
+// in-flight uploads so beforeunload can abort them; _healNFTResolved caches
+// the post-upload URL so any later code that consults it sees the new image.
 var _healNFTResolved = {};
-var _healNFTQueue    = [];
-var _healNFTActive   = 0;
 var _healNFTXHRs     = [];
-var _healNFTMaxConcurrent = 2;
 
+// Auto-heal disabled: cascading cache-nft-image.php requests when many
+// images failed at once were saturating PHP-FPM workers and locking the
+// site. onError now only swaps to the skull icon. The manual upload
+// button on the dashboard (user_id=1) still works — it's injected on
+// page load, independent of this path.
 function healNFT(img, nftId) {
-  if (!img || !nftId) return;
-  var failedSrc = img.src;
-  // Avoid infinite onError loops if even the placeholder 404s
+  if (!img) return;
   img.onerror = null;
   img.src = '/staking/icons/skull.png';
-  // Auto-heal is dashboard-only. On every other page, just show the
-  // placeholder — kicking off heal AJAX from raids/leaderboards/profile/etc
-  // can saturate PHP-FPM workers and stall page loads when many broken
-  // images appear at once. Dashboard owners get the heal + manual-upload
-  // affordance because they have direct interest in fixing their own NFTs.
-  if (window.location.pathname.indexOf('dashboard.php') === -1) return;
-  if (_healNFTResolved[nftId]) {
-    console.log('[healNFT] nft ' + nftId + ': using already-resolved url', _healNFTResolved[nftId]);
-    img.src = _healNFTResolved[nftId];
-    return;
-  }
-  if (_healNFTInFlight[nftId]) {
-    console.log('[healNFT] nft ' + nftId + ': attaching to in-flight request');
-    _healNFTInFlight[nftId].push(img);
-    return;
-  }
-  console.log('[healNFT] nft ' + nftId + ': queued (failed src ' + failedSrc + ')');
-  _healNFTInFlight[nftId] = [img];
-  _healNFTQueue.push(nftId);
-  _healNFTDrain();
-}
-
-function _healNFTDrain() {
-  while (_healNFTActive < _healNFTMaxConcurrent && _healNFTQueue.length > 0) {
-    _healNFTSend(_healNFTQueue.shift());
-  }
-}
-
-function _healNFTSend(nftId) {
-  _healNFTActive++;
-  console.log('[healNFT] nft ' + nftId + ': triggering cache');
-  var xhr = $.ajax({
-    url: '/staking/ajax/cache-nft-image.php',
-    method: 'POST',
-    data: { nft_id: nftId },
-    dataType: 'json',
-    // 30s = server's 12s race budget + worst-case queue behind one other
-    // in-flight heal (also 12s) + transit. Under 30s the queueing artifact
-    // can't cause a spurious client timeout.
-    timeout: 30000
-  });
-  _healNFTXHRs.push(xhr);
-  xhr.done(function (resp) {
-    if (resp && resp.success && resp.url) {
-      console.log('%c[healNFT] nft ' + nftId + ': SUCCESS — status=' + resp.status + ' url=' + resp.url,
-                  'color: #00c8a0');
-      _healNFTResolved[nftId] = resp.url;
-      (_healNFTInFlight[nftId] || []).forEach(function (el) { el.src = resp.url; });
-    } else {
-      console.warn('[healNFT] nft ' + nftId + ': server returned failure', resp);
-      // Show a manual upload affordance as last-resort recovery (dashboard only)
-      (_healNFTInFlight[nftId] || []).forEach(function (el) { _offerNFTUpload(el, nftId); });
-    }
-  }).fail(function (xhr, textStatus, errorThrown) {
-    if (textStatus === 'abort') return; // navigating away — not an error
-    console.error('[healNFT] nft ' + nftId + ': AJAX failed — ' +
-                  'HTTP ' + xhr.status + ' (' + textStatus + (errorThrown ? ', ' + errorThrown : '') + ')');
-    if (xhr.responseText) {
-      console.error('[healNFT] nft ' + nftId + ': server response body:', xhr.responseText);
-    }
-    (_healNFTInFlight[nftId] || []).forEach(function (el) { _offerNFTUpload(el, nftId); });
-  }).always(function () {
-    delete _healNFTInFlight[nftId];
-    _healNFTActive--;
-    _healNFTDrain();
-  });
 }
 
 // ── Manual upload fallback (dashboard only) ─────────────────────────────────
@@ -1866,12 +1790,9 @@ $(function () {
   });
 });
 
-// On navigation/refresh, abort any pending cache attempts so the new page
-// request isn't queued behind them in the browser's per-host connection pool.
-// The server's 5-min lock file remains in place so the attempt picks up the
-// next time someone hits that broken image.
+// Abort any in-flight uploads on navigation so a refresh isn't held up by
+// them in the browser's per-host connection pool.
 $(window).on('beforeunload', function() {
-  _healNFTQueue.length = 0;
   _healNFTXHRs.forEach(function (xhr) {
     try { if (xhr && xhr.readyState !== 4) xhr.abort(); } catch(e) {}
   });
