@@ -2871,7 +2871,11 @@ function getIPFS($ipfs, $collection_id, $project_id = 0){
 		$matches = glob(__DIR__ . '/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.*');
 		if(!empty($matches)){
 			$ext = pathinfo($matches[0], PATHINFO_EXTENSION);
-			return '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.' . $ext;
+			// mtime cache-buster so a re-uploaded image (same path, same ext)
+			// doesn't get masked by the browser's prior cached copy.
+			$mtime = @filemtime($matches[0]);
+			$bust = $mtime ? '?v=' . $mtime : '';
+			return '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.' . $ext . $bust;
 		}
 	}
 	// Fall back to JPGStore

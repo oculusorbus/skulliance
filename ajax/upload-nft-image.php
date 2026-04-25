@@ -127,7 +127,11 @@ try {
     $imagick->clear();
     $imagick->destroy();
 
-    $url = '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . $md5 . '.' . $ext;
+    // mtime cache-buster so the in-page <img> swap actually shows the new
+    // file. Without this the URL is identical to any prior upload at the same
+    // path/ext and the browser serves its cached copy.
+    $mtime = @filemtime($filepath) ?: time();
+    $url = '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . $md5 . '.' . $ext . '?v=' . $mtime;
     $conn->close();
     ob_clean();
     echo json_encode(['success' => true, 'url' => $url]);
