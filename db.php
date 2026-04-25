@@ -2895,7 +2895,8 @@ function renderIPFS($ipfs, $collection_id, $ipfs_format, $icon=false, $nft_id=0)
 		? "healNFT(this, ".intval($nft_id).");"
 		: "this.src=\"/staking/icons/skull.png\";";
 	$style = ($collection_id == 260) ? "style='min-height:165px' " : "";
-	return "<span class='nft-image'><img ".$style.$class." loading='lazy' onError='".$on_error."' src='".$ipfs_format."'/></span>";
+	$nft_id_attr = $nft_id > 0 ? "data-nft-id='".intval($nft_id)."' " : "";
+	return "<span class='nft-image'><img ".$style.$class.$nft_id_attr."loading='lazy' onError='".$on_error."' src='".$ipfs_format."'/></span>";
 }
 
 // Get NFTs associated with a Diamond Skull

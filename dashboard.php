@@ -104,6 +104,14 @@ if(getVisibility($conn) == "0"){
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
 }?>
+<?php
+// Dev-only: surface the manual upload affordance on every NFT card by default
+// so personal collection images can be replaced on demand without waiting for
+// a load failure to trigger the auto-heal fallback.
+if(isset($_SESSION['userData']['user_id']) && intval($_SESSION['userData']['user_id']) === 1){
+	echo "<script type='text/javascript'>window.NFT_UPLOAD_DEFAULT = true;</script>";
+}
+?>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php
 // Close DB Connection

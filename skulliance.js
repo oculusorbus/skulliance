@@ -1855,6 +1855,17 @@ function _uploadNFTImage(img, nftId, file, btn) {
   });
 }
 
+// Dev-only: when window.NFT_UPLOAD_DEFAULT is set (dashboard, user_id=1),
+// pre-attach the manual upload button to every NFT card on page load so images
+// can be replaced on demand instead of only after an auto-heal failure.
+$(function () {
+  if (!window.NFT_UPLOAD_DEFAULT) return;
+  document.querySelectorAll('.nft-data img[data-nft-id], .diamond-skull-data img[data-nft-id]').forEach(function (img) {
+    var nftId = img.getAttribute('data-nft-id');
+    if (nftId) _offerNFTUpload(img, nftId);
+  });
+});
+
 // On navigation/refresh, abort any pending cache attempts so the new page
 // request isn't queued behind them in the browser's per-host connection pool.
 // The server's 5-min lock file remains in place so the attempt picks up the
