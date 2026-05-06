@@ -1341,6 +1341,57 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       font-size: 1rem !important;
     }
 
+    /* Theme-group layout: original used the .theme-group itself as a
+       flex-wrap container holding [h3, option, option, ...]. JS now wraps
+       the options in a .theme-group-row sibling so we can layer the row
+       independently of the heading.
+         - Mobile / narrow widths: wrap-and-center grid (matches old behavior)
+         - Desktop (>=1025px)    : horizontal scroll-snap carousel,
+                                    Netflix-style, one row per theme group */
+    .theme-group {
+      display: block !important;
+      margin: 20px 0 !important;
+    }
+    .theme-group-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      padding: 8px 0;
+    }
+    @media (min-width: 1025px) {
+      .theme-group-row {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-padding-left: 8px;
+        padding: 12px 4px 18px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 200, 160, 0.45) transparent;
+        scroll-behavior: smooth;
+      }
+      .theme-group-row::-webkit-scrollbar {
+        height: 8px;
+      }
+      .theme-group-row::-webkit-scrollbar-thumb {
+        background: rgba(0, 200, 160, 0.4);
+        border-radius: 4px;
+      }
+      .theme-group-row::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 200, 160, 0.65);
+      }
+      .theme-group-row::-webkit-scrollbar-track {
+        background: rgba(0, 200, 160, 0.06);
+        border-radius: 4px;
+      }
+      .theme-group-row > .theme-option {
+        flex-shrink: 0;
+        scroll-snap-align: start;
+      }
+    }
+
     /* Game-over container — looser, matches modal aesthetic */
     #game-over-container {
       border-radius: 12px !important;
@@ -2146,6 +2197,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          groupTitle.textContent = group.group;
 	          groupDiv.appendChild(groupTitle);
 
+	          // Wrapper row — wraps as a grid on mobile / narrow viewports,
+	          // becomes a horizontal scroll-snap carousel on desktop (>=1025px)
+	          // via CSS in the platform-skin override block.
+	          const row = document.createElement('div');
+	          row.className = 'theme-group-row';
+
 	          group.items.forEach(theme => {
 	              const option = document.createElement('div');
 	              option.className = 'theme-option';
@@ -2168,9 +2225,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  characterContainer.style.display = 'block';
 	                  game.updateTheme(theme.value);
 	              });
-	              groupDiv.appendChild(option);
+	              row.appendChild(option);
 	          });
 
+	          groupDiv.appendChild(row);
 	          optionsDiv.appendChild(groupDiv);
 	      });
 
