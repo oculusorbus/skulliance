@@ -3739,17 +3739,17 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     position: fixed;
     left: 0; right: 0;
     bottom: 0;
-    height: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    height: calc(env(safe-area-inset-bottom, 0px) + 20px);
     background: #000;
     z-index: 1;
     pointer-events: none;
   }
   #quick-menu {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
     padding-bottom: 5px;
   }
   /* Body padding-bottom matches the strip so content can scroll fully clear */
   body {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
   }
 }
