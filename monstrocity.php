@@ -1203,35 +1203,47 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       letter-spacing: 0.04em;
     }
 
-    /* Selection cards (character / theme / boss options) — restyle hover
-       state with teal accent instead of original blue */
+    /* Selection cards (character / theme / boss options) — base border kept
+       neutral, hover applies a solid teal outline that sits outside the
+       border box (so layout doesn't shift). No background tint on hover —
+       theme/character/boss cards use a background-image set by JS, so a
+       bg-color change is invisible anyway. The outline is the highlight. */
     .character-option,
     .theme-option,
     .boss-option {
-      background-color: rgba(22, 87, 119, 0.55) !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 10px !important;
-      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease !important;
+      transition: outline-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+      outline: 2px solid transparent;
+      outline-offset: 1px;
     }
     .character-option:hover,
     .theme-option:hover,
     .boss-option:hover {
-      background-color: rgba(0, 200, 160, 0.14) !important;
-      border-color: #00c8a0 !important;
+      outline-color: #00c8a0;
+      box-shadow: 0 0 14px rgba(0, 200, 160, 0.35) !important;
       transform: translateY(-2px);
     }
     .boss-option.disabled,
     .boss-option.disabled:hover {
-      background-color: rgba(40, 40, 40, 0.6) !important;
-      border-color: rgba(255, 255, 255, 0.05) !important;
+      outline-color: transparent !important;
+      box-shadow: none !important;
       transform: none !important;
+      opacity: 0.5;
     }
 
-    /* Theme group headings inside theme-select */
+    /* Theme group headings inside theme-select — drop the blue bar bg
+       (was #165777, washed out the teal text). Clean section divider with
+       a teal underline instead. */
     .theme-group h3 {
+      background-color: transparent !important;
       color: #00c8a0 !important;
-      border-bottom: 1px solid rgba(0, 200, 160, 0.18);
-      padding-bottom: 4px;
+      border-top: none !important;
+      border-bottom: 1px solid rgba(0, 200, 160, 0.3) !important;
+      padding: 6px 0 8px !important;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 1rem !important;
     }
 
     /* Game-over container — looser, matches modal aesthetic */
