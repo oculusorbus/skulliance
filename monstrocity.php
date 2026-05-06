@@ -1045,6 +1045,238 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
     }
   </style>
+
+  <!-- ============================================================
+       SKULLIANCE PLATFORM SKIN OVERRIDES
+       Isolated block, appended last so cascade order wins. Does NOT
+       modify the original game CSS above — delete this entire <style>
+       block to revert if anything goes sideways.
+       Targets only chrome (colors, buttons, panel borders, modals).
+       Does NOT touch:
+         - tile colors (gameplay-meaningful: first-attack/last-stand/etc.)
+         - board layout / sizing
+         - animations (.matched, .falling, .winner, .loser, glow-*)
+         - character image dimensions
+         - turn-indicator positioning
+       ============================================================ -->
+  <style>
+    /* Page background — match platform body */
+    body {
+      background-color: #07111d;
+    }
+
+    /* Game container chrome — replace harsh black side borders with subtle
+       teal accent matching the platform's card treatment */
+    .game-container {
+      border-left: 2px solid rgba(0, 200, 160, 0.22) !important;
+      border-right: 2px solid rgba(0, 200, 160, 0.22) !important;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 200, 160, 0.08) !important;
+    }
+
+    /* Card panels — soften black borders to match platform card style.
+       Background colors stay (they're already Skulliance #165777). */
+    .character,
+    .log,
+    .legend {
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    }
+    .character {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(0, 200, 160, 0.06) !important;
+    }
+
+    /* Heading accents */
+    .log h3,
+    .legend h3,
+    .character h2 {
+      color: #00c8a0 !important;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+    .character h2 {
+      text-transform: none;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+
+    /* Generic game button — was off-brand blue (#49BBE3). Skulliance teal. */
+    button {
+      background-color: #00c8a0 !important;
+      color: #0a0a0a !important;
+      border: none !important;
+      border-radius: 8px !important;
+      font-weight: 600 !important;
+      transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+    }
+    button:hover {
+      background-color: #00e6b8 !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 200, 160, 0.35) !important;
+    }
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Primary game-over buttons */
+    #try-again,
+    #leaderboard {
+      background-color: #00c8a0 !important;
+      color: #0a0a0a !important;
+      border: 2px solid #00c8a0 !important;
+      border-radius: 10px !important;
+      font-family: Arial, sans-serif !important;
+    }
+    #try-again:hover,
+    #leaderboard:hover {
+      background-color: #00e6b8 !important;
+      border-color: #00e6b8 !important;
+      box-shadow: 0 6px 20px rgba(0, 200, 160, 0.4) !important;
+    }
+
+    /* Theme + boss-select primary buttons (sit on the start screen) */
+    #theme-select-button,
+    #select-boss-button {
+      background-color: #00c8a0 !important;
+      color: #0a0a0a !important;
+      border: none !important;
+      border-radius: 8px !important;
+    }
+    #theme-select-button:hover,
+    #select-boss-button:hover {
+      background-color: #00e6b8 !important;
+    }
+
+    /* Theme-picker close button — was likely styled red/X. Make it match
+       platform modal close treatment. */
+    #theme-close-button {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: #e8eaed !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 8px !important;
+    }
+    #theme-close-button:hover {
+      background: rgba(255, 70, 70, 0.18) !important;
+      border-color: rgba(255, 70, 70, 0.5) !important;
+      color: #fff !important;
+    }
+
+    /* Progress-resume modal — primary teal, secondary outlined */
+    #progress-resume {
+      background-color: #00c8a0 !important;
+      color: #0a0a0a !important;
+      border: none !important;
+      border-radius: 8px !important;
+    }
+    #progress-resume:hover {
+      background-color: #00e6b8 !important;
+    }
+    #progress-start-fresh {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      color: #e8eaed !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 8px !important;
+    }
+    #progress-start-fresh:hover {
+      background-color: rgba(255, 255, 255, 0.14) !important;
+    }
+
+    /* Modal-style overlays (character-select, theme-select, boss-select,
+       progress-modal). Match platform notify-modal/confirm-modal feel:
+       darker background, teal accent border, more pronounced shadow. */
+    #character-select-container,
+    #theme-select-container,
+    #boss-select-container,
+    .progress-modal-content {
+      background-color: #121212 !important;
+      border: 1px solid rgba(0, 200, 160, 0.35) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
+    }
+
+    /* Modal headings */
+    #character-select-container h2,
+    #theme-select-container h2,
+    #boss-select-container h2 {
+      color: #00c8a0 !important;
+      letter-spacing: 0.04em;
+    }
+
+    /* Selection cards (character / theme / boss options) — restyle hover
+       state with teal accent instead of original blue */
+    .character-option,
+    .theme-option,
+    .boss-option {
+      background-color: rgba(22, 87, 119, 0.55) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 10px !important;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease !important;
+    }
+    .character-option:hover,
+    .theme-option:hover,
+    .boss-option:hover {
+      background-color: rgba(0, 200, 160, 0.14) !important;
+      border-color: #00c8a0 !important;
+      transform: translateY(-2px);
+    }
+    .boss-option.disabled,
+    .boss-option.disabled:hover {
+      background-color: rgba(40, 40, 40, 0.6) !important;
+      border-color: rgba(255, 255, 255, 0.05) !important;
+      transform: none !important;
+    }
+
+    /* Theme group headings inside theme-select */
+    .theme-group h3 {
+      color: #00c8a0 !important;
+      border-bottom: 1px solid rgba(0, 200, 160, 0.18);
+      padding-bottom: 4px;
+    }
+
+    /* Game-over container — looser, matches modal aesthetic */
+    #game-over-container {
+      border-radius: 12px !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7) !important;
+    }
+    #game-over {
+      color: #00c8a0 !important;
+      text-shadow: 0 2px 12px rgba(0, 200, 160, 0.4);
+    }
+
+    /* Health bar — subtle teal glow on the inner fill */
+    .health-bar {
+      background-color: rgba(0, 0, 0, 0.45) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 6px !important;
+      overflow: hidden;
+    }
+    .health {
+      box-shadow: 0 0 8px rgba(0, 200, 160, 0.35);
+    }
+
+    /* Battle log entries — teal markers */
+    #battle-log li {
+      padding-left: 14px;
+      position: relative;
+    }
+    #battle-log li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: #00c8a0;
+      font-weight: 700;
+    }
+
+    /* Theme select dropdown / search if present */
+    #theme-select {
+      background-color: rgba(0, 0, 0, 0.4) !important;
+      color: #e8eaed !important;
+      border: 1px solid rgba(0, 200, 160, 0.25) !important;
+      border-radius: 6px !important;
+    }
+  </style>
+
   <script type="text/javascript">
     // Pass login status to JavaScript
     window.isLoggedIn = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && !empty($_SESSION['userData']['user_id'])); ?>;
