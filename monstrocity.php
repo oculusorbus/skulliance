@@ -2578,7 +2578,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  option.className = `boss-option`;
 	                  option.dataset.bossId = boss.id;
 	                  // Tag with project for the filter dropdown to target.
-	                  option.dataset.project = boss.project_name || 'Unknown';
+	                  // get-bosses.php returns projectName (camelCase).
+	                  option.dataset.project = boss.projectName || 'Unknown';
 
 	                  const isPlayerDead = boss.playerHealth === 0;
 	                  const isBossDead = boss.health <= 0;
@@ -2686,7 +2687,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              // Populate the project filter dropdown with unique project
 	              // names from the loaded bosses, alphabetized.
 	              const projects = Array.from(new Set(
-	                  bosses.map(b => b.project_name || 'Unknown')
+	                  bosses.map(b => b.projectName || 'Unknown')
 	              )).sort((a, b) => a.localeCompare(b));
 	              projects.forEach(p => {
 	                  const opt = document.createElement('option');
