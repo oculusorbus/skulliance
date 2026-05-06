@@ -1509,7 +1509,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         content: '';
         position: absolute;
         top: 0;
-        bottom: 64px; /* don't fade over the scrollbar (64px tall) */
+        bottom: 0; /* cover full wrapper height incl. scrollbar — was
+                      bottom: 64px which left the bottom of theme cards
+                      hanging out past the fade. The scrollbar still grabs
+                      fine in its middle since the gradient is only 60px
+                      wide at each edge. */
         width: 60px;
         pointer-events: none;
         z-index: 2;
