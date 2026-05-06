@@ -1066,23 +1066,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       color: #e8eaed;
     }
     /* Soften every pure-white text in the original game CSS to the
-       platform's off-white #e8eaed. Universal `*` inside .game-container
-       with !important wins over the original `color: white` declarations
-       (specificity 0,0,1,0 + !important beats specificity 0,0,1,1 without). */
-    .game-container,
-    .game-container * {
-      color: #e8eaed !important;
-    }
-    /* Selection containers (modals) sit OUTSIDE .game-container in the DOM,
-       so cover them too. */
-    #character-select-container,
-    #character-select-container *,
-    #theme-select-container,
-    #theme-select-container *,
-    #boss-select-container,
-    #boss-select-container *,
-    .progress-modal,
-    .progress-modal * {
+       platform's off-white #e8eaed. Wrapped in :where() so the whole
+       selector has specificity 0,0,0,0 — any subsequent rule with even
+       1 unit of specificity + !important wins (especially button colors,
+       which were getting dragged to off-white when on a teal bg). */
+    :where(
+      .game-container, .game-container *,
+      #character-select-container, #character-select-container *,
+      #theme-select-container, #theme-select-container *,
+      #boss-select-container, #boss-select-container *,
+      .progress-modal, .progress-modal *
+    ) {
       color: #e8eaed !important;
     }
     /* Accent restorations — higher specificity than the universal so these
@@ -2255,13 +2249,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  const healthPercentage = (boss.health || 0) / (boss.maxHealth || 100) * 100;
 	                  let healthColor;
 	                  if (healthPercentage > 75) {
-	                      healthColor = '#4CAF50';
+	                      healthColor = '#00c8a0'; // Skulliance teal for full health
 	                  } else if (healthPercentage > 50) {
-	                      healthColor = '#FFC105';
+	                      healthColor = '#ffc800'; // Platform yellow
 	                  } else if (healthPercentage > 25) {
-	                      healthColor = '#FFA500';
+	                      healthColor = '#ff9632'; // Platform orange
 	                  } else {
-	                      healthColor = '#F44336';
+	                      healthColor = '#ff5c5c'; // Platform red
 	                  }
 
 	                  option.innerHTML = `
@@ -4740,13 +4734,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
         let color;
         if (percentage > 75) {
-          color = '#4CAF50'; // Green for >75%
+          color = '#00c8a0'; // Skulliance teal for >75% (full health)
         } else if (percentage > 50) {
-          color = '#FFC105'; // Yellow for >50%
+          color = '#ffc800'; // Platform yellow for >50%
         } else if (percentage > 25) {
-          color = '#FFA500'; // Orange for >25%
+          color = '#ff9632'; // Platform orange for >25%
         } else {
-          color = '#F44336'; // Red for ≤25%
+          color = '#ff5c5c'; // Platform red for ≤25%
         }
 
         healthBar.style.backgroundColor = color;
