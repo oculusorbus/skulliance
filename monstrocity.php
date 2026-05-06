@@ -1362,13 +1362,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       gap: 16px;
       padding: 8px 0;
     }
-    /* Theme-select modal padding: top matches boss-select header position.
-       Bottom is moderate on the container (40px) — the bulk of the
-       "clear of OS chrome" buffer is provided by the last theme-group's
-       margin-bottom, so total content height grows but not in a way that
-       can shift the visible area. */
+    /* Theme-select modal padding: top matches boss-select container's
+       padding (20px) so the "Select Theme" h2 sits at the same vertical
+       position as "Select Boss". Bottom is moderate on the container
+       (40px); bulk of the "clear of OS chrome" buffer lives on the last
+       theme-group's margin-bottom. */
     #theme-select-container {
-      padding: 80px 20px 40px !important;
+      padding: 20px 20px 40px !important;
     }
     /* Spacer below the last theme-group inside theme-options so the last
        row's scrollbar sits well clear of OS chrome (taskbar / dock / home
