@@ -1325,8 +1325,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .boss-option {
       min-height: 360px !important;
       box-sizing: border-box !important;
-      display: flex !important;
+      /* inline-flex (not flex) so cards keep flowing horizontally like the
+         original inline-block — flex/block makes them stack vertically. */
+      display: inline-flex !important;
       flex-direction: column !important;
+      vertical-align: top !important;
     }
     .character-option img,
     .character-option video,
