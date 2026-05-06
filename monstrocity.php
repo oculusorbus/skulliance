@@ -1362,7 +1362,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         min-height: 280px !important;
       }
     }
-    /* Boss-select project filter — centered. */
+    /* Boss-select project filter — label stacked above the dropdown,
+       both centered. */
     .boss-filter-row {
       text-align: center;
       margin: 0 0 18px;
@@ -1371,9 +1372,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       width: 100%;
     }
     .boss-filter-label {
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 8px;
+      display: block;
+      margin: 0 0 6px;
       color: rgba(232, 234, 237, 0.7) !important;
       font-size: 0.82rem;
       letter-spacing: 0.04em;
@@ -1381,7 +1381,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
     .boss-project-filter {
       display: inline-block;
-      vertical-align: middle;
       min-width: 180px;
       max-width: 240px;
       padding: 8px 12px !important;
