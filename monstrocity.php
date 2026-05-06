@@ -1065,25 +1065,38 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: #07111d;
     }
 
-    /* Game container chrome — replace harsh black side borders with subtle
-       teal accent matching the platform's card treatment */
+    /* Game container chrome — replace the legacy #002f44 blue with the
+       platform's dark neutral surface, slightly lifted from body to imply
+       elevation. Soft teal side accents and outer shadow match dashboard /
+       missions / realms card treatment. */
     .game-container {
+      background-color: #0d1922 !important;
       border-left: 2px solid rgba(0, 200, 160, 0.22) !important;
       border-right: 2px solid rgba(0, 200, 160, 0.22) !important;
       box-shadow: 0 0 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 200, 160, 0.08) !important;
     }
 
-    /* Card panels — soften black borders to match platform card style.
-       Background colors stay (they're already Skulliance #165777). */
+    /* Inner panels — replace the legacy #165777 blue cards with the dark
+       neutral the live platform uses (#1a1a1a / translucent teal tints).
+       This is the main "blue hued" issue — character/log/legend are the
+       most visible interior surfaces. */
     .character,
     .log,
     .legend {
-      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      background-color: #1a1a1a !important;
+      border: 1px solid rgba(0, 200, 160, 0.12) !important;
       border-radius: 8px !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
     }
     .character {
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(0, 200, 160, 0.06) !important;
+      background-color: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid rgba(0, 200, 160, 0.18) !important;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+    }
+    /* Battle log + legend — slightly darker so they read as info panes */
+    .log,
+    .legend {
+      background-color: rgba(0, 0, 0, 0.35) !important;
     }
 
     /* Heading accents */
@@ -1203,13 +1216,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       letter-spacing: 0.04em;
     }
 
-    /* Selection cards (character / theme / boss options) — solid teal
-       outline at rest (was a barely-visible 8%-white border that read as
-       a faint background edge). Hover brightens the outline and adds a
-       glow ring + slight lift. */
+    /* Selection cards (character / theme / boss options) — solid muted
+       teal outline at rest. Background-color forced transparent so the
+       legacy `background: #165777` from the original CSS doesn't show
+       behind transparent areas of the JS-set bg-image. */
     .character-option,
     .theme-option,
     .boss-option {
+      background-color: transparent !important;
       border: 2px solid #0d6354 !important;
       border-radius: 10px !important;
       transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
@@ -1224,6 +1238,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
     .boss-option.disabled,
     .boss-option.disabled:hover {
+      background-color: transparent !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
       box-shadow: none !important;
       transform: none !important;
       opacity: 0.5;
