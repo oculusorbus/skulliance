@@ -1296,10 +1296,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
     .character-option,
     .boss-option {
-      /* Faint teal at rest so resting + hover are in the same hue family.
-         The previous rgba(255,255,255,0.05) read as a muddy gray-brown over
-         the modal's #121212 backdrop. */
-      background-color: rgba(0, 200, 160, 0.04) !important;
+      /* Solid colors instead of rgba — alpha-based fills compositied
+         differently as the modal backdrop changed (used to be #121212,
+         now #07111d), making the cards nearly invisible. Solid #1a3142
+         matches the gameplay inner-panel tier and reads consistently
+         regardless of what's behind. */
+      background-color: #1a3142 !important;
     }
     .theme-option:hover {
       background-color: transparent !important;
@@ -1309,7 +1311,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
     .character-option:hover,
     .boss-option:hover {
-      background-color: rgba(0, 200, 160, 0.08) !important;
+      /* Solid hover color — clearly brighter than the resting #1a3142
+         so the lift is visible regardless of backdrop. */
+      background-color: #23485c !important;
       border-color: #00c8a0 !important;
       box-shadow: 0 8px 22px rgba(0, 200, 160, 0.35) !important;
       transform: translateY(-2px) scale(1.02);
