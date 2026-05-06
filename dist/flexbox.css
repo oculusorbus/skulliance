@@ -1777,6 +1777,11 @@ section.active {
 		max-height: 100%;
 	    z-index: 1;
 		overflow-y: scroll;
+		/* viewport-fit=cover lets content render under the iPhone notch.
+		   Push opened menu items below the safe area so they're tappable. */
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+		padding-right: env(safe-area-inset-right, 0px);
 	}
 	.navbar .icon {
 		display: none;
@@ -1794,8 +1799,9 @@ section.active {
 	}
 	#burger-menu #burger-icon {
 		position: fixed;
-		top: 0px;
-		right: 0px;
+		/* Below the iPhone notch / status bar — fallback 0 on devices without insets */
+		top: env(safe-area-inset-top, 0px);
+		right: env(safe-area-inset-right, 0px);
 		width: 50px;
 		height: auto;
 		padding-top: 5px;
