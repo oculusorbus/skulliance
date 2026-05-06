@@ -46,19 +46,15 @@ body {
   /*background-image: url("../images/og.jpg");*/
 }
 
-/* Standalone PWA tweaks.
-   - Body: pull content up 10px above the safe-area inset so headers line up
-     with the burger menu's vertical center. max() guards against negative
-     padding on devices where the inset is small or 0.
-   - #quick-menu: 30px buffer above the home indicator. The 10px we tried
-     first cleared the gesture zone but felt cramped; tripling it gives the
-     bottom links real breathing room. */
+/* Standalone PWA top-padding tweak. Pulled 25px above the safe-area inset so
+   page headers sit at the same vertical line as the burger menu icon. max()
+   guards against negative padding on devices with a small inset.
+   The #quick-menu standalone overrides live at the bottom of this file because
+   the original #quick-menu rule (around line 1587) uses the `padding` shorthand
+   and would otherwise win on cascade order regardless of media query. */
 @media (display-mode: standalone) {
   body {
-    padding-top: max(env(safe-area-inset-top, 0px) - 10px, 0px);
-  }
-  #quick-menu {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    padding-top: max(env(safe-area-inset-top, 0px) - 25px, 0px);
   }
 }
 
@@ -3730,3 +3726,29 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .page-btn.disabled { opacity: 0.35; pointer-events: none; }
 .page-ellipsis { color: #7a9eb0; padding: 0 4px; line-height: 34px; }
 .page-info { width: 100%; font-size: 0.78rem; color: #7a9eb0; padding-top: 4px; }
+
+/* Standalone PWA: lift #quick-menu off the iPhone home indicator and put
+   a solid black strip below it for consistent visual placement. Placed at
+   end of file so it wins cascade order over the base #quick-menu rule that
+   uses `padding` shorthand earlier in this file. The black strip is rendered
+   via body::after and pinned to the viewport bottom. */
+@media (display-mode: standalone) {
+  body::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 0;
+    height: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    background: #000;
+    z-index: 1;
+    pointer-events: none;
+  }
+  #quick-menu {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+    padding-bottom: 5px;
+  }
+  /* Body padding-bottom matches the strip so content can scroll fully clear */
+  body {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+  }
+}
