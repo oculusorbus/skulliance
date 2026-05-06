@@ -451,8 +451,7 @@
 
 				<div class="pwa-actions">
 					<button class="pwa-btn pwa-btn-primary" id="pwa-native-install-btn" type="button" style="display:none" data-pwa-action="install">Install</button>
-					<button class="pwa-btn pwa-btn-primary" id="pwa-got-it-btn" type="button" data-pwa-action="later">Got it</button>
-					<button class="pwa-btn pwa-btn-secondary" type="button" data-pwa-action="never">Don't show again</button>
+					<button class="pwa-btn pwa-btn-primary" id="pwa-got-it-btn" type="button" data-pwa-action="later">Got it &mdash; remind me in 7 days</button>
 				</div>
 			</div>
 		</div>
@@ -564,19 +563,19 @@
 				if (action === 'install' && deferredPrompt) {
 					deferredPrompt.prompt();
 					deferredPrompt.userChoice.then(function(choice) {
-						if (choice && choice.outcome === 'accepted') {
-							setDismissed(365 * 10);
-						} else {
-							setDismissed(REMIND_DAYS);
-						}
+						// Either way, dismiss for 7 days. If install succeeded
+						// the appinstalled handler upgrades to a 10-year flag.
+						setDismissed(REMIND_DAYS);
 						deferredPrompt = null;
 						if (overlay) overlay.classList.remove('show');
 					});
 					return;
 				}
 
-				if (action === 'never') setDismissed(365 * 10);
-				else if (action === 'later') setDismissed(REMIND_DAYS);
+				// All other dismissals (X close, Got it) re-nag in 7 days.
+				// Permanent suppression only happens via successful install
+				// (appinstalled event) or detected standalone display mode.
+				if (action === 'later') setDismissed(REMIND_DAYS);
 
 				if (overlay) overlay.classList.remove('show');
 			});
