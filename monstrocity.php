@@ -1352,12 +1352,25 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       display: block !important;
       margin: 20px 0 !important;
     }
+    .theme-group-row-wrapper {
+      position: relative;
+    }
     .theme-group-row {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 16px;
       padding: 8px 0;
+    }
+    /* Bottom padding on the theme-select modal so the last row's scrollbar
+       doesn't sit flush against OS chrome (taskbar / dock / home indicator). */
+    #theme-select-container {
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+    }
+    /* Hide nav arrows on mobile — the wrapping grid below 1025px doesn't
+       need them. */
+    @media (max-width: 1024px) {
+      .theme-row-nav { display: none; }
     }
     @media (min-width: 1025px) {
       .theme-group-row {
@@ -1389,6 +1402,77 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       .theme-group-row > .theme-option {
         flex-shrink: 0;
         scroll-snap-align: start;
+      }
+
+      /* Edge-fade gradients — pseudo-elements over the row, fading from
+         the modal bg (#121212) to transparent. JS toggles .at-start /
+         .at-end on the wrapper so the corresponding edge fades when the
+         row reaches that boundary. */
+      .theme-group-row-wrapper::before,
+      .theme-group-row-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 60px;
+        pointer-events: none;
+        z-index: 2;
+        transition: opacity 0.25s ease;
+      }
+      .theme-group-row-wrapper::before {
+        left: 0;
+        background: linear-gradient(90deg, #121212 20%, transparent);
+      }
+      .theme-group-row-wrapper::after {
+        right: 0;
+        background: linear-gradient(270deg, #121212 20%, transparent);
+      }
+      .theme-group-row-wrapper.at-start::before { opacity: 0; }
+      .theme-group-row-wrapper.at-end::after { opacity: 0; }
+
+      /* Nav arrow buttons — circular pill-shaped scroll triggers on the
+         left/right edges of each row, with backdrop-blur over the gradient
+         so they pop without a heavy fill. */
+      .theme-row-nav {
+        position: absolute;
+        top: calc(50% - 9px); /* offset for the row's bottom padding so it visually centers on cards */
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 200, 160, 0.45) !important;
+        background: rgba(7, 17, 29, 0.85) !important;
+        color: #00c8a0 !important;
+        font-size: 1.8rem !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        z-index: 3;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-width: 44px !important;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+        transition: opacity 0.25s ease, background 0.15s, transform 0.15s, border-color 0.15s !important;
+      }
+      .theme-row-nav:hover {
+        background: rgba(0, 200, 160, 0.2) !important;
+        border-color: #00c8a0 !important;
+        transform: translateY(-50%) scale(1.08) !important;
+      }
+      .theme-row-nav-prev { left: 4px; }
+      .theme-row-nav-next { right: 4px; }
+      .theme-group-row-wrapper.at-start .theme-row-nav-prev,
+      .theme-group-row-wrapper.at-end .theme-row-nav-next {
+        opacity: 0;
+        pointer-events: none;
+      }
+      /* If the entire group fits without scrolling, both edges are at the
+         boundary simultaneously — hide both arrows. */
+      .theme-group-row-wrapper.at-start.at-end .theme-row-nav,
+      .theme-group-row-wrapper.at-start.at-end::before,
+      .theme-group-row-wrapper.at-start.at-end::after {
+        opacity: 0;
       }
     }
 
@@ -2199,7 +2283,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	          // Wrapper row — wraps as a grid on mobile / narrow viewports,
 	          // becomes a horizontal scroll-snap carousel on desktop (>=1025px)
-	          // via CSS in the platform-skin override block.
+	          // via CSS in the platform-skin override block. The outer wrapper
+	          // hosts edge-fade gradients (::before/::after) and the nav arrows.
+	          const wrapper = document.createElement('div');
+	          wrapper.className = 'theme-group-row-wrapper at-start';
+
+	          const prevBtn = document.createElement('button');
+	          prevBtn.type = 'button';
+	          prevBtn.className = 'theme-row-nav theme-row-nav-prev';
+	          prevBtn.setAttribute('aria-label', 'Scroll left');
+	          prevBtn.innerHTML = '‹';
+
+	          const nextBtn = document.createElement('button');
+	          nextBtn.type = 'button';
+	          nextBtn.className = 'theme-row-nav theme-row-nav-next';
+	          nextBtn.setAttribute('aria-label', 'Scroll right');
+	          nextBtn.innerHTML = '›';
+
 	          const row = document.createElement('div');
 	          row.className = 'theme-group-row';
 
@@ -2228,7 +2328,33 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              row.appendChild(option);
 	          });
 
-	          groupDiv.appendChild(row);
+	          // Arrow click handlers — scroll by ~80% of visible width
+	          prevBtn.addEventListener('click', function(e) {
+	              e.stopPropagation();
+	              row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' });
+	          });
+	          nextBtn.addEventListener('click', function(e) {
+	              e.stopPropagation();
+	              row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' });
+	          });
+
+	          // Toggle at-start / at-end classes so CSS can fade the
+	          // appropriate edge gradient and hide the corresponding arrow.
+	          function updateNavState() {
+	              var atStart = row.scrollLeft <= 4;
+	              var atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
+	              wrapper.classList.toggle('at-start', atStart);
+	              wrapper.classList.toggle('at-end', atEnd);
+	          }
+	          row.addEventListener('scroll', updateNavState, { passive: true });
+	          window.addEventListener('resize', updateNavState);
+	          // Run after the row has its real dimensions
+	          setTimeout(updateNavState, 50);
+
+	          wrapper.appendChild(prevBtn);
+	          wrapper.appendChild(row);
+	          wrapper.appendChild(nextBtn);
+	          groupDiv.appendChild(wrapper);
 	          optionsDiv.appendChild(groupDiv);
 	      });
 
