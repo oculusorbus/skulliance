@@ -1390,6 +1390,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       border-radius: 8px !important;
       font-size: 0.9rem !important;
       cursor: pointer;
+      /* Center the selected-option text in the closed state. The dropdown
+         option list (when opened) renders natively per browser and stays
+         left-aligned by default. */
+      text-align: center;
+      text-align-last: center;
+    }
+    /* Restore left-align inside the option list itself */
+    .boss-project-filter option {
+      text-align: left;
     }
     .boss-project-filter:focus {
       outline: none;
@@ -2528,7 +2537,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          <h2>Select Boss</h2>
 	          <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
 	          <div class="boss-filter-row">
-	              <label for="boss-project-filter" class="boss-filter-label">Project:</label>
+	              <label for="boss-project-filter" class="boss-filter-label">Select Project:</label>
 	              <select id="boss-project-filter" class="boss-project-filter">
 	                  <option value="__all__">All projects</option>
 	              </select>
