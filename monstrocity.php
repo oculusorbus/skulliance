@@ -1203,30 +1203,29 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       letter-spacing: 0.04em;
     }
 
-    /* Selection cards (character / theme / boss options) — base border kept
-       neutral, hover applies a solid teal outline that sits outside the
-       border box (so layout doesn't shift). No background tint on hover —
-       theme/character/boss cards use a background-image set by JS, so a
-       bg-color change is invisible anyway. The outline is the highlight. */
+    /* Selection cards (character / theme / boss options) — solid teal ring
+       on hover via box-shadow spread (renders reliably and respects
+       border-radius). The original :hover rules set `background: #2080ad`
+       (shorthand) which painted a blue tint over the cards on hover —
+       background-color: transparent kills that. The bg-image set inline by
+       JS persists because inline-style specificity beats the original's
+       shorthand-derived `background-image: none`. */
     .character-option,
     .theme-option,
     .boss-option {
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 10px !important;
-      transition: outline-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
-      outline: 2px solid transparent;
-      outline-offset: 1px;
+      transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease !important;
     }
     .character-option:hover,
     .theme-option:hover,
     .boss-option:hover {
-      outline-color: #00c8a0;
-      box-shadow: 0 0 14px rgba(0, 200, 160, 0.35) !important;
-      transform: translateY(-2px);
+      background-color: transparent !important;
+      box-shadow: 0 0 0 3px #00c8a0, 0 8px 22px rgba(0, 200, 160, 0.35) !important;
+      transform: translateY(-2px) scale(1.02);
     }
     .boss-option.disabled,
     .boss-option.disabled:hover {
-      outline-color: transparent !important;
       box-shadow: none !important;
       transform: none !important;
       opacity: 0.5;
