@@ -3,7 +3,22 @@
 <head>
   <title>Skulliance</title>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/staking/manifest.webmanifest">
+  <meta name="theme-color" content="#161616">
+  <meta name="application-name" content="Skulliance">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Skulliance">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" sizes="180x180" href="/staking/pwa/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/staking/pwa/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/staking/pwa/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/staking/pwa/icon-192.png">
+  <link rel="shortcut icon" href="/staking/pwa/favicon-32.png">
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
@@ -41,6 +56,14 @@
 	  }
   </script>
   <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
+  <script>
+    // Register service worker — needed for Android PWA install eligibility.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/staking/service-worker.js', { scope: '/staking/' });
+      });
+    }
+  </script>
   <?php if(isset($extra_head)) echo $extra_head; ?>
 </head>
 <body>
@@ -263,3 +286,267 @@
 			<input type="hidden" id="stakeaddress" name="stakeaddress" value="">
 			<input type="submit" value="Submit" style="display:none;">
 		</form>
+
+		<?php if(isset($name)): ?>
+		<!-- PWA Install Prompt (mobile only, dismissable, logged-in only) -->
+		<style>
+		#pwa-install-overlay {
+			position: fixed; inset: 0;
+			background: rgba(0,0,0,0.72);
+			z-index: 99998;
+			display: none;
+			align-items: flex-end;
+			justify-content: center;
+			animation: pwa-fade-in .25s ease;
+		}
+		#pwa-install-overlay.show { display: flex; }
+		@keyframes pwa-fade-in { from { opacity: 0; } to { opacity: 1; } }
+		@keyframes pwa-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+		#pwa-install-panel {
+			width: 100%;
+			max-width: 480px;
+			background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
+			color: #e8eaed;
+			border-top: 2px solid #00c8a0;
+			border-radius: 16px 16px 0 0;
+			padding: 20px 22px 28px;
+			box-shadow: 0 -8px 30px rgba(0,200,160,.15);
+			animation: pwa-slide-up .3s cubic-bezier(.2,.8,.2,1);
+			max-height: 90vh;
+			overflow-y: auto;
+		}
+		#pwa-install-panel .pwa-header {
+			display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+		}
+		#pwa-install-panel .pwa-icon {
+			width: 48px; height: 48px; border-radius: 12px;
+			background: #161616; padding: 4px; flex-shrink: 0;
+		}
+		#pwa-install-panel .pwa-title {
+			font-size: 1.05rem; font-weight: 600; line-height: 1.2;
+		}
+		#pwa-install-panel .pwa-subtitle {
+			font-size: .78rem; color: rgba(255,255,255,.55); margin-top: 2px;
+		}
+		#pwa-install-panel .pwa-close {
+			margin-left: auto;
+			background: transparent; border: 0; color: rgba(255,255,255,.5);
+			font-size: 1.4rem; cursor: pointer; padding: 4px 8px; line-height: 1;
+		}
+		#pwa-install-panel .pwa-close:hover { color: #fff; }
+		#pwa-install-panel .pwa-blurb {
+			font-size: .85rem; color: rgba(255,255,255,.75);
+			margin-bottom: 16px; line-height: 1.45;
+		}
+		#pwa-install-panel ol {
+			margin: 0 0 18px; padding-left: 0; list-style: none;
+			counter-reset: pwa-step;
+		}
+		#pwa-install-panel ol li {
+			counter-increment: pwa-step;
+			position: relative;
+			padding: 10px 0 10px 38px;
+			font-size: .9rem;
+			line-height: 1.4;
+			border-bottom: 1px solid rgba(255,255,255,.05);
+		}
+		#pwa-install-panel ol li:last-child { border-bottom: 0; }
+		#pwa-install-panel ol li::before {
+			content: counter(pwa-step);
+			position: absolute; left: 0; top: 10px;
+			width: 26px; height: 26px;
+			background: #00c8a0; color: #0a0a0a;
+			border-radius: 50%;
+			display: flex; align-items: center; justify-content: center;
+			font-size: .78rem; font-weight: 700;
+		}
+		#pwa-install-panel .pwa-glyph {
+			display: inline-block;
+			vertical-align: middle;
+			margin: 0 4px;
+			padding: 2px 6px;
+			background: rgba(0,200,160,.15);
+			border: 1px solid rgba(0,200,160,.3);
+			border-radius: 5px;
+			font-size: .82rem;
+			color: #00c8a0;
+		}
+		#pwa-install-panel .pwa-actions {
+			display: flex; gap: 10px; flex-wrap: wrap;
+		}
+		#pwa-install-panel .pwa-btn {
+			flex: 1; min-width: 120px;
+			padding: 11px 14px;
+			border-radius: 8px; border: 0;
+			font-size: .88rem; font-weight: 600;
+			cursor: pointer;
+			transition: opacity .15s;
+		}
+		#pwa-install-panel .pwa-btn:hover { opacity: .85; }
+		#pwa-install-panel .pwa-btn-primary {
+			background: #00c8a0; color: #0a0a0a;
+		}
+		#pwa-install-panel .pwa-btn-secondary {
+			background: rgba(255,255,255,.08); color: #e8eaed;
+		}
+		#pwa-install-panel .pwa-btn-ghost {
+			background: transparent; color: rgba(255,255,255,.45);
+			font-size: .78rem;
+			padding: 6px 0;
+			text-align: center;
+			width: 100%;
+			margin-top: 12px;
+		}
+		#pwa-install-panel .pwa-btn-ghost:hover { color: #fff; }
+		@media (min-width: 600px) {
+			#pwa-install-overlay { align-items: center; }
+			#pwa-install-panel { border-radius: 16px; border-top: 0; border: 2px solid #00c8a0; }
+		}
+		</style>
+
+		<div id="pwa-install-overlay" role="dialog" aria-modal="true" aria-labelledby="pwa-install-title">
+			<div id="pwa-install-panel">
+				<div class="pwa-header">
+					<img src="/staking/pwa/icon-192.png" alt="" class="pwa-icon">
+					<div>
+						<div id="pwa-install-title" class="pwa-title">Install Skulliance</div>
+						<div class="pwa-subtitle">Get a fullscreen app on your home screen</div>
+					</div>
+					<button class="pwa-close" type="button" aria-label="Dismiss" data-pwa-action="later">&times;</button>
+				</div>
+				<div class="pwa-blurb">No app store needed &mdash; this site can be installed straight to your home screen for one-tap access, fullscreen view, and faster loads.</div>
+
+				<!-- iOS instructions -->
+				<ol id="pwa-steps-ios" style="display:none">
+					<li>Tap the <span class="pwa-glyph">Share &#x2191;</span> button at the bottom of Safari.</li>
+					<li>Scroll and tap <span class="pwa-glyph">Add to Home Screen</span>.</li>
+					<li>Tap <span class="pwa-glyph">Add</span> in the top right.</li>
+				</ol>
+
+				<!-- Android instructions (fallback when beforeinstallprompt unavailable) -->
+				<ol id="pwa-steps-android" style="display:none">
+					<li>Tap the <span class="pwa-glyph">&#x22EE; menu</span> in your browser's top-right corner.</li>
+					<li>Tap <span class="pwa-glyph">Install app</span> or <span class="pwa-glyph">Add to Home screen</span>.</li>
+					<li>Tap <span class="pwa-glyph">Install</span> to confirm.</li>
+				</ol>
+
+				<!-- Android native install prompt -->
+				<div id="pwa-native-android" style="display:none">
+					<p class="pwa-blurb" style="margin-bottom:14px;">Tap install to add Skulliance to your home screen.</p>
+				</div>
+
+				<div class="pwa-actions">
+					<button class="pwa-btn pwa-btn-primary" id="pwa-native-install-btn" type="button" style="display:none" data-pwa-action="install">Install</button>
+					<button class="pwa-btn pwa-btn-primary" id="pwa-got-it-btn" type="button" data-pwa-action="later">Got it</button>
+					<button class="pwa-btn pwa-btn-secondary" type="button" data-pwa-action="never">Don't show again</button>
+				</div>
+			</div>
+		</div>
+
+		<script>
+		(function(){
+			var STORAGE_KEY = 'pwa-prompt-dismissed-until';
+			var REMIND_DAYS = 7;
+			var SHOW_DELAY_MS = 2500;
+
+			function isStandalone() {
+				return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+					|| window.navigator.standalone === true
+					|| document.referrer.indexOf('android-app://') === 0;
+			}
+
+			function detectPlatform() {
+				var ua = navigator.userAgent || '';
+				if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+				if (/Android/i.test(ua)) return 'android';
+				return null;
+			}
+
+			function isDismissed() {
+				try {
+					var until = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+					return until && Date.now() < until;
+				} catch (e) { return false; }
+			}
+
+			function setDismissed(days) {
+				try {
+					var until = Date.now() + days * 24 * 60 * 60 * 1000;
+					localStorage.setItem(STORAGE_KEY, String(until));
+				} catch (e) {}
+			}
+
+			var deferredPrompt = null;
+			window.addEventListener('beforeinstallprompt', function(e) {
+				e.preventDefault();
+				deferredPrompt = e;
+				var btn = document.getElementById('pwa-native-install-btn');
+				var gotIt = document.getElementById('pwa-got-it-btn');
+				var androidSteps = document.getElementById('pwa-steps-android');
+				var nativeBlurb = document.getElementById('pwa-native-android');
+				if (btn) btn.style.display = '';
+				if (gotIt) gotIt.style.display = 'none';
+				if (androidSteps) androidSteps.style.display = 'none';
+				if (nativeBlurb) nativeBlurb.style.display = '';
+			});
+
+			window.addEventListener('appinstalled', function() {
+				setDismissed(365 * 10);
+				var ov = document.getElementById('pwa-install-overlay');
+				if (ov) ov.classList.remove('show');
+			});
+
+			document.addEventListener('click', function(e) {
+				var btn = e.target.closest('[data-pwa-action]');
+				if (!btn) return;
+				var action = btn.getAttribute('data-pwa-action');
+				var overlay = document.getElementById('pwa-install-overlay');
+
+				if (action === 'install' && deferredPrompt) {
+					deferredPrompt.prompt();
+					deferredPrompt.userChoice.then(function(choice) {
+						if (choice && choice.outcome === 'accepted') {
+							setDismissed(365 * 10);
+						} else {
+							setDismissed(REMIND_DAYS);
+						}
+						deferredPrompt = null;
+						if (overlay) overlay.classList.remove('show');
+					});
+					return;
+				}
+
+				if (action === 'never') setDismissed(365 * 10);
+				else if (action === 'later') setDismissed(REMIND_DAYS);
+
+				if (overlay) overlay.classList.remove('show');
+			});
+
+			function maybeShow() {
+				if (isStandalone() || isDismissed()) return;
+				var platform = detectPlatform();
+				if (!platform) return;
+				var overlay = document.getElementById('pwa-install-overlay');
+				if (!overlay) return;
+				if (platform === 'ios') {
+					document.getElementById('pwa-steps-ios').style.display = '';
+				} else if (platform === 'android') {
+					if (deferredPrompt) {
+						document.getElementById('pwa-native-android').style.display = '';
+						document.getElementById('pwa-native-install-btn').style.display = '';
+						document.getElementById('pwa-got-it-btn').style.display = 'none';
+					} else {
+						document.getElementById('pwa-steps-android').style.display = '';
+					}
+				}
+				setTimeout(function(){ overlay.classList.add('show'); }, SHOW_DELAY_MS);
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', maybeShow);
+			} else {
+				maybeShow();
+			}
+		})();
+		</script>
+		<?php endif; ?>

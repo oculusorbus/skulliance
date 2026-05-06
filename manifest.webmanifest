@@ -1,0 +1,26 @@
+{
+  "name": "Skulliance Staking",
+  "short_name": "Skulliance",
+  "description": "Stake your Skulliance NFTs, earn points, run missions, raid realms.",
+  "start_url": "/staking/dashboard.php",
+  "scope": "/staking/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#161616",
+  "theme_color": "#161616",
+  "categories": ["games", "entertainment", "finance"],
+  "icons": [
+    {
+      "src": "/staking/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/staking/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
