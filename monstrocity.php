@@ -1362,6 +1362,43 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         min-height: 280px !important;
       }
     }
+    /* Boss-select project filter — small inline dropdown above the boss
+       grid so users can narrow down to a specific partner project's bosses
+       without scrolling the full list. */
+    .boss-filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 auto 18px;
+      max-width: 420px;
+    }
+    .boss-filter-label {
+      color: rgba(232, 234, 237, 0.7) !important;
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .boss-project-filter {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px 12px !important;
+      background-color: #1a3142 !important;
+      color: #e8eaed !important;
+      border: 1px solid rgba(0, 200, 160, 0.35) !important;
+      border-radius: 8px !important;
+      font-size: 0.9rem !important;
+      cursor: pointer;
+    }
+    .boss-project-filter:focus {
+      outline: none;
+      border-color: #00c8a0 !important;
+      box-shadow: 0 0 0 3px rgba(0, 200, 160, 0.15) !important;
+    }
+    .boss-option-hidden {
+      display: none !important;
+    }
+
     /* Reserve a fixed 2-line slot for the character/boss name so that
        short names (one line) and long names (wrap to two lines) take the
        same vertical space. Names beyond 2 lines clamp with ellipsis. */
@@ -2489,9 +2526,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      container.innerHTML = `
 	          <h2>Select Boss</h2>
 	          <button id="boss-close-button" class="theme-select-button" style="margin-bottom: 10px;">Back to Themes</button>
+	          <div class="boss-filter-row">
+	              <label for="boss-project-filter" class="boss-filter-label">Project:</label>
+	              <select id="boss-project-filter" class="boss-project-filter">
+	                  <option value="__all__">All projects</option>
+	              </select>
+	          </div>
 	          <div id="boss-options"></div>
 	      `;
 	      const optionsDiv = document.getElementById('boss-options');
+	      const projectFilter = document.getElementById('boss-project-filter');
 
 	      container.style.display = 'block';
 	      themeContainer.style.display = 'none';
@@ -2533,6 +2577,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  const option = document.createElement('div');
 	                  option.className = `boss-option`;
 	                  option.dataset.bossId = boss.id;
+	                  // Tag with project for the filter dropdown to target.
+	                  option.dataset.project = boss.project_name || 'Unknown';
 
 	                  const isPlayerDead = boss.playerHealth === 0;
 	                  const isBossDead = boss.health <= 0;
@@ -2636,6 +2682,30 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	              optionsDiv.appendChild(fragment);
 	              console.log(`showBossSelect: Rendered ${bosses.length} bosses`);
+
+	              // Populate the project filter dropdown with unique project
+	              // names from the loaded bosses, alphabetized.
+	              const projects = Array.from(new Set(
+	                  bosses.map(b => b.project_name || 'Unknown')
+	              )).sort((a, b) => a.localeCompare(b));
+	              projects.forEach(p => {
+	                  const opt = document.createElement('option');
+	                  opt.value = p;
+	                  opt.textContent = p;
+	                  projectFilter.appendChild(opt);
+	              });
+
+	              // Filter logic — toggles a .boss-option-hidden class on cards
+	              // whose project doesn't match the selected filter. CSS hides
+	              // those, so the layout reflows around the visible ones.
+	              projectFilter.addEventListener('change', function() {
+	                  const selected = this.value;
+	                  optionsDiv.querySelectorAll('.boss-option').forEach(el => {
+	                      const matches = selected === '__all__' || el.dataset.project === selected;
+	                      el.classList.toggle('boss-option-hidden', !matches);
+	                  });
+	              });
+
 	              if (lastBossId) {
 	                  requestAnimationFrame(() => {
 	                      const lastBossEl = optionsDiv.querySelector(`[data-boss-id="${lastBossId}"]`);
