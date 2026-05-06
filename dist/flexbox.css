@@ -46,14 +46,19 @@ body {
   /*background-image: url("../images/og.jpg");*/
 }
 
-/* Standalone PWA tweaks. The body already has safe-area-inset-top applied, so
-   we don't need extra top padding — that aligned page headers with the burger
-   menu's location. The quick-menu (#quick-menu, fixed at viewport bottom on
-   missions/realms pages) needs extra bottom space so its links don't sit on
-   top of the iPhone home indicator and accidentally trigger the system gesture. */
+/* Standalone PWA tweaks.
+   - Body: pull content up 10px above the safe-area inset so headers line up
+     with the burger menu's vertical center. max() guards against negative
+     padding on devices where the inset is small or 0.
+   - #quick-menu: 30px buffer above the home indicator. The 10px we tried
+     first cleared the gesture zone but felt cramped; tripling it gives the
+     bottom links real breathing room. */
 @media (display-mode: standalone) {
+  body {
+    padding-top: max(env(safe-area-inset-top, 0px) - 10px, 0px);
+  }
   #quick-menu {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
   }
 }
 
