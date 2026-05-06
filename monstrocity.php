@@ -1362,23 +1362,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         min-height: 280px !important;
       }
     }
-    /* Boss-select project filter — right-aligned to match the platform's
-       convention of placing filters at the top-right of a list view. */
+    /* Boss-select project filter — right-aligned via text-align so it stays
+       within the modal's content box regardless of flex quirks. */
     .boss-filter-row {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
+      text-align: right;
       margin: 0 0 18px;
-      padding: 0 12px;
+      padding-right: 8px;
+      box-sizing: border-box;
+      max-width: 100%;
     }
     .boss-filter-label {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
       color: rgba(232, 234, 237, 0.7) !important;
       font-size: 0.82rem;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
     .boss-project-filter {
+      display: inline-block;
+      vertical-align: middle;
       min-width: 180px;
       max-width: 240px;
       padding: 8px 12px !important;
