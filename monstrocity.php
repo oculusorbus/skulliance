@@ -1210,7 +1210,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .character-option,
     .theme-option,
     .boss-option {
-      border: 2px solid rgba(0, 200, 160, 0.35) !important;
+      border: 2px solid #0d6354 !important;
       border-radius: 10px !important;
       transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
     }
