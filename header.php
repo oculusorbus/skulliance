@@ -423,11 +423,12 @@
 					<li>Tap <span class="pwa-glyph">Add</span> in the top right.</li>
 				</ol>
 
-				<!-- iOS instructions (non-Safari: Chrome / Firefox / Edge / Opera / etc.) -->
+				<!-- iOS instructions (non-Safari: Chrome / Firefox / Edge / Opera / Brave / in-app browsers / etc.) -->
 				<div id="pwa-steps-ios-switch" style="display:none">
 					<div class="pwa-blurb" style="background:rgba(255,170,0,.08); border:1px solid rgba(255,170,0,.25); border-radius:8px; padding:10px 12px; margin-bottom:14px;">
 						<strong style="color:#ffaa00;">Heads up:</strong> Adding to Home Screen on iPhone only works in <strong>Safari</strong> &mdash; not <span id="pwa-ios-browser-name">your current browser</span>. Open this page in Safari first, then come back to install.
 					</div>
+					<button class="pwa-btn pwa-btn-primary" type="button" id="pwa-open-in-safari-btn" style="display:none; width:100%; margin-bottom:14px;">Open in Safari &rarr;</button>
 					<ol>
 						<li>Tap the <span class="pwa-glyph">Share &#x2191;</span> button (or <span class="pwa-glyph">&#x22EF;</span> menu) in this browser.</li>
 						<li>Tap <span class="pwa-glyph">Open in Safari</span>.</li>
@@ -477,8 +478,10 @@
 
 			// Returns Safari label or third-party iOS browser name. iOS PWA install
 			// only works in Safari proper — every third-party iOS browser uses
-			// WebKit but cannot Add to Home Screen.
-			function detectIOSBrowser() {
+			// WebKit but cannot Add to Home Screen. Note: Brave on iOS spoofs
+			// Safari's UA for privacy, so it can only be detected via the async
+			// navigator.brave.isBrave() API — see resolveIOSBrowser.
+			function detectIOSBrowserSync() {
 				var ua = navigator.userAgent || '';
 				if (/CriOS\//.test(ua)) return 'Chrome';
 				if (/FxiOS\//.test(ua)) return 'Firefox';
@@ -486,10 +489,36 @@
 				if (/OPiOS\//.test(ua)) return 'Opera';
 				if (/DuckDuckGo/.test(ua)) return 'DuckDuckGo';
 				if (/GSA\//.test(ua)) return 'Google App';
-				if (/FBAN|FBAV|Instagram|Twitter|Snapchat|Line\//.test(ua)) return 'in-app browser';
+				if (/FBAN|FBAV|Instagram|Twitter|Snapchat|Line\/|musical_ly/.test(ua)) return 'in-app browser';
 				// Genuine Safari has Safari/ token but none of the above
 				if (/Safari\//.test(ua) && /Version\//.test(ua)) return 'Safari';
 				return 'this browser';
+			}
+
+			// Resolves the iOS browser name asynchronously, upgrading a tentative
+			// "Safari" detection to "Brave" when navigator.brave.isBrave() is true.
+			// All other browsers resolve immediately via the sync UA check.
+			function resolveIOSBrowser(callback) {
+				var sync = detectIOSBrowserSync();
+				if (sync === 'Safari' && navigator.brave && typeof navigator.brave.isBrave === 'function') {
+					try {
+						var p = navigator.brave.isBrave();
+						if (p && typeof p.then === 'function') {
+							p.then(function(isBrave) { callback(isBrave ? 'Brave' : 'Safari'); },
+								   function() { callback('Safari'); });
+							return;
+						}
+					} catch (e) {}
+				}
+				callback(sync);
+			}
+
+			// Only in-app browsers reliably honor x-safari-https://. Chrome iOS,
+			// Firefox iOS, Edge iOS, Opera iOS, Brave iOS, DuckDuckGo, etc. all
+			// either intercept the scheme or stay in their own app, so showing a
+			// magic button there would be misleading.
+			function iosBrowserSupportsSafariScheme(name) {
+				return name === 'in-app browser';
 			}
 
 			function isDismissed() {
@@ -559,14 +588,20 @@
 				var overlay = document.getElementById('pwa-install-overlay');
 				if (!overlay) return;
 				if (platform === 'ios') {
-					var iosBrowser = detectIOSBrowser();
-					if (iosBrowser === 'Safari') {
-						document.getElementById('pwa-steps-ios').style.display = '';
-					} else {
-						document.getElementById('pwa-ios-browser-name').textContent = iosBrowser;
-						document.getElementById('pwa-steps-ios-switch').style.display = '';
-						document.getElementById('pwa-install-title').textContent = 'Open in Safari to install';
-					}
+					resolveIOSBrowser(function(iosBrowser) {
+						if (iosBrowser === 'Safari') {
+							document.getElementById('pwa-steps-ios').style.display = '';
+						} else {
+							document.getElementById('pwa-ios-browser-name').textContent = iosBrowser;
+							document.getElementById('pwa-steps-ios-switch').style.display = '';
+							document.getElementById('pwa-install-title').textContent = 'Open in Safari to install';
+							if (iosBrowserSupportsSafariScheme(iosBrowser)) {
+								document.getElementById('pwa-open-in-safari-btn').style.display = '';
+							}
+						}
+						setTimeout(function(){ overlay.classList.add('show'); }, SHOW_DELAY_MS);
+					});
+					return;
 				} else if (platform === 'android') {
 					if (deferredPrompt) {
 						document.getElementById('pwa-native-android').style.display = '';
@@ -604,8 +639,24 @@
 				});
 			}
 
+			function wireOpenInSafari() {
+				var btn = document.getElementById('pwa-open-in-safari-btn');
+				if (!btn) return;
+				btn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					// x-safari-https:// scheme escapes most in-app browser WebViews
+					// (Instagram, Facebook, Twitter, TikTok, Snapchat) and opens
+					// the URL in Safari. Strips the https:// prefix and prepends
+					// x-safari-https://.
+					var url = window.location.href;
+					var safariUrl = url.replace(/^https?:\/\//, 'x-safari-https://');
+					window.location.href = safariUrl;
+				});
+			}
+
 			function init() {
 				wireCopyLink();
+				wireOpenInSafari();
 				maybeShow();
 			}
 
