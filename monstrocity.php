@@ -1367,6 +1367,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         min-height: 280px !important;
       }
     }
+    /* Reserve a fixed 2-line slot for the character/boss name so that
+       short names (one line) and long names (wrap to two lines) take the
+       same vertical space. Names beyond 2 lines clamp with ellipsis. */
+    .character-option > p:first-of-type,
+    .boss-option > p:first-of-type {
+      min-height: 2.8em !important;
+      line-height: 1.3 !important;
+      margin: 8px 0 4px !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden !important;
+      text-overflow: ellipsis;
+    }
 
     .character-option:hover,
     .boss-option:hover {
