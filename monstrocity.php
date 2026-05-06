@@ -1362,16 +1362,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         min-height: 280px !important;
       }
     }
-    /* Boss-select project filter — small inline dropdown above the boss
-       grid so users can narrow down to a specific partner project's bosses
-       without scrolling the full list. */
+    /* Boss-select project filter — right-aligned to match the platform's
+       convention of placing filters at the top-right of a list view. */
     .boss-filter-row {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       gap: 10px;
-      margin: 0 auto 18px;
-      max-width: 420px;
+      margin: 0 0 18px;
+      padding: 0 12px;
     }
     .boss-filter-label {
       color: rgba(232, 234, 237, 0.7) !important;
@@ -1380,8 +1379,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       text-transform: uppercase;
     }
     .boss-project-filter {
-      flex: 1;
       min-width: 180px;
+      max-width: 240px;
       padding: 8px 12px !important;
       background-color: #1a3142 !important;
       color: #e8eaed !important;
