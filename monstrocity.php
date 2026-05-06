@@ -1362,10 +1362,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       gap: 16px;
       padding: 8px 0;
     }
-    /* Bottom padding on the theme-select modal so the last row's scrollbar
-       doesn't sit flush against OS chrome (taskbar / dock / home indicator). */
+    /* Theme-select modal padding: bump top to give the "Select Theme" h2
+       comfortable breathing room (matches the felt spacing of the boss-select
+       header), and add bottom padding so the last row's scrollbar doesn't sit
+       flush against OS chrome (taskbar / dock / home indicator). */
     #theme-select-container {
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+      padding: 60px 20px calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
     }
     /* Hide nav arrows on mobile — the wrapping grid below 1025px doesn't
        need them. */
@@ -1378,11 +1380,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         justify-content: flex-start;
         overflow-x: auto;
         overflow-y: hidden;
-        scroll-snap-type: x mandatory;
+        /* Proximity (not mandatory) — mandatory was aggressively re-snapping
+           when a card's hover-scale slightly shifted its box, causing the
+           row to jump on hover. Proximity only snaps when scroll lands
+           naturally close to a snap point. */
+        scroll-snap-type: x proximity;
         scroll-padding-left: 50px;
         /* Generous horizontal padding so first/last cards have breathing room
-           when they hover-scale (transform: scale(1.02)) and so they don't
-           sit underneath the nav arrow buttons. */
+           when they hover-scale and so they don't sit underneath the nav
+           arrow buttons. */
         padding: 20px 50px 22px;
         scrollbar-color: rgba(0, 200, 160, 0.55) transparent;
         scroll-behavior: smooth;
@@ -1438,7 +1444,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       .theme-group-row-wrapper.can-scroll-left::before { opacity: 1; }
       .theme-group-row-wrapper.can-scroll-right::after { opacity: 1; }
 
-      /* Nav arrow buttons — circular, teal-bordered, backdrop-blur. */
+      /* Nav arrow buttons — circular, teal-bordered, backdrop-blur.
+         Default opacity:0 + pointer-events:none with !important so they
+         stay hidden regardless of any cascade interaction until JS adds
+         the can-scroll-{left|right} class to the wrapper. */
       .theme-row-nav {
         position: absolute;
         top: calc(50% - 9px); /* offset for the row's bottom padding so it visually centers on cards */
@@ -1459,8 +1468,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
-        opacity: 0;
-        pointer-events: none;
+        opacity: 0 !important;
+        pointer-events: none !important;
         transition: opacity 0.25s ease, background 0.15s, transform 0.15s, border-color 0.15s !important;
       }
       .theme-row-nav:hover {
@@ -1472,8 +1481,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       .theme-row-nav-next { right: 6px; }
       .theme-group-row-wrapper.can-scroll-left .theme-row-nav-prev,
       .theme-group-row-wrapper.can-scroll-right .theme-row-nav-next {
-        opacity: 1;
-        pointer-events: auto;
+        opacity: 1 !important;
+        pointer-events: auto !important;
       }
     }
 
@@ -2353,8 +2362,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          }
 	          row.addEventListener('scroll', updateNavState, { passive: true });
 	          window.addEventListener('resize', updateNavState);
-	          // Run after the row has its real dimensions
-	          setTimeout(updateNavState, 50);
+	          // Belt + suspenders: explicitly reset scroll to 0 in case the
+	          // browser tried to restore a position, and run updateNavState
+	          // twice — once after layout, once after images may have
+	          // changed scrollWidth.
+	          setTimeout(function(){ row.scrollLeft = 0; updateNavState(); }, 50);
+	          setTimeout(updateNavState, 300);
 
 	          wrapper.appendChild(prevBtn);
 	          wrapper.appendChild(row);
