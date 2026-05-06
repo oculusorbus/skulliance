@@ -1312,6 +1312,59 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       box-shadow: 0 8px 22px rgba(0, 200, 160, 0.35) !important;
       transform: translateY(-2px) scale(1.02);
     }
+    /* Character-select layout stability:
+       - Card has min-height so it doesn't shrink while images are loading
+         (NFT artwork can take seconds to fetch from IPFS)
+       - Image / video forced to a 1:1 square via aspect-ratio + object-fit:cover
+         so non-square NFT art gets cropped to fit instead of breaking the layout
+       - Placeholder background (dark teal + centered skull icon) shows behind
+         the image element until the actual image renders, with a subtle pulse
+         animation so the user knows something's loading.
+       Boss-option cards use the same pattern for the boss preview image. */
+    .character-option,
+    .boss-option {
+      min-height: 360px !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    .character-option img,
+    .character-option video,
+    .boss-option > div > img,
+    .boss-option img:not([src*="skull"]) {
+      width: 100% !important;
+      aspect-ratio: 1 / 1 !important;
+      height: auto !important;
+      object-fit: cover !important;
+      background-color: #1a3142;
+      background-image: url('/staking/icons/skull.png');
+      background-size: 40%;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 6px;
+      animation: char-img-pulse 2s ease-in-out infinite;
+    }
+    /* Once the image's onload fires, JS adds .loaded — kill the pulse and
+       the placeholder bg so they don't sit behind a fully-rendered image
+       and waste paint cycles. */
+    .character-option img.loaded,
+    .character-option video.loaded,
+    .boss-option img.loaded {
+      animation: none !important;
+      background-image: none !important;
+      background-color: transparent !important;
+    }
+    @keyframes char-img-pulse {
+      0%, 100% { background-color: #1a3142; }
+      50% { background-color: #234253; }
+    }
+    @media (max-width: 1024px) {
+      .character-option,
+      .boss-option {
+        min-height: 280px !important;
+      }
+    }
+
     .character-option:hover,
     .boss-option:hover {
       /* Solid hover color — clearly brighter than the resting #1a3142
@@ -2495,7 +2548,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	                  option.innerHTML = `
 	                      <p><strong>${boss.name}</strong></p>
-	                      <div><img src="${imageSrc}" alt="${boss.name}" onerror="this.src='staking/icons/skull.png'"></div>
+	                      <div><img src="${imageSrc}" alt="${boss.name}" onload="this.classList.add('loaded')" onerror="this.src='staking/icons/skull.png'"></div>
 	                      <div class="health-bar" style="margin-bottom: 10px;">
 	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
 	                      </div>
@@ -3747,7 +3800,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          const option = document.createElement('div');
 	          option.className = 'character-option';
 	          option.innerHTML = character.mediaType === 'video' ?
-	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}" onerror="this.src='${character.fallbackUrl}'"></video>` +
+	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}" onloadeddata="this.classList.add('loaded')" onerror="this.src='${character.fallbackUrl}'"></video>` +
 	              `<p><strong>${character.name}</strong></p>` +
 	              `<p>Type: ${character.type}</p>` +
 	              `<p>Health: ${character.maxHealth}</p>` +
@@ -3756,7 +3809,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              `<p>Tactics: ${character.tactics}</p>` +
 	              `<p>Size: ${character.size}</p>` +
 	              `<p>Power-Up: ${character.powerup}</p>` :
-	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onerror="this.src='${character.fallbackUrl}'">` +
+	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onload="this.classList.add('loaded')" onerror="this.src='${character.fallbackUrl}'">` +
 	              `<p><strong>${character.name}</strong></p>` +
 	              `<p>Type: ${character.type}</p>` +
 	              `<p>Health: ${character.maxHealth}</p>` +
