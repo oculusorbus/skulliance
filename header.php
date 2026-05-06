@@ -7,6 +7,7 @@
 
   <!-- PWA -->
   <link rel="manifest" href="/staking/manifest.webmanifest">
+  <meta name="app-version" content="<?php echo @filemtime(__FILE__) ?: time(); ?>">
   <meta name="theme-color" content="#161616">
   <meta name="application-name" content="Skulliance">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -286,6 +287,214 @@
 			<input type="hidden" id="stakeaddress" name="stakeaddress" value="">
 			<input type="submit" value="Submit" style="display:none;">
 		</form>
+
+		<!-- App-version update banner: appears when /staking/version.php returns a
+		     mtime newer than the one rendered into the page. Auto-reloads on
+		     visibility change after the user has been away. Style is intentionally
+		     compact so it doesn't fight the navbar for attention. -->
+		<style>
+		#app-version-banner {
+			position: fixed;
+			top: env(safe-area-inset-top, 0px);
+			left: 0; right: 0;
+			z-index: 99990;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 10px 14px;
+			background: linear-gradient(90deg, #002f44 0%, #165777 100%);
+			border-bottom: 1px solid rgba(0,200,160,.5);
+			color: #e8eaed;
+			font-size: .85rem;
+			box-shadow: 0 2px 12px rgba(0,0,0,.35);
+			transform: translateY(-110%);
+			transition: transform .35s cubic-bezier(.2,.8,.2,1);
+		}
+		#app-version-banner.show { transform: translateY(0); }
+		#app-version-banner .avb-msg { flex: 1; line-height: 1.3; }
+		#app-version-banner .avb-refresh {
+			background: #00c8a0; color: #0a0a0a;
+			border: 0; border-radius: 6px;
+			padding: 7px 12px;
+			font-weight: 600; font-size: .82rem;
+			cursor: pointer;
+		}
+		#app-version-banner .avb-dismiss {
+			background: transparent; border: 0; color: rgba(255,255,255,.6);
+			font-size: 1.2rem; line-height: 1; cursor: pointer; padding: 4px 6px;
+		}
+		#app-version-banner .avb-dismiss:hover { color: #fff; }
+
+		/* Pull-to-refresh indicator — only visible inside an installed PWA where
+		   the browser's native pull-to-refresh is gone. Sits below the safe area
+		   so it doesn't collide with the OS status bar. */
+		#ptr-indicator {
+			position: fixed;
+			top: env(safe-area-inset-top, 0px);
+			left: 0; right: 0;
+			height: 3px;
+			z-index: 99989;
+			pointer-events: none;
+			background: rgba(0,200,160,.12);
+			opacity: 0;
+			transition: opacity .15s;
+		}
+		#ptr-indicator .ptr-bar {
+			height: 100%;
+			width: 0%;
+			background: #00c8a0;
+			box-shadow: 0 0 8px rgba(0,200,160,.55);
+			transition: width .08s linear;
+		}
+		#ptr-indicator.armed .ptr-bar { background: #00ffc8; }
+		#ptr-indicator.refreshing {
+			opacity: 1;
+		}
+		#ptr-indicator.refreshing .ptr-bar {
+			animation: ptr-loading 1.4s linear infinite;
+			width: 40%;
+		}
+		@keyframes ptr-loading {
+			0%   { transform: translateX(-100%); width: 30%; }
+			50%  { width: 60%; }
+			100% { transform: translateX(250%); width: 30%; }
+		}
+		</style>
+
+		<div id="app-version-banner" role="status" aria-live="polite" style="display:none;">
+			<span class="avb-msg">A new version of Skulliance is available.</span>
+			<button type="button" class="avb-refresh">Refresh</button>
+			<button type="button" class="avb-dismiss" aria-label="Dismiss">&times;</button>
+		</div>
+
+		<div id="ptr-indicator"><div class="ptr-bar"></div></div>
+
+		<script>
+		(function(){
+			// === App version auto-refresh ===
+			var meta = document.querySelector('meta[name="app-version"]');
+			if (meta) {
+				var currentVersion = (meta.getAttribute('content') || '').trim();
+				var POLL_MS = 5 * 60 * 1000; // 5 minutes
+				var FIRST_CHECK_MS = 30 * 1000; // first check 30s after load
+				var mismatchKnown = false;
+				var banner = document.getElementById('app-version-banner');
+
+				function showBanner() {
+					if (!banner) return;
+					banner.style.display = 'flex';
+					// Force a reflow so the transform transition kicks in
+					void banner.offsetHeight;
+					banner.classList.add('show');
+				}
+				function hideBanner() {
+					if (!banner) return;
+					banner.classList.remove('show');
+				}
+				if (banner) {
+					banner.querySelector('.avb-refresh').addEventListener('click', function(){
+						window.location.reload();
+					});
+					banner.querySelector('.avb-dismiss').addEventListener('click', hideBanner);
+				}
+
+				function checkVersion() {
+					try {
+						fetch('/staking/version.php?_=' + Date.now(), { cache: 'no-store' })
+							.then(function(r){ return r.ok ? r.text() : null; })
+							.then(function(v){
+								if (!v) return;
+								v = v.trim();
+								if (!v || v === currentVersion) return;
+								if (mismatchKnown) return;
+								mismatchKnown = true;
+								if (document.visibilityState === 'visible') {
+									showBanner();
+								}
+							})
+							.catch(function(){});
+					} catch (e) {}
+				}
+
+				document.addEventListener('visibilitychange', function() {
+					if (document.visibilityState !== 'visible') return;
+					if (mismatchKnown) {
+						// User came back to a page with stale code — silent reload
+						window.location.reload();
+					} else {
+						// Opportunistic re-check on focus
+						checkVersion();
+					}
+				});
+
+				setTimeout(checkVersion, FIRST_CHECK_MS);
+				setInterval(checkVersion, POLL_MS);
+			}
+
+			// === Pull-to-refresh (PWA standalone only) ===
+			// Native pull-to-refresh is disabled when the page is launched as
+			// an installed PWA, so we add our own. In a regular browser tab the
+			// native gesture still works, so we don't intercept there.
+			var inStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+				|| window.navigator.standalone === true;
+			if (!inStandalone) return;
+
+			var ptr = document.getElementById('ptr-indicator');
+			if (!ptr) return;
+			var ptrBar = ptr.querySelector('.ptr-bar');
+
+			var THRESHOLD = 80;
+			var MAX_PULL = 160;
+			var startY = 0, currentY = 0, pulling = false, refreshing = false;
+
+			function onTouchStart(e) {
+				if (refreshing) return;
+				if (window.scrollY > 0) return;
+				if (e.touches.length !== 1) return;
+				startY = e.touches[0].clientY;
+				currentY = startY;
+				pulling = true;
+			}
+			function onTouchMove(e) {
+				if (!pulling || refreshing) return;
+				currentY = e.touches[0].clientY;
+				var delta = currentY - startY;
+				if (delta <= 0) {
+					ptr.style.opacity = 0;
+					ptr.classList.remove('armed');
+					ptrBar.style.width = '0%';
+					return;
+				}
+				// Damping past threshold so the user gets resistance feedback
+				var pull = Math.min(delta, MAX_PULL);
+				var pct = Math.min(pull / THRESHOLD, 1);
+				ptr.style.opacity = String(0.4 + pct * 0.6);
+				ptrBar.style.width = (pct * 100) + '%';
+				if (pull >= THRESHOLD) ptr.classList.add('armed');
+				else ptr.classList.remove('armed');
+			}
+			function onTouchEnd() {
+				if (!pulling || refreshing) { pulling = false; return; }
+				var delta = currentY - startY;
+				pulling = false;
+				if (delta >= THRESHOLD) {
+					refreshing = true;
+					ptr.classList.remove('armed');
+					ptr.classList.add('refreshing');
+					// Brief visual feedback before navigation tears down the page
+					setTimeout(function(){ window.location.reload(); }, 250);
+				} else {
+					ptr.style.opacity = 0;
+					ptrBar.style.width = '0%';
+				}
+			}
+
+			document.addEventListener('touchstart', onTouchStart, { passive: true });
+			document.addEventListener('touchmove', onTouchMove, { passive: true });
+			document.addEventListener('touchend', onTouchEnd, { passive: true });
+			document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+		})();
+		</script>
 
 		<?php if(isset($name)): ?>
 		<!-- PWA Install Prompt (mobile only, dismissable, logged-in only) -->

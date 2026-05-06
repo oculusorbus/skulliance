@@ -29,6 +29,14 @@ body {
   margin: 0;
   background-color: #07111d;
   height:100%;
+  /* viewport-fit=cover lets content render under iPhone notch / home indicator.
+     env(safe-area-inset-*) is 0 on devices without insets, so this is a no-op
+     elsewhere. box-sizing: border-box (set on * globally) keeps height: 100%
+     working with the new padding. */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   /*background-image: url("../images/dropshipbackground.jpg");  The image used */
   background-position: top; /* Center the image */
   background-repeat: no-repeat; /* Do not repeat the image */
@@ -36,6 +44,14 @@ body {
   background-attachment: fixed;
   background-blend-mode: multiply;
   /*background-image: url("../images/og.jpg");*/
+}
+
+/* Extra breathing room when running as an installed PWA — there's no browser
+   chrome to provide visual separation between the OS status bar and content. */
+@media (display-mode: standalone) {
+  body {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  }
 }
 
 form {
