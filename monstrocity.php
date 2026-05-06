@@ -1217,21 +1217,33 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
 
     /* Selection cards (character / theme / boss options) — solid muted
-       teal outline at rest. Background-color forced transparent so the
-       legacy `background: #165777` from the original CSS doesn't show
-       behind transparent areas of the JS-set bg-image. */
+       teal outline at rest. Theme cards get a JS-set inline background-image
+       (line 2073), so their card bg is forced transparent. Character/boss
+       cards have no bg-image — JS just inserts a video/image child — so
+       they need a subtle neutral fill to read as cards on the dark modal. */
     .character-option,
     .theme-option,
     .boss-option {
-      background-color: transparent !important;
       border: 2px solid #0d6354 !important;
       border-radius: 10px !important;
       transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
     }
-    .character-option:hover,
-    .theme-option:hover,
-    .boss-option:hover {
+    .theme-option {
       background-color: transparent !important;
+    }
+    .character-option,
+    .boss-option {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+    .theme-option:hover {
+      background-color: transparent !important;
+      border-color: #00c8a0 !important;
+      box-shadow: 0 8px 22px rgba(0, 200, 160, 0.35) !important;
+      transform: translateY(-2px) scale(1.02);
+    }
+    .character-option:hover,
+    .boss-option:hover {
+      background-color: rgba(0, 200, 160, 0.08) !important;
       border-color: #00c8a0 !important;
       box-shadow: 0 8px 22px rgba(0, 200, 160, 0.35) !important;
       transform: translateY(-2px) scale(1.02);
