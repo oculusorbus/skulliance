@@ -1362,12 +1362,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       gap: 16px;
       padding: 8px 0;
     }
-    /* Theme-select modal padding: bump top to give the "Select Theme" h2
-       comfortable breathing room (matches the felt spacing of the boss-select
-       header), and add bottom padding so the last row's scrollbar doesn't sit
+    /* Theme-select modal padding: bump top to match the felt spacing of
+       the boss-select header (60px wasn't quite enough, 80px nails it),
+       and add bottom padding so the last row's scrollbar doesn't sit
        flush against OS chrome (taskbar / dock / home indicator). */
     #theme-select-container {
-      padding: 60px 20px calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+      padding: 80px 20px calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
     }
     /* Hide nav arrows on mobile — the wrapping grid below 1025px doesn't
        need them. */
@@ -1393,24 +1393,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         scrollbar-color: rgba(0, 200, 160, 0.55) transparent;
         scroll-behavior: smooth;
       }
-      /* Twice-as-thick scrollbar (was 8px) for easy mouse / trackpad grab. */
+      /* Chunky scrollbar (32px channel) for easy mouse / trackpad grab.
+         Thumb has a 4px transparent border with background-clip padding-box,
+         so it visually reads as ~24px thick inside the channel. */
       .theme-group-row::-webkit-scrollbar {
-        height: 16px;
+        height: 32px;
       }
       .theme-group-row::-webkit-scrollbar-thumb {
-        background: rgba(0, 200, 160, 0.45);
-        border-radius: 8px;
-        border: 3px solid transparent;
+        background: rgba(0, 200, 160, 0.5);
+        border-radius: 16px;
+        border: 4px solid transparent;
         background-clip: padding-box;
       }
       .theme-group-row::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 200, 160, 0.75);
+        background: rgba(0, 200, 160, 0.8);
         background-clip: padding-box;
-        border: 3px solid transparent;
+        border: 4px solid transparent;
       }
       .theme-group-row::-webkit-scrollbar-track {
         background: rgba(0, 200, 160, 0.08);
-        border-radius: 8px;
+        border-radius: 16px;
       }
       .theme-group-row > .theme-option {
         flex-shrink: 0;
@@ -1426,7 +1428,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         content: '';
         position: absolute;
         top: 0;
-        bottom: 16px; /* don't fade over the scrollbar */
+        bottom: 32px; /* don't fade over the scrollbar (now 32px tall) */
         width: 60px;
         pointer-events: none;
         z-index: 2;
@@ -2353,9 +2355,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          // Toggle can-scroll-left / can-scroll-right classes so CSS can
 	          // reveal the appropriate edge gradient + arrow. Arrows + gradients
 	          // start hidden and ONLY appear when there's actually content to
-	          // scroll to in that direction.
+	          // scroll to in that direction. Threshold is 50px so the arrow
+	          // doesn't reappear when scroll-snap settles to a slightly-positive
+	          // scrollLeft after the user releases the scrollbar near the
+	          // start (sub-50px positions still count as "at start").
 	          function updateNavState() {
-	              var canLeft = row.scrollLeft > 4;
+	              var canLeft = row.scrollLeft > 50;
 	              var canRight = row.scrollLeft + row.clientWidth < row.scrollWidth - 4;
 	              wrapper.classList.toggle('can-scroll-left', canLeft);
 	              wrapper.classList.toggle('can-scroll-right', canRight);
@@ -2364,10 +2369,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          window.addEventListener('resize', updateNavState);
 	          // Belt + suspenders: explicitly reset scroll to 0 in case the
 	          // browser tried to restore a position, and run updateNavState
-	          // twice — once after layout, once after images may have
-	          // changed scrollWidth.
+	          // multiple times to catch late layout shifts (image loads,
+	          // font swaps, scroll-snap settling).
 	          setTimeout(function(){ row.scrollLeft = 0; updateNavState(); }, 50);
 	          setTimeout(updateNavState, 300);
+	          setTimeout(updateNavState, 800);
 
 	          wrapper.appendChild(prevBtn);
 	          wrapper.appendChild(row);
