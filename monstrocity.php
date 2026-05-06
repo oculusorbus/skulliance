@@ -5491,17 +5491,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     const gameOver = document.getElementById("game-over");
 	
 	const assetCache = {};
-	async function getAssets(selectedTheme) {
-	    if (assetCache[selectedTheme]) {
-	        console.log('getAssets: Cache hit for ' + selectedTheme);
-	        return assetCache[selectedTheme];
+	// Module-level cache for the Monstrocity Koios fetch result. Backed by
+	// sessionStorage so it survives page reloads within the same tab session.
+	// NFT ownership is stable within a session — users who mint mid-session
+	// can refresh the tab to bust the cache.
+	let cachedMonstrocityAssets = null;
+	const MONSTROCITY_CACHE_KEY = 'monstrocityAssets_v1';
+	async function getMonstrocityAssetsCached() {
+	    if (cachedMonstrocityAssets !== null) {
+	        console.log('getAssets: Monstrocity in-memory cache hit');
+	        return cachedMonstrocityAssets;
 	    }
-
-	    console.time('getAssets_' + selectedTheme);
-	    let monstrocityAssets = [];
 	    try {
-	        console.log('getAssets: Fetching Monstrocity assets');
-	        const monstrocityResponse = await Promise.race([
+	        const stored = sessionStorage.getItem(MONSTROCITY_CACHE_KEY);
+	        if (stored) {
+	            const parsed = JSON.parse(stored);
+	            if (Array.isArray(parsed) && parsed.length > 0) {
+	                console.log('getAssets: Monstrocity sessionStorage cache hit');
+	                cachedMonstrocityAssets = parsed;
+	                return parsed;
+	            }
+	        }
+	    } catch (e) {}
+	    try {
+	        console.log('getAssets: Fetching Monstrocity assets from Koios');
+	        const response = await Promise.race([
 	            fetch('ajax/get-monstrocity-assets.php', {
 	                method: 'POST',
 	                headers: { 'Content-Type': 'application/json' },
@@ -5509,17 +5523,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	            }),
 	            new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), 5000))
 	        ]);
-
-	        if (!monstrocityResponse.ok) {
-	            throw new Error('Monstrocity HTTP error! Status: ' + monstrocityResponse.status);
+	        if (!response.ok) {
+	            throw new Error('Monstrocity HTTP error! Status: ' + response.status);
 	        }
-
-	        monstrocityAssets = await monstrocityResponse.json();
-	        if (!Array.isArray(monstrocityAssets)) {
-	            monstrocityAssets = [monstrocityAssets];
-	        }
-
-	        monstrocityAssets = monstrocityAssets.map((asset, index) => ({
+	        let assets = await response.json();
+	        if (!Array.isArray(assets)) assets = [assets];
+	        assets = assets.map((asset, index) => ({
 	            ...asset,
 	            theme: 'monstrocity',
 	            name: asset.name || ('Monstrocity_Unknown_' + index),
@@ -5530,13 +5539,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	            type: asset.type || 'Base',
 	            powerup: asset.powerup || 'Regenerate'
 	        }));
+	        // Only cache successful fetches — never persist the fallback dummies.
+	        cachedMonstrocityAssets = assets;
+	        try { sessionStorage.setItem(MONSTROCITY_CACHE_KEY, JSON.stringify(assets)); } catch (e) {}
+	        return assets;
 	    } catch (error) {
 	        console.error('getAssets: Monstrocity fetch error:', error);
-	        monstrocityAssets = [
+	        return [
 	            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
 	            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
 	        ];
 	    }
+	}
+	async function getAssets(selectedTheme) {
+	    if (assetCache[selectedTheme]) {
+	        console.log('getAssets: Cache hit for ' + selectedTheme);
+	        return assetCache[selectedTheme];
+	    }
+
+	    console.time('getAssets_' + selectedTheme);
+	    let monstrocityAssets = await getMonstrocityAssetsCached();
 
 	    if (selectedTheme === 'monstrocity') {
 	        assetCache[selectedTheme] = monstrocityAssets;
