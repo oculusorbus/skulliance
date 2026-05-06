@@ -3729,27 +3729,28 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .page-info { width: 100%; font-size: 0.78rem; color: #7a9eb0; padding-top: 4px; }
 
 /* Standalone PWA: lift #quick-menu off the iPhone home indicator and put
-   a solid black strip below it for consistent visual placement. Placed at
-   end of file so it wins cascade order over the base #quick-menu rule that
-   uses `padding` shorthand earlier in this file. The black strip is rendered
-   via body::after and pinned to the viewport bottom. */
+   a solid strip below it (matched to the page background, #07111d) for
+   consistent visual placement. Placed at end of file so it wins cascade
+   order over the base #quick-menu rule that uses `padding` shorthand
+   earlier in this file. The strip is rendered via body::after and pinned
+   to the viewport bottom. */
 @media (display-mode: standalone) {
   body::after {
     content: '';
     position: fixed;
     left: 0; right: 0;
     bottom: 0;
-    height: calc(env(safe-area-inset-bottom, 0px) + 20px);
-    background: #000;
+    height: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    background: #07111d;
     z-index: 1;
     pointer-events: none;
   }
   #quick-menu {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
     padding-bottom: 5px;
   }
   /* Body padding-bottom matches the strip so content can scroll fully clear */
   body {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
   }
 }
