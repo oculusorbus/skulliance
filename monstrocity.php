@@ -1362,12 +1362,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       gap: 16px;
       padding: 8px 0;
     }
-    /* Theme-select modal padding: 80px top to match boss-select header
-       position; generous bottom (160px + safe-area-inset) so the last
-       row's chunky scrollbar plus its own row padding sit well clear of
-       OS chrome (taskbar / dock / home indicator). */
+    /* Theme-select modal padding: top matches boss-select header position.
+       Bottom is moderate on the container (40px) — the bulk of the
+       "clear of OS chrome" buffer is provided by the last theme-group's
+       margin-bottom, so total content height grows but not in a way that
+       can shift the visible area. */
     #theme-select-container {
-      padding: 80px 20px calc(env(safe-area-inset-bottom, 0px) + 160px) !important;
+      padding: 80px 20px 40px !important;
+    }
+    /* Spacer below the last theme-group inside theme-options so the last
+       row's scrollbar sits well clear of OS chrome (taskbar / dock / home
+       indicator). Doing it here instead of as container padding-bottom
+       keeps the modal's content height predictable. */
+    #theme-options > .theme-group:last-child {
+      margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
     }
     /* Hide nav arrows on mobile — the wrapping grid below 1025px doesn't
        need them. */
@@ -2283,6 +2291,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	      container.style.display = 'block';
 	      characterContainer.style.display = 'none';
+	      // Always start at the top — defensive against any state where
+	      // a previous interaction left the modal scrolled, which would
+	      // otherwise hide the "Select Theme" header above the viewport.
+	      container.scrollTop = 0;
 
 	      game.toggleGameButtons(false);
 
