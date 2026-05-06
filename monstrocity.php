@@ -1210,7 +1210,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .character-option,
     .theme-option,
     .boss-option {
-      border: 2px solid #00c8a0 !important;
+      border: 2px solid rgba(0, 200, 160, 0.35) !important;
       border-radius: 10px !important;
       transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
     }
@@ -1218,6 +1218,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .theme-option:hover,
     .boss-option:hover {
       background-color: transparent !important;
+      border-color: #00c8a0 !important;
       box-shadow: 0 0 0 3px #00c8a0, 0 8px 22px rgba(0, 200, 160, 0.35) !important;
       transform: translateY(-2px) scale(1.02);
     }
