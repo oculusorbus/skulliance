@@ -1060,9 +1060,73 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
          - turn-indicator positioning
        ============================================================ -->
   <style>
-    /* Page background — match platform body */
+    /* Page background and text — match platform body */
     body {
       background-color: #07111d;
+      color: #e8eaed;
+    }
+    /* Soften every pure-white text in the original game CSS to the
+       platform's off-white #e8eaed. Universal `*` inside .game-container
+       with !important wins over the original `color: white` declarations
+       (specificity 0,0,1,0 + !important beats specificity 0,0,1,1 without). */
+    .game-container,
+    .game-container * {
+      color: #e8eaed !important;
+    }
+    /* Selection containers (modals) sit OUTSIDE .game-container in the DOM,
+       so cover them too. */
+    #character-select-container,
+    #character-select-container *,
+    #theme-select-container,
+    #theme-select-container *,
+    #boss-select-container,
+    #boss-select-container *,
+    .progress-modal,
+    .progress-modal * {
+      color: #e8eaed !important;
+    }
+    /* Accent restorations — higher specificity than the universal so these
+       still win the cascade. */
+    .log h3, .legend h3, .character h2,
+    #character-select-container h2,
+    #theme-select-container h2,
+    #boss-select-container h2,
+    .theme-group h3,
+    #game-over,
+    #monstrocity-exit .mx-arrow {
+      color: #00c8a0 !important;
+    }
+    /* Secondary metadata text (card paragraphs, attribute labels) softened
+       further for hierarchy — matches platform muted-text convention. */
+    .character .attribute-label,
+    .character-option p,
+    .character-option p strong,
+    .boss-option p,
+    .boss-option p strong,
+    .theme-option p {
+      color: rgba(232, 234, 237, 0.78) !important;
+    }
+    /* Battle log — muted body, teal marker */
+    #battle-log li {
+      color: rgba(232, 234, 237, 0.85) !important;
+    }
+    #battle-log li::before {
+      color: #00c8a0 !important;
+    }
+    /* Buttons — dark text on teal bg */
+    button,
+    #try-again,
+    #leaderboard,
+    #theme-select-button,
+    #select-boss-button,
+    #progress-resume {
+      color: #0a0a0a !important;
+    }
+    /* Secondary buttons — off-white on neutral */
+    #progress-start-fresh,
+    #theme-close-button,
+    #monstrocity-exit {
+      color: #e8eaed !important;
     }
 
     /* Game container chrome — replace the legacy #002f44 blue with the
