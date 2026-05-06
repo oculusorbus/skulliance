@@ -3699,8 +3699,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          } else {
 	              orientation = policyMetadata.orientation;
 	          }
-	          imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
-	          fallbackUrl = defaultIpfsPrefix + config.ipfs; // Set fallback URL
+	          // Prefer locally-cached image (served from /staking/images/nfts/...)
+	          // when get-nft-assets.php has detected one. Falls back to the IPFS
+	          // gateway when the local cache hasn't picked the asset up yet.
+	          // Critical pre-2026-05-23 jpgstoreapis shutdown.
+	          if (config.localUrl) {
+	              imageUrl = config.localUrl;
+	              fallbackUrl = policyMetadata.ipfsPrefix + config.ipfs;
+	          } else {
+	              imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
+	              fallbackUrl = defaultIpfsPrefix + config.ipfs; // Set fallback URL
+	          }
 	          // Determine mediaType from IPFS URL extension if present
 	          const urlExtension = imageUrl.split('.').pop().toLowerCase();
 	          if (videoExtensions.includes(urlExtension)) {

@@ -66,9 +66,12 @@ if (isset($_SESSION['userData']['user_id'])) {
 
         $final_array = [];
         $policy_placeholders = implode(',', array_fill(0, count($policy_ids), '?'));
-        $sql = "SELECT collections.policy, nfts.name, nfts.ipfs, nfts.asset_id 
-                FROM nfts 
-                INNER JOIN collections ON collections.id = nfts.collection_id 
+        // Added collections.project_id + nfts.collection_id so we can build the
+        // local-cache path for each NFT image: /staking/images/nfts/{project_id}/{collection_id}/{md5(ipfs)}.{ext}
+        $sql = "SELECT collections.policy, nfts.name, nfts.ipfs, nfts.asset_id,
+                       nfts.collection_id, collections.project_id
+                FROM nfts
+                INNER JOIN collections ON collections.id = nfts.collection_id
                 WHERE user_id = ? AND collections.policy IN ($policy_placeholders)";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -93,7 +96,15 @@ if (isset($_SESSION['userData']['user_id'])) {
         $name = '';
         $ipfs = '';
         $asset_id = '';
-        $stmt->bind_result($policy, $name, $ipfs, $asset_id);
+        $collection_id = 0;
+        $project_id = 0;
+        $stmt->bind_result($policy, $name, $ipfs, $asset_id, $collection_id, $project_id);
+
+        // Cache for the per-(project,collection) directory listings — saves
+        // many disk hits when a user owns many NFTs from the same collection.
+        $glob_cache = [];
+        $base_disk = realpath(__DIR__ . '/..') . '/images/nfts/';
+        $base_web  = '/staking/images/nfts/';
 
         $index = 0;
         while ($stmt->fetch()) {
@@ -160,9 +171,30 @@ if (isset($_SESSION['userData']['user_id'])) {
             $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
             $powerup = $powerup_map[ord($unique_id[$length - 1]) % 4];
 
+            // Look for a locally-cached image at the deterministic path
+            // produced by lib/image-cache-lib.php's cacheNFTImage(). Only
+            // glob each (project, collection) directory once per request.
+            $local_url = null;
+            if ($project_id > 0 && $collection_id > 0 && !empty($ipfs)) {
+                $cache_key = $project_id . '/' . $collection_id;
+                if (!array_key_exists($cache_key, $glob_cache)) {
+                    $dir = $base_disk . $cache_key . '/';
+                    $glob_cache[$cache_key] = is_dir($dir) ? glob($dir . '*.*') ?: [] : [];
+                }
+                $md5 = md5($ipfs);
+                foreach ($glob_cache[$cache_key] as $f) {
+                    $bn = basename($f);
+                    if (strpos($bn, $md5 . '.') === 0) {
+                        $local_url = $base_web . $cache_key . '/' . $bn;
+                        break;
+                    }
+                }
+            }
+
             $final_array[] = [
                 'name' => $name,
                 'ipfs' => $ipfs,
+                'localUrl' => $local_url,
                 'policyId' => $policy,
                 'strength' => $strength,
                 'speed' => $speed,
