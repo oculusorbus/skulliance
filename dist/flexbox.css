@@ -46,15 +46,16 @@ body {
   /*background-image: url("../images/og.jpg");*/
 }
 
-/* Standalone PWA top-padding tweak. Pulled 25px above the safe-area inset so
-   page headers sit at the same vertical line as the burger menu icon. max()
-   guards against negative padding on devices with a small inset.
+/* Standalone PWA top-padding tweak. Pulled 15px above the safe-area inset so
+   page headers sit just below the burger menu icon without the burger
+   bleeding onto content. max() guards against negative padding on devices
+   with a small inset.
    The #quick-menu standalone overrides live at the bottom of this file because
    the original #quick-menu rule (around line 1587) uses the `padding` shorthand
    and would otherwise win on cascade order regardless of media query. */
 @media (display-mode: standalone) {
   body {
-    padding-top: max(env(safe-area-inset-top, 0px) - 25px, 0px);
+    padding-top: max(env(safe-area-inset-top, 0px) - 15px, 0px);
   }
 }
 
