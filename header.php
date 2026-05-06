@@ -416,12 +416,25 @@
 				</div>
 				<div class="pwa-blurb">No app store needed &mdash; this site can be installed straight to your home screen for one-tap access, fullscreen view, and faster loads.</div>
 
-				<!-- iOS instructions -->
+				<!-- iOS instructions (Safari) -->
 				<ol id="pwa-steps-ios" style="display:none">
 					<li>Tap the <span class="pwa-glyph">Share &#x2191;</span> button at the bottom of Safari.</li>
 					<li>Scroll and tap <span class="pwa-glyph">Add to Home Screen</span>.</li>
 					<li>Tap <span class="pwa-glyph">Add</span> in the top right.</li>
 				</ol>
+
+				<!-- iOS instructions (non-Safari: Chrome / Firefox / Edge / Opera / etc.) -->
+				<div id="pwa-steps-ios-switch" style="display:none">
+					<div class="pwa-blurb" style="background:rgba(255,170,0,.08); border:1px solid rgba(255,170,0,.25); border-radius:8px; padding:10px 12px; margin-bottom:14px;">
+						<strong style="color:#ffaa00;">Heads up:</strong> Adding to Home Screen on iPhone only works in <strong>Safari</strong> &mdash; not <span id="pwa-ios-browser-name">your current browser</span>. Open this page in Safari first, then come back to install.
+					</div>
+					<ol>
+						<li>Tap the <span class="pwa-glyph">Share &#x2191;</span> button (or <span class="pwa-glyph">&#x22EF;</span> menu) in this browser.</li>
+						<li>Tap <span class="pwa-glyph">Open in Safari</span>.</li>
+						<li>Once the page loads in Safari, tap <span class="pwa-glyph">Share &#x2191;</span> &rarr; <span class="pwa-glyph">Add to Home Screen</span>.</li>
+					</ol>
+					<button class="pwa-btn pwa-btn-secondary" type="button" id="pwa-copy-link-btn" style="width:100%; margin-bottom:10px;">Copy link to paste in Safari</button>
+				</div>
 
 				<!-- Android instructions (fallback when beforeinstallprompt unavailable) -->
 				<ol id="pwa-steps-android" style="display:none">
@@ -460,6 +473,23 @@
 				if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
 				if (/Android/i.test(ua)) return 'android';
 				return null;
+			}
+
+			// Returns Safari label or third-party iOS browser name. iOS PWA install
+			// only works in Safari proper — every third-party iOS browser uses
+			// WebKit but cannot Add to Home Screen.
+			function detectIOSBrowser() {
+				var ua = navigator.userAgent || '';
+				if (/CriOS\//.test(ua)) return 'Chrome';
+				if (/FxiOS\//.test(ua)) return 'Firefox';
+				if (/EdgiOS\//.test(ua)) return 'Edge';
+				if (/OPiOS\//.test(ua)) return 'Opera';
+				if (/DuckDuckGo/.test(ua)) return 'DuckDuckGo';
+				if (/GSA\//.test(ua)) return 'Google App';
+				if (/FBAN|FBAV|Instagram|Twitter|Snapchat|Line\//.test(ua)) return 'in-app browser';
+				// Genuine Safari has Safari/ token but none of the above
+				if (/Safari\//.test(ua) && /Version\//.test(ua)) return 'Safari';
+				return 'this browser';
 			}
 
 			function isDismissed() {
@@ -529,7 +559,14 @@
 				var overlay = document.getElementById('pwa-install-overlay');
 				if (!overlay) return;
 				if (platform === 'ios') {
-					document.getElementById('pwa-steps-ios').style.display = '';
+					var iosBrowser = detectIOSBrowser();
+					if (iosBrowser === 'Safari') {
+						document.getElementById('pwa-steps-ios').style.display = '';
+					} else {
+						document.getElementById('pwa-ios-browser-name').textContent = iosBrowser;
+						document.getElementById('pwa-steps-ios-switch').style.display = '';
+						document.getElementById('pwa-install-title').textContent = 'Open in Safari to install';
+					}
 				} else if (platform === 'android') {
 					if (deferredPrompt) {
 						document.getElementById('pwa-native-android').style.display = '';
@@ -542,10 +579,40 @@
 				setTimeout(function(){ overlay.classList.add('show'); }, SHOW_DELAY_MS);
 			}
 
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', maybeShow);
-			} else {
+			function wireCopyLink() {
+				var btn = document.getElementById('pwa-copy-link-btn');
+				if (!btn) return;
+				btn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					var url = window.location.href;
+					var done = function() {
+						var orig = btn.textContent;
+						btn.textContent = 'Link copied — paste in Safari';
+						btn.style.background = 'rgba(0,200,160,.2)';
+						setTimeout(function(){
+							btn.textContent = orig;
+							btn.style.background = '';
+						}, 2200);
+					};
+					if (navigator.clipboard && navigator.clipboard.writeText) {
+						navigator.clipboard.writeText(url).then(done, function(){
+							window.prompt('Copy this URL, then open Safari and paste:', url);
+						});
+					} else {
+						window.prompt('Copy this URL, then open Safari and paste:', url);
+					}
+				});
+			}
+
+			function init() {
+				wireCopyLink();
 				maybeShow();
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', init);
+			} else {
+				init();
 			}
 		})();
 		</script>
