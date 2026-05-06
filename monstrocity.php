@@ -1147,14 +1147,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
     }
     .character {
-      background-color: rgba(255, 255, 255, 0.03) !important;
-      border: 1px solid rgba(0, 200, 160, 0.18) !important;
-      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+      /* Opaque fill — was rgba(255,255,255,0.03) which let the body's
+         theme bg-image bleed through, making warm-toned themes look brown. */
+      background-color: #121212 !important;
+      border: 1px solid rgba(0, 200, 160, 0.22) !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
     }
-    /* Battle log + legend — slightly darker so they read as info panes */
+    /* Battle log + legend — opaque dark info panes (was rgba(0,0,0,0.35)
+       which was letting the theme bg-image bleed through too) */
     .log,
     .legend {
-      background-color: rgba(0, 0, 0, 0.35) !important;
+      background-color: #0d0d0d !important;
     }
 
     /* Heading accents */
