@@ -1362,12 +1362,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       gap: 16px;
       padding: 8px 0;
     }
-    /* Theme-select modal padding: bump top to match the felt spacing of
-       the boss-select header (60px wasn't quite enough, 80px nails it),
-       and add bottom padding so the last row's scrollbar doesn't sit
-       flush against OS chrome (taskbar / dock / home indicator). */
+    /* Theme-select modal padding: 80px top to match boss-select header
+       position; generous bottom (160px + safe-area-inset) so the last
+       row's chunky scrollbar plus its own row padding sit well clear of
+       OS chrome (taskbar / dock / home indicator). */
     #theme-select-container {
-      padding: 80px 20px calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+      padding: 80px 20px calc(env(safe-area-inset-bottom, 0px) + 160px) !important;
     }
     /* Hide nav arrows on mobile — the wrapping grid below 1025px doesn't
        need them. */
@@ -1393,26 +1393,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         scrollbar-color: rgba(0, 200, 160, 0.55) transparent;
         scroll-behavior: smooth;
       }
-      /* Chunky scrollbar (32px channel) for easy mouse / trackpad grab.
-         Thumb has a 4px transparent border with background-clip padding-box,
-         so it visually reads as ~24px thick inside the channel. */
+      /* Chunky scrollbar (64px channel) for easy mouse / trackpad grab.
+         Thumb has an 8px transparent border with background-clip padding-box,
+         so it visually reads as ~48px thick inside the channel. */
       .theme-group-row::-webkit-scrollbar {
-        height: 32px;
+        height: 64px;
       }
       .theme-group-row::-webkit-scrollbar-thumb {
         background: rgba(0, 200, 160, 0.5);
-        border-radius: 16px;
-        border: 4px solid transparent;
+        border-radius: 32px;
+        border: 8px solid transparent;
         background-clip: padding-box;
       }
       .theme-group-row::-webkit-scrollbar-thumb:hover {
         background: rgba(0, 200, 160, 0.8);
         background-clip: padding-box;
-        border: 4px solid transparent;
+        border: 8px solid transparent;
       }
       .theme-group-row::-webkit-scrollbar-track {
         background: rgba(0, 200, 160, 0.08);
-        border-radius: 16px;
+        border-radius: 32px;
       }
       .theme-group-row > .theme-option {
         flex-shrink: 0;
@@ -1428,7 +1428,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         content: '';
         position: absolute;
         top: 0;
-        bottom: 32px; /* don't fade over the scrollbar (now 32px tall) */
+        bottom: 64px; /* don't fade over the scrollbar (64px tall) */
         width: 60px;
         pointer-events: none;
         z-index: 2;
