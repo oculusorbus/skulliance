@@ -1339,27 +1339,22 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       aspect-ratio: 1 / 1 !important;
       height: auto !important;
       object-fit: cover !important;
+      /* Static placeholder — solid bg + centered skull icon. No animation,
+         no paint cycles. Hides as soon as the actual image renders on top. */
       background-color: #1a3142;
       background-image: url('/staking/icons/skull.png');
       background-size: 40%;
       background-position: center;
       background-repeat: no-repeat;
       border-radius: 6px;
-      animation: char-img-pulse 2s ease-in-out infinite;
     }
-    /* Once the image's onload fires, JS adds .loaded — kill the pulse and
-       the placeholder bg so they don't sit behind a fully-rendered image
-       and waste paint cycles. */
+    /* Once the image's onload fires, JS adds .loaded — clear the
+       placeholder bg so it isn't sitting behind a fully-rendered image. */
     .character-option img.loaded,
     .character-option video.loaded,
     .boss-option img.loaded {
-      animation: none !important;
       background-image: none !important;
       background-color: transparent !important;
-    }
-    @keyframes char-img-pulse {
-      0%, 100% { background-color: #1a3142; }
-      50% { background-color: #234253; }
     }
     @media (max-width: 1024px) {
       .character-option,
