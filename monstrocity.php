@@ -1371,7 +1371,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
        (40px); bulk of the "clear of OS chrome" buffer lives on the last
        theme-group's margin-bottom. */
     #theme-select-container {
-      padding: 38px 20px 40px !important;
+      padding: 39px 20px 40px !important;
     }
     /* Spacer below the last theme-group inside theme-options so the last
        row's scrollbar sits well clear of OS chrome (taskbar / dock / home
