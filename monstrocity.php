@@ -1203,19 +1203,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       letter-spacing: 0.04em;
     }
 
-    /* Selection cards (character / theme / boss options) — solid teal ring
-       on hover via box-shadow spread (renders reliably and respects
-       border-radius). The original :hover rules set `background: #2080ad`
-       (shorthand) which painted a blue tint over the cards on hover —
-       background-color: transparent kills that. The bg-image set inline by
-       JS persists because inline-style specificity beats the original's
-       shorthand-derived `background-image: none`. */
+    /* Selection cards (character / theme / boss options) — solid teal
+       outline at rest (was a barely-visible 8%-white border that read as
+       a faint background edge). Hover brightens the outline and adds a
+       glow ring + slight lift. */
     .character-option,
     .theme-option,
     .boss-option {
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border: 2px solid #00c8a0 !important;
       border-radius: 10px !important;
-      transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease !important;
+      transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
     }
     .character-option:hover,
     .theme-option:hover,
