@@ -1219,7 +1219,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .boss-option:hover {
       background-color: transparent !important;
       border-color: #00c8a0 !important;
-      box-shadow: 0 0 0 3px #00c8a0, 0 8px 22px rgba(0, 200, 160, 0.35) !important;
+      box-shadow: 0 8px 22px rgba(0, 200, 160, 0.35) !important;
       transform: translateY(-2px) scale(1.02);
     }
     .boss-option.disabled,
