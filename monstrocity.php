@@ -1136,12 +1136,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       border-right: 2px solid rgba(0, 200, 160, 0.22) !important;
       box-shadow: 0 0 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
     }
-    /* Inner panels: character (gameplay player), battle log, legend —
-       all a step lighter than the container so they read as cards on
-       a tray, not pits in the floor. */
+    /* Inner panels: character (gameplay player), battle log, legend,
+       game board — all a step lighter than the container so they read as
+       cards on a tray, not pits in the floor. The game board (which holds
+       the tiles) shares the same elevation; was the legacy #165777 blue. */
     .character,
     .log,
-    .legend {
+    .legend,
+    #game-board {
       background-color: #1a3142 !important;
       border: 1px solid rgba(0, 200, 160, 0.18) !important;
       border-radius: 8px !important;
@@ -1248,13 +1250,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
 
     /* Modal-style overlays (character-select, theme-select, boss-select,
-       progress-modal). Match platform notify-modal/confirm-modal feel:
-       darker background, teal accent border, more pronounced shadow. */
+       progress-modal). Lifted to the same teal-tinged surface as the inner
+       gameplay panels (#1a3142) so they don't read as a stark dark void
+       behind off-white text. Was #121212 which made the white text read
+       as harshly contrasty. */
     #character-select-container,
     #theme-select-container,
     #boss-select-container,
     .progress-modal-content {
-      background-color: #121212 !important;
+      background-color: #1a3142 !important;
       border: 1px solid rgba(0, 200, 160, 0.35) !important;
       border-radius: 12px !important;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
