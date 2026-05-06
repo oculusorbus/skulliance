@@ -1147,11 +1147,21 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
     }
     .character {
-      /* Opaque fill — was rgba(255,255,255,0.03) which let the body's
-         theme bg-image bleed through, making warm-toned themes look brown. */
-      background-color: #121212 !important;
-      border: 1px solid rgba(0, 200, 160, 0.22) !important;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+      /* Cool-toned dark navy (#0d141d) instead of pure gray — the gray
+         was reading as brown next to character art with warm tones.
+         Padding around the character image creates a visible frame so
+         the panel's dark navy is always visible, not just covered by art. */
+      background-color: #0d141d !important;
+      border: 1px solid rgba(0, 200, 160, 0.25) !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 200, 160, 0.05) !important;
+    }
+    /* Subtle dark gradient backdrop directly behind the character art so any
+       warm-toned character image bg is muted and the panel frame reads as
+       cool/Skulliance. */
+    .character img,
+    .character video {
+      background-color: #0d141d !important;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4) !important;
     }
     /* Battle log + legend — opaque dark info panes (was rgba(0,0,0,0.35)
        which was letting the theme bg-image bleed through too) */
