@@ -1249,10 +1249,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: rgba(255, 255, 255, 0.14) !important;
     }
 
-    /* Modal-style overlays. Character + boss-select containers lift to
-       the inner-panel tier so off-white text isn't fighting a near-black
-       backdrop. Theme-select and progress-modal stay dark — they read as
-       focused stages. */
+    /* Modal-style overlays — outer backdrop sits at the dark brand
+       color (page body #07111d) so it reads as a continuation of the
+       page rather than a separate panel. Contrast comes from the inner
+       option cards on each screen. Theme-select and progress-modal
+       stay at #121212 (slightly darker neutral, focused-stage feel). */
     #character-select-container,
     #theme-select-container,
     #boss-select-container,
@@ -1263,7 +1264,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
     #character-select-container,
     #boss-select-container {
-      background-color: #1a3142 !important;
+      background-color: #07111d !important;
     }
     #theme-select-container,
     .progress-modal-content {
