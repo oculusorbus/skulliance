@@ -1249,18 +1249,25 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: rgba(255, 255, 255, 0.14) !important;
     }
 
-    /* Modal-style overlays (character-select, theme-select, boss-select,
-       progress-modal). Dark backdrop on purpose — gives the modal a
-       distinct "stage" feel separate from the gameplay area. Card tier
-       inside (the option cards) supplies the contrast. */
+    /* Modal-style overlays. Character + boss-select containers lift to
+       the inner-panel tier so off-white text isn't fighting a near-black
+       backdrop. Theme-select and progress-modal stay dark — they read as
+       focused stages. */
     #character-select-container,
     #theme-select-container,
     #boss-select-container,
     .progress-modal-content {
-      background-color: #121212 !important;
       border: 1px solid rgba(0, 200, 160, 0.35) !important;
       border-radius: 12px !important;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
+    }
+    #character-select-container,
+    #boss-select-container {
+      background-color: #1a3142 !important;
+    }
+    #theme-select-container,
+    .progress-modal-content {
+      background-color: #121212 !important;
     }
 
     /* Modal headings */
