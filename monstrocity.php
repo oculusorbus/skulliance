@@ -1263,10 +1263,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
     }
     #character-select-container,
-    #boss-select-container {
+    #boss-select-container,
+    #theme-select-container {
+      /* Dark brand color with subtle teal undertone (R:7,G:17,B:29). The
+         pure-gray #121212 made theme-select look flat black next to the
+         teal-tinged boss-select. Now both share the same backdrop. */
       background-color: #07111d !important;
     }
-    #theme-select-container,
     .progress-modal-content {
       background-color: #121212 !important;
     }
@@ -1368,7 +1371,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
        (40px); bulk of the "clear of OS chrome" buffer lives on the last
        theme-group's margin-bottom. */
     #theme-select-container {
-      padding: 30px 20px 40px !important;
+      padding: 35px 20px 40px !important;
     }
     /* Spacer below the last theme-group inside theme-options so the last
        row's scrollbar sits well clear of OS chrome (taskbar / dock / home
