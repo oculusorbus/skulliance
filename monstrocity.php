@@ -1379,44 +1379,52 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         overflow-x: auto;
         overflow-y: hidden;
         scroll-snap-type: x mandatory;
-        scroll-padding-left: 8px;
-        padding: 12px 4px 18px;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(0, 200, 160, 0.45) transparent;
+        scroll-padding-left: 50px;
+        /* Generous horizontal padding so first/last cards have breathing room
+           when they hover-scale (transform: scale(1.02)) and so they don't
+           sit underneath the nav arrow buttons. */
+        padding: 20px 50px 22px;
+        scrollbar-color: rgba(0, 200, 160, 0.55) transparent;
         scroll-behavior: smooth;
       }
+      /* Twice-as-thick scrollbar (was 8px) for easy mouse / trackpad grab. */
       .theme-group-row::-webkit-scrollbar {
-        height: 8px;
+        height: 16px;
       }
       .theme-group-row::-webkit-scrollbar-thumb {
-        background: rgba(0, 200, 160, 0.4);
-        border-radius: 4px;
+        background: rgba(0, 200, 160, 0.45);
+        border-radius: 8px;
+        border: 3px solid transparent;
+        background-clip: padding-box;
       }
       .theme-group-row::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 200, 160, 0.65);
+        background: rgba(0, 200, 160, 0.75);
+        background-clip: padding-box;
+        border: 3px solid transparent;
       }
       .theme-group-row::-webkit-scrollbar-track {
-        background: rgba(0, 200, 160, 0.06);
-        border-radius: 4px;
+        background: rgba(0, 200, 160, 0.08);
+        border-radius: 8px;
       }
       .theme-group-row > .theme-option {
         flex-shrink: 0;
         scroll-snap-align: start;
       }
 
-      /* Edge-fade gradients — pseudo-elements over the row, fading from
-         the modal bg (#121212) to transparent. JS toggles .at-start /
-         .at-end on the wrapper so the corresponding edge fades when the
-         row reaches that boundary. */
+      /* Edge gradients + arrows are HIDDEN by default. The wrapper gets
+         .can-scroll-left / .can-scroll-right from JS only when there's
+         actually content to scroll to in that direction. So if a group
+         fits entirely on screen, no arrows or fades show. */
       .theme-group-row-wrapper::before,
       .theme-group-row-wrapper::after {
         content: '';
         position: absolute;
         top: 0;
-        bottom: 0;
+        bottom: 16px; /* don't fade over the scrollbar */
         width: 60px;
         pointer-events: none;
         z-index: 2;
+        opacity: 0;
         transition: opacity 0.25s ease;
       }
       .theme-group-row-wrapper::before {
@@ -1427,12 +1435,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         right: 0;
         background: linear-gradient(270deg, #121212 20%, transparent);
       }
-      .theme-group-row-wrapper.at-start::before { opacity: 0; }
-      .theme-group-row-wrapper.at-end::after { opacity: 0; }
+      .theme-group-row-wrapper.can-scroll-left::before { opacity: 1; }
+      .theme-group-row-wrapper.can-scroll-right::after { opacity: 1; }
 
-      /* Nav arrow buttons — circular pill-shaped scroll triggers on the
-         left/right edges of each row, with backdrop-blur over the gradient
-         so they pop without a heavy fill. */
+      /* Nav arrow buttons — circular, teal-bordered, backdrop-blur. */
       .theme-row-nav {
         position: absolute;
         top: calc(50% - 9px); /* offset for the row's bottom padding so it visually centers on cards */
@@ -1453,6 +1459,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+        opacity: 0;
+        pointer-events: none;
         transition: opacity 0.25s ease, background 0.15s, transform 0.15s, border-color 0.15s !important;
       }
       .theme-row-nav:hover {
@@ -1460,19 +1468,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         border-color: #00c8a0 !important;
         transform: translateY(-50%) scale(1.08) !important;
       }
-      .theme-row-nav-prev { left: 4px; }
-      .theme-row-nav-next { right: 4px; }
-      .theme-group-row-wrapper.at-start .theme-row-nav-prev,
-      .theme-group-row-wrapper.at-end .theme-row-nav-next {
-        opacity: 0;
-        pointer-events: none;
-      }
-      /* If the entire group fits without scrolling, both edges are at the
-         boundary simultaneously — hide both arrows. */
-      .theme-group-row-wrapper.at-start.at-end .theme-row-nav,
-      .theme-group-row-wrapper.at-start.at-end::before,
-      .theme-group-row-wrapper.at-start.at-end::after {
-        opacity: 0;
+      .theme-row-nav-prev { left: 6px; }
+      .theme-row-nav-next { right: 6px; }
+      .theme-group-row-wrapper.can-scroll-left .theme-row-nav-prev,
+      .theme-group-row-wrapper.can-scroll-right .theme-row-nav-next {
+        opacity: 1;
+        pointer-events: auto;
       }
     }
 
@@ -2285,8 +2286,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          // becomes a horizontal scroll-snap carousel on desktop (>=1025px)
 	          // via CSS in the platform-skin override block. The outer wrapper
 	          // hosts edge-fade gradients (::before/::after) and the nav arrows.
+	          // Arrows + gradients are HIDDEN by default and only revealed when
+	          // .can-scroll-left / .can-scroll-right classes are added by JS.
 	          const wrapper = document.createElement('div');
-	          wrapper.className = 'theme-group-row-wrapper at-start';
+	          wrapper.className = 'theme-group-row-wrapper';
 
 	          const prevBtn = document.createElement('button');
 	          prevBtn.type = 'button';
@@ -2338,13 +2341,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' });
 	          });
 
-	          // Toggle at-start / at-end classes so CSS can fade the
-	          // appropriate edge gradient and hide the corresponding arrow.
+	          // Toggle can-scroll-left / can-scroll-right classes so CSS can
+	          // reveal the appropriate edge gradient + arrow. Arrows + gradients
+	          // start hidden and ONLY appear when there's actually content to
+	          // scroll to in that direction.
 	          function updateNavState() {
-	              var atStart = row.scrollLeft <= 4;
-	              var atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
-	              wrapper.classList.toggle('at-start', atStart);
-	              wrapper.classList.toggle('at-end', atEnd);
+	              var canLeft = row.scrollLeft > 4;
+	              var canRight = row.scrollLeft + row.clientWidth < row.scrollWidth - 4;
+	              wrapper.classList.toggle('can-scroll-left', canLeft);
+	              wrapper.classList.toggle('can-scroll-right', canRight);
 	          }
 	          row.addEventListener('scroll', updateNavState, { passive: true });
 	          window.addEventListener('resize', updateNavState);
