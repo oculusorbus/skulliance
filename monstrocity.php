@@ -1123,51 +1123,32 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       color: #e8eaed !important;
     }
 
-    /* Game container chrome — replace the legacy #002f44 blue with the
-       platform's dark neutral surface, slightly lifted from body to imply
-       elevation. Soft teal side accents and outer shadow match dashboard /
-       missions / realms card treatment. */
+    /* Layering / elevation — three tiers, each lighter than the one below,
+       so nested panels read as lifted not buried. Game container picks up
+       a subdued teal hue so the whole frame feels Skulliance.
+         L1 (body)                    : #07111d  (already set)
+         L2 (.game-container surface) : #0d2230  (subdued teal)
+         L3 (inner panels)            : #1a3142  (clearly lifted)
+    */
     .game-container {
-      background-color: #0d1922 !important;
+      background-color: #0d2230 !important;
       border-left: 2px solid rgba(0, 200, 160, 0.22) !important;
       border-right: 2px solid rgba(0, 200, 160, 0.22) !important;
-      box-shadow: 0 0 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 200, 160, 0.08) !important;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
     }
-
-    /* Inner panels — replace the legacy #165777 blue cards with the dark
-       neutral the live platform uses (#1a1a1a / translucent teal tints).
-       This is the main "blue hued" issue — character/log/legend are the
-       most visible interior surfaces. */
+    /* Inner panels: character (gameplay player), battle log, legend —
+       all a step lighter than the container so they read as cards on
+       a tray, not pits in the floor. */
     .character,
     .log,
     .legend {
-      background-color: #1a1a1a !important;
-      border: 1px solid rgba(0, 200, 160, 0.12) !important;
+      background-color: #1a3142 !important;
+      border: 1px solid rgba(0, 200, 160, 0.18) !important;
       border-radius: 8px !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
     }
     .character {
-      /* Cool-toned dark navy (#0d141d) instead of pure gray — the gray
-         was reading as brown next to character art with warm tones.
-         Padding around the character image creates a visible frame so
-         the panel's dark navy is always visible, not just covered by art. */
-      background-color: #0d141d !important;
-      border: 1px solid rgba(0, 200, 160, 0.25) !important;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 200, 160, 0.05) !important;
-    }
-    /* Subtle dark gradient backdrop directly behind the character art so any
-       warm-toned character image bg is muted and the panel frame reads as
-       cool/Skulliance. */
-    .character img,
-    .character video {
-      background-color: #0d141d !important;
-      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4) !important;
-    }
-    /* Battle log + legend — opaque dark info panes (was rgba(0,0,0,0.35)
-       which was letting the theme bg-image bleed through too) */
-    .log,
-    .legend {
-      background-color: #0d0d0d !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(0, 200, 160, 0.05) !important;
     }
 
     /* Heading accents */
