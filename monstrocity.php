@@ -1304,7 +1304,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
     .character-option,
     .boss-option {
-      background-color: rgba(255, 255, 255, 0.05) !important;
+      /* Faint teal at rest so resting + hover are in the same hue family.
+         The previous rgba(255,255,255,0.05) read as a muddy gray-brown over
+         the modal's #121212 backdrop. */
+      background-color: rgba(0, 200, 160, 0.04) !important;
     }
     .theme-option:hover {
       background-color: transparent !important;
