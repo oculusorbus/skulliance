@@ -1362,14 +1362,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         min-height: 280px !important;
       }
     }
-    /* Boss-select project filter — right-aligned via text-align so it stays
-       within the modal's content box regardless of flex quirks. */
+    /* Boss-select project filter — right-aligned. Explicit width:100% +
+       box-sizing:border-box so the row can't spill past parent. The
+       dropdown's max-width is capped and a 30px right padding pulls it
+       visibly inward from the modal edge. */
     .boss-filter-row {
       text-align: right;
       margin: 0 0 18px;
-      padding-right: 8px;
+      padding-right: 30px;
       box-sizing: border-box;
+      width: 100%;
       max-width: 100%;
+      overflow: hidden;
     }
     .boss-filter-label {
       display: inline-block;
