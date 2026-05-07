@@ -438,6 +438,12 @@
 			var inStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
 				|| window.navigator.standalone === true;
 			if (!inStandalone) return;
+			// Skip PTR on game pages where touchstart/move are needed for
+			// gameplay (tile dragging in Skull Swap, etc.). Pages can opt out
+			// by adding their basename here or by setting body.dataset.noPtr.
+			var skipPtrPages = ['skullswap.php'];
+			var currentPage = (location.pathname.split('/').pop() || '').toLowerCase();
+			if (skipPtrPages.indexOf(currentPage) !== -1 || document.body.dataset.noPtr === '1') return;
 
 			var ptr = document.getElementById('ptr-indicator');
 			if (!ptr) return;
