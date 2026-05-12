@@ -13,6 +13,17 @@
 //         on cached/exists; null otherwise
 //   message — human-readable detail (also echoed when $verbose is true)
 
+// Route ImageMagick's disk-spillover temp files out of CageFS's hidden /tmp
+// and into a path under the user's home directory. Spillover triggers when
+// an image exceeds the 256MB Imagick memory limit set per-instance below
+// (large animated GIFs, hi-res PNGs); spill files can run hundreds of MB
+// each. In CageFS /tmp they're invisible to du/find, so leaks from worker
+// processes killed mid-fetch piled up unseen. With MAGICK_TMPDIR pointed
+// here, a cleanup cron can keep the directory bounded.
+$magick_tmp_dir = '/home/jeremiah/magick-tmp';
+@mkdir($magick_tmp_dir, 0700, true);
+putenv("MAGICK_TMPDIR=$magick_tmp_dir");
+
 function cacheNFTImage(
     string $ipfs,
     int $collection_id,

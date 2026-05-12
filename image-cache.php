@@ -8,6 +8,25 @@ ini_set('memory_limit', '512M');
 $base_path   = __DIR__ . '/images/nfts/';
 $num_workers = 16; // Parallel worker processes
 
+// Defensive sweep of stale lock files from prior runs. Each lock is touched
+// at /tmp/nft-img-{md5}.lock when a fetch starts and unlinked in a finally
+// block when it completes. But if a worker is OOM-killed mid-fetch (LVE
+// limits, etc.), the lock survives — and CageFS /tmp is invisible from the
+// outside, so leaks accumulate unseen. Anything older than 6 hours is from
+// a prior crashed run; reap before tonight's pass starts.
+$lock_age_threshold = 6 * 3600;
+$now_ts             = time();
+$stale_cleaned      = 0;
+foreach (glob(sys_get_temp_dir() . '/nft-img-*.lock') ?: [] as $lock) {
+    $mt = @filemtime($lock);
+    if ($mt !== false && $mt < $now_ts - $lock_age_threshold) {
+        if (@unlink($lock)) $stale_cleaned++;
+    }
+}
+if ($stale_cleaned > 0) {
+    echo "Cleaned $stale_cleaned stale lock file(s) from prior runs.\n";
+}
+
 // ─── Fetch all NFTs belonging to active users, Diamond Skull owners, and delegators ───
 $sql = "
     SELECT DISTINCT n.id, n.ipfs, n.collection_id, c.project_id
