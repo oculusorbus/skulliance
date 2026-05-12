@@ -1,7 +1,15 @@
 <?php
 include 'credentials/db_credentials.php';
 include_once 'role.php';
-session_start();
+
+// Only resume an existing session — don't manufacture a fresh one for
+// every cookieless visitor. Bots and scrapers don't preserve cookies,
+// so calling session_start() unconditionally was creating one orphan
+// file in /tmp per request. Login flows (process-oauth.php) still
+// call session_start() explicitly and create the cookie there.
+if (isset($_COOKIE[session_name()])) {
+    session_start();
+}
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
