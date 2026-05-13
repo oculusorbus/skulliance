@@ -7,7 +7,13 @@ include_once 'role.php';
 // so calling session_start() unconditionally was creating one orphan
 // file in /tmp per request. Login flows (process-oauth.php) still
 // call session_start() explicitly and create the cookie there.
-if (isset($_COOKIE[session_name()])) {
+//
+// Also start a session when SessionCookie is present: mobile browsers
+// (iOS Safari ITP, PWA standalone) routinely drop PHPSESSID while
+// keeping the 6-month SessionCookie. Without a server session, AJAX
+// writes to $_SESSION (e.g. mission consumable selection) don't
+// persist — skulliance.php's cookie write runs before the mutation.
+if (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie'])) {
     session_start();
 }
 
