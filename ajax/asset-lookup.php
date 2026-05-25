@@ -65,13 +65,13 @@ if ($image !== '') {
     } elseif (str_starts_with($image, 'ipfs://')) {
         $ipfs_raw = substr($image, 7);
         $clean    = ltrim(str_replace('ipfs/', '', $ipfs_raw), '/');
-        $ipfs_url = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean;
+        $ipfs_url = 'https://ipfs.io/ipfs/' . $clean;
     } elseif (preg_match('/^https?:\/\//', $image)) {
         $ipfs_url = $image;
     } else {
         // bare CID
         $ipfs_raw = $image;
-        $ipfs_url = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $image;
+        $ipfs_url = 'https://ipfs.io/ipfs/' . $image;
     }
 }
 

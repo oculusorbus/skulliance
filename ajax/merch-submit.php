@@ -79,7 +79,7 @@ if ($balance === 'false' || floatval($balance) < $total_fee) {
 // Use the full-resolution IPFS URL for print quality.
 // The cached skulliance.io image is scaled down to 1000px — unsuitable for print.
 $clean_ipfs = str_replace('ipfs/', '', $nft['ipfs']);
-$image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
+$image_url  = 'https://ipfs.io/ipfs/' . $clean_ipfs;
 
 // ── Pre-upload image to Printful Files API ───────────────────
 // Uploading first lets Printful process the file and generate thumbnails properly.

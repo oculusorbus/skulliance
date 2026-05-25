@@ -538,7 +538,6 @@ $my_user_json = json_encode($my_user_id);
   </form>
   <div id="p-actions">
     <a id="p-pool-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://pool.pm/pool.pm.svg" alt="pool.pm" />View on pool.pm</a>
-    <a id="p-offer-btn" href="#" target="_blank" rel="noopener" class="p-action-btn"><img src="https://static.jpgstoreapis.com/icons/jpg-nav-logo-dark.svg" alt="jpg.store" />Make Offer</a>
   </div>
 </div>
 
@@ -661,7 +660,6 @@ const pProject  = document.getElementById('p-project');
 const pColl     = document.getElementById('p-collection');
 const pBadges   = document.getElementById('p-badges');
 const pPoolBtn  = document.getElementById('p-pool-btn');
-const pOfferBtn = document.getElementById('p-offer-btn');
 const pCollLink = document.getElementById('p-coll-link');
 const progress  = document.getElementById('progress');
 const controls  = document.getElementById('controls');
@@ -751,9 +749,8 @@ function renderSlide(n, nft){
     pProject.style.textDecoration = 'underline dotted';
     pProject.onclick = (function(pid){ return function(e){ e.preventDefault(); document.getElementById('nav-collections-filterby').value = pid; document.getElementById('nav-collections-form').submit(); }; })(nft.project_id);
     pCollLink.textContent = nft.collection_name;
-    pCollLink.href        = 'https://www.jpg.store/collection/' + (nft.collection_policy || '');
+    pCollLink.removeAttribute('href');
     pPoolBtn.href         = poolUrl;
-    pOfferBtn.href        = 'https://www.jpg.store/asset/' + nft.jpg_asset_id;
     slideCtrl.textContent = (n+1) + ' / ' + playlist.length;
 
     // Badges

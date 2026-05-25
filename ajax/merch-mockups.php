@@ -49,7 +49,7 @@ $stores = json_decode($acct['connected_stores'], true) ?: [];
 
 // ── Build image URL — use full-res IPFS, not scaled cache ────
 $clean_ipfs = str_replace('ipfs/', '', $nft['ipfs']);
-$image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
+$image_url  = 'https://ipfs.io/ipfs/' . $clean_ipfs;
 
 // ── Get active product types ─────────────────────────────────
 $pt_res = $conn->query("SELECT * FROM merch_product_types WHERE active = 1 ORDER BY name ASC");

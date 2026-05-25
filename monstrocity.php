@@ -1890,7 +1890,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Apprentices",
 	          policyIds: "93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1900,7 +1900,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Black Flag",
 	          policyIds: "b3dab69f7e6100849434fb1781e34bd12a916557f6231b8d2629b6f6",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1910,7 +1910,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "The Fourth",
 	          policyIds: "a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1920,7 +1920,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Legends",
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1930,7 +1930,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Moebius Pioneers",
 	          policyIds: "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1940,7 +1940,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Oculus Lounge",
 	          policyIds: "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1950,7 +1950,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Season 1",
 	          policyIds: "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1960,7 +1960,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Proxy",
 	          policyIds: "f85be1a54efa2607de78a0f8855f9d73c9dd79bfa116f3767c015098",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1970,7 +1970,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Muses of the Multiverse",
 	          policyIds: "7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1980,7 +1980,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Fauna x Nemonium",
 	          policyIds: "7cd357f96d7a7325ff3038e78e004840706887790d8b513913b45c27",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -1990,7 +1990,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Omen Legends",
 	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2000,7 +2000,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Sh4pes x Nemonium",
 	          policyIds: "2d868badf3dc317234fe253859621fedf661bf9eba275faea80a8bfe",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2010,7 +2010,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Pendulum",
 	          policyIds: "a616aab3b18eb855b4292246bd58f9e131d7c8c25d1d1d7c88b666c4",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2020,7 +2020,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Perps",
 	          policyIds: "e6ba9c0ff27be029442c32533c6efd956a60d15ecb976acbb64c4de0",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2030,7 +2030,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Vampire Invasion",
 	          policyIds: "590048dda6a624c887c0466b178c16fff3dedc2aac5651a9e0fc41b6",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        }
@@ -2045,7 +2045,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Yume",
 	          policyIds: "f5a4009f12b9ee53b15edf338d1b7001641630be8308409b1477753b",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2055,7 +2055,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Galaxy of Sons",
 	          policyIds: "647535c1befd741bfa1ace4a5508e93fe03ff7590c26d372c8a812cb",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2065,7 +2065,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Crypties S2",
 	          policyIds: "e77fe5101469bdbd2d596f69abbd8ea6311008f5687dec3d950bb17a",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2075,7 +2075,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Island of the Uncanny Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2085,7 +2085,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Island of the Violent Neighbors",
 	          policyIds: "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2095,7 +2095,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "NSFW",
 	          policyIds: "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2105,7 +2105,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Galactico",
 	          policyIds: "bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8,89c01dc68d57169d9c02c3f35562d219884bbafa9d9f868c2f39ce67",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "gif" // Applies only to character images
 	        },
@@ -2115,7 +2115,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Anime Origins",
 	          policyIds: "c7ad13b8f11d1d1d2abe519b4394b4ca62c1dd2ce737e382ab573947",
 	          orientations: "left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2125,7 +2125,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Happy People",
 	          policyIds: "ac9067e22a857ee2e4ea20f77c6c047f78a11511f285d30d81857196",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2135,7 +2135,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Machine Headz Carnage",
 	          policyIds: "8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17,f4ae899bda2d478baec88620a06108619b231dfc6197be2a3b74a0ea,243f0ca18ded6b45ba87655ce3917abc8e04830b23ba1f498de67a8a,dcd1fa7b85bf5854fbe9f94238e9079fd502bf10ab2a3c26cf3d5465",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "gif" // Applies only to character images
 	        },
@@ -2145,7 +2145,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Digital Hell Citizens 2: Fighters",
 	          policyIds: "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2155,7 +2155,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Shorty Verse",
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2165,7 +2165,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Shorty Verse Engaged",
 	          policyIds: "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2175,7 +2175,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Drop Ship",
 	          policyIds: "4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2185,7 +2185,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Beelzebub",
 	          policyIds: "cd3a338f248a8ccb484032327b499e90b0303c499beea47e37039bf2",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2195,7 +2195,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Bogeyman",
 	          policyIds: "bca7c472792b859fb18920477f917c94b76c9c9705e039bf08af0b63",
 	          orientations: "Random",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2205,7 +2205,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "John Doe",
 	          policyIds: "16b10d60f428b03fa5bafa631c848b2243f31cbf93cce1a65779e5f5",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2215,7 +2215,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Skada",
 	          policyIds: "2eacad9ddcb9edd7721af49f682bd356e8e28194bafa4bbc2f559bb7",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2225,7 +2225,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Sinder Skullz",
 	          policyIds: "83732ff37818e7e520592fcd3e5257e429307d40a9f5437240e926de",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2235,7 +2235,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Derivative Heroes",
 	          policyIds: "d38910b4b5bd3e634138dc027b507b52406acf687889e3719aa4f7cf",
 	          orientations: "Left",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2245,7 +2245,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Ug Vs Donuts",
 	          policyIds: "8972aab912aed2cf44b65916e206324c6bdcb6fbd3dc4eb634fdbd28",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        },
@@ -2255,7 +2255,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          title: "Wavy Ape Vibe Empire",
 	          policyIds: "d458857ae7d121bfb5af64d78c0454a519133248e030a0225734452b",
 	          orientations: "Right",
-	          ipfsPrefixes: "https://ipfs5.jpgstoreapis.com/ipfs/",
+	          ipfsPrefixes: "https://ipfs.io/ipfs/",
 			  background: true,
 			  extension: "png" // Applies only to character images
 	        }
@@ -3781,9 +3781,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              orientation = policyMetadata.orientation;
 	          }
 	          // Prefer locally-cached image (served from /staking/images/nfts/...)
-	          // when get-nft-assets.php has detected one. Falls back to the IPFS
-	          // gateway when the local cache hasn't picked the asset up yet.
-	          // Critical pre-2026-05-23 jpgstoreapis shutdown.
+	          // when get-nft-assets.php has detected one. Falls back to a public
+	          // IPFS gateway when the local cache hasn't picked the asset up yet.
 	          if (config.localUrl) {
 	              imageUrl = config.localUrl;
 	              fallbackUrl = policyMetadata.ipfsPrefix + config.ipfs;
@@ -5667,7 +5666,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        const policies = policyIds.map((policyId, index) => ({
 	            policyId,
 	            orientation: themeData.orientations?.split(',')[index] || 'Right',
-	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs5.jpgstoreapis.com/ipfs/'
+	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs.io/ipfs/'
 	        }));
 	        const response = await Promise.race([
 	            fetch('ajax/get-nft-assets.php', {

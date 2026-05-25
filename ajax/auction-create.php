@@ -100,9 +100,9 @@ if ($image === '') {
         } else {
             $clean_ipfs = ltrim(str_replace('ipfs/', '', $img_src), '/');
             $urls = [
-                'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs,
-                'https://cloudflare-ipfs.com/ipfs/'    . $clean_ipfs,
-                'https://ipfs.io/ipfs/'                . $clean_ipfs,
+                'https://ipfs.io/ipfs/'         . $clean_ipfs,
+                'https://nftstorage.link/ipfs/' . $clean_ipfs,
+                'https://dweb.link/ipfs/'       . $clean_ipfs,
             ];
         }
         foreach ($urls as $url) {

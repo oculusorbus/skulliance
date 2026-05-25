@@ -56,7 +56,7 @@ if (!$acct_res || $acct_res->num_rows === 0) {
 // ── Build image URL ───────────────────────────────────────────
 // Use full-resolution IPFS URL — cached images are scaled down to 1000px.
 $clean_ipfs = str_replace('ipfs/', '', $listing['ipfs']);
-$image_url  = 'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_ipfs;
+$image_url  = 'https://ipfs.io/ipfs/' . $clean_ipfs;
 
 // ── Pre-upload image to Printful Files API ────────────────────
 $pf_file_id     = null;

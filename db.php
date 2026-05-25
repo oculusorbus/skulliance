@@ -2848,10 +2848,10 @@ function ensureNFTImageCached($ipfs, $collection_id, $project_id) {
 
     $clean = preg_replace('#^ipfs/#', '', $ipfs);
     $gateways = [
-        'https://ipfs5.jpgstoreapis.com/ipfs/',
-        'https://cloudflare-ipfs.com/ipfs/',
         'https://ipfs.io/ipfs/',
+        'https://nftstorage.link/ipfs/',
         'https://dweb.link/ipfs/',
+        'https://gateway.pinata.cloud/ipfs/',
     ];
 
     foreach ($gateways as $gw) {
@@ -2892,9 +2892,9 @@ function getIPFS($ipfs, $collection_id, $project_id = 0){
 			return '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.' . $ext . $bust;
 		}
 	}
-	// Fall back to JPGStore
+	// Fall back to a public IPFS gateway
 	$ipfs = str_replace("ipfs/", "", $ipfs);
-	return "https://ipfs5.jpgstoreapis.com/ipfs/".$ipfs;
+	return "https://ipfs.io/ipfs/".$ipfs;
 }
 
 // Render IPFS
@@ -5738,7 +5738,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
 		  	echo "<tr>";
-			echo "<td align='left'>"."<a target='_blank' href='https://www.jpg.store/collection/".$row["policy"]."'>".$row["collection_name"]."</a>"."</td>";
+			echo "<td align='left'>".$row["collection_name"]."</td>";
 			echo "<td align='left'>".$row["project_name"]."</td>";
 			echo "<td align='left'>".$row["rate"]." ".$row["currency"]."</td>";
 			echo "<td align='left'>".$row["total"]."</td>";

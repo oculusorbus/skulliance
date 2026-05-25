@@ -127,9 +127,9 @@ if ($image === '') {
             } else {
                 $clean_cid = ltrim(str_replace('ipfs/', '', $img_src), '/');
                 $urls = [
-                    'https://ipfs5.jpgstoreapis.com/ipfs/' . $clean_cid,
-                    'https://cloudflare-ipfs.com/ipfs/'    . $clean_cid,
-                    'https://ipfs.io/ipfs/'                . $clean_cid,
+                    'https://ipfs.io/ipfs/'         . $clean_cid,
+                    'https://nftstorage.link/ipfs/' . $clean_cid,
+                    'https://dweb.link/ipfs/'       . $clean_cid,
                 ];
             }
             foreach ($urls as $url) {

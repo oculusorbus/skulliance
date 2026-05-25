@@ -127,87 +127,39 @@ function _doCacheFetch(
     // ── Fetch with gateway fallback and retry ────────────────────────────────
     $clean_ipfs = str_replace('ipfs/', '', $ipfs);
 
-    // jpg.store CDN is the fastest option and still live until 2026-05-23 —
-    // pin it at position 0. After May 23, remove it from this list.
-    $primary_gateway = 'https://ipfs5.jpgstoreapis.com/ipfs/';
-    $fallback_gateways = [
+    $gateways = [
+        'https://ipfs.io/ipfs/',
         'https://nftstorage.link/ipfs/',
         'https://w3s.link/ipfs/',
         'https://gateway.pinata.cloud/ipfs/',
         'https://4everland.io/ipfs/',
-        'https://ipfs.io/ipfs/',
         'https://dweb.link/ipfs/',
     ];
-    $offset            = $wid % count($fallback_gateways);
-    $fallback_gateways = array_merge(
-        array_slice($fallback_gateways, $offset),
-        array_slice($fallback_gateways, 0, $offset)
+    // Rotate the starting gateway per worker so concurrent CLI workers don't
+    // all hammer the same gateway first.
+    $offset   = $wid % count($gateways);
+    $gateways = array_merge(
+        array_slice($gateways, $offset),
+        array_slice($gateways, 0, $offset)
     );
-    $gateways = array_merge([$primary_gateway], $fallback_gateways);
 
     $body         = false;
     $content_type = '';
     $http_code    = 0;
     $tried_url    = '';
     $web_mode     = $max_fetch_seconds > 0;
+    $budget       = $web_mode ? $max_fetch_seconds : 45;
 
-    if ($web_mode) {
-        // Race all gateways concurrently — first valid response wins, losers
-        // get aborted. Big latency win when jpg.store is slow/missing on a CID
-        // but a fallback gateway has it fast.
-        $race = _fetchRace($gateways, $clean_ipfs, $max_fetch_seconds, $emit);
-        if (!$race['ok']) {
-            return ['status' => 'error', 'url' => null, 'message' => $race['message']];
-        }
+    // Race all gateways concurrently — first valid response wins, losers
+    // get aborted. With public gateways there's no clear primary, so racing
+    // is both the fastest path and the most resilient to any one gateway
+    // being slow or missing the CID.
+    $race = _fetchRace($gateways, $clean_ipfs, $budget, $emit, $web_mode ? 5 : 10);
+    if ($race['ok']) {
         $body         = $race['body'];
-        $content_type = $race['mime']; // already stripped of charset
+        $content_type = $race['mime'];
         $http_code    = 200;
         $tried_url    = $race['url'];
-    } else {
-        // CLI hybrid: try jpg.store sequentially first (it serves ~90% of
-        // hits, fastest path with no concurrent-download memory spike), then
-        // race the 6 fallback gateways only when jpg.store misses. This keeps
-        // public-gateway request volume proportional to misses (small) while
-        // collapsing the multi-minute sequential miss path down to ~one
-        // gateway-time worth of latency.
-        $jpg_url = $primary_gateway . $clean_ipfs;
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
-            $ch = curl_init($jpg_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 45);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                'Accept-Language: en-US,en;q=0.9',
-                'Referer: https://www.jpg.store/',
-            ]);
-            $resp = curl_exec($ch);
-            $ct   = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($resp !== false && $code > 0 && $code < 400) {
-                $body         = $resp;
-                $content_type = $ct;
-                $http_code    = $code;
-                $tried_url    = $jpg_url;
-                break;
-            }
-            if ($attempt === 1) usleep(1000000);
-        }
-
-        // jpg.store missed — race the public-gateway fallbacks
-        if ($body === false || $http_code === 0 || $http_code >= 400) {
-            $race = _fetchRace($fallback_gateways, $clean_ipfs, 45, $emit, 10);
-            if ($race['ok']) {
-                $body         = $race['body'];
-                $content_type = $race['mime'];
-                $http_code    = 200;
-                $tried_url    = $race['url'];
-            }
-        }
     }
 
     if ($body === false || $http_code === 0) {
@@ -296,7 +248,6 @@ function _fetchRace(array $gateways, string $clean_ipfs, int $budget_seconds, ca
         'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
         'Accept-Language: en-US,en;q=0.9',
-        'Referer: https://www.jpg.store/',
     ];
     foreach ($gateways as $gateway) {
         $url = $gateway . $clean_ipfs;
