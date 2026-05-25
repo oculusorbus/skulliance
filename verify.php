@@ -271,18 +271,49 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					} // End foreach
 					//updateNFTs($conn, implode("', '", $asset_names));
 				}else{
-					// Empty array response. Only treat as a legitimately empty wallet
-					// when the HTTP call itself succeeded (2xx) — the request filters
-					// with asset_list=not.is.null, so a wallet that's been emptied
-					// returns []. If HTTP was non-2xx (rate limit, 5xx, etc.) and the
-					// body happened to parse as an empty array, that's an API error,
-					// not an empty wallet — keep the old alert+exit so the downstream
-					// cleanupOrphanedProtectedNFTs doesn't zero out Diamond Skulls or
-					// delegated NFTs based on a bogus empty response.
+					// Empty array response. Two cases:
+					//   1) HTTP 2xx + [] — usually a legitimately emptied wallet
+					//      (the request filters with asset_list=not.is.null).
+					//   2) Non-2xx + [] — an API error whose body happened to
+					//      parse as []. Never trust this as "empty".
+					//
+					// For case (1), one more guard: if Koios is lying (rare but
+					// possible — indexing lag, internal consistency bug) and the
+					// user owns protected NFTs (Diamond Skulls or delegated),
+					// trusting the empty would cascade through
+					// cleanupOrphanedProtectedNFTs: the skull gets zeroed, every
+					// NFT delegated to it gets booted, and only a DB restore can
+					// reverse it. So before silently skipping, check the DB —
+					// if this address's user holds protected NFTs, alert and
+					// exit so the operator can confirm the wallet really is
+					// empty. Wallets without protected NFTs skip silently (the
+					// common case that was triggering nightly false alarms).
 					if($http_code >= 200 && $http_code < 300){
-						echo "No NFTs for stake address: https://pool.pm/".$address." (empty wallet, skipping) \r\n";
+						$check_uid = getUserId($conn, $address);
+						$protected_count = 0;
+						if($check_uid > 0){
+							$uid_esc = intval($check_uid);
+							$res = $conn->query("
+								SELECT COUNT(*) AS c FROM nfts
+								WHERE user_id = $uid_esc
+								  AND (collection_id = 16 OR id IN (SELECT nft_id FROM diamond_skulls))
+							");
+							if($res && $row = $res->fetch_assoc()){
+								$protected_count = intval($row['c']);
+							}
+						}
+						if($protected_count > 0){
+							$message .= "Koios returned [] for stake address: https://pool.pm/".$address." (HTTP 2xx)\r\n";
+							$message .= "User ".$check_uid." owns ".$protected_count." protected NFT(s) (Diamond Skulls or delegated). Aborting to avoid booting delegators — confirm whether the wallet is actually empty before rerunning.\r\n";
+							$failed_addresses[] = $address;
+							echo $message;
+							sendDM("772831523899965440", $message);
+							exit();
+						}else{
+							echo "No NFTs for stake address: https://pool.pm/".$address." (empty wallet, skipping) \r\n";
+						}
 					}else{
-						$message .= "There was no response data for stake address: https://pool.pm/".$address." (HTTP ".$http_code.") \r\n";
+						$message .= "There was no response data for stake address: https://pool.pm/".$address." (HTTP ".$http_code.")\r\n";
 						$failed_addresses[] = $address;
 						echo $message;
 						print_r($response);
