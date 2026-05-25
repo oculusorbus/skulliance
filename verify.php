@@ -271,13 +271,24 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					} // End foreach
 					//updateNFTs($conn, implode("', '", $asset_names));
 				}else{
-					// Koios returned an empty array — wallet legitimately has no
-					// NFT-bearing UTXOs (the request filters with asset_list=not.is.null,
-					// so previously-staked wallets that have since been emptied land
-					// here). Don't alert/exit: let the rest of the addresses verify,
-					// and any NFTs formerly held here will be detached by the normal
-					// post-loop cleanup pass since we add nothing to $nft_owners.
-					echo "No NFTs for stake address: https://pool.pm/".$address." (empty wallet, skipping) \r\n";
+					// Empty array response. Only treat as a legitimately empty wallet
+					// when the HTTP call itself succeeded (2xx) — the request filters
+					// with asset_list=not.is.null, so a wallet that's been emptied
+					// returns []. If HTTP was non-2xx (rate limit, 5xx, etc.) and the
+					// body happened to parse as an empty array, that's an API error,
+					// not an empty wallet — keep the old alert+exit so the downstream
+					// cleanupOrphanedProtectedNFTs doesn't zero out Diamond Skulls or
+					// delegated NFTs based on a bogus empty response.
+					if($http_code >= 200 && $http_code < 300){
+						echo "No NFTs for stake address: https://pool.pm/".$address." (empty wallet, skipping) \r\n";
+					}else{
+						$message .= "There was no response data for stake address: https://pool.pm/".$address." (HTTP ".$http_code.") \r\n";
+						$failed_addresses[] = $address;
+						echo $message;
+						print_r($response);
+						sendDM("772831523899965440", $message);
+						exit();
+					}
 				}
 				}else{
 					$message .= "There was no response for stake address: https://pool.pm/".$address." \r\n";
