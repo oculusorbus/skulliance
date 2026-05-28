@@ -2,7 +2,7 @@
   "name": "Skulliance Staking",
   "short_name": "Skulliance",
   "description": "Stake your Skulliance NFTs, earn points, run missions, raid realms.",
-  "start_url": "/staking/dashboard.php",
+  "start_url": "/staking/missions.php",
   "scope": "/staking/",
   "display": "standalone",
   "orientation": "portrait",
