@@ -110,7 +110,8 @@ if ($is_logged_in) {
     .ss-section { margin-top: 36px; }
     .ss-section h2 { font-size: 1.35rem; margin: 0 0 10px; }
     .ss-section p, .ss-section li { color: rgba(255,255,255,0.78); line-height: 1.55; }
-    .ss-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 14px; }
+    .ss-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 14px; }
+    @media (max-width: 560px) { .ss-features { grid-template-columns: 1fr; } }
     .ss-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; }
     .ss-card h3 { margin: 0 0 8px; font-size: 1.02rem; }
     .ss-card p { margin: 0; font-size: 0.92rem; }
