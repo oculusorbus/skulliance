@@ -573,63 +573,6 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       </div>
     </section>
 
-    <section id="how-it-works">
-      <div class="wrap">
-        <h2>Real RPG Combat in a Match 3 Puzzle</h2>
-        <p>Every tile on the board does something different in combat. Instead of generic "score points," each match resolves as a combat action against the enemy character - and your opponent does the same to you.</p>
-
-        <h3 class="mech-heading">Tile Types</h3>
-        <ul class="mechanics">
-          <li>
-            <span class="mech-icon"><img src="/staking/icons/first-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>First Attack (Slash)</strong> - Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
-          </li>
-          <li>
-            <span class="mech-icon"><img src="/staking/icons/second-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Second Attack (Bite)</strong> - Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
-          </li>
-          <li>
-            <span class="mech-icon"><img src="/staking/icons/special-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Special Attack (Shadow Strike)</strong> - Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
-          </li>
-          <li>
-            <span class="mech-icon"><img src="/staking/icons/power-up.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Power-Up</strong> - Activates a random powerup (see below).</span>
-          </li>
-          <li>
-            <span class="mech-icon"><img src="/staking/icons/last-stand.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Last Stand</strong> - Deals damage and mitigates 5 damage on the next attack received.</span>
-          </li>
-        </ul>
-
-        <h3 class="mech-heading">Power-Up Effects</h3>
-        <ul class="mechanics cols-2">
-          <li><span><strong>Heal (Bloody)</strong> - Restores 10 HP (reduced by enemy tactics).</span></li>
-          <li><span><strong>Boost Attack (Cardano)</strong> - Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
-          <li><span><strong>Regenerate (ADA)</strong> - Restores 7 HP (reduced by enemy tactics).</span></li>
-          <li><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
-        </ul>
-        <p class="mech-note">Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</p>
-
-        <h3 class="mech-heading">Combo Bonuses</h3>
-        <ul class="mechanics cols-2">
-          <li><span><strong>Match-4 Bonus</strong> - 50% bonus to damage and score for a single match of 4 tiles.</span></li>
-          <li><span><strong>Match-5+ Bonus</strong> - 100% bonus to damage and score for a single match of 5 or more tiles.</span></li>
-          <li><span><strong>Multi-Match (6–8 tiles)</strong> - 20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades).</span></li>
-          <li><span><strong>Mega Multi-Match (9+ tiles)</strong> - 200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades).</span></li>
-        </ul>
-
-        <h3 class="mech-heading">Character Traits</h3>
-        <ul class="mechanics">
-          <li><span><strong>Strength</strong> - Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
-          <li><span><strong>Speed</strong> - Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
-          <li><span><strong>Tactics</strong> - Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
-          <li><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
-          <li><span><strong>Type</strong> - Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
-        </ul>
-      </div>
-    </section>
-
     <section>
       <div class="wrap">
         <h2>Featured Artists &amp; Projects</h2>
@@ -691,6 +634,63 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
                    onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
             </li>
           <?php endforeach; ?>
+        </ul>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="wrap">
+        <h2>Real RPG Combat in a Match 3 Puzzle</h2>
+        <p>Every tile on the board does something different in combat. Instead of generic "score points," each match resolves as a combat action against the enemy character - and your opponent does the same to you.</p>
+
+        <h3 class="mech-heading">Tile Types</h3>
+        <ul class="mechanics">
+          <li>
+            <span class="mech-icon"><img src="/staking/icons/first-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
+            <span><strong>First Attack (Slash)</strong> - Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
+          </li>
+          <li>
+            <span class="mech-icon"><img src="/staking/icons/second-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
+            <span><strong>Second Attack (Bite)</strong> - Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
+          </li>
+          <li>
+            <span class="mech-icon"><img src="/staking/icons/special-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
+            <span><strong>Special Attack (Shadow Strike)</strong> - Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
+          </li>
+          <li>
+            <span class="mech-icon"><img src="/staking/icons/power-up.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
+            <span><strong>Power-Up</strong> - Activates a random powerup (see below).</span>
+          </li>
+          <li>
+            <span class="mech-icon"><img src="/staking/icons/last-stand.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
+            <span><strong>Last Stand</strong> - Deals damage and mitigates 5 damage on the next attack received.</span>
+          </li>
+        </ul>
+
+        <h3 class="mech-heading">Power-Up Effects</h3>
+        <ul class="mechanics cols-2">
+          <li><span><strong>Heal (Bloody)</strong> - Restores 10 HP (reduced by enemy tactics).</span></li>
+          <li><span><strong>Boost Attack (Cardano)</strong> - Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
+          <li><span><strong>Regenerate (ADA)</strong> - Restores 7 HP (reduced by enemy tactics).</span></li>
+          <li><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
+        </ul>
+        <p class="mech-note">Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</p>
+
+        <h3 class="mech-heading">Combo Bonuses</h3>
+        <ul class="mechanics cols-2">
+          <li><span><strong>Match-4 Bonus</strong> - 50% bonus to damage and score for a single match of 4 tiles.</span></li>
+          <li><span><strong>Match-5+ Bonus</strong> - 100% bonus to damage and score for a single match of 5 or more tiles.</span></li>
+          <li><span><strong>Multi-Match (6–8 tiles)</strong> - 20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades).</span></li>
+          <li><span><strong>Mega Multi-Match (9+ tiles)</strong> - 200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades).</span></li>
+        </ul>
+
+        <h3 class="mech-heading">Character Traits</h3>
+        <ul class="mechanics">
+          <li><span><strong>Strength</strong> - Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
+          <li><span><strong>Speed</strong> - Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
+          <li><span><strong>Tactics</strong> - Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
+          <li><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
+          <li><span><strong>Type</strong> - Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
         </ul>
       </div>
     </section>
