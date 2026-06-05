@@ -1,11 +1,46 @@
 <?php
+// Skull Swap is public: playable logged-out, but scores only save for
+// logged-in players (ajax/start-swap-game.php and ajax/save-swap-score.php
+// both enforce this server-side). db.php is needed unconditionally for the
+// tile-icon query below; it only resumes a session when cookies exist, so
+// cookieless visitors don't generate orphan session files.
 include_once 'db.php';
-include 'message.php';
-// Verify includes Webhooks
-include 'verify.php';
-include 'skulliance.php';
-include 'header.php';
+
+// Restore the staking session from the 6-month SessionCookie when PHPSESSID
+// has lapsed (same pattern as monstrocity.php / match3rpg.php).
+if (session_status() === PHP_SESSION_ACTIVE
+    && !isset($_SESSION['logged_in'])
+    && isset($_COOKIE['SessionCookie'])) {
+    $cookieData = json_decode($_COOKIE['SessionCookie'], true);
+    if (is_array($cookieData)) {
+        $_SESSION = $cookieData;
+    }
+}
+$is_logged_in = isset($_SESSION['userData']['user_id']);
+
+if ($is_logged_in) {
+    include 'message.php';
+    // Verify includes Webhooks
+    include 'verify.php';
+    include 'skulliance.php';
+    include 'header.php';
+} else {
+    // Public visitors skip the staking chrome entirely. Emit a minimal
+    // document head; the page's own <style> block follows and the existing
+    // "</head><body>" further down closes it.
 ?>
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Skull Swap - Free Match 3 Puzzle Game | Skulliance</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Play Skull Swap free in your browser - a match 3 puzzle game with carbon and diamond bombs, cascade combos, and a 25-match score chase. No download, no signup.">
+  <meta name="theme-color" content="#161616">
+  <style>
+    body { background: #0F0F0F; margin: 0; font-family: Arial, sans-serif; }
+  </style>
+<?php } ?>
  <style>
 	 /*
          body {
@@ -339,10 +374,12 @@ include 'header.php';
              <div id="game-over">GAME OVER</div>
              <div id="game-over-buttons">
                  <button id="try-again">TRY AGAIN</button>
+                 <?php if ($is_logged_in): ?>
                  <form id="leaderboard-form" action="leaderboards.php" method="POST">
                      <input type="hidden" name="filterby" value="weekly-swaps">
                      <button id="leaderboard" type="submit">LEADERBOARD</button>
                  </form>
+                 <?php endif; ?>
              </div>
          </div>
          <button id="guide-btn" onclick="openGuide()">HOW TO PLAY</button>
@@ -439,6 +476,10 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      </script>
 
      <script>
+ // Public players play without a server game session; token fetch and
+ // score saves are skipped client-side (and rejected server-side anyway).
+ const IS_LOGGED_IN = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
+
  class Match3Game {
      constructor() {
          this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
@@ -526,9 +567,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          this.tryAgainButton = document.getElementById('try-again');
          this.tryAgainButton.addEventListener('click', () => this.resetGame());
 
+         // Leaderboard button only renders for logged-in players
          this.leaderboardButton = document.getElementById('leaderboard');
          this.leaderboardForm = document.getElementById('leaderboard-form');
-         this.leaderboardButton.addEventListener('click', () => this.leaderboardForm.submit());
+         if (this.leaderboardButton && this.leaderboardForm) {
+             this.leaderboardButton.addEventListener('click', () => this.leaderboardForm.submit());
+         }
      }
 
      playSound(soundName) {
@@ -540,6 +584,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      }
 
      fetchGameToken() {
+         if (!IS_LOGGED_IN) return;
          var self = this;
          var xhr = new XMLHttpRequest();
          xhr.open('GET', 'ajax/start-swap-game.php', true);
@@ -1008,6 +1053,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      }
 
 	 saveSwapScore(score) {
+	     if (!IS_LOGGED_IN) return;
 	     var xhttp = new XMLHttpRequest();
 	     xhttp.open('GET', 'ajax/save-swap-score.php?score=' + score + '&token=' + encodeURIComponent(this.gameToken || ''), true);
 	     xhttp.send();
