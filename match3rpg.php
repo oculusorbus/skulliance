@@ -1,6 +1,6 @@
 <?php
 // Standalone marketing landing page for the Monstrocity Match 3 RPG.
-// Public — no session, no DB, no login redirect. Designed to rank for
+// Public - no session, no DB, no login redirect. Designed to rank for
 // "free match 3 rpg", "browser match 3 game", and adjacent terms, with
 // OpenGraph/Twitter Cards/Schema.org structured data. FAQPage schema
 // intentionally omitted (Google retired FAQ rich results on 2026-05-07);
@@ -10,9 +10,9 @@ $canonical    = 'https://www.skulliance.io/staking/match3rpg.php';
 $play_url     = 'https://www.skulliance.io/staking/monstrocity.php';
 $logo_url     = 'https://www.skulliance.io/staking/images/monstrocity/logo.png';
 $og_image     = $logo_url;
-$page_title   = 'Free Match 3 RPG Game — Play Monstrocity in Your Browser';
-$page_desc    = 'Play Monstrocity free — a Match 3 RPG with deep combat, 35+ visual themes, boss battles, and skill-based combos. Works on mobile, tablet, and desktop. No download, no ads, no pay-to-win.';
-$short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, and boss battles. Play on any device — no download.';
+$page_title   = 'Free Match 3 RPG Game - Play Monstrocity in Your Browser';
+$page_desc    = 'Play Monstrocity free - a Match 3 RPG with deep combat, 35+ visual themes, boss battles, and skill-based combos. Works on mobile, tablet, and desktop. No download, no ads, no pay-to-win.';
+$short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, and boss battles. Play on any device - no download.';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -206,7 +206,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       gap: 12px;
     }
     .mechanics li {
-      display: flex; align-items: center; gap: 12px;
+      display: flex; align-items: flex-start; gap: 12px;
       padding: 14px 16px;
       background: rgba(255, 255, 255, 0.03);
       border-left: 3px solid #00c8a0;
@@ -237,7 +237,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       font-style: italic;
     }
 
-    /* Themes — project logo grid */
+    /* Themes - project logo grid */
     .logo-grid {
       list-style: none; padding: 0; margin: 20px 0 0;
       display: grid;
@@ -321,9 +321,9 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
     <section class="hero">
       <div class="wrap">
-        <img src="<?php echo $logo_url; ?>" alt="Monstrocity — free Match 3 RPG logo" class="logo" width="320" height="320" fetchpriority="high">
-        <h1>Free Match 3 RPG — Play in Your Browser</h1>
-        <p class="lead">Monstrocity is a free online Match 3 RPG with real combat depth — character stats, special attacks, power-ups, and boss battles wrapped around the match-3 mechanics you already love. Plays in any modern browser on phone, tablet, or desktop.</p>
+        <img src="<?php echo $logo_url; ?>" alt="Monstrocity - free Match 3 RPG logo" class="logo" width="320" height="320" fetchpriority="high">
+        <h1>Free Match 3 RPG - Play in Your Browser</h1>
+        <p class="lead">Monstrocity is a free online Match 3 RPG with real combat depth - character stats, special attacks, power-ups, and boss battles wrapped around the match-3 mechanics you already love. Plays in any modern browser on phone, tablet, or desktop.</p>
         <a href="<?php echo $play_url; ?>" class="cta" aria-label="Play Monstrocity free now">Play Free Now</a>
         <a href="#how-it-works" class="cta secondary">How It Works</a>
         <div class="badges" aria-label="Game highlights">
@@ -355,7 +355,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           </article>
           <article class="card">
             <h3>35+ Visual Themes</h3>
-            <p>Swap between dozens of art styles drawn from independent artists and partner projects — from cosmic explorers to retro punks.</p>
+            <p>Swap between dozens of art styles drawn from independent artists and partner projects - from cosmic explorers to retro punks.</p>
           </article>
           <article class="card">
             <h3>Boss Battles</h3>
@@ -372,56 +372,56 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     <section id="how-it-works">
       <div class="wrap">
         <h2>Real RPG Combat in a Match 3 Puzzle</h2>
-        <p>Every tile on the board does something different in combat. Instead of generic "score points," each match resolves as a combat action against the enemy character — and your opponent does the same to you.</p>
+        <p>Every tile on the board does something different in combat. Instead of generic "score points," each match resolves as a combat action against the enemy character - and your opponent does the same to you.</p>
 
         <h3 class="mech-heading">Tile Types</h3>
         <ul class="mechanics">
           <li>
             <span class="mech-icon"><img src="/staking/icons/first-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>First Attack (Slash)</strong> — Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
+            <span><strong>First Attack (Slash)</strong> - Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
           </li>
           <li>
             <span class="mech-icon"><img src="/staking/icons/second-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Second Attack (Bite)</strong> — Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
+            <span><strong>Second Attack (Bite)</strong> - Deals damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
           </li>
           <li>
             <span class="mech-icon"><img src="/staking/icons/special-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Special Attack (Shadow Strike)</strong> — Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
+            <span><strong>Special Attack (Shadow Strike)</strong> - Deals 1.2× damage (Strength × 2/3/4 for 3/4/5 tiles).</span>
           </li>
           <li>
             <span class="mech-icon"><img src="/staking/icons/power-up.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Power-Up</strong> — Activates a random powerup (see below).</span>
+            <span><strong>Power-Up</strong> - Activates a random powerup (see below).</span>
           </li>
           <li>
             <span class="mech-icon"><img src="/staking/icons/last-stand.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-            <span><strong>Last Stand</strong> — Deals damage and mitigates 5 damage on the next attack received.</span>
+            <span><strong>Last Stand</strong> - Deals damage and mitigates 5 damage on the next attack received.</span>
           </li>
         </ul>
 
         <h3 class="mech-heading">Power-Up Effects</h3>
         <ul class="mechanics cols-2">
-          <li><span><strong>Heal (Bloody)</strong> — Restores 10 HP (reduced by enemy tactics).</span></li>
-          <li><span><strong>Boost Attack (Cardano)</strong> — Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
-          <li><span><strong>Regenerate (ADA)</strong> — Restores 7 HP (reduced by enemy tactics).</span></li>
-          <li><span><strong>Minor Regen (None)</strong> — Restores 5 HP (reduced by enemy tactics).</span></li>
+          <li><span><strong>Heal (Bloody)</strong> - Restores 10 HP (reduced by enemy tactics).</span></li>
+          <li><span><strong>Boost Attack (Cardano)</strong> - Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
+          <li><span><strong>Regenerate (ADA)</strong> - Restores 7 HP (reduced by enemy tactics).</span></li>
+          <li><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
         </ul>
         <p class="mech-note">Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</p>
 
         <h3 class="mech-heading">Combo Bonuses</h3>
         <ul class="mechanics cols-2">
-          <li><span><strong>Match-4 Bonus</strong> — 50% bonus to damage and score for a single match of 4 tiles.</span></li>
-          <li><span><strong>Match-5+ Bonus</strong> — 100% bonus to damage and score for a single match of 5 or more tiles.</span></li>
-          <li><span><strong>Multi-Match (6–8 tiles)</strong> — 20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades).</span></li>
-          <li><span><strong>Mega Multi-Match (9+ tiles)</strong> — 200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades).</span></li>
+          <li><span><strong>Match-4 Bonus</strong> - 50% bonus to damage and score for a single match of 4 tiles.</span></li>
+          <li><span><strong>Match-5+ Bonus</strong> - 100% bonus to damage and score for a single match of 5 or more tiles.</span></li>
+          <li><span><strong>Multi-Match (6–8 tiles)</strong> - 20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades).</span></li>
+          <li><span><strong>Mega Multi-Match (9+ tiles)</strong> - 200% bonus to score for matching 9 or more tiles across multiple matches in a single move (does not apply to cascades).</span></li>
         </ul>
 
         <h3 class="mech-heading">Character Traits</h3>
         <ul class="mechanics">
-          <li><span><strong>Strength</strong> — Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
-          <li><span><strong>Speed</strong> — Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
-          <li><span><strong>Tactics</strong> — Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
-          <li><span><strong>Size</strong> — Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
-          <li><span><strong>Type</strong> — Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
+          <li><span><strong>Strength</strong> - Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
+          <li><span><strong>Speed</strong> - Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
+          <li><span><strong>Tactics</strong> - Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
+          <li><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
+          <li><span><strong>Type</strong> - Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
         </ul>
       </div>
     </section>
@@ -429,7 +429,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     <section>
       <div class="wrap">
         <h2>Featured Artists &amp; Projects</h2>
-        <p>Monstrocity bundles the original character set with dozens of visual themes contributed by independent artists. Each project below brings its own world — swap freely in-game, the mechanics stay the same and the art changes everything.</p>
+        <p>Monstrocity bundles the original character set with dozens of visual themes contributed by independent artists. Each project below brings its own world - swap freely in-game, the mechanics stay the same and the art changes everything.</p>
         <?php
         // Display: project name. Path: /staking/images/monstrocity/{theme-slug}/logo.png
         // where theme-slug is the FIRST theme.value associated with this project
@@ -437,7 +437,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         // not a project-named folder). Slugified project names happen to match the
         // theme value for some projects (apprentices, blackflag, etc.) but for
         // many they don't (Heist on Alpha → proxy, Josh Howard → muses, Nemonium
-        // → fauna, etc.) — explicit map avoids 404s.
+        // → fauna, etc.) - explicit map avoids 404s.
         $img_base = 'https://www.skulliance.io/staking/images/monstrocity/';
         $projects = [
             'Monstrocity'      => 'monstrocity',
@@ -491,7 +491,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       <div class="wrap">
         <h2>How to Start Playing in Under 10 Seconds</h2>
         <ol>
-          <li>Open <a href="<?php echo $play_url; ?>">the game</a> in any browser — phone, tablet, or desktop.</li>
+          <li>Open <a href="<?php echo $play_url; ?>">the game</a> in any browser - phone, tablet, or desktop.</li>
           <li>Pick a visual theme (or stick with the default Monstrocity art).</li>
           <li>Choose a character and step into your first battle.</li>
           <li>Match tiles to attack, defend, and trigger power-ups. Beat the opponent.</li>
@@ -521,7 +521,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
         <details>
           <summary>How is this different from other match 3 games?</summary>
-          <p>Most match-3 games are pure puzzles or have light meta-game wrappers. Monstrocity is a true Match 3 RPG — every match resolves as a combat action with damage, defense, or power-up effects. Character stats (Strength, Speed, Tactics, Size, Type) actually change how fights play out, and bigger combos translate to bigger hits.</p>
+          <p>Most match-3 games are pure puzzles or have light meta-game wrappers. Monstrocity is a true Match 3 RPG - every match resolves as a combat action with damage, defense, or power-up effects. Character stats (Strength, Speed, Tactics, Size, Type) actually change how fights play out, and bigger combos translate to bigger hits.</p>
         </details>
 
         <details>
@@ -536,12 +536,12 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
         <details>
           <summary>What is Skulliance and do I need it to play?</summary>
-          <p>Skulliance is the platform that hosts and maintains Monstrocity. You do not need a Skulliance account, a wallet, or anything cryptocurrency-related to play. Optional features (leaderboards, game saves, rewards) exist for Skulliance community members, but they are entirely opt-in — the base game is free and complete on its own.</p>
+          <p>Skulliance is the platform that hosts and maintains Monstrocity. You do not need a Skulliance account, a wallet, or anything cryptocurrency-related to play. Optional features (leaderboards, game saves, rewards) exist for Skulliance community members, but they are entirely opt-in - the base game is free and complete on its own.</p>
         </details>
 
         <details>
           <summary>Can I save my progress?</summary>
-          <p>Casual play runs in-browser without an account. If you want persistent game saves, leaderboards, or to compete for rewards, you can optionally connect via the Skulliance staking platform — but it's not required to enjoy the game.</p>
+          <p>Casual play runs in-browser without an account. If you want persistent game saves, leaderboards, or to compete for rewards, you can optionally connect via the Skulliance staking platform - but it's not required to enjoy the game.</p>
         </details>
 
         <details>
