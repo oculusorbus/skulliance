@@ -338,6 +338,14 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       object-fit: contain;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     }
+    .mech-emoji {
+      flex-shrink: 0;
+      width: 32px;
+      font-size: 1.4rem;
+      line-height: 1;
+      text-align: center;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
     .mech-heading {
       margin-top: 36px;
       font-size: 1.05rem;
@@ -822,10 +830,10 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
         <h3 class="mech-heading">Power-Up Effects</h3>
         <ul class="mechanics cols-2">
-          <li><span><strong>Heal (Bloody)</strong> - Restores 10 HP (reduced by enemy tactics).</span></li>
-          <li><span><strong>Boost Attack (Cardano)</strong> - Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
-          <li><span><strong>Regenerate (ADA)</strong> - Restores 7 HP (reduced by enemy tactics).</span></li>
-          <li><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">🩸</span><span><strong>Heal (Bloody)</strong> - Restores 10 HP (reduced by enemy tactics).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">💥</span><span><strong>Boost Attack (Cardano)</strong> - Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">🔄</span><span><strong>Regenerate (ADA)</strong> - Restores 7 HP (reduced by enemy tactics).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">✨</span><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
         </ul>
         <p class="mech-note">Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</p>
 
@@ -839,11 +847,11 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
         <h3 class="mech-heading">Character Traits</h3>
         <ul class="mechanics">
-          <li><span><strong>Strength</strong> - Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
-          <li><span><strong>Speed</strong> - Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
-          <li><span><strong>Tactics</strong> - Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
-          <li><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
-          <li><span><strong>Type</strong> - Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">💪</span><span><strong>Strength</strong> - Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">⚡</span><span><strong>Speed</strong> - Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">🧠</span><span><strong>Tactics</strong> - Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">📏</span><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">🎭</span><span><strong>Type</strong> - Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
         </ul>
       </div>
     </section>
