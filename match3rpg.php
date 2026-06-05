@@ -403,6 +403,34 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       letter-spacing: 0.02em;
     }
 
+    /* Hint above the project grid that the logos are interactive */
+    .click-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      margin-top: 6px;
+      background: rgba(0, 200, 160, 0.08);
+      border: 1px solid rgba(0, 200, 160, 0.3);
+      border-radius: 999px;
+      color: #c7d0d9;
+      font-size: 0.92rem;
+    }
+    .click-hint strong { color: #34e3bb; }
+    .click-hint .click-icon {
+      font-size: 1.05rem;
+      transform: rotate(120deg);
+      display: inline-block;
+      animation: click-bounce 1.8s ease-in-out infinite;
+    }
+    @keyframes click-bounce {
+      0%, 100% { transform: rotate(120deg) translateY(0); }
+      50%      { transform: rotate(120deg) translateY(-3px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .click-hint .click-icon { animation: none; }
+    }
+
     /* Themes - project logo grid (full viewport width) */
     .logo-grid {
       list-style: none;
@@ -654,6 +682,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       <div class="wrap">
         <h2>Featured Artists &amp; Projects</h2>
         <p>Monstrocity bundles the original character set with dozens of visual themes contributed by independent artists. Each project below brings its own world - swap freely in-game, the mechanics stay the same and the art changes everything.</p>
+        <p class="click-hint"><span class="click-icon" aria-hidden="true">&#x1F446;</span> <strong>Click any logo</strong> to preview that project's cast of characters.</p>
         <?php
         // Display: project name. Path: /staking/images/monstrocity/{theme-slug}/logo.png
         // where theme-slug is the FIRST theme.value associated with this project
