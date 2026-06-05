@@ -160,11 +160,11 @@ if ($is_logged_in) {
       background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #c7d0d9;
     }
 
-    /* Framed screenshot, displayed as a plain image (not a background) */
-    .ss-band { width: 100%; padding: 48px 20px; }
+    /* Framed game-board screenshot leading the hero - a plain image, not
+       a background. This is the first thing public visitors see. */
     .ss-shot {
-      display: block; width: 100%; max-width: 520px; height: auto;
-      margin: 0 auto; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);
+      display: block; width: 100%; max-width: 480px; height: auto;
+      margin: 0 auto 30px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);
       box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,200,160,0.1) inset;
     }
 
@@ -572,7 +572,8 @@ if ($is_logged_in) {
      </style>
  </head>
  <body>
-     <div id="game-container">
+     <!-- Hidden for public visitors until they hit Play on the landing -->
+     <div id="game-container"<?php if (!$is_logged_in) echo ' style="display:none"'; ?>>
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
@@ -685,13 +686,15 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      </script>
 
 <?php if (!$is_logged_in): ?>
-     <!-- Marketing landing for public visitors, below the playable board.
-          The board itself is the first thing on the page; Play CTAs scroll
-          back up to it. Logged-in players never see this. All numbers
-          mirror the in-game guide modal so the copy stays truthful to the
-          mechanics - if scoring is ever rebalanced, update both. -->
+     <!-- Marketing landing shown to public visitors by default; the game
+          board image leads, the playable game stays hidden until Play is
+          clicked (ssPlay hides this landing and reveals the board).
+          Logged-in players never see this. All numbers mirror the in-game
+          guide modal so the copy stays truthful to the mechanics - if
+          scoring is ever rebalanced, update both. -->
      <div id="ss-landing">
          <header class="ss-hero">
+             <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207">
              <h1>&#x1F480; Skull Swap &#x1F480;<span class="ss-subtitle">Free Match 3 Puzzle Game</span></h1>
              <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
              <button class="ss-cta" type="button" onclick="ssPlay()">Play Free Now</button>
@@ -703,10 +706,6 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  <span class="ss-badge">Mobile &amp; Desktop</span>
              </div>
          </header>
-
-         <div class="ss-band">
-             <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207" loading="lazy" decoding="async">
-         </div>
 
          <section class="ss-section">
              <div class="ss-wrap">
@@ -804,9 +803,11 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          </footer>
      </div>
      <script>
-         // The board is already at the top of the page; Play just scrolls to it.
+         // Hide the landing and reveal the (already initialized) game.
          function ssPlay() {
-             window.scrollTo({ top: 0, behavior: 'smooth' });
+             document.getElementById('ss-landing').style.display = 'none';
+             document.getElementById('game-container').style.display = 'flex';
+             window.scrollTo(0, 0);
          }
      </script>
 <?php endif; ?>
