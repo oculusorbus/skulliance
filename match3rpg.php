@@ -341,9 +341,17 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       letter-spacing: 0.02em;
     }
 
-    /* Themes - project logo grid */
+    /* Themes - project logo grid (full viewport width) */
     .logo-grid {
-      list-style: none; padding: 0; margin: 20px 0 0;
+      list-style: none;
+      margin: 20px 0 0;
+      padding: 0 24px;
+      /* Break out of the .wrap container to fill the full viewport width
+         so more logos fit per row and the section uses less vertical
+         space. Heading/intro above the grid stay constrained. */
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
       gap: 14px;
