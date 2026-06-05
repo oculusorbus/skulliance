@@ -96,13 +96,14 @@ if ($is_logged_in) {
   </script>
 
   <style>
-    /* Marketing landing for public visitors; hidden once they hit Play.
-       Design language mirrors match3rpg.php's layer cake (glow hero,
-       gradient pill CTAs, parallax screenshot band, accent-bar mechanics,
-       score table, gradient final CTA) with Skull Swap's blue identity. */
+    /* Marketing landing for public visitors, rendered BELOW the playable
+       board. Design language matches match3rpg.php / the staking platform
+       theme: brand green-teal accents (#00c8a0 -> #0596c4), navy base,
+       glow hero, gradient pill CTAs, accent-bar mechanics, score table,
+       gradient final CTA. */
     html { scroll-behavior: smooth; }
     body {
-      background: #0F0F0F; margin: 0; color: #e8eaed;
+      background: #07111d; margin: 0; color: #e8eaed;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
@@ -110,39 +111,48 @@ if ($is_logged_in) {
     #ss-landing h1, #ss-landing h2, #ss-landing h3 { line-height: 1.2; margin: 0 0 0.5em; font-weight: 700; }
     #ss-landing h1 { font-size: clamp(1.9rem, 4.5vw, 3.2rem); }
     #ss-landing h2 { font-size: clamp(1.4rem, 3vw, 2rem); }
-    #ss-landing h3 { font-size: 1.12rem; color: #4db5e6; }
+    #ss-landing h3 { font-size: 1.12rem; color: #00c8a0; }
     #ss-landing p { margin: 0 0 1em; }
-    #ss-landing a { color: #4db5e6; text-decoration: none; }
-    #ss-landing a:hover { color: #7fd0f5; text-decoration: underline; }
+    #ss-landing a { color: #00c8a0; text-decoration: none; }
+    #ss-landing a:hover { color: #34e3bb; text-decoration: underline; }
     .ss-wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
 
     .ss-hero {
       text-align: center; padding: 56px 20px 48px;
       background:
-        radial-gradient(circle at 50% 0%, rgba(77, 181, 230, 0.16), transparent 60%),
-        linear-gradient(180deg, #0F0F0F 0%, #122430 100%);
+        radial-gradient(circle at 50% 0%, rgba(0, 200, 160, 0.18), transparent 60%),
+        linear-gradient(180deg, #07111d 0%, #0b1a2b 100%);
+      border-top: 1px solid rgba(255,255,255,0.08);
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    .ss-skull { font-size: 2.6rem; line-height: 1; margin-bottom: 10px; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6)); }
-    .ss-lead { font-size: clamp(1rem, 2vw, 1.18rem); max-width: 700px; margin: 0 auto 28px; color: #c7d0d9; }
+    .ss-subtitle {
+      display: block; margin-top: 8px;
+      font-size: clamp(1.05rem, 2.5vw, 1.6rem);
+      font-weight: 600; color: #c7d0d9;
+    }
+    /* ID-prefixed to outrank the #ss-landing p reset above */
+    #ss-landing .ss-lead {
+      text-align: center; font-size: clamp(1rem, 2vw, 1.18rem);
+      max-width: 700px; margin: 0 auto 28px; color: #c7d0d9;
+    }
     .ss-cta {
       display: inline-block;
-      background: linear-gradient(135deg, #4db5e6, #165777);
+      background: linear-gradient(135deg, #00c8a0, #0596c4);
       color: #07111d !important; font-weight: 800; font-size: 1.08rem;
       padding: 14px 32px; border: none; border-radius: 999px; cursor: pointer;
       font-family: inherit; text-decoration: none !important;
-      box-shadow: 0 6px 20px rgba(77, 181, 230, 0.35);
+      box-shadow: 0 6px 20px rgba(0, 200, 160, 0.35);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .ss-cta:hover, .ss-cta:focus {
       transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(77, 181, 230, 0.5);
+      box-shadow: 0 10px 28px rgba(0, 200, 160, 0.5);
     }
     .ss-cta.ss-secondary {
-      background: transparent; color: #4db5e6 !important;
-      border: 1px solid rgba(77, 181, 230, 0.45); box-shadow: none; margin-left: 12px;
+      background: transparent; color: #00c8a0 !important;
+      border: 1px solid rgba(0, 200, 160, 0.45); box-shadow: none; margin-left: 12px;
     }
-    .ss-cta.ss-secondary:hover { background: rgba(77, 181, 230, 0.08); }
+    .ss-cta.ss-secondary:hover { background: rgba(0, 200, 160, 0.08); }
     .ss-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
     .ss-badge {
       font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
@@ -150,25 +160,12 @@ if ($is_logged_in) {
       background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #c7d0d9;
     }
 
-    /* Full-width screenshot band with parallax backdrop */
-    .ss-band {
-      position: relative; width: 100%; padding: 56px 20px;
-      background-image: url('https://www.skulliance.io/staking/images/skullswap.png');
-      background-size: cover; background-position: center; background-attachment: fixed;
-      overflow: hidden;
-    }
-    .ss-band::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(180deg, rgba(15,15,15,0.78), rgba(15,15,15,0.45) 40%, rgba(15,15,15,0.82));
-      pointer-events: none;
-    }
+    /* Framed screenshot, displayed as a plain image (not a background) */
+    .ss-band { width: 100%; padding: 48px 20px; }
     .ss-shot {
-      position: relative; display: block; width: 100%; max-width: 520px; height: auto;
+      display: block; width: 100%; max-width: 520px; height: auto;
       margin: 0 auto; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(77,181,230,0.1) inset;
-    }
-    @media (max-width: 768px), (hover: none) {
-      .ss-band { background-attachment: scroll; }
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,200,160,0.1) inset;
     }
 
     .ss-section { padding: 44px 0; }
@@ -189,11 +186,16 @@ if ($is_logged_in) {
     .ss-mechanics li {
       display: flex; align-items: flex-start; gap: 12px;
       padding: 14px 16px; background: rgba(255,255,255,0.03);
-      border-left: 3px solid #4db5e6; border-radius: 6px; font-size: 0.95rem;
+      border-left: 3px solid #00c8a0; border-radius: 6px; font-size: 0.95rem;
     }
-    .ss-mechanics li strong { color: #7fd0f5; }
+    .ss-mechanics li strong { color: #34e3bb; }
     .ss-mech-icon { flex-shrink: 0; }
     .ss-mech-icon img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+    .ss-mech-emoji {
+      flex-shrink: 0; width: 32px; text-align: center;
+      font-size: 1.5rem; line-height: 1.2;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
 
     .ss-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 18px; }
     .ss-table th {
@@ -202,7 +204,7 @@ if ($is_logged_in) {
     }
     .ss-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #c7d0d9; }
     .ss-table tr:last-child td { border-bottom: none; }
-    .ss-table td strong { color: #7fd0f5; }
+    .ss-table td strong { color: #34e3bb; }
     .ss-table img { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; margin: 0 2px; }
 
     /* Strategy tips: numbered pills */
@@ -217,19 +219,25 @@ if ($is_logged_in) {
       position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
       width: 28px; height: 28px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #4db5e6, #165777);
+      background: linear-gradient(135deg, #00c8a0, #0596c4);
       color: #07111d; font-weight: 800; font-size: 0.9rem;
     }
-    .ss-tips li strong { color: #7fd0f5; }
+    .ss-tips li strong { color: #34e3bb; }
 
     .ss-center { text-align: center; }
+    /* Centered quickstart section */
+    .ss-quickstart { text-align: center; }
+    .ss-quickstart ol { list-style-position: inside; padding: 0; margin: 16px 0 24px; }
+    .ss-quickstart ol li { margin: 6px 0; }
     .ss-final {
       text-align: center; padding: 56px 20px;
-      background: linear-gradient(135deg, rgba(77,181,230,0.12), rgba(22,87,119,0.14));
+      background: linear-gradient(135deg, rgba(0,200,160,0.12), rgba(5,150,196,0.08));
       border-radius: 16px; margin-top: 8px;
     }
     .ss-final h2 { margin-top: 0; }
-    .ss-login-note { font-size: 0.9rem; color: #8a96a3; margin: 18px 0 0; }
+    /* ID-prefixed to outrank the #ss-landing p reset; the top margin is
+       the requested space above the login note */
+    #ss-landing .ss-login-note { font-size: 0.9rem; color: #8a96a3; margin: 28px 0 0; }
     .ss-footer {
       padding: 28px 20px; text-align: center; color: #8a96a3; font-size: 0.88rem;
       border-top: 1px solid rgba(255,255,255,0.06);
@@ -564,135 +572,7 @@ if ($is_logged_in) {
      </style>
  </head>
  <body>
-<?php if (!$is_logged_in): ?>
-     <!-- Marketing landing for public visitors. Hitting Play hides this and
-          reveals the (already initialized) game below. Logged-in players
-          never see it - they go straight to the board. All numbers mirror
-          the in-game guide modal so the copy stays truthful to the
-          mechanics - if scoring is ever rebalanced, update both. -->
-     <div id="ss-landing">
-         <header class="ss-hero">
-             <div class="ss-skull" aria-hidden="true">&#x1F480;</div>
-             <h1>Skull Swap - Free Match 3 Puzzle Game</h1>
-             <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
-             <button class="ss-cta" type="button" onclick="ssPlay()">Play Free Now</button>
-             <a class="ss-cta ss-secondary" href="#ss-scoring">How Scoring Works</a>
-             <div class="ss-badges" aria-label="Game highlights">
-                 <span class="ss-badge">100% Free</span>
-                 <span class="ss-badge">No Download</span>
-                 <span class="ss-badge">No Signup</span>
-                 <span class="ss-badge">Mobile &amp; Desktop</span>
-             </div>
-         </header>
-
-         <div class="ss-band">
-             <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207">
-         </div>
-
-         <section class="ss-section">
-             <div class="ss-wrap">
-                 <h2>Not Your Average Match 3</h2>
-                 <div class="ss-features">
-                     <div class="ss-card">
-                         <h3>&#x1F4A3; Carbon &amp; Diamond Bombs</h3>
-                         <p>Match 4 to forge a Carbon bomb that wipes a full row and column. Match 5 for a Diamond bomb that clears the entire board - up to 680 points in a single move.</p>
-                     </div>
-                     <div class="ss-card">
-                         <h3>&#x26D3; Chain Detonations</h3>
-                         <p>Bomb blasts that hit other bombs set them off too, stacking +50 and +100 bonuses on top. Planting bombs near each other is where monster scores come from.</p>
-                     </div>
-                     <div class="ss-card">
-                         <h3>&#x1F3AF; 25 Matches, Make Them Count</h3>
-                         <p>Every run is exactly 25 matches. No timers, no lives - pure score-per-move strategy where a 5-match always beats a quick 3.</p>
-                     </div>
-                     <div class="ss-card">
-                         <h3>&#x26A0; The End Game Trap</h3>
-                         <p>Leftover bombs auto-detonate at discount rates when your last match fires. Cashing them in manually before match 25 separates good scores from great ones.</p>
-                     </div>
-                 </div>
-             </div>
-         </section>
-
-         <section class="ss-section" id="ss-scoring">
-             <div class="ss-wrap">
-                 <h2>How Scoring Works</h2>
-                 <p>Every tile cleared is worth 10 points, so a plain match-3 pays 30. That's the floor, not the ceiling - the real economy is in the bombs:</p>
-                 <ul class="ss-mechanics">
-                     <li>
-                         <span class="ss-mech-icon"><img src="icons/carbon.png" alt="Carbon bomb" loading="lazy" decoding="async" width="32" height="32"></span>
-                         <span><strong>Carbon Bomb (match 4)</strong> - detonates its entire row and column, a 13-tile cross worth ~130 points plus a +25 manual-detonation bonus.</span>
-                     </li>
-                     <li>
-                         <span class="ss-mech-icon"><img src="icons/diamond.png" alt="Diamond bomb" loading="lazy" decoding="async" width="32" height="32"></span>
-                         <span><strong>Diamond Bomb (match 5+)</strong> - wipes the whole board: ~630 points plus a +50 bonus. One move, twenty times a plain match.</span>
-                     </li>
-                     <li>
-                         <span class="ss-mech-icon"><img src="icons/carbon.png" alt="" loading="lazy" decoding="async" width="32" height="32"></span>
-                         <span><strong>Chains</strong> - a blast that hits another bomb sets it off too: +50 per chained Carbon, +100 per chained Diamond. Stack bombs near each other on purpose.</span>
-                     </li>
-                 </ul>
-                 <table class="ss-table">
-                     <thead><tr><th>Move</th><th>Points</th></tr></thead>
-                     <tbody>
-                         <tr><td>Match 3</td><td>30</td></tr>
-                         <tr><td>Match 4 (makes <img src="icons/carbon.png" alt="Carbon"> Carbon bomb)</td><td>40</td></tr>
-                         <tr><td>Match 5 (makes <img src="icons/diamond.png" alt="Diamond"> Diamond bomb)</td><td>50</td></tr>
-                         <tr><td>Manually detonate <img src="icons/carbon.png" alt="Carbon"> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
-                         <tr><td>Manually detonate <img src="icons/diamond.png" alt="Diamond"> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
-                         <tr><td>Chain: <img src="icons/carbon.png" alt="Carbon"> Carbon into <img src="icons/diamond.png" alt="Diamond"> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
-                     </tbody>
-                 </table>
-             </div>
-         </section>
-
-         <section class="ss-section">
-             <div class="ss-wrap">
-                 <h2>Think Like a High Scorer</h2>
-                 <ol class="ss-tips">
-                     <li><strong>Always take a 5-match over a 3-match.</strong> A Diamond bomb is worth hundreds of points; a quick clear is worth 30.</li>
-                     <li><strong>Take a 4-match over a 3-match.</strong> A Carbon bomb beats a plain clear every time.</li>
-                     <li><strong>Position your drag endpoint.</strong> The bomb spawns where you release, so place it where it can chain into another bomb later.</li>
-                     <li><strong>Detonate before match 25.</strong> When your last match fires, leftover bombs auto-detonate at discount rates - you keep the tile points but lose every +25/+50 bonus.</li>
-                 </ol>
-             </div>
-         </section>
-
-         <section class="ss-section">
-             <div class="ss-wrap">
-                 <h2>How to Start Playing in Under 10 Seconds</h2>
-                 <ol>
-                     <li>Hit Play - the board loads instantly in your browser on phone, tablet, or desktop.</li>
-                     <li>Drag a tile to swap it with a neighbor and line up 3 or more matching icons.</li>
-                     <li>Chase 4- and 5-matches to forge bombs, then detonate them for the big points.</li>
-                 </ol>
-                 <p class="ss-center"><button class="ss-cta" type="button" onclick="ssPlay()">Start Playing Now</button></p>
-             </div>
-         </section>
-
-         <section class="ss-section">
-             <div class="ss-wrap">
-                 <div class="ss-final">
-                     <h2>Ready to Swap?</h2>
-                     <p>Open the board and start matching. No download. No signup. Just play.</p>
-                     <button class="ss-cta" type="button" onclick="ssPlay()">Play Skull Swap Free</button>
-                     <p class="ss-login-note">Want your scores saved and a shot at the weekly leaderboard? <a href="index.php">Log in through Skulliance</a> with Discord and every run you finish counts.</p>
-                 </div>
-             </div>
-         </section>
-
-         <footer class="ss-footer">
-             <p>&copy; Skulliance &middot; Skull Swap is a free browser-based match 3 puzzle game. <a href="https://www.skulliance.io/">Visit Skulliance</a></p>
-         </footer>
-     </div>
-     <script>
-         function ssPlay() {
-             document.getElementById('ss-landing').style.display = 'none';
-             document.getElementById('game-container').style.display = 'flex';
-             window.scrollTo(0, 0);
-         }
-     </script>
-<?php endif; ?>
-     <div id="game-container"<?php if (!$is_logged_in) echo ' style="display:none"'; ?>>
+     <div id="game-container">
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
@@ -803,6 +683,133 @@ if ($is_logged_in) {
 function openGuide() { document.getElementById('guide-overlay').style.display = 'flex'; }
 function closeGuide() { document.getElementById('guide-overlay').style.display = 'none'; }
      </script>
+
+<?php if (!$is_logged_in): ?>
+     <!-- Marketing landing for public visitors, below the playable board.
+          The board itself is the first thing on the page; Play CTAs scroll
+          back up to it. Logged-in players never see this. All numbers
+          mirror the in-game guide modal so the copy stays truthful to the
+          mechanics - if scoring is ever rebalanced, update both. -->
+     <div id="ss-landing">
+         <header class="ss-hero">
+             <h1>&#x1F480; Skull Swap &#x1F480;<span class="ss-subtitle">Free Match 3 Puzzle Game</span></h1>
+             <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
+             <button class="ss-cta" type="button" onclick="ssPlay()">Play Free Now</button>
+             <a class="ss-cta ss-secondary" href="#ss-scoring">How Scoring Works</a>
+             <div class="ss-badges" aria-label="Game highlights">
+                 <span class="ss-badge">100% Free</span>
+                 <span class="ss-badge">No Download</span>
+                 <span class="ss-badge">No Signup</span>
+                 <span class="ss-badge">Mobile &amp; Desktop</span>
+             </div>
+         </header>
+
+         <div class="ss-band">
+             <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207" loading="lazy" decoding="async">
+         </div>
+
+         <section class="ss-section">
+             <div class="ss-wrap">
+                 <h2>Not Your Average Match 3</h2>
+                 <div class="ss-features">
+                     <div class="ss-card">
+                         <h3>&#x1F4A3; Carbon &amp; Diamond Bombs</h3>
+                         <p>Match 4 to forge a Carbon bomb that wipes a full row and column. Match 5 for a Diamond bomb that clears the entire board - up to 680 points in a single move.</p>
+                     </div>
+                     <div class="ss-card">
+                         <h3>&#x26D3; Chain Detonations</h3>
+                         <p>Bomb blasts that hit other bombs set them off too, stacking +50 and +100 bonuses on top. Planting bombs near each other is where monster scores come from.</p>
+                     </div>
+                     <div class="ss-card">
+                         <h3>&#x1F3AF; 25 Matches, Make Them Count</h3>
+                         <p>Every run is exactly 25 matches. No timers, no lives - pure score-per-move strategy where a 5-match always beats a quick 3.</p>
+                     </div>
+                     <div class="ss-card">
+                         <h3>&#x26A0; The End Game Trap</h3>
+                         <p>Leftover bombs auto-detonate at discount rates when your last match fires. Cashing them in manually before match 25 separates good scores from great ones.</p>
+                     </div>
+                 </div>
+             </div>
+         </section>
+
+         <section class="ss-section" id="ss-scoring">
+             <div class="ss-wrap">
+                 <h2>How Scoring Works</h2>
+                 <p>Every tile cleared is worth 10 points, so a plain match-3 pays 30. That's the floor, not the ceiling - the real economy is in the bombs:</p>
+                 <ul class="ss-mechanics">
+                     <li>
+                         <span class="ss-mech-icon"><img src="icons/carbon.png" alt="Carbon bomb" loading="lazy" decoding="async" width="32" height="32"></span>
+                         <span><strong>Carbon Bomb (match 4)</strong> - detonates its entire row and column, a 13-tile cross worth ~130 points plus a +25 manual-detonation bonus.</span>
+                     </li>
+                     <li>
+                         <span class="ss-mech-icon"><img src="icons/diamond.png" alt="Diamond bomb" loading="lazy" decoding="async" width="32" height="32"></span>
+                         <span><strong>Diamond Bomb (match 5+)</strong> - wipes the whole board: ~630 points plus a +50 bonus. One move, twenty times a plain match.</span>
+                     </li>
+                     <li>
+                         <span class="ss-mech-emoji" aria-hidden="true">&#x26D3;</span>
+                         <span><strong>Chains</strong> - a blast that hits another bomb sets it off too: +50 per chained Carbon, +100 per chained Diamond. Stack bombs near each other on purpose.</span>
+                     </li>
+                 </ul>
+                 <table class="ss-table">
+                     <thead><tr><th>Move</th><th>Points</th></tr></thead>
+                     <tbody>
+                         <tr><td>Match 3</td><td>30</td></tr>
+                         <tr><td>Match 4 (makes <img src="icons/carbon.png" alt="Carbon"> Carbon bomb)</td><td>40</td></tr>
+                         <tr><td>Match 5 (makes <img src="icons/diamond.png" alt="Diamond"> Diamond bomb)</td><td>50</td></tr>
+                         <tr><td>Manually detonate <img src="icons/carbon.png" alt="Carbon"> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
+                         <tr><td>Manually detonate <img src="icons/diamond.png" alt="Diamond"> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
+                         <tr><td>Chain: <img src="icons/carbon.png" alt="Carbon"> Carbon into <img src="icons/diamond.png" alt="Diamond"> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
+                     </tbody>
+                 </table>
+             </div>
+         </section>
+
+         <section class="ss-section">
+             <div class="ss-wrap">
+                 <h2>Think Like a High Scorer</h2>
+                 <ol class="ss-tips">
+                     <li><strong>Always take a 5-match over a 3-match.</strong> A Diamond bomb is worth hundreds of points; a quick clear is worth 30.</li>
+                     <li><strong>Take a 4-match over a 3-match.</strong> A Carbon bomb beats a plain clear every time.</li>
+                     <li><strong>Position your drag endpoint.</strong> The bomb spawns where you release, so place it where it can chain into another bomb later.</li>
+                     <li><strong>Detonate before match 25.</strong> When your last match fires, leftover bombs auto-detonate at discount rates - you keep the tile points but lose every +25/+50 bonus.</li>
+                 </ol>
+             </div>
+         </section>
+
+         <section class="ss-section ss-quickstart">
+             <div class="ss-wrap">
+                 <h2>How to Start Playing in Under 10 Seconds</h2>
+                 <ol>
+                     <li>Hit Play - the board loads instantly in your browser on phone, tablet, or desktop.</li>
+                     <li>Drag a tile to swap it with a neighbor and line up 3 or more matching icons.</li>
+                     <li>Chase 4- and 5-matches to forge bombs, then detonate them for the big points.</li>
+                 </ol>
+                 <p class="ss-center"><button class="ss-cta" type="button" onclick="ssPlay()">Start Playing Now</button></p>
+             </div>
+         </section>
+
+         <section class="ss-section">
+             <div class="ss-wrap">
+                 <div class="ss-final">
+                     <h2>Ready to Swap?</h2>
+                     <p>The board is waiting at the top of this page. No download. No signup. Just play.</p>
+                     <button class="ss-cta" type="button" onclick="ssPlay()">Play Skull Swap Free</button>
+                     <p class="ss-login-note">Want your scores saved and a shot at the weekly leaderboard? <a href="index.php">Log in through Skulliance</a> with Discord and every run you finish counts.</p>
+                 </div>
+             </div>
+         </section>
+
+         <footer class="ss-footer">
+             <p>&copy; Skulliance &middot; Skull Swap is a free browser-based match 3 puzzle game. <a href="https://www.skulliance.io/">Visit Skulliance</a></p>
+         </footer>
+     </div>
+     <script>
+         // The board is already at the top of the page; Play just scrolls to it.
+         function ssPlay() {
+             window.scrollTo({ top: 0, behavior: 'smooth' });
+         }
+     </script>
+<?php endif; ?>
 
      <script>
  // Public players play without a server game session; token fetch and
