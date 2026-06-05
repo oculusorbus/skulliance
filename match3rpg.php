@@ -213,12 +213,12 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     .logo-grid {
       list-style: none; padding: 0; margin: 20px 0 0;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
       gap: 14px;
     }
     .logo-tile {
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      padding: 14px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 16px 14px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
@@ -231,14 +231,13 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       background: rgba(0, 200, 160, 0.06);
     }
     .logo-tile img {
-      width: 72px; height: 72px;
-      border-radius: 50%;
-      object-fit: cover;
-      background: #0b1a2b;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      width: 100%;
+      max-width: 200px;
+      height: 100px;
+      object-fit: contain;
     }
     .logo-tile span {
-      font-size: 0.82rem;
+      font-size: 0.88rem;
       color: #c7d0d9;
       line-height: 1.25;
       word-break: break-word;
@@ -419,7 +418,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
               <img src="<?php echo htmlspecialchars($logo); ?>"
                    alt="<?php echo htmlspecialchars($project); ?> project logo"
                    loading="lazy" decoding="async"
-                   width="72" height="72"
+                   width="200" height="100"
                    onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
               <span><?php echo htmlspecialchars($project); ?></span>
             </li>
