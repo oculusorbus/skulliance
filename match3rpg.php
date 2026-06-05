@@ -103,6 +103,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       color: #e8eaed;
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
     a { color: #00c8a0; text-decoration: none; }
     a:hover, a:focus { color: #34e3bb; text-decoration: underline; }
@@ -385,10 +386,18 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     }
     .logo-tile-expansion .expansion-inner {
       background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(0, 200, 160, 0.25);
-      border-radius: 14px;
+      border-top: 1px solid rgba(0, 200, 160, 0.25);
+      border-bottom: 1px solid rgba(0, 200, 160, 0.25);
       padding: 20px 0 24px;
       overflow: hidden;
+      /* Break out of the wrap container to fill the full viewport width,
+         matching the top-of-page character strips. The calc shifts the
+         element left by (half viewport - half parent) so width: 100vw
+         starts at viewport edge zero. body has overflow-x: hidden so
+         this never produces a horizontal scrollbar. */
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
     }
     .logo-tile-expansion h3 {
       text-align: center;
