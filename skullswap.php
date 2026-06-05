@@ -33,23 +33,17 @@ while ($icon_row = $icon_res->fetch_assoc()) {
 }
 $swap_icons = array_column($swap_projects, 'url');
 
-if ($is_logged_in) {
-    include 'message.php';
-    // Verify includes Webhooks
-    include 'verify.php';
-    include 'skulliance.php';
-    include 'header.php';
-} else {
-    // Public visitors skip the staking chrome entirely. Emit a minimal
-    // document head; the page's own <style> block follows and the existing
-    // "</head><body>" further down closes it. Social scrapers (X, Discord,
-    // Facebook) never send cookies, so they always see this branch — the
-    // OG/Twitter/schema metadata lives here.
-    $ss_canonical = 'https://www.skulliance.io/staking/skullswap.php';
-    $ss_image     = 'https://www.skulliance.io/staking/images/skullswap.png';
-    $ss_title     = 'Skull Swap - Free Match 3 Puzzle Game | Play in Your Browser';
-    $ss_desc      = 'Play Skull Swap free - a match 3 puzzle game with carbon and diamond bombs, cascade combos, and a 25-match score chase. Works on mobile, tablet, and desktop. No download, no signup.';
-    $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 25-match score chase. Play on any device - no download.';
+// Standalone page for EVERYONE - same treatment as match3rpg.php /
+// monstrocity.php: no header.php nav and no staking platform CSS (which
+// fights the landing's design). Logged-in users keep their session (db.php
+// resumed it above) and get a floating back-to-staking button instead of
+// the nav; score saving is unaffected because the ajax endpoints handle
+// their own session/auth independently of this page's includes.
+$ss_canonical = 'https://www.skulliance.io/staking/skullswap.php';
+$ss_image     = 'https://www.skulliance.io/staking/images/skullswap.png';
+$ss_title     = 'Skull Swap - Free Match 3 Puzzle Game | Play in Your Browser';
+$ss_desc      = 'Play Skull Swap free - a match 3 puzzle game with carbon and diamond bombs, cascade combos, and a 25-match score chase. Works on mobile, tablet, and desktop. No download, no signup.';
+$ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 25-match score chase. Play on any device - no download.';
 ?>
 <!doctype html>
 <html lang="en">
@@ -150,13 +144,12 @@ if ($is_logged_in) {
     }
   </style>
   <style>
-    /* Marketing landing styles - public visitors only (the staking
-       platform's global styles fight these, so logged-in users skip the
-       landing entirely). Scoped under #ss-landing.
-       Design language matches match3rpg.php / the staking platform theme:
-       brand green-teal accents (#00c8a0 -> #0596c4), navy base, glow hero,
-       gradient pill CTAs, accent-bar mechanics, score table, gradient
-       final CTA. */
+    /* Marketing landing styles - all visitors (the page is standalone
+       like match3rpg.php, so no platform CSS fights these). Scoped under
+       #ss-landing. Design language matches match3rpg.php / the staking
+       platform theme: brand green-teal accents (#00c8a0 -> #0596c4), navy
+       base, glow hero, gradient pill CTAs, accent-bar mechanics, score
+       table, gradient final CTA. */
     #ss-landing {
       background: #07111d; color: #e8eaed; width: 100%;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -405,8 +398,51 @@ if ($is_logged_in) {
       .ss-cta { width: 100%; text-align: center; }
       .ss-cta.ss-secondary { margin-left: 0; margin-top: 10px; }
     }
+
+    /* Floating back-to-staking button for logged-in users - mirrors
+       match3rpg's #m3-exit / monstrocity's #monstrocity-exit. When the
+       game is activated, ssPlay() adds .ss-compact so it collapses to a
+       small arrow and stays out of the board's way (mobile especially). */
+    #ss-exit {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      left: calc(env(safe-area-inset-left, 0px) + 8px);
+      z-index: 99990;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      min-height: 36px;
+      background: rgba(18, 18, 18, 0.85);
+      color: #e8eaed;
+      border: 1px solid rgba(0, 200, 160, 0.45);
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #ss-exit:hover, #ss-exit:active {
+      background: rgba(0, 200, 160, 0.18);
+      border-color: #00c8a0;
+      color: #e8eaed;
+    }
+    #ss-exit .mx-arrow {
+      font-size: 1.05rem;
+      line-height: 1;
+      color: #00c8a0;
+    }
+    #ss-exit.ss-compact .mx-label { display: none; }
+    #ss-exit.ss-compact { padding: 8px 10px; }
+    @media (max-width: 480px) {
+      #ss-exit .mx-label { display: none; }
+      #ss-exit { padding: 8px 10px; }
+    }
   </style>
-<?php } ?>
  <style>
 	 /*
          body {
@@ -730,10 +766,17 @@ if ($is_logged_in) {
      </style>
  </head>
  <body>
-     <!-- Hidden for public visitors until they hit Play on the landing.
-          Logged-in users go straight to the board: the staking platform's
-          global styles fight the landing's, so members skip it entirely. -->
-     <div id="game-container"<?php if (!$is_logged_in) echo ' style="display:none"'; ?>>
+  <?php if ($is_logged_in): ?>
+     <!-- Floating back button for logged-in users - the page has no nav.
+          Collapses to a bare arrow once the game is activated. -->
+     <a id="ss-exit" href="dashboard.php" aria-label="Back to Skulliance staking dashboard">
+         <span class="mx-arrow">&larr;</span>
+         <span class="mx-label">Back to Staking</span>
+     </a>
+  <?php endif; ?>
+
+     <!-- Hidden for ALL visitors until they hit Play on the landing -->
+     <div id="game-container" style="display:none">
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
@@ -845,8 +888,7 @@ function openGuide() { document.getElementById('guide-overlay').style.display = 
 function closeGuide() { document.getElementById('guide-overlay').style.display = 'none'; }
      </script>
 
-<?php if (!$is_logged_in): ?>
-     <!-- Marketing landing shown to public visitors by default; the game
+     <!-- Marketing landing shown to ALL visitors by default; the game
           board image leads, the playable game stays hidden until Play is
           clicked (ssPlay hides this landing and reveals the board). The
           board image itself is clickable and starts the game too. All
@@ -1018,7 +1060,11 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                      <h2>Ready to Swap?</h2>
                      <p>The board is waiting at the top of this page. No download. No signup. Just play.</p>
                      <button class="ss-cta" type="button" onclick="ssPlay()">Play Skull Swap Free</button>
+                     <?php if ($is_logged_in): ?>
+                     <p class="ss-login-note">You're logged in - every run you finish is saved and counts toward the weekly leaderboard.</p>
+                     <?php else: ?>
                      <p class="ss-login-note">Want your scores saved and a shot at the weekly leaderboard? <a href="index.php">Log in through Skulliance</a> with Discord and every run you finish counts.</p>
+                     <?php endif; ?>
                  </div>
              </div>
          </section>
@@ -1050,10 +1096,13 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          function ssPlay() {
              document.getElementById('ss-landing').style.display = 'none';
              document.getElementById('game-container').style.display = 'flex';
+             // Collapse the logged-in back button to a bare arrow while
+             // the board is up - screen real estate is tight on mobile.
+             var ssExit = document.getElementById('ss-exit');
+             if (ssExit) ssExit.classList.add('ss-compact');
              window.scrollTo(0, 0);
          }
      </script>
-<?php endif; ?>
 
      <script>
  // Public players play without a server game session; token fetch and
