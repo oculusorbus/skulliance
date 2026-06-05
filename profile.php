@@ -577,12 +577,13 @@ include 'header.php';
 }
 #profile-loader.fade-out { opacity: 0; pointer-events: none; }
 @keyframes pl-bar { to { width: 90%; } }
+@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 .pl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
 .pl-bar      { height: 100%; background: #00c8a0; width: 0%; animation: pl-bar 10s ease-out forwards; }
 .pl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
 </style>
 <div id="profile-loader">
-    <img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48">
+    <div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48"></div>
     <div class="pl-bar-wrap"><div class="pl-bar"></div></div>
     <div class="pl-text">Loading Profile</div>
 </div>

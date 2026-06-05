@@ -80,12 +80,13 @@
 }
 #nav-loader.active { opacity: 1; }
 @keyframes nl-bar { to { width: 90%; } }
+@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 .nl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
 .nl-bar      { height: 100%; background: #00c8a0; width: 0%; }
 .nl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
 </style>
 <div id="nav-loader">
-    <img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48">
+    <div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48"></div>
     <div class="nl-bar-wrap"><div class="nl-bar"></div></div>
     <div class="nl-text">Loading&hellip;</div>
 </div>
