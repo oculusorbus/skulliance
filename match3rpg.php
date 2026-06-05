@@ -200,6 +200,11 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       list-style: none; padding: 0; margin: 16px 0 0;
       display: flex; flex-direction: column; gap: 10px;
     }
+    .mechanics.cols-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
     .mechanics li {
       display: flex; align-items: center; gap: 12px;
       padding: 14px 16px;
@@ -394,7 +399,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         </ul>
 
         <h3 class="mech-heading">Power-Up Effects</h3>
-        <ul class="mechanics">
+        <ul class="mechanics cols-2">
           <li><span><strong>Heal (Bloody)</strong> — Restores 10 HP (reduced by enemy tactics).</span></li>
           <li><span><strong>Boost Attack (Cardano)</strong> — Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
           <li><span><strong>Regenerate (ADA)</strong> — Restores 7 HP (reduced by enemy tactics).</span></li>
@@ -403,7 +408,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         <p class="mech-note">Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</p>
 
         <h3 class="mech-heading">Combo Bonuses</h3>
-        <ul class="mechanics">
+        <ul class="mechanics cols-2">
           <li><span><strong>Match-4 Bonus</strong> — 50% bonus to damage and score for a single match of 4 tiles.</span></li>
           <li><span><strong>Match-5+ Bonus</strong> — 100% bonus to damage and score for a single match of 5 or more tiles.</span></li>
           <li><span><strong>Multi-Match (6–8 tiles)</strong> — 20% bonus to score for matching 6–8 tiles across multiple matches in a single move (does not apply to cascades).</span></li>
