@@ -368,64 +368,36 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
     <section>
       <div class="wrap">
-        <h2>Pick Your Look — 35+ Artist Themes</h2>
-        <p>Monstrocity ships with the original character set plus dozens of visual themes contributed by independent artists. Swap themes anytime — the gameplay is the same; the art changes everything.</p>
+        <h2>Featured Artists &amp; Projects</h2>
+        <p>Monstrocity bundles the original character set with dozens of visual themes contributed by independent artists. Each project below brings its own world — swap freely in-game, the mechanics stay the same and the art changes everything.</p>
         <?php
-        // Each entry: [display label, logo URL]. Where a project has a logo
-        // in /staking/images/projects/, that's preferred. Sub-collections
-        // (e.g. Moebius Pioneers under Disco Solaris) inherit their parent
-        // project's logo. Items with no project logo at all fall back to
-        // the collection theme logo from /staking/images/monstrocity/{value}/logo.png.
-        // The onerror handler degrades any missing file to the skull icon.
-        $img_base = 'https://www.skulliance.io/staking/images';
-        $themes = [
-            ['Monstrocity',            $img_base.'/monstrocity/logo.png'],
-            ['Apprentices',            $img_base.'/projects/apprentices.png'],
-            ['Black Flag',             $img_base.'/monstrocity/blackflag/logo.png'],
-            ['Danketsu',               $img_base.'/projects/danketsu.png'],
-            ['Disco Solaris',          $img_base.'/projects/discosolaris.png'],
-            ['Moebius Pioneers',       $img_base.'/projects/discosolaris.png'],
-            ['Oculus Lounge',          $img_base.'/projects/discosolaris.png'],
-            ['Havoc Worlds',           $img_base.'/projects/havocworlds.jpg'],
-            ['Heist on Alpha',         $img_base.'/projects/heistonalpha.jpg'],
-            ['Muses of the Multiverse',$img_base.'/projects/muses.jpg'],
-            ['Nemonium',               $img_base.'/projects/nemonium.jpg'],
-            ['Omen Legends',           $img_base.'/projects/nemonium.jpg'],
-            ['Sh4pes',                 $img_base.'/projects/nemonium.jpg'],
-            ['Pendulum',               $img_base.'/projects/pendulum.jpg'],
-            ['Perps',                  $img_base.'/monstrocity/perps/logo.png'],
-            ['Vampire Invasion',       $img_base.'/monstrocity/vampireinvasion/logo.png'],
-            ['Bungking · Yume',        $img_base.'/projects/bungking.jpg'],
-            ['Galaxy of Sons',         $img_base.'/projects/cardanocamera.jpg'],
-            ['Crypties',               $img_base.'/projects/crypties.png'],
-            ['Darkula',                $img_base.'/projects/darkula.jpg'],
-            ['Dead Pop Hell',          $img_base.'/projects/deadpophell.png'],
-            ['Galactico',              $img_base.'/projects/galactico.png'],
-            ['Anime Origins',          $img_base.'/monstrocity/animeorigins/logo.png'],
-            ['Happy People',           $img_base.'/projects/netanelcohen.png'],
-            ['Machine Headz Carnage',  $img_base.'/projects/kimosabe.png'],
-            ['Digital Hell Citizens 2',$img_base.'/projects/maxingo.png'],
-            ['Shorty Verse',           $img_base.'/projects/ohhmeed.png'],
-            ['Drop Ship',              $img_base.'/projects/ohhmeed.png'],
-            ['Ritual',                 $img_base.'/projects/ritual.png'],
-            ['Sinder Skullz',          $img_base.'/projects/sinderskullz.png'],
-            ['Derivative Heroes',      $img_base.'/projects/skowl.jpg'],
-            ['Ug Vs Donuts',           $img_base.'/projects/squashua.jpg'],
-            ['Wavy Ape Vibe Empire',   $img_base.'/projects/squashua.jpg'],
-            ['ADA Punks',              $img_base.'/monstrocity/adapunks/logo.png'],
-            ['Cardanian Snow Globes',  $img_base.'/monstrocity/cardanians/logo.png'],
+        // Unique project names from the monstrocity.php theme JSON
+        // (collection sub-themes collapsed up to their parent project).
+        // Path pattern: /staking/images/monstrocity/{project-slug}/logo.png
+        // where slug = lowercase + alphanumeric only. onerror degrades any
+        // missing file to the skull icon.
+        $img_base = 'https://www.skulliance.io/staking/images/monstrocity/';
+        $projects = [
+            'Monstrocity', 'Apprentices', 'Black Flag', 'Danketsu', 'Disco Solaris',
+            'Havoc Worlds', 'Heist on Alpha', 'Josh Howard', 'Nemonium', 'Pendulum',
+            'Perps', 'Vampire Invasion', 'Bungking', 'Cardano Camera', 'Crypties',
+            'Darkula', 'Dead Pop Hell', 'Galactico', 'Nel', 'Netanel Cohen',
+            'Kimosabe Art', 'Maxingo', 'Ohh Meed', 'Ritual', 'Sinder Skullz',
+            'Skowl', 'Squashua', 'ADA Punks', 'Cardanians',
         ];
-        $skull_fallback = $img_base.'/../icons/skull.png';
         ?>
         <ul class="logo-grid">
-          <?php foreach ($themes as [$label, $logo]): ?>
+          <?php foreach ($projects as $project):
+              $slug = strtolower(preg_replace('/[^a-z0-9]/i', '', $project));
+              $logo = $img_base . $slug . '/logo.png';
+          ?>
             <li class="logo-tile">
               <img src="<?php echo htmlspecialchars($logo); ?>"
-                   alt="<?php echo htmlspecialchars($label); ?> project logo"
+                   alt="<?php echo htmlspecialchars($project); ?> project logo"
                    loading="lazy" decoding="async"
                    width="72" height="72"
                    onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
-              <span><?php echo htmlspecialchars($label); ?></span>
+              <span><?php echo htmlspecialchars($project); ?></span>
             </li>
           <?php endforeach; ?>
         </ul>
