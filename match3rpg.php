@@ -217,12 +217,11 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       gap: 14px;
     }
     .logo-tile {
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      display: flex; align-items: center; justify-content: center;
       padding: 16px 14px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
-      text-align: center;
       transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
     .logo-tile:hover {
@@ -235,12 +234,6 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       max-width: 200px;
       height: 100px;
       object-fit: contain;
-    }
-    .logo-tile span {
-      font-size: 0.88rem;
-      color: #c7d0d9;
-      line-height: 1.25;
-      word-break: break-word;
     }
 
     /* FAQ */
@@ -420,7 +413,6 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
                    loading="lazy" decoding="async"
                    width="200" height="100"
                    onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
-              <span><?php echo htmlspecialchars($project); ?></span>
             </li>
           <?php endforeach; ?>
         </ul>
