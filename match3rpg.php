@@ -114,7 +114,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     p { margin: 0 0 1em; }
 
     .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-    main { padding: 24px 0 64px; }
+    main { padding: 0 0 64px; }
 
     /* Hero */
     .hero {
