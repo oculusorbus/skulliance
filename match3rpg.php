@@ -201,6 +201,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;
     }
     .mechanics li {
+      display: flex; align-items: center; gap: 12px;
       padding: 14px 16px;
       background: rgba(255, 255, 255, 0.03);
       border-left: 3px solid #00c8a0;
@@ -208,6 +209,15 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       font-size: 0.95rem;
     }
     .mechanics li strong { color: #34e3bb; }
+    .mech-icon {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .mech-icon img {
+      width: 32px; height: 32px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
 
     /* Themes — project logo grid */
     .logo-grid {
@@ -346,14 +356,35 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         <h2>Real RPG Combat in a Match 3 Puzzle</h2>
         <p>Every tile on the board does something different in combat. Instead of generic "score points," each match resolves as a combat action against the enemy character — and your opponent does the same to you.</p>
         <ul class="mechanics">
-          <li><strong>Slash &amp; Bite</strong> — basic attack tiles scale damage by tile count.</li>
-          <li><strong>Shadow Strike</strong> — special attack with a 1.2× damage multiplier.</li>
-          <li><strong>Power-Ups</strong> — heal, boost attack, or regenerate health.</li>
-          <li><strong>Last Stand</strong> — deal damage and mitigate the next incoming hit.</li>
-          <li><strong>Combo Bonuses</strong> — match-4 gives +50%, match-5+ gives +100%.</li>
-          <li><strong>Cascade Chains</strong> — falling tiles can trigger free extra matches.</li>
-          <li><strong>Tactics Stat</strong> — chance to halve incoming damage each turn.</li>
-          <li><strong>Speed Stat</strong> — decides turn order at the start of the level.</li>
+          <li>
+            <span class="mech-icon">
+              <img src="/staking/icons/first-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32">
+              <img src="/staking/icons/second-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32">
+            </span>
+            <span><strong>Slash &amp; Bite</strong> — basic attack tiles scale damage by tile count.</span>
+          </li>
+          <li>
+            <span class="mech-icon">
+              <img src="/staking/icons/special-attack.png" alt="" loading="lazy" decoding="async" width="32" height="32">
+            </span>
+            <span><strong>Shadow Strike</strong> — special attack with a 1.2× damage multiplier.</span>
+          </li>
+          <li>
+            <span class="mech-icon">
+              <img src="/staking/icons/power-up.png" alt="" loading="lazy" decoding="async" width="32" height="32">
+            </span>
+            <span><strong>Power-Ups</strong> — heal, boost attack, or regenerate health.</span>
+          </li>
+          <li>
+            <span class="mech-icon">
+              <img src="/staking/icons/last-stand.png" alt="" loading="lazy" decoding="async" width="32" height="32">
+            </span>
+            <span><strong>Last Stand</strong> — deal damage and mitigate the next incoming hit.</span>
+          </li>
+          <li><span><strong>Combo Bonuses</strong> — match-4 gives +50%, match-5+ gives +100%.</span></li>
+          <li><span><strong>Cascade Chains</strong> — falling tiles can trigger free extra matches.</span></li>
+          <li><span><strong>Tactics Stat</strong> — chance to halve incoming damage each turn.</span></li>
+          <li><span><strong>Speed Stat</strong> — decides turn order at the start of the level.</span></li>
         </ul>
       </div>
     </section>
