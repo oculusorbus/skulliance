@@ -167,6 +167,18 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
       margin-top: 22px;
     }
+    .hero-screenshot {
+      display: block;
+      width: 100%;
+      max-width: 960px;
+      height: auto;
+      margin: 40px auto 0;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(0, 200, 160, 0.08) inset;
+    }
     .badge {
       font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
       padding: 6px 12px; border-radius: 999px;
@@ -400,6 +412,11 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           <span class="badge">No Pay-to-Win</span>
           <span class="badge">Mobile · Tablet · Desktop</span>
         </div>
+        <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
+             alt="Monstrocity Match 3 RPG gameplay screenshot"
+             class="hero-screenshot"
+             width="2040" height="1414"
+             fetchpriority="high" decoding="async">
       </div>
     </section>
 
