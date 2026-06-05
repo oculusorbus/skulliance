@@ -237,6 +237,62 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       font-style: italic;
     }
 
+    /* Character gallery - horizontal scroller */
+    .character-gallery {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 8px 4px 20px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 200, 160, 0.4) rgba(255, 255, 255, 0.05);
+      margin-top: 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .character-gallery::-webkit-scrollbar { height: 8px; }
+    .character-gallery::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+    }
+    .character-gallery::-webkit-scrollbar-thumb {
+      background: rgba(0, 200, 160, 0.45);
+      border-radius: 4px;
+    }
+    .character-card {
+      flex: 0 0 auto;
+      width: 200px;
+      scroll-snap-align: start;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .character-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 200, 160, 0.45);
+    }
+    .character-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+    }
+    .character-card .char-name {
+      margin-top: 12px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: #e8eaed;
+      letter-spacing: 0.02em;
+    }
+    .scroll-hint {
+      font-size: 0.78rem;
+      color: #8a96a3;
+      margin-top: 6px;
+      letter-spacing: 0.05em;
+    }
+
     /* Themes - project logo grid */
     .logo-grid {
       list-style: none; padding: 0; margin: 20px 0 0;
@@ -366,6 +422,39 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
             <p>Match-4 and match-5 chains, multi-matches, and cascade combos all stack damage and score multipliers. Bigger combos hit harder.</p>
           </article>
         </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Meet the Monstrocity Cast</h2>
+        <p>Fourteen original characters anchor the base game, each with their own stats, size, and signature power-up. Pick your favorite, or unlock more by swapping themes from the partner art projects below.</p>
+        <?php
+        // Base Monstrocity character roster, in JSON order from monstrocity.php.
+        // Image path: /staking/images/monstrocity/monstrocity/base/{slug}.png
+        // where slug = lowercase name with spaces replaced by dashes.
+        $characters = [
+            'Craig', 'Merdock', 'Goblin Ganger', 'Texby', 'Mandiblus',
+            'Koipon', 'Slime Mind', 'Billandar and Ted', 'Dankle', 'Jarhead',
+            'Spydrax', 'Katastrophy', 'Ouchie', 'Drake',
+        ];
+        $char_base = 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/base/';
+        ?>
+        <div class="character-gallery" role="list" aria-label="Monstrocity base characters">
+          <?php foreach ($characters as $char):
+              $slug = strtolower(str_replace(' ', '-', $char));
+          ?>
+            <div class="character-card" role="listitem">
+              <img src="<?php echo $char_base . $slug; ?>.png"
+                   alt="<?php echo htmlspecialchars($char); ?> - Monstrocity base character"
+                   loading="lazy" decoding="async"
+                   width="180" height="180"
+                   onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
+              <div class="char-name"><?php echo htmlspecialchars($char); ?></div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <p class="scroll-hint">Scroll horizontally to see all 14 characters &rsaquo;</p>
       </div>
     </section>
 
