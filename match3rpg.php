@@ -571,7 +571,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 <body>
 
   <?php if ($is_logged_in): ?>
-  <a id="m3-exit" href="missions.php" aria-label="Back to Skulliance staking missions">
+  <a id="m3-exit" href="dashboard.php" aria-label="Back to Skulliance staking dashboard">
     <span class="mx-arrow">&larr;</span>
     <span class="mx-label">Back to Staking</span>
   </a>
