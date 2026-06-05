@@ -775,12 +775,23 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     var CHARS = ['Craig','Merdock','Goblin Ganger','Texby','Mandiblus','Koipon','Slime Mind','Billandar and Ted','Dankle','Jarhead','Spydrax','Katastrophy','Ouchie','Drake'];
     var IMG_ROOT = 'https://www.skulliance.io/staking/images/monstrocity/';
     var SKULL = '/staking/icons/skull.png';
+    // Per-theme image extension for character images. Pulled from the
+    // `extension:` field of each theme entry in monstrocity.php's JSON
+    // (the comment in that file: "Applies only to character images").
+    // Default is png; only themes that diverge need entries here.
+    var EXT_BY_THEME = <?php echo json_encode([
+        'galactico'    => 'gif',
+        'machineheadz' => 'gif',
+        'cardanians'   => 'gif',
+    ]); ?>;
 
     function slugify(name) { return name.toLowerCase().replace(/ /g, '-'); }
+    function extFor(themeSlug) { return EXT_BY_THEME[themeSlug] || 'png'; }
 
     function buildStrip(themeSlug, type, reverse) {
       var track = document.createElement('div');
       track.className = 'strip-track' + (reverse ? ' reverse' : '');
+      var ext = extFor(themeSlug);
       // Two passes for seamless loop.
       for (var pass = 0; pass < 2; pass++) {
         CHARS.forEach(function (name) {
@@ -790,7 +801,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           if (pass) card.setAttribute('aria-hidden', 'true');
 
           var img = document.createElement('img');
-          img.src = IMG_ROOT + themeSlug + '/' + type + '/' + slug + '.png';
+          img.src = IMG_ROOT + themeSlug + '/' + type + '/' + slug + '.' + ext;
           img.alt = name + ' - ' + type + ' character';
           img.width = 200; img.height = 200;
           img.loading = 'lazy'; img.decoding = 'async';
