@@ -18,18 +18,19 @@
 // navy #07111d base, brand teal #00c8a0 -> #0596c4 gradient CTAs, glow
 // hero, hairline-separated sections, card grids.
 //
-// Copy leads with art, games, and community; chain-specific vocabulary is
-// kept out of the hero/mission (same crypto-sentiment caution applied to
-// the public game pages).
+// Copy is proudly Cardano/NFT-forward: Skulliance's home is the Cardano
+// blockchain and the homepage courts Cardano users directly. (The neutral,
+// chain-free wording is reserved for the public game landing pages, which
+// target general gaming search traffic.)
 
 //get_header(); ?>
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Skulliance - Skull Art Collective, Free Browser Games &amp; Collector Rewards</title>
+  <title>Skulliance - Premier Skull NFT Artists on Cardano | Staking, Games &amp; Merch</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Skulliance unites premier skull artists and their collectors - free browser games, artist showcases, collector rewards, missions, leaderboards, and exclusive merch.">
+  <meta name="description" content="Skulliance connects art collectors with the premier skull NFT artists on Cardano - NFT staking with nightly rewards, free browser games, missions, leaderboards, and exclusive merch.">
   <meta name="theme-color" content="#07111d">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
   <link rel="canonical" href="https://www.skulliance.io/">
@@ -38,16 +39,16 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Skulliance">
   <meta property="og:url" content="https://www.skulliance.io/">
-  <meta property="og:title" content="Skulliance - Skull Art Collective, Free Games &amp; Collector Rewards">
-  <meta property="og:description" content="Premier skull artists and their collectors in one place - free browser games, rewards, missions, leaderboards, and exclusive merch.">
+  <meta property="og:title" content="Skulliance - Premier Skull NFT Artists on Cardano">
+  <meta property="og:description" content="Skull NFT staking with nightly rewards, free browser games, missions, leaderboards, and exclusive merch - built on Cardano.">
   <meta property="og:image" content="https://www.skulliance.io/staking/images/skulliancelogo.png">
   <meta property="og:image:alt" content="Skulliance logo">
   <meta property="og:locale" content="en_US">
 
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Skulliance - Skull Art Collective, Free Games &amp; Collector Rewards">
-  <meta name="twitter:description" content="Premier skull artists and their collectors in one place - free browser games, rewards, and exclusive merch.">
+  <meta name="twitter:title" content="Skulliance - Premier Skull NFT Artists on Cardano">
+  <meta name="twitter:description" content="Skull NFT staking with nightly rewards, free browser games, and exclusive merch - built on Cardano.">
   <meta name="twitter:image" content="https://www.skulliance.io/staking/images/skulliancelogo.png">
   <meta name="twitter:image:alt" content="Skulliance logo">
 
@@ -59,7 +60,7 @@
     "name": "Skulliance",
     "url": "https://www.skulliance.io/",
     "logo": "https://www.skulliance.io/staking/images/skulliancelogo.png",
-    "description": "Skulliance unites premier skull artists and their collectors - free browser games, artist showcases, collector rewards, and exclusive merch.",
+    "description": "Skulliance connects art collectors with the premier skull NFT artists on the Cardano blockchain - NFT staking with nightly rewards, free browser games, and exclusive merch.",
     "sameAs": [
       "https://www.x.com/skulliance",
       "https://discord.gg/JqqBZBrph2"
@@ -239,6 +240,13 @@
     }
     .hp-logos a { display: block; width: 100%; }
     .hp-logos img { width: 100%; height: 120px; object-fit: contain; }
+    /* Founding artists: fixed 3 columns x 2 rows (6 logos), larger tiles */
+    .hp-logos.hp-founding { grid-template-columns: repeat(3, 1fr); }
+    .hp-logos.hp-founding img { height: 150px; }
+    @media (max-width: 640px) {
+      .hp-logos.hp-founding { grid-template-columns: repeat(2, 1fr); }
+      .hp-logos.hp-founding img { height: 120px; }
+    }
 
     /* Platform screenshots */
     .hp-shots { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
@@ -342,16 +350,17 @@
   <!-- Hero -->
   <header class="hp-hero" id="top">
     <img class="hp-logo" src="https://www.skulliance.io/staking/images/skulliancelogo.png" alt="Skulliance logo" fetchpriority="high" decoding="async">
-    <h1>The skull art collective - premier artists, free browser games, collector rewards, and exclusive merch in one community.</h1>
+    <h1>The premier skull NFT collective on Cardano - artists, staking rewards, free browser games, and exclusive merch in one community.</h1>
     <div class="hp-ctas">
       <a class="hp-cta" href="#games">Play Free Games</a>
       <a class="hp-cta hp-secondary" href="https://www.skulliance.io/shop">Shop Merch</a>
       <a class="hp-cta hp-secondary" href="https://discord.gg/JqqBZBrph2">Join the Discord</a>
     </div>
     <div class="hp-badges" aria-label="Highlights">
+      <span class="hp-badge">Built on Cardano</span>
       <span class="hp-badge">25+ Featured Artists</span>
+      <span class="hp-badge">NFT Staking Rewards</span>
       <span class="hp-badge">Free Browser Games</span>
-      <span class="hp-badge">Collector Rewards</span>
       <span class="hp-badge">Exclusive Merch</span>
     </div>
   </header>
@@ -362,7 +371,7 @@
     <section id="mission">
       <div class="wrap">
         <h2>Mission</h2>
-        <p class="hp-intro hp-center">Skulliance connects collectors with the premier skull artists in the space - elevating the art form through games, rewards, showcases, and a community built to last. Led by Oculus Orbus, an avid skull art collector and developer, Skulliance gives artists a stage and collectors a reason to keep coming back every day.</p>
+        <p class="hp-intro hp-center">The mission of Skulliance is to connect skull art collectors with the premier skull NFT artists on the Cardano blockchain and elevate the collective art form and community within the space. Cardano is our home - led by Oculus Orbus, an avid skull NFT collector and developer, Skulliance gives artists a stage and collectors a reason to keep coming back every day.</p>
         <img src="https://www.skulliance.io/staking/images/skulliance-group.jpg" alt="Skulliance founding artists group artwork" loading="lazy" decoding="async" style="border-radius:14px; margin-top:18px;">
       </div>
     </section>
@@ -371,7 +380,7 @@
     <section id="games">
       <div class="wrap">
         <h2>Free Browser Games</h2>
-        <p class="hp-intro hp-center">No download, no signup, no paywall - both games run in any browser on phone, tablet, or desktop. Collectors can log in to save scores, climb weekly leaderboards, and play as characters from their own collections.</p>
+        <p class="hp-intro hp-center">No download, no signup, no paywall - both games run in any browser on phone, tablet, or desktop. Collectors can log in to save scores, climb weekly leaderboards, and battle with characters from their own NFT collections.</p>
         <div class="hp-games">
           <div class="hp-game">
             <a class="hp-game-art" href="https://www.skulliance.io/staking/match3rpg.php" aria-label="Play Monstrocity, the free match 3 RPG">
@@ -397,8 +406,8 @@
     <section id="artists">
       <div class="wrap">
         <h2>Founding Artists</h2>
-        <p class="hp-intro hp-center">These artists specialize in skull art and came together to form Skulliance. Collectors who hold their work can stake it on the Skulliance platform and earn nightly points redeemable for exclusive incentives.</p>
-        <ul class="hp-logos">
+        <p class="hp-intro hp-center">These artists specialize in skull art on Cardano and came together to form Skulliance. Holders of their NFTs can stake them on the Skulliance platform and earn nightly off-chain points redeemable for exclusive incentives.</p>
+        <ul class="hp-logos hp-founding">
           <li><a href="https://x.com/SinderSkullz" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png" alt="Sinder Skullz" loading="lazy" decoding="async"></a></li>
           <li><a href="https://x.com/Nft4R" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png" alt="Kimosabe Art" loading="lazy" decoding="async"></a></li>
           <li><a href="https://x.com/cryptiesnft" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/crypties.png" alt="Crypties" loading="lazy" decoding="async"></a></li>
@@ -413,7 +422,7 @@
     <section id="partners">
       <div class="wrap">
         <h2>Partner Artists &amp; Projects</h2>
-        <p class="hp-intro hp-center">With the success of the platform, Skulliance invited other high-quality artists and projects to participate in partner staking - their collectors earn points, redeem incentives, and climb the leaderboards too.</p>
+        <p class="hp-intro hp-center">With the success of the platform, Skulliance invited other high-quality artists and projects on Cardano to participate in partner staking - their holders earn points, redeem incentives, and climb the leaderboards too.</p>
         <ul class="hp-logos">
           <li><a href="https://x.com/_nemonium" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium" loading="lazy" decoding="async"></a></li>
           <li><a href="https://x.com/discosolaris" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris" loading="lazy" decoding="async"></a></li>
@@ -450,7 +459,7 @@
     <section id="platform">
       <div class="wrap">
         <h2>The Staking Platform</h2>
-        <p class="hp-intro hp-center">Log in with Discord, connect your wallets, and your qualifying collection starts earning nightly points - redeemable for exclusive incentives in the staking store. Send characters on idle missions for consumable rewards, delegate to Diamond Skulls to earn CARBON and craft DIAMOND, explore the Skulliverse, and climb the leaderboards.</p>
+        <p class="hp-intro hp-center">Log in with Discord, connect your Cardano wallets, and your qualifying NFTs start earning nightly off-chain points - redeemable for exclusive incentives in the staking store. Send your NFTs on idle missions for consumable rewards, delegate core project NFTs to Diamond Skulls to earn CARBON and craft DIAMOND, explore the Skulliverse, and climb the leaderboards.</p>
         <div class="hp-grid hp-shots">
           <div class="hp-shot-card">
             <h3>Dashboard</h3>
@@ -514,17 +523,17 @@
           <div class="hp-tier">
             <p class="hp-tier-rank">Tier 1</p>
             <h3>Base Member</h3>
-            <p>Hold 1 piece from Sinder Skullz, Kimosabe Art, and Crypties. Base membership isn't required to stake, but it unlocks claiming exclusive incentives from the staking store with the points you accumulate.</p>
+            <p>Hold 1 NFT from Sinder Skullz, Kimosabe Art, and Crypties. Base membership isn't required to stake, but it unlocks claiming exclusive incentives from the staking store with the points you accumulate.</p>
           </div>
           <div class="hp-tier">
             <p class="hp-tier-rank">Tier 2</p>
             <h3>Elite Member</h3>
-            <p>Hold at least 1 piece from every founding artist. Elite members can convert equal parts of founding-artist points into DIAMOND - the premium currency that can purchase any store reward at a discount or premium.</p>
+            <p>Hold at least 1 NFT from every founding artist. Elite members can convert equal parts of founding-artist points into DIAMOND - the premium currency that can purchase any store reward at a discount or premium.</p>
           </div>
           <div class="hp-tier hp-tier-top">
             <p class="hp-tier-rank">Tier 3</p>
             <h3>Inner Circle</h3>
-            <p>Elite members who also hold a Diamond Skull. The Inner Circle earns CARBON delegation rewards plus DIAMOND from nightly emissions and crafting - the deepest reward loop on the platform.</p>
+            <p>Elite members who also hold a Diamond Skull NFT. The Inner Circle earns CARBON delegation rewards plus DIAMOND from nightly emissions and crafting - the deepest reward loop on the platform.</p>
           </div>
         </div>
         <div class="hp-member-art">
@@ -537,7 +546,7 @@
     <section id="team">
       <div class="wrap">
         <h2>Team</h2>
-        <p class="hp-intro hp-center">Dedicated to elevating skull artists and bringing real value and utility to the Skulliance family of artists and loyal collectors.</p>
+        <p class="hp-intro hp-center">Dedicated to elevating skull artists on Cardano and bringing real value and utility to the Skulliance family of artists and loyal collectors.</p>
         <div class="hp-team">
           <div class="hp-member">
             <a href="https://www.x.com/oculusorbus" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg" alt="Oculus Orbus" loading="lazy" decoding="async"></a>
@@ -567,8 +576,8 @@
     <section>
       <div class="wrap">
         <div class="hp-final">
-          <h2>Join the Skulliance</h2>
-          <p>Play the games, meet the artists, grab some merch, and start earning rewards for the art you already love collecting.</p>
+          <h2>Join Skulliance</h2>
+          <p>Play the games, meet the artists, grab some merch, and start earning nightly rewards for the skull NFTs you already love collecting. Cardano is our home - come make it yours.</p>
           <div class="hp-ctas">
             <a class="hp-cta" href="https://discord.gg/JqqBZBrph2">Join the Discord</a>
             <a class="hp-cta hp-secondary" href="#games">Play Free Games</a>
