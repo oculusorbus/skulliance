@@ -399,10 +399,9 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
       .ss-cta.ss-secondary { margin-left: 0; margin-top: 10px; }
     }
 
-    /* Floating back-to-staking button for logged-in users - mirrors
-       match3rpg's #m3-exit / monstrocity's #monstrocity-exit. When the
-       game is activated, ssPlay() adds .ss-compact so it collapses to a
-       small arrow and stays out of the board's way (mobile especially). */
+    /* Floating back-to-staking pill for logged-in users on the LANDING
+       only - mirrors match3rpg's #m3-exit. ssPlay() hides it when the
+       game activates; the GO BACK button below the board takes over. */
     #ss-exit {
       position: fixed;
       top: calc(env(safe-area-inset-top, 0px) + 8px);
@@ -436,8 +435,6 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
       line-height: 1;
       color: #00c8a0;
     }
-    #ss-exit.ss-compact .mx-label { display: none; }
-    #ss-exit.ss-compact { padding: 8px 10px; }
     @media (max-width: 480px) {
       #ss-exit .mx-label { display: none; }
       #ss-exit { padding: 8px 10px; }
@@ -481,19 +478,12 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              text-align: right;
              white-space: nowrap;
          }
-        @media (max-width: 900px) {
-            /* The header/burger menu is gone (standalone page). For
-               logged-in users, drop the board ~50px so the floating back
-               arrow gets its own clear strip at the top-left and never
-               overlaps the score. 900px (not 768) because the centered
-               board's side gutter shrinks below the arrow's width before
-               phone sizes. The old 48px burger gutter on #matches is
-               reclaimed entirely. */
-            #game-container.has-exit { margin-top: 62px; }
-        }
         @media (max-width: 768px) {
             /* HUD type drops a couple points so max scores fit one line
-               on small phones. */
+               on small phones. No top clearance needed: the floating
+               back pill is landing-only, and gameplay's GO BACK lives in
+               the button row below the board. The old 48px burger-menu
+               gutter on #matches is gone with the header. */
             #score, #matches { font-size: 20px; }
         }
          #game-board {
@@ -643,7 +633,16 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              50% { transform: scale(1.1); opacity: 1; }
              100% { transform: scale(1); opacity: 0.8; }
          }
-        #guide-btn {
+        /* Button row below the board: GO BACK (logged-in only) + HOW TO
+           PLAY, sharing one quiet style so neither distracts from play. */
+        #board-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .board-btn {
+            display: inline-block;
             font-size: 13px;
             font-family: Arial;
             font-weight: bold;
@@ -654,10 +653,10 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
             padding: 6px 18px;
             border-radius: 4px;
             cursor: pointer;
-            margin-top: 10px;
+            text-decoration: none;
             transition: color 0.2s, border-color 0.2s;
         }
-        #guide-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+        .board-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
         #guide-overlay {
             display: none;
             position: fixed;
@@ -787,10 +786,8 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
      </a>
   <?php endif; ?>
 
-     <!-- Hidden for ALL visitors until they hit Play on the landing.
-          .has-exit marks the logged-in case so mobile CSS can clear the
-          floating back arrow; public visitors keep the tight layout. -->
-     <div id="game-container"<?php if ($is_logged_in) echo ' class="has-exit"'; ?> style="display:none">
+     <!-- Hidden for ALL visitors until they hit Play on the landing -->
+     <div id="game-container" style="display:none">
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
@@ -809,7 +806,12 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                  </form>
              </div>
          </div>
-         <button id="guide-btn" onclick="openGuide()">HOW TO PLAY</button>
+         <div id="board-btns">
+             <?php if ($is_logged_in): ?>
+             <a id="back-btn" class="board-btn" href="dashboard.php" aria-label="Back to Skulliance staking dashboard">GO BACK</a>
+             <?php endif; ?>
+             <button id="guide-btn" class="board-btn" onclick="openGuide()">HOW TO PLAY</button>
+         </div>
      </div>
 
      <!-- Skull Swap Guide Modal -->
@@ -1110,10 +1112,10 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          function ssPlay() {
              document.getElementById('ss-landing').style.display = 'none';
              document.getElementById('game-container').style.display = 'flex';
-             // Collapse the logged-in back button to a bare arrow while
-             // the board is up - screen real estate is tight on mobile.
+             // The floating pill is landing-only; during gameplay the
+             // GO BACK button in the row below the board takes over.
              var ssExit = document.getElementById('ss-exit');
-             if (ssExit) ssExit.classList.add('ss-compact');
+             if (ssExit) ssExit.style.display = 'none';
              window.scrollTo(0, 0);
          }
      </script>
