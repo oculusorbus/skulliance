@@ -481,11 +481,12 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              white-space: nowrap;
          }
         @media (max-width: 768px) {
-            /* HUD type drops a couple points so max scores fit one line
-               on small phones. No top clearance needed: the floating
-               back pill is landing-only, and gameplay's GO BACK lives in
-               the button row below the board. The old 48px burger-menu
-               gutter on #matches is gone with the header. */
+            /* Drop the board ~50px on phones so gameplay isn't pinned to
+               the very top of the viewport. HUD type drops a couple
+               points so max scores fit one line on small phones. The old
+               48px burger-menu gutter on #matches is gone with the
+               header. */
+            #game-container { margin-top: 62px; }
             #score, #matches { font-size: 20px; }
         }
          #game-board {
