@@ -237,60 +237,63 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       font-style: italic;
     }
 
-    /* Character gallery - horizontal scroller */
-    .character-gallery {
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-      padding: 8px 4px 20px;
-      scroll-snap-type: x mandatory;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(0, 200, 160, 0.4) rgba(255, 255, 255, 0.05);
-      margin-top: 24px;
-      -webkit-overflow-scrolling: touch;
+    /* Auto-scrolling character marquee - full viewport width */
+    .character-strip-section {
+      padding: 32px 0 12px;
     }
-    .character-gallery::-webkit-scrollbar { height: 8px; }
-    .character-gallery::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 4px;
-    }
-    .character-gallery::-webkit-scrollbar-thumb {
-      background: rgba(0, 200, 160, 0.45);
-      border-radius: 4px;
-    }
-    .character-card {
-      flex: 0 0 auto;
-      width: 200px;
-      scroll-snap-align: start;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 16px 12px;
+    .character-strip-section .intro {
       text-align: center;
-      transition: transform 0.15s ease, border-color 0.15s ease;
+      margin-bottom: 24px;
     }
-    .character-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(0, 200, 160, 0.45);
+    .character-strip-section h2 { margin-top: 0; }
+    .character-strip-section .intro p {
+      color: #c7d0d9;
+      max-width: 600px;
+      margin: 0 auto;
     }
-    .character-card img {
+    .character-strip {
       width: 100%;
-      height: 180px;
+      overflow: hidden;
+      padding: 24px 0;
+      background:
+        linear-gradient(180deg, rgba(0, 200, 160, 0.06), transparent 60%),
+        linear-gradient(180deg, #0b1a2b 0%, #07111d 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+    }
+    .strip-track {
+      display: flex;
+      gap: 28px;
+      width: max-content;
+      animation: strip-scroll 50s linear infinite;
+      will-change: transform;
+    }
+    .strip-track:hover { animation-play-state: paused; }
+    @keyframes strip-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .strip-track { animation: none; }
+    }
+    .strip-card {
+      flex: 0 0 200px;
+      text-align: center;
+    }
+    .strip-card img {
+      width: 200px;
+      height: 200px;
       object-fit: contain;
-      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.65));
     }
-    .character-card .char-name {
-      margin-top: 12px;
-      font-weight: 600;
+    .strip-card .name {
+      margin-top: 10px;
       font-size: 0.92rem;
-      color: #e8eaed;
+      color: #c7d0d9;
+      font-weight: 600;
       letter-spacing: 0.02em;
-    }
-    .scroll-hint {
-      font-size: 0.78rem;
-      color: #8a96a3;
-      margin-top: 6px;
-      letter-spacing: 0.05em;
     }
 
     /* Themes - project logo grid */
@@ -392,6 +395,46 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       </div>
     </section>
 
+    <section class="character-strip-section">
+      <div class="wrap intro">
+        <h2>Meet the Monstrocity Cast</h2>
+        <p>14 original characters anchor the base game, each with their own stats, size, and signature power-up.</p>
+      </div>
+      <?php
+      // Base Monstrocity character roster (JSON order from monstrocity.php).
+      // Path: /staking/images/monstrocity/monstrocity/base/{slug}.png
+      // Slug = lowercase name with spaces replaced by dashes.
+      $characters = [
+          'Craig', 'Merdock', 'Goblin Ganger', 'Texby', 'Mandiblus',
+          'Koipon', 'Slime Mind', 'Billandar and Ted', 'Dankle', 'Jarhead',
+          'Spydrax', 'Katastrophy', 'Ouchie', 'Drake',
+      ];
+      $char_base = 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/base/';
+      ?>
+      <div class="character-strip" aria-label="Monstrocity base characters">
+        <div class="strip-track">
+          <?php // Render twice for seamless infinite scroll loop.
+          for ($pass = 0; $pass < 2; $pass++):
+            foreach ($characters as $char):
+              $slug = strtolower(str_replace(' ', '-', $char));
+          ?>
+            <div class="strip-card"<?php echo $pass ? ' aria-hidden="true"' : ''; ?>>
+              <img src="<?php echo $char_base . $slug; ?>.png"
+                   alt="<?php echo htmlspecialchars($char); ?> - Monstrocity base character"
+                   loading="<?php echo $pass ? 'lazy' : 'eager'; ?>"
+                   decoding="async"
+                   width="200" height="200"
+                   onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
+              <div class="name"><?php echo htmlspecialchars($char); ?></div>
+            </div>
+          <?php
+            endforeach;
+          endfor;
+          ?>
+        </div>
+      </div>
+    </section>
+
     <section>
       <div class="wrap">
         <h2>Why Players Love Monstrocity</h2>
@@ -422,39 +465,6 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
             <p>Match-4 and match-5 chains, multi-matches, and cascade combos all stack damage and score multipliers. Bigger combos hit harder.</p>
           </article>
         </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <h2>Meet the Monstrocity Cast</h2>
-        <p>Fourteen original characters anchor the base game, each with their own stats, size, and signature power-up. Pick your favorite, or unlock more by swapping themes from the partner art projects below.</p>
-        <?php
-        // Base Monstrocity character roster, in JSON order from monstrocity.php.
-        // Image path: /staking/images/monstrocity/monstrocity/base/{slug}.png
-        // where slug = lowercase name with spaces replaced by dashes.
-        $characters = [
-            'Craig', 'Merdock', 'Goblin Ganger', 'Texby', 'Mandiblus',
-            'Koipon', 'Slime Mind', 'Billandar and Ted', 'Dankle', 'Jarhead',
-            'Spydrax', 'Katastrophy', 'Ouchie', 'Drake',
-        ];
-        $char_base = 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/base/';
-        ?>
-        <div class="character-gallery" role="list" aria-label="Monstrocity base characters">
-          <?php foreach ($characters as $char):
-              $slug = strtolower(str_replace(' ', '-', $char));
-          ?>
-            <div class="character-card" role="listitem">
-              <img src="<?php echo $char_base . $slug; ?>.png"
-                   alt="<?php echo htmlspecialchars($char); ?> - Monstrocity base character"
-                   loading="lazy" decoding="async"
-                   width="180" height="180"
-                   onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
-              <div class="char-name"><?php echo htmlspecialchars($char); ?></div>
-            </div>
-          <?php endforeach; ?>
-        </div>
-        <p class="scroll-hint">Scroll horizontally to see all 14 characters &rsaquo;</p>
       </div>
     </section>
 
