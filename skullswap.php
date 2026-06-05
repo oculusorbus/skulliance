@@ -111,16 +111,27 @@ if ($is_logged_in) {
   </script>
 
   <style>
-    /* Marketing landing for public visitors, rendered BELOW the playable
-       board. Design language matches match3rpg.php / the staking platform
-       theme: brand green-teal accents (#00c8a0 -> #0596c4), navy base,
-       glow hero, gradient pill CTAs, accent-bar mechanics, score table,
-       gradient final CTA. */
     html { scroll-behavior: smooth; }
     body {
       background: #07111d; margin: 0; color: #e8eaed;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+    }
+  </style>
+<?php } ?>
+ <style>
+    /* Marketing landing styles - emitted for BOTH public and logged-in
+       visitors (for logged-in users this lands inside <body>, exactly like
+       the game styles below, which browsers accept). Everything is scoped
+       under #ss-landing so the staking chrome is never repainted.
+       Design language matches match3rpg.php / the staking platform theme:
+       brand green-teal accents (#00c8a0 -> #0596c4), navy base, glow hero,
+       gradient pill CTAs, accent-bar mechanics, score table, gradient
+       final CTA. */
+    #ss-landing {
+      background: #07111d; color: #e8eaed; width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.55; -webkit-font-smoothing: antialiased;
     }
     #ss-landing *, #ss-landing *::before, #ss-landing *::after { box-sizing: border-box; }
     #ss-landing h1, #ss-landing h2, #ss-landing h3 { line-height: 1.2; margin: 0 0 0.5em; font-weight: 700; }
@@ -176,11 +187,19 @@ if ($is_logged_in) {
     }
 
     /* Framed game-board screenshot leading the hero - a plain image, not
-       a background. This is the first thing public visitors see. */
+       a background. This is the first thing visitors see; clicking it
+       starts the game, so it gets a hover lift as an affordance. */
+    .ss-shot-link { display: block; cursor: pointer; }
     .ss-shot {
       display: block; width: 100%; max-width: 480px; height: auto;
       margin: 0 auto 30px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.15);
       box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,200,160,0.1) inset;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .ss-shot-link:hover .ss-shot, .ss-shot-link:focus-visible .ss-shot {
+      transform: translateY(-3px);
+      border-color: rgba(0, 200, 160, 0.5);
+      box-shadow: 0 36px 90px rgba(0,0,0,0.75), 0 0 24px rgba(0,200,160,0.25);
     }
 
     .ss-section { padding: 44px 0; }
@@ -312,8 +331,7 @@ if ($is_logged_in) {
       .ss-cta { width: 100%; text-align: center; }
       .ss-cta.ss-secondary { margin-left: 0; margin-top: 10px; }
     }
-  </style>
-<?php } ?>
+ </style>
  <style>
 	 /*
          body {
@@ -637,8 +655,8 @@ if ($is_logged_in) {
      </style>
  </head>
  <body>
-     <!-- Hidden for public visitors until they hit Play on the landing -->
-     <div id="game-container"<?php if (!$is_logged_in) echo ' style="display:none"'; ?>>
+     <!-- Hidden until Play is clicked on the landing (all visitors) -->
+     <div id="game-container" style="display:none">
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
@@ -750,16 +768,18 @@ function openGuide() { document.getElementById('guide-overlay').style.display = 
 function closeGuide() { document.getElementById('guide-overlay').style.display = 'none'; }
      </script>
 
-<?php if (!$is_logged_in): ?>
-     <!-- Marketing landing shown to public visitors by default; the game
+     <!-- Marketing landing shown to ALL visitors by default; the game
           board image leads, the playable game stays hidden until Play is
-          clicked (ssPlay hides this landing and reveals the board).
-          Logged-in players never see this. All numbers mirror the in-game
-          guide modal so the copy stays truthful to the mechanics - if
-          scoring is ever rebalanced, update both. -->
+          clicked (ssPlay hides this landing and reveals the board). The
+          board image itself is clickable and starts the game too. All
+          numbers mirror the in-game guide modal so the copy stays
+          truthful to the mechanics - if scoring is ever rebalanced,
+          update both. -->
      <div id="ss-landing">
          <header class="ss-hero">
-             <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207">
+             <a class="ss-shot-link" href="#" onclick="ssPlay(); return false;" aria-label="Play Skull Swap now">
+                 <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207">
+             </a>
              <h1>&#x1F480; Skull Swap &#x1F480;<span class="ss-subtitle">Free Match 3 Puzzle Game</span></h1>
              <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
              <button class="ss-cta" type="button" onclick="ssPlay()">Play Free Now</button>
@@ -890,7 +910,11 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                      <h2>Ready to Swap?</h2>
                      <p>The board is waiting at the top of this page. No download. No signup. Just play.</p>
                      <button class="ss-cta" type="button" onclick="ssPlay()">Play Skull Swap Free</button>
+                     <?php if ($is_logged_in): ?>
+                     <p class="ss-login-note">You're logged in - every run you finish is saved and counts toward the weekly leaderboard.</p>
+                     <?php else: ?>
                      <p class="ss-login-note">Want your scores saved and a shot at the weekly leaderboard? <a href="index.php">Log in through Skulliance</a> with Discord and every run you finish counts.</p>
+                     <?php endif; ?>
                  </div>
              </div>
          </section>
@@ -907,7 +931,6 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              window.scrollTo(0, 0);
          }
      </script>
-<?php endif; ?>
 
      <script>
  // Public players play without a server game session; token fetch and

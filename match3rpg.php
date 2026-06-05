@@ -266,6 +266,16 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       box-shadow:
         0 30px 80px rgba(0, 0, 0, 0.7),
         0 0 0 1px rgba(0, 200, 160, 0.1) inset;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    /* The screenshot links to the game - hover lift as the affordance */
+    .screenshot-band a:hover .hero-screenshot,
+    .screenshot-band a:focus-visible .hero-screenshot {
+      transform: translateY(-3px);
+      border-color: rgba(0, 200, 160, 0.5);
+      box-shadow:
+        0 36px 90px rgba(0, 0, 0, 0.75),
+        0 0 24px rgba(0, 200, 160, 0.25);
     }
     @media (max-width: 768px), (hover: none) {
       /* iOS Safari and most touch browsers ignore background-attachment: fixed
@@ -580,11 +590,13 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
   <main>
 
     <div class="screenshot-band" role="presentation">
-      <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
-           alt="Monstrocity Match 3 RPG gameplay screenshot"
-           class="hero-screenshot"
-           width="2040" height="1414"
-           fetchpriority="high" decoding="async">
+      <a href="<?php echo $play_href; ?>" aria-label="Play Monstrocity now">
+        <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
+             alt="Monstrocity Match 3 RPG gameplay screenshot"
+             class="hero-screenshot"
+             width="2040" height="1414"
+             fetchpriority="high" decoding="async">
+      </a>
     </div>
 
     <section class="hero">
