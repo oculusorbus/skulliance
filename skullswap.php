@@ -820,8 +820,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
          <section class="ss-section">
              <div class="ss-wrap ss-center">
-                 <h2>Real Cardano Projects on Every Tile</h2>
-                 <p>The tiles you match aren't generic gems - they're icons from staking projects across the Cardano ecosystem. Every run deals a fresh hand of seven.</p>
+                 <h2>Featured Artists &amp; Projects on Every Tile</h2>
+                 <p>The tiles you match aren't generic gems - they're icons from artists and projects who have partnered with Skulliance. Every run deals a fresh hand of seven.</p>
              </div>
              <?php
              // Two opposite-direction marquee rows; each track holds its icon
