@@ -371,25 +371,49 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         <h2>Featured Artists &amp; Projects</h2>
         <p>Monstrocity bundles the original character set with dozens of visual themes contributed by independent artists. Each project below brings its own world — swap freely in-game, the mechanics stay the same and the art changes everything.</p>
         <?php
-        // Unique project names from the monstrocity.php theme JSON
-        // (collection sub-themes collapsed up to their parent project).
-        // Path pattern: /staking/images/monstrocity/{project-slug}/logo.png
-        // where slug = lowercase + alphanumeric only. onerror degrades any
-        // missing file to the skull icon.
+        // Display: project name. Path: /staking/images/monstrocity/{theme-slug}/logo.png
+        // where theme-slug is the FIRST theme.value associated with this project
+        // in the monstrocity.php JSON (since the logo lives inside a theme folder,
+        // not a project-named folder). Slugified project names happen to match the
+        // theme value for some projects (apprentices, blackflag, etc.) but for
+        // many they don't (Heist on Alpha → proxy, Josh Howard → muses, Nemonium
+        // → fauna, etc.) — explicit map avoids 404s.
         $img_base = 'https://www.skulliance.io/staking/images/monstrocity/';
         $projects = [
-            'Monstrocity', 'Apprentices', 'Black Flag', 'Danketsu', 'Disco Solaris',
-            'Havoc Worlds', 'Heist on Alpha', 'Josh Howard', 'Nemonium', 'Pendulum',
-            'Perps', 'Vampire Invasion', 'Bungking', 'Cardano Camera', 'Crypties',
-            'Darkula', 'Dead Pop Hell', 'Galactico', 'Nel', 'Netanel Cohen',
-            'Kimosabe Art', 'Maxingo', 'Ohh Meed', 'Ritual', 'Sinder Skullz',
-            'Skowl', 'Squashua', 'ADA Punks', 'Cardanians',
+            'Monstrocity'      => 'monstrocity',
+            'Apprentices'      => 'apprentices',
+            'Black Flag'       => 'blackflag',
+            'Danketsu'         => 'danketsu2',
+            'Disco Solaris'    => 'moebiuspioneers',
+            'Havoc Worlds'     => 'havocworlds',
+            'Heist on Alpha'   => 'proxy',
+            'Josh Howard'      => 'muses',
+            'Nemonium'         => 'fauna',
+            'Pendulum'         => 'pendulum',
+            'Perps'            => 'perps',
+            'Vampire Invasion' => 'vampireinvasion',
+            'Bungking'         => 'bungking',
+            'Cardano Camera'   => 'cardanocamera',
+            'Crypties'         => 'crypties2',
+            'Darkula'          => 'darkula',
+            'Dead Pop Hell'    => 'deadpophell',
+            'Galactico'        => 'galactico',
+            'Nel'              => 'animeorigins',
+            'Netanel Cohen'    => 'happypeople',
+            'Kimosabe Art'     => 'machineheadz',
+            'Maxingo'          => 'maxi',
+            'Ohh Meed'         => 'shortyverse',
+            'Ritual'           => 'beelzebub',
+            'Sinder Skullz'    => 'sinderskullz',
+            'Skowl'            => 'skowl',
+            'Squashua'         => 'ug',
+            'ADA Punks'        => 'adapunks',
+            'Cardanians'       => 'cardanians',
         ];
         ?>
         <ul class="logo-grid">
-          <?php foreach ($projects as $project):
-              $slug = strtolower(preg_replace('/[^a-z0-9]/i', '', $project));
-              $logo = $img_base . $slug . '/logo.png';
+          <?php foreach ($projects as $project => $theme_slug):
+              $logo = $img_base . $theme_slug . '/logo.png';
           ?>
             <li class="logo-tile">
               <img src="<?php echo htmlspecialchars($logo); ?>"
