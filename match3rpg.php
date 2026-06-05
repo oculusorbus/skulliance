@@ -422,9 +422,16 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
   <main>
 
+    <div class="screenshot-band" role="presentation">
+      <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
+           alt="Monstrocity Match 3 RPG gameplay screenshot"
+           class="hero-screenshot"
+           width="2040" height="1414"
+           fetchpriority="high" decoding="async">
+    </div>
+
     <section class="hero">
       <div class="wrap">
-        <img src="<?php echo $logo_url; ?>" alt="Monstrocity - free Match 3 RPG logo" class="logo" width="320" height="320" fetchpriority="high">
         <h1>Free Match 3 RPG - Play in Your Browser</h1>
         <p class="lead">Monstrocity is a free online Match 3 RPG with real combat depth - character stats, special attacks, power-ups, and boss battles wrapped around the match-3 mechanics you already love. Plays in any modern browser on phone, tablet, or desktop.</p>
         <a href="<?php echo $play_url; ?>" class="cta" aria-label="Play Monstrocity free now">Play Free Now</a>
@@ -438,14 +445,6 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         </div>
       </div>
     </section>
-
-    <div class="screenshot-band" role="presentation">
-      <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
-           alt="Monstrocity Match 3 RPG gameplay screenshot"
-           class="hero-screenshot"
-           width="2040" height="1414"
-           fetchpriority="high" decoding="async">
-    </div>
 
     <section class="character-strip-section">
       <div class="wrap intro">
