@@ -850,7 +850,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           <li><span class="mech-emoji" aria-hidden="true">💪</span><span><strong>Strength</strong> - Determines base damage for attacks (Strength × 2/3/4 for 3/4/5+ tiles).</span></li>
           <li><span class="mech-emoji" aria-hidden="true">⚡</span><span><strong>Speed</strong> - Determines turn order at the start of the level (higher Speed goes first; ties broken by Strength).</span></li>
           <li><span class="mech-emoji" aria-hidden="true">🧠</span><span><strong>Tactics</strong> - Gives a (Tactics × 10)% chance to halve incoming damage and reduces enemy power-up effects by (Tactics × 5)%.</span></li>
-          <li><span class="mech-emoji" aria-hidden="true">📏</span><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">📐</span><span><strong>Size</strong> - Large: +20% health, -2 Tactics (if Tactics &gt; 1); Medium: No effect; Small: -20% health, +2 Tactics (max 7).</span></li>
           <li><span class="mech-emoji" aria-hidden="true">🎭</span><span><strong>Type</strong> - Base: 85 health; Leader: 100 health; Battle Damaged: 70 health.</span></li>
         </ul>
       </div>
