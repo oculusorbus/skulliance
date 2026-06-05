@@ -374,12 +374,13 @@ if ($is_logged_in) {
              <div id="game-over">GAME OVER</div>
              <div id="game-over-buttons">
                  <button id="try-again">TRY AGAIN</button>
-                 <?php if ($is_logged_in): ?>
+                 <!-- Shown to public players too: leaderboards.php's login gate
+                      lands them on error.php with a Back to Login link, which
+                      doubles as a signup prompt. -->
                  <form id="leaderboard-form" action="leaderboards.php" method="POST">
                      <input type="hidden" name="filterby" value="weekly-swaps">
                      <button id="leaderboard" type="submit">LEADERBOARD</button>
                  </form>
-                 <?php endif; ?>
              </div>
          </div>
          <button id="guide-btn" onclick="openGuide()">HOW TO PLAY</button>
