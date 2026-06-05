@@ -553,6 +553,33 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     .faq summary:focus { outline: 2px solid #00c8a0; outline-offset: 4px; border-radius: 4px; }
     .faq details p { margin: 12px 0 0; color: #c7d0d9; }
 
+    /* Cross-promotion card for Skull Swap */
+    .cross-promo {
+      display: flex; align-items: center; gap: 28px;
+      margin-top: 20px; padding: 24px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+    }
+    .cross-promo .cross-shot { flex: 0 0 200px; display: block; }
+    .cross-promo .cross-shot img {
+      width: 100%; height: auto; border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .cross-promo .cross-shot:hover img,
+    .cross-promo .cross-shot:focus-visible img {
+      transform: translateY(-2px);
+      border-color: rgba(0, 200, 160, 0.5);
+    }
+    .cross-promo h3 { margin-top: 0; }
+    .cross-promo p { color: #c7d0d9; font-size: 0.96rem; }
+    @media (max-width: 640px) {
+      .cross-promo { flex-direction: column; text-align: center; }
+      .cross-promo .cross-shot { flex-basis: auto; width: 70%; max-width: 220px; }
+    }
+
     /* Final CTA */
     .final-cta {
       text-align: center;
@@ -893,6 +920,24 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         <a href="<?php echo $play_href; ?>" class="cta" aria-label="Play Monstrocity free Match 3 RPG now">Play Monstrocity Free</a>
       </div>
     </div>
+
+    <section>
+      <div class="wrap">
+        <h2>More Free Games from Skulliance</h2>
+        <div class="cross-promo">
+          <a class="cross-shot" href="skullswap.php" aria-label="Play Skull Swap, a free match 3 puzzle game">
+            <img src="https://www.skulliance.io/staking/images/skullswap.png"
+                 alt="Skull Swap match 3 puzzle game board"
+                 width="1207" height="1207" loading="lazy" decoding="async">
+          </a>
+          <div>
+            <h3>Skull Swap - Match 3 Puzzle</h3>
+            <p>Prefer a pure puzzle score chase? Skull Swap gives you exactly 25 matches to squeeze out every point - forge Carbon and Diamond bombs, chain detonations for huge combos, and cash your bombs in before the End Game Trap. Free in your browser, no download.</p>
+            <a href="skullswap.php" class="cta" aria-label="Play Skull Swap free now">Play Skull Swap Free</a>
+          </div>
+        </div>
+      </div>
+    </section>
 
   </main>
 

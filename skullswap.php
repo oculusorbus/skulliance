@@ -307,6 +307,30 @@ if ($is_logged_in) {
     .ss-tips li strong { color: #34e3bb; }
 
     .ss-center { text-align: center; }
+    /* Cross-promotion card for Monstrocity */
+    .ss-cross {
+      display: flex; align-items: center; gap: 28px;
+      margin-top: 20px; padding: 24px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+    }
+    .ss-cross .ss-cross-shot { flex: 0 0 200px; display: block; }
+    .ss-cross .ss-cross-shot img {
+      width: 100%; height: auto;
+      filter: drop-shadow(0 12px 32px rgba(0,0,0,0.5));
+      transition: transform 0.15s ease;
+    }
+    .ss-cross .ss-cross-shot:hover img,
+    .ss-cross .ss-cross-shot:focus-visible img {
+      transform: translateY(-2px);
+    }
+    .ss-cross h3 { margin-top: 0; }
+    .ss-cross p { font-size: 0.96rem; }
+    @media (max-width: 640px) {
+      .ss-cross { flex-direction: column; text-align: center; }
+      .ss-cross .ss-cross-shot { flex-basis: auto; width: 70%; max-width: 220px; }
+    }
     /* Centered quickstart section */
     .ss-quickstart { text-align: center; }
     .ss-quickstart ol { list-style-position: inside; padding: 0; margin: 16px 0 24px; }
@@ -913,6 +937,24 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                      <p>The board is waiting at the top of this page. No download. No signup. Just play.</p>
                      <button class="ss-cta" type="button" onclick="ssPlay()">Play Skull Swap Free</button>
                      <p class="ss-login-note">Want your scores saved and a shot at the weekly leaderboard? <a href="index.php">Log in through Skulliance</a> with Discord and every run you finish counts.</p>
+                 </div>
+             </div>
+         </section>
+
+         <section class="ss-section">
+             <div class="ss-wrap">
+                 <h2>More Free Games from Skulliance</h2>
+                 <div class="ss-cross">
+                     <a class="ss-cross-shot" href="match3rpg.php" aria-label="Play Monstrocity, a free match 3 RPG">
+                         <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png"
+                              alt="Monstrocity Match 3 RPG logo"
+                              loading="lazy" decoding="async">
+                     </a>
+                     <div>
+                         <h3>Monstrocity - Match 3 RPG</h3>
+                         <p>Want more than a score chase? Monstrocity wraps real RPG combat around the match 3 board - character stats, special attacks, power-ups, boss battles, and 35+ visual themes from featured artists. Free in your browser, no download.</p>
+                         <a class="ss-cta" href="match3rpg.php">Play Monstrocity Free</a>
+                     </div>
                  </div>
              </div>
          </section>
