@@ -375,7 +375,7 @@ if ($state === 'encounter') {
 		</div>
 		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
 		<?php else: ?>
-		<div class="rr-icon">💀</div>
+		<div class="rr-icon"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="58" height="80"></div>
 		<div class="rr-title">Defeated</div>
 		<?php endif; ?>
 		<div class="rr-dismiss">Tap to continue</div>
@@ -417,7 +417,7 @@ if ($state === 'encounter') {
 		$swept  = ($wins >= GAUNTLET_MAX_WINS);
 	?>
 	<div class="run-results">
-		<div class="run-result-icon"><?php echo $swept ? '&#x1F3C6;' : '&#x1F480;'; ?></div>
+		<div class="run-result-icon"><?php echo $swept ? '&#x1F3C6;' : '<img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48">'; ?></div>
 		<div class="run-result-title"><?php echo $swept ? 'Gauntlet Swept!' : 'Run Over'; ?></div>
 		<div class="run-result-sub"><?php echo $wins; ?> win<?php echo $wins !== 1 ? 's' : ''; ?> &middot; <?php echo $losses; ?> loss</div>
 	</div>
