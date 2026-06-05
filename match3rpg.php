@@ -366,6 +366,43 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       height: 100px;
       object-fit: contain;
     }
+    .logo-tile { cursor: pointer; }
+    .logo-tile:focus-visible {
+      outline: 2px solid #00c8a0;
+      outline-offset: 2px;
+    }
+    .logo-tile.active {
+      border-color: rgba(0, 200, 160, 0.6);
+      background: rgba(0, 200, 160, 0.1);
+    }
+    .logo-tile-expansion {
+      grid-column: 1 / -1;
+      list-style: none;
+      padding: 0;
+      background: transparent;
+      border: none;
+      margin: 4px 0 8px;
+    }
+    .logo-tile-expansion .expansion-inner {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 200, 160, 0.25);
+      border-radius: 14px;
+      padding: 20px 0 24px;
+      overflow: hidden;
+    }
+    .logo-tile-expansion h3 {
+      text-align: center;
+      margin: 0 0 16px;
+      padding: 0 20px;
+      font-size: 0.95rem;
+      color: #00c8a0;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .logo-tile-expansion .character-strip {
+      background: transparent;
+      border: none;
+    }
 
     /* FAQ */
     .faq details {
@@ -632,7 +669,12 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           <?php foreach ($projects as $project => $theme_slug):
               $logo = $img_base . $theme_slug . '/logo.png';
           ?>
-            <li class="logo-tile">
+            <li class="logo-tile"
+                role="button"
+                tabindex="0"
+                data-slug="<?php echo htmlspecialchars($theme_slug); ?>"
+                data-project="<?php echo htmlspecialchars($project); ?>"
+                aria-label="<?php echo htmlspecialchars($project); ?> - click to preview characters">
               <img src="<?php echo htmlspecialchars($logo); ?>"
                    alt="<?php echo htmlspecialchars($project); ?> project logo"
                    loading="lazy" decoding="async"
@@ -722,6 +764,108 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
   <footer>
     <p>© Skulliance · Monstrocity is a free browser-based Match 3 RPG. <a href="https://www.skulliance.io/">Visit Skulliance</a></p>
   </footer>
+
+  <script>
+  // Inline character-strip expansion for project logo tiles.
+  // Clicking a project logo splits the grid at that row and inserts two
+  // auto-scrolling rows (base + leader, opposite directions) for the
+  // clicked project's theme. Clicking the same tile again collapses it;
+  // clicking a different tile moves the expansion.
+  (function () {
+    var CHARS = ['Craig','Merdock','Goblin Ganger','Texby','Mandiblus','Koipon','Slime Mind','Billandar and Ted','Dankle','Jarhead','Spydrax','Katastrophy','Ouchie','Drake'];
+    var IMG_ROOT = 'https://www.skulliance.io/staking/images/monstrocity/';
+    var SKULL = '/staking/icons/skull.png';
+
+    function slugify(name) { return name.toLowerCase().replace(/ /g, '-'); }
+
+    function buildStrip(themeSlug, type, reverse) {
+      var track = document.createElement('div');
+      track.className = 'strip-track' + (reverse ? ' reverse' : '');
+      // Two passes for seamless loop.
+      for (var pass = 0; pass < 2; pass++) {
+        CHARS.forEach(function (name) {
+          var slug = slugify(name);
+          var card = document.createElement('div');
+          card.className = 'strip-card';
+          if (pass) card.setAttribute('aria-hidden', 'true');
+
+          var img = document.createElement('img');
+          img.src = IMG_ROOT + themeSlug + '/' + type + '/' + slug + '.png';
+          img.alt = name + ' - ' + type + ' character';
+          img.width = 200; img.height = 200;
+          img.loading = 'lazy'; img.decoding = 'async';
+          img.onerror = function () { this.onerror = null; this.src = SKULL; };
+
+          var nameDiv = document.createElement('div');
+          nameDiv.className = 'name';
+          nameDiv.textContent = name;
+
+          card.appendChild(img);
+          card.appendChild(nameDiv);
+          track.appendChild(card);
+        });
+      }
+      var strip = document.createElement('div');
+      strip.className = 'character-strip';
+      strip.appendChild(track);
+      return strip;
+    }
+
+    function buildExpansion(themeSlug, projectName) {
+      var li = document.createElement('li');
+      li.className = 'logo-tile-expansion';
+
+      var inner = document.createElement('div');
+      inner.className = 'expansion-inner';
+
+      var h3 = document.createElement('h3');
+      h3.textContent = projectName + ' Cast';
+      inner.appendChild(h3);
+
+      inner.appendChild(buildStrip(themeSlug, 'base', false));
+      inner.appendChild(buildStrip(themeSlug, 'leader', true));
+
+      li.appendChild(inner);
+      return li;
+    }
+
+    function activate(tile) {
+      var slug = tile.dataset.slug;
+      var project = tile.dataset.project;
+      if (!slug) return;
+
+      var alreadyActive = tile.classList.contains('active');
+
+      // Wipe any existing expansion + active state.
+      var existing = document.querySelectorAll('.logo-tile-expansion');
+      for (var i = 0; i < existing.length; i++) existing[i].remove();
+      var prevActive = document.querySelectorAll('.logo-tile.active');
+      for (var j = 0; j < prevActive.length; j++) prevActive[j].classList.remove('active');
+
+      // Toggle off if user clicked the currently-open tile.
+      if (alreadyActive) return;
+
+      var expansion = buildExpansion(slug, project);
+      tile.parentNode.insertBefore(expansion, tile.nextElementSibling);
+      tile.classList.add('active');
+
+      // Scroll the expansion into view so the user actually sees it.
+      requestAnimationFrame(function () {
+        expansion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+
+    document.querySelectorAll('.logo-tile').forEach(function (tile) {
+      tile.addEventListener('click', function () { activate(tile); });
+      tile.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activate(tile);
+        }
+      });
+    });
+  })();
+  </script>
 
 </body>
 </html>
