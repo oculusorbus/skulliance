@@ -85,7 +85,7 @@
 .nl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
 </style>
 <div id="nav-loader">
-    <div style="font-size:3rem;">&#x1F480;</div>
+    <img src="/staking/pwa/icon-192.png" alt="" width="48" height="48">
     <div class="nl-bar-wrap"><div class="nl-bar"></div></div>
     <div class="nl-text">Loading&hellip;</div>
 </div>

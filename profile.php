@@ -582,7 +582,7 @@ include 'header.php';
 .pl-text     { font-size: .78rem; color: rgba(255,255,255,.35); letter-spacing: .1em; text-transform: uppercase; }
 </style>
 <div id="profile-loader">
-    <div style="font-size:3rem;">&#x1F480;</div>
+    <img src="/staking/pwa/icon-192.png" alt="" width="48" height="48">
     <div class="pl-bar-wrap"><div class="pl-bar"></div></div>
     <div class="pl-text">Loading Profile</div>
 </div>
@@ -1699,7 +1699,7 @@ $realm_con_info = [
 <!-- ── Skull Swap ─────────────────────────────────────────────────────── -->
 <?php if ($swap_total_swaps > 0 || $swap_best_score > 0): ?>
 <div class="profile-section">
-    <div class="section-title"><span>&#128128; Skull Swap</span><a href="skullswap.php" class="section-title-link">Play Skull Swap &rarr;</a></div>
+    <div class="section-title"><span><img src="/staking/pwa/icon-192.png" alt="" width="18" height="18" style="vertical-align:-0.18em;margin-right:0.3em;">Skull Swap</span><a href="skullswap.php" class="section-title-link">Play Skull Swap &rarr;</a></div>
     <div class="activity-stats-row" style="grid-template-columns: repeat(3, 1fr)">
         <div class="act-stat">
             <span class="act-stat-num" style="color:#f5c518"><?php echo number_format($swap_best_score); ?></span>

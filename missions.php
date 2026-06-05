@@ -25,7 +25,7 @@ include 'header.php';
 .loader-text { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
 </style>
 <div id="missions-loader">
-	<div style="font-size:3rem;animation:lp 1.2s ease-in-out infinite;">&#x1F480;</div>
+	<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/icon-192.png" alt="" width="48" height="48"></div>
 	<div class="loader-bar-wrap"><div class="loader-bar"></div></div>
 	<div class="loader-text">Loading Missions</div>
 </div>
