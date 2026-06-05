@@ -19,12 +19,19 @@ if (session_status() === PHP_SESSION_ACTIVE
 $is_logged_in = isset($_SESSION['userData']['user_id']);
 
 // Project currency icons - the game's tile set (this.allIcons) and, for
-// public visitors, the landing page's scrolling icon marquee.
-$swap_icons = [];
-$icon_res = $conn->query("SELECT DISTINCT LOWER(currency) AS currency FROM projects WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != '' ORDER BY currency ASC");
+// public visitors, the landing page's scrolling icon marquee (which also
+// wants the project name for its labels). Grouped by currency to keep the
+// one-icon-per-currency dedupe the game relies on; MIN(name) picks a
+// stable representative when projects share a currency.
+$swap_projects = [];
+$icon_res = $conn->query("SELECT LOWER(currency) AS currency, MIN(name) AS name FROM projects WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != '' GROUP BY LOWER(currency) ORDER BY currency ASC");
 while ($icon_row = $icon_res->fetch_assoc()) {
-    $swap_icons[] = 'https://www.skulliance.io/staking/icons/' . $icon_row['currency'] . '.png';
+    $swap_projects[] = [
+        'url'  => 'https://www.skulliance.io/staking/icons/' . $icon_row['currency'] . '.png',
+        'name' => $icon_row['name'],
+    ];
 }
+$swap_icons = array_column($swap_projects, 'url');
 
 if ($is_logged_in) {
     include 'message.php';
@@ -221,7 +228,7 @@ if ($is_logged_in) {
       .ss-strip-track { animation: none; }
     }
     .ss-strip-card {
-      flex: 0 0 72px;
+      flex: 0 0 104px;
       text-align: center;
     }
     .ss-strip-card img {
@@ -232,14 +239,11 @@ if ($is_logged_in) {
     }
     .ss-strip-card .ss-ticker {
       margin-top: 8px;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
+      line-height: 1.3;
       color: #8a96a3;
       font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      letter-spacing: 0.04em;
     }
 
     /* Scoring mechanics: accent-bar list with bomb icons */
@@ -803,21 +807,20 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              // is aria-hidden). Bottom row runs the reversed list so the
              // rows don't mirror each other.
              $strip_rows = [
-                 ['icons' => $swap_icons,                'class' => ''],
-                 ['icons' => array_reverse($swap_icons), 'class' => ' ss-reverse'],
+                 ['projects' => $swap_projects,                'class' => ''],
+                 ['projects' => array_reverse($swap_projects), 'class' => ' ss-reverse'],
              ];
              foreach ($strip_rows as $row): ?>
              <div class="ss-strip">
                  <div class="ss-strip-track<?php echo $row['class']; ?>">
                      <?php for ($pass = 0; $pass < 2; $pass++):
-                         foreach ($row['icons'] as $icon_url):
-                             $ticker = strtoupper(pathinfo(parse_url($icon_url, PHP_URL_PATH), PATHINFO_FILENAME)); ?>
+                         foreach ($row['projects'] as $proj): ?>
                      <div class="ss-strip-card"<?php if ($pass) echo ' aria-hidden="true"'; ?>>
-                         <img src="<?php echo htmlspecialchars($icon_url); ?>"
-                              alt="<?php echo $pass ? '' : htmlspecialchars($ticker) . ' project icon'; ?>"
+                         <img src="<?php echo htmlspecialchars($proj['url']); ?>"
+                              alt="<?php echo $pass ? '' : htmlspecialchars($proj['name']) . ' project icon'; ?>"
                               loading="lazy" decoding="async" width="64" height="64"
                               onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
-                         <div class="ss-ticker"><?php echo htmlspecialchars($ticker); ?></div>
+                         <div class="ss-ticker"><?php echo htmlspecialchars($proj['name']); ?></div>
                      </div>
                      <?php endforeach; endfor; ?>
                  </div>
