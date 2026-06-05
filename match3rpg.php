@@ -167,17 +167,41 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
       margin-top: 22px;
     }
+    /* Screenshot band - full-width with parallax theme background */
+    .screenshot-band {
+      position: relative;
+      width: 100%;
+      padding: 56px 20px;
+      background-image: url('https://www.skulliance.io/staking/images/monstrocity/monstrocity/monstrocity.png');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      overflow: hidden;
+    }
+    .screenshot-band::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(7, 17, 29, 0.55), rgba(7, 17, 29, 0.3) 40%, rgba(7, 17, 29, 0.65));
+      pointer-events: none;
+    }
     .hero-screenshot {
+      position: relative;
       display: block;
       width: 100%;
       max-width: 960px;
       height: auto;
-      margin: 40px auto 0;
+      margin: 0 auto;
       border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.6),
-        0 0 0 1px rgba(0, 200, 160, 0.08) inset;
+        0 30px 80px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(0, 200, 160, 0.1) inset;
+    }
+    @media (max-width: 768px), (hover: none) {
+      /* iOS Safari and most touch browsers ignore background-attachment: fixed
+         (or break scrolling), so fall back to scroll on small/touch screens. */
+      .screenshot-band { background-attachment: scroll; }
     }
     .badge {
       font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
@@ -412,13 +436,16 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           <span class="badge">No Pay-to-Win</span>
           <span class="badge">Mobile · Tablet · Desktop</span>
         </div>
-        <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
-             alt="Monstrocity Match 3 RPG gameplay screenshot"
-             class="hero-screenshot"
-             width="2040" height="1414"
-             fetchpriority="high" decoding="async">
       </div>
     </section>
+
+    <div class="screenshot-band" role="presentation">
+      <img src="https://www.skulliance.io/staking/images/monstrocity/game.png"
+           alt="Monstrocity Match 3 RPG gameplay screenshot"
+           class="hero-screenshot"
+           width="2040" height="1414"
+           fetchpriority="high" decoding="async">
+    </div>
 
     <section class="character-strip-section">
       <div class="wrap intro">
