@@ -1,11 +1,21 @@
 <?php
-// Mirror the session handling used by analytics.php and gallery.php:
-// include db.php (which conditionally starts the session when a cookie
-// is present) and read $_SESSION. No manual session_start, no manual
-// cookie lifetime management, no SessionCookie refresh. Both of those
-// public pages keep stakers logged in via this pattern, so do the same
-// here instead of trying to manage it bespoke.
-include_once 'db.php';
+// Session handling is the EXACT pattern used by monstrocity.php (which is
+// confirmed to keep stakers logged in): bare session_start, then restore
+// the staking session from the 6-month SessionCookie if PHPSESSID has
+// lapsed. No db.php include - this page doesn't need DB access, and the
+// previous include_once 'db.php' attempt was still kicking users out.
+session_start();
+
+if (!isset($_SESSION['logged_in'])) {
+    if (isset($_COOKIE['SessionCookie'])) {
+        $cookie = $_COOKIE['SessionCookie'];
+        $cookieData = json_decode($cookie, true);
+        if (is_array($cookieData)) {
+            $_SESSION = $cookieData;
+        }
+    }
+}
+
 $is_logged_in = !empty($_SESSION['logged_in']);
 
 // Marketing landing page for the Monstrocity Match 3 RPG. Reachable both
