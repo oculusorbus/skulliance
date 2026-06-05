@@ -248,7 +248,7 @@ $conn->close();
 <div class="ana-row ana-row-3">
 
     <div class="ana-card">
-        <div class="ana-game-title"><img src="/staking/pwa/icon-192.png" alt="" width="20" height="20" style="vertical-align:-0.18em;margin-right:0.25em;"> Skull Swap</div>
+        <div class="ana-game-title"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="15" height="20" style="vertical-align:-0.18em;margin-right:0.25em;"> Skull Swap</div>
         <div class="ana-game-grid">
             <div class="ana-game-stat accent">
                 <div class="ana-game-stat-label">This Week</div>

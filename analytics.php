@@ -32,7 +32,7 @@ include 'header.php';
 ?>
 
 <div id="loader">
-    <div class="loader-skull"><img src="/staking/pwa/icon-192.png" alt="" width="48" height="48"></div>
+    <div class="loader-skull"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48"></div>
     <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
     <div class="loader-text">Loading Analytics</div>
 </div>

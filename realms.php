@@ -1169,7 +1169,7 @@ $conn->close();
 		}
 
 		var loadingHtml = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:70vh;">'
-			+ '<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/icon-192.png" alt="" width="36" height="36"></div>'
+			+ '<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="26" height="36"></div>'
 			+ '<div style="width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">'
 			+   '<div style="height:100%;background:#00c8a0;width:0%;animation:lb 4s ease-out forwards;"></div>'
 			+ '</div>'
@@ -1554,7 +1554,7 @@ $conn->close();
 		if (window._currentLocModal) openLocationModal(window._currentLocModal);
 	}
 
-	var _skullLoaderHTML = '<div class="modal-skull-loader"><div class="lsk"><img src="/staking/pwa/favicon-32.png" alt="" width="32" height="32"></div><div class="lbar-wrap"><div class="lbar"></div></div></div>';
+	var _skullLoaderHTML = '<div class="modal-skull-loader"><div class="lsk"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="23" height="32"></div><div class="lbar-wrap"><div class="lbar"></div></div></div>';
 
 	// gridSelector: optional CSS selector for just the soldiers grid — shows loader there only.
 	// Omit for a full-body loader (used on initial modal open).

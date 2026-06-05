@@ -177,8 +177,8 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
     .ss-title { text-transform: uppercase; letter-spacing: 0.04em; }
     .ss-title-skull {
       display: inline-block;
-      width: 0.85em; height: 0.85em;
-      vertical-align: -0.12em;
+      height: 0.95em; width: auto;
+      vertical-align: -0.15em;
       margin: 0 0.08em;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
     }
@@ -828,7 +828,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
      <div id="guide-overlay" onclick="if(event.target===this)closeGuide()">
          <div id="guide-modal">
              <button id="guide-close" onclick="closeGuide()">&#x2715;</button>
-             <h2><img src="/staking/pwa/icon-192.png" alt="" class="ss-title-skull"> Skull Swap Guide <img src="/staking/pwa/icon-192.png" alt="" class="ss-title-skull"></h2>
+             <h2><img src="/staking/pwa/skulliance-logo-icon.png" alt="" class="ss-title-skull"> Skull Swap Guide <img src="/staking/pwa/skulliance-logo-icon.png" alt="" class="ss-title-skull"></h2>
 
              <div class="guide-section">
                  <h3>The Basics</h3>
@@ -926,7 +926,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              <a class="ss-shot-link" href="#" onclick="ssPlay(); return false;" aria-label="Play Skull Swap now">
                  <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207" fetchpriority="high" decoding="async">
              </a>
-             <h1><span class="ss-title"><img src="/staking/pwa/icon-192.png" alt="" class="ss-title-skull"> Skull Swap <img src="/staking/pwa/icon-192.png" alt="" class="ss-title-skull"></span><span class="ss-subtitle">Free Match 3 Puzzle Game</span></h1>
+             <h1><span class="ss-title"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" class="ss-title-skull"> Skull Swap <img src="/staking/pwa/skulliance-logo-icon.png" alt="" class="ss-title-skull"></span><span class="ss-subtitle">Free Match 3 Puzzle Game</span></h1>
              <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
              <button class="ss-cta" type="button" onclick="ssPlay()">Play Free Now</button>
              <a class="ss-cta ss-secondary" href="#ss-scoring">How Scoring Works</a>

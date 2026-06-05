@@ -392,7 +392,7 @@ function loadTotalMissions(){
 	if(!container) return;
 	window.totalMissionsLoaded = true;
 	container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;">'
-		+ '<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/icon-192.png" alt="" width="36" height="36"></div>'
+		+ '<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="26" height="36"></div>'
 		+ '<div style="width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">'
 		+   '<div style="height:100%;background:#00c8a0;width:0%;animation:lb 8s ease-out forwards;"></div>'
 		+ '</div>'
@@ -433,7 +433,7 @@ function loadCurrentMissions(){
 	if(!container) return;
 	window.currentMissionsLoaded = true;
 	container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;">'
-		+ '<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/icon-192.png" alt="" width="36" height="36"></div>'
+		+ '<div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="26" height="36"></div>'
 		+ '<div style="width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">'
 		+   '<div style="height:100%;background:#00c8a0;width:0%;animation:lb 8s ease-out forwards;"></div>'
 		+ '</div>'
