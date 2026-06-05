@@ -727,6 +727,8 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
             'Skowl'            => 'skowl',
             'Squashua'         => 'ug',
             'ADA Punks'        => 'adapunks',
+            'Cardanians'       => 'cardanians',
+            'Handies'          => 'handies',
         ];
         ?>
         <ul class="logo-grid">
