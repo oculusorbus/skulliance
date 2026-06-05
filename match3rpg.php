@@ -270,10 +270,18 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       animation: strip-scroll 50s linear infinite;
       will-change: transform;
     }
+    .strip-track.reverse {
+      animation-direction: reverse;
+      animation-duration: 55s;
+    }
     .strip-track:hover { animation-play-state: paused; }
     @keyframes strip-scroll {
       from { transform: translateX(0); }
       to   { transform: translateX(-50%); }
+    }
+    .character-strip + .character-strip {
+      border-top: 0;
+      margin-top: -1px;
     }
     @media (prefers-reduced-motion: reduce) {
       .strip-track { animation: none; }
@@ -398,41 +406,49 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     <section class="character-strip-section">
       <div class="wrap intro">
         <h2>Meet the Monstrocity Cast</h2>
-        <p>14 original characters anchor the base game, each with their own stats, size, and signature power-up.</p>
+        <p>14 original characters anchor the base game in two flavors - Base and Leader - each with their own stats, size, and signature power-up.</p>
       </div>
       <?php
       // Base Monstrocity character roster (JSON order from monstrocity.php).
-      // Path: /staking/images/monstrocity/monstrocity/base/{slug}.png
-      // Slug = lowercase name with spaces replaced by dashes.
+      // Path: /staking/images/monstrocity/monstrocity/{type}/{slug}.png where
+      // type is "base" or "leader" and slug is the lowercase name with spaces
+      // replaced by dashes. Same 14 names exist in both type folders.
       $characters = [
           'Craig', 'Merdock', 'Goblin Ganger', 'Texby', 'Mandiblus',
           'Koipon', 'Slime Mind', 'Billandar and Ted', 'Dankle', 'Jarhead',
           'Spydrax', 'Katastrophy', 'Ouchie', 'Drake',
       ];
-      $char_base = 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/base/';
+      $char_root = 'https://www.skulliance.io/staking/images/monstrocity/monstrocity/';
+
+      // Render a single strip. Each character appears twice so the CSS
+      // 0% -> -50% translate loops seamlessly.
+      $render_strip = function(array $chars, string $type_folder, string $type_label, bool $reverse) use ($char_root) {
+          $track_class = 'strip-track' . ($reverse ? ' reverse' : '');
+          $aria_label  = 'Monstrocity ' . $type_label . ' characters';
+          echo '<div class="character-strip" aria-label="' . htmlspecialchars($aria_label) . '">';
+          echo   '<div class="' . $track_class . '">';
+          for ($pass = 0; $pass < 2; $pass++) {
+              foreach ($chars as $char) {
+                  $slug = strtolower(str_replace(' ', '-', $char));
+                  $url  = $char_root . $type_folder . '/' . $slug . '.png';
+                  $hide = $pass ? ' aria-hidden="true"' : '';
+                  $load = $pass ? 'lazy' : 'eager';
+                  echo '<div class="strip-card"' . $hide . '>';
+                  echo   '<img src="' . htmlspecialchars($url) . '"';
+                  echo        ' alt="' . htmlspecialchars($char . ' - Monstrocity ' . $type_label . ' character') . '"';
+                  echo        ' loading="' . $load . '" decoding="async"';
+                  echo        ' width="200" height="200"';
+                  echo        ' onerror="this.onerror=null;this.src=\'/staking/icons/skull.png\';">';
+                  echo   '<div class="name">' . htmlspecialchars($char) . '</div>';
+                  echo '</div>';
+              }
+          }
+          echo   '</div>';
+          echo '</div>';
+      };
+      $render_strip($characters, 'base',   'Base',   false);
+      $render_strip($characters, 'leader', 'Leader', true);
       ?>
-      <div class="character-strip" aria-label="Monstrocity base characters">
-        <div class="strip-track">
-          <?php // Render twice for seamless infinite scroll loop.
-          for ($pass = 0; $pass < 2; $pass++):
-            foreach ($characters as $char):
-              $slug = strtolower(str_replace(' ', '-', $char));
-          ?>
-            <div class="strip-card"<?php echo $pass ? ' aria-hidden="true"' : ''; ?>>
-              <img src="<?php echo $char_base . $slug; ?>.png"
-                   alt="<?php echo htmlspecialchars($char); ?> - Monstrocity base character"
-                   loading="<?php echo $pass ? 'lazy' : 'eager'; ?>"
-                   decoding="async"
-                   width="200" height="200"
-                   onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
-              <div class="name"><?php echo htmlspecialchars($char); ?></div>
-            </div>
-          <?php
-            endforeach;
-          endfor;
-          ?>
-        </div>
-      </div>
     </section>
 
     <section>
