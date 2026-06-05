@@ -96,7 +96,26 @@ if ($is_logged_in) {
   </script>
 
   <style>
-    body { background: #0F0F0F; margin: 0; font-family: Arial, sans-serif; }
+    body { background: #0F0F0F; margin: 0; font-family: Arial, sans-serif; color: #fff; }
+    /* Marketing landing shown to public visitors; hidden once they hit Play */
+    #ss-landing { max-width: 860px; margin: 0 auto; padding: 28px 18px 60px; }
+    .ss-hero { text-align: center; padding: 24px 0 8px; }
+    .ss-hero h1 { font-size: 2rem; margin: 0 0 12px; }
+    .ss-lead { color: rgba(255,255,255,0.8); font-size: 1.05rem; line-height: 1.55; max-width: 640px; margin: 0 auto 20px; }
+    .ss-cta { display: inline-block; background: #165777; color: #fff; border: none; font-size: 1.15rem; font-weight: bold; padding: 14px 34px; border-radius: 8px; cursor: pointer; letter-spacing: 0.03em; }
+    .ss-cta:hover { background: #1d6f99; }
+    .ss-badges { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .ss-badge { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 5px 12px; font-size: 0.8rem; color: rgba(255,255,255,0.75); }
+    .ss-shot { display: block; width: 100%; max-width: 480px; height: auto; margin: 26px auto 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+    .ss-section { margin-top: 36px; }
+    .ss-section h2 { font-size: 1.35rem; margin: 0 0 10px; }
+    .ss-section p, .ss-section li { color: rgba(255,255,255,0.78); line-height: 1.55; }
+    .ss-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 14px; }
+    .ss-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; }
+    .ss-card h3 { margin: 0 0 8px; font-size: 1.02rem; }
+    .ss-card p { margin: 0; font-size: 0.92rem; }
+    .ss-center { text-align: center; }
+    .ss-section a { color: #6db7dd; }
   </style>
 <?php } ?>
  <style>
@@ -422,7 +441,71 @@ if ($is_logged_in) {
      </style>
  </head>
  <body>
-     <div id="game-container">
+<?php if (!$is_logged_in): ?>
+     <!-- Marketing landing for public visitors. Hitting Play hides this and
+          reveals the (already initialized) game below. Logged-in players
+          never see it - they go straight to the board. Copy mirrors the
+          in-game guide modal so it stays truthful to the mechanics. -->
+     <div id="ss-landing">
+         <header class="ss-hero">
+             <h1>Skull Swap - Free Match 3 Puzzle Game</h1>
+             <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
+             <button class="ss-cta" type="button" onclick="ssPlay()">Play Free Now</button>
+             <div class="ss-badges" aria-label="Game highlights">
+                 <span class="ss-badge">100% Free</span>
+                 <span class="ss-badge">No Download</span>
+                 <span class="ss-badge">No Signup</span>
+                 <span class="ss-badge">Mobile &amp; Desktop</span>
+             </div>
+             <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207">
+         </header>
+
+         <section class="ss-section">
+             <h2>Not Your Average Match 3</h2>
+             <div class="ss-features">
+                 <div class="ss-card">
+                     <h3>&#x1F4A3; Carbon &amp; Diamond Bombs</h3>
+                     <p>Match 4 to forge a Carbon bomb that wipes a full row and column. Match 5 for a Diamond bomb that clears the entire board - up to 680 points in a single move.</p>
+                 </div>
+                 <div class="ss-card">
+                     <h3>&#x26D3; Chain Detonations</h3>
+                     <p>Bomb blasts that hit other bombs set them off too, stacking +50 and +100 bonuses on top. Planting bombs near each other is where monster scores come from.</p>
+                 </div>
+                 <div class="ss-card">
+                     <h3>&#x1F3AF; 25 Matches, Make Them Count</h3>
+                     <p>Every run is exactly 25 matches. No timers, no lives - pure score-per-move strategy where a 5-match always beats a quick 3.</p>
+                 </div>
+                 <div class="ss-card">
+                     <h3>&#x26A0; The End Game Trap</h3>
+                     <p>Leftover bombs auto-detonate at discount rates when your last match fires. Cashing them in manually before match 25 separates good scores from great ones.</p>
+                 </div>
+             </div>
+         </section>
+
+         <section class="ss-section">
+             <h2>How to Start Playing in Under 10 Seconds</h2>
+             <ol>
+                 <li>Hit Play - the board loads instantly in your browser on phone, tablet, or desktop.</li>
+                 <li>Drag a tile to swap it with a neighbor and line up 3 or more matching icons.</li>
+                 <li>Chase 4- and 5-matches to forge bombs, then detonate them for the big points.</li>
+             </ol>
+             <p class="ss-center"><button class="ss-cta" type="button" onclick="ssPlay()">Start Playing Now</button></p>
+         </section>
+
+         <section class="ss-section">
+             <h2>Compete on the Leaderboard</h2>
+             <p>Casual play needs no account. Want your scores saved and a shot at the weekly Skull Swap leaderboard? <a href="index.php">Log in through Skulliance</a> with Discord and every run you finish counts.</p>
+         </section>
+     </div>
+     <script>
+         function ssPlay() {
+             document.getElementById('ss-landing').style.display = 'none';
+             document.getElementById('game-container').style.display = 'flex';
+             window.scrollTo(0, 0);
+         }
+     </script>
+<?php endif; ?>
+     <div id="game-container"<?php if (!$is_logged_in) echo ' style="display:none"'; ?>>
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
