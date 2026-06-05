@@ -472,17 +472,29 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              font-family: Arial;
              color: #fff;
              text-align: left;
+             white-space: nowrap; /* high scores must never wrap to two lines */
          }
          #matches {
              font-size: 24px;
              font-family: Arial;
              color: #fff;
              text-align: right;
+             white-space: nowrap;
          }
+        @media (max-width: 900px) {
+            /* The header/burger menu is gone (standalone page). For
+               logged-in users, drop the board ~50px so the floating back
+               arrow gets its own clear strip at the top-left and never
+               overlaps the score. 900px (not 768) because the centered
+               board's side gutter shrinks below the arrow's width before
+               phone sizes. The old 48px burger gutter on #matches is
+               reclaimed entirely. */
+            #game-container.has-exit { margin-top: 62px; }
+        }
         @media (max-width: 768px) {
-            #matches {
-                padding-right: 48px;
-            }
+            /* HUD type drops a couple points so max scores fit one line
+               on small phones. */
+            #score, #matches { font-size: 20px; }
         }
          #game-board {
              display: grid;
@@ -775,8 +787,10 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
      </a>
   <?php endif; ?>
 
-     <!-- Hidden for ALL visitors until they hit Play on the landing -->
-     <div id="game-container" style="display:none">
+     <!-- Hidden for ALL visitors until they hit Play on the landing.
+          .has-exit marks the logged-in case so mobile CSS can clear the
+          floating back arrow; public visitors keep the tight layout. -->
+     <div id="game-container"<?php if ($is_logged_in) echo ' class="has-exit"'; ?> style="display:none">
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
