@@ -27,16 +27,74 @@ if ($is_logged_in) {
 } else {
     // Public visitors skip the staking chrome entirely. Emit a minimal
     // document head; the page's own <style> block follows and the existing
-    // "</head><body>" further down closes it.
+    // "</head><body>" further down closes it. Social scrapers (X, Discord,
+    // Facebook) never send cookies, so they always see this branch — the
+    // OG/Twitter/schema metadata lives here.
+    $ss_canonical = 'https://www.skulliance.io/staking/skullswap.php';
+    $ss_image     = 'https://www.skulliance.io/staking/images/skullswap.png';
+    $ss_title     = 'Skull Swap - Free Match 3 Puzzle Game | Play in Your Browser';
+    $ss_desc      = 'Play Skull Swap free - a match 3 puzzle game with carbon and diamond bombs, cascade combos, and a 25-match score chase. Works on mobile, tablet, and desktop. No download, no signup.';
+    $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 25-match score chase. Play on any device - no download.';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Skull Swap - Free Match 3 Puzzle Game | Skulliance</title>
+  <title><?php echo htmlspecialchars($ss_title); ?></title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Play Skull Swap free in your browser - a match 3 puzzle game with carbon and diamond bombs, cascade combos, and a 25-match score chase. No download, no signup.">
+  <meta name="description" content="<?php echo htmlspecialchars($ss_desc); ?>">
+  <meta name="keywords" content="free match 3 game, match 3 puzzle game, browser match 3 game, online match 3 game, no download match 3 game, free puzzle game, skull game, skull swap, match three game, mobile match 3 game">
   <meta name="theme-color" content="#161616">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="<?php echo $ss_canonical; ?>">
+
+  <!-- OpenGraph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Skulliance">
+  <meta property="og:url" content="<?php echo $ss_canonical; ?>">
+  <meta property="og:title" content="<?php echo htmlspecialchars($ss_title); ?>">
+  <meta property="og:description" content="<?php echo htmlspecialchars($ss_desc); ?>">
+  <meta property="og:image" content="<?php echo $ss_image; ?>">
+  <meta property="og:image:width" content="1207">
+  <meta property="og:image:height" content="1207">
+  <meta property="og:image:alt" content="Skull Swap match 3 puzzle game board">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<?php echo htmlspecialchars($ss_title); ?>">
+  <meta name="twitter:description" content="<?php echo htmlspecialchars($ss_short); ?>">
+  <meta name="twitter:image" content="<?php echo $ss_image; ?>">
+  <meta name="twitter:image:alt" content="Skull Swap match 3 puzzle game board">
+
+  <!-- Schema.org structured data: VideoGame -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Skull Swap",
+    "url": "<?php echo $ss_canonical; ?>",
+    "image": "<?php echo $ss_image; ?>",
+    "description": "<?php echo $ss_short; ?>",
+    "genre": ["Match 3", "Puzzle"],
+    "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+    "playMode": "SinglePlayer",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Skulliance",
+      "url": "https://www.skulliance.io/"
+    }
+  }
+  </script>
+
   <style>
     body { background: #0F0F0F; margin: 0; font-family: Arial, sans-serif; }
   </style>
