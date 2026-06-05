@@ -857,6 +857,23 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       return li;
     }
 
+    // Visually identify the last tile in the same row as the clicked tile.
+    // Grid layout uses auto-fit so the column count varies with viewport.
+    // Group tiles by getBoundingClientRect().top so we work off actual
+    // rendered rows rather than guessing column count.
+    function findLastTileInRow(clickedTile) {
+      var tiles = document.querySelectorAll('.logo-tile');
+      var clickedTop = clickedTile.getBoundingClientRect().top;
+      var last = clickedTile;
+      for (var i = 0; i < tiles.length; i++) {
+        var t = tiles[i];
+        if (Math.abs(t.getBoundingClientRect().top - clickedTop) <= 2) {
+          last = t;
+        }
+      }
+      return last;
+    }
+
     function activate(tile) {
       var slug = tile.dataset.slug;
       var project = tile.dataset.project;
@@ -864,7 +881,8 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
       var alreadyActive = tile.classList.contains('active');
 
-      // Wipe any existing expansion + active state.
+      // Wipe any existing expansion + active state. Doing this before the
+      // row calculation so getBoundingClientRect sees the post-removal layout.
       var existing = document.querySelectorAll('.logo-tile-expansion');
       for (var i = 0; i < existing.length; i++) existing[i].remove();
       var prevActive = document.querySelectorAll('.logo-tile.active');
@@ -874,7 +892,8 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       if (alreadyActive) return;
 
       var expansion = buildExpansion(slug, project);
-      tile.parentNode.insertBefore(expansion, tile.nextElementSibling);
+      var lastInRow = findLastTileInRow(tile);
+      tile.parentNode.insertBefore(expansion, lastInRow.nextElementSibling);
       tile.classList.add('active');
 
       // Scroll the expansion into view so the user actually sees it.
@@ -891,6 +910,25 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           activate(tile);
         }
       });
+    });
+
+    // Re-anchor expansion to the end of the active tile's row when the
+    // viewport size changes (column count changes -> active tile may have
+    // moved into a different row). Debounced so it doesn't fire constantly
+    // during a drag-resize.
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        var activeTile = document.querySelector('.logo-tile.active');
+        var expansion = document.querySelector('.logo-tile-expansion');
+        if (!activeTile || !expansion) return;
+        var lastInRow = findLastTileInRow(activeTile);
+        var desiredNext = lastInRow.nextElementSibling;
+        if (expansion !== desiredNext && expansion !== lastInRow) {
+          activeTile.parentNode.insertBefore(expansion, desiredNext);
+        }
+      }, 150);
     });
   })();
   </script>
