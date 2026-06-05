@@ -1,20 +1,45 @@
 <?php
-session_start();
+// Session handling matches the staking app's standard pattern so a
+// logged-in user who arrives here from the nav stays logged in
+// afterwards. Three things have to be right:
+//
+//  1. cookie lifetime — process-oauth.php sets PHPSESSID to a 31-day
+//     cookie. A bare session_start() in this file would reissue it
+//     with the default (browser-session) lifetime, silently
+//     downgrading the user's session to "until they close the
+//     browser". session_set_cookie_params(2678400) before
+//     session_start() preserves the original 31-day window.
+//
+//  2. resume condition — only call session_start() when there's
+//     actually a session cookie to resume (PHPSESSID or
+//     SessionCookie). Same as db.php, avoids creating throwaway
+//     sessions for cold search-arrival visitors and bots.
+//
+//  3. SessionCookie refresh — every "normal" staking page refreshes
+//     the SessionCookie at the bottom of skulliance.php with the
+//     current $_SESSION json-encoded. Without this refresh, mobile
+//     browsers that lose PHPSESSID (Safari ITP, PWA standalone) would
+//     have nothing to restore from on their next visit. We don't
+//     include skulliance.php here, so we have to do the refresh
+//     ourselves before any output starts.
+ini_set('session.gc_maxlifetime', 2678400);
+session_set_cookie_params(2678400);
 
-// Restore session from cookie if logged out (mirrors the pattern used by
-// monstrocity.php so mobile/PWA users keep their staking session when
-// they hit this page from the in-app nav). Cold visitors arriving via
-// search don't have a SessionCookie, so this is a no-op for them.
-if (!isset($_SESSION['logged_in'])) {
-    if (isset($_COOKIE['SessionCookie'])) {
-        $cookie = $_COOKIE['SessionCookie'];
-        $cookieData = json_decode($cookie, true);
-        if (is_array($cookieData)) {
-            $_SESSION = $cookieData;
-        }
+if (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie'])) {
+    session_start();
+}
+
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+    $cookieData = json_decode($_COOKIE['SessionCookie'], true);
+    if (is_array($cookieData)) {
+        $_SESSION = $cookieData;
     }
 }
 $is_logged_in = !empty($_SESSION['logged_in']);
+
+if ($is_logged_in) {
+    setcookie('SessionCookie', json_encode($_SESSION), time() + (6 * 30 * 24 * 3600), '/');
+}
 
 // Marketing landing page for the Monstrocity Match 3 RPG. Reachable both
 // from search (designed to rank for "free match 3 rpg" etc.) and from
