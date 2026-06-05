@@ -833,7 +833,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           <li><span class="mech-emoji" aria-hidden="true">🩸</span><span><strong>Heal (Bloody)</strong> - Restores 10 HP (reduced by enemy tactics).</span></li>
           <li><span class="mech-emoji" aria-hidden="true">💥</span><span><strong>Boost Attack (Cardano)</strong> - Adds +10 damage to the next attack (reduced by enemy tactics).</span></li>
           <li><span class="mech-emoji" aria-hidden="true">🔄</span><span><strong>Regenerate (ADA)</strong> - Restores 7 HP (reduced by enemy tactics).</span></li>
-          <li><span class="mech-emoji" aria-hidden="true">✨</span><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
+          <li><span class="mech-emoji" aria-hidden="true">🩹</span><span><strong>Minor Regen (None)</strong> - Restores 5 HP (reduced by enemy tactics).</span></li>
         </ul>
         <p class="mech-note">Power-up effects are boosted by 50% for a match-4 and 100% for a match-5+.</p>
 
