@@ -82,31 +82,62 @@ if ($is_logged_in) {
   <meta name="twitter:image" content="<?php echo $ss_image; ?>">
   <meta name="twitter:image:alt" content="Skull Swap match 3 puzzle game board">
 
-  <!-- Schema.org structured data: VideoGame -->
+  <!-- Schema.org structured data: VideoGame + BreadcrumbList
+       (FAQPage schema intentionally omitted - Google retired FAQ rich
+       results on 2026-05-07; FAQ content kept inline for topical depth,
+       same approach as match3rpg.php) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "VideoGame",
-    "name": "Skull Swap",
-    "url": "<?php echo $ss_canonical; ?>",
-    "image": "<?php echo $ss_image; ?>",
-    "description": "<?php echo $ss_short; ?>",
-    "genre": ["Match 3", "Puzzle"],
-    "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
-    "playMode": "SinglePlayer",
-    "applicationCategory": "Game",
-    "operatingSystem": "Any",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Skulliance",
-      "url": "https://www.skulliance.io/"
-    }
+    "@graph": [
+      {
+        "@type": "VideoGame",
+        "name": "Skull Swap",
+        "alternateName": ["Skull Swap Match 3", "Skull Swap Puzzle Game"],
+        "url": "<?php echo $ss_canonical; ?>",
+        "image": "<?php echo $ss_image; ?>",
+        "screenshot": "<?php echo $ss_image; ?>",
+        "description": "<?php echo $ss_short; ?>",
+        "genre": ["Match 3", "Puzzle"],
+        "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+        "playMode": "SinglePlayer",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "inLanguage": "en",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Skulliance",
+          "url": "https://www.skulliance.io/"
+        },
+        "potentialAction": {
+          "@type": "PlayAction",
+          "target": "<?php echo $ss_canonical; ?>"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Skulliance",
+            "item": "https://www.skulliance.io/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Skull Swap - Free Match 3 Puzzle Game",
+            "item": "<?php echo $ss_canonical; ?>"
+          }
+        ]
+      }
+    ]
   }
   </script>
 
@@ -335,6 +366,27 @@ if ($is_logged_in) {
     .ss-quickstart { text-align: center; }
     .ss-quickstart ol { list-style-position: inside; padding: 0; margin: 16px 0 24px; }
     .ss-quickstart ol li { margin: 6px 0; }
+    /* FAQ accordions, match3rpg pattern */
+    .ss-faq details {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 10px 0;
+    }
+    .ss-faq summary {
+      cursor: pointer; font-weight: 600; color: #e8eaed;
+      list-style: none; position: relative; padding-right: 28px;
+    }
+    .ss-faq summary::-webkit-details-marker { display: none; }
+    .ss-faq summary::after {
+      content: "+";
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      color: #00c8a0; font-size: 1.4rem; font-weight: 400; line-height: 1;
+    }
+    .ss-faq details[open] summary::after { content: "\2212"; }
+    .ss-faq summary:focus-visible { outline: 2px solid #00c8a0; outline-offset: 4px; border-radius: 4px; }
+    .ss-faq details p { margin: 12px 0 0; color: #c7d0d9; }
     .ss-final {
       text-align: center; padding: 56px 20px;
       background: linear-gradient(135deg, rgba(0,200,160,0.12), rgba(5,150,196,0.08));
@@ -804,7 +856,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      <div id="ss-landing">
          <header class="ss-hero">
              <a class="ss-shot-link" href="#" onclick="ssPlay(); return false;" aria-label="Play Skull Swap now">
-                 <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207">
+                 <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207" fetchpriority="high" decoding="async">
              </a>
              <h1>&#x1F480; Skull Swap &#x1F480;<span class="ss-subtitle">Free Match 3 Puzzle Game</span></h1>
              <p class="ss-lead">Swap, match, and detonate your way through 25 matches. Skull Swap is a free browser match 3 built around bombs, chain reactions, and squeezing every point out of a limited-move run. No download, no signup - just play.</p>
@@ -927,6 +979,36 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                      <li>Chase 4- and 5-matches to forge bombs, then detonate them for the big points.</li>
                  </ol>
                  <p class="ss-center"><button class="ss-cta" type="button" onclick="ssPlay()">Start Playing Now</button></p>
+             </div>
+         </section>
+
+         <section class="ss-section">
+             <div class="ss-wrap ss-faq">
+                 <h2>Skull Swap FAQ</h2>
+                 <details>
+                     <summary>Is Skull Swap really free to play?</summary>
+                     <p>Yes - completely free. There's nothing to buy, no pay-to-win mechanics, and no signup required. Open the page and play.</p>
+                 </details>
+                 <details>
+                     <summary>Do I need to download anything to play?</summary>
+                     <p>No. Skull Swap runs entirely in your web browser - no app store, no installer, no plugins. If you can read this page, you can play the game.</p>
+                 </details>
+                 <details>
+                     <summary>Does Skull Swap work on mobile?</summary>
+                     <p>Yes. The board is touch-friendly - drag a tile with your finger to swap it. It plays just as well on phones and tablets as on desktop.</p>
+                 </details>
+                 <details>
+                     <summary>How do I get a high score in Skull Swap?</summary>
+                     <p>Prioritize 4- and 5-matches to forge Carbon and Diamond bombs, place bombs near each other so detonations chain for +50/+100 bonuses, and always detonate manually before your 25th match - the End Game Trap auto-fires leftover bombs without the bonuses.</p>
+                 </details>
+                 <details>
+                     <summary>Do I need an account to play?</summary>
+                     <p>No account is needed for casual play. If you want your scores saved and a spot on the weekly leaderboard, you can optionally log in through Skulliance with Discord - but it's never required to enjoy the game.</p>
+                 </details>
+                 <details>
+                     <summary>How long does a game of Skull Swap take?</summary>
+                     <p>A typical run is a few minutes - every game is exactly 25 matches, so it's perfect for a quick break. Chasing a personal best is what keeps it going.</p>
+                 </details>
              </div>
          </section>
 
