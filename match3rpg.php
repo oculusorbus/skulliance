@@ -198,7 +198,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
     /* Gameplay list */
     .mechanics {
       list-style: none; padding: 0; margin: 16px 0 0;
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;
+      display: flex; flex-direction: column; gap: 10px;
     }
     .mechanics li {
       display: flex; align-items: center; gap: 12px;
