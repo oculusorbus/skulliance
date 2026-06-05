@@ -28,7 +28,13 @@ $is_logged_in = !empty($_SESSION['logged_in']);
 // on 2026-05-07); FAQ content kept inline for topical SEO depth.
 
 $canonical    = 'https://www.skulliance.io/staking/match3rpg.php';
+// Absolute URL for SEO markup (schema.org/OG) only. Clickable CTAs must use
+// $play_href instead: session cookies are host-only (no domain= on
+// SessionCookie/PHPSESSID), so an absolute www. link logs out users who are
+// sessioned on the bare domain — every in-app nav link is relative for the
+// same reason.
 $play_url     = 'https://www.skulliance.io/staking/monstrocity.php';
+$play_href    = 'monstrocity.php';
 $logo_url     = 'https://www.skulliance.io/staking/images/monstrocity/logo.png';
 $og_image     = $logo_url;
 $page_title   = 'Free Match 3 RPG Game - Play Monstrocity in Your Browser';
@@ -585,7 +591,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       <div class="wrap">
         <h1>Free Match 3 RPG - Play in Your Browser</h1>
         <p class="lead">Monstrocity is a free online Match 3 RPG with real combat depth - character stats, special attacks, power-ups, and boss battles wrapped around the match-3 mechanics you already love. Plays in any modern browser on phone, tablet, or desktop.</p>
-        <a href="<?php echo $play_url; ?>" class="cta" aria-label="Play Monstrocity free now">Play Free Now</a>
+        <a href="<?php echo $play_href; ?>" class="cta" aria-label="Play Monstrocity free now">Play Free Now</a>
         <a href="#how-it-works" class="cta secondary">How It Works</a>
         <div class="badges" aria-label="Game highlights">
           <span class="badge">100% Free</span>
@@ -805,12 +811,12 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       <div class="wrap">
         <h2>How to Start Playing in Under 10 Seconds</h2>
         <ol>
-          <li>Open <a href="<?php echo $play_url; ?>">the game</a> in any browser - phone, tablet, or desktop.</li>
+          <li>Open <a href="<?php echo $play_href; ?>">the game</a> in any browser - phone, tablet, or desktop.</li>
           <li>Pick a visual theme (or stick with the default Monstrocity art).</li>
           <li>Choose a character and step into your first battle.</li>
           <li>Match tiles to attack, defend, and trigger power-ups. Beat the opponent.</li>
         </ol>
-        <p style="margin-top: 18px;"><a href="<?php echo $play_url; ?>" class="cta">Start Playing Now</a></p>
+        <p style="margin-top: 18px;"><a href="<?php echo $play_href; ?>" class="cta">Start Playing Now</a></p>
       </div>
     </section>
 
@@ -870,7 +876,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
       <div class="final-cta">
         <h2 style="margin-top:0;">Ready to Play?</h2>
         <p>Open the game and start matching. No download. No signup. Just play.</p>
-        <a href="<?php echo $play_url; ?>" class="cta" aria-label="Play Monstrocity free Match 3 RPG now">Play Monstrocity Free</a>
+        <a href="<?php echo $play_href; ?>" class="cta" aria-label="Play Monstrocity free Match 3 RPG now">Play Monstrocity Free</a>
       </div>
     </div>
 
