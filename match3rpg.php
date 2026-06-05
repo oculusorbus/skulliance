@@ -1,10 +1,29 @@
 <?php
-// Standalone marketing landing page for the Monstrocity Match 3 RPG.
-// Public - no session, no DB, no login redirect. Designed to rank for
-// "free match 3 rpg", "browser match 3 game", and adjacent terms, with
-// OpenGraph/Twitter Cards/Schema.org structured data. FAQPage schema
-// intentionally omitted (Google retired FAQ rich results on 2026-05-07);
-// FAQ content kept inline for topical SEO depth and user value.
+session_start();
+
+// Restore session from cookie if logged out (mirrors the pattern used by
+// monstrocity.php so mobile/PWA users keep their staking session when
+// they hit this page from the in-app nav). Cold visitors arriving via
+// search don't have a SessionCookie, so this is a no-op for them.
+if (!isset($_SESSION['logged_in'])) {
+    if (isset($_COOKIE['SessionCookie'])) {
+        $cookie = $_COOKIE['SessionCookie'];
+        $cookieData = json_decode($cookie, true);
+        if (is_array($cookieData)) {
+            $_SESSION = $cookieData;
+        }
+    }
+}
+$is_logged_in = !empty($_SESSION['logged_in']);
+
+// Marketing landing page for the Monstrocity Match 3 RPG. Reachable both
+// from search (designed to rank for "free match 3 rpg" etc.) and from
+// the staking nav for logged-in users. When a session is present a small
+// floating exit button is rendered so PWA/mobile users have a way back
+// to their dashboard. SEO meta, OG, and Schema.org markup target the
+// cold-visitor case; logged-in users get the same page plus the exit.
+// FAQPage schema intentionally omitted (Google retired FAQ rich results
+// on 2026-05-07); FAQ content kept inline for topical SEO depth.
 
 $canonical    = 'https://www.skulliance.io/staking/match3rpg.php';
 $play_url     = 'https://www.skulliance.io/staking/monstrocity.php';
@@ -116,6 +135,47 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
 
     .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
     main { padding: 0 0 64px; }
+
+    /* Floating exit button for logged-in users arriving from the staking
+       nav. Mirrors monstrocity.php's #monstrocity-exit pattern so the
+       interaction feels consistent across the two standalone pages. */
+    #m3-exit {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      left: calc(env(safe-area-inset-left, 0px) + 8px);
+      z-index: 99990;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      min-height: 36px;
+      background: rgba(18, 18, 18, 0.85);
+      color: #e8eaed;
+      border: 1px solid rgba(0, 200, 160, 0.45);
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #m3-exit:hover, #m3-exit:active {
+      background: rgba(0, 200, 160, 0.18);
+      border-color: #00c8a0;
+      text-decoration: none;
+      color: #e8eaed;
+    }
+    #m3-exit .mx-arrow {
+      font-size: 1.05rem;
+      line-height: 1;
+      color: #00c8a0;
+    }
+    @media (max-width: 480px) {
+      #m3-exit .mx-label { display: none; }
+      #m3-exit { padding: 8px 10px; }
+    }
 
     /* Hero */
     .hero {
@@ -473,6 +533,13 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
   </style>
 </head>
 <body>
+
+  <?php if ($is_logged_in): ?>
+  <a id="m3-exit" href="dashboard.php" aria-label="Back to Skulliance staking dashboard">
+    <span class="mx-arrow">&larr;</span>
+    <span class="mx-label">Back to Staking</span>
+  </a>
+  <?php endif; ?>
 
   <main>
 
