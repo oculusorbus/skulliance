@@ -18,6 +18,14 @@ if (session_status() === PHP_SESSION_ACTIVE
 }
 $is_logged_in = isset($_SESSION['userData']['user_id']);
 
+// Project currency icons - the game's tile set (this.allIcons) and, for
+// public visitors, the landing page's scrolling icon marquee.
+$swap_icons = [];
+$icon_res = $conn->query("SELECT DISTINCT LOWER(currency) AS currency FROM projects WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != '' ORDER BY currency ASC");
+while ($icon_row = $icon_res->fetch_assoc()) {
+    $swap_icons[] = 'https://www.skulliance.io/staking/icons/' . $icon_row['currency'] . '.png';
+}
+
 if ($is_logged_in) {
     include 'message.php';
     // Verify includes Webhooks
@@ -180,6 +188,59 @@ if ($is_logged_in) {
     }
     .ss-card h3 { margin-bottom: 8px; }
     .ss-card p { margin: 0; font-size: 0.96rem; }
+
+    /* Auto-scrolling project icon marquee - same pattern as match3rpg's
+       character strips: duplicated track sliding -50%, opposite directions
+       per row, pause on hover, edge fade masks. */
+    .ss-strip {
+      width: 100%;
+      overflow: hidden;
+      padding: 18px 0;
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+    }
+    .ss-strip + .ss-strip { padding-top: 0; }
+    .ss-strip-track {
+      display: flex;
+      align-items: flex-start;
+      gap: 34px;
+      width: max-content;
+      animation: ss-strip-scroll 45s linear infinite;
+      will-change: transform;
+    }
+    .ss-strip-track.ss-reverse {
+      animation-direction: reverse;
+      animation-duration: 50s;
+    }
+    .ss-strip-track:hover { animation-play-state: paused; }
+    @keyframes ss-strip-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ss-strip-track { animation: none; }
+    }
+    .ss-strip-card {
+      flex: 0 0 72px;
+      text-align: center;
+    }
+    .ss-strip-card img {
+      width: 64px; height: 64px;
+      margin: 0 auto;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.65));
+    }
+    .ss-strip-card .ss-ticker {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: #8a96a3;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* Scoring mechanics: accent-bar list with bomb icons */
     .ss-mechanics { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 10px; }
@@ -731,6 +792,39 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              </div>
          </section>
 
+         <section class="ss-section">
+             <div class="ss-wrap ss-center">
+                 <h2>Real Cardano Projects on Every Tile</h2>
+                 <p>The tiles you match aren't generic gems - they're icons from staking projects across the Cardano ecosystem. Every run deals a fresh hand of seven.</p>
+             </div>
+             <?php
+             // Two opposite-direction marquee rows; each track holds its icon
+             // list twice for the seamless -50% translate loop (second pass
+             // is aria-hidden). Bottom row runs the reversed list so the
+             // rows don't mirror each other.
+             $strip_rows = [
+                 ['icons' => $swap_icons,                'class' => ''],
+                 ['icons' => array_reverse($swap_icons), 'class' => ' ss-reverse'],
+             ];
+             foreach ($strip_rows as $row): ?>
+             <div class="ss-strip">
+                 <div class="ss-strip-track<?php echo $row['class']; ?>">
+                     <?php for ($pass = 0; $pass < 2; $pass++):
+                         foreach ($row['icons'] as $icon_url):
+                             $ticker = strtoupper(pathinfo(parse_url($icon_url, PHP_URL_PATH), PATHINFO_FILENAME)); ?>
+                     <div class="ss-strip-card"<?php if ($pass) echo ' aria-hidden="true"'; ?>>
+                         <img src="<?php echo htmlspecialchars($icon_url); ?>"
+                              alt="<?php echo $pass ? '' : htmlspecialchars($ticker) . ' project icon'; ?>"
+                              loading="lazy" decoding="async" width="64" height="64"
+                              onerror="this.onerror=null;this.src='/staking/icons/skull.png';">
+                         <div class="ss-ticker"><?php echo htmlspecialchars($ticker); ?></div>
+                     </div>
+                     <?php endforeach; endfor; ?>
+                 </div>
+             </div>
+             <?php endforeach; ?>
+         </section>
+
          <section class="ss-section" id="ss-scoring">
              <div class="ss-wrap">
                  <h2>How Scoring Works</h2>
@@ -836,14 +930,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          this.gameToken = null;
          this.fetchGameToken();
 
-         this.allIcons = <?php
-            $icon_res = $conn->query("SELECT DISTINCT LOWER(currency) AS currency FROM projects WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != '' ORDER BY currency ASC");
-            $icons = [];
-            while ($icon_row = $icon_res->fetch_assoc()) {
-                $icons[] = 'https://www.skulliance.io/staking/icons/' . $icon_row['currency'] . '.png';
-            }
-            echo json_encode($icons);
-        ?>;
+         this.allIcons = <?php echo json_encode($swap_icons); ?>; // query hoisted to top of file (shared with landing marquee)
          this.specialIcons = {
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
              diamond: 'https://www.skulliance.io/staking/icons/diamond.png'
