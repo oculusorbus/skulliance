@@ -1,10 +1,28 @@
 <?php
 include_once 'db.php';
-include 'message.php';
-// Verify includes Webhooks
-include 'verify.php';
-include 'skulliance.php';
 require_once 'lib/Parsedown.php';
+
+/*
+ * Skull Paper is intentionally PUBLIC — it deliberately does NOT include
+ * skulliance.php (which redirects anonymous visitors to error.php) or the
+ * heavy verify.php. db.php gives us a session (only if a cookie exists) and
+ * $conn. We still light up the personalized navbar for logged-in visitors by
+ * restoring their session and populating $name / $avatar_url, but anonymous
+ * visitors and crawlers see the page with the default (logged-out) header.
+ */
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+	$cookie = json_decode($_COOKIE['SessionCookie'], true);
+	if (is_array($cookie)) { $_SESSION = $cookie; }
+}
+if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
+	$name = $_SESSION['userData']['name'] ?? null;
+	$sp_did = $_SESSION['userData']['discord_id'] ?? null;
+	$sp_avatar = $_SESSION['userData']['avatar'] ?? null;
+	if ($name !== null && $sp_did && $sp_avatar) {
+		$avatar_url = "https://cdn.discordapp.com/avatars/$sp_did/$sp_avatar.jpg";
+	}
+}
+
 include 'header.php';
 
 /*
