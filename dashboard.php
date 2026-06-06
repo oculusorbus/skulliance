@@ -108,7 +108,8 @@ if($filterby != ""){
 // Dev-only: surface the manual upload affordance on every NFT card by default
 // so personal collection images can be replaced on demand without waiting for
 // a load failure to trigger the auto-heal fallback.
-if(isset($_SESSION['userData']['user_id']) && intval($_SESSION['userData']['user_id']) === 1){
+// TEMPORARILY DISABLED (2026-06-05) - re-enable by restoring the condition.
+if(false && isset($_SESSION['userData']['user_id']) && intval($_SESSION['userData']['user_id']) === 1){
 	echo "<script type='text/javascript'>window.NFT_UPLOAD_DEFAULT = true;</script>";
 }
 ?>
