@@ -15,6 +15,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.skulliance.io/staking/skullpaper.php</loc>
+    <lastmod>2026-06-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.skulliance.io/staking/monstrocity.php</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>weekly</changefreq>

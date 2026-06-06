@@ -197,6 +197,7 @@
 		    </div>
 		  </div>
 
+		  <a href="skullpaper.php">Skull Paper</a>
 		  <a href="logout.php">Logout</a>
 		  <button id="wallet-nav-btn" onclick="openWalletModal()" title="Connect Wallet"><img src="icons/wallet.png" class="wallet-nav-icon" alt="Wallet"/></button>
 		  <?php } ?>

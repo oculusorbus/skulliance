@@ -151,7 +151,7 @@
 	  <a href="#team">Team</a>
 	  <a href="https://www.skulliance.io/staking">Staking</a>
 	  <a href="https://www.skulliance.io/shop">Merch</a>
-  	  <a href="https://skulliance.gitbook.io/skulliance" target="_blank">Skull Paper</a>
+  	  <a href="https://www.skulliance.io/staking/skullpaper.php">Skull Paper</a>
 	  <a class="social" href="https://discord.gg/JqqBZBrph2"><img src="https://www.skulliance.io/staking/images/discord.png" alt="Discord Icon"/></a>
 	  <a class="social" href="https://www.x.com/skulliance"><img src="https://www.skulliance.io/staking/images/x.png" alt="X Icon"/></a>
 	</div>
