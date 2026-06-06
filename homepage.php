@@ -219,11 +219,11 @@
     .hp-game p { color: #c7d0d9; font-size: 0.96rem; }
     .hp-game .hp-cta { margin-top: auto; }
 
-    /* Artist / partner logo grid */
+    /* Artist / partner logo grid - fixed 3 per row, 2-up on phones */
     .hp-logos {
       list-style: none; padding: 0; margin: 24px 0 0;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 14px;
     }
     .hp-logos li {
@@ -239,13 +239,10 @@
       background: rgba(0, 200, 160, 0.06);
     }
     .hp-logos a { display: block; width: 100%; }
-    .hp-logos img { width: 100%; height: 120px; object-fit: contain; }
-    /* Founding artists: fixed 3 columns x 2 rows (6 logos), larger tiles */
-    .hp-logos.hp-founding { grid-template-columns: repeat(3, 1fr); }
-    .hp-logos.hp-founding img { height: 150px; }
+    .hp-logos img { width: 100%; height: 150px; object-fit: contain; }
     @media (max-width: 640px) {
-      .hp-logos.hp-founding { grid-template-columns: repeat(2, 1fr); }
-      .hp-logos.hp-founding img { height: 120px; }
+      .hp-logos { grid-template-columns: repeat(2, 1fr); }
+      .hp-logos img { height: 120px; }
     }
 
     /* Platform screenshots */
