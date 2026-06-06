@@ -26,7 +26,7 @@ It includes the following amounts of core project points:
 * 1K CYBER
 * 1K DIAMOND
 
-Core project points are utilized to upgrade locations within your realm and this starter pack should get a new Realm owner to level 4 before running out of core project points. By then, they should have established a steady stream of CARBON that can be burned for DIAMOND and shattered into equal parts core project currency. If not, they can still rely on upgrading with any points at 3x the cost.
+Core project points are utilized to upgrade locations within your realm and this starter pack should get a new Realm owner to level 4 before running out of core project points. By then, they should have established a steady stream of CARBON that can be burned for DIAMOND and shattered into equal parts core project points. If not, they can still rely on upgrading with any points at 3x the cost.
 
 ## Themes
 

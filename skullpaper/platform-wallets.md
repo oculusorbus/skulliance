@@ -9,6 +9,6 @@ Skulliance supports **multiple Cardano wallets** per account, so you can stake N
 
 ## Primary Wallet
 
-You designate **one primary wallet**. This is the address Skulliance uses for delivery of anything you win or claim that settles on-chain — for example [[marketplace-auctions]] and [[marketplace-raffles]] prizes. You can change your primary wallet at any time.
+You designate **one primary wallet**. This is the address Skulliance uses for delivery of anything you win or claim that settles on-chain - for example [[marketplace-auctions]] and [[marketplace-raffles]] prizes. You can change your primary wallet at any time.
 
 Each wallet links out to a block explorer so you can verify the address and its holdings.

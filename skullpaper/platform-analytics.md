@@ -1,12 +1,14 @@
 # Analytics
 
-Analytics is your personal stats dashboard — a data view of everything you've earned and spent across the platform.
+Analytics is the platform-wide transparency dashboard - a public view of overall activity across all of Skulliance. It was built for transparency and is available for anyone to view, logged in or not.
 
 ## What It Shows
 
-* **Balances** across every currency you hold.
-* **Earning and spending trends** over time, rendered as charts.
-* Activity history pulled from your missions, raids, streaks, and other point movements.
-* Filtering by timeframe (daily, weekly, monthly, and longer).
+* **Community** - registered stakers, NFTs staked, wallets connected, active Realms, and supported collections.
+* **Engagement** - daily reward claims, missions, and raids, both monthly and all-time.
+* **Gaming** - plays across Skull Swap, Monstrocity, and Boss Battles.
+* **Projects** - core and partner project staking totals, Diamond Skull delegations, and faction sizes.
+* **Economy** - transactions, store claims, crafting, mission and raid rewards, and location upgrades.
+* **Trends** - time-series charts filterable by week, month, year, all-time, or a custom range.
 
-Analytics is private to you and reads from the same ledger as your [[platform-transactions]] page, presenting it as time-series trends so you can see how your holdings change over time.
+Analytics aggregates platform totals only - it is not a personal dashboard and shows no individual balances. For your own complete history, see your [[platform-transactions]] ledger.

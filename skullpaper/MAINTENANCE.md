@@ -1,4 +1,4 @@
-# Skull Paper — Maintenance Guide & Build Plan
+# Skull Paper - Maintenance Guide & Build Plan
 
 This file is the source of truth for keeping the Skull Paper (`/staking/skullpaper.php`)
 accurate. It maps each platform feature to its doc page and the code that defines it,
@@ -16,13 +16,13 @@ records verified constants, and tracks what still needs to be written.
 | staking.md                          | Points, store, craft   | db.php (updateBalances, craft/shatter), skulliance.php |
 | staking-membership.md               | Member/Elite/Inner     | skulliance.php:145-212 (role IDs) |
 | staking-daily-rewards.md            | Daily streak rewards   | db.php:806-830 (getDailyConsumable, getRewardTiers) |
-| staking-points-currencies.md *(new)*| All point currencies   | db.php getProjects (founding ids 1-6 / partner ids>7,!=15) — point tables auto-generated via `{{projects:founding}}` / `{{projects:partner}}` tokens in skullpaper.php; no manual edits needed |
+| staking-points.md                   | All points               | db.php getProjects (founding ids 1-6 / partner ids>7,!=15) - point tables auto-generated via `{{projects:founding}}` / `{{projects:partner}}` tokens in skullpaper.php; no manual edits needed |
 | staking-crafting.md *(new)*         | Craft/Shatter/Burn     | db.php:3947-3990 |
 | missions.md                         | Idle missions          | missions.php, db.php (getMissions, completeMission) |
 | missions-consumable-items.md        | 7 consumables          | db.php:2389-2418, consumables table |
 | missions-monthly-rewards.md         | Monthly CARBON LB      | db.php:4465-4591 (100,000/rank) |
 | realms.md                           | Realms overview        | realms.php, db.php |
-| realms-buildings.md *(was locations)*| 7 buildings           | db.php:8400-9360 |
+| realms-locations.md                  | 7 locations           | db.php:8400-9360 |
 | realms-soldiers.md *(new)*          | Soldiers/gear/crypt    | db.php:8444-8760 |
 | realms-raids.md                     | Raid offense/defense   | db.php:6428-7797 |
 | realms-factions.md                  | Factions               | db.php:4606, 5770 |
@@ -39,7 +39,6 @@ records verified constants, and tracks what still needs to be written.
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
 | marketplace-auctions.md *(new)*     | Bid-based NFT sales     | auctions.php, db.php:9379-9577 |
 | marketplace-raffles.md *(new)*      | Ticketed raffles        | raffles.php, db.php:9602-9828 |
-| marketplace-merch.md *(new)*        | Printful POD            | merch.php, ajax/merch-*.php |
 | platform-dashboard.md *(new)*       | Staking portfolio       | dashboard.php |
 | platform-gallery.md *(new)*         | NFT discovery           | gallery.php |
 | platform-collections.md *(new)*     | Policy registry         | collections.php |
@@ -62,12 +61,12 @@ records verified constants, and tracks what still needs to be written.
 - Base 949930195584954378 · Elite 949930360681140274 · Inner Circle 949930529841635348.
 
 ### Crafting (db.php:3947-3990)
-- Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per currency).
+- Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
 - Shatter: DIAMOND → equal parts of all 6 core points.
 - Burn: 100 CARBON = 1 DIAMOND. (NOTE: the "minimum batch of 1,000" claim from the old
-  GitBook is NOT enforced in code — code only requires multiples of 100. Harmonized in docs.)
+  GitBook is NOT enforced in code - code only requires multiples of 100. Harmonized in docs.)
 
-### Realms buildings (db.php) — location_id / project_id 1-7, all cap at level 10
+### Realms locations (db.php) - location_id / project_id 1-7, all cap at level 10
 - 1 Portal: raids_allowed = portal_level; soldiers per raid scale with it.
 - 2 Armory: nightly gear drops (L1 = 1; L2+ = rand(1, min(10, level))).
 - 3 Tower: garrison up to 10 trained soldiers; TowerScore = (garrison/10)*10.
@@ -90,12 +89,12 @@ records verified constants, and tracks what still needs to be written.
 - Boss Battles weekly LB: CLAW/CARBON split by damage (db.php:5139-5258).
 
 ### Games constants
-- Gauntlets (db.php:9877-9888): hand size 6, win at 3 wins (no loss = "sweep"), 100 currency/win.
-  Consumables: 100/75/50/25% Success = +4/+3/+2/+1% win chance; FF swaps card; Double Rewards 2x; Random Reward redirects currency.
+- Gauntlets (db.php:9877-9888): hand size 6, win at 3 wins (no loss = "sweep"), 100 points/win.
+  Consumables: 100/75/50/25% Success = +4/+3/+2/+1% win chance; FF swaps card; Double Rewards 2x; Random Reward redirects points.
   Matchup (db.php:9916-9931): circular chain 6>1, 5>2, 4>3, 2>4, 1>5, 3>6. Strong 70%, weak 30%, neutral/same/Diamond 50%. Partner NFTs wildcard to random core.
 - Skull Swap (ajax/save-swap-score.php): 25 matches/game, max score 25,000, min 60s anti-cheat.
 - Monstrocity: 28 campaign levels, 35+ NFT themes; character traits health/strength/speed/tactics/size/powerup.
-- CLAW is a real currency (Monstrocity/Boss reward), separate from CARBON/DIAMOND.
+- CLAW is a real point type (Monstrocity/Boss reward), separate from CARBON/DIAMOND.
 
 ---
 
@@ -103,9 +102,9 @@ records verified constants, and tracks what still needs to be written.
 
 - [x] Phase 1: 17 GitBook pages migrated (faithful copy).
 - [x] Phase 2: Fix inaccuracies (CARBON burn ratio harmonized; daily consumable mapping added).
-- [x] Phase 3: Expand Realms (realms-buildings covers all 7; realms-soldiers added; raids math added).
+- [x] Phase 3: Expand Realms (realms-locations covers all 7; realms-soldiers added; raids math added).
 - [x] Phase 4: Add 4 game pages (Monstrocity, Boss Battles, Skull Swap, Gauntlets) + games overview.
-- [x] Phase 5: Add Marketplace section (Store, Auctions, Raffles, Merch).
+- [x] Phase 5: Add Marketplace section (Store, Auctions, Raffles; Merch page removed 2026-06-06 - never launched).
 - [x] Phase 6: Add Platform section (Dashboard, Gallery, Collections, Leaderboards, Analytics, Profile, Wallets, Transactions).
 - [x] Phase 7: nav array updated; CLAUDE.md directive + pre-commit reminder hook added.
 

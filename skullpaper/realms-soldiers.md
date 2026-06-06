@@ -1,6 +1,6 @@
 # Soldiers
 
-Soldiers are the NFTs you enlist into your Realm. They train in the Barracks, defend from the Tower, fight on raids, and can die and be resurrected. A strong army is what turns high building levels into actual offense and defense.
+Soldiers are the NFTs you enlist into your Realm. They train in the Barracks, defend from the Tower, fight on raids, and can die and be resurrected. A strong army is what turns high location levels into actual offense and defense.
 
 ## Enlistment
 
@@ -13,14 +13,14 @@ Each soldier occupies a number of **deployment slots**:
 
 Your total deployment capacity is set by your Barracks: **`min(100, Barracks level × 10)`**. Soldiers beyond your cap are held in reserve and can't be deployed until you raise the cap or remove others.
 
-## Soldier Locations
+## Soldier Status
 
 A soldier is always in one of these states:
 
-* **Reserve** — trained (or training) and available, not currently deployed.
-* **Tower** — stationed in the defensive garrison (max 10). Must be trained.
-* **On Raid** — currently deployed on an active raid.
-* **Dead** — killed on a raid; held until resurrected in the Crypt.
+* **Reserve** - trained (or training) and available, not currently deployed.
+* **Tower** - stationed in the defensive garrison (max 10). Must be trained.
+* **On Raid** - currently deployed on an active raid.
+* **Dead** - killed on a raid; held until resurrected in the Crypt.
 
 ## Training
 
@@ -41,4 +41,4 @@ Your army directly feeds the raid formulas in [[realms-raids]]:
 * Deployed, trained soldiers raise your **offense** (BarracksScore).
 * Tower garrison raises your **defense** (TowerScore).
 
-Two Realms with identical building levels can have very different raid outcomes based on how well their armies are trained, geared, deployed, and garrisoned.
+Two Realms with identical location levels can have very different raid outcomes based on how well their armies are trained, geared, deployed, and garrisoned.

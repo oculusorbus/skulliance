@@ -43,7 +43,7 @@ $skullpaper_nav = [
 	['slug' => 'staking', 'title' => 'Staking', 'emoji' => '💰', 'children' => [
 		['slug' => 'staking-membership',         'title' => 'Membership',          'emoji' => '🎟️'],
 		['slug' => 'staking-daily-rewards',      'title' => 'Daily Rewards',       'emoji' => '📅'],
-		['slug' => 'staking-points-currencies',  'title' => 'Points & Currencies', 'emoji' => '🪙'],
+		['slug' => 'staking-points',             'title' => 'Points',              'emoji' => '🪙'],
 		['slug' => 'staking-crafting',           'title' => 'Crafting',            'emoji' => '⚒️'],
 	]],
 	['slug' => 'missions', 'title' => 'Missions', 'emoji' => '🎯', 'children' => [
@@ -51,7 +51,7 @@ $skullpaper_nav = [
 		['slug' => 'missions-monthly-rewards',  'title' => 'Monthly Rewards',  'emoji' => '🏆'],
 	]],
 	['slug' => 'realms', 'title' => 'Realms', 'emoji' => '🏰', 'children' => [
-		['slug' => 'realms-buildings', 'title' => 'Buildings', 'emoji' => '🏗️'],
+		['slug' => 'realms-locations', 'title' => 'Locations', 'emoji' => '📍'],
 		['slug' => 'realms-soldiers',  'title' => 'Soldiers',  'emoji' => '⚔️'],
 		['slug' => 'realms-raids',     'title' => 'Raids',     'emoji' => '🐉'],
 		['slug' => 'realms-factions',  'title' => 'Factions',  'emoji' => '🚩'],
@@ -72,7 +72,6 @@ $skullpaper_nav = [
 		['slug' => 'marketplace-store',    'title' => 'Store',    'emoji' => '🏪'],
 		['slug' => 'marketplace-auctions', 'title' => 'Auctions', 'emoji' => '🔨'],
 		['slug' => 'marketplace-raffles',  'title' => 'Raffles',  'emoji' => '🎫'],
-		['slug' => 'marketplace-merch',    'title' => 'Merch',    'emoji' => '👕'],
 	]],
 	['slug' => 'platform', 'title' => 'Platform', 'emoji' => '🛠️', 'children' => [
 		['slug' => 'platform-dashboard',    'title' => 'Dashboard',    'emoji' => '📊'],
@@ -170,6 +169,7 @@ $pageTitle = $sp_order[$page];
 	color:#e8eaed; margin-bottom:16px; padding-bottom:14px;
 	border-bottom:1px solid rgba(0,200,160,0.15);
 }
+#skullpaper .sp-brand a { display:inline-flex; }
 #skullpaper .sp-brand img { width:28px; height:auto; }
 #skullpaper .sp-nav { list-style:none; margin:0; padding:0; text-align:left; }
 #skullpaper .sp-nav .sp-section { margin-bottom:6px; }
@@ -271,7 +271,7 @@ $pageTitle = $sp_order[$page];
 		<!-- Sidebar -->
 		<aside class="sp-side">
 			<div class="sp-brand">
-				<img src="/staking/pwa/skulliance-logo-icon.png" alt="Skulliance"> Skull Paper
+				<a href="https://www.skulliance.io/" aria-label="Back to Skulliance home"><img src="/staking/pwa/skulliance-logo-icon.png" alt="Skulliance"></a> Skull Paper
 			</div>
 			<button class="sp-menu-toggle" onclick="document.getElementById('sp-nav').classList.toggle('open')">
 				&#9776; <span>Contents</span>
@@ -336,7 +336,7 @@ $pageTitle = $sp_order[$page];
 </div>
 </div>
 </body>
-<script type="text/javascript">document.title = "<?php echo htmlspecialchars($pageTitle, ENT_QUOTES); ?> — Skull Paper | Skulliance";</script>
+<script type="text/javascript">document.title = "<?php echo htmlspecialchars($pageTitle, ENT_QUOTES); ?> - Skull Paper | Skulliance";</script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php $conn->close(); ?>
 </html>

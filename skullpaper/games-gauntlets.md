@@ -27,11 +27,11 @@ Before an encounter resolves, you can play consumables (see [[missions-consumabl
 
 * **100% / 75% / 50% / 25% Success** add **+4% / +3% / +2% / +1%** win chance.
 * **Fast Forward** swaps your chosen NFT for another card in your hand.
-* **Double Rewards** doubles the currency reward for that encounter.
-* **Random Reward** redirects the encounter's reward to a random project's currency.
+* **Double Rewards** doubles the points reward for that encounter.
+* **Random Reward** redirects the encounter's reward to a random project's points.
 
 ## Scoring & Rewards
 
-* Each win pays **100 currency**.
+* Each win pays **100 points**.
 * The **weekly leaderboard** ranks by **sweeps first, then total wins, then fewest losses**.
 * The weekly pool is **25,000 CARBON**, divided down the rankings by rank and convertible to DIAMOND at 100:1. See [[staking-crafting]].

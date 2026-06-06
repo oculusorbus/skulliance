@@ -1,13 +1,13 @@
 # Skull Swap
 
-Skull Swap is a fast, pure **match-3 puzzle** — no RPG layer, just a score chase. Swap tiles to clear matches, trigger cascades, and set off bombs to rack up the highest score you can in a single run.
+Skull Swap is a fast, pure **match-3 puzzle** - no RPG layer, just a score chase. Swap tiles to clear matches, trigger cascades, and set off bombs to rack up the highest score you can in a single run.
 
 ## Playing
 
 * A run is a fixed **25 matches** long.
-* The tiles are the **project currency icons** from across the Skulliance ecosystem.
+* The tiles are the **project icons** from across the Skulliance ecosystem.
 * Score comes from matches, **cascade combos** (chains that clear as tiles fall), and **special bombs** (CARBON and DIAMOND bombs) that clear larger areas.
-* Skull Swap is **public** — anyone can play, even logged out. You must be logged in for your score to be saved to the leaderboard.
+* Skull Swap is **public** - anyone can play, even logged out. You must be logged in for your score to be saved to the leaderboard.
 
 ## Scoring & Anti-Cheat
 

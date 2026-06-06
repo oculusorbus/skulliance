@@ -1,11 +1,11 @@
 # Store
 
-The Store is where stakers redeem their points for exclusive incentives — NFTs and items contributed by Skulliance and its partner creators.
+The Store is where stakers redeem their points for exclusive incentives - NFTs and items contributed by Skulliance and its partner creators.
 
 ## Claiming
 
 * Claiming items requires Skulliance **membership** (see [[staking-membership]]). You can stake and earn points without membership, but you must be a member to claim from the store.
-* Items can be claimed with the matching **project points**, and **DIAMOND** can claim *any* item — at a **discount** for core offerings and a **premium** for partner offerings. See [[staking-points-currencies]].
+* Items can be claimed with the matching **project points**, and **DIAMOND** can claim *any* item - at a **discount** for core offerings and a **premium** for partner offerings. See [[staking-points]].
 
 ## Browsing
 

@@ -20,6 +20,6 @@ Skulliance is home to a growing suite of games that turn your NFT collections in
 
 ## How Rewards Work
 
-Across the games, leaderboard rewards are paid in platform currencies — most commonly **CARBON** (burnable for DIAMOND) and **CLAW** (the Monstrocity currency). Weekly games reset on a fixed cadence and distribute a CARBON pool that is divided down the leaderboard by rank, so even runner-ups earn their fair share. Top finishers in the external games receive core project points (DREAD for Drop Ship, MOON for Oculus Lounge) deposited directly into their Skulliance balance.
+Across the games, leaderboard rewards are paid in platform points - most commonly **CARBON** (burnable for DIAMOND) and **CLAW** (Monstrocity's own points). Weekly games reset on a fixed cadence and distribute a CARBON pool that is divided down the leaderboard by rank, so even runner-ups earn their fair share. Top finishers in the external games receive core project points (DREAD for Drop Ship, MOON for Oculus Lounge) deposited directly into their Skulliance balance.
 
-Many games share the same **consumable items** used in Missions and Realms (success boosts, Fast Forward, Double Rewards, Random Reward) — see [[missions-consumable-items]].
+Many games share the same **consumable items** used in Missions and Realms (success boosts, Fast Forward, Double Rewards, Random Reward) - see [[missions-consumable-items]].

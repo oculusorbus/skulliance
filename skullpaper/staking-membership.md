@@ -1,7 +1,5 @@
 # Membership
 
-![Galactico x Skulliance](https://www.skulliance.io/staking/images/skulliance.jpg)
-
 ## Base Membership
 
 Base membership requires that you hold at least 1 NFT from ALL of the following artists:
@@ -21,3 +19,5 @@ Elite Membership requires that you hold all the aforementioned NFTs for base mem
 ## Inner Circle
 
 In order to join the Inner Circle, you must satisfy the requirements of base and elite membership as well as hold a Diamond Skull NFT from Skulliance.
+
+![Galactico x Skulliance](https://www.skulliance.io/staking/images/skulliance.jpg)

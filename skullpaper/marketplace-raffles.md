@@ -6,8 +6,8 @@ Raffles are a lottery-style alternative to auctions: buy numbered tickets with y
 
 * Creating a raffle requires **membership** (see [[staking-membership]]).
 * A listing includes a title, description, the prize asset, an image, and a start/end date.
-* The creator sets the **ticket cost per currency** (raffles can accept multiple currencies) and a **minimum tickets per purchase**.
-* A listing can be edited until the first ticket sells, and canceled by the creator — which **refunds all ticket holders**.
+* The creator sets the **ticket cost per point type** (raffles can accept multiple point types) and a **minimum tickets per purchase**.
+* A listing can be edited until the first ticket sells, and canceled by the creator - which **refunds all ticket holders**.
 
 ## Buying Tickets
 

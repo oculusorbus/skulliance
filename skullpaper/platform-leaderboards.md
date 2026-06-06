@@ -5,11 +5,11 @@ Leaderboards track competitive performance across the entire platform. Most mode
 ## Leaderboard Types
 
 * **Overall** and **per-project** point standings.
-* **Missions** — all-time and monthly (the monthly track pays the CARBON pool; see [[missions-monthly-rewards]]).
-* **Raids** and **Factions** — Realms competition (see [[realms-raids]] and [[realms-factions]]).
-* **Streaks** — daily-reward login streaks.
-* **Monstrocity**, **Boss Battles**, **Skull Swap**, **Gauntlets** — the game leaderboards (see [[games]]).
-* **Activity** — overall platform engagement.
+* **Missions** - all-time and monthly (the monthly track pays the CARBON pool; see [[missions-monthly-rewards]]).
+* **Raids** and **Factions** - Realms competition (see [[realms-raids]] and [[realms-factions]]).
+* **Streaks** - daily-reward login streaks.
+* **Monstrocity**, **Boss Battles**, **Skull Swap**, **Gauntlets** - the game leaderboards (see [[games]]).
+* **Activity** - overall platform engagement.
 
 ## How It Works
 
