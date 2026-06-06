@@ -105,20 +105,28 @@ $mdFile = __DIR__ . '/skullpaper/' . $page . '.md';
 $bodyHtml = '<p>This page is coming soon.</p>';
 if (is_file($mdFile)) {
 	$raw = file_get_contents($mdFile);
-	// Expand {{projects:core}} / {{projects:partner}} into live Markdown table
-	// rows pulled from the projects table, so the points/currency lists never
-	// drift from the database. The doc keeps the table header; this only emits
-	// the rows. Only public fields (name, currency) are exposed — Skull Paper is
-	// a public page (see header comment).
-	$raw = preg_replace_callback('/\{\{projects:(core|partner)\}\}/', function ($m) use ($conn) {
+	// Expand {{projects:GROUP}} tokens into live Markdown pulled from the
+	// projects table, so the project/points lists never drift from the database.
+	//   GROUP    = founding (ids 1-6) | core (id <= 7) | partner (id > 7, !=15)
+	//   {{projects:GROUP}}        -> table rows  "| Name | CURRENCY |"
+	//   {{projects:GROUP:names}}  -> bullet list "* Name"  (for the overview)
+	// Only public fields (name, currency) are emitted — Skull Paper is a public
+	// page (see header comment). The doc owns any table header / surrounding text.
+	$raw = preg_replace_callback('/\{\{projects:(founding|core|partner)(?::(names))?\}\}/', function ($m) use ($conn) {
 		$rows = getProjects($conn, $m[1]);
-		if (!is_array($rows)) { return '_None listed yet._'; }
+		if (!is_array($rows) || !$rows) { return '_None listed yet._'; }
+		$asNames = (($m[2] ?? '') === 'names');
 		$out = [];
 		foreach ($rows as $p) {
-			// Escape pipes so a stray "|" in a name can't break the table.
-			$name = str_replace('|', '\\|', trim((string)$p['name']));
-			$cur  = str_replace('|', '\\|', trim((string)$p['currency']));
-			$out[] = '| ' . $name . ' | ' . $cur . ' |';
+			$name = trim((string)$p['name']);
+			if ($asNames) {
+				$out[] = '* ' . $name;
+			} else {
+				// Escape pipes so a stray "|" in a value can't break the table.
+				$n = str_replace('|', '\\|', $name);
+				$c = str_replace('|', '\\|', trim((string)$p['currency']));
+				$out[] = '| ' . $n . ' | ' . $c . ' |';
+			}
 		}
 		return implode("\n", $out);
 	}, $raw);

@@ -8,7 +8,7 @@ Earned nightly by staking core artist NFTs:
 
 | Artist | Currency |
 |--------|----------|
-{{projects:core}}
+{{projects:founding}}
 
 ## Partner Points
 

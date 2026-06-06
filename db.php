@@ -634,6 +634,9 @@ function getProjectInfo($conn, $project_id){
 // Get projects
 function getProjects($conn, $type=""){
 	$where = " ";
+	if($type == "founding"){
+		$where = " WHERE id BETWEEN 1 AND 6";   // the 6 founding artists (marketing/core points)
+	}
 	if($type == "core"){
 		$where = " WHERE id <= 7";
 	}
