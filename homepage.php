@@ -544,21 +544,21 @@
         // (temporary home - if the folder moves, update $hp_shot_base only).
         $hp_shot_base = 'https://www.skulliance.io/staking/screenshots/';
         $hp_shots = [
-            ['dashboard.png',     'Dashboard',                'https://www.skulliance.io/staking/dashboard.php'],
             ['profile.png',       'Profile',                  'https://www.skulliance.io/staking/profile.php'],
-            ['daily-rewards.png', 'Daily Rewards & Crafting', 'https://www.skulliance.io/staking/dashboard.php'],
-            ['missions.png',      'Missions',                 'https://www.skulliance.io/staking/missions.php'],
-            ['realms.png',        'Realms',                   'https://www.skulliance.io/staking/realms.php'],
-            ['gauntlet.png',      'Gauntlets',                'https://www.skulliance.io/staking/gauntlets.php'],
+            ['dashboard.png',     'Dashboard',                'https://www.skulliance.io/staking/dashboard.php'],
             ['store.png',         'Staking Store',            'https://www.skulliance.io/staking/store.php'],
+            ['missions.png',      'Missions',                 'https://www.skulliance.io/staking/missions.php'],
+            ['gauntlet.png',      'Gauntlets',                'https://www.skulliance.io/staking/gauntlets.php'],
+            ['realms.png',        'Realms',                   'https://www.skulliance.io/staking/realms.php'],
             ['diamond-skulls.png','Diamond Skulls',           'https://www.skulliance.io/staking/diamond-skulls.php'],
             ['delegation.png',    'Delegations',              'https://www.skulliance.io/staking/diamond-skulls.php#delegation'],
             ['skulliverse.png',   'Skulliverse',              'https://www.skulliance.io/staking/skulliverse.php'],
+            ['monstrocity.png',   'Monstrocity - Match 3 RPG','https://www.skulliance.io/staking/match3rpg.php'],
+            ['skull-swap.png',    'Skull Swap',               'https://www.skulliance.io/staking/skullswap.php'],
+            ['boss-battles.png',  'Boss Battles',             'https://www.skulliance.io/staking/monstrocity.php#boss'],
+            ['daily-rewards.png', 'Daily Rewards & Crafting', 'https://www.skulliance.io/staking/dashboard.php'],
             ['leaderboard.png',   'Leaderboards',             'https://www.skulliance.io/staking/leaderboards.php'],
             ['analytics.png',     'Analytics',                'https://www.skulliance.io/staking/analytics.php'],
-            ['monstrocity.png',   'Monstrocity - Match 3 RPG','https://www.skulliance.io/staking/match3rpg.php'],
-            ['boss-battles.png',  'Boss Battles',             'https://www.skulliance.io/staking/monstrocity.php#boss'],
-            ['skull-swap.png',    'Skull Swap',               'https://www.skulliance.io/staking/skullswap.php'],
         ];
         ?>
         <div class="hp-grid hp-shots">
