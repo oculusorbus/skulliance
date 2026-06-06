@@ -23,10 +23,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 }
 
-include 'header.php';
-
 /*
  * Skull Paper — the Skulliance documentation, served natively from this repo.
+ * (header.php is included further down, AFTER the page is resolved and its
+ * markdown loaded, so per-page SEO meta can be injected via $extra_head.)
  *
  * Content lives as plain Markdown in /skullpaper/*.md. To add or edit a page:
  *   1. Create/edit the .md file in /skullpaper/
@@ -152,6 +152,107 @@ $prevSlug = ($idx > 0) ? $slugs[$idx - 1] : null;
 $nextSlug = ($idx < count($slugs) - 1) ? $slugs[$idx + 1] : null;
 
 $pageTitle = $sp_order[$page];
+
+/*
+ * Per-page SEO, injected through header.php's $extra_head hook.
+ * Title/description/canonical/OG/Twitter/JSON-LD are all server-rendered so
+ * every doc page is uniquely indexable and shares cleanly (the old approach
+ * set the title via JS only, which crawlers and scrapers never saw).
+ */
+$sp_site = 'https://www.skulliance.io/staking/skullpaper.php';
+$sp_canonical = $sp_site . ($page === 'overview' ? '' : '?page=' . $page);
+$page_title_override = $pageTitle . ' - Skull Paper | Skulliance';
+
+// Meta description: first real prose paragraph of the markdown, stripped of
+// markup. Falls back to a general blurb for token-only or missing pages.
+$sp_desc = 'The Skull Paper is the living guide to the Skulliance platform - staking, missions, Realms, Diamond Skulls, games, and the marketplace.';
+if (isset($raw)) {
+	foreach (preg_split('/\n\s*\n/', $raw) as $sp_block) {
+		$sp_block = trim($sp_block);
+		if ($sp_block === '') { continue; }
+		$c = $sp_block[0];
+		if ($c === '#' || $c === '!' || $c === '|' || $c === '>' || $c === '*' || $c === '-' || preg_match('/^\d+\./', $sp_block)) { continue; }
+		$sp_block = preg_replace('/!\[[^\]]*\]\([^)]*\)/', '', $sp_block);   // images
+		$sp_block = preg_replace('/\[([^\]]*)\]\([^)]*\)/', '$1', $sp_block); // links -> text
+		$sp_block = str_replace(['**', '`', '*'], '', $sp_block);
+		$sp_block = trim(preg_replace('/\s+/', ' ', $sp_block));
+		if ($sp_block !== '') {
+			$sp_desc = mb_strlen($sp_block) > 158 ? mb_substr($sp_block, 0, 155) . '...' : $sp_block;
+			break;
+		}
+	}
+}
+
+// Share image: first image embedded in the page, else the brand artwork.
+$sp_img = 'https://www.skulliance.io/staking/images/skulliance-group.jpg';
+if (isset($raw) && preg_match('/!\[[^\]]*\]\((https?:[^)\s]+)\)/', $raw, $sp_m)) {
+	$sp_img = $sp_m[1];
+}
+
+// Parent section (for breadcrumbs) + real modified date from the md file.
+$sp_parent = null;
+foreach ($skullpaper_nav as $sp_sec) {
+	if (in_array($page, array_column($sp_sec['children'], 'slug'), true)) { $sp_parent = $sp_sec; break; }
+}
+$sp_modified = is_file($mdFile) ? date('c', filemtime($mdFile)) : date('c');
+
+// Breadcrumbs: Skulliance -> Skull Paper [-> Section] -> Page
+$sp_crumbs = [['Skulliance', 'https://www.skulliance.io/'], ['Skull Paper', $sp_site]];
+if ($sp_parent) { $sp_crumbs[] = [$sp_parent['title'], $sp_site . '?page=' . $sp_parent['slug']]; }
+if ($page !== 'overview') { $sp_crumbs[] = [$pageTitle, $sp_canonical]; }
+$sp_crumb_items = [];
+foreach ($sp_crumbs as $sp_i => $sp_c) {
+	$sp_crumb_items[] = ['@type' => 'ListItem', 'position' => $sp_i + 1, 'name' => $sp_c[0], 'item' => $sp_c[1]];
+}
+
+$sp_jsonld = json_encode([
+	'@context' => 'https://schema.org',
+	'@graph' => [
+		[
+			'@type' => 'TechArticle',
+			'headline' => $pageTitle . ' - Skull Paper',
+			'description' => $sp_desc,
+			'url' => $sp_canonical,
+			'mainEntityOfPage' => $sp_canonical,
+			'image' => $sp_img,
+			'dateModified' => $sp_modified,
+			'inLanguage' => 'en',
+			'isPartOf' => ['@id' => 'https://www.skulliance.io/#website'],
+			'author' => ['@id' => 'https://www.skulliance.io/#organization'],
+			'publisher' => ['@id' => 'https://www.skulliance.io/#organization'],
+		],
+		[
+			'@type' => 'BreadcrumbList',
+			'itemListElement' => $sp_crumb_items,
+		],
+	],
+], JSON_UNESCAPED_SLASHES);
+
+$sp_t = htmlspecialchars($page_title_override, ENT_QUOTES);
+$sp_d = htmlspecialchars($sp_desc, ENT_QUOTES);
+$sp_u = htmlspecialchars($sp_canonical, ENT_QUOTES);
+$sp_i = htmlspecialchars($sp_img, ENT_QUOTES);
+$extra_head = <<<HTML
+  <meta name="description" content="{$sp_d}">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <link rel="canonical" href="{$sp_u}">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Skulliance">
+  <meta property="og:url" content="{$sp_u}">
+  <meta property="og:title" content="{$sp_t}">
+  <meta property="og:description" content="{$sp_d}">
+  <meta property="og:image" content="{$sp_i}">
+  <meta property="og:locale" content="en_US">
+  <meta property="article:modified_time" content="{$sp_modified}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@skulliance">
+  <meta name="twitter:title" content="{$sp_t}">
+  <meta name="twitter:description" content="{$sp_d}">
+  <meta name="twitter:image" content="{$sp_i}">
+  <script type="application/ld+json">{$sp_jsonld}</script>
+HTML;
+
+include 'header.php';
 ?>
 <style>
 #skullpaper { color:#e8eaed; }
@@ -336,7 +437,6 @@ $pageTitle = $sp_order[$page];
 </div>
 </div>
 </body>
-<script type="text/javascript">document.title = "<?php echo htmlspecialchars($pageTitle, ENT_QUOTES); ?> - Skull Paper | Skulliance";</script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php $conn->close(); ?>
 </html>
