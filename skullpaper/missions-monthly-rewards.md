@@ -6,7 +6,7 @@ There is a monthly leaderboard for missions participants linked under leaderboar
 
 ## CARBON Rewards
 
-Every single participant in missions will receive CARBON which can be burned in multiples of 100, in minimum batches of 1,000, to form DIAMOND.
+Every single participant in missions will receive CARBON which can be burned in multiples of 100 to form DIAMOND, at a rate of **100 CARBON = 1 DIAMOND**.
 
 DIAMOND can only be acquired from holding a Diamond Skull NFT, delegating to Diamond Skulls to earn CARBON, earning random DIAMOND from claiming daily rewards, crafting DIAMOND from holding ALL core projects, and now participating in Missions to earn CARBON and burn for DIAMOND.
 

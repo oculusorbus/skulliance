@@ -41,15 +41,18 @@ include 'header.php';
 $skullpaper_nav = [
 	['slug' => 'overview', 'title' => 'Overview', 'children' => []],
 	['slug' => 'staking', 'title' => 'Staking', 'children' => [
-		['slug' => 'staking-membership',    'title' => 'Membership'],
-		['slug' => 'staking-daily-rewards', 'title' => 'Daily Rewards'],
+		['slug' => 'staking-membership',         'title' => 'Membership'],
+		['slug' => 'staking-daily-rewards',      'title' => 'Daily Rewards'],
+		['slug' => 'staking-points-currencies',  'title' => 'Points & Currencies'],
+		['slug' => 'staking-crafting',           'title' => 'Crafting'],
 	]],
 	['slug' => 'missions', 'title' => 'Missions', 'children' => [
 		['slug' => 'missions-consumable-items', 'title' => 'Consumable Items'],
 		['slug' => 'missions-monthly-rewards',  'title' => 'Monthly Rewards'],
 	]],
 	['slug' => 'realms', 'title' => 'Realms', 'children' => [
-		['slug' => 'realms-locations', 'title' => 'Locations'],
+		['slug' => 'realms-buildings', 'title' => 'Buildings'],
+		['slug' => 'realms-soldiers',  'title' => 'Soldiers'],
 		['slug' => 'realms-raids',     'title' => 'Raids'],
 		['slug' => 'realms-factions',  'title' => 'Factions'],
 	]],
@@ -58,8 +61,28 @@ $skullpaper_nav = [
 		['slug' => 'diamond-skulls-skulliverse',      'title' => 'Skulliverse'],
 	]],
 	['slug' => 'games', 'title' => 'Games', 'children' => [
-		['slug' => 'games-drop-ship',    'title' => 'Drop Ship'],
+		['slug' => 'games-monstrocity',   'title' => 'Monstrocity'],
+		['slug' => 'games-boss-battles',  'title' => 'Boss Battles'],
+		['slug' => 'games-skull-swap',    'title' => 'Skull Swap'],
+		['slug' => 'games-gauntlets',     'title' => 'Gauntlets'],
+		['slug' => 'games-drop-ship',     'title' => 'Drop Ship'],
 		['slug' => 'games-oculus-lounge', 'title' => 'Oculus Lounge'],
+	]],
+	['slug' => 'marketplace', 'title' => 'Marketplace', 'children' => [
+		['slug' => 'marketplace-store',    'title' => 'Store'],
+		['slug' => 'marketplace-auctions', 'title' => 'Auctions'],
+		['slug' => 'marketplace-raffles',  'title' => 'Raffles'],
+		['slug' => 'marketplace-merch',    'title' => 'Merch'],
+	]],
+	['slug' => 'platform', 'title' => 'Platform', 'children' => [
+		['slug' => 'platform-dashboard',    'title' => 'Dashboard'],
+		['slug' => 'platform-gallery',      'title' => 'Gallery'],
+		['slug' => 'platform-collections',  'title' => 'Collections'],
+		['slug' => 'platform-leaderboards', 'title' => 'Leaderboards'],
+		['slug' => 'platform-analytics',    'title' => 'Analytics'],
+		['slug' => 'platform-profile',      'title' => 'Profile'],
+		['slug' => 'platform-wallets',      'title' => 'Wallets'],
+		['slug' => 'platform-transactions', 'title' => 'Transactions'],
 	]],
 ];
 
@@ -81,9 +104,19 @@ $mdFile = __DIR__ . '/skullpaper/' . $page . '.md';
 
 $bodyHtml = '<p>This page is coming soon.</p>';
 if (is_file($mdFile)) {
+	$raw = file_get_contents($mdFile);
+	// Resolve [[slug]] wiki-links to internal doc links using nav titles.
+	// Unknown slugs render as plain text (their label) rather than a broken link.
+	$raw = preg_replace_callback('/\[\[([a-z0-9-]+)\]\]/', function ($m) use ($sp_order) {
+		$slug = $m[1];
+		if (isset($sp_order[$slug])) {
+			return '[' . $sp_order[$slug] . '](skullpaper.php?page=' . $slug . ')';
+		}
+		return $slug;
+	}, $raw);
 	$Parsedown = new Parsedown();
 	$Parsedown->setSafeMode(true); // content is trusted, but escape raw HTML for safety
-	$bodyHtml = $Parsedown->text(file_get_contents($mdFile));
+	$bodyHtml = $Parsedown->text($raw);
 }
 
 // Prev / next within the flat order.

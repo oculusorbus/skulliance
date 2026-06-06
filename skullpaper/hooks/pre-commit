@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Skull Paper doc-sync reminder (non-blocking).
+#
+# When you stage changes to feature code but NOT to skullpaper/, this prints a
+# reminder to update the Skull Paper. It never blocks a commit (always exits 0).
+#
+# Install:  cp skullpaper/hooks/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit
+
+staged=$(git diff --cached --name-only)
+
+# Did this commit already touch the docs?
+echo "$staged" | grep -q '^skullpaper/' && exit 0
+
+# Feature files whose changes usually warrant a doc update.
+feature_re='^(db\.php|realms\.php|missions\.php|gauntlets\.php|monstrocity\.php|monstrocity-test\.php|match3rpg\.php|skullswap\.php|auctions\.php|raffles\.php|merch\.php|store\.php|diamond-skulls\.php|skulliverse\.php|gallery\.php|collections\.php|leaderboards\.php|analytics\.php|profile\.php|wallets\.php|dashboard\.php|verify\.php|skulliance\.php|ajax/)'
+
+hits=$(echo "$staged" | grep -E "$feature_re")
+[ -z "$hits" ] && exit 0
+
+echo ""
+echo "📖 Skull Paper reminder: you're committing feature code but no docs."
+echo "   Changed feature files:"
+echo "$hits" | sed 's/^/     - /'
+echo "   If this changes player-facing behavior, update the matching page in"
+echo "   skullpaper/ (see skullpaper/MAINTENANCE.md for the feature→page map)."
+echo "   This is a reminder only — your commit will proceed."
+echo ""
+exit 0

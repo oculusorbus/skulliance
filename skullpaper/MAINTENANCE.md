@@ -102,9 +102,11 @@ records verified constants, and tracks what still needs to be written.
 ## Build Status
 
 - [x] Phase 1: 17 GitBook pages migrated (faithful copy).
-- [ ] Phase 2: Fix inaccuracies in existing pages (CARBON burn ratio, add daily consumable mapping).
-- [ ] Phase 3: Expand Realms (buildings → 7, add soldiers page).
-- [ ] Phase 4: Add 4 game pages (Monstrocity, Boss Battles, Skull Swap, Gauntlets).
-- [ ] Phase 5: Add Marketplace section (Store, Auctions, Raffles, Merch).
-- [ ] Phase 6: Add Platform section (Dashboard, Gallery, Collections, Leaderboards, Analytics, Profile, Wallets, Transactions).
-- [ ] Phase 7: Update `skullpaper.php` nav array + this map; add CLAUDE.md maintenance directive + git pre-commit reminder hook.
+- [x] Phase 2: Fix inaccuracies (CARBON burn ratio harmonized; daily consumable mapping added).
+- [x] Phase 3: Expand Realms (realms-buildings covers all 7; realms-soldiers added; raids math added).
+- [x] Phase 4: Add 4 game pages (Monstrocity, Boss Battles, Skull Swap, Gauntlets) + games overview.
+- [x] Phase 5: Add Marketplace section (Store, Auctions, Raffles, Merch).
+- [x] Phase 6: Add Platform section (Dashboard, Gallery, Collections, Leaderboards, Analytics, Profile, Wallets, Transactions).
+- [x] Phase 7: nav array updated; CLAUDE.md directive + pre-commit reminder hook added.
+
+Total: 38 doc pages across 8 sections.

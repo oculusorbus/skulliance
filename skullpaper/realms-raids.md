@@ -4,6 +4,17 @@
 
 Realms participants can engage in raids and monitor the status of outgoing/incoming raids.
 
+## Offense & Defense Ratings
+
+Every raid is decided by two ratings, each averaged from four inputs (rounded up):
+
+* **Offense** = `ceil((Armory + Barracks + Crypt + BarracksScore) ÷ 4)`
+* **Defense** = `ceil((Tower + Factory + Mine + TowerScore) ÷ 4)`
+
+**BarracksScore** rises as your deployed, trained army fills your capacity, and **TowerScore** rises with your Tower garrison (up to 10 soldiers). This is why building levels alone don't win raids — you also need a trained, deployed, and garrisoned army. See [[realms-buildings]] and [[realms-soldiers]].
+
+Your **success rate** is derived from the gap between your offense and the defender's defense. Two evenly matched Realms each sit near 50%; a stronger attacker's rate climbs from there. Stocked defensive consumables can nudge the defender's odds up, and stocked offensive consumables nudge the attacker's odds up (each side capped at +10%).
+
 ## Raid Offense
 
 Successful raids initiated by Realm owners result in damaging a random defense location for the defender's Realm. A percentage of a random project's points, containing a balance of at least 100, are also looted from the defender's balance and redistributed to the attacker. That percentage is based on the difference between the attacker's offense and the player's defense.

@@ -12,6 +12,20 @@ For up to 7 days, the reward increases for every day in a row that you claim you
 * Day 6: +20 RANDOM
 * Day 7: +30 RANDOM
 
+## Daily Consumable
+
+In addition to RANDOM points, each daily claim also awards one **mission consumable**, and which item you receive is tied to your current streak day:
+
+* Day 1: Random Reward
+* Day 2: 25% Success
+* Day 3: Fast Forward
+* Day 4: 50% Success
+* Day 5: 75% Success
+* Day 6: Double Rewards
+* Day 7: 100% Success
+
+So a full 7-day streak hands you the complete consumable set, including the two Legendary items (Double Rewards on day 6 and 100% Success on day 7). See [[missions-consumable-items]] for what each item does.
+
 ## Streaks
 
 A maximum of 84 random reward points can be claimed via a completed 7 day streak.
