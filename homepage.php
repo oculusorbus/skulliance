@@ -240,8 +240,26 @@
     }
     .hp-logos a { display: block; width: 100%; }
     .hp-logos img { width: 100%; height: 150px; object-fit: contain; }
+    /* Partners: break out of the 1100px wrap to full browser width and
+       aim for 6 per row (27 logos -> four rows of 6 plus 3), stepping
+       down as the viewport narrows. The calc shifts the element left by
+       (half viewport - half parent) so width:100vw starts at viewport
+       edge zero; body has overflow-x:hidden so no horizontal scrollbar. */
+    .hp-logos.hp-partners {
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      padding: 0 24px;
+      grid-template-columns: repeat(6, 1fr);
+    }
+    @media (max-width: 1280px) {
+      .hp-logos.hp-partners { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 860px) {
+      .hp-logos.hp-partners { grid-template-columns: repeat(3, 1fr); }
+    }
     @media (max-width: 640px) {
-      .hp-logos { grid-template-columns: repeat(2, 1fr); }
+      .hp-logos, .hp-logos.hp-partners { grid-template-columns: repeat(2, 1fr); }
       .hp-logos img { height: 120px; }
     }
 
@@ -420,7 +438,7 @@
       <div class="wrap">
         <h2>Partner Artists &amp; Projects</h2>
         <p class="hp-intro hp-center">With the success of the platform, Skulliance invited other high-quality artists and projects on Cardano to participate in partner staking - their holders earn points, redeem incentives, and climb the leaderboards too.</p>
-        <ul class="hp-logos">
+        <ul class="hp-logos hp-partners">
           <li><a href="https://x.com/_nemonium" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium" loading="lazy" decoding="async"></a></li>
           <li><a href="https://x.com/discosolaris" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris" loading="lazy" decoding="async"></a></li>
           <li><a href="https://x.com/DanketsuNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png" alt="Danketsu" loading="lazy" decoding="async"></a></li>
