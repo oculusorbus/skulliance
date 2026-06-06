@@ -320,8 +320,14 @@
       border-color: rgba(0, 200, 160, 0.45);
       background: rgba(0, 200, 160, 0.06);
     }
-    .hp-logos a { display: block; width: 100%; }
+    .hp-logos a { display: block; width: 100%; text-decoration: none !important; }
     .hp-logos img { width: 100%; height: 150px; object-fit: contain; }
+    .hp-logo-name {
+      display: block; margin-top: 10px; text-align: center;
+      font-size: 0.88rem; font-weight: 600;
+      color: #c7d0d9; letter-spacing: 0.02em;
+    }
+    .hp-logos li:hover .hp-logo-name { color: #34e3bb; }
     @media (max-width: 640px) {
       .hp-logos { grid-template-columns: repeat(2, 1fr); }
       .hp-logos img { height: 120px; }
@@ -560,12 +566,12 @@
         <h2>Founding Artists</h2>
         <p class="hp-intro hp-center">These artists specialize in skull art on Cardano and came together to form Skulliance. Holders of their NFTs can stake them on the Skulliance platform and earn nightly off-chain points redeemable for exclusive incentives.</p>
         <ul class="hp-logos hp-founding">
-          <li><a href="https://x.com/SinderSkullz" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png" alt="Sinder Skullz" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/Nft4R" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png" alt="Kimosabe Art" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/cryptiesnft" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/crypties.png" alt="Crypties" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/GalacticoNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/galactico.png" alt="Galactico" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/ohh_meed" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/ohhmeed.png" alt="Ohh Meed" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/haveyouseenhype" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/hype.png" alt="H.Y.P.E." loading="lazy" decoding="async"></a></li>
+          <li><a href="https://x.com/SinderSkullz" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png" alt="Sinder Skullz" loading="lazy" decoding="async"><span class="hp-logo-name">Sinder Skullz</span></a></li>
+          <li><a href="https://x.com/Nft4R" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png" alt="Kimosabe Art" loading="lazy" decoding="async"><span class="hp-logo-name">Kimosabe Art</span></a></li>
+          <li><a href="https://x.com/cryptiesnft" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/crypties.png" alt="Crypties" loading="lazy" decoding="async"><span class="hp-logo-name">Crypties</span></a></li>
+          <li><a href="https://x.com/GalacticoNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/galactico.png" alt="Galactico" loading="lazy" decoding="async"><span class="hp-logo-name">Galactico</span></a></li>
+          <li><a href="https://x.com/ohh_meed" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/ohhmeed.png" alt="Ohh Meed" loading="lazy" decoding="async"><span class="hp-logo-name">Ohh Meed</span></a></li>
+          <li><a href="https://x.com/haveyouseenhype" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/hype.png" alt="H.Y.P.E." loading="lazy" decoding="async"><span class="hp-logo-name">H.Y.P.E.</span></a></li>
         </ul>
       </div>
     </section>
