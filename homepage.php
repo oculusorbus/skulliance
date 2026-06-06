@@ -696,17 +696,17 @@
         <div class="hp-tiers">
           <div class="hp-tier">
             <p class="hp-tier-rank">Tier 1</p>
-            <h3>Base Member</h3>
+            <h3>&#x1F6E1;&#xFE0F; Base Member</h3>
             <p>Hold 1 NFT from Sinder Skullz, Kimosabe Art, and Crypties. Base membership isn't required to stake, but it unlocks claiming exclusive incentives from the staking store with the points you accumulate.</p>
           </div>
           <div class="hp-tier">
             <p class="hp-tier-rank">Tier 2</p>
-            <h3>Elite Member</h3>
+            <h3>&#x2694;&#xFE0F; Elite Member</h3>
             <p>Hold at least 1 NFT from every founding artist. Elite members can convert equal parts of founding-artist points into DIAMOND - the premium currency that can purchase any store reward at a discount or premium.</p>
           </div>
           <div class="hp-tier hp-tier-top">
             <p class="hp-tier-rank">Tier 3</p>
-            <h3>Inner Circle</h3>
+            <h3>&#x1F48E; Inner Circle</h3>
             <p>Elite members who also hold a Diamond Skull NFT. The Inner Circle earns CARBON delegation rewards plus DIAMOND from nightly emissions and crafting - the deepest reward loop on the platform.</p>
           </div>
         </div>
