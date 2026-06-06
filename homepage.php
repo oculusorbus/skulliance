@@ -495,7 +495,7 @@
     </div>
     <div class="hp-badges" aria-label="Highlights">
       <span class="hp-badge">Built on Cardano</span>
-      <span class="hp-badge">25+ Featured Artists</span>
+      <span class="hp-badge">35+ Featured Artists</span>
       <span class="hp-badge">NFT Staking Rewards</span>
       <span class="hp-badge">Free Browser Games</span>
       <span class="hp-badge">Exclusive Merch</span>
