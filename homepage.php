@@ -765,7 +765,7 @@
       <div class="wrap">
         <div class="hp-final">
           <img class="hp-final-art" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="Skulliance on Cardano" width="1500" height="1674" loading="lazy" decoding="async">
-          <h2>Join Skulliance</h2>
+          <h2>Join our Community</h2>
           <p>Play the games, meet the artists, grab some merch, and start earning nightly rewards for the skull NFTs you already love collecting. Cardano is our home - come make it yours.</p>
           <div class="hp-ctas">
             <a class="hp-cta" href="https://discord.gg/JqqBZBrph2">Join the Discord</a>
