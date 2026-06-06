@@ -622,9 +622,9 @@
         <h2>The Staking Platform</h2>
         <p class="hp-intro hp-center">Log in with Discord, connect your Cardano wallets, and your qualifying NFTs start earning nightly off-chain points - redeemable for exclusive incentives in the staking store. Claim daily rewards, send your NFTs on idle missions, build out your Realm, run the Gauntlet, delegate core project NFTs to Diamond Skulls to earn CARBON and craft DIAMOND, explore the Skulliverse, and climb the leaderboards.</p>
         <?php
-        // Platform screenshot cards. Images are served from /staking/screenshots/
-        // (temporary home - if the folder moves, update $hp_shot_base only).
-        $hp_shot_base = 'https://www.skulliance.io/staking/screenshots/';
+        // Platform screenshot cards. Images live on the server at
+        // /staking/images/screenshots/ (uploaded via FTP, not in the repo).
+        $hp_shot_base = 'https://www.skulliance.io/staking/images/screenshots/';
         $hp_shots = [
             ['profile.png',       'Profile',                  'https://www.skulliance.io/staking/profile.php'],
             ['dashboard.png',     'Dashboard',                'https://www.skulliance.io/staking/dashboard.php'],
