@@ -105,6 +105,23 @@ $mdFile = __DIR__ . '/skullpaper/' . $page . '.md';
 $bodyHtml = '<p>This page is coming soon.</p>';
 if (is_file($mdFile)) {
 	$raw = file_get_contents($mdFile);
+	// Expand {{projects:core}} / {{projects:partner}} into live Markdown table
+	// rows pulled from the projects table, so the points/currency lists never
+	// drift from the database. The doc keeps the table header; this only emits
+	// the rows. Only public fields (name, currency) are exposed — Skull Paper is
+	// a public page (see header comment).
+	$raw = preg_replace_callback('/\{\{projects:(core|partner)\}\}/', function ($m) use ($conn) {
+		$rows = getProjects($conn, $m[1]);
+		if (!is_array($rows)) { return '_None listed yet._'; }
+		$out = [];
+		foreach ($rows as $p) {
+			// Escape pipes so a stray "|" in a name can't break the table.
+			$name = str_replace('|', '\\|', trim((string)$p['name']));
+			$cur  = str_replace('|', '\\|', trim((string)$p['currency']));
+			$out[] = '| ' . $name . ' | ' . $cur . ' |';
+		}
+		return implode("\n", $out);
+	}, $raw);
 	// Resolve [[slug]] wiki-links to internal doc links using nav titles.
 	// Unknown slugs render as plain text (their label) rather than a broken link.
 	$raw = preg_replace_callback('/\[\[([a-z0-9-]+)\]\]/', function ($m) use ($sp_order) {

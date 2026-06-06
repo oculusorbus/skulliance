@@ -8,12 +8,7 @@ Earned nightly by staking core artist NFTs:
 
 | Artist | Currency |
 |--------|----------|
-| Crypties | CRYPT |
-| Kimosabe Art | CYBER |
-| Sinder Skullz | SINDER |
-| H.Y.P.E. | HYPE |
-| Ohh Meed | DREAD |
-| Galactico | STAR |
+{{projects:core}}
 
 ## Partner Points
 
@@ -21,20 +16,7 @@ Earned by staking partner project NFTs:
 
 | Project | Currency |
 |---------|----------|
-| Apprentices | USTRA |
-| AscenderOne | ASS |
-| Cardano Camera | LENS |
-| Danketsu | DANK |
-| Dead Pop Hell | FIRE |
-| Disco Solaris | MOON |
-| Grey | DARK |
-| Jordi | EYE |
-| Maxingo | MAXI |
-| Mipa Toys | MIPA |
-| Netanel Cohen | NAT |
-| Pendulum | KALA |
-| Squashua | WAVE |
-| Threefold Bold | SHARON |
+{{projects:partner}}
 
 ## Special Currencies
 

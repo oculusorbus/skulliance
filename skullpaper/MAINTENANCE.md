@@ -16,7 +16,7 @@ records verified constants, and tracks what still needs to be written.
 | staking.md                          | Points, store, craft   | db.php (updateBalances, craft/shatter), skulliance.php |
 | staking-membership.md               | Member/Elite/Inner     | skulliance.php:145-212 (role IDs) |
 | staking-daily-rewards.md            | Daily streak rewards   | db.php:806-830 (getDailyConsumable, getRewardTiers) |
-| staking-points-currencies.md *(new)*| All point currencies   | skulliance.php:646-653, db.php getProjects |
+| staking-points-currencies.md *(new)*| All point currencies   | db.php getProjects (core/partner) — point tables auto-generated via `{{projects:core/partner}}` tokens in skullpaper.php; no manual edits needed |
 | staking-crafting.md *(new)*         | Craft/Shatter/Burn     | db.php:3947-3990 |
 | missions.md                         | Idle missions          | missions.php, db.php (getMissions, completeMission) |
 | missions-consumable-items.md        | 7 consumables          | db.php:2389-2418, consumables table |
