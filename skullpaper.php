@@ -109,23 +109,25 @@ if (is_file($mdFile)) {
 	// projects table, so the project/points lists never drift from the database.
 	//   GROUP    = founding (ids 1-6) | core (id <= 7) | partner (id > 7, !=15)
 	//   {{projects:GROUP}}        -> table rows  "| Name | CURRENCY |"
-	//   {{projects:GROUP:names}}  -> bullet list "* Name"  (for the overview)
+	//   {{projects:GROUP:names}}  -> bullet list "* Name"            (overview)
+	//   {{projects:GROUP:points}} -> bullet list "* Name - CURRENCY" (staking)
 	// Only public fields (name, currency) are emitted — Skull Paper is a public
 	// page (see header comment). The doc owns any table header / surrounding text.
-	$raw = preg_replace_callback('/\{\{projects:(founding|core|partner)(?::(names))?\}\}/', function ($m) use ($conn) {
+	$raw = preg_replace_callback('/\{\{projects:(founding|core|partner)(?::(names|points))?\}\}/', function ($m) use ($conn) {
 		$rows = getProjects($conn, $m[1]);
 		if (!is_array($rows) || !$rows) { return '_None listed yet._'; }
-		$asNames = (($m[2] ?? '') === 'names');
+		$fmt = $m[2] ?? '';
 		$out = [];
 		foreach ($rows as $p) {
 			$name = trim((string)$p['name']);
-			if ($asNames) {
+			$cur  = trim((string)$p['currency']);
+			if ($fmt === 'names') {
 				$out[] = '* ' . $name;
+			} elseif ($fmt === 'points') {
+				$out[] = '* ' . $name . ' - ' . $cur;
 			} else {
 				// Escape pipes so a stray "|" in a value can't break the table.
-				$n = str_replace('|', '\\|', $name);
-				$c = str_replace('|', '\\|', trim((string)$p['currency']));
-				$out[] = '| ' . $n . ' | ' . $c . ' |';
+				$out[] = '| ' . str_replace('|', '\\|', $name) . ' | ' . str_replace('|', '\\|', $cur) . ' |';
 			}
 		}
 		return implode("\n", $out);

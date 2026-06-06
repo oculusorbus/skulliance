@@ -14,12 +14,7 @@ Base membership is not required to participate in staking and earn off-chain poi
 
 Core artist NFTs yield off-chain points nightly at 2am CST.
 
-* Crypties - CRYPT
-* Kimosabe Art - CYBER
-* Sinder Skullz - SINDER
-* H.Y.P.E. - HYPE
-* Ohh Meed - DREAD
-* Galactico - STAR
+{{projects:founding:points}}
 
 ## Diamond
 
@@ -47,17 +42,4 @@ Stakers can use their points to redeem exclusive incentives from the staking sto
 
 ## Partner Points
 
-* Apprentices - USTRA
-* AscenderOne - ASS
-* Cardano Camera - LENS
-* Danketsu - DANK
-* Dead Pop Hell - FIRE
-* Disco Solaris - MOON
-* Grey - DARK
-* Jordi - EYE
-* Maxingo - MAXI
-* Mipa Toys - MIPA
-* Netanel Cohen - NAT
-* Pendulum - KALA
-* Squashua - WAVE
-* Threefold Bold - SHARON
+{{projects:partner:points}}
