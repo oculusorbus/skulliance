@@ -580,7 +580,7 @@
     <section id="partners">
       <div class="wrap">
         <h2>Partner Artists &amp; Projects</h2>
-        <p class="hp-intro hp-center">With the success of the platform, Skulliance invited other high-quality artists and projects on Cardano to participate in partner staking - their holders earn points, redeem incentives, and climb the&nbsp;leaderboards&nbsp;too.</p>
+        <p class="hp-intro hp-center">With the success of the platform, Skulliance invited other high-quality artists/projects on Cardano to participate in partner staking - their holders earn points, redeem incentives, and climb the leaderboards too.</p>
         <?php
         // Partner flyers, split half/half across two counter-scrolling
         // marquee rows so the majority of artists register at a glance.
