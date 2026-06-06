@@ -399,6 +399,23 @@
     }
     .hp-shot-card a:hover img { transform: translateY(-2px); }
 
+    /* Skull Paper callout */
+    .hp-paper {
+      display: flex; align-items: center; gap: 28px;
+      background: linear-gradient(135deg, rgba(0, 200, 160, 0.10), rgba(5, 150, 196, 0.07));
+      border: 1px solid rgba(0, 200, 160, 0.30);
+      border-radius: 16px; padding: 30px 34px;
+    }
+    .hp-paper-icon { width: 84px; height: auto; flex: 0 0 auto; }
+    .hp-paper-body { flex: 1 1 auto; }
+    .hp-paper-body h2 { text-align: left; margin: 0 0 8px; }
+    .hp-paper-body p { color: #c7d0d9; margin: 0 0 18px; max-width: 720px; }
+    @media (max-width: 640px) {
+      .hp-paper { flex-direction: column; text-align: center; gap: 18px; padding: 26px 20px; }
+      .hp-paper-body h2 { text-align: center; }
+      .hp-paper-body p { margin-left: auto; margin-right: auto; }
+    }
+
     /* Membership tiers */
     .hp-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 24px; }
     .hp-tier {
@@ -652,6 +669,20 @@
           <?php endforeach; ?>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
+      </div>
+    </section>
+
+    <!-- Skull Paper callout -->
+    <section id="skull-paper">
+      <div class="wrap">
+        <div class="hp-paper">
+          <img class="hp-paper-icon" src="https://www.skulliance.io/staking/pwa/skulliance-logo-icon.png" alt="Skull Paper" loading="lazy" decoding="async">
+          <div class="hp-paper-body">
+            <h2>Dive Deeper: The Skull Paper</h2>
+            <p>Every feature above &mdash; staking rewards, missions, Realms, Diamond Skulls, the games, and the marketplace &mdash; is documented in depth in the Skull Paper, our living platform guide. Mechanics, rates, currencies, and formulas, kept in sync with the platform itself.</p>
+            <a class="hp-cta" href="https://www.skulliance.io/staking/skullpaper.php">Read the Skull Paper</a>
+          </div>
+        </div>
       </div>
     </section>
 
