@@ -434,8 +434,15 @@
     .hp-tier h3 { margin-bottom: 10px; }
     .hp-tier p { margin: 0; color: #c7d0d9; font-size: 0.94rem; }
     .hp-tier.hp-tier-top { border-color: rgba(0, 200, 160, 0.35); background: rgba(0, 200, 160, 0.05); }
-    .hp-member-art { max-width: 420px; margin: 28px auto 0; }
-    .hp-member-art img { border-radius: 14px; }
+    /* Membership artwork above the section title, emblem-style like the
+       Skull Paper and Join Skulliance panels */
+    .hp-member-art {
+      display: block;
+      width: 100%; max-width: 240px; height: auto;
+      margin: 0 auto 20px;
+      border-radius: 14px;
+      filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+    }
 
     /* Team */
     .hp-team { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-top: 24px; }
@@ -700,6 +707,7 @@
     <!-- Membership -->
     <section id="membership">
       <div class="wrap">
+        <img class="hp-member-art" src="https://www.skulliance.io/staking/images/skulliance.jpg" alt="Skulliance membership artwork" loading="lazy" decoding="async">
         <h2>Membership Tiers</h2>
         <p class="hp-intro hp-center">Staking is open to everyone - membership unlocks more of the store and deeper rewards as your collection grows.</p>
         <div class="hp-tiers">
@@ -718,9 +726,6 @@
             <h3>&#x1F48E; Inner Circle</h3>
             <p>Elite members who also hold a Diamond Skull NFT. The Inner Circle earns CARBON delegation rewards plus DIAMOND from nightly emissions and crafting - the deepest reward loop on the platform.</p>
           </div>
-        </div>
-        <div class="hp-member-art">
-          <img src="https://www.skulliance.io/staking/images/skulliance.jpg" alt="Skulliance membership artwork" loading="lazy" decoding="async">
         </div>
       </div>
     </section>
