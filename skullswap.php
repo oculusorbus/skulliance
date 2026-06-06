@@ -173,6 +173,15 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
       border-top: 1px solid rgba(255,255,255,0.08);
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
+    @media (max-width: 768px) {
+      /* Logged-in users have the floating back arrow at top-left (its
+         bottom edge sits at safe-area + ~44px, up to ~90px on notched
+         phones); push the hero's board image clear of it. Public
+         visitors (no .ss-has-exit) keep the tight layout. */
+      .ss-has-exit .ss-hero {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
+      }
+    }
     /* Uppercase the game name only - the subtitle keeps its casing */
     .ss-title { text-transform: uppercase; letter-spacing: 0.04em; }
     .ss-title-skull {
@@ -921,7 +930,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
           numbers mirror the in-game guide modal so the copy stays
           truthful to the mechanics - if scoring is ever rebalanced,
           update both. -->
-     <div id="ss-landing">
+     <div id="ss-landing"<?php if ($is_logged_in) echo ' class="ss-has-exit"'; ?>>
          <header class="ss-hero">
              <a class="ss-shot-link" href="#" onclick="ssPlay(); return false;" aria-label="Play Skull Swap now">
                  <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207" fetchpriority="high" decoding="async">
