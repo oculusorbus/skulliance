@@ -588,7 +588,7 @@
         // loop (second pass aria-hidden). Image filenames live under
         // /staking/images/projects/.
         $hp_partners = [
-            ['nemonium.jpg',     'Nemonium',                'https://x.com/_nemonium'],
+            ['nemonium.jpg',     'Nemonium',                'https://x.com/Omen4Omen'],
             ['discosolaris.png', 'Disco Solaris',           'https://x.com/discosolaris'],
             ['danketsu.png',     'Danketsu',                'https://x.com/DanketsuNFT'],
             ['squashua.jpg',     'Squashua',                'https://x.com/Joshua_Squashua'],
