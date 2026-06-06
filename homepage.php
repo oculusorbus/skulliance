@@ -240,27 +240,67 @@
     }
     .hp-logos a { display: block; width: 100%; }
     .hp-logos img { width: 100%; height: 150px; object-fit: contain; }
-    /* Partners: break out of the 1100px wrap to full browser width and
-       aim for 6 per row (27 logos -> four rows of 6 plus 3), stepping
-       down as the viewport narrows. The calc shifts the element left by
-       (half viewport - half parent) so width:100vw starts at viewport
-       edge zero; body has overflow-x:hidden so no horizontal scrollbar. */
-    .hp-logos.hp-partners {
+    @media (max-width: 640px) {
+      .hp-logos { grid-template-columns: repeat(2, 1fr); }
+      .hp-logos img { height: 120px; }
+    }
+
+    /* Partner flyer marquees - match3rpg's character-strip pattern:
+       full-viewport-width rows (calc shift breaks out of the wrap; body
+       overflow-x:hidden prevents a scrollbar), duplicated track sliding
+       -50% for a seamless loop, opposite directions per row, pause on
+       hover, edge fade masks, reduced-motion fallback. */
+    .hp-strip {
       width: 100vw;
       margin-left: calc(50% - 50vw);
       margin-right: calc(50% - 50vw);
-      padding: 0 24px;
-      grid-template-columns: repeat(6, 1fr);
+      overflow: hidden;
+      padding: 20px 0;
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
     }
-    @media (max-width: 1280px) {
-      .hp-logos.hp-partners { grid-template-columns: repeat(4, 1fr); }
+    .hp-strip + .hp-strip { padding-top: 0; }
+    .hp-strip-track {
+      display: flex;
+      align-items: flex-start;
+      gap: 26px;
+      width: max-content;
+      animation: hp-strip-scroll 60s linear infinite;
+      will-change: transform;
     }
-    @media (max-width: 860px) {
-      .hp-logos.hp-partners { grid-template-columns: repeat(3, 1fr); }
+    .hp-strip-track.hp-reverse {
+      animation-direction: reverse;
+      animation-duration: 66s;
     }
+    .hp-strip-track:hover { animation-play-state: paused; }
+    @keyframes hp-strip-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hp-strip-track { animation: none; }
+    }
+    .hp-strip-card {
+      flex: 0 0 auto;
+      text-align: center;
+      text-decoration: none !important;
+    }
+    .hp-strip-card img {
+      height: 170px; width: auto; max-width: 280px;
+      object-fit: contain;
+      border-radius: 10px;
+      filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.65));
+      transition: transform 0.15s ease;
+    }
+    .hp-strip-card:hover img { transform: translateY(-3px); }
+    .hp-strip-name {
+      display: block; margin-top: 8px;
+      font-size: 0.85rem; font-weight: 600;
+      color: #c7d0d9; letter-spacing: 0.02em;
+    }
+    .hp-strip-card:hover .hp-strip-name { color: #34e3bb; }
     @media (max-width: 640px) {
-      .hp-logos, .hp-logos.hp-partners { grid-template-columns: repeat(2, 1fr); }
-      .hp-logos img { height: 120px; }
+      .hp-strip-card img { height: 130px; max-width: 220px; }
     }
 
     /* Platform screenshots */
@@ -438,35 +478,59 @@
       <div class="wrap">
         <h2>Partner Artists &amp; Projects</h2>
         <p class="hp-intro hp-center">With the success of the platform, Skulliance invited other high-quality artists and projects on Cardano to participate in partner staking - their holders earn points, redeem incentives, and climb the leaderboards too.</p>
-        <ul class="hp-logos hp-partners">
-          <li><a href="https://x.com/_nemonium" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/nemonium.jpg" alt="Nemonium" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/discosolaris" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/discosolaris.png" alt="Disco Solaris" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/DanketsuNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/danketsu.png" alt="Danketsu" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/Joshua_Squashua" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/squashua.jpg" alt="Squashua" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/netanelchn" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/netanelcohen.png" alt="Netanel Cohen" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/madmaxi__" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/maxingo.png" alt="Maxingo" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/Pendulum_NFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/pendulum.jpg" alt="Pendulum" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/aeoniumsky" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/aeoniumsky.jpg" alt="Aeoniumsky" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/havocworlds" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/havocworlds.jpg" alt="Havoc Worlds" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/adaGOATS" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/goattribe.jpg" alt="Goat Tribe" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/Threefoldbold" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/threefoldbold.png" alt="Threefold Bold" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/Fiqhi_Alfani" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/bungking.jpg" alt="Bungking" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/darkula__" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/darkula.jpg" alt="Darkula" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/heistonalpha" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/heistonalpha.jpg" alt="Heist on Alpha" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/ApprenticesCNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/apprentices.png" alt="Apprentices" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/deadpophell" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/deadpophell.png" alt="Dead Pop Hell" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/cnftfart" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/fart.jpg" alt="f.ART" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/joshuahoward" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/muses.jpg" alt="Muses of the Multiverse" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/cardanocamera" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/cardanocamera.jpg" alt="Cardano Camera" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/OldMoneyNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/oldmoney.jpg" alt="Old Money" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/JordiLeitao" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/jordi.png" alt="Jordi" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/AscenderOne" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/ascenderone.jpg" alt="Ascender One" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/thecgritual" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/ritual.png" alt="Ritual" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/MipaToys" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/mipatoys.jpg" alt="Mipa Toys" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/stagwolf" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/stagwolf.jpg" alt="Stagwolf" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/diexgrey" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/grey.png" alt="Grey" loading="lazy" decoding="async"></a></li>
-          <li><a href="https://x.com/skowllwoks" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/skowl.jpg" alt="Skowl" loading="lazy" decoding="async"></a></li>
-        </ul>
+        <?php
+        // Partner flyers, split half/half across two counter-scrolling
+        // marquee rows so the majority of artists register at a glance.
+        // Each track holds its list twice for the seamless -50% translate
+        // loop (second pass aria-hidden). Image filenames live under
+        // /staking/images/projects/.
+        $hp_partners = [
+            ['nemonium.jpg',     'Nemonium',                'https://x.com/_nemonium'],
+            ['discosolaris.png', 'Disco Solaris',           'https://x.com/discosolaris'],
+            ['danketsu.png',     'Danketsu',                'https://x.com/DanketsuNFT'],
+            ['squashua.jpg',     'Squashua',                'https://x.com/Joshua_Squashua'],
+            ['netanelcohen.png', 'Netanel Cohen',           'https://x.com/netanelchn'],
+            ['maxingo.png',      'Maxingo',                 'https://x.com/madmaxi__'],
+            ['pendulum.jpg',     'Pendulum',                'https://x.com/Pendulum_NFT'],
+            ['aeoniumsky.jpg',   'Aeoniumsky',              'https://x.com/aeoniumsky'],
+            ['havocworlds.jpg',  'Havoc Worlds',            'https://x.com/havocworlds'],
+            ['goattribe.jpg',    'Goat Tribe',              'https://x.com/adaGOATS'],
+            ['threefoldbold.png','Threefold Bold',          'https://x.com/Threefoldbold'],
+            ['bungking.jpg',     'Bungking',                'https://x.com/Fiqhi_Alfani'],
+            ['darkula.jpg',      'Darkula',                 'https://x.com/darkula__'],
+            ['heistonalpha.jpg', 'Heist on Alpha',          'https://x.com/heistonalpha'],
+            ['apprentices.png',  'Apprentices',             'https://x.com/ApprenticesCNFT'],
+            ['deadpophell.png',  'Dead Pop Hell',           'https://x.com/deadpophell'],
+            ['fart.jpg',         'f.ART',                   'https://x.com/cnftfart'],
+            ['muses.jpg',        'Muses of the Multiverse', 'https://x.com/joshuahoward'],
+            ['cardanocamera.jpg','Cardano Camera',          'https://x.com/cardanocamera'],
+            ['oldmoney.jpg',     'Old Money',               'https://x.com/OldMoneyNFT'],
+            ['jordi.png',        'Jordi',                   'https://x.com/JordiLeitao'],
+            ['ascenderone.jpg',  'Ascender One',            'https://x.com/AscenderOne'],
+            ['ritual.png',       'Ritual',                  'https://x.com/thecgritual'],
+            ['mipatoys.jpg',     'Mipa Toys',               'https://x.com/MipaToys'],
+            ['stagwolf.jpg',     'Stagwolf',                'https://x.com/stagwolf'],
+            ['grey.png',         'Grey',                    'https://x.com/diexgrey'],
+            ['skowl.jpg',        'Skowl',                   'https://x.com/skowllwoks'],
+        ];
+        $hp_img_base = 'https://www.skulliance.io/staking/images/projects/';
+        $hp_rows = array_chunk($hp_partners, (int)ceil(count($hp_partners) / 2));
+        foreach ($hp_rows as $hp_row_index => $hp_row): ?>
+        <div class="hp-strip">
+            <div class="hp-strip-track<?php echo $hp_row_index % 2 ? ' hp-reverse' : ''; ?>">
+                <?php for ($hp_pass = 0; $hp_pass < 2; $hp_pass++):
+                    foreach ($hp_row as $hp_partner):
+                        list($hp_file, $hp_name, $hp_url) = $hp_partner; ?>
+                <a class="hp-strip-card" href="<?php echo htmlspecialchars($hp_url); ?>" target="_blank" rel="noopener"<?php if ($hp_pass) echo ' aria-hidden="true" tabindex="-1"'; ?>>
+                    <img src="<?php echo $hp_img_base . $hp_file; ?>"
+                         alt="<?php echo $hp_pass ? '' : htmlspecialchars($hp_name); ?>"
+                         loading="lazy" decoding="async">
+                    <span class="hp-strip-name"><?php echo htmlspecialchars($hp_name); ?></span>
+                </a>
+                <?php endforeach; endfor; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
       </div>
     </section>
 
