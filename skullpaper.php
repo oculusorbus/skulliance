@@ -147,7 +147,7 @@ $pageTitle = $sp_order[$page];
 #skullpaper .sp-nav { list-style:none; margin:0; padding:0; text-align:left; }
 #skullpaper .sp-nav .sp-section { margin-bottom:6px; }
 #skullpaper .sp-nav a {
-	display:block; text-decoration:none; color:#7a9eb0;
+	display:block; text-decoration:none; color:#7a9eb0; text-align:left;
 	padding:7px 10px; border-radius:7px; font-size:.92rem; line-height:1.3;
 	transition:background .15s, color .15s;
 }
