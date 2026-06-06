@@ -463,6 +463,14 @@
     .hp-final p { max-width: 640px; margin: 0 auto 24px; color: #c7d0d9; }
     .hp-final .hp-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
+    /* Skulliance x Cardano sign-off image above the footer */
+    .hp-signoff {
+      display: block;
+      width: 100%; max-width: 380px; height: auto;
+      margin: 0 auto;
+      filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
+    }
+
     /* Footer */
     footer {
       padding: 30px 20px; text-align: center;
@@ -758,6 +766,13 @@
             <a class="hp-cta hp-secondary" href="https://www.skulliance.io/shop">Shop Merch</a>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Skulliance x Cardano sign-off -->
+    <section>
+      <div class="wrap">
+        <img class="hp-signoff" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="Skulliance on Cardano" width="1500" height="1674" loading="lazy" decoding="async">
       </div>
     </section>
 
