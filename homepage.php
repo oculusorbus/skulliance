@@ -463,11 +463,12 @@
     .hp-final p { max-width: 640px; margin: 0 auto 24px; color: #c7d0d9; }
     .hp-final .hp-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-    /* Skulliance x Cardano sign-off image above the footer */
-    .hp-signoff {
+    /* Skulliance x Cardano artwork above the Join Skulliance title,
+       mirroring the Skull Paper callout's icon-above-title treatment */
+    .hp-final-art {
       display: block;
-      width: 100%; max-width: 380px; height: auto;
-      margin: 0 auto;
+      width: 100%; max-width: 240px; height: auto;
+      margin: 0 auto 20px;
       filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
     }
 
@@ -758,6 +759,7 @@
     <section>
       <div class="wrap">
         <div class="hp-final">
+          <img class="hp-final-art" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="Skulliance on Cardano" width="1500" height="1674" loading="lazy" decoding="async">
           <h2>Join Skulliance</h2>
           <p>Play the games, meet the artists, grab some merch, and start earning nightly rewards for the skull NFTs you already love collecting. Cardano is our home - come make it yours.</p>
           <div class="hp-ctas">
@@ -766,13 +768,6 @@
             <a class="hp-cta hp-secondary" href="https://www.skulliance.io/shop">Shop Merch</a>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Skulliance x Cardano sign-off -->
-    <section>
-      <div class="wrap">
-        <img class="hp-signoff" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="Skulliance on Cardano" width="1500" height="1674" loading="lazy" decoding="async">
       </div>
     </section>
 
