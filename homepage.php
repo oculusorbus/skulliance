@@ -27,43 +27,125 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Skulliance - Premier Skull NFT Artists on Cardano | Staking, Games &amp; Merch</title>
+  <title>Skulliance | Skull NFT Artists on Cardano - Staking, Games &amp; Merch</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Skulliance connects art collectors with the premier skull NFT artists on Cardano - NFT staking with nightly rewards, free browser games, missions, leaderboards, and exclusive merch.">
+  <meta name="description" content="Skulliance connects collectors with premier skull NFT artists on Cardano. Stake NFTs for nightly rewards, play free browser games, and shop exclusive merch.">
+  <meta name="keywords" content="skulliance, skull nft, skull nfts, cardano nft, cardano nft staking, cnft staking, nft staking rewards, skull art nft, cardano nft projects, cnft projects, skull artists cardano, nft staking platform, cardano nft community, diamond skulls, nft idle missions, nft games, free nft games, skull art, cardano cnft, nft rewards platform">
   <meta name="theme-color" content="#07111d">
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <link rel="canonical" href="https://www.skulliance.io/">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.skulliance.io/staking/pwa/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.skulliance.io/staking/pwa/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.skulliance.io/staking/pwa/apple-touch-icon.png">
 
   <!-- OpenGraph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Skulliance">
   <meta property="og:url" content="https://www.skulliance.io/">
   <meta property="og:title" content="Skulliance - Premier Skull NFT Artists on Cardano">
-  <meta property="og:description" content="Skull NFT staking with nightly rewards, free browser games, missions, leaderboards, and exclusive merch - built on Cardano.">
-  <meta property="og:image" content="https://www.skulliance.io/staking/images/skulliancelogo.png">
-  <meta property="og:image:alt" content="Skulliance logo">
+  <meta property="og:description" content="Stake skull NFTs for nightly rewards, play free browser games, run missions, climb leaderboards, and shop exclusive merch - built on Cardano.">
+  <meta property="og:image" content="https://www.skulliance.io/staking/images/skulliance-group.jpg">
+  <meta property="og:image:width" content="1500">
+  <meta property="og:image:height" content="765">
+  <meta property="og:image:alt" content="Skulliance founding skull artists group artwork">
   <meta property="og:locale" content="en_US">
 
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@skulliance">
   <meta name="twitter:title" content="Skulliance - Premier Skull NFT Artists on Cardano">
-  <meta name="twitter:description" content="Skull NFT staking with nightly rewards, free browser games, and exclusive merch - built on Cardano.">
-  <meta name="twitter:image" content="https://www.skulliance.io/staking/images/skulliancelogo.png">
-  <meta name="twitter:image:alt" content="Skulliance logo">
+  <meta name="twitter:description" content="Stake skull NFTs for nightly rewards, play free browser games, and shop exclusive skull art merch - built on Cardano.">
+  <meta name="twitter:image" content="https://www.skulliance.io/staking/images/skulliance-group.jpg">
+  <meta name="twitter:image:alt" content="Skulliance founding skull artists group artwork">
 
-  <!-- Schema.org: Organization -->
+  <!-- Schema.org: Organization + WebSite + WebPage + games ItemList,
+       cross-linked via @id so crawlers see one connected entity graph -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Skulliance",
-    "url": "https://www.skulliance.io/",
-    "logo": "https://www.skulliance.io/staking/images/skulliancelogo.png",
-    "description": "Skulliance connects art collectors with the premier skull NFT artists on the Cardano blockchain - NFT staking with nightly rewards, free browser games, and exclusive merch.",
-    "sameAs": [
-      "https://www.x.com/skulliance",
-      "https://discord.gg/JqqBZBrph2"
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.skulliance.io/#organization",
+        "name": "Skulliance",
+        "url": "https://www.skulliance.io/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.skulliance.io/staking/images/skulliancelogo.png",
+          "width": 700,
+          "height": 300
+        },
+        "image": "https://www.skulliance.io/staking/images/skulliance-group.jpg",
+        "description": "Skulliance connects art collectors with the premier skull NFT artists on the Cardano blockchain - NFT staking with nightly rewards, free browser games, idle missions, leaderboards, and exclusive merch.",
+        "founder": {
+          "@type": "Person",
+          "name": "Oculus Orbus",
+          "url": "https://www.x.com/oculusorbus"
+        },
+        "knowsAbout": ["Skull Art", "NFT Art", "Cardano", "NFT Staking", "Browser Games", "Digital Collectibles"],
+        "sameAs": [
+          "https://www.x.com/skulliance",
+          "https://discord.gg/JqqBZBrph2",
+          "https://skulliance.gitbook.io/skulliance"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.skulliance.io/#website",
+        "url": "https://www.skulliance.io/",
+        "name": "Skulliance",
+        "publisher": { "@id": "https://www.skulliance.io/#organization" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://www.skulliance.io/#webpage",
+        "url": "https://www.skulliance.io/",
+        "name": "Skulliance - Premier Skull NFT Artists on Cardano | NFT Staking, Games & Merch",
+        "isPartOf": { "@id": "https://www.skulliance.io/#website" },
+        "about": { "@id": "https://www.skulliance.io/#organization" },
+        "primaryImageOfPage": "https://www.skulliance.io/staking/images/skulliance-group.jpg",
+        "description": "Skulliance connects collectors with the premier skull NFT artists on Cardano - NFT staking with nightly rewards, free browser games, missions, leaderboards, and exclusive merch.",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.skulliance.io/#games",
+        "name": "Free Browser Games by Skulliance",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "item": {
+              "@type": "VideoGame",
+              "name": "Monstrocity",
+              "url": "https://www.skulliance.io/staking/match3rpg.php",
+              "image": "https://www.skulliance.io/staking/images/monstrocity/logo.png",
+              "genre": ["Match 3", "Puzzle RPG"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "item": {
+              "@type": "VideoGame",
+              "name": "Skull Swap",
+              "url": "https://www.skulliance.io/staking/skullswap.php",
+              "image": "https://www.skulliance.io/staking/images/skullswap.png",
+              "genre": ["Match 3", "Puzzle"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
+          }
+        ]
+      }
     ]
   }
   </script>
