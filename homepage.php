@@ -538,56 +538,36 @@
     <section id="platform">
       <div class="wrap">
         <h2>The Staking Platform</h2>
-        <p class="hp-intro hp-center">Log in with Discord, connect your Cardano wallets, and your qualifying NFTs start earning nightly off-chain points - redeemable for exclusive incentives in the staking store. Send your NFTs on idle missions for consumable rewards, delegate core project NFTs to Diamond Skulls to earn CARBON and craft DIAMOND, explore the Skulliverse, and climb the leaderboards.</p>
+        <p class="hp-intro hp-center">Log in with Discord, connect your Cardano wallets, and your qualifying NFTs start earning nightly off-chain points - redeemable for exclusive incentives in the staking store. Claim daily rewards, send your NFTs on idle missions, build out your Realm, run the Gauntlet, delegate core project NFTs to Diamond Skulls to earn CARBON and craft DIAMOND, explore the Skulliverse, and climb the leaderboards.</p>
+        <?php
+        // Platform screenshot cards. Images are served from /staking/screenshots/
+        // (temporary home - if the folder moves, update $hp_shot_base only).
+        $hp_shot_base = 'https://www.skulliance.io/staking/screenshots/';
+        $hp_shots = [
+            ['dashboard.png',     'Dashboard',                'https://www.skulliance.io/staking/dashboard.php'],
+            ['profile.png',       'Profile',                  'https://www.skulliance.io/staking/profile.php'],
+            ['daily-rewards.png', 'Daily Rewards & Crafting', 'https://www.skulliance.io/staking/dashboard.php'],
+            ['missions.png',      'Missions',                 'https://www.skulliance.io/staking/missions.php'],
+            ['realms.png',        'Realms',                   'https://www.skulliance.io/staking/realms.php'],
+            ['gauntlet.png',      'Gauntlets',                'https://www.skulliance.io/staking/gauntlets.php'],
+            ['store.png',         'Staking Store',            'https://www.skulliance.io/staking/store.php'],
+            ['diamond-skulls.png','Diamond Skulls',           'https://www.skulliance.io/staking/diamond-skulls.php'],
+            ['delegation.png',    'Delegations',              'https://www.skulliance.io/staking/diamond-skulls.php#delegation'],
+            ['skulliverse.png',   'Skulliverse',              'https://www.skulliance.io/staking/skulliverse.php'],
+            ['leaderboard.png',   'Leaderboards',             'https://www.skulliance.io/staking/leaderboards.php'],
+            ['analytics.png',     'Analytics',                'https://www.skulliance.io/staking/analytics.php'],
+            ['monstrocity.png',   'Monstrocity - Match 3 RPG','https://www.skulliance.io/staking/match3rpg.php'],
+            ['boss-battles.png',  'Boss Battles',             'https://www.skulliance.io/staking/monstrocity.php#boss'],
+            ['skull-swap.png',    'Skull Swap',               'https://www.skulliance.io/staking/skullswap.php'],
+        ];
+        ?>
         <div class="hp-grid hp-shots">
+          <?php foreach ($hp_shots as $hp_shot): list($hp_shot_file, $hp_shot_name, $hp_shot_url) = $hp_shot; ?>
           <div class="hp-shot-card">
-            <h3>Dashboard</h3>
-            <a href="https://www.skulliance.io/staking/dashboard.php"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png" alt="Dashboard screenshot" loading="lazy" decoding="async"></a>
+            <h3><?php echo htmlspecialchars($hp_shot_name); ?></h3>
+            <a href="<?php echo $hp_shot_url; ?>"><img src="<?php echo $hp_shot_base . $hp_shot_file; ?>" alt="<?php echo htmlspecialchars($hp_shot_name); ?> screenshot" loading="lazy" decoding="async"></a>
           </div>
-          <div class="hp-shot-card">
-            <h3>Staking Store</h3>
-            <a href="https://www.skulliance.io/staking/store.php"><img src="https://www.skulliance.io/staking/images/screenshots/store.png" alt="Staking store screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Showcase</h3>
-            <a href="https://www.skulliance.io/staking/showcase.php"><img src="https://www.skulliance.io/staking/images/screenshots/showcase.png" alt="Showcase screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Missions</h3>
-            <a href="https://www.skulliance.io/staking/missions.php"><img src="https://www.skulliance.io/staking/images/screenshots/missions.png" alt="Missions screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Inventory</h3>
-            <a href="https://www.skulliance.io/staking/missions.php#inventory"><img src="https://www.skulliance.io/staking/images/screenshots/inventory.png" alt="Inventory screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Mission Stats</h3>
-            <a href="https://www.skulliance.io/staking/missions.php#stats"><img src="https://www.skulliance.io/staking/images/screenshots/stats.png" alt="Mission stats screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Diamond Skulls</h3>
-            <a href="https://www.skulliance.io/staking/diamond-skulls.php"><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png" alt="Diamond Skulls screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Delegations</h3>
-            <a href="https://www.skulliance.io/staking/diamond-skulls.php#delegation"><img src="https://www.skulliance.io/staking/images/screenshots/delegation.png" alt="Delegations screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Skulliverse</h3>
-            <a href="https://www.skulliance.io/staking/skulliverse.php"><img src="https://www.skulliance.io/staking/images/screenshots/skulliverse.png" alt="Skulliverse screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Leaderboards</h3>
-            <a href="https://www.skulliance.io/staking/leaderboards.php"><img src="https://www.skulliance.io/staking/images/screenshots/leaderboard.png" alt="Leaderboards screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Collections</h3>
-            <a href="https://www.skulliance.io/staking/collections.php"><img src="https://www.skulliance.io/staking/images/screenshots/collections.png" alt="Collections screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Transaction History</h3>
-            <a href="https://www.skulliance.io/staking/transactions.php"><img src="https://www.skulliance.io/staking/images/screenshots/transactions.png" alt="Transaction history screenshot" loading="lazy" decoding="async"></a>
-          </div>
+          <?php endforeach; ?>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
       </div>
