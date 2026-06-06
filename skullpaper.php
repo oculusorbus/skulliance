@@ -39,50 +39,50 @@ include 'header.php';
 
 // Navigation tree: each section is a page in its own right; children nest under it.
 $skullpaper_nav = [
-	['slug' => 'overview', 'title' => 'Overview', 'children' => []],
-	['slug' => 'staking', 'title' => 'Staking', 'children' => [
-		['slug' => 'staking-membership',         'title' => 'Membership'],
-		['slug' => 'staking-daily-rewards',      'title' => 'Daily Rewards'],
-		['slug' => 'staking-points-currencies',  'title' => 'Points & Currencies'],
-		['slug' => 'staking-crafting',           'title' => 'Crafting'],
+	['slug' => 'overview', 'title' => 'Overview', 'emoji' => '📖', 'children' => []],
+	['slug' => 'staking', 'title' => 'Staking', 'emoji' => '💰', 'children' => [
+		['slug' => 'staking-membership',         'title' => 'Membership',          'emoji' => '🎟️'],
+		['slug' => 'staking-daily-rewards',      'title' => 'Daily Rewards',       'emoji' => '📅'],
+		['slug' => 'staking-points-currencies',  'title' => 'Points & Currencies', 'emoji' => '🪙'],
+		['slug' => 'staking-crafting',           'title' => 'Crafting',            'emoji' => '⚒️'],
 	]],
-	['slug' => 'missions', 'title' => 'Missions', 'children' => [
-		['slug' => 'missions-consumable-items', 'title' => 'Consumable Items'],
-		['slug' => 'missions-monthly-rewards',  'title' => 'Monthly Rewards'],
+	['slug' => 'missions', 'title' => 'Missions', 'emoji' => '🎯', 'children' => [
+		['slug' => 'missions-consumable-items', 'title' => 'Consumable Items', 'emoji' => '🧪'],
+		['slug' => 'missions-monthly-rewards',  'title' => 'Monthly Rewards',  'emoji' => '🏆'],
 	]],
-	['slug' => 'realms', 'title' => 'Realms', 'children' => [
-		['slug' => 'realms-buildings', 'title' => 'Buildings'],
-		['slug' => 'realms-soldiers',  'title' => 'Soldiers'],
-		['slug' => 'realms-raids',     'title' => 'Raids'],
-		['slug' => 'realms-factions',  'title' => 'Factions'],
+	['slug' => 'realms', 'title' => 'Realms', 'emoji' => '🏰', 'children' => [
+		['slug' => 'realms-buildings', 'title' => 'Buildings', 'emoji' => '🏗️'],
+		['slug' => 'realms-soldiers',  'title' => 'Soldiers',  'emoji' => '⚔️'],
+		['slug' => 'realms-raids',     'title' => 'Raids',     'emoji' => '🐉'],
+		['slug' => 'realms-factions',  'title' => 'Factions',  'emoji' => '🚩'],
 	]],
-	['slug' => 'diamond-skulls', 'title' => 'Diamond Skulls', 'children' => [
-		['slug' => 'diamond-skulls-carbon-emissions', 'title' => 'Carbon Emissions'],
-		['slug' => 'diamond-skulls-skulliverse',      'title' => 'Skulliverse'],
+	['slug' => 'diamond-skulls', 'title' => 'Diamond Skulls', 'emoji' => '💎', 'children' => [
+		['slug' => 'diamond-skulls-carbon-emissions', 'title' => 'Carbon Emissions', 'emoji' => '♻️'],
+		['slug' => 'diamond-skulls-skulliverse',      'title' => 'Skulliverse',      'emoji' => '🌌'],
 	]],
-	['slug' => 'games', 'title' => 'Games', 'children' => [
-		['slug' => 'games-monstrocity',   'title' => 'Monstrocity'],
-		['slug' => 'games-boss-battles',  'title' => 'Boss Battles'],
-		['slug' => 'games-skull-swap',    'title' => 'Skull Swap'],
-		['slug' => 'games-gauntlets',     'title' => 'Gauntlets'],
-		['slug' => 'games-drop-ship',     'title' => 'Drop Ship'],
-		['slug' => 'games-oculus-lounge', 'title' => 'Oculus Lounge'],
+	['slug' => 'games', 'title' => 'Games', 'emoji' => '🎮', 'children' => [
+		['slug' => 'games-monstrocity',   'title' => 'Monstrocity',   'emoji' => '👾'],
+		['slug' => 'games-boss-battles',  'title' => 'Boss Battles',  'emoji' => '👹'],
+		['slug' => 'games-skull-swap',    'title' => 'Skull Swap',    'emoji' => '🔄'],
+		['slug' => 'games-gauntlets',     'title' => 'Gauntlets',     'emoji' => '🥊'],
+		['slug' => 'games-drop-ship',     'title' => 'Drop Ship',     'emoji' => '🚀'],
+		['slug' => 'games-oculus-lounge', 'title' => 'Oculus Lounge', 'emoji' => '🛋️'],
 	]],
-	['slug' => 'marketplace', 'title' => 'Marketplace', 'children' => [
-		['slug' => 'marketplace-store',    'title' => 'Store'],
-		['slug' => 'marketplace-auctions', 'title' => 'Auctions'],
-		['slug' => 'marketplace-raffles',  'title' => 'Raffles'],
-		['slug' => 'marketplace-merch',    'title' => 'Merch'],
+	['slug' => 'marketplace', 'title' => 'Marketplace', 'emoji' => '🛒', 'children' => [
+		['slug' => 'marketplace-store',    'title' => 'Store',    'emoji' => '🏪'],
+		['slug' => 'marketplace-auctions', 'title' => 'Auctions', 'emoji' => '🔨'],
+		['slug' => 'marketplace-raffles',  'title' => 'Raffles',  'emoji' => '🎫'],
+		['slug' => 'marketplace-merch',    'title' => 'Merch',    'emoji' => '👕'],
 	]],
-	['slug' => 'platform', 'title' => 'Platform', 'children' => [
-		['slug' => 'platform-dashboard',    'title' => 'Dashboard'],
-		['slug' => 'platform-gallery',      'title' => 'Gallery'],
-		['slug' => 'platform-collections',  'title' => 'Collections'],
-		['slug' => 'platform-leaderboards', 'title' => 'Leaderboards'],
-		['slug' => 'platform-analytics',    'title' => 'Analytics'],
-		['slug' => 'platform-profile',      'title' => 'Profile'],
-		['slug' => 'platform-wallets',      'title' => 'Wallets'],
-		['slug' => 'platform-transactions', 'title' => 'Transactions'],
+	['slug' => 'platform', 'title' => 'Platform', 'emoji' => '🛠️', 'children' => [
+		['slug' => 'platform-dashboard',    'title' => 'Dashboard',    'emoji' => '📊'],
+		['slug' => 'platform-gallery',      'title' => 'Gallery',      'emoji' => '🖼️'],
+		['slug' => 'platform-collections',  'title' => 'Collections',  'emoji' => '📚'],
+		['slug' => 'platform-leaderboards', 'title' => 'Leaderboards', 'emoji' => '🏅'],
+		['slug' => 'platform-analytics',    'title' => 'Analytics',    'emoji' => '📈'],
+		['slug' => 'platform-profile',      'title' => 'Profile',      'emoji' => '👤'],
+		['slug' => 'platform-wallets',      'title' => 'Wallets',      'emoji' => '👛'],
+		['slug' => 'platform-transactions', 'title' => 'Transactions', 'emoji' => '🧾'],
 	]],
 ];
 
@@ -132,7 +132,7 @@ $pageTitle = $sp_order[$page];
 #skullpaper .sp-row { display:flex; flex-wrap:wrap; align-items:flex-start; gap:0; }
 #skullpaper .sp-side {
 	flex:0 0 260px; max-width:260px; padding:20px 16px;
-	position:sticky; top:10px; align-self:flex-start;
+	position:sticky; top:10px; align-self:flex-start; text-align:left;
 }
 #skullpaper .sp-main { flex:1 1 480px; min-width:0; padding:20px 28px; text-align:left; }
 
@@ -144,7 +144,7 @@ $pageTitle = $sp_order[$page];
 	border-bottom:1px solid rgba(0,200,160,0.15);
 }
 #skullpaper .sp-brand img { width:28px; height:auto; }
-#skullpaper .sp-nav { list-style:none; margin:0; padding:0; }
+#skullpaper .sp-nav { list-style:none; margin:0; padding:0; text-align:left; }
 #skullpaper .sp-nav .sp-section { margin-bottom:6px; }
 #skullpaper .sp-nav a {
 	display:block; text-decoration:none; color:#7a9eb0;
@@ -154,9 +154,23 @@ $pageTitle = $sp_order[$page];
 #skullpaper .sp-nav a:hover { color:#e8eaed; background:rgba(0,200,160,0.07); }
 #skullpaper .sp-nav a.sp-top { color:#d6dde0; font-weight:600; }
 #skullpaper .sp-nav a.active { color:#00c8a0; background:rgba(0,200,160,0.12); font-weight:600; }
+#skullpaper .sp-emoji { display:inline-block; width:1.5em; margin-right:2px; text-align:center; }
 #skullpaper .sp-children { list-style:none; margin:2px 0 8px; padding:0 0 0 12px;
 	border-left:1px solid rgba(0,200,160,0.12); }
 #skullpaper .sp-children a { font-size:.88rem; padding:5px 10px; }
+
+/* Collapsible sections */
+#skullpaper .sp-sec-row { display:flex; align-items:stretch; gap:4px; }
+#skullpaper .sp-sec-row a.sp-top { flex:1 1 auto; min-width:0; }
+#skullpaper .sp-caret {
+	flex:0 0 auto; background:none; border:none; cursor:pointer; color:#7a9eb0;
+	padding:0 8px; border-radius:7px; font-size:.8rem; line-height:1;
+	transition:transform .15s, color .15s, background .15s;
+}
+#skullpaper .sp-caret:hover { color:#e8eaed; background:rgba(0,200,160,0.07); }
+#skullpaper .sp-section.open > .sp-sec-row .sp-caret { transform:rotate(90deg); }
+#skullpaper .sp-section > .sp-children { display:none; }
+#skullpaper .sp-section.open > .sp-children { display:block; }
 
 /* Article */
 #skullpaper .sp-article {
@@ -236,16 +250,27 @@ $pageTitle = $sp_order[$page];
 				&#9776; <span>Contents</span>
 			</button>
 			<ul class="sp-nav" id="sp-nav">
-				<?php foreach ($skullpaper_nav as $sec): ?>
-				<li class="sp-section">
-					<a class="sp-top<?php echo ($page === $sec['slug']) ? ' active' : ''; ?>"
-					   href="skullpaper.php?page=<?php echo $sec['slug']; ?>"><?php echo htmlspecialchars($sec['title']); ?></a>
+				<?php foreach ($skullpaper_nav as $sec):
+					// A section is "open" when you're on its page or one of its children.
+					$childSlugs = array_column($sec['children'], 'slug');
+					$isActiveSec = ($page === $sec['slug']);
+					$isOpen = $isActiveSec || in_array($page, $childSlugs, true);
+				?>
+				<li class="sp-section<?php echo $isOpen ? ' open' : ''; ?>">
+					<div class="sp-sec-row">
+						<a class="sp-top<?php echo $isActiveSec ? ' active' : ''; ?>"
+						   href="skullpaper.php?page=<?php echo $sec['slug']; ?>"><span class="sp-emoji"><?php echo $sec['emoji']; ?></span><?php echo htmlspecialchars($sec['title']); ?></a>
+						<?php if (!empty($sec['children'])): ?>
+						<button type="button" class="sp-caret" aria-label="Toggle section"
+						        onclick="this.closest('.sp-section').classList.toggle('open')">&#9656;</button>
+						<?php endif; ?>
+					</div>
 					<?php if (!empty($sec['children'])): ?>
 					<ul class="sp-children">
 						<?php foreach ($sec['children'] as $child): ?>
 						<li>
 							<a class="<?php echo ($page === $child['slug']) ? 'active' : ''; ?>"
-							   href="skullpaper.php?page=<?php echo $child['slug']; ?>"><?php echo htmlspecialchars($child['title']); ?></a>
+							   href="skullpaper.php?page=<?php echo $child['slug']; ?>"><span class="sp-emoji"><?php echo $child['emoji']; ?></span><?php echo htmlspecialchars($child['title']); ?></a>
 						</li>
 						<?php endforeach; ?>
 					</ul>
