@@ -13,3 +13,5 @@ Your Profile is your public showcase on Skulliance - a snapshot of your activity
 ## Visibility
 
 Profiles respect your visibility setting (see [[platform-dashboard]]). You can always view your own profile; others can only view it if you've made it public. This is the same visibility that gates your appearance on [[platform-leaderboards]] and the [[platform-gallery]].
+
+![Public staker profile with stats, missions, and realm](https://www.skulliance.io/staking/images/screenshots/profile.png)

@@ -67,3 +67,5 @@ The duration of a potential raid is calculated by the difference in offense and 
 * **Raid in Progress** - This signifies that you are already actively raiding this realm.
 * **# Level(s) Out of Range** - Realms are only allowed to raid realms 3 defense levels lower than their current offense level. This ensures that weaker realms don't get overpowered by stronger realms.
 * **Max Raids Reached** - This indicates that you have reached the maximum number of raids allowed based on your portal level and cannot raid anymore Realms at this time.
+
+![Realm locations, inventory, and realm artwork](https://www.skulliance.io/staking/images/screenshots/realms.png)

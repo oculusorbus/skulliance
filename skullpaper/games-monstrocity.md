@@ -27,3 +27,5 @@ Each character carries combat stats: **health, strength, speed, tactics, size, a
 The monthly Monstrocity leaderboard pays out **30,000 CLAW + 30,000 CARBON**, divided down the leaderboard by rank (rank 1 gets the full share, rank 2 half, and so on). CLAW is Monstrocity's own points; CARBON can be burned for DIAMOND. See [[staking-crafting]].
 
 > Monstrocity is also referred to as "Match 3 RPG." **Boss Battles** are a related but separate mode built on the same combat engine - see [[games-boss-battles]].
+
+![Monstrocity match 3 RPG battle](https://www.skulliance.io/staking/images/screenshots/monstrocity.png)

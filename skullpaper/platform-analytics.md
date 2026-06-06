@@ -12,3 +12,5 @@ Analytics is the platform-wide transparency dashboard - a public view of overall
 * **Trends** - time-series charts filterable by week, month, year, all-time, or a custom range.
 
 Analytics aggregates platform totals only - it is not a personal dashboard and shows no individual balances. For your own complete history, see your [[platform-transactions]] ledger.
+
+![Skulliance Analytics public transparency dashboard](https://www.skulliance.io/staking/images/screenshots/analytics.png)

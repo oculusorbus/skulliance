@@ -16,3 +16,5 @@ The Store is where stakers redeem their points for exclusive incentives - NFTs a
 ## Submissions
 
 Approved creators can submit items to the store through the submission form, making the store a continually refreshed pool of community rewards.
+
+![Staking store items with point claim buttons](https://www.skulliance.io/staking/images/screenshots/store.png)

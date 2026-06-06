@@ -15,3 +15,5 @@ DIAMOND can be crafted by burning an equal amount of ALL core artist points in t
 Core artist NFTs in the store can be claimed with artist points OR a discounted amount of DIAMOND.
 
 ![Diamond Skulls](https://www.skulliance.io/staking/images/projects/skulliance.jpg)
+
+![Diamond Skull cards with rarity ranks and delegation status](https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png)

@@ -20,3 +20,5 @@ Boss Battles run on a **weekly** cadence. The weekly leaderboard ranks players b
 ## Consumables
 
 Encounters can use the shared platform consumables (success boosts, Fast Forward, Double Rewards, Random Reward) - see [[missions-consumable-items]].
+
+![Boss Battles roster](https://www.skulliance.io/staking/images/screenshots/boss-battles.png)

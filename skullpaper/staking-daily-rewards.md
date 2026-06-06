@@ -47,3 +47,5 @@ Although the random rewards are generous, they do not compete with existing rewa
 Another benefit of this feature is that it allows non-members and base members the ability to collect points from projects they don't own yet and eventually experiment with crafting DIAMOND.
 
 Even though you may earn points from a project you don't own yet, you will not show up on leaderboards until you actually own an NFT from that project.
+
+![Daily rewards streak and crafting panel](https://www.skulliance.io/staking/images/screenshots/daily-rewards.png)

@@ -35,3 +35,5 @@ Before an encounter resolves, you can play consumables (see [[missions-consumabl
 * Each win pays **100 points**.
 * The **weekly leaderboard** ranks by **sweeps first, then total wins, then fewest losses**.
 * The weekly pool is **25,000 CARBON**, divided down the rankings by rank and convertible to DIAMOND at 100:1. See [[staking-crafting]].
+
+![A Gauntlet encounter with win odds and resources](https://www.skulliance.io/staking/images/screenshots/gauntlet.png)

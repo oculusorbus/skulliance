@@ -14,3 +14,5 @@ Leaderboards track competitive performance across the entire platform. Most mode
 ## How It Works
 
 Each mode ranks by its own calculated score. The page shows a top-3 podium with avatars and medals, followed by an extended ranked list. Only stakers who've set their profile to visible appear publicly. Reward-bearing leaderboards divide their pool down the rankings by rank, so finishers beyond the podium still earn a share.
+
+![All-time activity leaderboard with podium](https://www.skulliance.io/staking/images/screenshots/leaderboard.png)

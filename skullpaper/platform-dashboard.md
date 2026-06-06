@@ -11,3 +11,5 @@ The Dashboard is your staking home base - a view of all the NFTs you have staked
 ## Visibility
 
 On your first visit you choose a **visibility setting** that controls whether your NFTs and activity appear publicly - for example on [[platform-leaderboards]] and the [[platform-gallery]]. You can keep your collection private or make it visible to the community.
+
+![Staked NFT dashboard](https://www.skulliance.io/staking/images/screenshots/dashboard.png)

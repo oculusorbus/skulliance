@@ -49,3 +49,5 @@ Remember how fun it was to delegate to your Diamond Skulls? Our hope is that mis
 If you're a partner and interested in participating in mission utility, please provide a title, square image (500px), and 2 sentence description for your mission and it will be added to the platform ASAP.
 
 At least 1 base mission is needed for all partner artists. Skulliance will configure tiered cost, rewards, and duration as required for all missions.
+
+![Available missions with project filter icons](https://www.skulliance.io/staking/images/screenshots/missions.png)

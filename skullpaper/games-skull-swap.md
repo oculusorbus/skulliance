@@ -17,3 +17,5 @@ Skull Swap is a fast, pure **match-3 puzzle** - no RPG layer, just a score chase
 ## Leaderboard & Rewards
 
 Skull Swap runs on a **weekly** cadence and ranks players by their **best single-run score**. The weekly leaderboard distributes a pool of **25,000 CARBON** down the rankings by rank; top finishers' CARBON is convertible to DIAMOND at 100:1. See [[staking-crafting]].
+
+![Skull Swap match 3 board mid-run](https://www.skulliance.io/staking/images/screenshots/skull-swap.png)

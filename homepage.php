@@ -399,22 +399,20 @@
     }
     .hp-shot-card a:hover img { transform: translateY(-2px); }
 
-    /* Skull Paper callout */
+    /* Skull Paper callout - centered like the final Join Skulliance panel,
+       skull icon above the title */
     .hp-paper {
-      display: flex; align-items: center; gap: 28px;
+      text-align: center; padding: 56px 20px;
       background: linear-gradient(135deg, rgba(0, 200, 160, 0.10), rgba(5, 150, 196, 0.07));
       border: 1px solid rgba(0, 200, 160, 0.30);
-      border-radius: 16px; padding: 30px 34px;
+      border-radius: 16px;
     }
-    .hp-paper-icon { width: 84px; height: auto; flex: 0 0 auto; }
-    .hp-paper-body { flex: 1 1 auto; }
-    .hp-paper-body h2 { text-align: left; margin: 0 0 8px; }
-    .hp-paper-body p { color: #c7d0d9; margin: 0 0 18px; max-width: 720px; }
-    @media (max-width: 640px) {
-      .hp-paper { flex-direction: column; text-align: center; gap: 18px; padding: 26px 20px; }
-      .hp-paper-body h2 { text-align: center; }
-      .hp-paper-body p { margin-left: auto; margin-right: auto; }
+    .hp-paper-icon {
+      display: block; width: 84px; height: auto; margin: 0 auto 18px;
+      filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
     }
+    .hp-paper h2 { margin: 0 0 12px; }
+    .hp-paper p { color: #c7d0d9; max-width: 680px; margin: 0 auto 24px; }
 
     /* Membership tiers */
     .hp-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 24px; }
@@ -677,11 +675,9 @@
       <div class="wrap">
         <div class="hp-paper">
           <img class="hp-paper-icon" src="https://www.skulliance.io/staking/pwa/skulliance-logo-icon.png" alt="Skull Paper" loading="lazy" decoding="async">
-          <div class="hp-paper-body">
-            <h2>Dive Deeper: The Skull Paper</h2>
-            <p>Every feature above &mdash; staking rewards, missions, Realms, Diamond Skulls, the games, and the marketplace &mdash; is documented in depth in the Skull Paper, our living platform guide. Mechanics, rates, currencies, and formulas, kept in sync with the platform itself.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/skullpaper.php">Read the Skull Paper</a>
-          </div>
+          <h2>Dive Deeper: The Skull Paper</h2>
+          <p>Every feature above - staking rewards, missions, Realms, Diamond Skulls, the games, and the marketplace - is documented in depth in the Skull Paper, our living platform guide. Mechanics, rates, points, and formulas, kept in sync with the platform itself.</p>
+          <a class="hp-cta" href="https://www.skulliance.io/staking/skullpaper.php">Read the Skull Paper</a>
         </div>
       </div>
     </section>
