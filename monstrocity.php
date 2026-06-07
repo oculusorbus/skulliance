@@ -3639,6 +3639,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			}
 			
 		async saveProgress() {
+		  // Logged-out players have no server progress; the endpoint includes
+		  // the login gate and would just redirect slowly. Skip instantly.
+		  if (!window.isLoggedIn) {
+		    console.log("saveProgress skipped: not logged in");
+		    return;
+		  }
 		  const data = {
 		    currentLevel: this.currentLevel, // Now 1-28
 		    grandTotalScore: this.grandTotalScore
@@ -3676,6 +3682,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		}
 
 		async loadProgress() {
+		    // Logged-out players always start fresh - skip the slow gate trip.
+		    if (!window.isLoggedIn) {
+		      return { loadedLevel: 1, loadedScore: 0, hasProgress: false };
+		    }
 		    try {
 		      console.log("Fetching progress from ajax/load-monstrocity-progress.php");
 		      const response = await fetch('ajax/load-monstrocity-progress.php', {
@@ -3708,6 +3718,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		  }
 
 	  async clearProgress() {
+	    // Logged-out: nothing on the server to clear - do the local reset
+	    // the success path would have done and return immediately.
+	    if (!window.isLoggedIn) {
+	      this.currentLevel = 1;
+	      this.grandTotalScore = 0;
+	      this.clearBoard();
+	      log('Progress cleared');
+	      return;
+	    }
 	    try {
 	      const response = await fetch('ajax/clear-monstrocity-progress.php', {
 	        method: 'POST',
@@ -4044,6 +4063,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		initGame() {
 		    var self = this;
 		    console.log('initGame: Started with this.currentLevel=' + this.currentLevel);
+		    // Invalidate any pending end-level continuation (delayed win
+		    // cosmetics behind in-flight saves) - see checkGameOver's winSeq.
+		    this._winSeq = (this._winSeq || 0) + 1;
 		    this.selectedBoss = null;
 		    this.selectedCharacter = null;
 		    console.log('initGame: Cleared selectedBoss and selectedCharacter');
@@ -5304,6 +5326,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      } else if (this.player2.health <= 0) {
 	          console.log("Player 2 health <= 0, triggering game over (win)");
 
+	          // Stale-continuation token: everything after the awaited saves
+	          // below (second win jingle, battle-damaged art swap, end-level
+	          // animations) must NOT run if the player has already advanced -
+	          // initGame() bumps the sequence, invalidating this continuation.
+	          this._winSeq = (this._winSeq || 0) + 1;
+	          const winSeq = this._winSeq;
+
 	          if (this.selectedBoss) {
 	              this.player2.health = 0;
 	              await this.saveBossHealth();
@@ -5367,9 +5396,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  }
 	              }
 
-	              await this.saveScoreToDatabase(this.currentLevel);
+	              // Mutate game state SYNCHRONOUSLY before any awaits. The
+	              // NEXT LEVEL button is already live above; previously the
+	              // level increment sat behind the awaited saves, so a fast
+	              // click started the SAME level and the delayed continuation
+	              // then incremented mid-round. Logged out, the save endpoints
+	              // redirect through the login gate, stretching that window to
+	              // several seconds and making the race easy to hit.
+	              const completedLevel = this.currentLevel;
+	              const isFinalLevel = (completedLevel === opponentsConfig.length);
+	              if (!isFinalLevel) {
+	                  this.clearBoard();
+	                  this.currentLevel += 1;
+	              }
 
-	              if (this.currentLevel === opponentsConfig.length) {
+	              await this.saveScoreToDatabase(completedLevel);
+
+	              if (isFinalLevel) {
 	                  try {
 	                      this.sounds.finalWin.play();
 	                  } catch (err) {
@@ -5380,12 +5423,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  await this.clearProgress();
 	                  log("Game completed! Grand total score reset.");
 	              } else {
-	                  this.clearBoard();
-	                  this.currentLevel += 1;
 	                  await this.saveProgress();
 	                  console.log(`Progress saved: currentLevel=${this.currentLevel}`);
-	                  this.sounds.win.play();
+	                  if (winSeq === this._winSeq) this.sounds.win.play();
 	              }
+	          }
+
+	          // Player already advanced while the saves were in flight: skip
+	          // the cosmetic tail (battle-damaged art swap + end-level
+	          // animations) so it can't ghost into the new round.
+	          if (winSeq !== this._winSeq) {
+	              console.log("checkGameOver: stale win continuation skipped");
+	              return;
 	          }
 
 	          let damagedUrl;
@@ -5455,6 +5504,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
+	    // Logged-out scores can't be saved (server enforces this anyway);
+	    // skip the slow login-gate redirect and tell the player why.
+	    if (!window.isLoggedIn) {
+	      log(`Level ${completedLevel} complete! Log in through Skulliance to save scores and compete on the leaderboard.`);
+	      return;
+	    }
 	    const data = {
 	      level: completedLevel,
 	      score: this.grandTotalScore,
