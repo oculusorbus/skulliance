@@ -1711,7 +1711,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   </script>
 </head>
 <body>
+  <?php if ($user_id): ?>
   <a id="monstrocity-exit" href="dashboard.php" aria-label="Exit Monstrocity and return to Skulliance"><span class="mx-arrow">&larr;</span><span class="mx-label">Exit</span></a>
+  <?php endif; ?>
   <div class="game-container">
     <div id="game-over-container">
       <div id="game-over"></div>
