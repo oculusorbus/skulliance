@@ -1061,6 +1061,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       
       #game-over-container {
         top: 317px;
+        /* Nudge the win/lose modal down so it sits centered over the board
+           after the mobile layout shifts (pill + full-viewport container). */
+        margin-top: 41px;
       }
 
       #character-select-container {
