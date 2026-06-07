@@ -965,6 +965,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         right: 0;
         height: 56px;
         background: #0d2230;
+        /* Carry the container's 2px side borders up through the strip so
+           the teal verticals run unbroken from the top of the page into
+           the game board, instead of starting abruptly at the board. */
+        box-sizing: border-box;
+        border-left: 2px solid rgba(0, 200, 160, 0.22);
+        border-right: 2px solid rgba(0, 200, 160, 0.22);
         z-index: 99970;
       }
       
@@ -5388,7 +5394,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameOver = true;
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Win!";
-	          turnIndicator.textContent = "Game Over";
+	          // Not "Game Over" - that misleads players (especially now the
+	          // mobile pill shows this) into thinking the whole game ended
+	          // when they only cleared a level. currentLevel hasn't been
+	          // incremented yet here, so it's the level just completed.
+	          if (this.selectedBoss) {
+	              turnIndicator.textContent = "Boss Defeated!";
+	          } else if (this.currentLevel === opponentsConfig.length) {
+	              turnIndicator.textContent = "Campaign Complete!";
+	          } else {
+	              turnIndicator.textContent = `Level ${this.currentLevel} Complete`;
+	          }
 			  if (this.selectedBoss) {
 		          try {
 	          		  this.sounds.finalWin.play();
