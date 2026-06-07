@@ -997,14 +997,35 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         flex-direction: column;
         align-items: center;
         gap: 0px;
+        /* The turn indicator is now a fixed pill (below) instead of an
+           in-flow box; preserve the ~44px its box used to reserve so the
+           tuned mobile layout (board offset, game-over position) doesn't
+           shift. */
+        margin-top: 44px;
       }
-      
+
       .turn-indicator {
         /* Was opacity:0 - mobile users had no level/turn feedback at all.
-           The box always occupied layout space (opacity, not display),
-           so showing it doesn't shift the board layout below. Slightly
-           smaller so "Level 28 of 28 - Opponent's Turn" fits one line. */
-        font-size: 0.95em;
+           Simply unhiding it doesn't work: the board is pulled up 225px
+           on mobile and its tiles paint directly over the indicator's
+           flow position. Instead it floats as a fixed pill at the top of
+           the viewport (same treatment as the exit arrow), always
+           readable and never under the board. */
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 99980;
+        margin: 0;
+        font-size: 0.85em;
+        background: rgba(7, 17, 29, 0.92);
+        border: 1px solid rgba(0, 200, 160, 0.45);
+        border-radius: 999px;
+        padding: 7px 14px;
+        white-space: nowrap;
+        max-width: calc(100vw - 110px);
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #game-board {
