@@ -320,7 +320,8 @@ include 'header.php';
 #skullpaper .sp-article a:hover { text-decoration:underline; }
 #skullpaper .sp-article strong { color:#e8eaed; }
 #skullpaper .sp-article img {
-	max-width:100%; height:auto; border-radius:10px; margin:8px 0 20px;
+	display:block; max-width:min(100%, 1000px); height:auto;
+	border-radius:10px; margin:8px auto 20px;
 	border:1px solid rgba(0,200,160,0.12);
 }
 #skullpaper .sp-article table { border-collapse:collapse; width:100%; margin:0 0 18px; }
