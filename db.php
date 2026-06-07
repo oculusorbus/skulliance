@@ -4195,9 +4195,13 @@ function fireworks(){}
 
 // Universal leaderboard renderer — called by all check*Leaderboard functions
 // Realm Power leaderboard: ranks ACTIVE realms by total location levels
-// (sum across all seven locations, max 70) so the strongest realms are
-// visible at a glance without browsing the realms map. Offense/Defense
-// chips use the same calculated ratings the realms list shows.
+// (sum across the seven gameplay locations) so the strongest realms are
+// visible at a glance without browsing the realms map. There is no fixed
+// maximum: purchased upgrades cap at level 10 per location, but the raid
+// defense reward (updateRealmLocationLevel credit) raises locations past
+// 10 without limit, so strong defenders climb beyond 70 total over time.
+// Offense/Defense chips use the same calculated ratings the realms list
+// shows.
 function checkRealmsLeaderboard($conn){
 	$sql = "SELECT realms.id AS realm_id, realms.name AS realm_name, users.id AS user_id,
 	               users.username, users.avatar, users.discord_id, users.visibility,
@@ -4236,7 +4240,7 @@ function checkRealmsLeaderboard($conn){
 		}
 		if($leaderboardCounter <= 3){
 			global $leaderboard_top3;
-			$leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($total).' / 70 levels'];
+			$leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($total).' levels'];
 		}
 		$highlight = (isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id']);
 		$offense = calculateRaidOffense($conn, $row['realm_id']);
@@ -4245,7 +4249,7 @@ function checkRealmsLeaderboard($conn){
 		$name_html = htmlspecialchars($row['realm_name'])." <span style='opacity:.6'>&middot;</span> <a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 		$stats = [
 			'Faction' => $row['currency'],
-			'Levels'  => number_format($total)." / 70",
+			'Levels'  => number_format($total),
 			'Offense' => "Lv ".$offense,
 			'Defense' => "Lv ".$defense,
 		];
