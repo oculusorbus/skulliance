@@ -4207,6 +4207,7 @@ function checkRealmsLeaderboard($conn){
 	        INNER JOIN users ON users.id = realms.user_id
 	        INNER JOIN projects ON projects.id = realms.project_id
 	        LEFT JOIN realms_locations ON realms_locations.realm_id = realms.id
+	             AND realms_locations.location_id IN (1,2,3,4,5,6,7)
 	        WHERE realms.active = '1'
 	        GROUP BY realms.id
 	        ORDER BY total_levels DESC, realms.name ASC";
