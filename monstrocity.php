@@ -965,12 +965,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         right: 0;
         height: 56px;
         background: #0d2230;
-        /* Carry the container's 2px side borders up through the strip so
-           the teal verticals run unbroken from the top of the page into
-           the game board, instead of starting abruptly at the board. */
-        box-sizing: border-box;
-        border-left: 2px solid rgba(0, 200, 160, 0.22);
-        border-right: 2px solid rgba(0, 200, 160, 0.22);
         z-index: 99970;
       }
       
@@ -1706,6 +1700,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       color: #e8eaed !important;
       border: 1px solid rgba(0, 200, 160, 0.25) !important;
       border-radius: 6px !important;
+    }
+
+    /* Mobile: drop the container's side borders and outline ring so the
+       game surface (and the pill backdrop strip, which shares #0d2230)
+       reads as one solid edge-to-edge backdrop across the phone, instead
+       of a bordered panel. Placed after the .game-container override above
+       so this wins the !important cascade. Desktop keeps its framed look. */
+    @media (max-width: 1025px) {
+      .game-container {
+        border-left: 0 !important;
+        border-right: 0 !important;
+        box-shadow: none !important;
+      }
     }
   </style>
 
