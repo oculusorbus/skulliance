@@ -2614,10 +2614,14 @@ $conn->close();
 			success: function(resp) {
 				try { var r = JSON.parse(resp); } catch(e) { var r = {success:false}; }
 				if (r.success) {
-					openNotify('Rewards claimed!');
+					// No success modal: the location modal refresh below
+					// already shows the claimed gear/items/CARBON, so an
+					// extra OK-to-dismiss dialog was pure friction.
 					var loc = window._currentLocModal;
 					if (loc) openLocationModal(loc);
 				} else {
+					// Kept: nothing changes visually in this case, so
+					// without feedback the button would feel dead.
 					openNotify('Nothing to claim.');
 				}
 			}
