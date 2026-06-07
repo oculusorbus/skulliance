@@ -6829,13 +6829,20 @@ function getRecentRaidedRealms($conn){
 	}
 }
 
-// Get recent realms raiding or raided limited by current portal level
+// Get recent realms raiding or raided limited by current portal level.
+// Drives revenge eligibility (out-of-range raids are allowed against realms
+// that raided you), so "recent" must mean recent in TIME as well: without
+// the 30-day window, an inactive realm's final raids sat in this list
+// forever - they never raided again, the list never rotated, and their
+// victims could revenge-raid them perpetually despite being far out of
+// range. 30 days matches the platform's own activity standard (realms
+// auto-deactivate after a month without raiding).
 function getRecentRealmsRaiding($conn, $realm_id){
 	$portal_level = getRealmLocationLevel($conn, $realm_id, 1);
 	if($portal_level == 0){
 		$portal_level = 1;
 	}
-	$sql = "SELECT defense_id FROM raids WHERE offense_id = '".$realm_id."' ORDER BY id DESC LIMIT ".$portal_level;
+	$sql = "SELECT defense_id FROM raids WHERE offense_id = '".$realm_id."' AND created_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) ORDER BY id DESC LIMIT ".$portal_level;
 	$result = $conn->query($sql);
 	
 	$recent_realms = array();
@@ -6996,6 +7003,29 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 		$offense_id = getRealmID($conn);
 		$defense_id = intval($defense_id);
 		$duration   = max(2, intval($duration));
+
+		// Server-side eligibility - the realm list UI is not a security
+		// boundary (stale pages and direct ajax calls bypass it). Mirrors
+		// the listing rules: no duplicate in-progress raid; and unless
+		// revenge applies (they raided us within the last 30 days, see
+		// getRecentRealmsRaiding), the target must not be establishing
+		// (defense 0), must be within 3 defense levels of our offense,
+		// and must not have been successfully looted too recently.
+		if(!checkRealmRaidStatus($conn, $defense_id)){
+			return 0;
+		}
+		$revenge = in_array($offense_id, getRecentRealmsRaiding($conn, $defense_id));
+		if(!$revenge){
+			$offense     = calculateRaidOffense($conn, $offense_id);
+			$defense     = calculateRaidDefense($conn, $defense_id);
+			$raw_offense = calculateRawRaidOffense($conn, $offense_id);
+			$raw_defense = calculateRawRaidDefense($conn, $defense_id);
+			if(($raw_defense == 0 && $raw_offense != 0)
+				|| (($offense - $defense) > 3)
+				|| in_array($defense_id, getRecentRaidedRealms($conn))){
+				return 0;
+			}
+		}
 
 		// Resolve which consumable IDs to apply
 		$consumable_ids = array();
