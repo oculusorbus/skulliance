@@ -14,11 +14,28 @@ if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
 	if (is_array($cookie)) { $_SESSION = $cookie; }
 }
 
-// Default roster shown to logged-out visitors. Mirrors the client-side fallback
-// in monstrocity.php so the select screen is identical either way.
+// Default roster shown to logged-out visitors: all 14 base Monstrocity
+// characters, stat-balanced so no single pick dominates. Each totals ~12
+// "power" — stat-sum = 12 minus a powerup cost (Minor Regen 0, Regenerate 1,
+// Boost Attack/Heal 2), centred on Craig's 4/4/4 (Craig gets +1 STR as the
+// flagship). Size carries its own HP/Tactics tradeoff in-engine, so personality
+// is leaned into it. Keep in sync with the JS fallback in monstrocity.php and
+// the Monstrocity page in the Skull Paper.
 $default_characters = array(
-	array('name' => 'Craig',  'strength' => 4, 'speed' => 4, 'tactics' => 4, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
-	array('name' => 'Dankle', 'strength' => 3, 'speed' => 5, 'tactics' => 3, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Heal'),
+	array('name' => 'Craig',             'strength' => 5, 'speed' => 4, 'tactics' => 4, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Minor Regen'),
+	array('name' => 'Merdock',           'strength' => 5, 'speed' => 3, 'tactics' => 4, 'size' => 'Large',  'type' => 'Base', 'powerup' => 'Minor Regen'),
+	array('name' => 'Goblin Ganger',     'strength' => 3, 'speed' => 5, 'tactics' => 4, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Minor Regen'),
+	array('name' => 'Texby',             'strength' => 3, 'speed' => 4, 'tactics' => 5, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Minor Regen'),
+	array('name' => 'Mandiblus',         'strength' => 5, 'speed' => 3, 'tactics' => 3, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
+	array('name' => 'Koipon',            'strength' => 3, 'speed' => 3, 'tactics' => 5, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
+	array('name' => 'Slime Mind',        'strength' => 3, 'speed' => 4, 'tactics' => 4, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Regenerate'),
+	array('name' => 'Billandar and Ted', 'strength' => 4, 'speed' => 4, 'tactics' => 3, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
+	array('name' => 'Dankle',            'strength' => 5, 'speed' => 3, 'tactics' => 2, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Boost Attack'),
+	array('name' => 'Jarhead',           'strength' => 4, 'speed' => 4, 'tactics' => 2, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Boost Attack'),
+	array('name' => 'Spydrax',           'strength' => 3, 'speed' => 5, 'tactics' => 2, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Heal'),
+	array('name' => 'Katastrophy',       'strength' => 4, 'speed' => 2, 'tactics' => 4, 'size' => 'Large',  'type' => 'Base', 'powerup' => 'Heal'),
+	array('name' => 'Ouchie',            'strength' => 5, 'speed' => 3, 'tactics' => 2, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Heal'),
+	array('name' => 'Drake',             'strength' => 3, 'speed' => 4, 'tactics' => 3, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Heal'),
 );
 
 if(isset($_SESSION['userData']['user_id'])){
