@@ -1000,7 +1000,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
       
       .turn-indicator {
-        opacity: 0;
+        /* Was opacity:0 - mobile users had no level/turn feedback at all.
+           The box always occupied layout space (opacity, not display),
+           so showing it doesn't shift the board layout below. Slightly
+           smaller so "Level 28 of 28 - Opponent's Turn" fits one line. */
+        font-size: 0.95em;
       }
 
       #game-board {
@@ -3996,7 +4000,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        : this.player1.strength >= this.player2.strength 
 	          ? this.player1 
 	          : this.player2;
-	    turnIndicator.textContent = `Level ${this.currentLevel} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
+	    turnIndicator.textContent = `Level ${this.currentLevel} of ${opponentsConfig.length} - ${this.currentTurn === this.player1 ? "Player" : "Opponent"}'s Turn`;
   
 	    if (this.currentTurn === this.player2 && this.gameState !== "gameOver") {
 	      setTimeout(() => this.aiTurn(), 1000);
@@ -4129,7 +4133,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    this.initBoard();
 		    this.gameState = this.currentTurn === this.player1 ? 'playerTurn' : 'aiTurn';
-		    turnIndicator.textContent = 'Level ' + this.currentLevel + ' - ' + (this.currentTurn === this.player1 ? 'Player' : 'Opponent') + '\'s Turn';
+		    turnIndicator.textContent = 'Level ' + this.currentLevel + ' of ' + opponentsConfig.length + ' - ' + (this.currentTurn === this.player1 ? 'Player' : 'Opponent') + '\'s Turn';
 
 		    if (this.currentTurn === this.player2) {
 		        setTimeout(function() { self.aiTurn(); }, 1000);
