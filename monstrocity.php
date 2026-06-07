@@ -951,15 +951,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         max-height: none;
         margin-top: 0px;
       }
-      /* Opaque strip pinned to the viewport top behind the pill so the
-         page's themed background image never peeks through above the
-         game. Fixed (like the pill), full width, matching the skinned
-         container color; z-index one step under the pill (99980).
-         Lives on .game-container so display:none during character
-         select hides it together with the game. */
+      /* Opaque strip at the top of the page behind the pill so the
+         themed background image never peeks through above the game.
+         Absolute like the pill (NOT fixed) so both scroll away with the
+         page instead of riding over the board; z-index one step under
+         the pill (99980). Lives on .game-container so display:none
+         during character select hides it together with the game. */
       .game-container::before {
         content: '';
-        position: fixed;
+        position: absolute;
         top: 0;
         left: 0;
         right: 0;
@@ -1027,11 +1027,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         /* Was opacity:0 - mobile users had no level/turn feedback at all.
            Simply unhiding it doesn't work: the board is pulled up 225px
            on mobile and its tiles paint directly over the indicator's
-           flow position. Instead it floats as a fixed pill at the top of
-           the viewport (same treatment as the exit arrow), always
-           readable and never under the board. */
-        position: fixed;
-        top: calc(env(safe-area-inset-top, 0px) + 10px);
+           flow position. Instead it sits as a pill at the top of the
+           page. position:absolute (anchored to the document, NOT fixed):
+           it must scroll away with the page so it never rides over the
+           board when the player scrolls down mid-game. */
+        position: absolute;
+        top: 10px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 99980;
