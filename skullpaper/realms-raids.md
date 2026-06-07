@@ -29,7 +29,7 @@ Attackers should seek out realms with the highest success rates for raids. This 
 
 ## Raid Defense
 
-If the attacker fails during the raid, a random location from their offense is damaged by 1 level and the defender's same offense location is upgraded by 1 level. There is also a 1 in 3 chance that the attacker's portal will be damaged by 1 level, reducing the attacker's number of concurrent raids allotted.
+If the attacker fails during the raid, a random location from their offense is damaged by 1 level and the defender's same offense location is upgraded by 1 level - and this defensive upgrade is **not** capped at Level 10, so strong defenders push their locations past the purchasable soft limit (see [[realms-locations]]). There is also a 1 in 3 chance that the attacker's portal will be damaged by 1 level, reducing the attacker's number of concurrent raids allotted.
 
 ### Defensive Strategy
 

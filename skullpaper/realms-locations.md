@@ -1,6 +1,6 @@
 # Locations
 
-Every Realm contains **seven locations**. Each one is upgraded independently using core project points, and each caps at **Level 10**. Your locations are split into offensive and defensive roles, and several of them passively produce resources every night.
+Every Realm contains **seven locations**. Each one is upgraded independently using core project points, and purchased upgrades cap at **Level 10** - though raid performance can push locations beyond it (see below). Your locations are split into offensive and defensive roles, and several of them passively produce resources every night.
 
 ## Upgrade Cost
 
@@ -9,6 +9,10 @@ Upgrading a location to its next level costs **next level × 100** core project 
 Upgrades complete on a timer and are claimed automatically when you visit the Realms page. A completed upgrade overrides any damage taken while it was in progress.
 
 **Upgrade window strategy:** because completed raids are also auto-claimed when you load the page, a freshly upgraded location can be damaged immediately by an incoming raid that resolves at the same time. Monitor your upgrade timers against your incoming/outgoing raids - claim a finished upgrade and queue the next one *before* a raid resolves, or you risk repeating (or dropping below) the level you just paid for. At max level, keep re-queuing Level 10 upgrades to instantly repair any incoming damage.
+
+## Beyond Level 10
+
+Level 10 is a **soft limit**: it's the most you can *buy*. Purchased upgrades max out at Level 10, and at that point upgrades can only *maintain* the location at 10. But raids can take locations further - when an incoming raid against you **fails**, the matching offense location in your Realm is upgraded by 1 level, with no cap. Raid and defend well, and your locations push past the soft limit over time, raising your offense and defense ratings beyond what points alone can purchase. Total location levels are ranked on the **Realm Power leaderboard**. See [[realms-raids]].
 
 ## The Seven Locations
 
