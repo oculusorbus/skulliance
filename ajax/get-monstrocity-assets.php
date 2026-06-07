@@ -1,6 +1,25 @@
 <?php
 include '../db.php';
-include '../skulliance.php';
+
+// Lightweight session restore — intentionally do NOT include skulliance.php.
+// That file is the login gate: for anonymous / edge sessions it issues header()
+// redirects (error.php, or the external discord.gg) and runs membership
+// bootstrap. Including it in this public data endpoint made the logged-out
+// character-select fetch get redirected instead of receiving JSON, so the
+// client's 5-second timeout fired and only THEN showed the default characters.
+// We only need the session to know whether the visitor is logged in. (Same
+// lightweight pattern skullpaper.php uses to stay public without the gate.)
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+	$cookie = json_decode($_COOKIE['SessionCookie'], true);
+	if (is_array($cookie)) { $_SESSION = $cookie; }
+}
+
+// Default roster shown to logged-out visitors. Mirrors the client-side fallback
+// in monstrocity.php so the select screen is identical either way.
+$default_characters = array(
+	array('name' => 'Craig',  'strength' => 4, 'speed' => 4, 'tactics' => 4, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
+	array('name' => 'Dankle', 'strength' => 3, 'speed' => 5, 'tactics' => 3, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Heal'),
+);
 
 if(isset($_SESSION['userData']['user_id'])){
 	$asset_list = getMonstrocityAssets($conn);
@@ -113,8 +132,10 @@ if(isset($_SESSION['userData']['user_id'])){
 		echo "false";
 	}
 }else{
-	//echo "You are not logged in to discord.";
-	echo "false";
+	// Logged-out visitors get the default roster immediately as JSON — no login
+	// gate, no redirect, no blockchain call — so the character-select screen
+	// paints instantly instead of waiting on the client's 5s timeout fallback.
+	echo json_encode($default_characters, JSON_PRETTY_PRINT);
 }
 
 //echo json_encode($project);
