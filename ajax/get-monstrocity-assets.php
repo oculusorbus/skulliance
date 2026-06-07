@@ -1,6 +1,17 @@
 <?php
 include '../db.php';
 
+// This is a JSON API: PHP notices/warnings must NEVER leak into the body.
+// db.php sets display_errors=1, so a single notice (e.g. a Monstrocity NFT
+// whose Koios metadata is missing a stat field) would print before/inside
+// the JSON, making the client's response.json() throw - which lands in the
+// catch block and silently shows the 14-character fallback roster despite
+// the player owning NFTs. Force clean output; errors still go to the log.
+ini_set('display_errors', '0');
+header('Content-Type: application/json');
+$sp_debug = isset($_GET['debug']) && $_GET['debug'] === '1';
+$sp_diag = array('stage' => 'start');
+
 // Lightweight session restore — intentionally do NOT include skulliance.php.
 // That file is the login gate: for anonymous / edge sessions it issues header()
 // redirects (error.php, or the external discord.gg) and runs membership
@@ -40,6 +51,10 @@ $default_characters = array(
 
 if(isset($_SESSION['userData']['user_id'])){
 	$asset_list = getMonstrocityAssets($conn);
+	$sp_diag['logged_in'] = true;
+	$sp_diag['user_id'] = (int)$_SESSION['userData']['user_id'];
+	$sp_diag['asset_list_is_array'] = is_array($asset_list);
+	$sp_diag['nft_count'] = is_array($asset_list) ? count($asset_list['_asset_list']) : 0;
 	if(is_array($asset_list)){
 		// Batch asset list into arrays of 35 items or less to allow for successful queries, had to reduce from 50 to 35 to remain under the free Koios plan limits.
 		$batch_asset_lists = array();
@@ -96,9 +111,11 @@ if(isset($_SESSION['userData']['user_id'])){
 			if ($mactive) { curl_multi_select($mh); }
 		} while ($mactive && $mstatus == CURLM_OK);
 
+		$sp_diag['koios_http'] = array();
 		foreach($handles AS $handle_index => $tokench){
 			$tokenresponse = curl_multi_getcontent($tokench);
 			$http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
+			$sp_diag['koios_http'][] = $http_code;
 			curl_multi_remove_handle($mh, $tokench);
 			curl_close( $tokench );
 
@@ -152,6 +169,11 @@ if(isset($_SESSION['userData']['user_id'])){
 		} // End foreach
 		curl_multi_close($mh);
 
+		$sp_diag['parsed_characters'] = count($final_array);
+		$sp_diag['any_batch_failed'] = $batch_failed;
+		$sp_diag['returning'] = !empty($final_array) ? 'nfts' : 'defaults';
+		if($sp_debug){ echo json_encode($sp_diag, JSON_PRETTY_PRINT); $conn->close(); exit; }
+
 		// One JSON document, always. Partial results beat fallbacks when
 		// only some batches failed; the default roster only when nothing
 		// came back at all (the old "false" output parsed client-side into
@@ -163,12 +185,17 @@ if(isset($_SESSION['userData']['user_id'])){
 		}
 	}else{
 		// Logged in but no Monstrocity NFTs in the DB: default roster.
+		$sp_diag['returning'] = 'defaults (no monstrocity NFTs in DB)';
+		if($sp_debug){ echo json_encode($sp_diag, JSON_PRETTY_PRINT); $conn->close(); exit; }
 		echo json_encode($default_characters, JSON_PRETTY_PRINT);
 	}
 }else{
 	// Logged-out visitors get the default roster immediately as JSON — no login
 	// gate, no redirect, no blockchain call — so the character-select screen
 	// paints instantly instead of waiting on the client's 5s timeout fallback.
+	$sp_diag['logged_in'] = false;
+	$sp_diag['returning'] = 'defaults (not logged in)';
+	if($sp_debug){ echo json_encode($sp_diag, JSON_PRETTY_PRINT); $conn->close(); exit; }
 	echo json_encode($default_characters, JSON_PRETTY_PRINT);
 }
 

@@ -5679,7 +5679,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	// Cache key is scoped by login state: logged-out visitors now receive the
 	// default roster as a real (cacheable) JSON array, and we must not let that
 	// be served to the same tab after the user logs in (or vice-versa).
-	const MONSTROCITY_CACHE_KEY = 'monstrocityAssets_v1_' + (window.isLoggedIn ? 'in' : 'out');
+	const MONSTROCITY_CACHE_KEY = 'monstrocityAssets_v2_' + (window.isLoggedIn ? 'in' : 'out');
 	async function getMonstrocityAssetsCached() {
 	    if (cachedMonstrocityAssets !== null) {
 	        console.log('getAssets: Monstrocity in-memory cache hit');
