@@ -1,7 +1,17 @@
 <?php
 // Include dependencies
 include '../db.php';
-include '../skulliance.php';
+
+// Lightweight session restore — intentionally do NOT include skulliance.php (the
+// login gate). Same fix as get-monstrocity-assets.php: including it made the
+// logged-out theme-switch fetch get redirected (error.php / discord.gg) instead
+// of returning JSON, so the client's 10s timeout fired before falling back to
+// the default characters. We only need the session to resolve the visitor's
+// owned NFTs (or none, when logged out, which yields the defaults instantly).
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+    $cookie = json_decode($_COOKIE['SessionCookie'], true);
+    if (is_array($cookie)) { $_SESSION = $cookie; }
+}
 
 // Set JSON output
 header('Content-Type: application/json');
