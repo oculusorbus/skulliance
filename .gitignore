@@ -1,3 +1,7 @@
 .DS_Store
 *.sql
 .claude/settings.local.json
+
+# cardano.org submission assets (belong in the cardano-org fork, not here)
+match3rpg.png
+skulliance.webp

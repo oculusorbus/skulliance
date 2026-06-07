@@ -57,19 +57,25 @@ Use the existing repo asset `pwa/icon-512.png` (512×512, square — meets the �
 square requirement). Copy and rename it to `skulliance.png`.
 
 ### Screenshot → `src/data/app-screenshots/skulliance.webp`
-Requirements: WebP, 16:9, real app UI, **no browser chrome**, **≤ 500 KB**
-(light theme preferred but not required — the dark UI is fine).
+Requirements (from the `apps.js` header comment — the authoritative source):
+- Format: **WebP**, quality 80
+- Dimensions: **2048 × 1440** (renders 1024×720 @2x), aspect ratio **64:45 (~1.42:1)** — *not* 16:9
+- File size: **≤ 500 KB**
+- Content: real app UI, **no browser chrome** (light theme preferred, but the dark UI is fine)
 
-You already host screenshots at `staking/images/screenshots/` (e.g. `dashboard.png`,
-`realms.png`, `store.png`). Convert one:
+**Already prepared:** `skulliance.webp` has been generated from `match3rpg.png`
+(2048×1440, 216 KB, opaque RGB, quality 80 — passes every criterion) and sits at the
+repo root. Just copy it into the cardano-org fork:
 
 ```bash
-brew install webp          # once
-cwebp -q 80 -resize 2048 1440 dashboard.png -o skulliance.webp
-ls -lh skulliance.webp     # confirm under 500KB
+cp skulliance.webp <cardano-org-fork>/src/data/app-screenshots/skulliance.webp
 ```
 
-Dashboard or Realms makes the strongest first impression.
+To remake it from a different screenshot later: capture at the 64:45 ratio (Chrome
+DevTools device mode set to 1024×720 at DPR 2 → "Capture screenshot" yields 2048×1440
+on any laptop), then convert. With cwebp: `cwebp -q 80 -m 6 in.png -o skulliance.webp`
+(add `-resize 2048 1440` if the source isn't already that size). No cwebp? The repo's
+generator used Python/Pillow.
 
 ---
 
@@ -109,7 +115,7 @@ select the **"Add Your App"** PR template, and complete its checklist
 ## Pre-submit checklist
 
 - [ ] `https://github.com/oculusorbus/skulliance` loads while logged out (truly public)
-- [ ] `skulliance.webp` is ≤ 500 KB and 16:9, no browser chrome
+- [x] `skulliance.webp` is ≤ 500 KB, 2048×1440 (64:45), no browser chrome — prepared (216 KB)
 - [ ] `skulliance.png` is square, ≥ 128px
 - [ ] Entry appended to end of `Showcases` array, valid JS (commas correct)
 - [ ] `yarn build` passes locally
