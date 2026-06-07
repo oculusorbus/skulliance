@@ -995,12 +995,9 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
           img.loading = 'lazy'; img.decoding = 'async';
           img.onerror = function () { this.onerror = null; this.src = SKULL; };
 
-          var nameDiv = document.createElement('div');
-          nameDiv.className = 'name';
-          nameDiv.textContent = name;
-
+          // No name label: the base-character names don't describe the
+          // artists' own themed designs, so the expansion strips show art only.
           card.appendChild(img);
-          card.appendChild(nameDiv);
           track.appendChild(card);
         });
       }
