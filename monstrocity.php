@@ -5779,8 +5779,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
             { name: 'Jarhead',           strength: 4, speed: 4, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
             { name: 'Spydrax',           strength: 3, speed: 5, tactics: 2, size: 'Small',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
             { name: 'Katastrophy',       strength: 4, speed: 2, tactics: 4, size: 'Large',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Ouchie',            strength: 5, speed: 3, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Drake',             strength: 3, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' }
+            { name: 'Ouchie',            strength: 3, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
+            { name: 'Drake',             strength: 5, speed: 3, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' }
         ];
 	    }
 	}
