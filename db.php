@@ -4240,7 +4240,7 @@ function checkRealmsLeaderboard($conn){
 		}
 		if($leaderboardCounter <= 3){
 			global $leaderboard_top3;
-			$leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($total).' levels'];
+			$leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>'Level '.number_format($total)];
 		}
 		$highlight = (isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id']);
 		$offense = calculateRaidOffense($conn, $row['realm_id']);
@@ -4249,7 +4249,7 @@ function checkRealmsLeaderboard($conn){
 		$name_html = htmlspecialchars($row['realm_name'])." <span style='opacity:.6'>&middot;</span> <a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 		$stats = [
 			'Faction' => $row['currency'],
-			'Levels'  => number_format($total),
+			'Level'   => number_format($total),
 			'Offense' => "Lv ".$offense,
 			'Defense' => "Lv ".$defense,
 		];
