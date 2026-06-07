@@ -1708,6 +1708,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     // Pass login status to JavaScript
     window.isLoggedIn = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && !empty($_SESSION['userData']['user_id'])); ?>;
 	window.userId = <?php echo json_encode($user_id); ?>;
+	// Default character roster - single source of truth shared with the server
+	// endpoint (monstrocity-default-characters.php). Used for the logged-out
+	// fallback and the fetch-failure fallback so the JS never hardcodes stats.
+	window.MONSTROCITY_DEFAULT_CHARACTERS = <?php echo json_encode(require __DIR__ . '/monstrocity-default-characters.php'); ?>;
   </script>
 </head>
 <body>
@@ -3671,11 +3675,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 			        updatePending = false;
 			    }).catch(function(error) {
 			        console.error('Error updating theme assets:', error);
-			        // Fallback to default monstrocity assets
-			        self.playerCharactersConfig = [
-			            { name: 'Craig', strength: 4, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate', theme: 'monstrocity' },
-			            { name: 'Dankle', strength: 3, speed: 5, tactics: 3, size: 'Small', type: 'Base', powerup: 'Heal', theme: 'monstrocity' }
-			        ];
+			        // Fallback to the shared default monstrocity roster (single
+			        // source of truth - monstrocity-default-characters.php).
+			        self.playerCharactersConfig = (window.MONSTROCITY_DEFAULT_CHARACTERS || []).map(function (c) {
+			            return Object.assign({}, c, { theme: 'monstrocity' });
+			        });
 			        self.playerCharacters = self.playerCharactersConfig.map(config => self.createCharacter(config));
 			        // Clear boss overrides in case of error, unless it's a boss battle
 			        if (!isBossBattle) {
@@ -5766,22 +5770,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        return assets;
 	    } catch (error) {
 	        console.error('getAssets: Monstrocity fetch error:', error);
-	        return [
-            { name: 'Craig',             strength: 6, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Merdock',           strength: 6, speed: 4, tactics: 5, size: 'Large',  type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Goblin Ganger',     strength: 4, speed: 6, tactics: 5, size: 'Small',  type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Texby',             strength: 4, speed: 5, tactics: 6, size: 'Medium', type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Mandiblus',         strength: 6, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Koipon',            strength: 4, speed: 4, tactics: 6, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Slime Mind',        strength: 4, speed: 5, tactics: 5, size: 'Small',  type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Billandar and Ted', strength: 5, speed: 5, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Dankle',            strength: 6, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
-            { name: 'Jarhead',           strength: 5, speed: 5, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
-            { name: 'Spydrax',           strength: 4, speed: 6, tactics: 3, size: 'Small',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Katastrophy',       strength: 5, speed: 3, tactics: 5, size: 'Large',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Ouchie',            strength: 4, speed: 5, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Drake',             strength: 6, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' }
-        ];
+	        // Offline fallback: the shared default roster injected by PHP
+	        // (single source of truth - monstrocity-default-characters.php),
+	        // tagged with the theme like the success path does.
+	        return (window.MONSTROCITY_DEFAULT_CHARACTERS || []).map(function (c) {
+	            return Object.assign({}, c, { theme: 'monstrocity' });
+	        });
 	    }
 	}
 	async function getAssets(selectedTheme) {

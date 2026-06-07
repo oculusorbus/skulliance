@@ -25,29 +25,11 @@ if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
 	if (is_array($cookie)) { $_SESSION = $cookie; }
 }
 
-// Default roster shown to logged-out visitors: all 14 base Monstrocity
-// characters, stat-balanced so no single pick dominates. Each totals ~12
-// "power" — stat-sum = 12 minus a powerup cost (Minor Regen 0, Regenerate 1,
-// Boost Attack/Heal 2), centred on Craig's 4/4/4 (Craig gets +1 STR as the
-// flagship). Size carries its own HP/Tactics tradeoff in-engine, so personality
-// is leaned into it. Keep in sync with the JS fallback in monstrocity.php and
-// the Monstrocity page in the Skull Paper.
-$default_characters = array(
-	array('name' => 'Craig',             'strength' => 6, 'speed' => 5, 'tactics' => 5, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Minor Regen'),
-	array('name' => 'Merdock',           'strength' => 6, 'speed' => 4, 'tactics' => 5, 'size' => 'Large',  'type' => 'Base', 'powerup' => 'Minor Regen'),
-	array('name' => 'Goblin Ganger',     'strength' => 4, 'speed' => 6, 'tactics' => 5, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Minor Regen'),
-	array('name' => 'Texby',             'strength' => 4, 'speed' => 5, 'tactics' => 6, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Minor Regen'),
-	array('name' => 'Mandiblus',         'strength' => 6, 'speed' => 4, 'tactics' => 4, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
-	array('name' => 'Koipon',            'strength' => 4, 'speed' => 4, 'tactics' => 6, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
-	array('name' => 'Slime Mind',        'strength' => 4, 'speed' => 5, 'tactics' => 5, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Regenerate'),
-	array('name' => 'Billandar and Ted', 'strength' => 5, 'speed' => 5, 'tactics' => 4, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Regenerate'),
-	array('name' => 'Dankle',            'strength' => 6, 'speed' => 4, 'tactics' => 3, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Boost Attack'),
-	array('name' => 'Jarhead',           'strength' => 5, 'speed' => 5, 'tactics' => 3, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Boost Attack'),
-	array('name' => 'Spydrax',           'strength' => 4, 'speed' => 6, 'tactics' => 3, 'size' => 'Small',  'type' => 'Base', 'powerup' => 'Heal'),
-	array('name' => 'Katastrophy',       'strength' => 5, 'speed' => 3, 'tactics' => 5, 'size' => 'Large',  'type' => 'Base', 'powerup' => 'Heal'),
-	array('name' => 'Ouchie',            'strength' => 4, 'speed' => 5, 'tactics' => 4, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Heal'),
-	array('name' => 'Drake',             'strength' => 6, 'speed' => 4, 'tactics' => 3, 'size' => 'Medium', 'type' => 'Base', 'powerup' => 'Heal'),
-);
+// Default roster shown to logged-out visitors (and logged-in players with no
+// Monstrocity NFTs). Single source of truth lives in
+// monstrocity-default-characters.php, shared with monstrocity.php's JS so the
+// two can never drift - edit stats there, not here.
+$default_characters = require __DIR__ . '/../monstrocity-default-characters.php';
 
 if(isset($_SESSION['userData']['user_id'])){
 	$asset_list = getMonstrocityAssets($conn);
