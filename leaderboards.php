@@ -212,7 +212,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" &&
 				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" &&
 				           $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" && $filterby != "realms" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
@@ -301,6 +301,10 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Weekly Activity";
 				        $filterby = "activity-weekly";
 				        break;
+				    case ($filterby == "realms"):
+				        $title = "Realm Power";
+				        $filterby = "realms";
+				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
 				?>
@@ -316,10 +320,13 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" &&
 				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" &&
 				              $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" && $filterby != "realms" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
+				            break;
+				        case ($filterby == "realms"):
+				            checkRealmsLeaderboard($conn);
 				            break;
 				        case ($filterby == "missions"):
 				            checkMissionsLeaderboard($conn);

@@ -983,6 +983,9 @@ function filterLeaderboard($page){
 				<option value="raids">All Raids</option>
 				<option value="monthly-raids">'.date('F').' Raids</option>
 			</optgroup>
+			<optgroup label="Realms">
+				<option value="realms">Realm Power</option>
+			</optgroup>
 			<optgroup label="Factions">
 				<option value="factions">All Factions</option>
 				<option value="monthly-factions">'.date('F').' Factions</option>

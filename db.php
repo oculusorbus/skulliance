@@ -4194,6 +4194,66 @@ function getProjectDelegationPercentages($conn){
 function fireworks(){}
 
 // Universal leaderboard renderer — called by all check*Leaderboard functions
+// Realm Power leaderboard: ranks ACTIVE realms by total location levels
+// (sum across all seven locations, max 70) so the strongest realms are
+// visible at a glance without browsing the realms map. Offense/Defense
+// chips use the same calculated ratings the realms list shows.
+function checkRealmsLeaderboard($conn){
+	$sql = "SELECT realms.id AS realm_id, realms.name AS realm_name, users.id AS user_id,
+	               users.username, users.avatar, users.discord_id, users.visibility,
+	               projects.currency AS currency,
+	               COALESCE(SUM(realms_locations.level), 0) AS total_levels
+	        FROM realms
+	        INNER JOIN users ON users.id = realms.user_id
+	        INNER JOIN projects ON projects.id = realms.project_id
+	        LEFT JOIN realms_locations ON realms_locations.realm_id = realms.id
+	        WHERE realms.active = '1'
+	        GROUP BY realms.id
+	        ORDER BY total_levels DESC, realms.name ASC";
+	$result = $conn->query($sql);
+	if (!$result || $result->num_rows == 0) return;
+
+	$lb_rows = [];
+	$leaderboardCounter = 0;
+	$last_total = -1;
+	$third_total = -1;
+	while($row = $result->fetch_assoc()) {
+		$leaderboardCounter++;
+		$total = intval($row['total_levels']);
+		// Shared-rank trophy logic, same pattern as the other boards
+		$trophy = "";
+		if($leaderboardCounter == 1){
+			$trophy = "first";
+		}else if($leaderboardCounter == 2){
+			if($last_total != $total){ $trophy = "second"; } else { $trophy = "first"; $leaderboardCounter--; }
+		}else if($leaderboardCounter == 3){
+			if($last_total != $total){ $trophy = "third"; $third_total = $total; } else { $trophy = "second"; $leaderboardCounter--; }
+		}else if($leaderboardCounter > 3 && $third_total == $total){
+			$trophy = "third"; $leaderboardCounter--;
+		}else if($leaderboardCounter > 3 && $last_total == $total){
+			$leaderboardCounter--;
+		}
+		if($leaderboardCounter <= 3){
+			global $leaderboard_top3;
+			$leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>number_format($total).' / 70 levels'];
+		}
+		$highlight = (isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id']);
+		$offense = calculateRaidOffense($conn, $row['realm_id']);
+		$defense = calculateRaidDefense($conn, $row['realm_id']);
+		$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+		$name_html = htmlspecialchars($row['realm_name'])." <span style='opacity:.6'>&middot;</span> <a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
+		$stats = [
+			'Faction' => $row['currency'],
+			'Levels'  => number_format($total)." / 70",
+			'Offense' => "Lv ".$offense,
+			'Defense' => "Lv ".$defense,
+		];
+		$lb_rows[] = ['rank'=>$leaderboardCounter,'trophy'=>$trophy,'avatar_url'=>$avatar_url,'name'=>$name_html,'highlight'=>$highlight,'stats'=>$stats];
+		$last_total = $total;
+	}
+	renderLeaderboardList($lb_rows);
+}
+
 function renderLeaderboardList($rows) {
     if(empty($rows)) return;
     echo "<div class='lb-list'>";
