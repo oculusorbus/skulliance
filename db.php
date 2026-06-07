@@ -8994,8 +8994,9 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	$type    = $is_weapon ? 'weapon' : 'armor';
 	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
 	if (getCurrentGear($conn, $user_id, $type, $item_id) < 1) return false;
-	// Only allow equipping to reserve (barracks) soldiers
-	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL AND active = 1 LIMIT 1");
+	// Allow equipping to reserve (1) and tower-garrisoned (2) soldiers -
+	// raiding soldiers (3) keep their loadout until the raid resolves
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location IN (1, 2) AND dead IS NULL AND active = 1 LIMIT 1");
 	if (!$s || $s->num_rows == 0) return false;
 	$current_gear_id = intval($s->fetch_assoc()[$col]);
 	if ($current_gear_id > 0) updateGear($conn, $user_id, $type, $current_gear_id, 1);
@@ -9008,7 +9009,8 @@ function equipGear($conn, $soldier_id, $realm_id, $item_id, $is_weapon) {
 	return true;
 }
 
-// Unequip gear from a reserve (location=1) soldier and return it to inventory
+// Unequip gear from a reserve (1) or tower-garrisoned (2) soldier and return
+// it to inventory (mirrors equipGear's eligibility)
 function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	$soldier_id = intval($soldier_id);
 	$realm_id   = intval($realm_id);
@@ -9017,7 +9019,7 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	$user_id = intval($r->fetch_assoc()['user_id']);
 	$type    = $is_weapon ? 'weapon' : 'armor';
 	$col     = $is_weapon ? 'weapon_id' : 'armor_id';
-	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location = 1 AND dead IS NULL AND active = 1 LIMIT 1");
+	$s = $conn->query("SELECT $col FROM soldiers WHERE id = $soldier_id AND realm_id = $realm_id AND location IN (1, 2) AND dead IS NULL AND active = 1 LIMIT 1");
 	if (!$s || $s->num_rows == 0) return false;
 	$gear_id = intval($s->fetch_assoc()[$col]);
 	if ($gear_id == 0) return false;
@@ -9027,7 +9029,11 @@ function unequipGear($conn, $soldier_id, $realm_id, $is_weapon) {
 	return true;
 }
 
-// Auto-equip inventory gear to reserve soldiers, best gear first, upgrading weakest slots
+// Auto-equip inventory gear to reserve AND tower-garrisoned soldiers, best
+// gear first, upgrading weakest slots. Garrison is included so defenders get
+// gear upgrades without the pointless unassign-from-tower / auto-equip /
+// reassign dance (location 1 = reserve, 2 = tower; raiding soldiers (3) keep
+// their loadout until they return).
 function autoEquipReserve($conn, $realm_id) {
 	$realm_id = intval($realm_id);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
@@ -9048,7 +9054,7 @@ function autoEquipReserve($conn, $realm_id) {
 			$gear_level = intval($gear['level']);
 			// Equip as many copies as available to trained soldiers that would benefit
 			while (getCurrentGear($conn, $user_id, $type, $gear_id) > 0) {
-				$target = $conn->query("SELECT soldiers.id AS soldier_id, COALESCE($table.level, 0) AS current_level FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location = 1 AND soldiers.trained = 1 AND soldiers.dead IS NULL AND soldiers.active = 1 AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC, soldiers.date_created ASC LIMIT 1");
+				$target = $conn->query("SELECT soldiers.id AS soldier_id, COALESCE($table.level, 0) AS current_level FROM soldiers LEFT JOIN $table ON $table.id = soldiers.$col WHERE soldiers.realm_id = $realm_id AND soldiers.location IN (1, 2) AND soldiers.trained = 1 AND soldiers.dead IS NULL AND soldiers.active = 1 AND COALESCE($table.level, 0) < $gear_level ORDER BY COALESCE($table.level, 0) ASC, soldiers.date_created ASC LIMIT 1");
 				if (!$target || $target->num_rows == 0) break;
 				$trow = $target->fetch_assoc();
 				if (equipGear($conn, intval($trow['soldier_id']), $realm_id, $gear_id, $type === 'weapon')) {
