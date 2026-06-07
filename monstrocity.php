@@ -944,13 +944,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         width: 100%;
         min-width: 320px;
         max-width: 100%;
-        padding: 10px;
+        /* Top padding (not margin) clears the fixed level/turn pill
+           without revealing the page background above the container -
+           the container's own background keeps covering from the top.
+           Avatars follow fine: their absolute positioning anchors to
+           .character (position:relative), which moves with the flow. */
+        padding: 52px 10px 10px;
         max-height: none;
-        /* Clear the fixed level/turn pill at the top of the viewport
-           (~40px tall incl. offset) so it never covers the player's
-           health bar. margin (not padding) so absolutely-positioned
-           children like the character avatars shift down with it. */
-        margin-top: 52px;
+        margin-top: 0px;
       }
       
       .character {
