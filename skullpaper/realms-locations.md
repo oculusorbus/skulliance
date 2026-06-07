@@ -14,6 +14,8 @@ Upgrades complete on a timer and are claimed automatically when you visit the Re
 
 Level 10 is a **soft limit**: it's the most you can *buy*. Purchased upgrades max out at Level 10, and at that point upgrades can only *maintain* the location at 10. But raids can take locations further - when an incoming raid against you **fails**, the matching offense location in your Realm is upgraded by 1 level, with no cap. Raid and defend well, and your locations push past the soft limit over time, raising your offense and defense ratings beyond what points alone can purchase. Total location levels are ranked on the **Realm Power leaderboard**. See [[realms-raids]].
 
+**Transcendence cuts both ways.** The further you climb, the more your growth slows - by design, on both fronts. Raiding out: you can only attack realms within 3 defense levels of your offense, so as your ratings tower over the field, your target list shrinks. Raiding in: weaker realms *can* still challenge you (there's no upward range limit), but every failed attempt damages their locations while leveling yours - a risk fewer and fewer attackers will accept. With no one left worth raiding and no one willing to raid you, level gains stall at the top. Transcendent realms grow only as fast as worthy challengers appear.
+
 ## The Seven Locations
 
 ### 1. Portal (Offense)
