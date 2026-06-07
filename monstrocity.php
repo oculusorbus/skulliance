@@ -944,14 +944,28 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         width: 100%;
         min-width: 320px;
         max-width: 100%;
-        /* Top padding (not margin) clears the fixed level/turn pill
-           without revealing the page background above the container -
-           the container's own background keeps covering from the top.
-           Avatars follow fine: their absolute positioning anchors to
-           .character (position:relative), which moves with the flow. */
+        /* Top padding (not margin) clears the fixed level/turn pill;
+           avatars follow fine since their absolute positioning anchors
+           to .character (position:relative), which moves with the flow. */
         padding: 52px 10px 10px;
         max-height: none;
         margin-top: 0px;
+      }
+      /* Opaque strip pinned to the viewport top behind the pill so the
+         page's themed background image never peeks through above the
+         game. Fixed (like the pill), full width, matching the skinned
+         container color; z-index one step under the pill (99980).
+         Lives on .game-container so display:none during character
+         select hides it together with the game. */
+      .game-container::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: #0d2230;
+        z-index: 99970;
       }
       
       .character {
