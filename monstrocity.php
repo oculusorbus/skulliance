@@ -2438,6 +2438,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      console.time('showThemeSelect');
 	      let container = document.getElementById('theme-select-container');
 	      const characterContainer = document.getElementById('character-select-container');
+	      // Hide the level/turn pill on the theme menu too (boss select, reached
+	      // from here, inherits the hidden state until gameplay resumes).
+	      var _ti = document.getElementById('turn-indicator');
+	      if (_ti) _ti.style.visibility = 'hidden';
 
 	      // Clear boss mode state to ensure default game mode
 	      game.selectedBoss = null;
@@ -2941,6 +2945,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		async startBossBattle() {
 		    console.log('Starting boss battle...');
+		    // Boss gameplay starting - restore the pill hidden by select screens.
+		    var _ti = document.getElementById('turn-indicator');
+		    if (_ti) _ti.style.visibility = 'visible';
 		    console.log('Selected Character:', this.selectedCharacter.name);
 		    console.log('Selected Boss:', this.selectedBoss.name);
 		    console.log('Boss Theme:', this.selectedBoss.theme);
@@ -3942,6 +3949,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const optionsDiv = document.getElementById('character-options');
 	      optionsDiv.innerHTML = '';
 	      container.style.display = 'block';
+	      // Hide the level/turn pill while choosing a character - no battle is
+	      // in progress, and on mobile its high z-index otherwise floats over
+	      // the select screen. Restored when gameplay resumes (initGame /
+	      // swapPlayerCharacter / startBossBattle).
+	      var _ti = document.getElementById('turn-indicator');
+	      if (_ti) _ti.style.visibility = 'hidden';
 
 	      const selectBossButton = document.getElementById('select-boss-button');
 	      if (this.selectedBoss && window.isLoggedIn) {
@@ -4017,6 +4030,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  }
 	  
 	  swapPlayerCharacter(newCharacter) {
+	    // Mid-game character swap returns to the board - restore the pill.
+	    var _ti = document.getElementById('turn-indicator');
+	    if (_ti) _ti.style.visibility = 'visible';
 	    const oldHealth = this.player1.health;
 	    const oldMaxHealth = this.player1.maxHealth;
 	    const newInstance = { ...newCharacter };
@@ -4112,6 +4128,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    // Invalidate any pending end-level continuation (delayed win
 		    // cosmetics behind in-flight saves) - see checkGameOver's winSeq.
 		    this._winSeq = (this._winSeq || 0) + 1;
+		    // Gameplay is (re)starting - restore the level/turn pill hidden by
+		    // the character/theme select screens.
+		    var _ti = document.getElementById('turn-indicator');
+		    if (_ti) _ti.style.visibility = 'visible';
 		    this.selectedBoss = null;
 		    this.selectedCharacter = null;
 		    console.log('initGame: Cleared selectedBoss and selectedCharacter');
