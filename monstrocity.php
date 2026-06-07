@@ -5698,13 +5698,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    } catch (e) {}
 	    try {
 	        console.log('getAssets: Fetching Monstrocity assets from Koios');
+	        // Logged-in fetches do real blockchain lookups server-side (Koios
+	        // asset_info, now parallelized) - give them real runway. 5s was
+	        // enough only for the logged-out path (instant default roster) and
+	        // silently dropped NFT collectors to the default characters.
+	        const fetchTimeoutMs = window.isLoggedIn ? 30000 : 5000;
 	        const response = await Promise.race([
 	            fetch('ajax/get-monstrocity-assets.php', {
 	                method: 'POST',
 	                headers: { 'Content-Type': 'application/json' },
 	                body: JSON.stringify({ theme: 'monstrocity' })
 	            }),
-	            new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), 5000))
+	            new Promise((_, reject) => setTimeout(() => reject(new Error('Monstrocity timeout')), fetchTimeoutMs))
 	        ]);
 	        if (!response.ok) {
 	            throw new Error('Monstrocity HTTP error! Status: ' + response.status);

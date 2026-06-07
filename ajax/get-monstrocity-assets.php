@@ -71,23 +71,38 @@ if(isset($_SESSION['userData']['user_id'])){
 		$final_array = [];
 		$batch_failed = false;
 
+		// Fire all batch requests CONCURRENTLY via curl_multi. Sequential
+		// batches took ~2-4s EACH, so collectors with 35+ NFTs (2+ batches)
+		// blew past the client's fetch timeout and were dropped to the
+		// default roster despite owning NFTs. Concurrent total time is
+		// roughly one batch's latency regardless of collection size.
+		$koios_bearer_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'; // renewed Dec 2025 (exp Dec 2026) - keep in sync with db.php / verify.php
+		$mh = curl_multi_init();
+		$handles = array();
 		foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
 			$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-			// Koios bearer token renewed Dec 2025 (exp Dec 2026) - keep in
-			// sync with the copies in db.php and verify.php. The old token
-			// here expired 2025-12-22 and every query 401'd.
-			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
+			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer '.$koios_bearer_token));
 			curl_setopt( $tokench, CURLOPT_POST, 1);
 			curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
 			curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
 			curl_setopt( $tokench, CURLOPT_HEADER, 0);
 			curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt( $tokench, CURLOPT_TIMEOUT, 20);
+			curl_multi_add_handle($mh, $tokench);
+			$handles[$final_asset_index] = $tokench;
+		}
+		do {
+			$mstatus = curl_multi_exec($mh, $mactive);
+			if ($mactive) { curl_multi_select($mh); }
+		} while ($mactive && $mstatus == CURLM_OK);
 
-			$tokenresponse = curl_exec( $tokench );
+		foreach($handles AS $handle_index => $tokench){
+			$tokenresponse = curl_multi_getcontent($tokench);
 			$http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
+			curl_multi_remove_handle($mh, $tokench);
 			curl_close( $tokench );
 
-			if ($tokenresponse === false || $http_code >= 400) {
+			if ($tokenresponse === false || $tokenresponse === '' || $http_code >= 400) {
 				$batch_failed = true;
 				continue;
 			}
@@ -135,18 +150,20 @@ if(isset($_SESSION['userData']['user_id'])){
 			    }
 			}
 		} // End foreach
+		curl_multi_close($mh);
 
-		// One JSON document, always. Partial results beat "false" when only
-		// some batches failed; "false" only when nothing came back at all.
+		// One JSON document, always. Partial results beat fallbacks when
+		// only some batches failed; the default roster only when nothing
+		// came back at all (the old "false" output parsed client-side into
+		// a single broken [false] character).
 		if(!empty($final_array)){
 			echo json_encode($final_array, JSON_PRETTY_PRINT);
 		}else{
-			//echo "Bulk asset info could not be retrieved.";
-			echo "false";
+			echo json_encode($default_characters, JSON_PRETTY_PRINT);
 		}
 	}else{
-		//echo "You do not have any Monstrocity NFTs";
-		echo "false";
+		// Logged in but no Monstrocity NFTs in the DB: default roster.
+		echo json_encode($default_characters, JSON_PRETTY_PRINT);
 	}
 }else{
 	// Logged-out visitors get the default roster immediately as JSON — no login
