@@ -5767,20 +5767,20 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    } catch (error) {
 	        console.error('getAssets: Monstrocity fetch error:', error);
 	        return [
-            { name: 'Craig',             strength: 5, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Merdock',           strength: 5, speed: 3, tactics: 4, size: 'Large',  type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Goblin Ganger',     strength: 3, speed: 5, tactics: 4, size: 'Small',  type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Texby',             strength: 3, speed: 4, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
-            { name: 'Mandiblus',         strength: 5, speed: 3, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Koipon',            strength: 3, speed: 3, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Slime Mind',        strength: 3, speed: 4, tactics: 4, size: 'Small',  type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Billandar and Ted', strength: 4, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
-            { name: 'Dankle',            strength: 5, speed: 3, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
-            { name: 'Jarhead',           strength: 4, speed: 4, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
-            { name: 'Spydrax',           strength: 3, speed: 5, tactics: 2, size: 'Small',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Katastrophy',       strength: 4, speed: 2, tactics: 4, size: 'Large',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Ouchie',            strength: 3, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
-            { name: 'Drake',             strength: 5, speed: 3, tactics: 2, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' }
+            { name: 'Craig',             strength: 6, speed: 5, tactics: 5, size: 'Medium', type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
+            { name: 'Merdock',           strength: 6, speed: 4, tactics: 5, size: 'Large',  type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
+            { name: 'Goblin Ganger',     strength: 4, speed: 6, tactics: 5, size: 'Small',  type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
+            { name: 'Texby',             strength: 4, speed: 5, tactics: 6, size: 'Medium', type: 'Base', powerup: 'Minor Regen',  theme: 'monstrocity' },
+            { name: 'Mandiblus',         strength: 6, speed: 4, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
+            { name: 'Koipon',            strength: 4, speed: 4, tactics: 6, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
+            { name: 'Slime Mind',        strength: 4, speed: 5, tactics: 5, size: 'Small',  type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
+            { name: 'Billandar and Ted', strength: 5, speed: 5, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Regenerate',   theme: 'monstrocity' },
+            { name: 'Dankle',            strength: 6, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
+            { name: 'Jarhead',           strength: 5, speed: 5, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Boost Attack', theme: 'monstrocity' },
+            { name: 'Spydrax',           strength: 4, speed: 6, tactics: 3, size: 'Small',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
+            { name: 'Katastrophy',       strength: 5, speed: 3, tactics: 5, size: 'Large',  type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
+            { name: 'Ouchie',            strength: 4, speed: 5, tactics: 4, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' },
+            { name: 'Drake',             strength: 6, speed: 4, tactics: 3, size: 'Medium', type: 'Base', powerup: 'Heal',         theme: 'monstrocity' }
         ];
 	    }
 	}
