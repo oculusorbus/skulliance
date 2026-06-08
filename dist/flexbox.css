@@ -3167,6 +3167,10 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .lb-list-wide .lb-ident { width: auto; max-width: 60%; overflow: visible; }
     .lb-list-wide .lb-name { white-space: nowrap; overflow: visible; text-overflow: clip; }
 }
+/* On the realm board the row reads "Realm Name · owner"; color the owner
+   link teal so it's visibly clickable next to the plain-white realm name. */
+.lb-list-wide .lb-name a { color: #00c8a0; }
+.lb-list-wide .lb-name a:hover { color: #34e3bb; text-decoration: underline; }
 .lb-stats {
     display: flex;
     flex-wrap: wrap;
