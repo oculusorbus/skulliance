@@ -4256,12 +4256,14 @@ function checkRealmsLeaderboard($conn){
 		$lb_rows[] = ['rank'=>$leaderboardCounter,'trophy'=>$trophy,'avatar_url'=>$avatar_url,'name'=>$name_html,'highlight'=>$highlight,'stats'=>$stats];
 		$last_total = $total;
 	}
-	renderLeaderboardList($lb_rows);
+	// 'lb-list-wide' lets the identity column (realm name + owner) show in full
+	// on desktop, since realm names run longer than the usual single username.
+	renderLeaderboardList($lb_rows, 'lb-list-wide');
 }
 
-function renderLeaderboardList($rows) {
+function renderLeaderboardList($rows, $listClass = '') {
     if(empty($rows)) return;
-    echo "<div class='lb-list'>";
+    echo "<div class='lb-list".($listClass !== '' ? ' '.$listClass : '')."'>";
     foreach($rows as $row) {
         $hl = !empty($row['highlight']) ? ' lb-highlight' : '';
         echo "<div class='lb-row".$hl."'>";

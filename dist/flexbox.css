@@ -3160,6 +3160,13 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 }
 .lb-name a { color: inherit; text-decoration: none; }
 .lb-name a:hover { color: #00c8a0; }
+/* Realm Power board: let the identity column (realm name + owner) show in
+   full instead of the fixed 170px ellipsis, when the browser is wide enough.
+   Desktop only (>600px) - mobile keeps the compact clamped layout below. */
+@media (min-width: 601px) {
+    .lb-list-wide .lb-ident { width: auto; max-width: 60%; overflow: visible; }
+    .lb-list-wide .lb-name { white-space: nowrap; overflow: visible; text-overflow: clip; }
+}
 .lb-stats {
     display: flex;
     flex-wrap: wrap;
