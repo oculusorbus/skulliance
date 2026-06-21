@@ -3172,6 +3172,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        : this.player2;
 		    this.gameState = 'initializing';
 		    this.gameOver = false;
+		    // Clear the game-over re-entry latch so (re)starting a level always
+		    // recovers, even if a prior checkGameOver left it stuck.
+		    this.isCheckingGameOver = false;
 
 		    this.roundStats = [];
 
@@ -4167,6 +4170,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        : this.player2;
 		    this.gameState = 'initializing';
 		    this.gameOver = false;
+		    // Clear the game-over re-entry latch so (re)starting a level always
+		    // recovers, even if a prior checkGameOver left it stuck.
+		    this.isCheckingGameOver = false;
 
 		    this.roundStats = [];
 
@@ -5323,6 +5329,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      this.isCheckingGameOver = true;
 	      console.log(`checkGameOver started: currentLevel=${this.currentLevel}, player1.health=${this.player1.health}, player2.health=${this.player2.health}, selectedBoss=${this.selectedBoss ? this.selectedBoss.name : 'none'}`);
 
+	      // Everything below runs under try/finally so isCheckingGameOver is
+	      // ALWAYS cleared. Previously, if any statement here threw (a rejected
+	      // save/fetch, a missing DOM node, an undefined opponent field) or the
+	      // stale-win early return fired, the flag stayed true forever - and the
+	      // guard at the top of this method then skipped every future check, so
+	      // win/loss never registered and both health bars could empty out with
+	      // no end-of-level modal. Restart Level (initGame) doesn't clear it,
+	      // which is why the lock survived a restart.
+	      try {
 	      const tryAgainButton = document.getElementById("try-again");
 	      const leaderboardButtonDiv = document.getElementById("leaderboard-button");
 
@@ -5583,9 +5598,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          p1Image.classList.add("winner");
 	          this.renderBoard();
 	      }
-
-	      this.isCheckingGameOver = false;
-	      console.log(`checkGameOver completed: gameOver=${this.gameOver}, gameState=${this.gameState}`);
+	      } finally {
+	          this.isCheckingGameOver = false;
+	          console.log(`checkGameOver completed: gameOver=${this.gameOver}, gameState=${this.gameState}`);
+	      }
 	  }
 	  
 	  async saveScoreToDatabase(completedLevel) {
