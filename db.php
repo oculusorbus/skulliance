@@ -10464,6 +10464,13 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 
 define('CRYPTCRAWL_MAX_HP', 20);
 
+// Decorative card art source: the site owner's own Crypties NFTs, shared
+// across every player's deck (not per-player ownership — this is reskinning,
+// not a "your NFTs become your deck" system). Change here if the collection
+// changes.
+define('CRYPTCRAWL_ART_USER_ID', 1);
+define('CRYPTCRAWL_ART_COLLECTION_ID', 8);
+
 function cryptcrawlRankLabel($rank) {
 	$rank = intval($rank);
 	if ($rank === 14) return 'A';
@@ -10473,9 +10480,33 @@ function cryptcrawlRankLabel($rank) {
 	return strval($rank);
 }
 
+// Resolves the Crypties art pool to real image URLs via the same getIPFS()
+// helper gauntlets.php uses (local cache first, IPFS gateway fallback).
+// Returns an empty array (deck falls back to plain suit/rank cards) if the
+// collection is empty or missing — never fatal.
+function cryptcrawlGetArtPool($conn) {
+	$user_id = CRYPTCRAWL_ART_USER_ID;
+	$collection_id = CRYPTCRAWL_ART_COLLECTION_ID;
+	$result = $conn->query("
+		SELECT nfts.ipfs, nfts.collection_id, collections.project_id
+		FROM nfts
+		INNER JOIN collections ON collections.id = nfts.collection_id
+		WHERE nfts.user_id = $user_id AND nfts.collection_id = $collection_id
+	");
+	$pool = array();
+	if ($result) {
+		while ($row = $result->fetch_assoc()) {
+			$pool[] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
+		}
+	}
+	return $pool;
+}
+
 // Fresh shuffled 44-card deck: 26 monsters (clubs/spades, rank 2-14),
-// 9 weapons (diamonds, rank 2-10), 9 potions (hearts, rank 2-10).
-function cryptcrawlBuildDeck() {
+// 9 weapons (diamonds, rank 2-10), 9 potions (hearts, rank 2-10). Each card
+// gets an image_url from $art_pool (cycling if the pool is smaller than the
+// deck) when a pool is supplied; otherwise cards render as plain suit/rank.
+function cryptcrawlBuildDeck($art_pool = array()) {
 	$deck = array();
 	foreach (array('C', 'S') as $suit) {
 		for ($rank = 2; $rank <= 14; $rank++) {
@@ -10489,6 +10520,13 @@ function cryptcrawlBuildDeck() {
 		}
 	}
 	shuffle($deck);
+	if (!empty($art_pool)) {
+		shuffle($art_pool);
+		foreach ($deck as $i => &$card) {
+			$card['image_url'] = $art_pool[$i % count($art_pool)];
+		}
+		unset($card);
+	}
 	return $deck;
 }
 
@@ -10519,7 +10557,8 @@ function cryptcrawlGetMostRecentRun($conn, $user_id) {
 
 function cryptcrawlStartRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$deck = cryptcrawlBuildDeck();
+	$art_pool = cryptcrawlGetArtPool($conn);
+	$deck = cryptcrawlBuildDeck($art_pool);
 	$room = array_splice($deck, 0, 4);
 	$hp = CRYPTCRAWL_MAX_HP;
 	$deck_json = $conn->real_escape_string(json_encode($deck));

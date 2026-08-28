@@ -81,11 +81,16 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-hp-bar-fill { background: linear-gradient(90deg,#ff4444,#ff9900,#00c8a0); height: 100%; transition: width .3s; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.cc-card { background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; padding: 14px 10px; text-align: center; }
-.cc-card-rank { font-size: 1.8rem; font-weight: 700; line-height: 1; }
-.cc-card-suit { font-size: 1.4rem; margin-top: 2px; }
-.cc-card-label { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; letter-spacing: .05em; margin-top: 6px; }
-.cc-card-actions { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.cc-card { background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; text-align: center; }
+.cc-card-art { position: relative; aspect-ratio: 1; background: #002f44; }
+.cc-card-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cc-card-badge { position: absolute; top: 6px; left: 6px; background: rgba(1,20,30,.78); border-radius: 6px; padding: 3px 7px; font-size: 1rem; font-weight: 700; line-height: 1.1; display: flex; align-items: center; gap: 3px; }
+.cc-card-badge .cc-card-suit { font-size: 0.85rem; }
+.cc-card-art-empty .cc-card-badge { position: static; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; background: none; padding: 20px 0; }
+.cc-card-art-empty .cc-card-badge .cc-card-rank { font-size: 1.8rem; }
+.cc-card-art-empty .cc-card-badge .cc-card-suit { font-size: 1.4rem; }
+.cc-card-label { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; letter-spacing: .05em; padding: 8px 10px 0; }
+.cc-card-actions { padding: 8px 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 .cc-btn { background: #00c8a0; color: #012; border: 1px solid transparent; border-radius: 6px; padding: 7px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
 .cc-btn:hover { filter: brightness(1.1); }
 .cc-btn.secondary { background: rgba(255,255,255,.08); color: #e8f2f8; border-color: rgba(255,255,255,.3); }
@@ -161,8 +166,15 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 			?>
 				<div class="cc-card">
-					<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
-					<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+					<div class="cc-card-art<?php echo empty($card['image_url']) ? ' cc-card-art-empty' : ''; ?>">
+						<?php if (!empty($card['image_url'])): ?>
+							<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();this.parentElement.classList.add('cc-card-art-empty');">
+						<?php endif; ?>
+						<div class="cc-card-badge">
+							<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
+							<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+						</div>
+					</div>
 					<div class="cc-card-label"><?php echo htmlspecialchars($type); ?></div>
 					<div class="cc-card-actions">
 						<?php if ($type === 'monster'): ?>
