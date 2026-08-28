@@ -147,7 +147,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	transition: width 1s cubic-bezier(.22,1,.36,1);
 }
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
-.cc-weapon { font-size: 0.8rem; opacity: 0.8; }
+.cc-weapon { font-size: 0.8rem; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
+.cc-weapon-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+.cc-equip-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: 4px; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cc-card { text-align: center; }
 .cc-card-flip {
@@ -326,8 +328,15 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			</div>
 			<div class="cc-hud-meta">
 				<div class="cc-weapon">
-					<?php if ($weapon_power !== null): ?>
-						🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) — <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
+					<?php if ($weapon_power !== null):
+						// Same icon convention gauntlets.php uses for its own gear
+						// panel: lowercase the weapon's name, hyphenate, .png — with
+						// the same graceful onerror hide for any name with no icon
+						// on disk (e.g. the "Rusty Blade" fallback name).
+						$weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $weapon_name)) . '.png';
+					?>
+						<img class="cc-weapon-icon" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
+						<strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) — <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
 					<?php else: ?>
 						👊 Bare-handed
 					<?php endif; ?>
@@ -393,11 +402,21 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 								</form>
 								<?php if (!$weapon_eligible): ?><div class="cc-note">weapon is too worn for this one</div><?php endif; ?>
 							<?php endif; ?>
-						<?php elseif ($type === 'weapon'): ?>
+						<?php elseif ($type === 'weapon'):
+							// Preview the exact name this card would become on equip
+							// (same lookup cryptcrawlPlayCard() itself uses) so the
+							// icon shown here always matches what actually gets
+							// equipped — same icon convention/fallback as the HUD.
+							$preview_weapon_name = cryptcrawlWeaponName($conn, $rank);
+							$preview_weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $preview_weapon_name)) . '.png';
+						?>
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn warn">⚔️ Equip</button>
+								<button type="submit" class="cc-btn warn">
+									<img class="cc-equip-icon" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">
+									Equip <?php echo htmlspecialchars($preview_weapon_name); ?>
+								</button>
 							</form>
 						<?php else: ?>
 							<form method="post"><input type="hidden" name="action" value="play_card">
