@@ -73,7 +73,8 @@ $suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
 $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
 ?>
 <style>
-.cc-wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 60px; }
+.cc-wrap { padding: 20px 16px 60px; }
+.cc-inner { max-width: 720px; margin: 0 auto; }
 .cc-flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }
 .cc-flash.win  { background: rgba(0,200,160,.12); border: 1px solid rgba(0,200,160,.35); color: #00c8a0; }
 .cc-flash.loss { background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
@@ -110,6 +111,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-flee-row { text-align: center; margin-bottom: 20px; }
 </style>
 <div class="cc-wrap">
+<div class="cc-inner">
 	<h2 style="margin-bottom:4px;">💀 Crypt Crawl <span style="font-size:0.6rem;opacity:0.5;text-transform:uppercase;letter-spacing:.08em;">prototype</span></h2>
 
 	<?php foreach ($flashes as $f): ?>
@@ -129,6 +131,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">Start Delve</button>
 		</form>
+	</div><!-- /cc-inner -->
 
 	<?php elseif ($state === 'game_over'): ?>
 		<div class="cc-rules">
@@ -141,6 +144,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">Delve Again</button>
 		</form>
+	</div><!-- /cc-inner -->
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];
@@ -159,7 +163,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		$room_themes = ['24.jpg','23.jpg','25.jpg','12.jpg','4.jpg','11.jpg','22.jpg','9.jpg','18.jpg','3.jpg','2.jpg','38.jpg','1.jpg','0old.jpg','6.jpg'];
 		$room_theme_url = '/staking/images/themes/' . $room_themes[intval($active_run['rooms_cleared']) % count($room_themes)];
 	?>
+	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
 		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
+		<div class="cc-inner">
 		<div class="cc-hud">
 			<div class="cc-hp-wrap">
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;">HP <?php echo $hp; ?> / <?php echo $max_hp; ?></div>
@@ -246,7 +252,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				<button type="submit" class="cc-btn secondary" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;">Abandon run</button>
 			</form>
 		</div>
-		</div>
+		</div><!-- /cc-inner -->
+		</div><!-- /cc-theme-bg -->
 	<?php endif; ?>
 </div>
 </html>
