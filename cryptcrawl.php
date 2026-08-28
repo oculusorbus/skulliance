@@ -310,7 +310,16 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			function sizeTheme() {
 				var top = el.getBoundingClientRect().top;
 				var bottomPad = 60; // matches .cc-wrap's bottom padding
-				el.style.height = Math.max(200, window.innerHeight - top - bottomPad) + 'px';
+				var available = window.innerHeight - top - bottomPad;
+				// Never shrink below what the content actually needs — on narrow
+				// viewports the room grid wraps to more rows, and with
+				// align-items:center a too-short box would center-overflow,
+				// clipping the HUD off the top of the page instead of just
+				// letting the page scroll a little. Cropping the art via
+				// background-size:cover is fine; clipping the UI isn't.
+				el.style.height = 'auto';
+				var natural = el.scrollHeight;
+				el.style.height = Math.max(200, available, natural) + 'px';
 			}
 			sizeTheme();
 			window.addEventListener('resize', sizeTheme);
