@@ -87,7 +87,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-hp-bar-fill { background: linear-gradient(90deg,#ff4444,#ff9900,#00c8a0); height: 100%; transition: width .3s; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.cc-card { background: linear-gradient(135deg, #2e2013, #1a1209); border: 2px solid transparent; border-image: linear-gradient(135deg, #4a3520, #1a1209) 1; border-radius: 10px; overflow: hidden; text-align: center; }
+.cc-card { background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; text-align: center; }
 .cc-card-frame { position: relative; background: linear-gradient(135deg, #2e2013, #1a1209); box-sizing: border-box; padding: 16px; }
 .cc-card-art { position: relative; aspect-ratio: 5 / 7; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
@@ -184,9 +184,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			<?php foreach ($room as $i => $card):
 				$suit = $card['suit']; $rank = intval($card['rank']); $type = $card['type'];
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
+				$frame_gradient = cryptcrawlFrameGradient(cryptcrawlDominantColor($card['image_url'] ?? ''));
 			?>
 				<div class="cc-card">
-					<div class="cc-card-frame">
+					<div class="cc-card-frame" style="background:<?php echo htmlspecialchars($frame_gradient); ?>;">
 						<?php if (!empty($card['image_url'])): ?>
 							<div class="cc-card-art">
 								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
