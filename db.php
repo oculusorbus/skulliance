@@ -5443,6 +5443,119 @@ function resetGauntlets($conn) {
 	}
 }
 
+// Crypt Crawl leaderboard -- same shape as checkGauntletsLeaderboard() above:
+// $weekly filters to runs not yet counted toward a payout (reward=0, reset by
+// resetCryptCrawls() below, same "unrewarded since last cycle" convention as
+// Gauntlets rather than a calendar-week date filter); $rewards actually pays
+// out and is only ever called from rewards.php's cron-triggered endpoint.
+// Only resolved runs count (status won/lost) -- an in-progress delve isn't a
+// result yet, same reasoning as Gauntlets excluding outcome='pending'.
+// Ranked by wins first, then best single-run crypt depth reached (rooms
+// cleared, out of the fixed 15-room deck-clear), then fewest losses.
+function checkCryptCrawlLeaderboard($conn, $weekly=false, $rewards=false) {
+	$carbon = 50000;
+	$where  = ($weekly || $rewards) ? "AND cc.reward = 0" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			SUM(cc.status = 'won')  AS wins,
+			SUM(cc.status = 'lost') AS losses,
+			MAX(cc.rooms_cleared)   AS best_depth
+		FROM cryptcrawls cc
+		INNER JOIN users u ON u.id = cc.user_id
+		WHERE cc.status IN ('won', 'lost') $where
+		GROUP BY u.id
+		ORDER BY wins DESC, best_depth DESC, losses ASC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			// Composite score tuple for tie-detection
+			$score = [intval($row['wins']), intval($row['best_depth']), intval($row['losses'])];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['wins']) . 'W · depth ' . min(intval($row['best_depth']), 15) . '/15',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
+			$stats      = [
+				'Wins'       => number_format($row['wins']),
+				'Best Depth' => min(intval($row['best_depth']), 15) . '/15',
+				'Losses'     => number_format($row['losses']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Wins: " . $row['wins'] . ", Best Depth: " . min(intval($row['best_depth']), 15) . "/15, Losses: " . $row['losses'] . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			resetCryptCrawls($conn);
+			discordmsg("💀 Weekly Crypt Crawl Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($weekly || $rewards) ? "for the week" : "";
+		echo "<p>No Crypt Crawl delves have been completed yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="cryptcrawl"><input type="submit" class="small-button" value="View All Crypt Crawl Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+function resetCryptCrawls($conn) {
+	$sql = "UPDATE cryptcrawls SET reward = 1 WHERE reward = 0";
+	if ($conn->query($sql) !== TRUE) {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Check Activity Leaderboard — weighted aggregate across all platform features
 // Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5, raid=15, boss battle=25, monstrocity session=50
 function checkActivityLeaderboard($conn, $period = 'ath') {
@@ -10684,9 +10797,9 @@ function cryptcrawlStartRun($conn, $user_id) {
 		$room_esc = $conn->real_escape_string($room_json);
 		$conn->query("
 			INSERT INTO cryptcrawls
-				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared, second_wind_used)
+				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared, second_wind_used, reward)
 			VALUES
-				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0, 0)
+				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0)
 		");
 		return $conn->insert_id;
 	}
@@ -10696,7 +10809,7 @@ function cryptcrawlStartRun($conn, $user_id) {
 		'deck' => $deck_json, 'room' => $room_json,
 		'weapon_power' => null, 'weapon_name' => null, 'weapon_beaten_rank' => null,
 		'last_card_type' => null, 'potion_used_this_room' => 0, 'fled_last_room' => 0, 'rooms_cleared' => 0,
-		'second_wind_used' => 0,
+		'second_wind_used' => 0, 'reward' => 0, // guest runs never reach the leaderboard anyway (no DB row at all)
 	);
 	return 0;
 }
@@ -10858,6 +10971,10 @@ function cryptcrawlSaveRun($conn, $run) {
 	$fled_last_room        = intval($run['fled_last_room']);
 	$rooms_cleared         = intval($run['rooms_cleared']);
 	$second_wind_used      = intval($run['second_wind_used'] ?? 0);
+	// Persists whatever reward flag the run was fetched with -- nothing in the
+	// game logic itself ever sets it; only resetCryptCrawls() does, after a
+	// weekly payout. Falls back to 0 for a freshly-inserted run's first save.
+	$reward                = intval($run['reward'] ?? 0);
 
 	$conn->query("
 		UPDATE cryptcrawls SET
@@ -10865,7 +10982,7 @@ function cryptcrawlSaveRun($conn, $run) {
 			weapon_power = $weapon_power, weapon_name = $weapon_name,
 			weapon_beaten_rank = $weapon_beaten_rank, last_card_type = $last_card_type,
 			potion_used_this_room = $potion_used_this_room, fled_last_room = $fled_last_room,
-			rooms_cleared = $rooms_cleared, second_wind_used = $second_wind_used, updated_at = NOW()
+			rooms_cleared = $rooms_cleared, second_wind_used = $second_wind_used, reward = $reward, updated_at = NOW()
 		WHERE id = $id
 	");
 }

@@ -3,11 +3,10 @@
 // playable while logged out, same as skullswap.php/match3rpg.php — but only
 // persisted to the DB for a real account (see the storage functions in
 // db.php's "CRYPT CRAWL" block, which branch on $user_id/run id > 0). A
-// guest's run lives in $_SESSION only and is gone with their session.
-// Still outstanding from the original prototype punch list: currency
-// payout, Discord broadcast (both explicitly guest-ineligible anyway), and
-// the skullpaper/cryptcrawl.md + MAINTENANCE.md entry CLAUDE.md calls for
-// on a significant feature going live.
+// guest's run lives in $_SESSION only and is gone with their session, so
+// guests never appear on the leaderboard (see checkCryptCrawlLeaderboard()
+// in db.php, alongside the other leaderboard checks) or earn CARBON —
+// explicitly account-only, like every other weekly leaderboard payout here.
 include_once 'db.php';
 include 'message.php';
 include 'verify.php';

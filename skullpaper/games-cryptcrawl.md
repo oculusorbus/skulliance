@@ -30,6 +30,13 @@ The **first hit that would take you to 0 HP** in a delve doesn't - it leaves you
 * Run out of HP (after Second Wind is spent) and the delve **ends in a loss**.
 * Giving up mid-delve counts as a loss too - there's no separate "abandoned" outcome.
 
+## Leaderboard & Rewards
+
+Every completed delve (won or lost - an in-progress one doesn't count yet) feeds the Crypt Crawl leaderboard, ranked by **wins first, then your best single delve's crypt depth, then fewest losses**. See [[platform-leaderboards]].
+
+* **All-Time** shows your career totals.
+* **Weekly** resets each cycle and pays out - the **1st place** finisher earns **50,000 CARBON (= 500 DIAMOND)**, and the pool divides down the rankings from there (each rank gets roughly its share of the pool, same distribution [[games-gauntlets]] uses for its own weekly pool). Convertible to DIAMOND at 100:1 - see [[staking-crafting]].
+
 ## Playing as a Guest
 
-Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends. Log in to have your delve saved to your account. There's no currency payout or Discord broadcast wired up for Crypt Crawl yet.
+Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your delves saved to your account and counted toward both leaderboards.

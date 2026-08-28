@@ -43,4 +43,7 @@ if(isset($_GET['monstrocity'])){
 if(isset($_GET['gauntlets'])){
 	checkGauntletsLeaderboard($conn, false, true);
 }
+if(isset($_GET['cryptcrawl'])){
+	checkCryptCrawlLeaderboard($conn, false, true);
+}
 ?>

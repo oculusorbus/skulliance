@@ -994,6 +994,10 @@ function filterLeaderboard($page){
 				<option value="gauntlets">All Gauntlets</option>
 				<option value="weekly-gauntlets">Weekly Gauntlets</option>
 			</optgroup>
+			<optgroup label="Crypt Crawl">
+				<option value="cryptcrawl">All Crypt Crawls</option>
+				<option value="weekly-cryptcrawl">Weekly Crypt Crawl</option>
+			</optgroup>
 			<optgroup label="Skull Swaps">
 				<option value="swaps">All Skull Swaps</option>
 				<option value="weekly-swaps">Weekly Skull Swaps</option>

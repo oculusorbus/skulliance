@@ -212,7 +212,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "monthly-raids" && $filterby != "factions" && $filterby != "monthly-factions" &&
 				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" &&
 				           $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" && $filterby != "realms" &&
+				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+			           $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" && $filterby != "realms" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
@@ -288,6 +289,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				    case ($filterby == "weekly-gauntlets"):
 				        $title = "Weekly Gauntlets";
 				        $filterby = "weekly-gauntlets";
+				        break;
+				    case ($filterby == "cryptcrawl"):
+				        $title = "All Crypt Crawls";
+				        $filterby = "cryptcrawl";
+				        break;
+				    case ($filterby == "weekly-cryptcrawl"):
+				        $title = "Weekly Crypt Crawl";
+				        $filterby = "weekly-cryptcrawl";
 				        break;
 				    case ($filterby == "activity-ath"):
 				        $title = "All-Time Activity";
@@ -375,6 +384,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "weekly-gauntlets"):
 				            checkGauntletsLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "cryptcrawl"):
+				            checkCryptCrawlLeaderboard($conn);
+				            break;
+				        case ($filterby == "weekly-cryptcrawl"):
+				            checkCryptCrawlLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "activity-ath"):
 				            checkActivityLeaderboard($conn, 'ath');

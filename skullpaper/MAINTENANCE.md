@@ -100,7 +100,15 @@ records verified constants, and tracks what still needs to be written.
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
   heal half (floor, min 1) instead of nothing. Second Wind: first hit that would hit 0 HP per
-  delve instead clamps to 1 HP, once per delve, automatic. No currency payout yet.
+  delve instead clamps to 1 HP, once per delve, automatic.
+- Crypt Crawl leaderboard (db.php `checkCryptCrawlLeaderboard`/`resetCryptCrawls`, same shape
+  as `checkGauntletsLeaderboard`): ranks by wins DESC, best single-run rooms_cleared ("crypt
+  depth", 0-15) DESC, losses ASC. Only status won/lost runs count (not in-progress). Weekly
+  pool 50,000 CARBON, `round(50000/rank)` per rank same as Gauntlets' formula (rank 1 = 50,000
+  CARBON = 500 DIAMOND, rank 2 = 25,000 = 250 DIAMOND, etc.), paid via rewards.php?cryptcrawl=1
+  (cron-triggered, same convention as every other weekly leaderboard here). All-time view has
+  no reward. Requires a `reward` TINYINT column on `cryptcrawls` (see the migration note in the
+  commit that added it) - not yet run on the live table as of this writing.
 - Crypt Crawl card art (db.php CRYPTCRAWL_CARD_ART, `cryptcrawlGetCardArt`): each of the 44
   cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - curated
   2026-08-28 from the owner's Crypties - Season 2 holdings (~108 candidates reviewed, 27 of
