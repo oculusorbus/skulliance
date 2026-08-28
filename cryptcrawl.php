@@ -93,7 +93,11 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-flash.error{ background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
 .cc-flash.info { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #c8dce8; }
 .cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
-.cc-hud { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both; }
+.cc-hud {
+	display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both;
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border-radius: 12px; padding: 12px 14px; box-sizing: border-box;
+}
 .cc-hp-wrap { width: 100%; }
 .cc-hud-meta { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 .cc-hp-bar-bg { background: rgba(255,255,255,.08); border-radius: 6px; height: 14px; overflow: hidden; }
@@ -161,7 +165,11 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-note { font-size: 0.68rem; opacity: 0.5; margin-top: 4px; }
 .cc-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
-.cc-flee-row { text-align: center; margin-bottom: 20px; }
+.cc-flee-row {
+	text-align: center; margin-bottom: 20px;
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border-radius: 12px; padding: 14px; box-sizing: border-box;
+}
 @media (prefers-reduced-motion: reduce) {
 	.cc-card, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after { animation: none !important; }
 	.cc-card, .cc-btn { transition: none !important; }
