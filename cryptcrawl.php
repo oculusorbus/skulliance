@@ -28,12 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($run) {
 			$card_index = intval($_POST['card_index'] ?? -1);
 			$use_weapon = isset($_POST['use_weapon']) && $_POST['use_weapon'] === '1';
-			$updated = cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
-			if ($updated && $updated['status'] === 'lost') {
-				cryptcrawlFlash('You fell in the crypt. Run over — ' . intval($updated['rooms_cleared']) . ' crypts cleared.', 'loss');
-			} elseif ($updated && $updated['status'] === 'won') {
-				cryptcrawlFlash('Deck cleared! You made it out with ' . intval($updated['hp']) . ' HP left.', 'win');
-			}
+			// No flash for a run-ending outcome — the game_over screen's own
+			// result panel says the same thing, better, and having both was
+			// redundant (two near-identical sentences stacked on load).
+			cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 		}
 
 	} elseif ($action === 'flee') {
@@ -81,6 +79,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap');
 
 @keyframes ccCardFlip { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
+@keyframes ccResultPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes ccFlashIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ccPulse { 0%, 100% { box-shadow: 0 0 0 rgba(255,68,68,0); } 50% { box-shadow: 0 0 16px 2px rgba(255,68,68,.65); } }
 @keyframes ccBtnSheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(220%) skewX(-20deg); } }
@@ -184,13 +183,25 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-note { font-size: 0.68rem; opacity: 0.5; margin-top: 4px; }
 .cc-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
+.cc-result {
+	text-align: center; border-radius: 12px; padding: 30px 20px; margin-bottom: 20px; box-sizing: border-box;
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.cc-result.lost { box-shadow: 0 0 40px rgba(224,85,85,.15) inset, 0 0 1px rgba(224,85,85,.4); }
+.cc-result.won  { box-shadow: 0 0 40px rgba(0,200,160,.15) inset, 0 0 1px rgba(0,200,160,.4); }
+.cc-result-icon  { font-size: 3.2rem; margin-bottom: 10px; animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .1s both; }
+.cc-result-title { font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .2s both; }
+.cc-result.lost .cc-result-title { color: #ff7070; }
+.cc-result.won  .cc-result-title { color: #00c8a0; }
+.cc-result-sub { font-size: .85rem; color: rgba(255,255,255,.5); animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .3s both; }
 .cc-flee-row {
 	text-align: center; margin-bottom: 20px;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 	border-radius: 12px; padding: 14px; box-sizing: border-box;
 }
 @media (prefers-reduced-motion: reduce) {
-	.cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after { animation: none !important; }
+	.cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
+	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
 	.cc-card-flip, .cc-btn { transition: none !important; }
 }
 </style>
@@ -223,12 +234,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
 		<div class="cc-inner">
 		<?php endif; ?>
-		<div class="cc-rules">
-			<?php if ($recent_run['status'] === 'won'): ?>
-				<strong style="color:#00c8a0;">Deck cleared.</strong> You escaped with <?php echo intval($recent_run['hp']); ?> HP left across <?php echo intval($recent_run['rooms_cleared']); ?> crypts.
-			<?php else: ?>
-				<strong style="color:#ff7070;">You fell.</strong> <?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared before the crypt got you.
-			<?php endif; ?>
+		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
+			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
+			<div class="cc-result-title"><?php echo $fell ? 'You Fell' : 'You Escaped'; ?></div>
+			<div class="cc-result-sub">
+				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
+				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
+			</div>
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
