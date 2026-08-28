@@ -143,11 +143,18 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 
 .cc-wrap { padding: 20px 16px 60px; }
 .cc-inner { max-width: 720px; width: 100%; margin: 0 auto; }
-.cc-flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; animation: ccFlashIn .4s ease both; }
-.cc-flash.win  { background: rgba(0,200,160,.12); border: 1px solid rgba(0,200,160,.35); color: #00c8a0; }
-.cc-flash.loss { background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
-.cc-flash.error{ background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
-.cc-flash.info { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #c8dce8; }
+/* Floats over the game instead of sitting in normal document flow at the top
+   of the page -- the old in-flow placement pushed the HUD/room down every
+   time a flash fired, and stuck around "hanging" there until the next action
+   reloaded the page. pointer-events:none on the stack so it never blocks a
+   tap on whatever's underneath; each toast still gets its own auto-dismiss
+   (see the bottom script block) so it clears itself instead of lingering. */
+.cc-flash-stack { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 460px); pointer-events: none; }
+.cc-flash { padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; text-align: center; background: rgba(5,12,20,.92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: ccFlashIn .4s ease both; }
+.cc-flash.win  { border: 1px solid rgba(0,200,160,.5); color: #00c8a0; }
+.cc-flash.loss { border: 1px solid rgba(255,68,68,.5); color: #ff7070; }
+.cc-flash.error{ border: 1px solid rgba(255,68,68,.5); color: #ff7070; }
+.cc-flash.info { border: 1px solid rgba(255,255,255,.25); color: #c8dce8; }
 .cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
 .cc-hud {
 	display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both;
@@ -344,9 +351,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 </style>
 <div class="cc-wrap">
 <div class="cc-inner">
-	<?php foreach ($flashes as $f): ?>
-		<div class="cc-flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
-	<?php endforeach; ?>
+	<?php if ($flashes): ?>
+	<div class="cc-flash-stack">
+		<?php foreach ($flashes as $f): ?>
+			<div class="cc-flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
 
 	<?php if ($state === 'no_run'): ?>
 		<div class="cc-rules">
@@ -570,6 +581,24 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 </div>
 <script>
 (function() {
+	// Flash toasts float over the game now instead of sitting in the page
+	// flow, so nothing dismisses them automatically the way scrolling past an
+	// in-flow banner used to -- clear each one on a timer instead of letting
+	// it sit there until the next action reloads the page. Reduced-motion
+	// still gets the timed removal, just without the opacity transition.
+	var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	document.querySelectorAll('.cc-flash').forEach(function(el) {
+		setTimeout(function() {
+			if (reduceMotion) {
+				el.remove();
+				return;
+			}
+			el.style.transition = 'opacity .4s ease';
+			el.style.opacity = '0';
+			setTimeout(function() { el.remove(); }, 400);
+		}, 4000);
+	});
+
 	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
 	// nudging it to its real data-target-width one frame later animates the
 	// gradient revealing in on every page load, not just on HP changes —
