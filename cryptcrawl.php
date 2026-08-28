@@ -88,13 +88,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cc-card { background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; text-align: center; }
-.cc-card-art { position: relative; aspect-ratio: 5 / 7; background: #002f44; }
+.cc-card-art { position: relative; aspect-ratio: 5 / 7; background: #23180d; box-sizing: border-box; padding: 16px; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
-.cc-card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 6px rgba(0,0,0,.6); }
-.cc-card-corner .cc-card-rank { font-size: 1.15rem; font-weight: 800; }
-.cc-card-corner .cc-card-suit { font-size: 0.95rem; margin-top: 1px; }
-.cc-card-corner.tl { top: 6px; left: 7px; }
-.cc-card-corner.br { bottom: 6px; right: 7px; transform: rotate(180deg); }
+.cc-card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.cc-card-corner .cc-card-rank { font-size: 1rem; font-weight: 800; }
+.cc-card-corner .cc-card-suit { font-size: 0.8rem; margin-top: 1px; }
+.cc-card-corner.tl { top: 3px; left: 4px; }
+.cc-card-corner.br { bottom: 3px; right: 4px; transform: rotate(180deg); }
 .cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 26px 0; }
 .cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 700; }
 .cc-card-badge-standalone .cc-card-suit { font-size: 1.4rem; }
