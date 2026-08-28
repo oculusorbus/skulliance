@@ -5537,7 +5537,7 @@ function checkCryptCrawlLeaderboard($conn, $weekly=false, $rewards=false) {
 
 		if ($rewards) {
 			resetCryptCrawls($conn);
-			discordmsg("💀 Weekly Crypt Crawl Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+			discordmsg("💀 Weekly Crypt Crawl Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php", "cryptcrawl");
 		}
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();
