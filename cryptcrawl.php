@@ -74,13 +74,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 ?>
 <style>
 .cc-wrap { padding: 20px 16px 60px; }
-.cc-inner { max-width: 720px; margin: 0 auto; }
+.cc-inner { max-width: 720px; width: 100%; margin: 0 auto; }
 .cc-flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }
 .cc-flash.win  { background: rgba(0,200,160,.12); border: 1px solid rgba(0,200,160,.35); color: #00c8a0; }
 .cc-flash.loss { background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
 .cc-flash.error{ background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
 .cc-flash.info { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #c8dce8; }
-.cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .4s ease; }
+.cc-theme-bg { aspect-ratio: 4 / 3; background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .4s ease; display: flex; align-items: center; justify-content: center; }
 .cc-hud { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
 .cc-hp-wrap { flex: 1; min-width: 180px; }
 .cc-hp-bar-bg { background: rgba(255,255,255,.08); border-radius: 6px; height: 14px; overflow: hidden; }
