@@ -458,7 +458,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 									<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 									<input type="hidden" name="use_weapon" value="1">
 									<button type="submit" class="cc-btn attack punchy" <?php echo $weapon_eligible ? '' : 'disabled'; ?>>
-										<span class="cc-btn-icon-big">🗡️</span>
+										<!-- Same $weapon_icon the HUD line above already computed for the
+										     currently equipped weapon -- reused as-is so this always matches. -->
+										<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
 										<span class="cc-btn-action">Use Weapon</span>
 										<span class="cc-btn-detail"><?php echo $weapon_eligible ? '-' . max(0, $rank - $weapon_power) . ' HP' : 'Too worn'; ?></span>
 									</button>
