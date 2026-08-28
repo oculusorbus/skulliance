@@ -239,7 +239,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			</div>
 			<div class="cc-weapon">
 				<?php if ($weapon_power !== null): ?>
-					🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>)<?php if ($weapon_beaten_rank !== null): ?> — beats up to <?php echo cryptcrawlRankLabel($weapon_beaten_rank); ?><?php endif; ?>
+					🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) — <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
 				<?php else: ?>
 					🗡️ Bare-handed
 				<?php endif; ?>
@@ -292,7 +292,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 										🗡️ Use weapon<?php echo $weapon_eligible ? ' (-' . max(0, $rank - $weapon_power) . ')' : ''; ?>
 									</button>
 								</form>
-								<?php if (!$weapon_eligible): ?><div class="cc-note">too worn for this one</div><?php endif; ?>
+								<?php if (!$weapon_eligible): ?><div class="cc-note">weapon is too worn for this one</div><?php endif; ?>
 							<?php endif; ?>
 						<?php elseif ($type === 'weapon'): ?>
 							<form method="post"><input type="hidden" name="action" value="play_card">
