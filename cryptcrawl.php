@@ -86,9 +86,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-card-suit { font-size: 1.4rem; margin-top: 2px; }
 .cc-card-label { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; letter-spacing: .05em; margin-top: 6px; }
 .cc-card-actions { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
-.cc-btn { background: #00c8a0; color: #012; border: none; border-radius: 6px; padding: 7px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.cc-btn { background: #00c8a0; color: #012; border: 1px solid transparent; border-radius: 6px; padding: 7px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
 .cc-btn:hover { filter: brightness(1.1); }
-.cc-btn.secondary { background: rgba(255,255,255,.1); color: #c8dce8; }
+.cc-btn.secondary { background: rgba(255,255,255,.08); color: #e8f2f8; border-color: rgba(255,255,255,.3); }
+.cc-btn.secondary:hover { background: rgba(255,255,255,.15); }
 .cc-btn.warn { background: #ff9900; color: #012; }
 .cc-btn:disabled { opacity: 0.35; cursor: default; }
 .cc-note { font-size: 0.68rem; opacity: 0.5; margin-top: 4px; }
