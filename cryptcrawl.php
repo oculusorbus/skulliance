@@ -149,13 +149,6 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
 .cc-weapon-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
-.cc-equip-icon {
-	width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: 4px;
-	/* Force solid black regardless of the icon's own colors, matching the
-	   button's dark #012 text — robust against any weapon icon's actual
-	   palette instead of clashing with whatever it happens to be. */
-	filter: brightness(0);
-}
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cc-card { text-align: center; }
 .cc-card-flip {
@@ -220,8 +213,21 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-btn.secondary { background: rgba(255,255,255,.08); color: #e8f2f8; border-color: rgba(255,255,255,.3); }
 .cc-btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,.15); box-shadow: 0 6px 16px rgba(255,255,255,.12); }
 .cc-btn.warn { background: #ff9900; color: #012; }
-.cc-btn.stacked { flex-direction: column; gap: 2px; line-height: 1.2; }
-.cc-btn-row2 { font-size: 0.68rem; font-weight: 500; opacity: 0.8; }
+/* Punchy 3-tier layout: big icon, bold action word, small effect/detail
+   line — deliberate hierarchy instead of everything crammed onto one or
+   two lines. Only the four card-action buttons use this; Flee/Abandon/
+   Start Delve stay single-line since they don't have an icon+action+detail
+   shape to begin with. */
+.cc-btn.punchy { flex-direction: column; justify-content: center; gap: 3px; min-height: 84px; padding: 10px 6px; }
+.cc-btn-icon-big { font-size: 1.5rem; line-height: 1; }
+.cc-btn-icon-big-img {
+	width: 30px; height: 30px; object-fit: contain;
+	/* Same reasoning as before: force solid black so it matches the
+	   button's dark text regardless of the weapon icon's own colors. */
+	filter: brightness(0);
+}
+.cc-btn-action { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; line-height: 1.1; }
+.cc-btn-detail { font-size: 0.7rem; font-weight: 500; opacity: 0.75; line-height: 1.1; text-align: center; }
 .cc-btn.warn:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,153,0,.4); }
 .cc-btn.heal { background: #00c8a0; color: #012; }
 .cc-btn.heal:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(0,200,160,.4); }
@@ -398,17 +404,22 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn bare">👊 Fist Fight (-<?php echo $rank; ?>)</button>
+								<button type="submit" class="cc-btn bare punchy">
+									<span class="cc-btn-icon-big">👊</span>
+									<span class="cc-btn-action">Fist Fight</span>
+									<span class="cc-btn-detail">-<?php echo $rank; ?> HP</span>
+								</button>
 							</form>
 							<?php if ($weapon_power !== null): ?>
 								<form method="post"><input type="hidden" name="action" value="play_card">
 									<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 									<input type="hidden" name="use_weapon" value="1">
-									<button type="submit" class="cc-btn attack" <?php echo $weapon_eligible ? '' : 'disabled'; ?>>
-										🗡️ Use weapon<?php echo $weapon_eligible ? ' (-' . max(0, $rank - $weapon_power) . ')' : ''; ?>
+									<button type="submit" class="cc-btn attack punchy" <?php echo $weapon_eligible ? '' : 'disabled'; ?>>
+										<span class="cc-btn-icon-big">🗡️</span>
+										<span class="cc-btn-action">Use Weapon</span>
+										<span class="cc-btn-detail"><?php echo $weapon_eligible ? '-' . max(0, $rank - $weapon_power) . ' HP' : 'Too worn'; ?></span>
 									</button>
 								</form>
-								<?php if (!$weapon_eligible): ?><div class="cc-note">weapon is too worn for this one</div><?php endif; ?>
 							<?php endif; ?>
 						<?php elseif ($type === 'weapon'):
 							// Preview the exact name this card would become on equip
@@ -421,18 +432,22 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn warn stacked">
-									<span><img class="cc-equip-icon" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">Equip</span>
-									<span class="cc-btn-row2"><?php echo htmlspecialchars($preview_weapon_name); ?></span>
+								<button type="submit" class="cc-btn warn punchy">
+									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">
+									<span class="cc-btn-action">Equip</span>
+									<span class="cc-btn-detail"><?php echo htmlspecialchars($preview_weapon_name); ?></span>
 								</button>
 							</form>
 						<?php else: ?>
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn heal">🧪 Drink</button>
+								<button type="submit" class="cc-btn heal punchy">
+									<span class="cc-btn-icon-big">🧪</span>
+									<span class="cc-btn-action">Drink</span>
+									<span class="cc-btn-detail"><?php echo intval($active_run['potion_used_this_room']) === 1 ? 'No effect' : '+' . $rank . ' HP'; ?></span>
+								</button>
 							</form>
-							<?php if (intval($active_run['potion_used_this_room']) === 1): ?><div class="cc-note">won't heal — already drank this crypt</div><?php endif; ?>
 						<?php endif; ?>
 					</div>
 					</div>
