@@ -329,7 +329,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "factions" && $filterby != "monthly-factions" && $filterby != "swaps" &&
 				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" &&
 				              $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
-				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" && $filterby != "realms" &&
+				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
+				              $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" && $filterby != "realms" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
