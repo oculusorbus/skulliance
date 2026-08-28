@@ -99,8 +99,18 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-hp-wrap { width: 100%; }
 .cc-hud-meta { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
-.cc-hp-bar-bg { background: rgba(255,255,255,.08); border-radius: 6px; height: 14px; overflow: hidden; }
-.cc-hp-bar-fill { background: linear-gradient(90deg,#ff4444,#ff9900,#00c8a0); height: 100%; border-radius: 6px; transition: width 1s cubic-bezier(.22,1,.36,1); }
+.cc-hp-bar-bg {
+	background: linear-gradient(90deg,#ff4444,#ff9900,#00c8a0); border-radius: 6px; height: 14px;
+	overflow: hidden; position: relative;
+}
+.cc-hp-bar-fill {
+	/* A right-anchored cover over the un-filled portion, not a growing fill —
+	   the gradient lives on .cc-hp-bar-bg at a fixed, always-full-bar-width
+	   position so low HP shows solid red instead of the whole red-to-teal
+	   spectrum getting squeezed into a sliver a few px wide. */
+	background: rgba(5,12,20,.88); height: 100%; position: absolute; top: 0; right: 0;
+	transition: width 1s cubic-bezier(.22,1,.36,1);
+}
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
@@ -277,7 +287,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<div class="cc-hud">
 			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;">HP <?php echo $hp; ?> / <?php echo $max_hp; ?></div>
-				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" style="width:<?php echo $hp_pct; ?>%;"></div></div>
+				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" style="width:<?php echo 100 - $hp_pct; ?>%;"></div></div>
 			</div>
 			<div class="cc-hud-meta">
 				<div class="cc-weapon">
