@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			// redundant (two near-identical sentences stacked on load).
 			cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 			if ($wasted_potion) {
-				cryptcrawlFlash('No effect - you already drank a potion this crypt.', 'error');
+				cryptcrawlFlash('No effect - you already used a medkit this crypt.', 'error');
 			}
 		}
 
@@ -321,7 +321,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<div class="cc-rules">
 			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
 			equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
-			<strong style="color:#ff6b6b;">♥ Hearts</strong> heal you, but only the first one you drink each crypt counts.
+			<strong style="color:#ff6b6b;">♥ Hearts</strong> are medkits - heal you, but only the first one you use each crypt counts.
 			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
 			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
 			into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
@@ -407,7 +407,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$suit = $card['suit']; $rank = intval($card['rank']); $type = $card['type'];
 				// Display only — internal type stays 'monster' (game logic, DB
 				// data) so this is purely a label swap, not a data rename.
-				$type_label = $type === 'monster' ? 'enemy' : $type;
+				$type_label = $type === 'monster' ? 'enemy' : ($type === 'potion' ? 'medkit' : $type);
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 				$dom_rgb = cryptcrawlDominantColor($card['image_url'] ?? '');
 				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
@@ -488,8 +488,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
 								<button type="submit" class="cc-btn heal punchy">
-									<span class="cc-btn-icon-big">🧪</span>
-									<span class="cc-btn-action">Drink</span>
+									<img class="cc-btn-icon-big-img" src="https://madballs.net/drop-ship/icons/medkit.png" alt="" onerror="this.style.display='none';">
+									<span class="cc-btn-action">Heal</span>
 									<span class="cc-btn-detail"><?php echo intval($active_run['potion_used_this_room']) === 1 ? 'No effect' : '+' . $rank . ' HP'; ?></span>
 								</button>
 							</form>
