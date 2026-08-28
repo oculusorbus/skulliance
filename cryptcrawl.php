@@ -149,7 +149,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
 .cc-weapon-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
-.cc-equip-icon { width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: 4px; }
+.cc-equip-icon {
+	width: 18px; height: 18px; object-fit: contain; vertical-align: -4px; margin-right: 4px;
+	/* Force solid black regardless of the icon's own colors, matching the
+	   button's dark #012 text — robust against any weapon icon's actual
+	   palette instead of clashing with whatever it happens to be. */
+	filter: brightness(0);
+}
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cc-card { text-align: center; }
 .cc-card-flip {
