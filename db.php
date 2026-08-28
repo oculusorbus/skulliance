@@ -11059,7 +11059,7 @@ function cryptcrawlAnnounceResult($conn, $run) {
 		$cc_desc = $cc_mention . " cleared the crypt! 🏆\n\n💀 **Crypt Depth:** " . $cc_depth . "/15\n❤️ **HP Remaining:** " . intval($run['hp']) . "/" . intval($run['max_hp']) . $cc_badge_text;
 		discordmsg("🏆 Crypt Crawl Cleared", $cc_desc, $cc_theme_url, "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "00C8A0", $cc_author);
 	} else {
-		$cc_desc = $cc_mention . " fell in the crypt. 💀\n\n💀 **Crypt Depth Reached:** " . $cc_depth . "/15" . $cc_badge_text;
+		$cc_desc = $cc_mention . " died in the crypt. 💀\n\n💀 **Crypt Depth Reached:** " . $cc_depth . "/15" . $cc_badge_text;
 		discordmsg("💀 Crypt Crawl Ended", $cc_desc, $cc_theme_url, "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "FF4444", $cc_author);
 	}
 }
