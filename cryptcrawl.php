@@ -236,7 +236,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<?php endif; ?>
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
 			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
-			<div class="cc-result-title"><?php echo $fell ? 'You Fell' : 'You Escaped'; ?></div>
+			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
 			<div class="cc-result-sub">
 				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
 				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
