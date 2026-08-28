@@ -154,6 +154,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,.15); box-shadow: 0 6px 16px rgba(255,255,255,.12); }
 .cc-btn.warn { background: #ff9900; color: #012; }
 .cc-btn.warn:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,153,0,.4); }
+.cc-btn.heal { background: #ff6b6b; color: #012; }
+.cc-btn.heal:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,107,107,.4); }
 .cc-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
 	.cc-btn:not(:disabled)::after {
@@ -315,7 +317,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn warn">🧪 Drink</button>
+								<button type="submit" class="cc-btn heal">🧪 Drink</button>
 							</form>
 							<?php if (intval($active_run['potion_used_this_room']) === 1): ?><div class="cc-note">won't heal — already drank this crypt</div><?php endif; ?>
 						<?php endif; ?>
