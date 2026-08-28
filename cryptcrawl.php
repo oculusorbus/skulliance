@@ -334,7 +334,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	.cc-btn-icon-big { font-size: 1.125rem; }
 	.cc-btn-icon-big-img { width: 22px; height: 22px; }
 	.cc-btn-action { font-size: 0.6rem; }
-	.cc-btn-detail { font-size: 0.53rem; }
+	/* Bolder + more opaque than the desktop rule -- at this size, 500-weight
+	   text at 0.75 opacity was hard to make out. */
+	.cc-btn-detail { font-size: 0.53rem; font-weight: 700; opacity: 0.9; }
 	/* The button panel covers the card's bottom half here (see margin-top:-70%
 	   above) -- a dead-centered icon on a weapon/potion card face would sit
 	   right on that fold and get covered. Move it up into the clear top
