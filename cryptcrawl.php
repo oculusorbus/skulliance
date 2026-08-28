@@ -135,10 +135,6 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap');
 
 @keyframes ccCardFlip { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
-@keyframes ccCardDeal {
-	from { opacity: 0; transform: translate(var(--deal-x, 0), -20px) rotate(var(--deal-r, 0deg)) scale(.88); }
-	to   { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
-}
 @keyframes ccResultPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes ccFlashIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ccPulse { 0%, 100% { box-shadow: 0 0 0 rgba(255,68,68,0); } 50% { box-shadow: 0 0 16px 2px rgba(255,68,68,.65); } }
@@ -183,19 +179,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-second-wind { color: #00c8a0; font-weight: 700; white-space: nowrap; }
 .cc-weapon-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
-/* Dealt into place first, THEN flipped -- two separate animations on two
-   separate elements on purpose. This one (position/rotation/opacity) lives
-   on .cc-card, the outermost wrapper; the flip (rotateY) lives two levels
-   down on .cc-card-flip-inner. Keeping them apart also matters for a reason
-   that has nothing to do with looks: the desktop mouse-tilt effect (bottom
-   script block) sets an inline transform directly on .cc-card-flip on every
-   mousemove, and a CSS animation sharing that same element/property would
-   fight it. .cc-card-flip itself stays untouched by either animation. */
-.cc-card { text-align: center; animation: ccCardDeal .45s cubic-bezier(.22,.85,.32,1) both; }
-.cc-room .cc-card:nth-child(1) { --deal-x: -34px; --deal-r: -7deg; animation-delay: 0s; }
-.cc-room .cc-card:nth-child(2) { --deal-x: 34px;  --deal-r: 7deg;  animation-delay: .06s; }
-.cc-room .cc-card:nth-child(3) { --deal-x: -34px; --deal-r: -7deg; animation-delay: .12s; }
-.cc-room .cc-card:nth-child(4) { --deal-x: 34px;  --deal-r: 7deg;  animation-delay: .18s; }
+.cc-card { text-align: center; }
 .cc-card-flip {
 	perspective: 1000px; margin-bottom: 10px;
 	transition: transform .18s ease-out, box-shadow .25s ease;
@@ -204,13 +188,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	position: relative; aspect-ratio: 5 / 7; transform-style: preserve-3d;
 	animation: ccCardFlip .6s cubic-bezier(.3,.9,.4,1) both;
 }
-/* Delay starts after each card's own deal-in animation has settled, plus a
-   deliberate ~.4s hold so the card back (the Skulliance skull icon) is
-   clearly visible before it flips, not just a blur mid-motion. */
-.cc-room .cc-card:nth-child(1) .cc-card-flip-inner { animation-delay: .85s; }
-.cc-room .cc-card:nth-child(2) .cc-card-flip-inner { animation-delay: .92s; }
-.cc-room .cc-card:nth-child(3) .cc-card-flip-inner { animation-delay: .99s; }
-.cc-room .cc-card:nth-child(4) .cc-card-flip-inner { animation-delay: 1.06s; }
+.cc-room .cc-card:nth-child(1) .cc-card-flip-inner { animation-delay: .05s; }
+.cc-room .cc-card:nth-child(2) .cc-card-flip-inner { animation-delay: .13s; }
+.cc-room .cc-card:nth-child(3) .cc-card-flip-inner { animation-delay: .21s; }
+.cc-room .cc-card:nth-child(4) .cc-card-flip-inner { animation-delay: .29s; }
 .cc-card-face {
 	position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
 	border-radius: 10px; overflow: hidden; background: #000; border: 2px solid rgba(255,255,255,.08); box-sizing: border-box;
@@ -323,7 +304,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	border-radius: 12px; padding: 14px; box-sizing: border-box;
 }
 @media (prefers-reduced-motion: reduce) {
-	.cc-card, .cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
+	.cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
 	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
 	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
