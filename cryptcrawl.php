@@ -80,7 +80,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-flash.loss { background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
 .cc-flash.error{ background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
 .cc-flash.info { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #c8dce8; }
-.cc-theme-bg { aspect-ratio: 4 / 3; background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .4s ease; display: flex; align-items: center; justify-content: center; }
+.cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .4s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
 .cc-hud { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
 .cc-hp-wrap { flex: 1; min-width: 180px; }
 .cc-hp-bar-bg { background: rgba(255,255,255,.08); border-radius: 6px; height: 14px; overflow: hidden; }
@@ -112,8 +112,6 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 </style>
 <div class="cc-wrap">
 <div class="cc-inner">
-	<h2 style="margin-bottom:4px;">💀 Crypt Crawl <span style="font-size:0.6rem;opacity:0.5;text-transform:uppercase;letter-spacing:.08em;">prototype</span></h2>
-
 	<?php foreach ($flashes as $f): ?>
 		<div class="cc-flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
 	<?php endforeach; ?>
@@ -254,6 +252,22 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		</div>
 		</div><!-- /cc-inner -->
 		</div><!-- /cc-theme-bg -->
+		<script>
+		(function() {
+			// Fill whatever viewport space is left below the backdrop rather than
+			// forcing the page to scroll to show the full theme image — cropping
+			// via background-size:cover is fine, scrolling isn't.
+			var el = document.querySelector('.cc-theme-bg');
+			if (!el) return;
+			function sizeTheme() {
+				var top = el.getBoundingClientRect().top;
+				var bottomPad = 60; // matches .cc-wrap's bottom padding
+				el.style.height = Math.max(200, window.innerHeight - top - bottomPad) + 'px';
+			}
+			sizeTheme();
+			window.addEventListener('resize', sizeTheme);
+		})();
+		</script>
 	<?php endif; ?>
 </div>
 </html>
