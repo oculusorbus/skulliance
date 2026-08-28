@@ -130,17 +130,18 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9);
 }
 .cc-card-corner .cc-card-rank { font-size: 1rem; font-weight: 800; }
-.cc-card-corner .cc-card-suit { font-size: 0.8rem; margin-top: 1px; }
+.cc-card-corner .cc-card-suit { font-size: 1.3rem; margin-top: 1px; }
 .cc-card-corner.tl { top: 8%; left: 12%; }
 .cc-card-corner.br { bottom: 8%; right: 12%; transform: rotate(180deg); }
 .cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 26px 0; }
 .cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 800; }
-.cc-card-badge-standalone .cc-card-suit { font-size: 1.4rem; }
+.cc-card-badge-standalone .cc-card-suit { font-size: 2.1rem; }
 .cc-card-label { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; letter-spacing: .05em; padding: 8px 10px 0; }
 .cc-card-actions { padding: 8px 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 .cc-btn {
 	position: relative; overflow: hidden; background: #00c8a0; color: #012; border: 1px solid transparent; border-radius: 6px;
-	padding: 7px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+	padding: 7px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; box-sizing: border-box;
+	width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; text-align: center;
 	transition: transform .12s ease, filter .12s ease, box-shadow .2s ease;
 }
 .cc-btn:hover:not(:disabled) { filter: brightness(1.12); box-shadow: 0 6px 16px rgba(0,200,160,.35); }
