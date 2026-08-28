@@ -208,6 +208,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-card-flip.cc-spinning { box-shadow: none !important; }
 .cc-card-art { position: relative; width: 100%; height: 100%; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+/* Weapon/potion card faces: plain black instead of NFT art (curated Crypties
+   art is reserved for enemies), with just the weapon/medkit icon centered --
+   same idea as the card back's centered logo. Forced to solid white via the
+   filter so an arbitrarily-colored source icon always reads clearly against
+   the black card, regardless of its own native colors. */
+.cc-card-icon-face { display: flex; align-items: center; justify-content: center; background: #000; }
+.cc-card-icon { width: 42%; height: auto; filter: brightness(0) invert(1); opacity: 0.92; }
 .cc-card-rank, .cc-card-suit { font-family: 'Poppins', Arial, sans-serif; }
 .cc-card-corner {
 	position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1;
@@ -431,6 +438,16 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 				$dom_rgb = cryptcrawlDominantColor($card['image_url'] ?? '');
 				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
+				// Weapon cards get an icon-on-black face instead of NFT art (see the card
+				// face rendering below) -- computed here, once, so the same icon shows on
+				// the card face and the Equip button below it. Same lookup
+				// cryptcrawlPlayCard() itself uses on equip, so it always matches what
+				// actually gets equipped.
+				if ($type === 'weapon') {
+					$preview_weapon_name = cryptcrawlWeaponName($conn, $rank);
+					$preview_weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $preview_weapon_name)) . '.png';
+				}
+				$medkit_icon = 'https://madballs.net/drop-ship/icons/medkit.png';
 			?>
 				<div class="cc-card" style="--cc-glow:<?php echo htmlspecialchars($glow_rgba); ?>;">
 					<div class="cc-card-flip">
@@ -439,7 +456,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<img class="cc-card-back-icon" src="/staking/pwa/skulliance-logo-icon.png" alt="">
 						</div>
 						<div class="cc-card-face cc-card-front">
-						<?php if (!empty($card['image_url'])): ?>
+						<?php if ($type === 'monster' && !empty($card['image_url'])): ?>
 							<div class="cc-card-art">
 								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
 								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
@@ -451,10 +468,23 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
 								</div>
 							</div>
-						<?php else: ?>
+						<?php elseif ($type === 'monster'): ?>
 							<div class="cc-card-badge-standalone">
 								<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
 								<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+							</div>
+						<?php else: // weapon or potion -- icon on black instead of NFT art, keeping
+							// the curated Crypties art reserved for enemies specifically. ?>
+							<div class="cc-card-art cc-card-icon-face">
+								<img class="cc-card-icon" src="<?php echo htmlspecialchars($type === 'weapon' ? $preview_weapon_icon : $medkit_icon); ?>" alt="" onerror="this.style.display='none';">
+								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+								<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
 							</div>
 						<?php endif; ?>
 						</div>
@@ -486,14 +516,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 									</button>
 								</form>
 							<?php endif; ?>
-						<?php elseif ($type === 'weapon'):
-							// Preview the exact name this card would become on equip
-							// (same lookup cryptcrawlPlayCard() itself uses) so the
-							// icon shown here always matches what actually gets
-							// equipped — same icon convention/fallback as the HUD.
-							$preview_weapon_name = cryptcrawlWeaponName($conn, $rank);
-							$preview_weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $preview_weapon_name)) . '.png';
-						?>
+						<?php elseif ($type === 'weapon'): ?>
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
@@ -508,7 +531,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
 								<button type="submit" class="cc-btn heal punchy">
-									<img class="cc-btn-icon-big-img" src="https://madballs.net/drop-ship/icons/medkit.png" alt="" onerror="this.style.display='none';">
+									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($medkit_icon); ?>" alt="" onerror="this.style.display='none';">
 									<span class="cc-btn-action">Heal</span>
 									<span class="cc-btn-detail"><?php echo intval($active_run['potion_used_this_room']) === 1 ? '+' . max(1, intval($rank / 2)) . ' HP (half)' : '+' . $rank . ' HP'; ?></span>
 								</button>
