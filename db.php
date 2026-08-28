@@ -10448,7 +10448,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
    ============================================================ */
 
 /* ============================================================
-   CARD CRAWL — PROTOTYPE
+   CRYPT CRAWL — PROTOTYPE
    A Scoundrel-style single-player dungeon delve played with a
    44-card deck (2-A of clubs/spades = monsters, 2-10 of diamonds
    = weapons, 2-10 of hearts = potions). Card art is a placeholder
@@ -10458,13 +10458,13 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
    delve's loot reads as part of the same world. No currency
    payout or Discord broadcast wired up yet — this is a vertical
    slice to test whether the loop is fun before going further.
-   Requires table `cardcrawl_runs` (see skullpaper/MAINTENANCE.md
+   Requires table `cryptcrawl_runs` (see skullpaper/MAINTENANCE.md
    once this is promoted out of prototype).
    ============================================================ */
 
-define('CARDCRAWL_MAX_HP', 20);
+define('CRYPTCRAWL_MAX_HP', 20);
 
-function cardcrawlRankLabel($rank) {
+function cryptcrawlRankLabel($rank) {
 	$rank = intval($rank);
 	if ($rank === 14) return 'A';
 	if ($rank === 13) return 'K';
@@ -10475,7 +10475,7 @@ function cardcrawlRankLabel($rank) {
 
 // Fresh shuffled 44-card deck: 26 monsters (clubs/spades, rank 2-14),
 // 9 weapons (diamonds, rank 2-10), 9 potions (hearts, rank 2-10).
-function cardcrawlBuildDeck() {
+function cryptcrawlBuildDeck() {
 	$deck = array();
 	foreach (array('C', 'S') as $suit) {
 		for ($rank = 2; $rank <= 14; $rank++) {
@@ -10494,7 +10494,7 @@ function cardcrawlBuildDeck() {
 
 // Best-fit flavor name from the real Armory weapons table for a given
 // power level — ties delve loot to the same gear players farm in Realms.
-function cardcrawlWeaponName($conn, $power) {
+function cryptcrawlWeaponName($conn, $power) {
 	$weapons = getAllWeapons($conn);
 	if (empty($weapons)) return 'Rusty Blade';
 	$best = null;
@@ -10505,27 +10505,27 @@ function cardcrawlWeaponName($conn, $power) {
 	return $best['name'];
 }
 
-function cardcrawlGetActiveRun($conn, $user_id) {
+function cryptcrawlGetActiveRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$result = $conn->query("SELECT * FROM cardcrawl_runs WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
 	return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
 }
 
-function cardcrawlGetMostRecentRun($conn, $user_id) {
+function cryptcrawlGetMostRecentRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$result = $conn->query("SELECT * FROM cardcrawl_runs WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
 	return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
 }
 
-function cardcrawlStartRun($conn, $user_id) {
+function cryptcrawlStartRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$deck = cardcrawlBuildDeck();
+	$deck = cryptcrawlBuildDeck();
 	$room = array_splice($deck, 0, 4);
-	$hp = CARDCRAWL_MAX_HP;
+	$hp = CRYPTCRAWL_MAX_HP;
 	$deck_json = $conn->real_escape_string(json_encode($deck));
 	$room_json = $conn->real_escape_string(json_encode(array_values($room)));
 	$conn->query("
-		INSERT INTO cardcrawl_runs
+		INSERT INTO cryptcrawl_runs
 			(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared)
 		VALUES
 			($user_id, 'active', $hp, $hp, '$deck_json', '$room_json', NULL, NULL, NULL, NULL, 0, 0, 0)
@@ -10536,7 +10536,7 @@ function cardcrawlStartRun($conn, $user_id) {
 // Draws up to 3 fresh cards into the room (called once 3 of the current
 // room's 4 cards have been resolved, leaving 1 behind) and starts a new
 // per-room cycle (potion chain + flee-lock both reset here).
-function cardcrawlRefillRoom(&$run) {
+function cryptcrawlRefillRoom(&$run) {
 	$deck = json_decode($run['deck'], true) ?: array();
 	$room = json_decode($run['room'], true) ?: array();
 	$draw = array_slice($deck, 0, min(3, count($deck)));
@@ -10550,9 +10550,9 @@ function cardcrawlRefillRoom(&$run) {
 
 // Resolve one card from the room. $use_weapon only matters for monster
 // cards. Returns the updated run row (also persisted to the DB).
-function cardcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
+function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 	$run_id = intval($run_id);
-	$result = $conn->query("SELECT * FROM cardcrawl_runs WHERE id = $run_id AND status = 'active' LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE id = $run_id AND status = 'active' LIMIT 1");
 	if (!$result || !$result->num_rows) return null;
 	$run = $result->fetch_assoc();
 
@@ -10566,7 +10566,7 @@ function cardcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	if ($card['type'] === 'weapon') {
 		$run['weapon_power']       = intval($card['rank']);
-		$run['weapon_name']        = cardcrawlWeaponName($conn, intval($card['rank']));
+		$run['weapon_name']        = cryptcrawlWeaponName($conn, intval($card['rank']));
 		$run['weapon_beaten_rank'] = null;
 		$run['last_card_type']     = 'weapon';
 
@@ -10594,7 +10594,7 @@ function cardcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	// Room advances once only 1 card is left unresolved; draw 3 more.
 	if (intval($run['hp']) > 0 && count(json_decode($run['room'], true)) === 1) {
-		cardcrawlRefillRoom($run);
+		cryptcrawlRefillRoom($run);
 	}
 
 	if (intval($run['hp']) <= 0) {
@@ -10604,16 +10604,16 @@ function cardcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 	}
 
 	$run['fled_last_room'] = 0; // resolving a card always clears the flee-lock
-	cardcrawlSaveRun($conn, $run);
+	cryptcrawlSaveRun($conn, $run);
 	return $run;
 }
 
 // Avoid the current room: all 4 cards go back into the deck (reshuffled),
 // a fresh room is dealt. Can't be done twice in a row, and only before
 // any card from the current room has been resolved.
-function cardcrawlFleeRoom($conn, $run_id) {
+function cryptcrawlFleeRoom($conn, $run_id) {
 	$run_id = intval($run_id);
-	$result = $conn->query("SELECT * FROM cardcrawl_runs WHERE id = $run_id AND status = 'active' LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE id = $run_id AND status = 'active' LIMIT 1");
 	if (!$result || !$result->num_rows) return null;
 	$run = $result->fetch_assoc();
 
@@ -10630,11 +10630,11 @@ function cardcrawlFleeRoom($conn, $run_id) {
 	$run['room'] = json_encode(array_values($new_room));
 	$run['potion_used_this_room'] = 0;
 	$run['fled_last_room'] = 1;
-	cardcrawlSaveRun($conn, $run);
+	cryptcrawlSaveRun($conn, $run);
 	return $run;
 }
 
-function cardcrawlSaveRun($conn, $run) {
+function cryptcrawlSaveRun($conn, $run) {
 	$id                    = intval($run['id']);
 	$status                = $conn->real_escape_string($run['status']);
 	$hp                    = intval($run['hp']);
@@ -10649,7 +10649,7 @@ function cardcrawlSaveRun($conn, $run) {
 	$rooms_cleared         = intval($run['rooms_cleared']);
 
 	$conn->query("
-		UPDATE cardcrawl_runs SET
+		UPDATE cryptcrawl_runs SET
 			status = '$status', hp = $hp, deck = '$deck', room = '$room',
 			weapon_power = $weapon_power, weapon_name = $weapon_name,
 			weapon_beaten_rank = $weapon_beaten_rank, last_card_type = $last_card_type,
@@ -10660,6 +10660,6 @@ function cardcrawlSaveRun($conn, $run) {
 }
 
 /* ============================================================
-   END CARD CRAWL
+   END CRYPT CRAWL
    ============================================================ */
 ?>

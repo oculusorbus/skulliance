@@ -1,8 +1,8 @@
 <?php
-// CARD CRAWL — prototype. Not linked in nav yet; direct-URL only while we
-// test whether the loop is fun. See db.php ("CARD CRAWL — PROTOTYPE" block)
+// CRYPT CRAWL — prototype. Not linked in nav yet; direct-URL only while we
+// test whether the loop is fun. See db.php ("CRYPT CRAWL — PROTOTYPE" block)
 // for the game logic. Once this earns its keep, promote it: add to nav,
-// wire currency payout + Discord broadcast, write skullpaper/cardcrawl.md
+// wire currency payout + Discord broadcast, write skullpaper/cryptcrawl.md
 // and add it to skullpaper/MAINTENANCE.md per CLAUDE.md.
 include_once 'db.php';
 include 'message.php';
@@ -11,9 +11,9 @@ include 'skulliance.php';
 
 $user_id = intval($_SESSION['userData']['user_id']);
 
-if (!isset($_SESSION['cardcrawl_flash'])) $_SESSION['cardcrawl_flash'] = [];
-function cardcrawlFlash($msg, $type = 'info') {
-	$_SESSION['cardcrawl_flash'][] = ['msg' => $msg, 'type' => $type];
+if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
+function cryptcrawlFlash($msg, $type = 'info') {
+	$_SESSION['cryptcrawl_flash'][] = ['msg' => $msg, 'type' => $type];
 }
 
 // ── POST action handling — must run before any output ───────
@@ -21,49 +21,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$action = $_POST['action'] ?? '';
 
 	if ($action === 'start_run') {
-		cardcrawlStartRun($conn, $user_id);
+		cryptcrawlStartRun($conn, $user_id);
 
 	} elseif ($action === 'play_card') {
-		$run = cardcrawlGetActiveRun($conn, $user_id);
+		$run = cryptcrawlGetActiveRun($conn, $user_id);
 		if ($run) {
 			$card_index = intval($_POST['card_index'] ?? -1);
 			$use_weapon = isset($_POST['use_weapon']) && $_POST['use_weapon'] === '1';
-			$updated = cardcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
+			$updated = cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 			if ($updated && $updated['status'] === 'lost') {
-				cardcrawlFlash('You fell in the dungeon. Run over — ' . intval($updated['rooms_cleared']) . ' rooms cleared.', 'loss');
+				cryptcrawlFlash('You fell in the dungeon. Run over — ' . intval($updated['rooms_cleared']) . ' rooms cleared.', 'loss');
 			} elseif ($updated && $updated['status'] === 'won') {
-				cardcrawlFlash('Deck cleared! You made it out with ' . intval($updated['hp']) . ' HP left.', 'win');
+				cryptcrawlFlash('Deck cleared! You made it out with ' . intval($updated['hp']) . ' HP left.', 'win');
 			}
 		}
 
 	} elseif ($action === 'flee') {
-		$run = cardcrawlGetActiveRun($conn, $user_id);
+		$run = cryptcrawlGetActiveRun($conn, $user_id);
 		if ($run) {
 			$before = json_decode($run['room'], true) ?: [];
-			$updated = cardcrawlFleeRoom($conn, intval($run['id']));
+			$updated = cryptcrawlFleeRoom($conn, intval($run['id']));
 			if ($updated && intval($updated['fled_last_room']) === 1 && count($before) === 4) {
-				cardcrawlFlash('You slipped past that room.', 'info');
+				cryptcrawlFlash('You slipped past that room.', 'info');
 			} else {
-				cardcrawlFlash("Can't flee twice in a row — face the room.", 'error');
+				cryptcrawlFlash("Can't flee twice in a row — face the room.", 'error');
 			}
 		}
 	}
 
-	header('Location: cardcrawl.php');
+	header('Location: cryptcrawl.php');
 	exit;
 }
 
 include 'header.php';
 
-$active_run = cardcrawlGetActiveRun($conn, $user_id);
-$recent_run = $active_run ? null : cardcrawlGetMostRecentRun($conn, $user_id);
+$active_run = cryptcrawlGetActiveRun($conn, $user_id);
+$recent_run = $active_run ? null : cryptcrawlGetMostRecentRun($conn, $user_id);
 
 if ($active_run)                                              $state = 'active';
 elseif ($recent_run && in_array($recent_run['status'], ['won', 'lost'], true)) $state = 'game_over';
 else                                                           $state = 'no_run';
 
-$flashes = $_SESSION['cardcrawl_flash'];
-$_SESSION['cardcrawl_flash'] = [];
+$flashes = $_SESSION['cryptcrawl_flash'];
+$_SESSION['cryptcrawl_flash'] = [];
 
 $suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
 $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
@@ -96,7 +96,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-flee-row { text-align: center; margin-bottom: 20px; }
 </style>
 <div class="cc-wrap">
-	<h2 style="margin-bottom:4px;">💀 Card Crawl <span style="font-size:0.6rem;opacity:0.5;text-transform:uppercase;letter-spacing:.08em;">prototype</span></h2>
+	<h2 style="margin-bottom:4px;">💀 Crypt Crawl <span style="font-size:0.6rem;opacity:0.5;text-transform:uppercase;letter-spacing:.08em;">prototype</span></h2>
 
 	<?php foreach ($flashes as $f): ?>
 		<div class="cc-flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
@@ -146,7 +146,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			</div>
 			<div class="cc-weapon">
 				<?php if ($weapon_power !== null): ?>
-					🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>)<?php if ($weapon_beaten_rank !== null): ?> — beats up to <?php echo cardcrawlRankLabel($weapon_beaten_rank); ?><?php endif; ?>
+					🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>)<?php if ($weapon_beaten_rank !== null): ?> — beats up to <?php echo cryptcrawlRankLabel($weapon_beaten_rank); ?><?php endif; ?>
 				<?php else: ?>
 					🗡️ Bare-handed
 				<?php endif; ?>
@@ -160,7 +160,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 			?>
 				<div class="cc-card">
-					<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cardcrawlRankLabel($rank); ?></div>
+					<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
 					<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
 					<div class="cc-card-label"><?php echo htmlspecialchars($type); ?></div>
 					<div class="cc-card-actions">
