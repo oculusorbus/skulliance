@@ -109,8 +109,15 @@ records verified constants, and tracks what still needs to be written.
   (cron-triggered, same convention as every other weekly leaderboard here). All-time view has
   no reward. Requires a `reward` TINYINT column on `cryptcrawls` (see the migration note in the
   commit that added it) - not yet run on the live table as of this writing. Weekly results post
-  via the "cryptcrawl" webhooks.php channel (`getCryptCrawlWebhook()`, alongside `getGauntletsWebhook()`
-  and the rest - defined in credentials/webhooks_credentials.php, not in this repo).
+  to the default/notifications webhook (same as Gauntlets' own weekly summary - no channel
+  passed), not the "cryptcrawl" channel.
+- Crypt Crawl live updates (db.php `cryptcrawlAnnounceResult`, called from both
+  `cryptcrawlPlayCard` on a natural win/loss and `cryptcrawlAbandonRun`): posts to the
+  "cryptcrawl" webhooks.php channel (`getCryptCrawlWebhook()`, alongside `getGauntletsWebhook()`
+  and the rest - defined in credentials/webhooks_credentials.php, not in this repo) every time
+  a real account's delve ends, win or loss, showing crypt depth reached. This is the channel
+  for live play; the weekly leaderboard summary above goes elsewhere. Guests and in-progress
+  runs never announce.
 - Crypt Crawl card art (db.php CRYPTCRAWL_CARD_ART, `cryptcrawlGetCardArt`): each of the 44
   cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - curated
   2026-08-28 from the owner's Crypties - Season 2 holdings (~108 candidates reviewed, 27 of

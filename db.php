@@ -5537,7 +5537,11 @@ function checkCryptCrawlLeaderboard($conn, $weekly=false, $rewards=false) {
 
 		if ($rewards) {
 			resetCryptCrawls($conn);
-			discordmsg("💀 Weekly Crypt Crawl Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php", "cryptcrawl");
+			// Notifications/default webhook, not the "cryptcrawl" channel -- that
+			// one is for live per-round updates as people actually play (see
+			// cryptcrawlAnnounceResult()), same split Gauntlets uses (its own
+			// weekly summary doesn't pass a channel either).
+			discordmsg("💀 Weekly Crypt Crawl Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
 		}
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();
@@ -10907,6 +10911,7 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	$run['fled_last_room'] = 0; // resolving a card always clears the flee-lock
 	cryptcrawlSaveRun($conn, $run);
+	cryptcrawlAnnounceResult($run);
 	return $run;
 }
 
@@ -10950,7 +10955,39 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 	if (!$run) return null;
 	$run['status'] = 'lost';
 	cryptcrawlSaveRun($conn, $run);
+	cryptcrawlAnnounceResult($run);
 	return $run;
+}
+
+// Posts a live "run finished" update to the Crypt Crawl Discord channel --
+// fires from both a natural completion (cryptcrawlPlayCard, win or loss) and
+// a deliberate abandon (also recorded as a loss, same as the leaderboard
+// counts it). Real accounts only: a guest's session has no discord_id to
+// mention or a profile to link, and their run never reaches the leaderboard
+// either. This is the live per-round "someone just played" channel -- the
+// weekly leaderboard summary (checkCryptCrawlLeaderboard) posts to the
+// default/notifications webhook instead, not this one.
+function cryptcrawlAnnounceResult($run) {
+	if (intval($run['id']) <= 0) return; // guest run, no DB row, nothing to announce
+	if (!isset($_SESSION['userData']['discord_id'])) return;
+	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
+
+	$cc_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$cc_discord    = $_SESSION['userData']['discord_id'];
+	$cc_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+	$cc_avatar_url = ($cc_discord && $cc_avatar) ? "https://cdn.discordapp.com/avatars/" . $cc_discord . "/" . $cc_avatar . ".png" : "";
+	$cc_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($cc_username);
+	$cc_mention    = "<@" . $cc_discord . ">";
+	$cc_depth      = intval($run['rooms_cleared']);
+	$cc_author     = array("name" => $cc_username, "icon_url" => $cc_avatar_url, "url" => $cc_profile);
+
+	if ($run['status'] === 'won') {
+		$cc_desc = $cc_mention . " cleared the crypt! 🏆\n\n💀 **Crypt Depth:** " . $cc_depth . "/15\n❤️ **HP Remaining:** " . intval($run['hp']) . "/" . intval($run['max_hp']);
+		discordmsg("🏆 Crypt Crawl Cleared", $cc_desc, "", "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "00C8A0", $cc_author);
+	} else {
+		$cc_desc = $cc_mention . " fell in the crypt. 💀\n\n💀 **Crypt Depth Reached:** " . $cc_depth . "/15";
+		discordmsg("💀 Crypt Crawl Ended", $cc_desc, "", "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "FF4444", $cc_author);
+	}
 }
 
 function cryptcrawlSaveRun($conn, $run) {
