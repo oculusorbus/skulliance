@@ -1,9 +1,9 @@
 <?php
-// CRYPT CRAWL — prototype. Not linked in nav yet; direct-URL only while we
-// test whether the loop is fun. See db.php ("CRYPT CRAWL — PROTOTYPE" block)
-// for the game logic. Once this earns its keep, promote it: add to nav,
-// wire currency payout + Discord broadcast, write skullpaper/cryptcrawl.md
-// and add it to skullpaper/MAINTENANCE.md per CLAUDE.md.
+// CRYPT CRAWL — now linked in nav (Play > Crypt Crawl, after Gauntlets).
+// See db.php ("CRYPT CRAWL — PROTOTYPE" block) for the game logic. Still
+// outstanding from the original prototype punch list: currency payout,
+// Discord broadcast, and the skullpaper/cryptcrawl.md + MAINTENANCE.md
+// entry CLAUDE.md calls for on a significant feature going live.
 include_once 'db.php';
 include 'message.php';
 include 'verify.php';
