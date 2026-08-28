@@ -220,6 +220,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-btn.secondary { background: rgba(255,255,255,.08); color: #e8f2f8; border-color: rgba(255,255,255,.3); }
 .cc-btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,.15); box-shadow: 0 6px 16px rgba(255,255,255,.12); }
 .cc-btn.warn { background: #ff9900; color: #012; }
+.cc-btn.stacked { flex-direction: column; gap: 2px; line-height: 1.2; }
+.cc-btn-row2 { font-size: 0.68rem; font-weight: 500; opacity: 0.8; }
 .cc-btn.warn:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,153,0,.4); }
 .cc-btn.heal { background: #00c8a0; color: #012; }
 .cc-btn.heal:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(0,200,160,.4); }
@@ -396,7 +398,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn bare">👊 Fight bare-handed (-<?php echo $rank; ?>)</button>
+								<button type="submit" class="cc-btn bare">👊 Fist Fight (-<?php echo $rank; ?>)</button>
 							</form>
 							<?php if ($weapon_power !== null): ?>
 								<form method="post"><input type="hidden" name="action" value="play_card">
@@ -419,9 +421,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn warn">
-									<img class="cc-equip-icon" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">
-									Equip <?php echo htmlspecialchars($preview_weapon_name); ?>
+								<button type="submit" class="cc-btn warn stacked">
+									<span><img class="cc-equip-icon" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">Equip</span>
+									<span class="cc-btn-row2"><?php echo htmlspecialchars($preview_weapon_name); ?></span>
 								</button>
 							</form>
 						<?php else: ?>
