@@ -176,9 +176,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	<?php if ($state === 'no_run'): ?>
 		<div class="cc-rules">
 			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons —
-			equip one and it stays until you use it, degrading so it can only beat weaker monsters after each kill.
+			equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
 			<strong style="color:#ff6b6b;">♥ Hearts</strong> heal you, but only the first one you drink each crypt counts.
-			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are monsters — fight bare-handed and take full
+			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies — fight bare-handed and take full
 			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
 			into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
 			deck to win, or run out of HP and the delve ends.
@@ -251,6 +251,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<div class="cc-room">
 			<?php foreach ($room as $i => $card):
 				$suit = $card['suit']; $rank = intval($card['rank']); $type = $card['type'];
+				// Display only — internal type stays 'monster' (game logic, DB
+				// data) so this is purely a label swap, not a data rename.
+				$type_label = $type === 'monster' ? 'enemy' : $type;
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 				$dom_rgb = cryptcrawlDominantColor($card['image_url'] ?? '');
 				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
@@ -274,7 +277,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
 						</div>
 					<?php endif; ?>
-					<div class="cc-card-label"><?php echo htmlspecialchars($type); ?></div>
+					<div class="cc-card-label"><?php echo htmlspecialchars($type_label); ?></div>
 					<div class="cc-card-actions">
 						<?php if ($type === 'monster'): ?>
 							<form method="post"><input type="hidden" name="action" value="play_card">
