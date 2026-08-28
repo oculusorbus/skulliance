@@ -180,9 +180,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-room .cc-card:nth-child(4) .cc-card-flip-inner { animation-delay: .29s; }
 .cc-card-face {
 	position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-	border-radius: 10px; overflow: hidden; background: #002f44; border: 2px solid rgba(255,255,255,.08); box-sizing: border-box;
+	border-radius: 10px; overflow: hidden; background: #000; border: 2px solid rgba(255,255,255,.08); box-sizing: border-box;
 }
-.cc-card-back { transform: rotateY(180deg); background: #000; display: flex; align-items: center; justify-content: center; }
+.cc-card-back { transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
 .cc-card-back-icon { width: 38%; height: auto; display: block; }
 @media (hover: hover) and (pointer: fine) {
 	.cc-room { perspective: 900px; }
@@ -194,7 +194,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	.cc-card-flip:active { transform: scale(.97); box-shadow: 0 0 22px var(--cc-glow, rgba(255,153,0,.3)); }
 }
 .cc-card-art { position: relative; width: 100%; height: 100%; }
-.cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
+.cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .cc-card-rank, .cc-card-suit { font-family: 'Poppins', Arial, sans-serif; }
 .cc-card-corner {
 	position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1;
