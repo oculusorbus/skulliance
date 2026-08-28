@@ -90,6 +90,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	exit;
 }
 
+// header.php's shared nav is entirely gated on isset($name) (plus $avatar_url for
+// the avatar image) — normally supplied by skulliance.php's extract($_SESSION
+// ['userData']). This page deliberately skips that hard-gated include (see the
+// header comment above) so a logged-in visitor needs the same two values computed
+// here, or the whole nav — Play/NFTs/Stats/Account menus, Logout, wallet button,
+// all of it — silently renders empty. Guests (user_id 0) get no $name, same as any
+// other page when logged out; that part is an existing site-wide convention, not
+// something specific to this page.
+if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
+	extract($_SESSION['userData']);
+	if (isset($discord_id) && isset($avatar)) {
+		$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+	}
+}
+
 include 'header.php';
 
 $active_run = cryptcrawlGetActiveRun($conn, $user_id);
