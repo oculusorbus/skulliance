@@ -10458,7 +10458,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
    delve's loot reads as part of the same world. No currency
    payout or Discord broadcast wired up yet — this is a vertical
    slice to test whether the loop is fun before going further.
-   Requires table `cryptcrawl_runs` (see skullpaper/MAINTENANCE.md
+   Requires table `cryptcrawls` (see skullpaper/MAINTENANCE.md
    once this is promoted out of prototype).
    ============================================================ */
 
@@ -10507,13 +10507,13 @@ function cryptcrawlWeaponName($conn, $power) {
 
 function cryptcrawlGetActiveRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
 	return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
 }
 
 function cryptcrawlGetMostRecentRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
 	return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
 }
 
@@ -10525,7 +10525,7 @@ function cryptcrawlStartRun($conn, $user_id) {
 	$deck_json = $conn->real_escape_string(json_encode($deck));
 	$room_json = $conn->real_escape_string(json_encode(array_values($room)));
 	$conn->query("
-		INSERT INTO cryptcrawl_runs
+		INSERT INTO cryptcrawls
 			(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared)
 		VALUES
 			($user_id, 'active', $hp, $hp, '$deck_json', '$room_json', NULL, NULL, NULL, NULL, 0, 0, 0)
@@ -10552,7 +10552,7 @@ function cryptcrawlRefillRoom(&$run) {
 // cards. Returns the updated run row (also persisted to the DB).
 function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 	$run_id = intval($run_id);
-	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE id = $run_id AND status = 'active' LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND status = 'active' LIMIT 1");
 	if (!$result || !$result->num_rows) return null;
 	$run = $result->fetch_assoc();
 
@@ -10613,7 +10613,7 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 // any card from the current room has been resolved.
 function cryptcrawlFleeRoom($conn, $run_id) {
 	$run_id = intval($run_id);
-	$result = $conn->query("SELECT * FROM cryptcrawl_runs WHERE id = $run_id AND status = 'active' LIMIT 1");
+	$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND status = 'active' LIMIT 1");
 	if (!$result || !$result->num_rows) return null;
 	$run = $result->fetch_assoc();
 
@@ -10649,7 +10649,7 @@ function cryptcrawlSaveRun($conn, $run) {
 	$rooms_cleared         = intval($run['rooms_cleared']);
 
 	$conn->query("
-		UPDATE cryptcrawl_runs SET
+		UPDATE cryptcrawls SET
 			status = '$status', hp = $hp, deck = '$deck', room = '$room',
 			weapon_power = $weapon_power, weapon_name = $weapon_name,
 			weapon_beaten_rank = $weapon_beaten_rank, last_card_type = $last_card_type,
