@@ -93,8 +93,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-flash.error{ background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.35); color: #ff7070; }
 .cc-flash.info { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #c8dce8; }
 .cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
-.cc-hud { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both; }
-.cc-hp-wrap { flex: 1; min-width: 180px; }
+.cc-hud { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both; }
+.cc-hp-wrap { width: 100%; }
+.cc-hud-meta { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 .cc-hp-bar-bg { background: rgba(255,255,255,.08); border-radius: 6px; height: 14px; overflow: hidden; }
 .cc-hp-bar-fill { background: linear-gradient(90deg,#ff4444,#ff9900,#00c8a0); height: 100%; border-radius: 6px; transition: width 1s cubic-bezier(.22,1,.36,1); }
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
@@ -237,14 +238,16 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;">HP <?php echo $hp; ?> / <?php echo $max_hp; ?></div>
 				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" style="width:<?php echo $hp_pct; ?>%;"></div></div>
 			</div>
-			<div class="cc-weapon">
-				<?php if ($weapon_power !== null): ?>
-					🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) — <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
-				<?php else: ?>
-					🗡️ Bare-handed
-				<?php endif; ?>
+			<div class="cc-hud-meta">
+				<div class="cc-weapon">
+					<?php if ($weapon_power !== null): ?>
+						🗡️ <strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) — <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
+					<?php else: ?>
+						🗡️ Bare-handed
+					<?php endif; ?>
+				</div>
+				<div style="font-size:0.72rem;opacity:0.5;">Crypts cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
 			</div>
-			<div style="font-size:0.72rem;opacity:0.5;">Crypts cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
 		</div>
 
 		<div class="cc-room">
