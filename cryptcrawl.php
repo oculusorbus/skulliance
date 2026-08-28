@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$use_weapon = isset($_POST['use_weapon']) && $_POST['use_weapon'] === '1';
 			$updated = cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 			if ($updated && $updated['status'] === 'lost') {
-				cryptcrawlFlash('You fell in the crypt. Run over — ' . intval($updated['rooms_cleared']) . ' rooms cleared.', 'loss');
+				cryptcrawlFlash('You fell in the crypt. Run over — ' . intval($updated['rooms_cleared']) . ' crypts cleared.', 'loss');
 			} elseif ($updated && $updated['status'] === 'won') {
 				cryptcrawlFlash('Deck cleared! You made it out with ' . intval($updated['hp']) . ' HP left.', 'win');
 			}
@@ -42,9 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$before = json_decode($run['room'], true) ?: [];
 			$updated = cryptcrawlFleeRoom($conn, intval($run['id']));
 			if ($updated && intval($updated['fled_last_room']) === 1 && count($before) === 4) {
-				cryptcrawlFlash('You slipped past that room.', 'info');
+				cryptcrawlFlash('You slipped past that crypt.', 'info');
 			} else {
-				cryptcrawlFlash("Can't flee twice in a row — face the room.", 'error');
+				cryptcrawlFlash("Can't flee twice in a row — face the crypt.", 'error');
 			}
 		}
 
@@ -177,10 +177,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<div class="cc-rules">
 			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons —
 			equip one and it stays until you use it, degrading so it can only beat weaker monsters after each kill.
-			<strong style="color:#ff6b6b;">♥ Hearts</strong> heal you, but only the first one you drink each room counts.
+			<strong style="color:#ff6b6b;">♥ Hearts</strong> heal you, but only the first one you drink each crypt counts.
 			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are monsters — fight bare-handed and take full
-			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a room and the 4th carries
-			into the next; or flee a fresh room once (not twice in a row) to reshuffle it back into the deck. Clear the
+			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
+			into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
 			deck to win, or run out of HP and the delve ends.
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
@@ -191,9 +191,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	<?php elseif ($state === 'game_over'): ?>
 		<div class="cc-rules">
 			<?php if ($recent_run['status'] === 'won'): ?>
-				<strong style="color:#00c8a0;">Deck cleared.</strong> You escaped with <?php echo intval($recent_run['hp']); ?> HP left across <?php echo intval($recent_run['rooms_cleared']); ?> rooms.
+				<strong style="color:#00c8a0;">Deck cleared.</strong> You escaped with <?php echo intval($recent_run['hp']); ?> HP left across <?php echo intval($recent_run['rooms_cleared']); ?> crypts.
 			<?php else: ?>
-				<strong style="color:#ff7070;">You fell.</strong> <?php echo intval($recent_run['rooms_cleared']); ?> rooms cleared before the crypt got you.
+				<strong style="color:#ff7070;">You fell.</strong> <?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared before the crypt got you.
 			<?php endif; ?>
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
@@ -233,7 +233,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 					🗡️ Bare-handed
 				<?php endif; ?>
 			</div>
-			<div style="font-size:0.72rem;opacity:0.5;">Rooms cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
+			<div style="font-size:0.72rem;opacity:0.5;">Crypts cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
 		</div>
 
 		<div class="cc-room">
@@ -292,7 +292,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 								<input type="hidden" name="use_weapon" value="0">
 								<button type="submit" class="cc-btn warn">🧪 Drink</button>
 							</form>
-							<?php if (intval($active_run['potion_used_this_room']) === 1): ?><div class="cc-note">won't heal — already drank this room</div><?php endif; ?>
+							<?php if (intval($active_run['potion_used_this_room']) === 1): ?><div class="cc-note">won't heal — already drank this crypt</div><?php endif; ?>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -301,9 +301,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 
 		<div class="cc-flee-row">
 			<form method="post"><input type="hidden" name="action" value="flee">
-				<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee this room</button>
+				<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee this crypt</button>
 			</form>
-			<?php if (!$can_flee): ?><div class="cc-note">already fled last room, or mid-room — can't flee now</div><?php endif; ?>
+			<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt — can't flee now</div><?php endif; ?>
 			<form method="post" style="margin-top:8px;" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
 				<input type="hidden" name="action" value="abandon">
 				<button type="submit" class="cc-btn secondary" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;">🏳️ Abandon run</button>
