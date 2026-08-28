@@ -412,11 +412,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		$weapon_beaten_rank = $active_run['weapon_beaten_rank'] !== null ? intval($active_run['weapon_beaten_rank']) : null;
 		$can_flee = (intval($active_run['fled_last_room']) === 0) && (count($room) === 4);
 
-		// One theme image per room, in play order — a full deck-clear is always
-		// exactly 15 rooms (verified: fixed by the 44-card deck + refill rule,
-		// not variable), so this list has exactly one entry per room reached.
-		$room_themes = ['24.jpg','23.jpg','25.jpg','12.jpg','4.jpg','11.jpg','22.jpg','9.jpg','18.jpg','3.jpg','2.jpg','38.jpg','1.jpg','0old.jpg','6.jpg'];
-		$room_theme_url = '/staking/images/themes/' . $room_themes[intval($active_run['rooms_cleared']) % count($room_themes)];
+		// See cryptcrawlRoomThemeFile() in db.php -- shared with the Discord
+		// per-round announcement so there's one theme list, not two.
+		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
 	?>
 	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
 		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">

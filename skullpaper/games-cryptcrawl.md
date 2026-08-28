@@ -37,7 +37,7 @@ Every completed delve (won or lost - an in-progress one doesn't count yet) feeds
 * **All-Time** shows your career totals.
 * **Weekly** resets each cycle and pays out - the **1st place** finisher earns **50,000 CARBON (= 500 DIAMOND)**, and the pool divides down the rankings from there (each rank gets roughly its share of the pool, same distribution [[games-gauntlets]] uses for its own weekly pool). Convertible to DIAMOND at 100:1 - see [[staking-crafting]].
 
-Every delve you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel, showing how deep you got.
+Every delve you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel: how deep you got, illustrated with the theme art for the crypt you reached, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
 
 ## Playing as a Guest
 

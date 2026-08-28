@@ -10656,6 +10656,20 @@ function cryptcrawlRankLabel($rank) {
 	return strval($rank);
 }
 
+// One theme image per room, in play order (verified: a full clear is always
+// exactly 15 rooms, so rooms_cleared runs 0-14 during active play). Shared by
+// cryptcrawl.php's own active-room backdrop and cryptcrawlAnnounceResult()'s
+// Discord embed image, so there's one list to keep in sync, not two. Clamped
+// to the last entry rather than wrapped (%) at rooms_cleared=15 specifically
+// -- the one value active play never actually reaches (game_over fires first)
+// but a just-completed win passes here, and showing the final crypt's theme
+// reads far better than wrapping back around to the first one.
+function cryptcrawlRoomThemeFile($rooms_cleared) {
+	$room_themes = ['24.jpg','23.jpg','25.jpg','12.jpg','4.jpg','11.jpg','22.jpg','9.jpg','18.jpg','3.jpg','2.jpg','38.jpg','1.jpg','0old.jpg','6.jpg'];
+	$idx = min(max(intval($rooms_cleared), 0), count($room_themes) - 1);
+	return $room_themes[$idx];
+}
+
 // Resolves CRYPTCRAWL_CARD_ART's 44 specific NFT names to real image URLs via
 // the same getIPFS() helper gauntlets.php uses (local cache first, IPFS gateway
 // fallback), keyed by the same "SUIT+RANK" card key. A single query, matched by
@@ -10911,7 +10925,7 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	$run['fled_last_room'] = 0; // resolving a card always clears the flee-lock
 	cryptcrawlSaveRun($conn, $run);
-	cryptcrawlAnnounceResult($run);
+	cryptcrawlAnnounceResult($conn, $run);
 	return $run;
 }
 
@@ -10955,8 +10969,50 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 	if (!$run) return null;
 	$run['status'] = 'lost';
 	cryptcrawlSaveRun($conn, $run);
-	cryptcrawlAnnounceResult($run);
+	cryptcrawlAnnounceResult($conn, $run);
 	return $run;
+}
+
+// True if $depth is strictly deeper than this user's best rooms_cleared among
+// their OTHER completed runs (the just-finished run's own row is excluded by
+// id, since by the time this is called it's already saved and would
+// otherwise trivially "match itself"). No prior runs at all also counts as a
+// new best -- a first completed delve is your best by definition.
+function cryptcrawlIsNewBestDepth($conn, $user_id, $current_run_id, $depth) {
+	$user_id = intval($user_id);
+	$current_run_id = intval($current_run_id);
+	$result = $conn->query("SELECT MAX(rooms_cleared) AS best FROM cryptcrawls WHERE user_id = $user_id AND status IN ('won','lost') AND id != $current_run_id");
+	if ($result && $result->num_rows > 0) {
+		$row = $result->fetch_assoc();
+		$prev_best = ($row['best'] !== null) ? intval($row['best']) : -1;
+		return intval($depth) > $prev_best;
+	}
+	return true;
+}
+
+// user_id currently sitting in 1st place -- same ranking as
+// checkCryptCrawlLeaderboard() (wins DESC, best depth DESC, losses ASC),
+// collapsed to just the winner instead of the full list. Known
+// simplification: if multiple users are exactly tied for 1st, only one of
+// them is returned (whichever MySQL happens to order first among the tie,
+// with no further deterministic tiebreak) -- a fully-tied co-leader may not
+// get credited here. Not worth a more elaborate tie-set query for a "did you
+// just take the top spot" badge.
+function cryptcrawlLeaderboardLeaderUserId($conn, $weekly = false) {
+	$where = $weekly ? "AND cc.reward = 0" : "";
+	$result = $conn->query("
+		SELECT u.id AS user_id
+		FROM cryptcrawls cc
+		INNER JOIN users u ON u.id = cc.user_id
+		WHERE cc.status IN ('won', 'lost') $where
+		GROUP BY u.id
+		ORDER BY SUM(cc.status = 'won') DESC, MAX(cc.rooms_cleared) DESC, SUM(cc.status = 'lost') ASC
+		LIMIT 1
+	");
+	if ($result && $result->num_rows > 0) {
+		return intval($result->fetch_assoc()['user_id']);
+	}
+	return null;
 }
 
 // Posts a live "run finished" update to the Crypt Crawl Discord channel --
@@ -10967,7 +11023,7 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 // either. This is the live per-round "someone just played" channel -- the
 // weekly leaderboard summary (checkCryptCrawlLeaderboard) posts to the
 // default/notifications webhook instead, not this one.
-function cryptcrawlAnnounceResult($run) {
+function cryptcrawlAnnounceResult($conn, $run) {
 	if (intval($run['id']) <= 0) return; // guest run, no DB row, nothing to announce
 	if (!isset($_SESSION['userData']['discord_id'])) return;
 	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
@@ -10979,14 +11035,32 @@ function cryptcrawlAnnounceResult($run) {
 	$cc_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($cc_username);
 	$cc_mention    = "<@" . $cc_discord . ">";
 	$cc_depth      = intval($run['rooms_cleared']);
+	$cc_user_id    = intval($run['user_id']);
 	$cc_author     = array("name" => $cc_username, "icon_url" => $cc_avatar_url, "url" => $cc_profile);
+	$cc_theme_url  = "https://skulliance.io/staking/images/themes/" . cryptcrawlRoomThemeFile($cc_depth);
+
+	// Personal-best and leaderboard-leader badges, checked AFTER this run is
+	// already saved -- so "best" and "leader" both reflect the world
+	// including this very run, which is exactly what "did this run just
+	// achieve X" needs to compare against.
+	$badges = array();
+	if (cryptcrawlIsNewBestDepth($conn, $cc_user_id, intval($run['id']), $cc_depth)) {
+		$badges[] = "🏅 **New personal best!**";
+	}
+	if (cryptcrawlLeaderboardLeaderUserId($conn, false) === $cc_user_id) {
+		$badges[] = "👑 **#1 All-Time!**";
+	}
+	if (cryptcrawlLeaderboardLeaderUserId($conn, true) === $cc_user_id) {
+		$badges[] = "🔥 **#1 This Week!**";
+	}
+	$cc_badge_text = $badges ? ("\n\n" . implode("\n", $badges)) : "";
 
 	if ($run['status'] === 'won') {
-		$cc_desc = $cc_mention . " cleared the crypt! 🏆\n\n💀 **Crypt Depth:** " . $cc_depth . "/15\n❤️ **HP Remaining:** " . intval($run['hp']) . "/" . intval($run['max_hp']);
-		discordmsg("🏆 Crypt Crawl Cleared", $cc_desc, "", "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "00C8A0", $cc_author);
+		$cc_desc = $cc_mention . " cleared the crypt! 🏆\n\n💀 **Crypt Depth:** " . $cc_depth . "/15\n❤️ **HP Remaining:** " . intval($run['hp']) . "/" . intval($run['max_hp']) . $cc_badge_text;
+		discordmsg("🏆 Crypt Crawl Cleared", $cc_desc, $cc_theme_url, "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "00C8A0", $cc_author);
 	} else {
-		$cc_desc = $cc_mention . " fell in the crypt. 💀\n\n💀 **Crypt Depth Reached:** " . $cc_depth . "/15";
-		discordmsg("💀 Crypt Crawl Ended", $cc_desc, "", "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "FF4444", $cc_author);
+		$cc_desc = $cc_mention . " fell in the crypt. 💀\n\n💀 **Crypt Depth Reached:** " . $cc_depth . "/15" . $cc_badge_text;
+		discordmsg("💀 Crypt Crawl Ended", $cc_desc, $cc_theme_url, "https://skulliance.io/staking/cryptcrawl.php", "cryptcrawl", $cc_avatar_url, "FF4444", $cc_author);
 	}
 }
 

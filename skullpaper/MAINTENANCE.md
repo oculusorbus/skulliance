@@ -117,7 +117,14 @@ records verified constants, and tracks what still needs to be written.
   and the rest - defined in credentials/webhooks_credentials.php, not in this repo) every time
   a real account's delve ends, win or loss, showing crypt depth reached. This is the channel
   for live play; the weekly leaderboard summary above goes elsewhere. Guests and in-progress
-  runs never announce.
+  runs never announce. Embed image is the theme art for the room reached (`cryptcrawlRoomThemeFile()`,
+  shared with cryptcrawl.php's own active-room backdrop so there's one theme list, not two -
+  clamped rather than wrapped at rooms_cleared=15, the value a completed win passes, so a win
+  shows the final crypt's art instead of wrapping back to the first room's). Also flags, checked
+  against the state including this very run: `cryptcrawlIsNewBestDepth()` (strictly deeper than
+  this user's prior best among their other completed runs; ties don't count) and
+  `cryptcrawlLeaderboardLeaderUserId()` (checked once for all-time, once for weekly - exact
+  ties for 1st are a known simplification, only one tied user gets credited).
 - Crypt Crawl card art (db.php CRYPTCRAWL_CARD_ART, `cryptcrawlGetCardArt`): each of the 44
   cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - curated
   2026-08-28 from the owner's Crypties - Season 2 holdings (~108 candidates reviewed, 27 of
