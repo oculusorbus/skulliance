@@ -293,7 +293,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 @media (prefers-reduced-motion: reduce) {
 	.cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
 	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
-	.cc-card-flip, .cc-btn { transition: none !important; }
+	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
 /* Mobile: cards and buttons at 75% scale, with the button panel pulled up
    to sit over the card art's lower half instead of stacked below it —
@@ -401,7 +401,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Second Wind ready</span>
 					<?php endif; ?>
 				</div>
-				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" style="width:<?php echo 100 - $hp_pct; ?>%;"></div></div>
+				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" data-target-width="<?php echo 100 - $hp_pct; ?>" style="width:100%;"></div></div>
 			</div>
 			<div class="cc-hud-meta">
 				<div class="cc-weapon">
@@ -536,6 +536,20 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 </div>
 <script>
 (function() {
+	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
+	// nudging it to its real data-target-width one frame later animates the
+	// gradient revealing in on every page load, not just on HP changes —
+	// the bar's own CSS transition (.cc-hp-bar-fill) does the actual tween.
+	var hpFill = document.querySelector('.cc-hp-bar-fill');
+	if (hpFill) {
+		var target = hpFill.getAttribute('data-target-width');
+		requestAnimationFrame(function() {
+			requestAnimationFrame(function() {
+				hpFill.style.width = target + '%';
+			});
+		});
+	}
+
 	// Fill whatever viewport space is left below the backdrop rather than
 	// forcing the page to scroll to show the full theme image — cropping
 	// via background-size:cover is fine, scrolling isn't. No-ops cleanly
