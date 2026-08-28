@@ -193,6 +193,11 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	   to me" feedback without a stuck hover state after lifting the finger. */
 	.cc-card-flip:active { transform: scale(.97); box-shadow: 0 0 22px var(--cc-glow, rgba(255,153,0,.3)); }
 }
+/* Mid-spin, the 3D-rotated card can go edge-on (near-invisible) while this
+   glow — sized to the flat, unrotated card — stays put as a static
+   rectangle, reading as a stray outline hovering behind the animation.
+   Suppressed for the animation's duration (JS toggles this class). */
+.cc-card-flip.cc-spinning { box-shadow: none !important; }
 .cc-card-art { position: relative; width: 100%; height: 100%; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .cc-card-rank, .cc-card-suit { font-family: 'Poppins', Arial, sans-serif; }
@@ -577,11 +582,15 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			card.addEventListener('click', function() {
 				if (spinning) return;
 				spinning = true;
+				card.classList.add('cc-spinning');
 				var anim = inner.animate(
 					[{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(360deg)' }],
 					{ duration: 650, easing: 'cubic-bezier(.3,.9,.4,1)' }
 				);
-				anim.onfinish = anim.oncancel = function() { spinning = false; };
+				anim.onfinish = anim.oncancel = function() {
+					spinning = false;
+					card.classList.remove('cc-spinning');
+				};
 			});
 		});
 	}
