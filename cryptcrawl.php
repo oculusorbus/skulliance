@@ -28,10 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($run) {
 			$card_index = intval($_POST['card_index'] ?? -1);
 			$use_weapon = isset($_POST['use_weapon']) && $_POST['use_weapon'] === '1';
+			// Detect a wasted potion before playing it, so we can flash a clear
+			// "no effect" message — the small note under the Drink button
+			// wasn't loud enough on its own (a player drank two potions back
+			// to back and didn't notice it before clicking the second).
+			$room_before = json_decode($run['room'], true) ?: [];
+			$card_before = $room_before[$card_index] ?? null;
+			$wasted_potion = $card_before && $card_before['type'] === 'potion' && intval($run['potion_used_this_room']) === 1;
 			// No flash for a run-ending outcome — the game_over screen's own
 			// result panel says the same thing, better, and having both was
 			// redundant (two near-identical sentences stacked on load).
 			cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
+			if ($wasted_potion) {
+				cryptcrawlFlash('No effect — you already drank a potion this crypt.', 'error');
+			}
 		}
 
 	} elseif ($action === 'flee') {
