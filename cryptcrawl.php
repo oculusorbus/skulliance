@@ -88,7 +88,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cc-card { background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; text-align: center; }
-.cc-card-art { position: relative; aspect-ratio: 5 / 7; background: #23180d; box-sizing: border-box; padding: 16px; }
+.cc-card-frame { position: relative; background: #23180d; box-sizing: border-box; padding: 16px; }
+.cc-card-art { position: relative; aspect-ratio: 5 / 7; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
 .cc-card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .cc-card-corner .cc-card-rank { font-size: 1rem; font-weight: 800; }
@@ -185,9 +186,11 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 			?>
 				<div class="cc-card">
-					<div class="cc-card-art">
+					<div class="cc-card-frame">
 						<?php if (!empty($card['image_url'])): ?>
-							<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
+							<div class="cc-card-art">
+								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
+							</div>
 							<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
 								<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
 								<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
