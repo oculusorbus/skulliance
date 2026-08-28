@@ -282,6 +282,31 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
 	.cc-card-flip, .cc-btn { transition: none !important; }
 }
+/* Mobile: cards and buttons at 75% scale, with the button panel pulled up
+   to sit over the card art's lower half instead of stacked below it —
+   halves a room's vertical footprint instead of just shrinking it, which
+   is what actually gets the whole game onto one phone screen.
+   margin-top:-70% is deliberate, not a rounded guess: percentage margins
+   resolve against the containing block's WIDTH (not height), and this
+   card's aspect-ratio is 5/7 (height = 1.4x width) — so -70% of width is
+   exactly -50% of the card's own height, regardless of the actual column
+   width any given phone's grid lands on. */
+@media (max-width: 700px) {
+	.cc-room { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 9px; }
+	.cc-card-flip { margin-bottom: 0; }
+	.cc-card-corner .cc-card-rank { font-size: 0.75rem; }
+	.cc-card-corner .cc-card-suit { font-size: 0.975rem; }
+	.cc-card-badge-standalone .cc-card-rank { font-size: 1.35rem; }
+	.cc-card-badge-standalone .cc-card-suit { font-size: 1.575rem; }
+	.cc-card-controls { position: relative; z-index: 2; margin-top: -70%; }
+	.cc-card-label { font-size: 0.51rem; padding: 6px 8px 0; }
+	.cc-card-actions { padding: 6px 8px 9px; gap: 4px; }
+	.cc-btn.punchy { min-height: 63px; padding: 7px 5px; gap: 2px; }
+	.cc-btn-icon-big { font-size: 1.125rem; }
+	.cc-btn-icon-big-img { width: 22px; height: 22px; }
+	.cc-btn-action { font-size: 0.6rem; }
+	.cc-btn-detail { font-size: 0.53rem; }
+}
 </style>
 <div class="cc-wrap">
 <div class="cc-inner">
