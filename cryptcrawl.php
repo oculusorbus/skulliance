@@ -107,6 +107,11 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	.cc-room { perspective: 900px; }
 	.cc-card:hover { box-shadow: 0 16px 32px rgba(0,0,0,.55), 0 0 28px var(--cc-glow, rgba(255,153,0,.35)); }
 }
+@media (hover: none), (pointer: coarse) {
+	/* No hover/tilt on touch — a tap-press scale gives the same "this reacted
+	   to me" feedback without a stuck hover state after lifting the finger. */
+	.cc-card:active { transform: scale(.97); box-shadow: 0 0 22px var(--cc-glow, rgba(255,153,0,.3)); }
+}
 .cc-card-frame { position: relative; background: linear-gradient(135deg, #2e2013, #1a1209); box-sizing: border-box; padding: 16px; }
 .cc-card-art { position: relative; aspect-ratio: 5 / 7; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
