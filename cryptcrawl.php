@@ -47,6 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				cryptcrawlFlash("Can't flee twice in a row — face the room.", 'error');
 			}
 		}
+
+	} elseif ($action === 'abandon') {
+		cryptcrawlAbandonRun($conn, $user_id);
+		cryptcrawlFlash('Run abandoned.', 'info');
 	}
 
 	header('Location: cryptcrawl.php');
@@ -159,18 +163,6 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			</div>
 			<div style="font-size:0.72rem;opacity:0.5;">Rooms cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
 		</div>
-		<?php
-		// TEMP DEBUG — remove once art loading is confirmed working.
-		$dbg_pool = cryptcrawlGetArtPool($conn);
-		$dbg_room_with_art = 0;
-		foreach ($room as $c) if (!empty($c['image_url'])) $dbg_room_with_art++;
-		echo '<div style="font-size:0.68rem;color:#ff9900;background:rgba(255,153,0,.1);border:1px solid rgba(255,153,0,.3);border-radius:6px;padding:6px 10px;margin-bottom:14px;">';
-		echo 'DEBUG — live art pool right now: ' . count($dbg_pool) . ' images';
-		if (!empty($dbg_pool)) echo ' (sample: ' . htmlspecialchars($dbg_pool[0]) . ')';
-		echo ' · this run\'s room cards with image_url baked in: ' . $dbg_room_with_art . ' / ' . count($room);
-		echo '</div>';
-		?>
-
 
 		<div class="cc-room">
 			<?php foreach ($room as $i => $card):
@@ -229,6 +221,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>Flee this room</button>
 			</form>
 			<?php if (!$can_flee): ?><div class="cc-note">already fled last room, or mid-room — can't flee now</div><?php endif; ?>
+			<form method="post" style="margin-top:8px;" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
+				<input type="hidden" name="action" value="abandon">
+				<button type="submit" class="cc-btn secondary" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;">Abandon run</button>
+			</form>
 		</div>
 	<?php endif; ?>
 </div>

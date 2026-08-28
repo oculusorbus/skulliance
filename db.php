@@ -10673,6 +10673,18 @@ function cryptcrawlFleeRoom($conn, $run_id) {
 	return $run;
 }
 
+// Give up on the current run outright (e.g. a stale run started before a
+// game-affecting change like the art pool went live, not worth fighting
+// out to a natural loss). Recorded as a loss — there's no separate
+// "abandoned" status, and that's the closest honest outcome.
+function cryptcrawlAbandonRun($conn, $user_id) {
+	$run = cryptcrawlGetActiveRun($conn, $user_id);
+	if (!$run) return null;
+	$run['status'] = 'lost';
+	cryptcrawlSaveRun($conn, $run);
+	return $run;
+}
+
 function cryptcrawlSaveRun($conn, $run) {
 	$id                    = intval($run['id']);
 	$status                = $conn->real_escape_string($run['status']);
