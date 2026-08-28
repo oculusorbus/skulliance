@@ -80,7 +80,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
    closest properly-licensed match). */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap');
 
-@keyframes ccCardIn { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes ccCardFlip { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
 @keyframes ccFlashIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ccPulse { 0%, 100% { box-shadow: 0 0 0 rgba(255,68,68,0); } 50% { box-shadow: 0 0 16px 2px rgba(255,68,68,.65); } }
 @keyframes ccBtnSheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(220%) skewX(-20deg); } }
@@ -105,25 +105,35 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.cc-card {
-	background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; text-align: center;
-	opacity: 0; animation: ccCardIn .5s cubic-bezier(.22,1,.36,1) both;
+.cc-card { text-align: center; }
+.cc-card-flip {
+	perspective: 1000px; margin-bottom: 10px;
 	transition: transform .18s ease-out, box-shadow .25s ease;
 }
-.cc-room .cc-card:nth-child(1) { animation-delay: .05s; }
-.cc-room .cc-card:nth-child(2) { animation-delay: .13s; }
-.cc-room .cc-card:nth-child(3) { animation-delay: .21s; }
-.cc-room .cc-card:nth-child(4) { animation-delay: .29s; }
+.cc-card-flip-inner {
+	position: relative; aspect-ratio: 5 / 7; transform-style: preserve-3d;
+	animation: ccCardFlip .6s cubic-bezier(.3,.9,.4,1) both;
+}
+.cc-room .cc-card:nth-child(1) .cc-card-flip-inner { animation-delay: .05s; }
+.cc-room .cc-card:nth-child(2) .cc-card-flip-inner { animation-delay: .13s; }
+.cc-room .cc-card:nth-child(3) .cc-card-flip-inner { animation-delay: .21s; }
+.cc-room .cc-card:nth-child(4) .cc-card-flip-inner { animation-delay: .29s; }
+.cc-card-face {
+	position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+	border-radius: 10px; overflow: hidden; background: #002f44; border: 2px solid rgba(255,255,255,.08); box-sizing: border-box;
+}
+.cc-card-back { transform: rotateY(180deg); background: #000; display: flex; align-items: center; justify-content: center; }
+.cc-card-back-icon { width: 38%; height: auto; display: block; }
 @media (hover: hover) and (pointer: fine) {
 	.cc-room { perspective: 900px; }
-	.cc-card:hover { box-shadow: 0 16px 32px rgba(0,0,0,.55), 0 0 28px var(--cc-glow, rgba(255,153,0,.35)); }
+	.cc-card-flip:hover { box-shadow: 0 16px 32px rgba(0,0,0,.55), 0 0 28px var(--cc-glow, rgba(255,153,0,.35)); }
 }
 @media (hover: none), (pointer: coarse) {
 	/* No hover/tilt on touch — a tap-press scale gives the same "this reacted
 	   to me" feedback without a stuck hover state after lifting the finger. */
-	.cc-card:active { transform: scale(.97); box-shadow: 0 0 22px var(--cc-glow, rgba(255,153,0,.3)); }
+	.cc-card-flip:active { transform: scale(.97); box-shadow: 0 0 22px var(--cc-glow, rgba(255,153,0,.3)); }
 }
-.cc-card-art { position: relative; aspect-ratio: 5 / 7; }
+.cc-card-art { position: relative; width: 100%; height: 100%; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
 .cc-card-rank, .cc-card-suit { font-family: 'Poppins', Arial, sans-serif; }
 .cc-card-corner {
@@ -137,9 +147,14 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-card-corner .cc-card-suit { font-size: 1.3rem; margin-top: 1px; }
 .cc-card-corner.tl { top: 8%; left: 12%; }
 .cc-card-corner.br { bottom: 8%; right: 12%; transform: rotate(180deg); }
-.cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 26px 0; }
+.cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; height: 100%; justify-content: center; }
 .cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 800; }
 .cc-card-badge-standalone .cc-card-suit { font-size: 2.1rem; }
+.cc-card-controls {
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border-radius: 10px; box-sizing: border-box;
+	animation: ccFlashIn .4s ease .35s both;
+}
 .cc-card-label { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; letter-spacing: .05em; padding: 8px 10px 0; }
 .cc-card-actions { padding: 8px 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 .cc-btn {
@@ -175,8 +190,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	border-radius: 12px; padding: 14px; box-sizing: border-box;
 }
 @media (prefers-reduced-motion: reduce) {
-	.cc-card, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after { animation: none !important; }
-	.cc-card, .cc-btn { transition: none !important; }
+	.cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after { animation: none !important; }
+	.cc-card-flip, .cc-btn { transition: none !important; }
 }
 </style>
 <div class="cc-wrap">
@@ -273,24 +288,34 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
 			?>
 				<div class="cc-card" style="--cc-glow:<?php echo htmlspecialchars($glow_rgba); ?>;">
-					<?php if (!empty($card['image_url'])): ?>
-						<div class="cc-card-art">
-							<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
-							<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
-								<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
-								<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
-							</div>
-							<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
-								<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
-								<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
-							</div>
+					<div class="cc-card-flip">
+					<div class="cc-card-flip-inner">
+						<div class="cc-card-face cc-card-back">
+							<img class="cc-card-back-icon" src="/staking/pwa/skulliance-logo-icon.png" alt="">
 						</div>
-					<?php else: ?>
-						<div class="cc-card-badge-standalone">
-							<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
-							<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+						<div class="cc-card-face cc-card-front">
+						<?php if (!empty($card['image_url'])): ?>
+							<div class="cc-card-art">
+								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
+								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+								<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+							</div>
+						<?php else: ?>
+							<div class="cc-card-badge-standalone">
+								<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
+								<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+							</div>
+						<?php endif; ?>
 						</div>
-					<?php endif; ?>
+					</div>
+					</div>
+					<div class="cc-card-controls">
 					<div class="cc-card-label"><?php echo htmlspecialchars($type_label); ?></div>
 					<div class="cc-card-actions">
 						<?php if ($type === 'monster'): ?>
@@ -323,6 +348,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							</form>
 							<?php if (intval($active_run['potion_used_this_room']) === 1): ?><div class="cc-note">won't heal — already drank this crypt</div><?php endif; ?>
 						<?php endif; ?>
+					</div>
 					</div>
 				</div>
 			<?php endforeach; ?>
@@ -370,9 +396,11 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	}
 
 	// Desktop-only card tilt — skip entirely on touch devices so there's no
-	// stuck "hover" state after a tap. No-ops on states with no .cc-card.
+	// stuck "hover" state after a tap. Targets .cc-card-flip specifically
+	// (the "card" object) so the controls panel below stays flat/static
+	// instead of tilting along with it. No-ops on states with no cards.
 	if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-		document.querySelectorAll('.cc-card').forEach(function(card) {
+		document.querySelectorAll('.cc-card-flip').forEach(function(card) {
 			card.addEventListener('mousemove', function(e) {
 				var r = card.getBoundingClientRect();
 				var x = (e.clientX - r.left) / r.width - 0.5;
