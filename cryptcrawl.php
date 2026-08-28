@@ -123,8 +123,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-card-corner .cc-card-rank { font-size: 1rem; font-weight: 800; }
 .cc-card-corner .cc-card-suit { font-size: 0.8rem; margin-top: 1px; }
-.cc-card-corner.tl { top: 10px; left: 10px; }
-.cc-card-corner.br { bottom: 10px; right: 10px; transform: rotate(180deg); }
+.cc-card-corner.tl { top: 8%; left: 8%; }
+.cc-card-corner.br { bottom: 8%; right: 8%; transform: rotate(180deg); }
 .cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 26px 0; }
 .cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 700; }
 .cc-card-badge-standalone .cc-card-suit { font-size: 1.4rem; }
