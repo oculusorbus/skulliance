@@ -180,7 +180,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-room .cc-card:nth-child(4) .cc-card-flip-inner { animation-delay: .29s; }
 .cc-card-face {
 	position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-	border-radius: 10px; overflow: hidden; background: #000; box-sizing: border-box;
+	border-radius: 10px; overflow: hidden; background: #000; border: 2px solid rgba(255,255,255,.08); box-sizing: border-box;
 }
 .cc-card-back { transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
 .cc-card-back-icon { width: 38%; height: auto; display: block; }
