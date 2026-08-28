@@ -10469,24 +10469,27 @@ define('CRYPTCRAWL_MAX_HP', 20);
 // not a "your NFTs become your deck" system). Change here if the wallet changes.
 define('CRYPTCRAWL_ART_USER_ID', 1);
 
-// Deliberate card -> art mapping (curated 2026-08-28 from the owner's Crypties -
-// Season 2 holdings, ~108 candidates reviewed by suit/rank fit and color/content
-// variety): each of the 44 cards uses one specific NFT, not a shuffled pool. The
-// 5 highest monster ranks (both Aces, both Kings, one Queen) use confirmed
-// WTF/Mythic-rarity pieces where they existed among the owned set -- see
-// skullpaper/MAINTENANCE.md for the rarity notes. Keyed "SUIT+RANK", e.g. "C14"
-// = Ace of Clubs; the value is the exact nfts.name string ("Cryptie #NNNNN").
+// Deliberate card -> art mapping (curated 2026-08-28, revised repeatedly the
+// same day as the owner identified their WTF/Mythic/Legendary pieces directly,
+// from the owner's Crypties - Season 2 holdings, ~108 candidates reviewed):
+// each of the 44 cards uses one specific NFT, not a shuffled pool. The rarity
+// ladder here (confirmed via pool.pm attributes + the owner's own IDs) is all
+// 8 WTF pieces on the 8 top monster slots (both Aces/Kings/Queens/Jacks, per
+// the owner's explicit priority for top-level cards), Legendary plus both
+// Mythic pieces on the next tier down (rank 6-10 across all four suits) -- see
+// skullpaper/MAINTENANCE.md for the full rarity notes. Keyed "SUIT+RANK", e.g.
+// "C14" = Ace of Clubs; the value is the exact nfts.name string ("Cryptie #NNNNN").
 define('CRYPTCRAWL_CARD_ART', array(
 	// Clubs (monsters)
 	'C14' => 'Cryptie #11731', // WTF - Ada Dolls collab, variant "horny"
 	'C13' => 'Cryptie #11120', // WTF - Chimera subset, variant "the one"
-	'C12' => 'Cryptie #10753', // Mythic - frost/blizzard gargoyle
-	'C11' => 'Cryptie #10340', // WTF (per owner's own ID, not individually re-verified)
-	'C10' => 'Cryptie #11216',
-	'C9'  => 'Cryptie #11225', // moved down from C11 to make room for the WTF piece above
-	'C8'  => 'Cryptie #11552',
-	'C7'  => 'Cryptie #10428',
-	'C6'  => 'Cryptie #11096',
+	'C12' => 'Cryptie #11903', // WTF - Chimera subset
+	'C11' => 'Cryptie #10340', // WTF (per owner's own ID)
+	'C10' => 'Cryptie #10351', // Legendary (per owner's own ID)
+	'C9'  => 'Cryptie #10464', // Legendary
+	'C8'  => 'Cryptie #10552', // Legendary
+	'C7'  => 'Cryptie #10760', // Legendary
+	'C6'  => 'Cryptie #11141', // Legendary
 	'C5'  => 'Cryptie #10218',
 	'C4'  => 'Cryptie #10473',
 	'C3'  => 'Cryptie #11416',
@@ -10495,33 +10498,33 @@ define('CRYPTCRAWL_CARD_ART', array(
 	'S14' => 'Cryptie #10208', // WTF - Ada Dolls collab, variant "boombox"
 	'S13' => 'Cryptie #10316', // WTF - Chimera subset, variant "sketch platinum"
 	'S12' => 'Cryptie #10330', // WTF - withspaces collab, variant "static twist"
-	'S11' => 'Cryptie #10873', // WTF (per owner's own ID, not individually re-verified)
-	'S10' => 'Cryptie #10360',
-	'S9'  => 'Cryptie #10444',
-	'S8'  => 'Cryptie #11566',
-	'S7'  => 'Cryptie #10997',
-	'S6'  => 'Cryptie #11604',
-	'S5'  => 'Cryptie #10823',
-	'S4'  => 'Cryptie #11279',
+	'S11' => 'Cryptie #10873', // WTF - Chimera subset
+	'S10' => 'Cryptie #11097', // Legendary
+	'S9'  => 'Cryptie #11279', // Legendary
+	'S8'  => 'Cryptie #11380', // Legendary
+	'S7'  => 'Cryptie #11470', // Legendary
+	'S6'  => 'Cryptie #10753', // Mythic - frost/blizzard gargoyle (moved down from C12 to make room for the WTF piece there)
+	'S5'  => 'Cryptie #10720',
+	'S4'  => 'Cryptie #11009',
 	'S3'  => 'Cryptie #11336',
-	'S2'  => 'Cryptie #10464',
+	'S2'  => 'Cryptie #10203',
 	// Diamonds (weapons)
-	'D10' => 'Cryptie #11961',
-	'D9'  => 'Cryptie #11543',
-	'D8'  => 'Cryptie #10571',
-	'D7'  => 'Cryptie #11071',
-	'D6'  => 'Cryptie #10896',
+	'D10' => 'Cryptie #11472', // Legendary
+	'D9'  => 'Cryptie #11552', // Legendary
+	'D8'  => 'Cryptie #11862', // Legendary
+	'D7'  => 'Cryptie #11592', // Legendary
+	'D6'  => 'Cryptie #11216', // Mythic
 	'D5'  => 'Cryptie #11376',
 	'D4'  => 'Cryptie #11229',
 	'D3'  => 'Cryptie #10777',
 	'D2'  => 'Cryptie #11907',
 	// Hearts (medkits)
-	'H10' => 'Cryptie #11890',
-	'H9'  => 'Cryptie #10252',
-	'H8'  => 'Cryptie #11380',
-	'H7'  => 'Cryptie #10593',
+	'H10' => 'Cryptie #11356', // Legendary
+	'H9'  => 'Cryptie #11543', // Legendary
+	'H8'  => 'Cryptie #11566', // Legendary
+	'H7'  => 'Cryptie #10823', // Legendary
 	'H6'  => 'Cryptie #10365',
-	'H5'  => 'Cryptie #11470',
+	'H5'  => 'Cryptie #11332',
 	'H4'  => 'Cryptie #10305',
 	'H3'  => 'Cryptie #11258',
 	'H2'  => 'Cryptie #11407',
