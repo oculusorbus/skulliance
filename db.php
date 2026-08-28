@@ -10449,7 +10449,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 
 /* ============================================================
    CRYPT CRAWL — PROTOTYPE
-   A Scoundrel-style single-player dungeon delve played with a
+   A Scoundrel-style single-player crypt delve played with a
    44-card deck (2-A of clubs/spades = monsters, 2-10 of diamonds
    = weapons, 2-10 of hearts = potions). Card art is a placeholder
    suit/rank badge for now — swap in real NFT art via a per-card

@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$use_weapon = isset($_POST['use_weapon']) && $_POST['use_weapon'] === '1';
 			$updated = cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 			if ($updated && $updated['status'] === 'lost') {
-				cryptcrawlFlash('You fell in the dungeon. Run over — ' . intval($updated['rooms_cleared']) . ' rooms cleared.', 'loss');
+				cryptcrawlFlash('You fell in the crypt. Run over — ' . intval($updated['rooms_cleared']) . ' rooms cleared.', 'loss');
 			} elseif ($updated && $updated['status'] === 'won') {
 				cryptcrawlFlash('Deck cleared! You made it out with ' . intval($updated['hp']) . ' HP left.', 'win');
 			}
@@ -118,7 +118,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 
 	<?php if ($state === 'no_run'): ?>
 		<div class="cc-rules">
-			Delve a 44-card dungeon deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons —
+			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons —
 			equip one and it stays until you use it, degrading so it can only beat weaker monsters after each kill.
 			<strong style="color:#ff6b6b;">♥ Hearts</strong> heal you, but only the first one you drink each room counts.
 			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are monsters — fight bare-handed and take full
@@ -135,7 +135,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			<?php if ($recent_run['status'] === 'won'): ?>
 				<strong style="color:#00c8a0;">Deck cleared.</strong> You escaped with <?php echo intval($recent_run['hp']); ?> HP left across <?php echo intval($recent_run['rooms_cleared']); ?> rooms.
 			<?php else: ?>
-				<strong style="color:#ff7070;">You fell.</strong> <?php echo intval($recent_run['rooms_cleared']); ?> rooms cleared before the dungeon got you.
+				<strong style="color:#ff7070;">You fell.</strong> <?php echo intval($recent_run['rooms_cleared']); ?> rooms cleared before the crypt got you.
 			<?php endif; ?>
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
