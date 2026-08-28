@@ -292,7 +292,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
    exactly -50% of the card's own height, regardless of the actual column
    width any given phone's grid lands on. */
 @media (max-width: 700px) {
-	.cc-room { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 9px; }
+	/* Fixed 2 columns, not auto-fill -- a room is always exactly 4 cards,
+	   and auto-fill's minmax(105px,1fr) was free to fit 3 across on wider
+	   phones, splitting the room 3-and-1 instead of a clean 2x2. */
+	.cc-room { grid-template-columns: repeat(2, 1fr); gap: 9px; }
 	.cc-card-flip { margin-bottom: 0; }
 	.cc-card-corner .cc-card-rank { font-size: 0.75rem; }
 	.cc-card-corner .cc-card-suit { font-size: 0.975rem; }
