@@ -73,6 +73,13 @@ $suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
 $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
 ?>
 <style>
+/* Card index numerals only — rest of the page stays the site's normal Arial.
+   Poppins ExtraBold approximates the bold, slightly-rounded look of a
+   classic playing-card corner index (not an exact clone of any specific
+   card brand's proprietary face — Google Fonts doesn't host one — but the
+   closest properly-licensed match). */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&display=swap');
+
 @keyframes ccCardIn { from { opacity: 0; transform: translateY(18px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes ccFlashIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ccBgIn { from { opacity: 0; } to { opacity: 1; } }
@@ -114,6 +121,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-card-art { position: relative; aspect-ratio: 5 / 7; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
+.cc-card-rank, .cc-card-suit { font-family: 'Poppins', Arial, sans-serif; }
 .cc-card-corner {
 	position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1;
 	text-shadow:
@@ -126,7 +134,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-card-corner.tl { top: 8%; left: 12%; }
 .cc-card-corner.br { bottom: 8%; right: 12%; transform: rotate(180deg); }
 .cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 26px 0; }
-.cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 700; }
+.cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 800; }
 .cc-card-badge-standalone .cc-card-suit { font-size: 1.4rem; }
 .cc-card-label { font-size: 0.68rem; text-transform: uppercase; opacity: 0.55; letter-spacing: .05em; padding: 8px 10px 0; }
 .cc-card-actions { padding: 8px 10px 12px; display: flex; flex-direction: column; gap: 6px; }
