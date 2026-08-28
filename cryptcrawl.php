@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			// redundant (two near-identical sentences stacked on load).
 			cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 			if ($wasted_potion) {
-				cryptcrawlFlash('No effect — you already drank a potion this crypt.', 'error');
+				cryptcrawlFlash('No effect - you already drank a potion this crypt.', 'error');
 			}
 		}
 
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			if ($updated && intval($updated['fled_last_room']) === 1 && count($before) === 4) {
 				cryptcrawlFlash('You slipped past that crypt.', 'info');
 			} else {
-				cryptcrawlFlash("Can't flee twice in a row — face the crypt.", 'error');
+				cryptcrawlFlash("Can't flee twice in a row - face the crypt.", 'error');
 			}
 		}
 
@@ -319,10 +319,10 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 
 	<?php if ($state === 'no_run'): ?>
 		<div class="cc-rules">
-			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons —
+			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
 			equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
 			<strong style="color:#ff6b6b;">♥ Hearts</strong> heal you, but only the first one you drink each crypt counts.
-			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies — fight bare-handed and take full
+			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
 			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
 			into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
 			deck to win, or run out of HP and the delve ends.
@@ -393,7 +393,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 						$weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $weapon_name)) . '.png';
 					?>
 						<img class="cc-weapon-icon" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
-						<strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) — <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
+						<strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) - <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
 					<?php else: ?>
 						👊 Bare-handed
 					<?php endif; ?>
@@ -504,7 +504,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			<form method="post"><input type="hidden" name="action" value="flee">
 				<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee this crypt</button>
 			</form>
-			<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt — can't flee now</div><?php endif; ?>
+			<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
 			<form method="post" style="margin-top:8px;" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
 				<input type="hidden" name="action" value="abandon">
 				<button type="submit" class="cc-btn secondary" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;">🏳️ Abandon run</button>
