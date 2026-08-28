@@ -558,6 +558,33 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			});
 		});
 	}
+
+	// Click/tap a card and it does a full 360° spin, passing through the
+	// back face at the midpoint -- a tactile "yep, that reacted" flourish.
+	// Purely cosmetic: the actual actions are the buttons below, a sibling
+	// of this element in the DOM, so this listener never touches them.
+	// Uses the Web Animations API rather than a CSS class + keyframe so it
+	// can't collide with .cc-card-flip-inner's own intro-flip CSS animation
+	// -- toggling a class that shares the `animation` property would make
+	// the browser treat animation-name as having changed and replay the
+	// intro flip from its rotateY(180deg) starting point every time this
+	// spin finishes and the class comes back off.
+	if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		document.querySelectorAll('.cc-card-flip').forEach(function(card) {
+			var inner = card.querySelector('.cc-card-flip-inner');
+			if (!inner) return;
+			var spinning = false;
+			card.addEventListener('click', function() {
+				if (spinning) return;
+				spinning = true;
+				var anim = inner.animate(
+					[{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(360deg)' }],
+					{ duration: 650, easing: 'cubic-bezier(.3,.9,.4,1)' }
+				);
+				anim.onfinish = anim.oncancel = function() { spinning = false; };
+			});
+		});
+	}
 })();
 </script>
 </html>
