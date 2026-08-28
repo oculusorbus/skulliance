@@ -69,52 +69,59 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 			}
 			// Run verification if first pass OR if stake address for dhp157 aka Davi on second pass, accommodates an extra batch for more than 1,000 UTXOs in a single wallet
 			if($offset_flag == false || $address == "stake1u9h47jzelq38mk7yvaxklducf9uw7lhmfhwk4fm44wfdszsgqdmmz"){
-				$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list,inline_datum&asset_list=not.is.null".$offset);
-				curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
-				curl_setopt( $ch, CURLOPT_POST, 1);
-				curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
-				curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-				curl_setopt( $ch, CURLOPT_HEADER, 0);
-				curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-				//curl_setopt( $ch, CURLOPT_VERBOSE, true);
-				
-				// Verbose Debugging Parameters
-				//curl_setopt( $ch, CURLOPT_VERBOSE, true);
-				//$streamVerboseHandle = fopen('php://temp', 'w+');
-				//curl_setopt( $ch, CURLOPT_STDERR, $streamVerboseHandle);
+				// Koios' PostgREST backend intermittently returns a transient 504 /
+				// PGRST003 ("Timed out acquiring connection from connection pool").
+				// Without a retry, a single hiccup here drops into the "no response"
+				// failure branch below and exit()s the whole nightly run. Retry
+				// transient failures (cURL errors, HTTP 5xx, or any response that
+				// doesn't decode to an array) a few times with backoff before giving
+				// up. A legitimately empty wallet returns a 2xx [] which is a valid
+				// array, so it succeeds immediately and is never retried.
+				$max_attempts = 4;
+				$response = false;
+				$http_code = 0;
+				for($attempt = 1; $attempt <= $max_attempts; $attempt++){
+					$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list,inline_datum&asset_list=not.is.null".$offset);
+					curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
+					curl_setopt( $ch, CURLOPT_POST, 1);
+					curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$address.'"],"_extended":true}');
+					curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
+					curl_setopt( $ch, CURLOPT_HEADER, 0);
+					curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+					//curl_setopt( $ch, CURLOPT_VERBOSE, true);
 
-				$response = curl_exec( $ch );
-				
-				/* Verbose Debugging Response Handling
-				if ($response === FALSE) {
-				    printf("cUrl error (#%d): %s<br>\n",
-				           curl_errno($ch),
-				           htmlspecialchars(curl_error($ch)))
-				           ;
+					$response = curl_exec( $ch );
+					$curl_err = ($response === false) ? curl_error($ch) : "";
+					$curl_errno = ($response === false) ? curl_errno($ch) : 0;
+					$http_code = ($response === false) ? 0 : curl_getinfo($ch, CURLINFO_HTTP_CODE);
+					curl_close( $ch );
+
+					$decoded = json_decode($response);
+
+					// Success: a 2xx response that decodes to an array (an empty wallet's
+					// [] counts and is not retried). Keep the decoded value and stop.
+					if($response !== false && $http_code >= 200 && $http_code < 300 && is_array($decoded)){
+						$response = $decoded;
+						break;
+					}
+
+					// Transient failure — log this attempt. $message is only ever DM'd
+					// from the failure/exit branches, so on eventual success these lines
+					// are harmlessly discarded; on permanent failure they give the
+					// operator the full retry history.
+					if ($response === false) {
+					    $message .= "cURL Error (attempt ".$attempt."/".$max_attempts."): " . $curl_err . "\n";
+					    $message .= "cURL Error Number: " . $curl_errno . "\n";
+					} else {
+					    $message .= "HTTP Error (attempt ".$attempt."/".$max_attempts."): Status code " . $http_code . "\n";
+					    $message .= "Response: " . $response . "\n";
+					}
+					$response = $decoded;
+					// Back off before retrying (3s, 6s, 9s); skip the wait after the last attempt.
+					if($attempt < $max_attempts){
+						sleep($attempt * 3);
+					}
 				}
-
-				rewind($streamVerboseHandle);
-				$verboseLog = stream_get_contents($streamVerboseHandle);
-
-				echo "cUrl verbose information:\n", 
-				     "<pre>", htmlspecialchars($verboseLog), "</pre>\n";*/
-				
-				// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
-				if ($response === false) {
-				    $message .= "cURL Error: " . curl_error($ch) . "\n";
-				    $message .= "cURL Error Number: " . curl_errno($ch) . "\n";
-				} else {
-				    // Optionally check HTTP status code
-				    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-				    if ($http_code >= 400) {
-				        $message .= "HTTP Error: Status code " . $http_code . "\n";
-				        $message .= "Response: " . $response . "\n";
-				    }
-				}
-				$response = json_decode($response);
-				//print_r($response[0]->asset_list);
-				//exit;
-				curl_close( $ch );
 
 				//$_SESSION['userData']['nfts'] = array();
 				if(is_array($response)){
@@ -186,32 +193,60 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					}
 
 					foreach($final_asset_lists AS $final_asset_index => $final_asset_list){
-						$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-						curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
-						curl_setopt( $tokench, CURLOPT_POST, 1);
-						curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
-						curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
-						curl_setopt( $tokench, CURLOPT_HEADER, 0);
-						curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
-						//curl_setopt( $tokench, CURLOPT_VERBOSE, true);
-			
-						//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
-						//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
-						$tokenresponse = curl_exec( $tokench );
-						// Check for errors and echo them
-						if ($tokenresponse === false) {
-						    $message .= "cURL Error: " . curl_error($tokench) . "\n";
-						    $message .= "cURL Error Number: " . curl_errno($tokench) . "\n";
-						} else {
-						    // Optionally check HTTP status code
-						    $http_code = curl_getinfo($tokench, CURLINFO_HTTP_CODE);
-						    if ($http_code >= 400) {
-						        $message .= "HTTP Error: Status code " . $http_code . "\n";
-						        $message .= "Response: " . $tokenresponse . "\n";
-						    }
+						// Koios' PostgREST backend intermittently returns a transient 504 /
+						// PGRST003 ("Timed out acquiring connection from connection pool").
+						// That used to drop straight into the failure branch below and
+						// exit(), killing the whole nightly verification run every few days.
+						// Retry transient failures (cURL errors, HTTP 5xx, or any response
+						// that doesn't decode to the expected array) a few times with
+						// exponential-ish backoff before giving up.
+						$max_attempts = 4;
+						$tokenresponse = false;
+						$http_code = 0;
+						for($attempt = 1; $attempt <= $max_attempts; $attempt++){
+							$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
+							curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXhybHB1d2R4MjN4bGRhM3hkOG40NnR3cW0zano5Y3hkNGYyazJoaDhzNGUwMGN3ZmFnNHUiLCJleHAiOjE3OTc5NjAyODEsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.JWfVIQGU6SH0p7BpyzqV931Em8nz_eKkVbheIGzLShg'));
+							curl_setopt( $tokench, CURLOPT_POST, 1);
+							curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($final_asset_list));
+							curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
+							curl_setopt( $tokench, CURLOPT_HEADER, 0);
+							curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+							//curl_setopt( $tokench, CURLOPT_VERBOSE, true);
+
+							//$tokench = curl_init("https://api.koios.rest/api/v0/asset_info?_asset_policy=".$token->policy_id."&_asset_name=".$token->asset_name);
+							//curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+							$tokenresponse = curl_exec( $tokench );
+							$curl_err = ($tokenresponse === false) ? curl_error($tokench) : "";
+							$curl_errno = ($tokenresponse === false) ? curl_errno($tokench) : 0;
+							$http_code = ($tokenresponse === false) ? 0 : curl_getinfo($tokench, CURLINFO_HTTP_CODE);
+							curl_close( $tokench );
+
+							$decoded = json_decode($tokenresponse);
+
+							// Success: a 2xx response that decodes to the expected array of
+							// asset records. Keep the decoded value and stop retrying.
+							if($tokenresponse !== false && $http_code >= 200 && $http_code < 300 && is_array($decoded)){
+								$tokenresponse = $decoded;
+								break;
+							}
+
+							// Transient failure — log this attempt. $message is only ever DM'd
+							// from the failure/exit branches, so on eventual success these
+							// lines are harmlessly discarded; on permanent failure they give
+							// the operator the full retry history.
+							if ($tokenresponse === false) {
+							    $message .= "cURL Error (attempt ".$attempt."/".$max_attempts."): " . $curl_err . "\n";
+							    $message .= "cURL Error Number: " . $curl_errno . "\n";
+							} else {
+							    $message .= "HTTP Error (attempt ".$attempt."/".$max_attempts."): Status code " . $http_code . "\n";
+							    $message .= "Response: " . $tokenresponse . "\n";
+							}
+							$tokenresponse = $decoded;
+							// Back off before retrying (3s, 6s, 9s); skip the wait after the last attempt.
+							if($attempt < $max_attempts){
+								sleep($attempt * 3);
+							}
 						}
-						$tokenresponse = json_decode($tokenresponse);
-						curl_close( $tokench );
 			
 						if(is_array($tokenresponse)){
 							foreach($tokenresponse AS $index => $tokenresponsedata){
@@ -261,7 +296,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 								}
 							} // End foreach
 						}else{
-							$message .= "Bulk asset info could not be retrieved for stake address: https://pool.pm/".$address." \r\n";
+							$message .= "Bulk asset info could not be retrieved after ".$max_attempts." attempts for stake address: https://pool.pm/".$address." \r\n";
 							$failed_addresses[] = $address;
 							echo $message;
 							print_r($tokenresponse);
@@ -322,7 +357,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					}
 				}
 				}else{
-					$message .= "There was no response for stake address: https://pool.pm/".$address." \r\n";
+					$message .= "There was no response after ".$max_attempts." attempts for stake address: https://pool.pm/".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
 					print_r($response);
