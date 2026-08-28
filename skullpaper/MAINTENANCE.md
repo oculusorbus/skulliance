@@ -34,6 +34,7 @@ records verified constants, and tracks what still needs to be written.
 | games-boss-battles.md *(new)*       | Boss encounters        | ajax/get-bosses.php, db.php:5139-5258 |
 | games-skull-swap.md *(new)*         | Match-3 score chase    | skullswap.php, db.php:5019-5136 |
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
+| games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawl.php, db.php:10451-10805 |
 | games-drop-ship.md                  | External game          | madballs.net (external) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
@@ -95,6 +96,11 @@ records verified constants, and tracks what still needs to be written.
 - Skull Swap (ajax/save-swap-score.php): 25 matches/game, max score 25,000, min 60s anti-cheat.
 - Monstrocity: 28 campaign levels, 35+ NFT themes; character traits health/strength/speed/tactics/size/powerup.
 - CLAW is a real point type (Monstrocity/Boss reward), separate from CARBON/DIAMOND.
+- Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
+  diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
+  after each kill. First medkit per crypt heals full rank; any after that in the same crypt
+  heal half (floor, min 1) instead of nothing. Second Wind: first hit that would hit 0 HP per
+  delve instead clamps to 1 HP, once per delve, automatic. No currency payout yet.
 
 ---
 

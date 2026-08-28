@@ -65,6 +65,7 @@ $skullpaper_nav = [
 		['slug' => 'games-boss-battles',  'title' => 'Boss Battles',  'emoji' => '👹'],
 		['slug' => 'games-skull-swap',    'title' => 'Skull Swap',    'emoji' => '🔄'],
 		['slug' => 'games-gauntlets',     'title' => 'Gauntlets',     'emoji' => '🥊'],
+		['slug' => 'games-cryptcrawl',    'title' => 'Crypt Crawl',   'emoji' => '💀'],
 		['slug' => 'games-drop-ship',     'title' => 'Drop Ship',     'emoji' => '🚀'],
 		['slug' => 'games-oculus-lounge', 'title' => 'Oculus Lounge', 'emoji' => '🛋️'],
 	]],

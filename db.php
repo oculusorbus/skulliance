@@ -10615,9 +10615,9 @@ function cryptcrawlStartRun($conn, $user_id) {
 		$room_esc = $conn->real_escape_string($room_json);
 		$conn->query("
 			INSERT INTO cryptcrawls
-				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared)
+				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared, second_wind_used)
 			VALUES
-				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0)
+				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0, 0)
 		");
 		return $conn->insert_id;
 	}
@@ -10627,6 +10627,7 @@ function cryptcrawlStartRun($conn, $user_id) {
 		'deck' => $deck_json, 'room' => $room_json,
 		'weapon_power' => null, 'weapon_name' => null, 'weapon_beaten_rank' => null,
 		'last_card_type' => null, 'potion_used_this_room' => 0, 'fled_last_room' => 0, 'rooms_cleared' => 0,
+		'second_wind_used' => 0,
 	);
 	return 0;
 }
@@ -10674,10 +10675,15 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 		$run['last_card_type']     = 'weapon';
 
 	} elseif ($card['type'] === 'potion') {
-		if (intval($run['potion_used_this_room']) === 0) {
-			$run['hp'] = min(intval($run['max_hp']), intval($run['hp']) + intval($card['rank']));
-			$run['potion_used_this_room'] = 1;
-		}
+		$rank = intval($card['rank']);
+		// First medkit in a room heals full value. Any medkit after that in
+		// the same room used to do nothing at all -- a "gotcha" players
+		// only learned about by wasting one. It now heals for half instead
+		// (floor, minimum 1), so hoarding still isn't optimal but is never
+		// a punished no-op either.
+		$heal = (intval($run['potion_used_this_room']) === 0) ? $rank : max(1, intval($rank / 2));
+		$run['hp'] = min(intval($run['max_hp']), intval($run['hp']) + $heal);
+		$run['potion_used_this_room'] = 1;
 		$run['last_card_type'] = 'potion';
 
 	} else { // monster
@@ -10691,7 +10697,18 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 		} else {
 			$damage = $rank;
 		}
-		$run['hp'] = max(0, intval($run['hp']) - $damage);
+		$new_hp = intval($run['hp']) - $damage;
+		// Second Wind: the first time in a run a hit would drop HP to 0 or
+		// below, survive at 1 HP instead -- once per delve, automatic (no
+		// button to remember). This is the one guaranteed out for a
+		// bad-luck stretch (weapon already worn out, flee already spent,
+		// back-to-back big monsters) that otherwise has no lever to pull
+		// at all short of the damage roll itself.
+		if ($new_hp <= 0 && intval($run['second_wind_used']) === 0) {
+			$new_hp = 1;
+			$run['second_wind_used'] = 1;
+		}
+		$run['hp'] = max(0, $new_hp);
 		$run['last_card_type'] = 'monster';
 	}
 
@@ -10771,6 +10788,7 @@ function cryptcrawlSaveRun($conn, $run) {
 	$potion_used_this_room = intval($run['potion_used_this_room']);
 	$fled_last_room        = intval($run['fled_last_room']);
 	$rooms_cleared         = intval($run['rooms_cleared']);
+	$second_wind_used      = intval($run['second_wind_used'] ?? 0);
 
 	$conn->query("
 		UPDATE cryptcrawls SET
@@ -10778,7 +10796,7 @@ function cryptcrawlSaveRun($conn, $run) {
 			weapon_power = $weapon_power, weapon_name = $weapon_name,
 			weapon_beaten_rank = $weapon_beaten_rank, last_card_type = $last_card_type,
 			potion_used_this_room = $potion_used_this_room, fled_last_room = $fled_last_room,
-			rooms_cleared = $rooms_cleared, updated_at = NOW()
+			rooms_cleared = $rooms_cleared, second_wind_used = $second_wind_used, updated_at = NOW()
 		WHERE id = $id
 	");
 }
