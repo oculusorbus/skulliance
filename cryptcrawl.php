@@ -172,6 +172,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-btn.heal:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(0,200,160,.4); }
 .cc-btn.attack { background: #ff4444; color: #012; }
 .cc-btn.attack:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,68,68,.4); }
+.cc-btn.bare { background: #7a8ca0; color: #012; }
+.cc-btn.bare:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(122,140,160,.4); }
 .cc-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
 	.cc-btn:not(:disabled)::after {
@@ -334,7 +336,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn secondary">👊 Fight bare-handed (-<?php echo $rank; ?>)</button>
+								<button type="submit" class="cc-btn bare">👊 Fight bare-handed (-<?php echo $rank; ?>)</button>
 							</form>
 							<?php if ($weapon_power !== null): ?>
 								<form method="post"><input type="hidden" name="action" value="play_card">
