@@ -112,14 +112,19 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	   to me" feedback without a stuck hover state after lifting the finger. */
 	.cc-card:active { transform: scale(.97); box-shadow: 0 0 22px var(--cc-glow, rgba(255,153,0,.3)); }
 }
-.cc-card-frame { position: relative; background: linear-gradient(135deg, #2e2013, #1a1209); box-sizing: border-box; padding: 16px; }
 .cc-card-art { position: relative; aspect-ratio: 5 / 7; }
 .cc-card-img { width: 100%; height: 100%; object-fit: contain; display: block; background: #002f44; }
-.cc-card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.cc-card-corner {
+	position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1;
+	text-shadow:
+		-1.5px -1.5px 2px rgba(0,0,0,.95), 1.5px -1.5px 2px rgba(0,0,0,.95),
+		-1.5px  1.5px 2px rgba(0,0,0,.95), 1.5px  1.5px 2px rgba(0,0,0,.95),
+		0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9);
+}
 .cc-card-corner .cc-card-rank { font-size: 1rem; font-weight: 800; }
 .cc-card-corner .cc-card-suit { font-size: 0.8rem; margin-top: 1px; }
-.cc-card-corner.tl { top: 3px; left: 4px; }
-.cc-card-corner.br { bottom: 3px; right: 4px; transform: rotate(180deg); }
+.cc-card-corner.tl { top: 10px; left: 10px; }
+.cc-card-corner.br { bottom: 10px; right: 10px; transform: rotate(180deg); }
 .cc-card-badge-standalone { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 26px 0; }
 .cc-card-badge-standalone .cc-card-rank { font-size: 1.8rem; font-weight: 700; }
 .cc-card-badge-standalone .cc-card-suit { font-size: 1.4rem; }
@@ -227,15 +232,12 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				$suit = $card['suit']; $rank = intval($card['rank']); $type = $card['type'];
 				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
 				$dom_rgb = cryptcrawlDominantColor($card['image_url'] ?? '');
-				$frame_gradient = cryptcrawlFrameGradient($dom_rgb);
 				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
 			?>
 				<div class="cc-card" style="--cc-glow:<?php echo htmlspecialchars($glow_rgba); ?>;">
-					<div class="cc-card-frame" style="background:<?php echo htmlspecialchars($frame_gradient); ?>;">
-						<?php if (!empty($card['image_url'])): ?>
-							<div class="cc-card-art">
-								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
-							</div>
+					<?php if (!empty($card['image_url'])): ?>
+						<div class="cc-card-art">
+							<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
 							<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
 								<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
 								<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
@@ -244,13 +246,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 								<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
 								<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
 							</div>
-						<?php else: ?>
-							<div class="cc-card-badge-standalone">
-								<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
-								<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
-							</div>
-						<?php endif; ?>
-					</div>
+						</div>
+					<?php else: ?>
+						<div class="cc-card-badge-standalone">
+							<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
+							<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+						</div>
+					<?php endif; ?>
 					<div class="cc-card-label"><?php echo htmlspecialchars($type); ?></div>
 					<div class="cc-card-actions">
 						<?php if ($type === 'monster'): ?>

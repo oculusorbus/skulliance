@@ -10574,23 +10574,6 @@ function cryptcrawlDominantColor($web_url) {
 	return [($rgb >> 16) & 0xFF, ($rgb >> 8) & 0xFF, $rgb & 0xFF];
 }
 
-// Two-stop diagonal gradient CSS value built from an [r,g,b] — darkened at
-// both ends so the frame reads as a frame (echoing the art's color) rather
-// than another bright shape competing with it. Falls back to the default
-// bronze when $rgb is null (extraction failed or a non-local image).
-function cryptcrawlFrameGradient($rgb) {
-	if (!$rgb) return 'linear-gradient(135deg, #2e2013, #1a1209)';
-	list($r, $g, $b) = $rgb;
-	$mix = function($frac) use ($r, $g, $b) {
-		return sprintf('#%02x%02x%02x',
-			max(0, min(255, (int) round($r * $frac))),
-			max(0, min(255, (int) round($g * $frac))),
-			max(0, min(255, (int) round($b * $frac)))
-		);
-	};
-	return 'linear-gradient(135deg, ' . $mix(0.4) . ', ' . $mix(0.16) . ')';
-}
-
 function cryptcrawlGetActiveRun($conn, $user_id) {
 	$user_id = intval($user_id);
 	$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
