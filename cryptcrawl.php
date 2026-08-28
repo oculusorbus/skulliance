@@ -154,8 +154,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,.15); box-shadow: 0 6px 16px rgba(255,255,255,.12); }
 .cc-btn.warn { background: #ff9900; color: #012; }
 .cc-btn.warn:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,153,0,.4); }
-.cc-btn.heal { background: #ff6b6b; color: #012; }
-.cc-btn.heal:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,107,107,.4); }
+.cc-btn.heal { background: #00c8a0; color: #012; }
+.cc-btn.heal:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(0,200,160,.4); }
 .cc-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
 	.cc-btn:not(:disabled)::after {
