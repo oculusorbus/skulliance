@@ -10481,9 +10481,9 @@ define('CRYPTCRAWL_CARD_ART', array(
 	'C14' => 'Cryptie #11731', // WTF - Ada Dolls collab, variant "horny"
 	'C13' => 'Cryptie #11120', // WTF - Chimera subset, variant "the one"
 	'C12' => 'Cryptie #10753', // Mythic - frost/blizzard gargoyle
-	'C11' => 'Cryptie #11225',
+	'C11' => 'Cryptie #10340', // WTF (per owner's own ID, not individually re-verified)
 	'C10' => 'Cryptie #11216',
-	'C9'  => 'Cryptie #10340',
+	'C9'  => 'Cryptie #11225', // moved down from C11 to make room for the WTF piece above
 	'C8'  => 'Cryptie #11552',
 	'C7'  => 'Cryptie #10428',
 	'C6'  => 'Cryptie #11096',
@@ -10494,8 +10494,8 @@ define('CRYPTCRAWL_CARD_ART', array(
 	// Spades (monsters)
 	'S14' => 'Cryptie #10208', // WTF - Ada Dolls collab, variant "boombox"
 	'S13' => 'Cryptie #10316', // WTF - Chimera subset, variant "sketch platinum"
-	'S12' => 'Cryptie #11449',
-	'S11' => 'Cryptie #11866',
+	'S12' => 'Cryptie #10330', // WTF - withspaces collab, variant "static twist"
+	'S11' => 'Cryptie #10873', // WTF (per owner's own ID, not individually re-verified)
 	'S10' => 'Cryptie #10360',
 	'S9'  => 'Cryptie #10444',
 	'S8'  => 'Cryptie #11566',
