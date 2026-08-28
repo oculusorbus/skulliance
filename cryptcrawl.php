@@ -188,7 +188,14 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		</form>
 	</div><!-- /cc-inner -->
 
-	<?php elseif ($state === 'game_over'): ?>
+	<?php elseif ($state === 'game_over'):
+			$fell = ($recent_run['status'] === 'lost');
+		?>
+		<?php if ($fell): ?>
+	</div><!-- /cc-inner -->
+		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
+		<div class="cc-inner">
+		<?php endif; ?>
 		<div class="cc-rules">
 			<?php if ($recent_run['status'] === 'won'): ?>
 				<strong style="color:#00c8a0;">Deck cleared.</strong> You escaped with <?php echo intval($recent_run['hp']); ?> HP left across <?php echo intval($recent_run['rooms_cleared']); ?> crypts.
@@ -199,7 +206,12 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
 		</form>
+		<?php if ($fell): ?>
+		</div><!-- /cc-inner -->
+		</div><!-- /cc-theme-bg -->
+		<?php else: ?>
 	</div><!-- /cc-inner -->
+		<?php endif; ?>
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];
@@ -311,47 +323,50 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		</div>
 		</div><!-- /cc-inner -->
 		</div><!-- /cc-theme-bg -->
-		<script>
-		(function() {
-			// Fill whatever viewport space is left below the backdrop rather than
-			// forcing the page to scroll to show the full theme image — cropping
-			// via background-size:cover is fine, scrolling isn't.
-			var el = document.querySelector('.cc-theme-bg');
-			if (!el) return;
-			function sizeTheme() {
-				var top = el.getBoundingClientRect().top;
-				var bottomPad = 60; // matches .cc-wrap's bottom padding
-				var available = window.innerHeight - top - bottomPad;
-				// Never shrink below what the content actually needs — on narrow
-				// viewports the room grid wraps to more rows, and with
-				// align-items:center a too-short box would center-overflow,
-				// clipping the HUD off the top of the page instead of just
-				// letting the page scroll a little. Cropping the art via
-				// background-size:cover is fine; clipping the UI isn't.
-				el.style.height = 'auto';
-				var natural = el.scrollHeight;
-				el.style.height = Math.max(200, available, natural) + 'px';
-			}
-			sizeTheme();
-			window.addEventListener('resize', sizeTheme);
-
-			// Desktop-only card tilt — skip entirely on touch devices so there's
-			// no stuck "hover" state after a tap.
-			if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-				document.querySelectorAll('.cc-card').forEach(function(card) {
-					card.addEventListener('mousemove', function(e) {
-						var r = card.getBoundingClientRect();
-						var x = (e.clientX - r.left) / r.width - 0.5;
-						var y = (e.clientY - r.top) / r.height - 0.5;
-						card.style.transform = 'perspective(700px) rotateX(' + (-y * 8) + 'deg) rotateY(' + (x * 8) + 'deg) translateY(-6px) scale(1.03)';
-					});
-					card.addEventListener('mouseleave', function() {
-						card.style.transform = '';
-					});
-				});
-			}
-		})();
-		</script>
 	<?php endif; ?>
 </div>
+<script>
+(function() {
+	// Fill whatever viewport space is left below the backdrop rather than
+	// forcing the page to scroll to show the full theme image — cropping
+	// via background-size:cover is fine, scrolling isn't. No-ops cleanly
+	// when there's no .cc-theme-bg on the page at all (no_run state, or a
+	// game_over 'won' screen, which doesn't get a themed backdrop).
+	var el = document.querySelector('.cc-theme-bg');
+	if (el) {
+		function sizeTheme() {
+			var top = el.getBoundingClientRect().top;
+			var bottomPad = 60; // matches .cc-wrap's bottom padding
+			var available = window.innerHeight - top - bottomPad;
+			// Never shrink below what the content actually needs — on narrow
+			// viewports the room grid wraps to more rows, and with
+			// align-items:center a too-short box would center-overflow,
+			// clipping the HUD off the top of the page instead of just
+			// letting the page scroll a little. Cropping the art via
+			// background-size:cover is fine; clipping the UI isn't.
+			el.style.height = 'auto';
+			var natural = el.scrollHeight;
+			el.style.height = Math.max(200, available, natural) + 'px';
+		}
+		sizeTheme();
+		window.addEventListener('resize', sizeTheme);
+	}
+
+	// Desktop-only card tilt — skip entirely on touch devices so there's no
+	// stuck "hover" state after a tap. No-ops on states with no .cc-card.
+	if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+		document.querySelectorAll('.cc-card').forEach(function(card) {
+			card.addEventListener('mousemove', function(e) {
+				var r = card.getBoundingClientRect();
+				var x = (e.clientX - r.left) / r.width - 0.5;
+				var y = (e.clientY - r.top) / r.height - 0.5;
+				card.style.transform = 'perspective(700px) rotateX(' + (-y * 8) + 'deg) rotateY(' + (x * 8) + 'deg) translateY(-6px) scale(1.03)';
+			});
+			card.addEventListener('mouseleave', function() {
+				card.style.transform = '';
+			});
+		});
+	}
+})();
+</script>
 </html>
