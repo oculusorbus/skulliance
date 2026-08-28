@@ -297,7 +297,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn secondary">⚔️ Fight bare-handed (-<?php echo $rank; ?>)</button>
+								<button type="submit" class="cc-btn secondary">👊 Fight bare-handed (-<?php echo $rank; ?>)</button>
 							</form>
 							<?php if ($weapon_power !== null): ?>
 								<form method="post"><input type="hidden" name="action" value="play_card">
