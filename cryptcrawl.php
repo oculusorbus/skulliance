@@ -329,6 +329,17 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	.cc-btn-icon-big-img { width: 22px; height: 22px; }
 	.cc-btn-action { font-size: 0.6rem; }
 	.cc-btn-detail { font-size: 0.53rem; }
+	/* The button panel covers the card's bottom half here (see margin-top:-70%
+	   above) -- a dead-centered icon on a weapon/potion card face would sit
+	   right on that fold and get covered. Move it up into the clear top
+	   portion instead of just hoping it peeks out. */
+	.cc-card-icon-face { align-items: flex-start; padding-top: 14%; box-sizing: border-box; }
+	/* Icon + action + detail no longer fits three rows worth of height at this
+	   scale without help -- drop the icon row on mobile specifically (the
+	   action word plus detail number still say everything the icon did) to
+	   claim back vertical space for the rest of the UI. */
+	.cc-btn-icon-big, .cc-btn-icon-big-img { display: none; }
+	.cc-btn.punchy { min-height: 44px; padding: 6px 5px; gap: 1px; }
 }
 </style>
 <div class="cc-wrap">
