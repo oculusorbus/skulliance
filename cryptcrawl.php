@@ -1,15 +1,40 @@
 <?php
-// CRYPT CRAWL — now linked in nav (Play > Crypt Crawl, after Gauntlets).
-// See db.php ("CRYPT CRAWL — PROTOTYPE" block) for the game logic. Still
-// outstanding from the original prototype punch list: currency payout,
-// Discord broadcast, and the skullpaper/cryptcrawl.md + MAINTENANCE.md
-// entry CLAUDE.md calls for on a significant feature going live.
+// CRYPT CRAWL — linked in nav (Play > Crypt Crawl, after Gauntlets). Public:
+// playable while logged out, same as skullswap.php/match3rpg.php — but only
+// persisted to the DB for a real account (see the storage functions in
+// db.php's "CRYPT CRAWL" block, which branch on $user_id/run id > 0). A
+// guest's run lives in $_SESSION only and is gone with their session.
+// Still outstanding from the original prototype punch list: currency
+// payout, Discord broadcast (both explicitly guest-ineligible anyway), and
+// the skullpaper/cryptcrawl.md + MAINTENANCE.md entry CLAUDE.md calls for
+// on a significant feature going live.
 include_once 'db.php';
 include 'message.php';
 include 'verify.php';
-include 'skulliance.php';
 
-$user_id = intval($_SESSION['userData']['user_id']);
+// Unlike most guest-playable pages here, Crypt Crawl needs a real working
+// session even for a brand-new anonymous visitor: it's a full page-reload
+// per action (not a client-side JS game with an occasional AJAX save), so
+// a guest's flash messages and run state have nowhere to live between
+// clicks without one. db.php only starts a session when a cookie already
+// exists — force one here regardless, so a first-ever visitor still gets a
+// session cookie and can actually play.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+// Restore the staking session from the 6-month SessionCookie when PHPSESSID
+// has lapsed (same pattern as skullswap.php/monstrocity.php/match3rpg.php).
+// No hard gate — a missing/absent session just means a guest.
+if (session_status() === PHP_SESSION_ACTIVE
+    && !isset($_SESSION['logged_in'])
+    && isset($_COOKIE['SessionCookie'])) {
+    $cookieData = json_decode($_COOKIE['SessionCookie'], true);
+    if (is_array($cookieData)) {
+        $_SESSION = $cookieData;
+    }
+}
+$user_id = isset($_SESSION['userData']['user_id']) ? intval($_SESSION['userData']['user_id']) : 0;
 
 if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
 function cryptcrawlFlash($msg, $type = 'info') {

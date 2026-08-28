@@ -10574,16 +10574,31 @@ function cryptcrawlDominantColor($web_url) {
 	return [($rgb >> 16) & 0xFF, ($rgb >> 8) & 0xFF, $rgb & 0xFF];
 }
 
+// Crypt Crawl is public: playable while logged out, but only persisted to
+// the DB for a real account. Every storage function below branches on
+// $user_id/$run_id > 0 (real account) vs a guest, whose one-and-only run
+// lives entirely in $_SESSION['cryptcrawl_guest_run'] (id sentinel 0) —
+// never touches the database, and is gone once their session/cookies are.
+// Game-logic functions (cryptcrawlRefillRoom, and the mutation bodies of
+// PlayCard/FleeRoom below) are storage-agnostic; they just operate on
+// whatever $run array they're handed.
 function cryptcrawlGetActiveRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
-	return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
+	if ($user_id > 0) {
+		$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
+		return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
+	}
+	$run = $_SESSION['cryptcrawl_guest_run'] ?? null;
+	return ($run && $run['status'] === 'active') ? $run : null;
 }
 
 function cryptcrawlGetMostRecentRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
-	return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
+	if ($user_id > 0) {
+		$result = $conn->query("SELECT * FROM cryptcrawls WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
+		return ($result && $result->num_rows) ? $result->fetch_assoc() : null;
+	}
+	return $_SESSION['cryptcrawl_guest_run'] ?? null;
 }
 
 function cryptcrawlStartRun($conn, $user_id) {
@@ -10592,15 +10607,28 @@ function cryptcrawlStartRun($conn, $user_id) {
 	$deck = cryptcrawlBuildDeck($art_pool);
 	$room = array_splice($deck, 0, 4);
 	$hp = CRYPTCRAWL_MAX_HP;
-	$deck_json = $conn->real_escape_string(json_encode($deck));
-	$room_json = $conn->real_escape_string(json_encode(array_values($room)));
-	$conn->query("
-		INSERT INTO cryptcrawls
-			(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared)
-		VALUES
-			($user_id, 'active', $hp, $hp, '$deck_json', '$room_json', NULL, NULL, NULL, NULL, 0, 0, 0)
-	");
-	return $conn->insert_id;
+	$deck_json = json_encode($deck);
+	$room_json = json_encode(array_values($room));
+
+	if ($user_id > 0) {
+		$deck_esc = $conn->real_escape_string($deck_json);
+		$room_esc = $conn->real_escape_string($room_json);
+		$conn->query("
+			INSERT INTO cryptcrawls
+				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared)
+			VALUES
+				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0)
+		");
+		return $conn->insert_id;
+	}
+
+	$_SESSION['cryptcrawl_guest_run'] = array(
+		'id' => 0, 'status' => 'active', 'hp' => $hp, 'max_hp' => $hp,
+		'deck' => $deck_json, 'room' => $room_json,
+		'weapon_power' => null, 'weapon_name' => null, 'weapon_beaten_rank' => null,
+		'last_card_type' => null, 'potion_used_this_room' => 0, 'fled_last_room' => 0, 'rooms_cleared' => 0,
+	);
+	return 0;
 }
 
 // Draws up to 3 fresh cards into the room (called once 3 of the current
@@ -10622,9 +10650,14 @@ function cryptcrawlRefillRoom(&$run) {
 // cards. Returns the updated run row (also persisted to the DB).
 function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 	$run_id = intval($run_id);
-	$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND status = 'active' LIMIT 1");
-	if (!$result || !$result->num_rows) return null;
-	$run = $result->fetch_assoc();
+	if ($run_id > 0) {
+		$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND status = 'active' LIMIT 1");
+		if (!$result || !$result->num_rows) return null;
+		$run = $result->fetch_assoc();
+	} else {
+		$run = $_SESSION['cryptcrawl_guest_run'] ?? null;
+		if (!$run || $run['status'] !== 'active') return null;
+	}
 
 	$room = json_decode($run['room'], true) ?: array();
 	$card_index = intval($card_index);
@@ -10683,9 +10716,14 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 // any card from the current room has been resolved.
 function cryptcrawlFleeRoom($conn, $run_id) {
 	$run_id = intval($run_id);
-	$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND status = 'active' LIMIT 1");
-	if (!$result || !$result->num_rows) return null;
-	$run = $result->fetch_assoc();
+	if ($run_id > 0) {
+		$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND status = 'active' LIMIT 1");
+		if (!$result || !$result->num_rows) return null;
+		$run = $result->fetch_assoc();
+	} else {
+		$run = $_SESSION['cryptcrawl_guest_run'] ?? null;
+		if (!$run || $run['status'] !== 'active') return null;
+	}
 
 	$room = json_decode($run['room'], true) ?: array();
 	if (intval($run['fled_last_room']) === 1 || count($room) !== 4) return $run; // not allowed
@@ -10717,7 +10755,11 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 }
 
 function cryptcrawlSaveRun($conn, $run) {
-	$id                    = intval($run['id']);
+	$id = intval($run['id']);
+	if ($id <= 0) {
+		$_SESSION['cryptcrawl_guest_run'] = $run;
+		return;
+	}
 	$status                = $conn->real_escape_string($run['status']);
 	$hp                    = intval($run['hp']);
 	$deck                  = $conn->real_escape_string($run['deck']);
