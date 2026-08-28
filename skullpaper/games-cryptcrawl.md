@@ -1,6 +1,6 @@
 # Crypt Crawl
 
-Crypt Crawl is a **solo dungeon-delve card game**, played with a single 44-card deck reskinned in Crypties NFT art. No party, no dice - just the deck, your HP, and whatever crypt turns up next.
+Crypt Crawl is a **solo dungeon-delve card game**, played with a single 44-card deck reskinned in Crypties NFT art. No party, no dice - just the deck, your HP, and whatever crypt turns up next. Every one of the 44 cards is hand-assigned to a specific Crypties NFT (from the Crypties - Season 2 collection) rather than drawn from a shuffled art pool - the highest-ranking enemy cards use the rarest pieces the owner holds.
 
 ## The Deck
 

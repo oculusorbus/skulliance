@@ -10466,10 +10466,66 @@ define('CRYPTCRAWL_MAX_HP', 20);
 
 // Decorative card art source: the site owner's own Crypties NFTs, shared
 // across every player's deck (not per-player ownership — this is reskinning,
-// not a "your NFTs become your deck" system). Change here if the collection
-// changes.
+// not a "your NFTs become your deck" system). Change here if the wallet changes.
 define('CRYPTCRAWL_ART_USER_ID', 1);
-define('CRYPTCRAWL_ART_COLLECTION_ID', 8);
+
+// Deliberate card -> art mapping (curated 2026-08-28 from the owner's Crypties -
+// Season 2 holdings, ~108 candidates reviewed by suit/rank fit and color/content
+// variety): each of the 44 cards uses one specific NFT, not a shuffled pool. The
+// 5 highest monster ranks (both Aces, both Kings, one Queen) use confirmed
+// WTF/Mythic-rarity pieces where they existed among the owned set -- see
+// skullpaper/MAINTENANCE.md for the rarity notes. Keyed "SUIT+RANK", e.g. "C14"
+// = Ace of Clubs; the value is the exact nfts.name string ("Cryptie #NNNNN").
+define('CRYPTCRAWL_CARD_ART', array(
+	// Clubs (monsters)
+	'C14' => 'Cryptie #11731', // WTF - Ada Dolls collab, variant "horny"
+	'C13' => 'Cryptie #11120', // WTF - Chimera subset, variant "the one"
+	'C12' => 'Cryptie #10753', // Mythic - frost/blizzard gargoyle
+	'C11' => 'Cryptie #11225',
+	'C10' => 'Cryptie #11216',
+	'C9'  => 'Cryptie #10340',
+	'C8'  => 'Cryptie #11552',
+	'C7'  => 'Cryptie #10428',
+	'C6'  => 'Cryptie #11096',
+	'C5'  => 'Cryptie #10218',
+	'C4'  => 'Cryptie #10473',
+	'C3'  => 'Cryptie #11416',
+	'C2'  => 'Cryptie #10031',
+	// Spades (monsters)
+	'S14' => 'Cryptie #10208', // WTF - Ada Dolls collab, variant "boombox"
+	'S13' => 'Cryptie #10316', // WTF - Chimera subset, variant "sketch platinum"
+	'S12' => 'Cryptie #11449',
+	'S11' => 'Cryptie #11866',
+	'S10' => 'Cryptie #10360',
+	'S9'  => 'Cryptie #10444',
+	'S8'  => 'Cryptie #11566',
+	'S7'  => 'Cryptie #10997',
+	'S6'  => 'Cryptie #11604',
+	'S5'  => 'Cryptie #10823',
+	'S4'  => 'Cryptie #11279',
+	'S3'  => 'Cryptie #11336',
+	'S2'  => 'Cryptie #10464',
+	// Diamonds (weapons)
+	'D10' => 'Cryptie #11961',
+	'D9'  => 'Cryptie #11543',
+	'D8'  => 'Cryptie #10571',
+	'D7'  => 'Cryptie #11071',
+	'D6'  => 'Cryptie #10896',
+	'D5'  => 'Cryptie #11376',
+	'D4'  => 'Cryptie #11229',
+	'D3'  => 'Cryptie #10777',
+	'D2'  => 'Cryptie #11907',
+	// Hearts (medkits)
+	'H10' => 'Cryptie #11890',
+	'H9'  => 'Cryptie #10252',
+	'H8'  => 'Cryptie #11380',
+	'H7'  => 'Cryptie #10593',
+	'H6'  => 'Cryptie #10365',
+	'H5'  => 'Cryptie #11470',
+	'H4'  => 'Cryptie #10305',
+	'H3'  => 'Cryptie #11258',
+	'H2'  => 'Cryptie #11407',
+));
 
 function cryptcrawlRankLabel($rank) {
 	$rank = intval($rank);
@@ -10480,53 +10536,63 @@ function cryptcrawlRankLabel($rank) {
 	return strval($rank);
 }
 
-// Resolves the Crypties art pool to real image URLs via the same getIPFS()
-// helper gauntlets.php uses (local cache first, IPFS gateway fallback).
-// Returns an empty array (deck falls back to plain suit/rank cards) if the
-// collection is empty or missing — never fatal.
-function cryptcrawlGetArtPool($conn) {
+// Resolves CRYPTCRAWL_CARD_ART's 44 specific NFT names to real image URLs via
+// the same getIPFS() helper gauntlets.php uses (local cache first, IPFS gateway
+// fallback), keyed by the same "SUIT+RANK" card key. A single query, matched by
+// exact nfts.name -- confirmed against db.php's own dashboard listing query
+// (nfts.name is the literal "Cryptie #NNNNN" display string, e.g. the regex
+// pull at getDiamondSkullLeaderboard()'s `#(\d+)` match). Any card whose named
+// NFT isn't found (renamed, transferred out) is simply missing from the
+// returned array -- cryptcrawlBuildDeck() falls back to a plain suit/rank badge
+// for it, never fatal.
+function cryptcrawlGetCardArt($conn) {
 	$user_id = CRYPTCRAWL_ART_USER_ID;
-	$collection_id = CRYPTCRAWL_ART_COLLECTION_ID;
+	$names = array_map(function($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, array_values(CRYPTCRAWL_CARD_ART));
 	$result = $conn->query("
-		SELECT nfts.ipfs, nfts.collection_id, collections.project_id
+		SELECT nfts.name, nfts.ipfs, nfts.collection_id, collections.project_id
 		FROM nfts
 		INNER JOIN collections ON collections.id = nfts.collection_id
-		WHERE nfts.user_id = $user_id AND nfts.collection_id = $collection_id
+		WHERE nfts.user_id = $user_id AND nfts.name IN (" . implode(',', $names) . ")
 	");
-	$pool = array();
+	$by_name = array();
 	if ($result) {
 		while ($row = $result->fetch_assoc()) {
-			$pool[] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
+			$by_name[$row['name']] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
 		}
 	}
-	return $pool;
+	$art = array();
+	foreach (CRYPTCRAWL_CARD_ART as $key => $name) {
+		if (isset($by_name[$name])) {
+			$art[$key] = $by_name[$name];
+		}
+	}
+	return $art;
 }
 
 // Fresh shuffled 44-card deck: 26 monsters (clubs/spades, rank 2-14),
 // 9 weapons (diamonds, rank 2-10), 9 potions (hearts, rank 2-10). Each card
-// gets an image_url from $art_pool (cycling if the pool is smaller than the
-// deck) when a pool is supplied; otherwise cards render as plain suit/rank.
-function cryptcrawlBuildDeck($art_pool = array()) {
+// gets its deliberately-assigned image_url from $card_art (see
+// CRYPTCRAWL_CARD_ART) keyed by its own suit+rank when available; otherwise it
+// renders as a plain suit/rank badge. Shuffled after art assignment -- the art
+// is tied to the card identity, not the card's position in the deck.
+function cryptcrawlBuildDeck($card_art = array()) {
 	$deck = array();
 	foreach (array('C', 'S') as $suit) {
 		for ($rank = 2; $rank <= 14; $rank++) {
-			$deck[] = array('suit' => $suit, 'rank' => $rank, 'type' => 'monster');
+			$card = array('suit' => $suit, 'rank' => $rank, 'type' => 'monster');
+			if (isset($card_art[$suit . $rank])) $card['image_url'] = $card_art[$suit . $rank];
+			$deck[] = $card;
 		}
 	}
 	foreach (array('D', 'H') as $suit) {
 		$type = ($suit === 'D') ? 'weapon' : 'potion';
 		for ($rank = 2; $rank <= 10; $rank++) {
-			$deck[] = array('suit' => $suit, 'rank' => $rank, 'type' => $type);
+			$card = array('suit' => $suit, 'rank' => $rank, 'type' => $type);
+			if (isset($card_art[$suit . $rank])) $card['image_url'] = $card_art[$suit . $rank];
+			$deck[] = $card;
 		}
 	}
 	shuffle($deck);
-	if (!empty($art_pool)) {
-		shuffle($art_pool);
-		foreach ($deck as $i => &$card) {
-			$card['image_url'] = $art_pool[$i % count($art_pool)];
-		}
-		unset($card);
-	}
 	return $deck;
 }
 
@@ -10603,8 +10669,8 @@ function cryptcrawlGetMostRecentRun($conn, $user_id) {
 
 function cryptcrawlStartRun($conn, $user_id) {
 	$user_id = intval($user_id);
-	$art_pool = cryptcrawlGetArtPool($conn);
-	$deck = cryptcrawlBuildDeck($art_pool);
+	$card_art = cryptcrawlGetCardArt($conn);
+	$deck = cryptcrawlBuildDeck($card_art);
 	$room = array_splice($deck, 0, 4);
 	$hp = CRYPTCRAWL_MAX_HP;
 	$deck_json = json_encode($deck);

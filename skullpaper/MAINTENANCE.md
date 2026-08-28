@@ -101,6 +101,12 @@ records verified constants, and tracks what still needs to be written.
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
   heal half (floor, min 1) instead of nothing. Second Wind: first hit that would hit 0 HP per
   delve instead clamps to 1 HP, once per delve, automatic. No currency payout yet.
+- Crypt Crawl card art (db.php CRYPTCRAWL_CARD_ART, `cryptcrawlGetCardArt`): each of the 44
+  cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - curated
+  2026-08-28 from the owner's Crypties - Season 2 holdings (~108 candidates reviewed). Both
+  Aces and both Kings use confirmed `RARITY: wtf` pieces (pool.pm attributes: PROJECT "ada
+  dolls" for the Aces, SUBSET "chimera" for the Kings); one Queen uses a confirmed `RARITY:
+  mythic` piece. Update CRYPTCRAWL_CARD_ART directly to change any card's art.
 
 ---
 
