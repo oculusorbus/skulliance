@@ -341,6 +341,21 @@ records verified constants, and tracks what still needs to be written.
   standalone `.hp-shot-card` in the platform screenshots grid (hardcoded full path, not folded
   into the `$hp_shots` loop - that loop's shared `$hp_shot_base` points at `images/screenshots/`,
   and this screenshot lives directly under `images/` instead), and a footer link.
+  **Ambient music does NOT autoplay on the landing** - fixed the same day, reported directly by
+  the user ("the game music autoplays when visiting the public page and not logged into the
+  staking platform"). The `<audio>`/`#cc-audio-player` markup is a permanent sibling of
+  `#cc-game-area` (unconditional, present on every state - needed so the swap on every action
+  never touches it), so it was attempting autoplay even on a cold landing visit, before anyone
+  had shown any intent to play. `maybeStartAudioAmbience()` (exposed to `initGameArea()` via a
+  closure var, same pattern as `syncMood()`/`applyThemeState()`) checks `document.querySelector('.cc-landing')`
+  first and no-ops while it's still in the DOM; called once at initial setup and again after
+  every AJAX swap, since Start Delve -> active is a swap, not a fresh page load - that swap is
+  what actually starts ambience for a landing visitor now, the same moment they've shown real
+  intent to play. `syncMood()`'s own `crossfadeTo()` calls were independently checked and
+  confirmed NOT to need the same gate: `$cc_mood` defaults to `'normal'` for `no_run` in
+  `cryptcrawlRenderGameArea()`, matching the JS `currentMood` var's own initial value, so
+  `syncMood()`'s `mood === currentMood` no-op check already prevented it from ever reaching a
+  `.play()` call on a landing visit.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

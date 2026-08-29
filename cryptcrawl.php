@@ -608,6 +608,12 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	// animation on every single action instead of only when the actual
 	// scene changed).
 	var applyThemeState = null;
+	// Assigned once the audio player sets itself up (below) -- called once
+	// initially and again from initGameArea() after every AJAX swap (Start
+	// Delve -> active is itself a swap, not a fresh page load). No-ops once
+	// ambience has already started, and while #cc-landing is still in the
+	// DOM -- the marketing page should stay silent; see MAINTENANCE.md.
+	var maybeStartAudioAmbience = null;
 
 	// Sizing only -- #cc-theme-bg's active/inactive state and image are
 	// applyThemeState()'s job (called from initGameArea() below, once per
@@ -798,6 +804,11 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 		// player checks its own initial mood itself once it sets up, just
 		// below this function in source order.
 		if (syncMood) syncMood();
+		// Re-check whether ambience should start yet -- a no-op once it
+		// already has, or while #cc-landing is still showing (the
+		// marketing page stays silent). Catches Start Delve -> active,
+		// which is an AJAX swap, not a fresh page load.
+		if (maybeStartAudioAmbience) maybeStartAudioAmbience();
 	}
 
 	initGameArea();
@@ -1193,15 +1204,27 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 		}
 
 		loadTrack(trackIndex, true);
-		if (enabled) {
+
+		// Ambience should stay silent on the marketing landing (#cc-landing,
+		// the no_run state) -- "ambience by default" was always about the
+		// game itself, not a page visitors land on from a search result or
+		// a link before they've shown any intent to play. Exposed to the
+		// outer scope (initGameArea() calls it again after every AJAX swap)
+		// since Start Delve -> active is a swap, not a fresh page load --
+		// that's the moment ambience actually starts for a landing visitor.
+		var audioAmbienceStarted = false;
+		maybeStartAudioAmbience = function() {
+			if (audioAmbienceStarted || document.querySelector('.cc-landing')) return;
+			audioAmbienceStarted = true;
+			if (!enabled) return;
 			tryPlay();
 			// Browsers only allow unmuted autoplay off the back of a *trusted*
 			// user gesture -- nothing in JS can fake that (see Skull Paper /
 			// MAINTENANCE.md for why). If the tryPlay() above got blocked,
 			// catch the very first real interaction anywhere on the page --
 			// not just a tap on this player's own button -- and use it to
-			// start audio too, since a player's first move is usually
-			// something else entirely (Start Delve, playing a card).
+			// start audio too, since a player's first move after this point
+			// is usually something else entirely (playing a card).
 			var playerEl = document.getElementById('cc-audio-player');
 			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
 			var unlockAudio = function(e) {
@@ -1214,14 +1237,14 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 				// inside .play()), then the toggle button's own 'click'
 				// handler -- now seeing paused already false -- immediately
 				// paused it right back again, thinking it was already
-				// playing. Every other first-interaction spot (Start Delve,
-				// a card, anywhere outside the player) still unlocks here as
-				// before.
+				// playing. Every other first-interaction spot (a card,
+				// anywhere outside the player) still unlocks here as before.
 				if (playerEl && e && e.target && playerEl.contains(e.target)) return;
 				if (active().paused && getEnabled()) tryPlay();
 			};
 			unlockEvents.forEach(function(evt) { window.addEventListener(evt, unlockAudio, true); });
-		}
+		};
+		maybeStartAudioAmbience();
 		updateToggleIcon();
 
 		players.forEach(function(p) {
