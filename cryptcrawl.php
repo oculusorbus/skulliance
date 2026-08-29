@@ -867,6 +867,16 @@ include 'header.php';
 		syncMood = function() {
 			var moodEl = document.getElementById('cc-mood');
 			var mood = moodEl ? moodEl.getAttribute('data-mood') : 'normal';
+			// A fresh delve (Start Delve / Delve Again) always opens on the
+			// Theme specifically -- checked first, unconditionally, so it
+			// wins over both the escape-from-danger case below and even a
+			// same-mood no-op (restarting while already on the Theme should
+			// still restart it from 0:00, not leave it mid-track).
+			if (moodEl && moodEl.getAttribute('data-restarted') === '1') {
+				loadTrack(0, false);
+				if (getEnabled()) tryPlay();
+				return;
+			}
 			if (!mood || mood === currentMood) return; // no change -- don't interrupt what's already playing
 			if (mood === 'normal') {
 				if (currentMood === 'frantic' || currentMood === 'doom') {
@@ -878,7 +888,7 @@ include 'header.php';
 					// last-saved track happened to be.
 					loadTrack(1, false);
 				} else {
-					loadTrack(getTrackIndex(), true); // ordinary resume -- e.g. first load, or leaving game_over
+					loadTrack(getTrackIndex(), true); // ordinary resume -- e.g. first load
 				}
 				if (getEnabled()) tryPlay();
 				return;

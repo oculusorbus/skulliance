@@ -190,8 +190,14 @@ records verified constants, and tracks what still needs to be written.
   `frantic`/`doom` back to `normal` without the delve actually ending (healed up, geared up) lands
   specifically on the Reprise (`TRACKS[1]`), not whatever the normal loop's last-saved track
   happened to be - picking back up after a close call should feel like a reprise, not the intro
-  theme restarting. Restarting a fresh delve after game_over is unaffected by this - `death`/
-  `triumph` -> `normal` still falls through to the ordinary resume (last-saved track/position).
+  theme restarting. A genuine restart (Start Delve / Delve Again) is its own separate, higher-
+  priority signal though, not just another `normal` transition: `cryptcrawlHandleAction()` sets a
+  one-shot `$_SESSION['cryptcrawl_just_started']` on `start_run`, read (and cleared) by
+  `cryptcrawlRenderGameArea()` into `#cc-mood`'s `data-restarted="1"`. `syncMood()` checks that
+  *before* the mood-diffing logic and, if set, unconditionally forces `loadTrack(0, false)` (the
+  Theme specifically, from 0:00) regardless of `currentMood` or what the normal loop's last-saved
+  track happened to be - covers both the AJAX path and the no-JS full-reload fallback the same
+  way, since it's driven by session state read at render time either way.
 - Crypt Crawl theme-art Ken Burns drift (`.cc-theme-bg::before`, `--kb-*` custom properties,
   `#cc-audio-zoom-toggle`, re-added 2026-08-29 now that actions are AJAX - see the entry below for
   why a full-reload architecture made this genuinely risky the first time, not just theoretically):

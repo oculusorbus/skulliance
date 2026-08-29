@@ -40,6 +40,11 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 	$flashes = $_SESSION['cryptcrawl_flash'];
 	$_SESSION['cryptcrawl_flash'] = [];
 
+	// One-shot, set by cryptcrawlHandleAction() on start_run, read (and
+	// cleared) here -- see #cc-mood's data-restarted below.
+	$cc_just_started = !empty($_SESSION['cryptcrawl_just_started']);
+	unset($_SESSION['cryptcrawl_just_started']);
+
 	$suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
 	$suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
 
@@ -81,7 +86,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		}
 	}
 ?>
-<div id="cc-mood" data-mood="<?php echo htmlspecialchars($cc_mood); ?>" style="display:none;"></div>
+<div id="cc-mood" data-mood="<?php echo htmlspecialchars($cc_mood); ?>" data-restarted="<?php echo $cc_just_started ? '1' : '0'; ?>" style="display:none;"></div>
 <div class="cc-inner">
 	<?php if ($flashes): ?>
 	<div class="cc-flash-backdrop" id="cc-flash-backdrop">

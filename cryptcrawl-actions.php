@@ -22,6 +22,12 @@ function cryptcrawlHandleAction($conn, $user_id, $post) {
 
 	if ($action === 'start_run') {
 		cryptcrawlStartRun($conn, $user_id);
+		// One-shot signal read (and cleared) by cryptcrawlRenderGameArea()'s
+		// #cc-mood output -- the audio player forces the Theme track
+		// specifically on a fresh delve, not whatever the normal loop's
+		// last-saved track happened to be (could be the Reprise, e.g. from
+		// an earlier escape-from-danger this same session).
+		$_SESSION['cryptcrawl_just_started'] = true;
 
 	} elseif ($action === 'play_card') {
 		$run = cryptcrawlGetActiveRun($conn, $user_id);
