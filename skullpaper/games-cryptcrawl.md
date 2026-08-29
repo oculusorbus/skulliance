@@ -46,10 +46,11 @@ Every delve you finish while logged in - cleared or not - also posts a quick res
 ## Ambience
 
 A small music player sits below the buttons on every screen - play/pause and
-prev/next controls cycling between the theme song and its reprise. It's on by
-default; your on/off choice, current track, and playback position stick for
-the rest of your browser session, so a delve full of page reloads doesn't
-keep restarting the music from the top.
+prev/next controls cycling between the theme song and its reprise, plus a
+volume slider (starts at 50%, since the tracks are mixed loud). It's on by
+default; your on/off choice, current track, playback position, and volume
+stick for the rest of your browser session, so a delve full of page reloads
+doesn't keep restarting the music from the top or resetting how loud it is.
 
 ## Playing as a Guest
 

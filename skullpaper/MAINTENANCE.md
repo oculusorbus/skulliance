@@ -155,7 +155,9 @@ records verified constants, and tracks what still needs to be written.
   app (every action is POST->redirect->GET); without it the music would restart from 0:00 on
   every single card played. Defaults on and attempts to autoplay; browsers that block autoplay
   without a prior user gesture just leave it paused until the toggle is tapped. Auto-advances
-  (cycles) to the other track on `ended`.
+  (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain range input,
+  0-100) defaults to 50 - the source tracks are mixed loud - also persisted in `sessionStorage`
+  (`cc_audio_volume`), applied straight to `audio.volume` and independent of track/position.
 
 ---
 

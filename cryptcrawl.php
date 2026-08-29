@@ -342,7 +342,9 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	display: flex; align-items: center; justify-content: center; width: 26px; height: 26px;
 }
 .cc-audio-btn:hover { background: rgba(255,255,255,.1); }
-.cc-audio-track { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-audio-track { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
+.cc-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
 .cc-result {
 	text-align: center; border-radius: 12px; padding: 30px 20px; margin-bottom: 20px; box-sizing: border-box;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -720,6 +722,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<button type="button" class="cc-audio-btn" id="cc-audio-toggle" title="Play/Pause">▶</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-next" title="Next track">⏭</button>
 		<span class="cc-audio-track" id="cc-audio-track-name">Crypt Crawl Theme</span>
+		<span class="cc-audio-vol-icon">🔊</span>
+		<input type="range" class="cc-audio-volume" id="cc-audio-volume" min="0" max="100" value="50" title="Volume">
 	</div>
 	<audio id="cc-audio-el" preload="metadata"></audio>
 </div>
@@ -783,6 +787,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		var prevBtn = document.getElementById('cc-audio-prev');
 		var nextBtn = document.getElementById('cc-audio-next');
 		var trackNameEl = document.getElementById('cc-audio-track-name');
+		var volumeEl = document.getElementById('cc-audio-volume');
 		if (!audio || !toggleBtn) return;
 
 		var TRACKS = [
@@ -805,9 +810,17 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			return isNaN(v) ? 0 : v;
 		}
 		function setPosition(v) { try { sessionStorage.setItem('cc_audio_position', String(v)); } catch (e) {} }
+		function getVolume() {
+			var v = parseInt(sessionStorage.getItem('cc_audio_volume'), 10);
+			return (v >= 0 && v <= 100) ? v : 50; // tracks are mixed loud -- half by default
+		}
+		function setVolume(v) { try { sessionStorage.setItem('cc_audio_volume', String(v)); } catch (e) {} }
 
 		var trackIndex = getTrackIndex();
 		var enabled = getEnabled();
+
+		audio.volume = getVolume() / 100;
+		if (volumeEl) volumeEl.value = getVolume();
 
 		function updateToggleIcon() {
 			toggleBtn.textContent = (!audio.paused) ? '⏸' : '▶';
@@ -867,6 +880,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			setEnabled(true);
 			tryPlay();
 		});
+		if (volumeEl) {
+			volumeEl.addEventListener('input', function() {
+				var v = parseInt(volumeEl.value, 10) || 0;
+				audio.volume = v / 100;
+				setVolume(v);
+			});
+		}
 	})();
 
 	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
