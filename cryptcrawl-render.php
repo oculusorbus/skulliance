@@ -107,7 +107,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		?>
 		<?php if ($fell): ?>
 	</div><!-- /cc-inner -->
-		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
+		<div class="cc-theme-bg" style="--theme-img: linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
 		<div class="cc-inner">
 		<?php endif; ?>
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
@@ -156,7 +156,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
 	?>
 	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
-		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
+		<div class="cc-theme-bg" style="--theme-img: linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
 		<div class="cc-inner">
 		<div class="cc-hud">
 			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">

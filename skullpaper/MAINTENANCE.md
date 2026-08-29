@@ -192,6 +192,24 @@ records verified constants, and tracks what still needs to be written.
   happened to be - picking back up after a close call should feel like a reprise, not the intro
   theme restarting. Restarting a fresh delve after game_over is unaffected by this - `death`/
   `triumph` -> `normal` still falls through to the ordinary resume (last-saved track/position).
+- Crypt Crawl theme-art Ken Burns drift (`.cc-theme-bg::before`, `--kb-*` custom properties,
+  `#cc-audio-zoom-toggle`, re-added 2026-08-29 now that actions are AJAX - see the entry below for
+  why a full-reload architecture made this genuinely risky the first time, not just theoretically):
+  background image lives on a `::before` pseudo (driven by a `--theme-img` custom property, not a
+  plain inline `background-image`, so the pseudo can read it) `inset: -5%` of its own container,
+  giving `transform: scale()+translate()` room to pan/zoom without ever exposing an edge -
+  `.cc-theme-bg` itself clips that oversized margin via `overflow: hidden`. JS
+  (`randomizeKenBurns()`) picks a fresh random scale range (1.00-1.04 -> 1.08-1.16), pan angle
+  (fully random 0-2π, `dist` 1.5%-3.5% - comfortably inside the 5% buffer even at the smallest
+  scale) and duration (20s-34s) per `.cc-theme-bg` element - i.e. on every fresh render, since a
+  swap always creates a new one - via a `kbInit` dataset marker so a `resize` re-running
+  `sizeTheme()` on the *same* element doesn't also re-randomize it. `animation-direction:
+  alternate` (CSS, `.cc-zoom` class) is what makes each pick loop seamlessly (ping-pongs back to
+  its start) instead of snapping. Gated on two things ANDed together via `updateZoomClass()`: the
+  `#cc-audio-zoom-toggle` on/off setting (`cc_zoom_enabled` in `sessionStorage`, defaults **on** -
+  deliberate, so it's noticed once before anyone turns it off) and whether a track is actually
+  playing right now (`!audio.paused`) - "max ambience when media is playing," per the user,
+  meaning pausing the music also stops the drift, not just muting it.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

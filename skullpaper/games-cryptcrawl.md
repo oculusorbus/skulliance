@@ -62,6 +62,12 @@ spent and that's still true, it turns to Doom - there's no safety net left.
 None of these four are reachable through prev/next - the only way to hear
 Triumph is to actually win.
 
+The crypt's own backdrop art slowly drifts and zooms while music is playing
+too - a different pan direction and pace every time, so it never settles
+into one predictable pattern. It's on by default so you notice it, with a
+🎥 button on the player to turn it off if it's more distracting than
+atmospheric.
+
 ## Playing as a Guest
 
 Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your delves saved to your account and counted toward both leaderboards.

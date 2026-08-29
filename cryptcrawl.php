@@ -133,7 +133,34 @@ include 'header.php';
 }
 .cc-instructions-modal h3 { margin: 0 0 10px; font-size: 1.05rem; }
 .cc-instructions-close { margin-top: 16px; width: 100%; }
-.cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
+.cc-theme-bg {
+	position: relative; overflow: hidden; border-radius: 14px; padding: 18px; margin: 0 -16px;
+	display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px;
+}
+/* Background image lives on a pseudo-element, not the box itself, so the Ken
+   Burns drift below (transform only) animates just the art -- never the real
+   content (.cc-inner) sitting on top of it. inset:-5% (bigger than its own
+   container) gives the pan/zoom room to move without ever exposing an edge;
+   .cc-theme-bg's own overflow:hidden clips that oversized margin off. */
+.cc-theme-bg::before {
+	content: ''; position: absolute; inset: -5%; background-image: var(--theme-img);
+	background-size: cover; background-position: center; transition: background-image .6s ease;
+	will-change: transform;
+}
+/* Ken Burns drift while the music is playing (toggleable -- see the audio
+   player's zoom button) and a track is actually audible. --kb-* custom
+   properties are randomized in JS per render (see initGameArea() ->
+   randomizeKenBurns()) so the pan/zoom direction is never the same twice --
+   this rule just plays back whatever values got set. animation-direction:
+   alternate is what makes it loop seamlessly (ping-pongs back to its start
+   rather than snapping), regardless of which random pair got picked. */
+.cc-theme-bg.cc-zoom::before {
+	animation: ccKenBurns var(--kb-duration, 26s) ease-in-out infinite alternate;
+}
+@keyframes ccKenBurns {
+	from { transform: scale(var(--kb-scale-from, 1)) translate(var(--kb-x-from, 0%), var(--kb-y-from, 0%)); }
+	to   { transform: scale(var(--kb-scale-to, 1.12)) translate(var(--kb-x-to, 2%), var(--kb-y-to, -2%)); }
+}
 .cc-hud {
 	display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -292,6 +319,7 @@ include 'header.php';
 .cc-audio-track { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cc-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
 .cc-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
+.cc-audio-btn.zoom-off { opacity: 0.35; }
 .cc-result {
 	text-align: center; border-radius: 12px; padding: 30px 20px; margin-bottom: 20px; box-sizing: border-box;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -325,7 +353,7 @@ include 'header.php';
 @media (prefers-reduced-motion: reduce) {
 	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-instructions-backdrop.show,
 	.cc-instructions-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
-	.cc-result-icon, .cc-result-title, .cc-result-sub, .cc-result-carbon { animation: none !important; }
+	.cc-result-icon, .cc-result-title, .cc-result-sub, .cc-result-carbon, .cc-theme-bg::before { animation: none !important; }
 	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
 /* Mobile: cards and buttons at 75% scale, with the button panel pulled up
@@ -386,6 +414,7 @@ include 'header.php';
 		<span class="cc-audio-track" id="cc-audio-track-name">Crypt Crawl Theme</span>
 		<span class="cc-audio-vol-icon">🔊</span>
 		<input type="range" class="cc-audio-volume" id="cc-audio-volume" min="0" max="100" value="50" title="Volume">
+		<button type="button" class="cc-audio-btn" id="cc-audio-zoom-toggle" title="Background zoom: on">🎥</button>
 	</div>
 	<audio id="cc-audio-el" preload="metadata"></audio>
 </div>
@@ -396,6 +425,11 @@ include 'header.php';
 	// so initGameArea() can call it again after every AJAX swap, since the
 	// server recomputes #cc-mood fresh on every render.
 	var syncMood = null;
+	// Assigned once the audio player sets itself up (below) -- picks a fresh
+	// random Ken Burns pan/zoom for a .cc-theme-bg element and applies the
+	// on/off + playing-state class. Called from sizeTheme() below since
+	// that already finds a fresh .cc-theme-bg on every swap.
+	var applyThemeZoom = null;
 
 	// .cc-theme-bg sizing -- one resize listener attached once below (not
 	// re-added on every AJAX swap, which would stack up a fresh listener
@@ -404,6 +438,7 @@ include 'header.php';
 	function sizeTheme() {
 		var el = document.querySelector('.cc-theme-bg');
 		if (!el) return;
+		if (applyThemeZoom) applyThemeZoom(el);
 		var top = el.getBoundingClientRect().top;
 		var bottomPad = 60; // matches .cc-wrap's bottom padding
 		var available = window.innerHeight - top - bottomPad;
@@ -607,9 +642,11 @@ include 'header.php';
 	});
 
 	// Ambient music player. Two tracks, cycled on 'ended'. State (on/off,
-	// which track, playback position) lives in sessionStorage because this
-	// page reloads on every single game action -- without saving position,
-	// the music would restart from 0:00 on every card played.
+	// which track, playback position, volume, Ken Burns on/off) lives in
+	// sessionStorage so it survives a fresh page load/reload -- continuity
+	// *within* a session no longer depends on this now that actions are
+	// AJAX (the <audio> element itself just never gets destroyed between
+	// actions), but a manual refresh or a brand-new tab still needs it.
 	(function() {
 		var audio = document.getElementById('cc-audio-el');
 		var toggleBtn = document.getElementById('cc-audio-toggle');
@@ -617,6 +654,7 @@ include 'header.php';
 		var nextBtn = document.getElementById('cc-audio-next');
 		var trackNameEl = document.getElementById('cc-audio-track-name');
 		var volumeEl = document.getElementById('cc-audio-volume');
+		var zoomToggleBtn = document.getElementById('cc-audio-zoom-toggle');
 		if (!audio || !toggleBtn) return;
 
 		var TRACKS = [
@@ -655,15 +693,92 @@ include 'header.php';
 			return (v >= 0 && v <= 100) ? v : 50; // tracks are mixed loud -- half by default
 		}
 		function setVolume(v) { try { sessionStorage.setItem('cc_audio_volume', String(v)); } catch (e) {} }
+		function getZoomEnabled() {
+			var v = sessionStorage.getItem('cc_zoom_enabled');
+			return v === null ? true : v === '1'; // on by default -- noticed once, then a deliberate choice either way
+		}
+		function setZoomEnabled(v) { try { sessionStorage.setItem('cc_zoom_enabled', v ? '1' : '0'); } catch (e) {} }
 
 		var trackIndex = getTrackIndex();
 		var enabled = getEnabled();
 
 		audio.volume = getVolume() / 100;
 		if (volumeEl) volumeEl.value = getVolume();
+		if (zoomToggleBtn) {
+			zoomToggleBtn.classList.toggle('zoom-off', !getZoomEnabled());
+			zoomToggleBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
+		}
+
+		// Ken Burns drift on the theme art -- max ambience while a track is
+		// actually audible, so it's tied to play/pause as well as the
+		// on/off toggle below. Picks a brand new random pan/zoom direction
+		// per .cc-theme-bg element (i.e. on every fresh render, since a
+		// swap always creates a new one) rather than one fixed pattern --
+		// see the CSS @keyframes ccKenBurns for how the --kb-* custom
+		// properties set here get played back, and .cc-zoom's
+		// animation-direction:alternate for why it loops seamlessly rather
+		// than snapping at the end of each pass.
+		function updateZoomClass() {
+			var active = getZoomEnabled() && !audio.paused;
+			document.querySelectorAll('.cc-theme-bg').forEach(function(el) {
+				el.classList.toggle('cc-zoom', active);
+			});
+		}
+		function randomizeKenBurns(el) {
+			var scaleFrom = 1 + Math.random() * 0.04;   // 1.00 - 1.04
+			var scaleTo = 1.08 + Math.random() * 0.08;  // 1.08 - 1.16
+			// Pan between two OPPOSITE points around center (not center -> a
+			// corner) so it reads as a continuous drift across the image,
+			// not a zoom that jerks toward one corner. Angle is fully
+			// random -- that's what makes the direction unpredictable.
+			var angle = Math.random() * Math.PI * 2;
+			var dist = 1.5 + Math.random() * 2; // 1.5% - 3.5%, safely inside the pseudo's 5% inset buffer
+			var xFrom = (Math.cos(angle) * dist).toFixed(2) + '%';
+			var yFrom = (Math.sin(angle) * dist).toFixed(2) + '%';
+			var xTo = (Math.cos(angle + Math.PI) * dist).toFixed(2) + '%';
+			var yTo = (Math.sin(angle + Math.PI) * dist).toFixed(2) + '%';
+			var duration = (20 + Math.random() * 14).toFixed(1) + 's'; // 20s - 34s, varies pace too
+			el.style.setProperty('--kb-scale-from', scaleFrom.toFixed(3));
+			el.style.setProperty('--kb-scale-to', scaleTo.toFixed(3));
+			el.style.setProperty('--kb-x-from', xFrom);
+			el.style.setProperty('--kb-y-from', yFrom);
+			el.style.setProperty('--kb-x-to', xTo);
+			el.style.setProperty('--kb-y-to', yTo);
+			el.style.setProperty('--kb-duration', duration);
+		}
+		// Exposed to sizeTheme() (outer scope) -- only randomizes once per
+		// element (a resize firing sizeTheme() again on the SAME element
+		// shouldn't pick a new direction, only a genuinely fresh one from a
+		// swap should) via the kbInit marker; always reconciles the on/off
+		// + playing-state class either way.
+		applyThemeZoom = function(el) {
+			if (!el.dataset.kbInit) {
+				randomizeKenBurns(el);
+				el.dataset.kbInit = '1';
+			}
+			updateZoomClass();
+		};
+		// sizeTheme() already ran once for the very first render, before
+		// applyThemeZoom existed yet (this whole setup runs after
+		// initGameArea()'s first call in source order) -- run it again now
+		// so the initial page's own .cc-theme-bg (if any) actually gets its
+		// Ken Burns applied instead of only ever picking one up starting
+		// with the next swap.
+		sizeTheme();
+
+		if (zoomToggleBtn) {
+			zoomToggleBtn.addEventListener('click', function() {
+				var next = !getZoomEnabled();
+				setZoomEnabled(next);
+				zoomToggleBtn.classList.toggle('zoom-off', !next);
+				zoomToggleBtn.title = 'Background zoom: ' + (next ? 'on' : 'off');
+				updateZoomClass();
+			});
+		}
 
 		function updateToggleIcon() {
 			toggleBtn.textContent = (!audio.paused) ? '⏸' : '▶';
+			updateZoomClass();
 		}
 
 		function loadTrack(index, resumePosition) {
