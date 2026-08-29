@@ -407,6 +407,18 @@
 
     /* Platform screenshots */
     .hp-shots { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    /* 15 $hp_shots cards + the standalone Crypt Crawl card below the loop =
+       16, which fills five 3-column rows exactly and leaves Crypt Crawl
+       (:last-child) alone in the left column of a sixth. Centers it in the
+       middle column instead once the grid genuinely lands on 3 columns --
+       .wrap's 1100px max-width (minus 40px padding = 1060px content) never
+       reaches a 4th 260px+18px-gap column, and 3 columns first fits at a
+       ~856px viewport, so this range is exactly "wide enough for 3, never
+       enough for 4." If $hp_shots ever grows/shrinks so Crypt Crawl stops
+       being the sole item in the last row, drop this rule along with it. */
+    @media (min-width: 900px) {
+      .hp-shots .hp-shot-card:last-child { grid-column: 2; }
+    }
     .hp-shot-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
