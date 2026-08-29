@@ -160,6 +160,14 @@ records verified constants, and tracks what still needs to be written.
   `pointerdown`/`keydown`/`touchstart`) the very first real interaction anywhere on the page -
   not bypassable from JS any further than that (synthetic clicks/`dispatchEvent` don't count,
   `AudioContext` is gated identically - hard browser policy, confirmed, not a gap in this code).
+  That listener skips entirely (still self-removes, just doesn't call `tryPlay()`) when the
+  gesture's `e.target` is inside `#cc-audio-player` - fixed a real bug where clicking the toggle
+  button itself as the very first interaction started playback on `pointerdown` (`audio.paused`
+  flips to `false` synchronously inside `.play()`, before the promise even settles), so the
+  button's own `click` handler then saw `paused` already `false` and immediately paused it right
+  back, thinking it was already playing. Every other first-interaction spot (Start Delve, a card,
+  anywhere outside the player) still unlocks exactly as before - only the player's own controls,
+  which always manage their own play state correctly on a genuine trusted click, are excluded.
   Auto-advances (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain
   range input, 0-100) defaults to 50 - the source tracks are mixed loud.
 - Crypt Crawl situational music (`#cc-mood`, added 2026-08-29 ahead of the actual audio files

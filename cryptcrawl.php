@@ -818,9 +818,22 @@ include 'header.php';
 			// not just a tap on this player's own button -- and use it to
 			// start audio too, since a player's first move is usually
 			// something else entirely (Start Delve, playing a card).
+			var playerEl = document.getElementById('cc-audio-player');
 			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
-			var unlockAudio = function() {
+			var unlockAudio = function(e) {
 				unlockEvents.forEach(function(evt) { window.removeEventListener(evt, unlockAudio, true); });
+				// Skip if the gesture landed on the player's own controls --
+				// their click handlers already start/stop playback correctly
+				// on a genuine trusted click, and firing tryPlay() here too
+				// raced with them: clicking Play itself started playback on
+				// 'pointerdown' (audio.paused flips to false synchronously
+				// inside .play()), then the toggle button's own 'click'
+				// handler -- now seeing paused already false -- immediately
+				// paused it right back again, thinking it was already
+				// playing. Every other first-interaction spot (Start Delve,
+				// a card, anywhere outside the player) still unlocks here as
+				// before.
+				if (playerEl && e && e.target && playerEl.contains(e.target)) return;
 				if (audio.paused && getEnabled()) tryPlay();
 			};
 			unlockEvents.forEach(function(evt) { window.addEventListener(evt, unlockAudio, true); });
