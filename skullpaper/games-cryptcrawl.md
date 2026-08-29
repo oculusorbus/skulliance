@@ -49,8 +49,10 @@ A small music player sits below the buttons on every screen - play/pause and
 prev/next controls cycling between the theme song and its reprise, plus a
 volume slider (starts at 50%, since the tracks are mixed loud). It's on by
 default; your on/off choice, current track, playback position, and volume
-stick for the rest of your browser session, so a delve full of page reloads
-doesn't keep restarting the music from the top or resetting how loud it is.
+stick for the rest of your browser session. Actions themselves no longer
+reload the page either - fighting, healing, fleeing, all of it updates in
+place - so the music just keeps playing straight through a delve instead of
+restarting.
 
 ## Playing as a Guest
 

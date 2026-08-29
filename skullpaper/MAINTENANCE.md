@@ -34,7 +34,7 @@ records verified constants, and tracks what still needs to be written.
 | games-boss-battles.md *(new)*       | Boss encounters        | ajax/get-bosses.php, db.php:5139-5258 |
 | games-skull-swap.md *(new)*         | Match-3 score chase    | skullswap.php, db.php:5019-5136 |
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
-| games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawl.php, db.php:10451-10805 |
+| games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawl.php, cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-drop-ship.md                  | External game          | madballs.net (external) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
@@ -145,25 +145,47 @@ records verified constants, and tracks what still needs to be written.
   ranks, plus the top of the weapon and medkit ranges) carries the 17 Legendary pieces plus
   both Mythic pieces (Spades 6, Diamonds 6). Update CRYPTCRAWL_CARD_ART directly to change any
   card's art.
-- Crypt Crawl ambient player (cryptcrawl.php, markup+JS in the render section, `#cc-audio-player`):
-  two tracks committed straight into the repo (`audio/tracks/Crypt Crawl Theme.mp3`,
+- Crypt Crawl ambient player (`#cc-audio-player`/`#cc-audio-el`, markup lives in cryptcrawl.php,
+  OUTSIDE `#cc-game-area` - see the AJAX entry below for why that placement matters): two tracks
+  committed straight into the repo (`audio/tracks/Crypt Crawl Theme.mp3`,
   `audio/tracks/Crypt Crawl Reprise.mp3` - URL-encoded to `%20` for the spaces when referenced),
   a deliberate one-off exception to this project's usual FTP-deployed-images convention, per the
-  user. Rendered unconditionally, outside the no_run/active/game_over chain, so it's in the same
-  spot below the bottom buttons on every state. On/off, current track index, and `currentTime`
-  persist in `sessionStorage` (not the PHP session) - required because this is a full-page-reload
-  app (every action is POST->redirect->GET); without it the music would restart from 0:00 on
-  every single card played. Defaults on and attempts to autoplay; browsers that block autoplay
-  without a prior user gesture just leave it paused until the toggle is tapped. Auto-advances
-  (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain range input,
-  0-100) defaults to 50 - the source tracks are mixed loud - also persisted in `sessionStorage`
-  (`cc_audio_volume`), applied straight to `audio.volume` and independent of track/position.
-  If the initial autoplay attempt is blocked (no prior trusted gesture on the origin - browser
-  policy, not bypassable from JS: synthetic clicks/`dispatchEvent` don't count, `AudioContext`
-  is gated identically), a one-time capturing listener on `window` for `pointerdown`/`keydown`/
-  `touchstart` retries `tryPlay()` off the very first real interaction anywhere on the page, not
-  just a tap on the player's own button - most players' first move is something else entirely
-  (Start Delve, playing a card).
+  user. Rendered unconditionally, in the same spot below the bottom buttons on every state.
+  On/off, current track index, `currentTime`, and volume persist in `sessionStorage` (not the
+  PHP session) - covers a fresh page load/reload/no-JS visit; continuity *within* a session no
+  longer depends on this at all now that actions are AJAX (see below), since the `<audio>`
+  element itself just never gets destroyed between actions any more. Defaults on and attempts to
+  autoplay; browsers that block autoplay without a prior user gesture just leave it paused until
+  the toggle is tapped, or (a one-time capturing listener on `window` for
+  `pointerdown`/`keydown`/`touchstart`) the very first real interaction anywhere on the page -
+  not bypassable from JS any further than that (synthetic clicks/`dispatchEvent` don't count,
+  `AudioContext` is gated identically - hard browser policy, confirmed, not a gap in this code).
+  Auto-advances (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain
+  range input, 0-100) defaults to 50 - the source tracks are mixed loud.
+- Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
+  ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
+  used to be a real `<form method="post">` submit -> full page navigation, which tore down and
+  rebuilt the `<audio>` element above on every single click, audibly stuttering the ambient
+  player - confirmed the actual cause after ruling out a competing theory (a CSS zoom effect on
+  the theme art, added and then fully reverted first) via direct evidence: the page's own
+  `header('Location: cryptcrawl.php'); exit;` pattern on every POST. Fixed by splitting what was
+  one monolithic render block in cryptcrawl.php into `cryptcrawlRenderGameArea($conn, $user_id)`
+  (cryptcrawl-render.php - echoes the `#cc-game-area` fragment: flash modal + whichever of
+  no_run/game_over/active applies; computes `$active_run`/`$recent_run`/`$state`/`$flashes`
+  itself now, not the caller) and `cryptcrawlHandleAction($conn, $user_id, $post)`
+  (cryptcrawl-actions.php - the actual action logic + `cryptcrawlFlash()`, unchanged from before,
+  just extracted). Both cryptcrawl.php's own POST branch (still a real redirect - the no-JS/
+  fetch-failure fallback) and ajax/cryptcrawl-action.php (the JS path: handles the action, then
+  calls the render function directly in the *same* request and returns just that HTML as the
+  response body - no redirect) call these same two functions, so the logic itself lives in
+  exactly one place either way. Client-side, cryptcrawl.php delegates a `submit` listener on
+  `document` (checks `e.defaultPrevented` first, so Abandon Run's own `confirm()` still works
+  exactly as before) that `fetch()`s the AJAX endpoint and swaps `#cc-game-area`'s `innerHTML`
+  with the response, then re-runs `initGameArea()` (flash/instructions-modal wiring, HP bar
+  reveal, theme sizing, card tilt/spin - everything that touches elements the swap just
+  recreated) - falls back to a real `form.submit()` if the fetch itself fails. The `#cc-audio-player`
+  markup being a sibling of `#cc-game-area`, never inside it, is what actually keeps the `<audio>`
+  element continuously alive across actions now - the whole reason this refactor exists.
 
 ---
 

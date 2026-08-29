@@ -1,0 +1,316 @@
+<?php
+// cryptcrawl-render.php — shared game-area renderer for Crypt Crawl.
+//
+// Extracted so both cryptcrawl.php's own GET (full page load, and the no-JS
+// POST->redirect->GET fallback) and ajax/cryptcrawl-action.php (fragment
+// response after an action, so the client can swap #cc-game-area in place
+// without a real page navigation) render from exactly one copy of this
+// markup instead of two that could quietly drift apart. See MAINTENANCE.md
+// for why the AJAX path exists at all: every action used to be a full page
+// reload, which tore down and rebuilt the <audio> element every single
+// time, audibly stuttering the ambient music player.
+	// Shared by the no_run intro screen below and the in-game "View
+	// Instructions" modal (see the flee-row further down) -- one copy of the
+	// rules text instead of two that could quietly drift apart.
+	function cryptcrawlRulesHtml() { ?>
+		Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
+		equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
+		<strong style="color:#ff6b6b;">♥ Hearts</strong> are medkits - the first one you use each crypt heals in
+		full, and any more after that in the same crypt still heal, just for half.
+		<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
+		damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
+		into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
+		deck to win, or run out of HP and the delve ends - except the first hit that would take you to 0 HP each
+		delve instead leaves you standing at 1, <span class="cc-second-wind">Last Stand</span>, once per delve.
+	<?php } ?>
+
+<?php
+// Renders the entire swappable game area -- flash modal, and whichever of
+// no_run/game_over/active applies -- for the given user. Echoes directly
+// (matches the established convention here, same as cryptcrawlRulesHtml()
+// above) rather than returning a string.
+function cryptcrawlRenderGameArea($conn, $user_id) {
+	$active_run = cryptcrawlGetActiveRun($conn, $user_id);
+	$recent_run = $active_run ? null : cryptcrawlGetMostRecentRun($conn, $user_id);
+
+	if ($active_run)                                              $state = 'active';
+	elseif ($recent_run && in_array($recent_run['status'], ['won', 'lost'], true)) $state = 'game_over';
+	else                                                           $state = 'no_run';
+
+	$flashes = $_SESSION['cryptcrawl_flash'];
+	$_SESSION['cryptcrawl_flash'] = [];
+
+	$suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
+	$suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
+?>
+<div class="cc-inner">
+	<?php if ($flashes): ?>
+	<div class="cc-flash-backdrop" id="cc-flash-backdrop">
+		<?php foreach ($flashes as $f):
+			$flash_icon = $f['type'] === 'win' ? '🎉' : (($f['type'] === 'loss' || $f['type'] === 'error') ? '⚠️' : 'ℹ️');
+		?>
+			<div class="cc-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
+				<div class="cc-flash-icon"><?php echo $flash_icon; ?></div>
+				<div class="cc-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
+			</div>
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
+	<?php if ($state === 'no_run'): ?>
+		<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
+		<form method="post"><input type="hidden" name="action" value="start_run">
+			<button type="submit" class="cc-btn">💀 Start Delve</button>
+		</form>
+	</div><!-- /cc-inner -->
+
+	<?php elseif ($state === 'game_over'):
+			$fell = ($recent_run['status'] === 'lost');
+		?>
+		<?php if ($fell): ?>
+	</div><!-- /cc-inner -->
+		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
+		<div class="cc-inner">
+		<?php endif; ?>
+		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
+			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
+			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
+			<div class="cc-result-sub">
+				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
+				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
+			</div>
+			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
+			<?php if ($user_id > 0 && $carbon_earned > 0): ?>
+				<!-- Guests never see this: carbon_earned still accrues for them
+				     (cryptcrawlPlayCard), but there's no account to actually
+				     credit (cryptcrawlPayoutCarbon no-ops on a guest run), so
+				     showing an amount they didn't really get would be misleading. -->
+				<div class="cc-result-carbon">
+					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
+					+<?php echo number_format($carbon_earned); ?> CARBON earned
+				</div>
+			<?php endif; ?>
+		</div>
+		<form method="post"><input type="hidden" name="action" value="start_run">
+			<button type="submit" class="cc-btn">💀 Delve Again</button>
+		</form>
+		<?php if ($fell): ?>
+		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
+		</div><!-- /cc-inner -->
+		</div><!-- /cc-theme-bg -->
+		<?php else: ?>
+	</div><!-- /cc-inner -->
+		<?php endif; ?>
+
+	<?php else: // active
+		$room = json_decode($active_run['room'], true) ?: [];
+		$deck_count = count(json_decode($active_run['deck'], true) ?: []);
+		$hp = intval($active_run['hp']);
+		$max_hp = intval($active_run['max_hp']);
+		$hp_pct = $max_hp > 0 ? max(0, min(100, round(($hp / $max_hp) * 100))) : 0;
+		$weapon_power = $active_run['weapon_power'] !== null ? intval($active_run['weapon_power']) : null;
+		$weapon_name  = $active_run['weapon_name'];
+		$weapon_beaten_rank = $active_run['weapon_beaten_rank'] !== null ? intval($active_run['weapon_beaten_rank']) : null;
+		$can_flee = (intval($active_run['fled_last_room']) === 0) && (count($room) === 4);
+
+		// See cryptcrawlRoomThemeFile() in db.php -- shared with the Discord
+		// per-round announcement so there's one theme list, not two.
+		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
+	?>
+	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
+		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
+		<div class="cc-inner">
+		<div class="cc-hud">
+			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">
+				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+					<span>HP <?php echo $hp; ?> / <?php echo $max_hp; ?></span>
+					<?php if (intval($active_run['second_wind_used'] ?? 0) === 0): ?>
+						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Last Stand ready</span>
+					<?php else: ?>
+						<!-- Previously just vanished with no state to check -- a player
+						     couldn't glance at the HUD mid-run and confirm whether
+						     they'd already spent it (only a flash toast said so, and
+						     it auto-dismisses in 4s). Shown explicitly now instead. -->
+						<span class="cc-second-wind used" title="Already used this delve -- the next lethal hit ends it for real.">🛡️ Last Stand used</span>
+					<?php endif; ?>
+					<?php if ($user_id > 0): ?>
+						<!-- Running total, updates every card (10x its rank -- see
+						     cryptcrawlPlayCard in db.php) so it's visible building up
+						     over the whole delve, not just revealed at the end. Pushed
+						     to the far right of the row (margin-left:auto) instead of
+						     sitting in DOM order after HP -- HP/Last Stand cluster on
+						     the left, this stands apart on the right. Guests don't see
+						     it here either: it exists for them too (accrues in the
+						     guest session run same as a real one), but showing a live
+						     "earning" counter for something that'll never actually pay
+						     out reads as more misleading mid-game than it does as a
+						     one-time number on the result screen. -->
+						<span class="cc-hud-carbon" title="CARBON earned so far this delve">
+							<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
+						</span>
+					<?php endif; ?>
+				</div>
+				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" data-target-width="<?php echo 100 - $hp_pct; ?>" style="width:100%;"></div></div>
+			</div>
+			<div class="cc-hud-meta">
+				<div class="cc-weapon">
+					<?php if ($weapon_power !== null):
+						// Same icon convention gauntlets.php uses for its own gear
+						// panel: lowercase the weapon's name, hyphenate, .png — with
+						// the same graceful onerror hide for any name with no icon
+						// on disk (e.g. the "Rusty Blade" fallback name).
+						$weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $weapon_name)) . '.png';
+					?>
+						<img class="cc-weapon-icon" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
+						<strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) - <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
+					<?php else: ?>
+						👊 Bare-handed
+					<?php endif; ?>
+				</div>
+				<div style="font-size:0.72rem;opacity:0.5;">Crypts cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
+			</div>
+		</div>
+
+		<div class="cc-room">
+			<?php foreach ($room as $i => $card):
+				$suit = $card['suit']; $rank = intval($card['rank']); $type = $card['type'];
+				// Display only — internal type stays 'monster' (game logic, DB
+				// data) so this is purely a label swap, not a data rename.
+				$type_label = $type === 'monster' ? 'enemy' : ($type === 'potion' ? 'medkit' : $type);
+				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
+				$dom_rgb = cryptcrawlDominantColor($card['image_url'] ?? '');
+				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
+				// Weapon cards get an icon-on-black face instead of NFT art (see the card
+				// face rendering below) -- computed here, once, so the same icon shows on
+				// the card face and the Equip button below it. Same lookup
+				// cryptcrawlPlayCard() itself uses on equip, so it always matches what
+				// actually gets equipped.
+				if ($type === 'weapon') {
+					$preview_weapon_name = cryptcrawlWeaponName($conn, $rank);
+					$preview_weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $preview_weapon_name)) . '.png';
+				}
+				$medkit_icon = 'https://madballs.net/drop-ship/icons/medkit.png';
+			?>
+				<div class="cc-card" style="--cc-glow:<?php echo htmlspecialchars($glow_rgba); ?>;">
+					<div class="cc-card-flip">
+					<div class="cc-card-flip-inner">
+						<div class="cc-card-face cc-card-back">
+							<img class="cc-card-back-icon" src="/staking/pwa/skulliance-logo-icon.png" alt="">
+						</div>
+						<div class="cc-card-face cc-card-front">
+						<?php if ($type === 'monster' && !empty($card['image_url'])): ?>
+							<div class="cc-card-art">
+								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
+								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+								<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+							</div>
+						<?php elseif ($type === 'monster'): ?>
+							<div class="cc-card-badge-standalone">
+								<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
+								<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
+							</div>
+						<?php else: // weapon or potion -- icon on black instead of NFT art, keeping
+							// the curated Crypties art reserved for enemies specifically. ?>
+							<div class="cc-card-art cc-card-icon-face">
+								<img class="cc-card-icon" src="<?php echo htmlspecialchars($type === 'weapon' ? $preview_weapon_icon : $medkit_icon); ?>" alt="" onerror="this.style.display='none';">
+								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+								<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
+									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
+									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
+								</div>
+							</div>
+						<?php endif; ?>
+						</div>
+					</div>
+					</div>
+					<div class="cc-card-controls">
+					<div class="cc-card-label"><?php echo htmlspecialchars($type_label); ?></div>
+					<div class="cc-card-actions">
+						<?php if ($type === 'monster'): ?>
+							<form method="post"><input type="hidden" name="action" value="play_card">
+								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
+								<input type="hidden" name="use_weapon" value="0">
+								<button type="submit" class="cc-btn bare punchy">
+									<span class="cc-btn-icon-big">👊</span>
+									<span class="cc-btn-action">Fist Fight</span>
+									<span class="cc-btn-detail">-<?php echo $rank; ?> HP</span>
+								</button>
+							</form>
+							<?php if ($weapon_power !== null): ?>
+								<form method="post"><input type="hidden" name="action" value="play_card">
+									<input type="hidden" name="card_index" value="<?php echo $i; ?>">
+									<input type="hidden" name="use_weapon" value="1">
+									<button type="submit" class="cc-btn attack punchy" <?php echo $weapon_eligible ? '' : 'disabled'; ?>>
+										<!-- Same $weapon_icon the HUD line above already computed for the
+										     currently equipped weapon -- reused as-is so this always matches. -->
+										<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
+										<span class="cc-btn-action">Use Weapon</span>
+										<span class="cc-btn-detail"><?php echo $weapon_eligible ? '-' . max(0, $rank - $weapon_power) . ' HP' : 'Too worn'; ?></span>
+									</button>
+								</form>
+							<?php endif; ?>
+						<?php elseif ($type === 'weapon'): ?>
+							<form method="post"><input type="hidden" name="action" value="play_card">
+								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
+								<input type="hidden" name="use_weapon" value="0">
+								<button type="submit" class="cc-btn warn punchy">
+									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">
+									<span class="cc-btn-action">Equip</span>
+									<span class="cc-btn-detail"><?php echo htmlspecialchars($preview_weapon_name); ?></span>
+								</button>
+							</form>
+						<?php else: ?>
+							<form method="post"><input type="hidden" name="action" value="play_card">
+								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
+								<input type="hidden" name="use_weapon" value="0">
+								<button type="submit" class="cc-btn heal punchy">
+									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($medkit_icon); ?>" alt="" onerror="this.style.display='none';">
+									<span class="cc-btn-action">Heal</span>
+									<span class="cc-btn-detail"><?php echo intval($active_run['potion_used_this_room']) === 1 ? '+' . max(1, intval($rank / 2)) . ' HP (half)' : '+' . $rank . ' HP'; ?></span>
+								</button>
+							</form>
+						<?php endif; ?>
+					</div>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
+
+		<div class="cc-flee-row">
+			<div class="cc-flee-cell">
+				<form method="post"><input type="hidden" name="action" value="flee">
+					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee This Crypt</button>
+				</form>
+				<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
+			</div>
+			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
+				<input type="hidden" name="action" value="abandon">
+				<button type="submit" class="cc-btn secondary">🏳️ Abandon Run</button>
+			</form>
+			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
+			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
+		</div>
+		</div><!-- /cc-inner -->
+		</div><!-- /cc-theme-bg -->
+
+		<!-- Pure client-side toggle -- the rules text is static, no server
+		     round trip needed to revisit it mid-delve. See the bottom script
+		     block for the open/close wiring. -->
+		<div class="cc-instructions-backdrop" id="cc-instructions-backdrop">
+			<div class="cc-instructions-modal">
+				<h3>📖 How to Play</h3>
+				<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
+				<button type="button" class="cc-btn secondary cc-instructions-close" id="cc-instructions-close">Close</button>
+			</div>
+		</div>
+	<?php endif; ?>
+<?php
+}

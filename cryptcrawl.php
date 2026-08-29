@@ -10,12 +10,15 @@
 include_once 'db.php';
 include 'message.php';
 include 'verify.php';
+include_once 'cryptcrawl-actions.php';
+include_once 'cryptcrawl-render.php';
 
 // Unlike most guest-playable pages here, Crypt Crawl needs a real working
-// session even for a brand-new anonymous visitor: it's a full page-reload
-// per action (not a client-side JS game with an occasional AJAX save), so
-// a guest's flash messages and run state have nowhere to live between
-// clicks without one. db.php only starts a session when a cookie already
+// session even for a brand-new anonymous visitor. Actions are now handled
+// over AJAX (see the script block below and ajax/cryptcrawl-action.php),
+// but this page is still the no-JS/first-load fallback, so a guest's flash
+// messages and run state still need somewhere to live between requests.
+// db.php only starts a session when a cookie already
 // exists — force one here regardless, so a first-ever visitor still gets a
 // session cookie and can actually play.
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -36,62 +39,15 @@ if (session_status() === PHP_SESSION_ACTIVE
 $user_id = isset($_SESSION['userData']['user_id']) ? intval($_SESSION['userData']['user_id']) : 0;
 
 if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
-function cryptcrawlFlash($msg, $type = 'info') {
-	$_SESSION['cryptcrawl_flash'][] = ['msg' => $msg, 'type' => $type];
-}
 
 // ── POST action handling — must run before any output ───────
+// No-JS fallback only now: with JS, the forms below are intercepted and
+// posted to ajax/cryptcrawl-action.php instead (see the script block),
+// which calls this exact same cryptcrawlHandleAction() — real navigation
+// here is what used to tear down and rebuild the <audio> element on every
+// single action, audibly stuttering the ambient music player.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$action = $_POST['action'] ?? '';
-
-	if ($action === 'start_run') {
-		cryptcrawlStartRun($conn, $user_id);
-
-	} elseif ($action === 'play_card') {
-		$run = cryptcrawlGetActiveRun($conn, $user_id);
-		if ($run) {
-			$card_index = intval($_POST['card_index'] ?? -1);
-			$use_weapon = isset($_POST['use_weapon']) && $_POST['use_weapon'] === '1';
-			// Detect a diminished heal before playing it, so we can flash a
-			// clear message — the small note under the Heal button wasn't
-			// loud enough on its own (a player used two medkits back to back
-			// and didn't notice the second one healed for less).
-			$room_before = json_decode($run['room'], true) ?: [];
-			$card_before = $room_before[$card_index] ?? null;
-			$diminished_potion = $card_before && $card_before['type'] === 'potion' && intval($run['potion_used_this_room']) === 1;
-			$second_wind_was_available = intval($run['second_wind_used'] ?? 0) === 0;
-			// No flash for a run-ending outcome — the game_over screen's own
-			// result panel says the same thing, better, and having both was
-			// redundant (two near-identical sentences stacked on load).
-			$updated = cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
-			if ($diminished_potion) {
-				$half_heal = max(1, intval(intval($card_before['rank']) / 2));
-				cryptcrawlFlash("Half effect - you've already used a medkit this crypt. (+$half_heal HP)", 'info');
-			}
-			// Last Stand fired this exact play if it was available going in
-			// and is now spent -- the only place that flag ever changes.
-			if ($second_wind_was_available && $updated && intval($updated['second_wind_used']) === 1) {
-				cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win');
-			}
-		}
-
-	} elseif ($action === 'flee') {
-		$run = cryptcrawlGetActiveRun($conn, $user_id);
-		if ($run) {
-			$before = json_decode($run['room'], true) ?: [];
-			$updated = cryptcrawlFleeRoom($conn, intval($run['id']));
-			if ($updated && intval($updated['fled_last_room']) === 1 && count($before) === 4) {
-				cryptcrawlFlash('You slipped past that crypt.', 'info');
-			} else {
-				cryptcrawlFlash("Can't flee twice in a row - face the crypt.", 'error');
-			}
-		}
-
-	} elseif ($action === 'abandon') {
-		cryptcrawlAbandonRun($conn, $user_id);
-		cryptcrawlFlash('Run abandoned.', 'info');
-	}
-
+	cryptcrawlHandleAction($conn, $user_id, $_POST);
 	header('Location: cryptcrawl.php');
 	exit;
 }
@@ -112,19 +68,10 @@ if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData
 }
 
 include 'header.php';
-
-$active_run = cryptcrawlGetActiveRun($conn, $user_id);
-$recent_run = $active_run ? null : cryptcrawlGetMostRecentRun($conn, $user_id);
-
-if ($active_run)                                              $state = 'active';
-elseif ($recent_run && in_array($recent_run['status'], ['won', 'lost'], true)) $state = 'game_over';
-else                                                           $state = 'no_run';
-
-$flashes = $_SESSION['cryptcrawl_flash'];
-$_SESSION['cryptcrawl_flash'] = [];
-
-$suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
-$suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
+// $active_run/$recent_run/$state/$flashes/$suit_symbol/$suit_color are all
+// computed inside cryptcrawlRenderGameArea() now (cryptcrawl-render.php),
+// since that function needs to be independently callable from the AJAX
+// endpoint too, not just this page's own initial GET.
 ?>
 <style>
 /* Card index numerals only — rest of the page stays the site's normal Arial.
@@ -424,299 +371,14 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 </style>
 <div class="cc-wrap">
-<div class="cc-inner">
-	<?php if ($flashes): ?>
-	<div class="cc-flash-backdrop" id="cc-flash-backdrop">
-		<?php foreach ($flashes as $f):
-			$flash_icon = $f['type'] === 'win' ? '🎉' : (($f['type'] === 'loss' || $f['type'] === 'error') ? '⚠️' : 'ℹ️');
-		?>
-			<div class="cc-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
-				<div class="cc-flash-icon"><?php echo $flash_icon; ?></div>
-				<div class="cc-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
-			</div>
-		<?php endforeach; ?>
-	</div>
-	<?php endif; ?>
+<div id="cc-game-area"><?php cryptcrawlRenderGameArea($conn, $user_id); ?></div>
 
-	<?php
-	// Shared by the no_run intro screen below and the in-game "View
-	// Instructions" modal (see the flee-row further down) -- one copy of the
-	// rules text instead of two that could quietly drift apart.
-	function cryptcrawlRulesHtml() { ?>
-		Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
-		equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
-		<strong style="color:#ff6b6b;">♥ Hearts</strong> are medkits - the first one you use each crypt heals in
-		full, and any more after that in the same crypt still heal, just for half.
-		<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
-		damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
-		into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
-		deck to win, or run out of HP and the delve ends - except the first hit that would take you to 0 HP each
-		delve instead leaves you standing at 1, <span class="cc-second-wind">Last Stand</span>, once per delve.
-	<?php } ?>
-
-	<?php if ($state === 'no_run'): ?>
-		<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
-		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Start Delve</button>
-		</form>
-	</div><!-- /cc-inner -->
-
-	<?php elseif ($state === 'game_over'):
-			$fell = ($recent_run['status'] === 'lost');
-		?>
-		<?php if ($fell): ?>
-	</div><!-- /cc-inner -->
-		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
-		<div class="cc-inner">
-		<?php endif; ?>
-		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
-			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
-			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
-			<div class="cc-result-sub">
-				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
-				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
-			</div>
-			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
-			<?php if ($user_id > 0 && $carbon_earned > 0): ?>
-				<!-- Guests never see this: carbon_earned still accrues for them
-				     (cryptcrawlPlayCard), but there's no account to actually
-				     credit (cryptcrawlPayoutCarbon no-ops on a guest run), so
-				     showing an amount they didn't really get would be misleading. -->
-				<div class="cc-result-carbon">
-					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
-					+<?php echo number_format($carbon_earned); ?> CARBON earned
-				</div>
-			<?php endif; ?>
-		</div>
-		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Delve Again</button>
-		</form>
-		<?php if ($fell): ?>
-		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
-		</div><!-- /cc-inner -->
-		</div><!-- /cc-theme-bg -->
-		<?php else: ?>
-	</div><!-- /cc-inner -->
-		<?php endif; ?>
-
-	<?php else: // active
-		$room = json_decode($active_run['room'], true) ?: [];
-		$deck_count = count(json_decode($active_run['deck'], true) ?: []);
-		$hp = intval($active_run['hp']);
-		$max_hp = intval($active_run['max_hp']);
-		$hp_pct = $max_hp > 0 ? max(0, min(100, round(($hp / $max_hp) * 100))) : 0;
-		$weapon_power = $active_run['weapon_power'] !== null ? intval($active_run['weapon_power']) : null;
-		$weapon_name  = $active_run['weapon_name'];
-		$weapon_beaten_rank = $active_run['weapon_beaten_rank'] !== null ? intval($active_run['weapon_beaten_rank']) : null;
-		$can_flee = (intval($active_run['fled_last_room']) === 0) && (count($room) === 4);
-
-		// See cryptcrawlRoomThemeFile() in db.php -- shared with the Discord
-		// per-round announcement so there's one theme list, not two.
-		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
-	?>
-	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
-		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
-		<div class="cc-inner">
-		<div class="cc-hud">
-			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">
-				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-					<span>HP <?php echo $hp; ?> / <?php echo $max_hp; ?></span>
-					<?php if (intval($active_run['second_wind_used'] ?? 0) === 0): ?>
-						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Last Stand ready</span>
-					<?php else: ?>
-						<!-- Previously just vanished with no state to check -- a player
-						     couldn't glance at the HUD mid-run and confirm whether
-						     they'd already spent it (only a flash toast said so, and
-						     it auto-dismisses in 4s). Shown explicitly now instead. -->
-						<span class="cc-second-wind used" title="Already used this delve -- the next lethal hit ends it for real.">🛡️ Last Stand used</span>
-					<?php endif; ?>
-					<?php if ($user_id > 0): ?>
-						<!-- Running total, updates every card (10x its rank -- see
-						     cryptcrawlPlayCard in db.php) so it's visible building up
-						     over the whole delve, not just revealed at the end. Pushed
-						     to the far right of the row (margin-left:auto) instead of
-						     sitting in DOM order after HP -- HP/Last Stand cluster on
-						     the left, this stands apart on the right. Guests don't see
-						     it here either: it exists for them too (accrues in the
-						     guest session run same as a real one), but showing a live
-						     "earning" counter for something that'll never actually pay
-						     out reads as more misleading mid-game than it does as a
-						     one-time number on the result screen. -->
-						<span class="cc-hud-carbon" title="CARBON earned so far this delve">
-							<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
-						</span>
-					<?php endif; ?>
-				</div>
-				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" data-target-width="<?php echo 100 - $hp_pct; ?>" style="width:100%;"></div></div>
-			</div>
-			<div class="cc-hud-meta">
-				<div class="cc-weapon">
-					<?php if ($weapon_power !== null):
-						// Same icon convention gauntlets.php uses for its own gear
-						// panel: lowercase the weapon's name, hyphenate, .png — with
-						// the same graceful onerror hide for any name with no icon
-						// on disk (e.g. the "Rusty Blade" fallback name).
-						$weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $weapon_name)) . '.png';
-					?>
-						<img class="cc-weapon-icon" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
-						<strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) - <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
-					<?php else: ?>
-						👊 Bare-handed
-					<?php endif; ?>
-				</div>
-				<div style="font-size:0.72rem;opacity:0.5;">Crypts cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
-			</div>
-		</div>
-
-		<div class="cc-room">
-			<?php foreach ($room as $i => $card):
-				$suit = $card['suit']; $rank = intval($card['rank']); $type = $card['type'];
-				// Display only — internal type stays 'monster' (game logic, DB
-				// data) so this is purely a label swap, not a data rename.
-				$type_label = $type === 'monster' ? 'enemy' : ($type === 'potion' ? 'medkit' : $type);
-				$weapon_eligible = ($type === 'monster') && $weapon_power !== null && ($weapon_beaten_rank === null || $rank <= $weapon_beaten_rank);
-				$dom_rgb = cryptcrawlDominantColor($card['image_url'] ?? '');
-				$glow_rgba = $dom_rgb ? sprintf('rgba(%d,%d,%d,.45)', $dom_rgb[0], $dom_rgb[1], $dom_rgb[2]) : 'rgba(255,153,0,.35)';
-				// Weapon cards get an icon-on-black face instead of NFT art (see the card
-				// face rendering below) -- computed here, once, so the same icon shows on
-				// the card face and the Equip button below it. Same lookup
-				// cryptcrawlPlayCard() itself uses on equip, so it always matches what
-				// actually gets equipped.
-				if ($type === 'weapon') {
-					$preview_weapon_name = cryptcrawlWeaponName($conn, $rank);
-					$preview_weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $preview_weapon_name)) . '.png';
-				}
-				$medkit_icon = 'https://madballs.net/drop-ship/icons/medkit.png';
-			?>
-				<div class="cc-card" style="--cc-glow:<?php echo htmlspecialchars($glow_rgba); ?>;">
-					<div class="cc-card-flip">
-					<div class="cc-card-flip-inner">
-						<div class="cc-card-face cc-card-back">
-							<img class="cc-card-back-icon" src="/staking/pwa/skulliance-logo-icon.png" alt="">
-						</div>
-						<div class="cc-card-face cc-card-front">
-						<?php if ($type === 'monster' && !empty($card['image_url'])): ?>
-							<div class="cc-card-art">
-								<img class="cc-card-img" src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="" loading="lazy" onerror="this.remove();">
-								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
-									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
-									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
-								</div>
-								<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
-									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
-									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
-								</div>
-							</div>
-						<?php elseif ($type === 'monster'): ?>
-							<div class="cc-card-badge-standalone">
-								<div class="cc-card-rank" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo cryptcrawlRankLabel($rank); ?></div>
-								<div class="cc-card-suit" style="color:<?php echo $suit_color[$suit]; ?>;"><?php echo $suit_symbol[$suit]; ?></div>
-							</div>
-						<?php else: // weapon or potion -- icon on black instead of NFT art, keeping
-							// the curated Crypties art reserved for enemies specifically. ?>
-							<div class="cc-card-art cc-card-icon-face">
-								<img class="cc-card-icon" src="<?php echo htmlspecialchars($type === 'weapon' ? $preview_weapon_icon : $medkit_icon); ?>" alt="" onerror="this.style.display='none';">
-								<div class="cc-card-corner tl" style="color:<?php echo $suit_color[$suit]; ?>;">
-									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
-									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
-								</div>
-								<div class="cc-card-corner br" style="color:<?php echo $suit_color[$suit]; ?>;">
-									<div class="cc-card-rank"><?php echo cryptcrawlRankLabel($rank); ?></div>
-									<div class="cc-card-suit"><?php echo $suit_symbol[$suit]; ?></div>
-								</div>
-							</div>
-						<?php endif; ?>
-						</div>
-					</div>
-					</div>
-					<div class="cc-card-controls">
-					<div class="cc-card-label"><?php echo htmlspecialchars($type_label); ?></div>
-					<div class="cc-card-actions">
-						<?php if ($type === 'monster'): ?>
-							<form method="post"><input type="hidden" name="action" value="play_card">
-								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
-								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn bare punchy">
-									<span class="cc-btn-icon-big">👊</span>
-									<span class="cc-btn-action">Fist Fight</span>
-									<span class="cc-btn-detail">-<?php echo $rank; ?> HP</span>
-								</button>
-							</form>
-							<?php if ($weapon_power !== null): ?>
-								<form method="post"><input type="hidden" name="action" value="play_card">
-									<input type="hidden" name="card_index" value="<?php echo $i; ?>">
-									<input type="hidden" name="use_weapon" value="1">
-									<button type="submit" class="cc-btn attack punchy" <?php echo $weapon_eligible ? '' : 'disabled'; ?>>
-										<!-- Same $weapon_icon the HUD line above already computed for the
-										     currently equipped weapon -- reused as-is so this always matches. -->
-										<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
-										<span class="cc-btn-action">Use Weapon</span>
-										<span class="cc-btn-detail"><?php echo $weapon_eligible ? '-' . max(0, $rank - $weapon_power) . ' HP' : 'Too worn'; ?></span>
-									</button>
-								</form>
-							<?php endif; ?>
-						<?php elseif ($type === 'weapon'): ?>
-							<form method="post"><input type="hidden" name="action" value="play_card">
-								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
-								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn warn punchy">
-									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">
-									<span class="cc-btn-action">Equip</span>
-									<span class="cc-btn-detail"><?php echo htmlspecialchars($preview_weapon_name); ?></span>
-								</button>
-							</form>
-						<?php else: ?>
-							<form method="post"><input type="hidden" name="action" value="play_card">
-								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
-								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn heal punchy">
-									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($medkit_icon); ?>" alt="" onerror="this.style.display='none';">
-									<span class="cc-btn-action">Heal</span>
-									<span class="cc-btn-detail"><?php echo intval($active_run['potion_used_this_room']) === 1 ? '+' . max(1, intval($rank / 2)) . ' HP (half)' : '+' . $rank . ' HP'; ?></span>
-								</button>
-							</form>
-						<?php endif; ?>
-					</div>
-					</div>
-				</div>
-			<?php endforeach; ?>
-		</div>
-
-		<div class="cc-flee-row">
-			<div class="cc-flee-cell">
-				<form method="post"><input type="hidden" name="action" value="flee">
-					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee This Crypt</button>
-				</form>
-				<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
-			</div>
-			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
-				<input type="hidden" name="action" value="abandon">
-				<button type="submit" class="cc-btn secondary">🏳️ Abandon Run</button>
-			</form>
-			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
-			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
-		</div>
-		</div><!-- /cc-inner -->
-		</div><!-- /cc-theme-bg -->
-
-		<!-- Pure client-side toggle -- the rules text is static, no server
-		     round trip needed to revisit it mid-delve. See the bottom script
-		     block for the open/close wiring. -->
-		<div class="cc-instructions-backdrop" id="cc-instructions-backdrop">
-			<div class="cc-instructions-modal">
-				<h3>📖 How to Play</h3>
-				<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
-				<button type="button" class="cc-btn secondary cc-instructions-close" id="cc-instructions-close">Close</button>
-			</div>
-		</div>
-	<?php endif; ?>
-
-	<!-- Ambient music player -- unconditional (outside the no_run/active/
-	     game_over chain above) so it's present on every state, always in the
-	     same spot below whatever that state's bottom buttons are. Playback
-	     state (on/off, track, position) persists in sessionStorage: this is
-	     a full-page-reload app (every action is a POST->redirect->GET), so
-	     without that the music would restart from 0:00 on every click. -->
+	<!-- Ambient music player -- OUTSIDE #cc-game-area above on purpose, so
+	     AJAX-swapping the game area on every action (see the script block
+	     below) never touches this element or the <audio> below it: this is
+	     what actually keeps the music playing continuously across actions.
+	     Playback state (on/off, track, position) still persists in
+	     sessionStorage too, for the no-JS fallback and the first page load. -->
 	<div class="cc-audio-player" id="cc-audio-player">
 		<button type="button" class="cc-audio-btn" id="cc-audio-prev" title="Previous track">⏮</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-toggle" title="Play/Pause">▶</button>
@@ -729,53 +391,196 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 </div>
 <script>
 (function() {
-	// Flash notifications are a real modal now (backdrop + centered card),
-	// not a small corner toast -- easy to miss on mobile, especially fixed-
-	// position elements fighting the browser's own address-bar chrome.
-	// Dismissible by tapping anywhere (nothing inside is interactive, so a
-	// tap on the card itself is just as valid as tapping the dimmed area
-	// around it) and auto-dismisses on its own after a hold so it never
-	// blocks play if left alone. Reduced-motion still gets the timed
-	// removal, just without the fade transition.
-	var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	var flashBackdrop = document.getElementById('cc-flash-backdrop');
-	if (flashBackdrop) {
-		var dismissFlash = function() {
-			if (!flashBackdrop.isConnected) return; // already dismissed
-			if (reduceMotion) {
-				flashBackdrop.remove();
-				return;
-			}
-			flashBackdrop.style.transition = 'opacity .3s ease';
-			flashBackdrop.style.opacity = '0';
-			setTimeout(function() { flashBackdrop.remove(); }, 300);
-		};
-		flashBackdrop.addEventListener('click', dismissFlash);
-		setTimeout(dismissFlash, 4000);
-	}
+	var gameArea = document.getElementById('cc-game-area');
 
-	// "View Instructions" -- purely a client-side show/hide, no server round
-	// trip needed since the rules text is static. Unlike the flash modal
-	// above (nothing inside it is interactive, so any tap dismisses it),
-	// this one only closes on a tap OUTSIDE the card or the explicit Close
-	// button -- the modal can scroll on a small screen, and a stray tap
-	// while reading shouldn't close it out from under you.
-	var instrBtn = document.getElementById('cc-instructions-btn');
-	var instrBackdrop = document.getElementById('cc-instructions-backdrop');
-	var instrClose = document.getElementById('cc-instructions-close');
-	if (instrBtn && instrBackdrop) {
-		instrBtn.addEventListener('click', function() {
-			instrBackdrop.classList.add('show');
-		});
-		instrBackdrop.addEventListener('click', function(e) {
-			if (e.target === instrBackdrop) instrBackdrop.classList.remove('show');
-		});
-		if (instrClose) {
-			instrClose.addEventListener('click', function() {
-				instrBackdrop.classList.remove('show');
+	// .cc-theme-bg sizing -- one resize listener attached once below (not
+	// re-added on every AJAX swap, which would stack up a fresh listener
+	// per action), re-querying .cc-theme-bg fresh each time it fires so it
+	// always matches whatever's currently in #cc-game-area.
+	function sizeTheme() {
+		var el = document.querySelector('.cc-theme-bg');
+		if (!el) return;
+		var top = el.getBoundingClientRect().top;
+		var bottomPad = 60; // matches .cc-wrap's bottom padding
+		var available = window.innerHeight - top - bottomPad;
+		// Never shrink below what the content actually needs — on narrow
+		// viewports the room grid wraps to more rows, and with
+		// align-items:center a too-short box would center-overflow,
+		// clipping the HUD off the top of the page instead of just
+		// letting the page scroll a little. Cropping the art via
+		// background-size:cover is fine; clipping the UI isn't.
+		el.style.height = 'auto';
+		var natural = el.scrollHeight;
+		el.style.height = Math.max(200, available, natural) + 'px';
+	}
+	window.addEventListener('resize', sizeTheme);
+
+	// Everything below re-wires whatever's currently inside #cc-game-area --
+	// run once for the initial page load, then again after every AJAX swap
+	// (see the submit-interception further down), since a swap destroys and
+	// recreates all of it. Each piece re-queries the DOM fresh rather than
+	// caching elements from a previous call.
+	function initGameArea() {
+		// Flash notifications are a real modal (backdrop + centered card),
+		// not a small corner toast -- easy to miss on mobile, especially
+		// fixed-position elements fighting the browser's own address-bar
+		// chrome. Dismissible by tapping anywhere (nothing inside is
+		// interactive, so a tap on the card itself is just as valid as
+		// tapping the dimmed area around it) and auto-dismisses on its own
+		// after a hold so it never blocks play if left alone. Reduced-
+		// motion still gets the timed removal, just without the fade.
+		var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		var flashBackdrop = document.getElementById('cc-flash-backdrop');
+		if (flashBackdrop) {
+			var dismissFlash = function() {
+				if (!flashBackdrop.isConnected) return; // already dismissed
+				if (reduceMotion) {
+					flashBackdrop.remove();
+					return;
+				}
+				flashBackdrop.style.transition = 'opacity .3s ease';
+				flashBackdrop.style.opacity = '0';
+				setTimeout(function() { flashBackdrop.remove(); }, 300);
+			};
+			flashBackdrop.addEventListener('click', dismissFlash);
+			setTimeout(dismissFlash, 4000);
+		}
+
+		// "View Instructions" -- purely a client-side show/hide, no server
+		// round trip needed since the rules text is static. Unlike the flash
+		// modal above (nothing inside it is interactive, so any tap
+		// dismisses it), this one only closes on a tap OUTSIDE the card or
+		// the explicit Close button -- the modal can scroll on a small
+		// screen, and a stray tap while reading shouldn't close it out from
+		// under you.
+		var instrBtn = document.getElementById('cc-instructions-btn');
+		var instrBackdrop = document.getElementById('cc-instructions-backdrop');
+		var instrClose = document.getElementById('cc-instructions-close');
+		if (instrBtn && instrBackdrop) {
+			instrBtn.addEventListener('click', function() {
+				instrBackdrop.classList.add('show');
+			});
+			instrBackdrop.addEventListener('click', function(e) {
+				if (e.target === instrBackdrop) instrBackdrop.classList.remove('show');
+			});
+			if (instrClose) {
+				instrClose.addEventListener('click', function() {
+					instrBackdrop.classList.remove('show');
+				});
+			}
+		}
+
+		// HP bar renders fully covered (width:100%, i.e. empty-looking) so
+		// that nudging it to its real data-target-width one frame later
+		// animates the gradient revealing in on every render, not just on
+		// HP changes -- the bar's own CSS transition (.cc-hp-bar-fill) does
+		// the actual tween.
+		var hpFill = document.querySelector('.cc-hp-bar-fill');
+		if (hpFill) {
+			var target = hpFill.getAttribute('data-target-width');
+			requestAnimationFrame(function() {
+				requestAnimationFrame(function() {
+					hpFill.style.width = target + '%';
+				});
+			});
+		}
+
+		sizeTheme();
+
+		// Desktop-only card tilt — skip entirely on touch devices so there's
+		// no stuck "hover" state after a tap. Targets .cc-card-flip
+		// specifically (the "card" object) so the controls panel below
+		// stays flat/static instead of tilting along with it. No-ops on
+		// states with no cards.
+		if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+			document.querySelectorAll('.cc-card-flip').forEach(function(card) {
+				card.addEventListener('mousemove', function(e) {
+					var r = card.getBoundingClientRect();
+					var x = (e.clientX - r.left) / r.width - 0.5;
+					var y = (e.clientY - r.top) / r.height - 0.5;
+					card.style.transform = 'perspective(700px) rotateX(' + (-y * 8) + 'deg) rotateY(' + (x * 8) + 'deg) translateY(-6px) scale(1.03)';
+				});
+				card.addEventListener('mouseleave', function() {
+					card.style.transform = '';
+				});
+			});
+		}
+
+		// Click/tap a card and it does a full 360° spin, passing through the
+		// back face at the midpoint -- a tactile "yep, that reacted"
+		// flourish. Purely cosmetic: the actual actions are the buttons
+		// below, a sibling of this element in the DOM, so this listener
+		// never touches them. Uses the Web Animations API rather than a CSS
+		// class + keyframe so it can't collide with .cc-card-flip-inner's
+		// own intro-flip CSS animation -- toggling a class that shares the
+		// `animation` property would make the browser treat animation-name
+		// as having changed and replay the intro flip from its
+		// rotateY(180deg) starting point every time this spin finishes and
+		// the class comes back off.
+		if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			document.querySelectorAll('.cc-card-flip').forEach(function(card) {
+				var inner = card.querySelector('.cc-card-flip-inner');
+				if (!inner) return;
+				var spinning = false;
+				card.addEventListener('click', function() {
+					if (spinning) return;
+					spinning = true;
+					card.classList.add('cc-spinning');
+					var anim = inner.animate(
+						[{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(360deg)' }],
+						{ duration: 650, easing: 'cubic-bezier(.3,.9,.4,1)' }
+					);
+					anim.onfinish = anim.oncancel = function() {
+						spinning = false;
+						card.classList.remove('cc-spinning');
+					};
+				});
 			});
 		}
 	}
+
+	initGameArea();
+
+	// Intercept every action form inside #cc-game-area and post to the AJAX
+	// endpoint instead of letting the browser navigate there -- this is what
+	// actually keeps the ambient <audio> element (a sibling of #cc-game-area,
+	// outside it entirely, never touched by the innerHTML swap below)
+	// playing continuously across actions instead of restarting on every
+	// single one. Delegated on document (stable across swaps) rather than
+	// bound to each form directly, since every swap destroys and recreates
+	// all of them; cryptcrawl.php's own POST handling stays in place as the
+	// fallback for when this fails or JS is unavailable.
+	var busy = false;
+	document.addEventListener('submit', function(e) {
+		if (e.defaultPrevented) return; // e.g. Abandon Run's own confirm() said no
+		var form = e.target;
+		if (!gameArea || form.tagName !== 'FORM' || !gameArea.contains(form)) return;
+		e.preventDefault();
+		if (busy) return;
+		busy = true;
+		gameArea.style.opacity = '0.55';
+		gameArea.style.pointerEvents = 'none';
+		fetch('ajax/cryptcrawl-action.php', { method: 'POST', body: new FormData(form) })
+			.then(function(res) {
+				if (!res.ok) throw new Error('bad response');
+				return res.text();
+			})
+			.then(function(html) {
+				gameArea.innerHTML = html;
+				gameArea.style.opacity = '';
+				gameArea.style.pointerEvents = '';
+				busy = false;
+				initGameArea();
+			})
+			.catch(function() {
+				// AJAX failed for some reason -- fall back to a real submit
+				// (full page reload) rather than leaving the action stuck.
+				gameArea.style.opacity = '';
+				gameArea.style.pointerEvents = '';
+				busy = false;
+				form.submit();
+			});
+	});
 
 	// Ambient music player. Two tracks, cycled on 'ended'. State (on/off,
 	// which track, playback position) lives in sessionStorage because this
@@ -903,94 +708,5 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			});
 		}
 	})();
-
-	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
-	// nudging it to its real data-target-width one frame later animates the
-	// gradient revealing in on every page load, not just on HP changes —
-	// the bar's own CSS transition (.cc-hp-bar-fill) does the actual tween.
-	var hpFill = document.querySelector('.cc-hp-bar-fill');
-	if (hpFill) {
-		var target = hpFill.getAttribute('data-target-width');
-		requestAnimationFrame(function() {
-			requestAnimationFrame(function() {
-				hpFill.style.width = target + '%';
-			});
-		});
-	}
-
-	// Fill whatever viewport space is left below the backdrop rather than
-	// forcing the page to scroll to show the full theme image — cropping
-	// via background-size:cover is fine, scrolling isn't. No-ops cleanly
-	// when there's no .cc-theme-bg on the page at all (no_run state, or a
-	// game_over 'won' screen, which doesn't get a themed backdrop).
-	var el = document.querySelector('.cc-theme-bg');
-	if (el) {
-		function sizeTheme() {
-			var top = el.getBoundingClientRect().top;
-			var bottomPad = 60; // matches .cc-wrap's bottom padding
-			var available = window.innerHeight - top - bottomPad;
-			// Never shrink below what the content actually needs — on narrow
-			// viewports the room grid wraps to more rows, and with
-			// align-items:center a too-short box would center-overflow,
-			// clipping the HUD off the top of the page instead of just
-			// letting the page scroll a little. Cropping the art via
-			// background-size:cover is fine; clipping the UI isn't.
-			el.style.height = 'auto';
-			var natural = el.scrollHeight;
-			el.style.height = Math.max(200, available, natural) + 'px';
-		}
-		sizeTheme();
-		window.addEventListener('resize', sizeTheme);
-	}
-
-	// Desktop-only card tilt — skip entirely on touch devices so there's no
-	// stuck "hover" state after a tap. Targets .cc-card-flip specifically
-	// (the "card" object) so the controls panel below stays flat/static
-	// instead of tilting along with it. No-ops on states with no cards.
-	if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-		document.querySelectorAll('.cc-card-flip').forEach(function(card) {
-			card.addEventListener('mousemove', function(e) {
-				var r = card.getBoundingClientRect();
-				var x = (e.clientX - r.left) / r.width - 0.5;
-				var y = (e.clientY - r.top) / r.height - 0.5;
-				card.style.transform = 'perspective(700px) rotateX(' + (-y * 8) + 'deg) rotateY(' + (x * 8) + 'deg) translateY(-6px) scale(1.03)';
-			});
-			card.addEventListener('mouseleave', function() {
-				card.style.transform = '';
-			});
-		});
-	}
-
-	// Click/tap a card and it does a full 360° spin, passing through the
-	// back face at the midpoint -- a tactile "yep, that reacted" flourish.
-	// Purely cosmetic: the actual actions are the buttons below, a sibling
-	// of this element in the DOM, so this listener never touches them.
-	// Uses the Web Animations API rather than a CSS class + keyframe so it
-	// can't collide with .cc-card-flip-inner's own intro-flip CSS animation
-	// -- toggling a class that shares the `animation` property would make
-	// the browser treat animation-name as having changed and replay the
-	// intro flip from its rotateY(180deg) starting point every time this
-	// spin finishes and the class comes back off.
-	if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-		document.querySelectorAll('.cc-card-flip').forEach(function(card) {
-			var inner = card.querySelector('.cc-card-flip-inner');
-			if (!inner) return;
-			var spinning = false;
-			card.addEventListener('click', function() {
-				if (spinning) return;
-				spinning = true;
-				card.classList.add('cc-spinning');
-				var anim = inner.animate(
-					[{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(360deg)' }],
-					{ duration: 650, easing: 'cubic-bezier(.3,.9,.4,1)' }
-				);
-				anim.onfinish = anim.oncancel = function() {
-					spinning = false;
-					card.classList.remove('cc-spinning');
-				};
-			});
-		});
-	}
 })();
 </script>
-</html>
