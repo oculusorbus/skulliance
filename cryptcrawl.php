@@ -172,6 +172,20 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-flash-modal.loss .cc-flash-text, .cc-flash-modal.error .cc-flash-text { color: #ff7070; }
 .cc-flash-modal.info { border: 1px solid rgba(255,255,255,.25); }
 .cc-flash-modal.info .cc-flash-text { color: #c8dce8; }
+/* "View Instructions" -- same backdrop+card look as the flash notifications
+   above, but a plain hide/show toggle instead of something PHP renders
+   conditionally: the rules text is static, so there's nothing server-side
+   to drive it. display:none by default; JS just adds/removes .show. */
+.cc-instructions-backdrop { display: none; position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.65); align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+.cc-instructions-backdrop.show { display: flex; animation: ccFlashBackdropIn .2s ease both; }
+.cc-instructions-modal {
+	background: rgba(10,16,24,.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+	border-radius: 16px; padding: 22px 20px; max-width: 440px; width: 100%; box-sizing: border-box;
+	box-shadow: 0 20px 60px rgba(0,0,0,.6); animation: ccFlashModalIn .3s cubic-bezier(.18,.89,.32,1.28) both;
+	max-height: 85vh; overflow-y: auto;
+}
+.cc-instructions-modal h3 { margin: 0 0 10px; font-size: 1.05rem; }
+.cc-instructions-close { margin-top: 16px; width: 100%; }
 .cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
 .cc-hud {
 	display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both;
@@ -323,7 +337,8 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	border-radius: 12px; padding: 14px; box-sizing: border-box;
 }
 @media (prefers-reduced-motion: reduce) {
-	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
+	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-instructions-backdrop.show,
+	.cc-instructions-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
 	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
 	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
@@ -384,18 +399,24 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	</div>
 	<?php endif; ?>
 
+	<?php
+	// Shared by the no_run intro screen below and the in-game "View
+	// Instructions" modal (see the flee-row further down) -- one copy of the
+	// rules text instead of two that could quietly drift apart.
+	function cryptcrawlRulesHtml() { ?>
+		Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
+		equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
+		<strong style="color:#ff6b6b;">♥ Hearts</strong> are medkits - the first one you use each crypt heals in
+		full, and any more after that in the same crypt still heal, just for half.
+		<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
+		damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
+		into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
+		deck to win, or run out of HP and the delve ends - except the first hit that would take you to 0 HP each
+		delve instead leaves you standing at 1, <span class="cc-second-wind">Last Stand</span>, once per delve.
+	<?php } ?>
+
 	<?php if ($state === 'no_run'): ?>
-		<div class="cc-rules">
-			Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
-			equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
-			<strong style="color:#ff6b6b;">♥ Hearts</strong> are medkits - the first one you use each crypt heals in
-			full, and any more after that in the same crypt still heal, just for half.
-			<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
-			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
-			into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
-			deck to win, or run out of HP and the delve ends - except the first hit that would take you to 0 HP each
-			delve instead leaves you standing at 1, <span class="cc-second-wind">Last Stand</span>, once per delve.
-		</div>
+		<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Start Delve</button>
 		</form>
@@ -603,9 +624,21 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				<input type="hidden" name="action" value="abandon">
 				<button type="submit" class="cc-btn secondary" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;">🏳️ Abandon run</button>
 			</form>
+			<button type="button" class="cc-btn secondary" id="cc-instructions-btn" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;margin-top:8px;">📖 View Instructions</button>
 		</div>
 		</div><!-- /cc-inner -->
 		</div><!-- /cc-theme-bg -->
+
+		<!-- Pure client-side toggle -- the rules text is static, no server
+		     round trip needed to revisit it mid-delve. See the bottom script
+		     block for the open/close wiring. -->
+		<div class="cc-instructions-backdrop" id="cc-instructions-backdrop">
+			<div class="cc-instructions-modal">
+				<h3>📖 How to Play</h3>
+				<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
+				<button type="button" class="cc-btn secondary cc-instructions-close" id="cc-instructions-close">Close</button>
+			</div>
+		</div>
 	<?php endif; ?>
 </div>
 <script>
@@ -633,6 +666,29 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		};
 		flashBackdrop.addEventListener('click', dismissFlash);
 		setTimeout(dismissFlash, 4000);
+	}
+
+	// "View Instructions" -- purely a client-side show/hide, no server round
+	// trip needed since the rules text is static. Unlike the flash modal
+	// above (nothing inside it is interactive, so any tap dismisses it),
+	// this one only closes on a tap OUTSIDE the card or the explicit Close
+	// button -- the modal can scroll on a small screen, and a stray tap
+	// while reading shouldn't close it out from under you.
+	var instrBtn = document.getElementById('cc-instructions-btn');
+	var instrBackdrop = document.getElementById('cc-instructions-backdrop');
+	var instrClose = document.getElementById('cc-instructions-close');
+	if (instrBtn && instrBackdrop) {
+		instrBtn.addEventListener('click', function() {
+			instrBackdrop.classList.add('show');
+		});
+		instrBackdrop.addEventListener('click', function(e) {
+			if (e.target === instrBackdrop) instrBackdrop.classList.remove('show');
+		});
+		if (instrClose) {
+			instrClose.addEventListener('click', function() {
+				instrBackdrop.classList.remove('show');
+			});
+		}
 	}
 
 	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
