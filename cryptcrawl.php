@@ -319,7 +319,7 @@ include 'header.php';
 .cc-audio-track { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cc-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
 .cc-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
-.cc-audio-btn.zoom-off { opacity: 0.35; }
+.cc-audio-btn.off { opacity: 0.35; } /* shared dimmed state for the player's toggle buttons (zoom, notifications) */
 .cc-result {
 	text-align: center; border-radius: 12px; padding: 30px 20px; margin-bottom: 20px; box-sizing: border-box;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -415,6 +415,7 @@ include 'header.php';
 		<span class="cc-audio-vol-icon">🔊</span>
 		<input type="range" class="cc-audio-volume" id="cc-audio-volume" min="0" max="100" value="50" title="Volume">
 		<button type="button" class="cc-audio-btn" id="cc-audio-zoom-toggle" title="Background zoom: on">🎥</button>
+		<button type="button" class="cc-audio-btn" id="cc-audio-notif-toggle" title="Flee/medkit/Last Stand pop-ups: on">🔔</button>
 	</div>
 	<audio id="cc-audio-el" preload="metadata"></audio>
 </div>
@@ -454,6 +455,20 @@ include 'header.php';
 	}
 	window.addEventListener('resize', sizeTheme);
 
+	// Flee/medkit/Last Stand pop-ups toggle (🔔 on the audio player). Lives
+	// here, not inside the audio-setup IIFE below, since sessionStorage
+	// access needs nothing from that closure and initGameArea() needs it
+	// directly. The categories suppressible this way are tagged server-side
+	// (cryptcrawlFlash()'s $source param, see cryptcrawl-actions.php) and
+	// come through as data-source on each .cc-flash-modal -- anything
+	// untagged (e.g. Abandon Run's confirmation) is never suppressed.
+	var SUPPRESSIBLE_FLASH_SOURCES = ['flee', 'medkit', 'laststand'];
+	function getFlowNotifsEnabled() {
+		var v = sessionStorage.getItem('cc_flow_notifs_enabled');
+		return v === null ? true : v === '1'; // on by default -- opt out, not opt in
+	}
+	function setFlowNotifsEnabled(v) { try { sessionStorage.setItem('cc_flow_notifs_enabled', v ? '1' : '0'); } catch (e) {} }
+
 	// Everything below re-wires whatever's currently inside #cc-game-area --
 	// run once for the initial page load, then again after every AJAX swap
 	// (see the submit-interception further down), since a swap destroys and
@@ -470,6 +485,19 @@ include 'header.php';
 		// motion still gets the timed removal, just without the fade.
 		var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		var flashBackdrop = document.getElementById('cc-flash-backdrop');
+		if (flashBackdrop && !getFlowNotifsEnabled()) {
+			flashBackdrop.querySelectorAll('.cc-flash-modal').forEach(function(modal) {
+				if (SUPPRESSIBLE_FLASH_SOURCES.indexOf(modal.getAttribute('data-source')) !== -1) modal.remove();
+			});
+			// Only remove the whole backdrop once every modal it held was
+			// suppressed -- a request could in principle queue an untagged
+			// flash (Abandon Run) alongside a suppressible one; that one
+			// should still show.
+			if (!flashBackdrop.querySelector('.cc-flash-modal')) {
+				flashBackdrop.remove();
+				flashBackdrop = null;
+			}
+		}
 		if (flashBackdrop) {
 			var dismissFlash = function() {
 				if (!flashBackdrop.isConnected) return; // already dismissed
@@ -655,6 +683,7 @@ include 'header.php';
 		var trackNameEl = document.getElementById('cc-audio-track-name');
 		var volumeEl = document.getElementById('cc-audio-volume');
 		var zoomToggleBtn = document.getElementById('cc-audio-zoom-toggle');
+		var notifToggleBtn = document.getElementById('cc-audio-notif-toggle');
 		if (!audio || !toggleBtn) return;
 
 		var TRACKS = [
@@ -705,8 +734,12 @@ include 'header.php';
 		audio.volume = getVolume() / 100;
 		if (volumeEl) volumeEl.value = getVolume();
 		if (zoomToggleBtn) {
-			zoomToggleBtn.classList.toggle('zoom-off', !getZoomEnabled());
+			zoomToggleBtn.classList.toggle('off', !getZoomEnabled());
 			zoomToggleBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
+		}
+		if (notifToggleBtn) {
+			notifToggleBtn.classList.toggle('off', !getFlowNotifsEnabled());
+			notifToggleBtn.title = 'Flee/medkit/Last Stand pop-ups: ' + (getFlowNotifsEnabled() ? 'on' : 'off');
 		}
 
 		// Ken Burns drift on the theme art -- max ambience while a track is
@@ -770,9 +803,21 @@ include 'header.php';
 			zoomToggleBtn.addEventListener('click', function() {
 				var next = !getZoomEnabled();
 				setZoomEnabled(next);
-				zoomToggleBtn.classList.toggle('zoom-off', !next);
+				zoomToggleBtn.classList.toggle('off', !next);
 				zoomToggleBtn.title = 'Background zoom: ' + (next ? 'on' : 'off');
 				updateZoomClass();
+			});
+		}
+		if (notifToggleBtn) {
+			notifToggleBtn.addEventListener('click', function() {
+				var next = !getFlowNotifsEnabled();
+				setFlowNotifsEnabled(next);
+				notifToggleBtn.classList.toggle('off', !next);
+				notifToggleBtn.title = 'Flee/medkit/Last Stand pop-ups: ' + (next ? 'on' : 'off');
+				// Retroactively suppress/restore-visibility isn't attempted
+				// here -- a currently-open flash modal (if any) just plays
+				// out its own dismiss timer as normal; this only changes
+				// what shows up starting with the *next* one.
 			});
 		}
 

@@ -68,6 +68,11 @@ into one predictable pattern. It's on by default so you notice it, with a
 🎥 button on the player to turn it off if it's more distracting than
 atmospheric.
 
+A 🔔 button on the player also lets you turn off the pop-up notices for
+fleeing, medkits, and Last Stand specifically - handy once you know what
+they say and just want them out of the way. Everything else (like the
+Abandon Run confirmation) still shows regardless.
+
 ## Playing as a Guest
 
 Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your delves saved to your account and counted toward both leaderboards.

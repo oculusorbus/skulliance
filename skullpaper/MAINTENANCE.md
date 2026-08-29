@@ -224,6 +224,19 @@ records verified constants, and tracks what still needs to be written.
   deliberate, so it's noticed once before anyone turns it off) and whether a track is actually
   playing right now (`!audio.paused`) - "max ambience when media is playing," per the user,
   meaning pausing the music also stops the drift, not just muting it.
+- Crypt Crawl suppressible flow pop-ups (`#cc-audio-notif-toggle`, `cryptcrawlFlash()`'s optional
+  `$source` param, added 2026-08-29): `cryptcrawlFlash($msg, $type, $source = null)` in
+  cryptcrawl-actions.php tags the 3 specific flashes the user wanted a mute for -
+  `'flee'` (both the success and the "can't flee twice" messages), `'medkit'` (diminished-heal
+  notice), `'laststand'` - leaving everything else (e.g. Abandon Run's "Run abandoned.")
+  untagged/`null`, which is never suppressible. `cryptcrawlRenderGameArea()` writes it straight
+  through as `data-source` on each `.cc-flash-modal`. Client-side, purely cosmetic/local like the
+  zoom toggle: `cc_flow_notifs_enabled` in `sessionStorage` (default **on** - opt out, not opt in),
+  checked in `initGameArea()` right after finding `#cc-flash-backdrop` - removes just the tagged
+  `.cc-flash-modal` children whose `data-source` is in `SUPPRESSIBLE_FLASH_SOURCES`, then removes
+  the whole backdrop too only if that emptied it out entirely (an untagged flash queued alongside
+  a suppressed one, if that ever happens, still shows). Doesn't retroactively touch a flash modal
+  already on-screen when the button is toggled - only affects what shows up starting next render.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

@@ -93,7 +93,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<?php foreach ($flashes as $f):
 			$flash_icon = $f['type'] === 'win' ? '🎉' : (($f['type'] === 'loss' || $f['type'] === 'error') ? '⚠️' : 'ℹ️');
 		?>
-			<div class="cc-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
+			<div class="cc-flash-modal <?php echo htmlspecialchars($f['type']); ?>" data-source="<?php echo htmlspecialchars($f['source'] ?? ''); ?>">
 				<div class="cc-flash-icon"><?php echo $flash_icon; ?></div>
 				<div class="cc-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
 			</div>

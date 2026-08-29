@@ -8,8 +8,13 @@
 // one copy of the actual game-action logic instead of two that could
 // quietly drift apart.
 
-function cryptcrawlFlash($msg, $type = 'info') {
-	$_SESSION['cryptcrawl_flash'][] = ['msg' => $msg, 'type' => $type];
+// $source tags which flow the flash came from (e.g. 'flee'/'medkit'/
+// 'laststand') so the client can selectively suppress just those categories
+// (see the audio player's 🔕 button in cryptcrawl.php / #cc-flash-backdrop's
+// data-source in cryptcrawl-render.php) without touching untagged flashes
+// like Abandon Run's confirmation. null (the default) is never suppressible.
+function cryptcrawlFlash($msg, $type = 'info', $source = null) {
+	$_SESSION['cryptcrawl_flash'][] = ['msg' => $msg, 'type' => $type, 'source' => $source];
 }
 
 // Performs one Crypt Crawl action (start_run/play_card/flee/abandon) for
@@ -48,12 +53,12 @@ function cryptcrawlHandleAction($conn, $user_id, $post) {
 			$updated = cryptcrawlPlayCard($conn, intval($run['id']), $card_index, $use_weapon);
 			if ($diminished_potion) {
 				$half_heal = max(1, intval(intval($card_before['rank']) / 2));
-				cryptcrawlFlash("Half effect - you've already used a medkit this crypt. (+$half_heal HP)", 'info');
+				cryptcrawlFlash("Half effect - you've already used a medkit this crypt. (+$half_heal HP)", 'info', 'medkit');
 			}
 			// Last Stand fired this exact play if it was available going in
 			// and is now spent -- the only place that flag ever changes.
 			if ($second_wind_was_available && $updated && intval($updated['second_wind_used']) === 1) {
-				cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win');
+				cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win', 'laststand');
 			}
 		}
 
@@ -63,9 +68,9 @@ function cryptcrawlHandleAction($conn, $user_id, $post) {
 			$before = json_decode($run['room'], true) ?: [];
 			$updated = cryptcrawlFleeRoom($conn, intval($run['id']));
 			if ($updated && intval($updated['fled_last_room']) === 1 && count($before) === 4) {
-				cryptcrawlFlash('You slipped past that crypt.', 'info');
+				cryptcrawlFlash('You slipped past that crypt.', 'info', 'flee');
 			} else {
-				cryptcrawlFlash("Can't flee twice in a row - face the crypt.", 'error');
+				cryptcrawlFlash("Can't flee twice in a row - face the crypt.", 'error', 'flee');
 			}
 		}
 
