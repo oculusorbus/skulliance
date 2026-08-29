@@ -442,6 +442,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
 		</form>
 		<?php if ($fell): ?>
+		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
 		</div><!-- /cc-inner -->
 		</div><!-- /cc-theme-bg -->
 		<?php else: ?>
