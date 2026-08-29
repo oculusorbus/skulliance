@@ -196,7 +196,6 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-theme-bg::before {
 	content: ''; position: absolute; inset: 0; background-image: var(--theme-img);
 	background-size: cover; background-position: center; transition: background-image .6s ease;
-	will-change: transform; /* pre-promote the layer so starting the zoom (delayed in JS, see below) doesn't itself cause a jank spike */
 }
 /* Slow ambient zoom while the music is actually playing -- toggled in JS
    alongside the audio player's play/pause state. */
@@ -837,30 +836,17 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		audio.volume = getVolume() / 100;
 		if (volumeEl) volumeEl.value = getVolume();
 
-		var zoomTimer = null;
-		function setThemeZoom(active) {
-			// querySelectorAll because game_over(lost)/active each render their
-			// own .cc-theme-bg; no-ops fine on no_run/game_over(won), which
-			// have none.
-			document.querySelectorAll('.cc-theme-bg').forEach(function(el) {
-				el.classList.toggle('cc-zoom', active);
-			});
-		}
 		function updateToggleIcon() {
 			toggleBtn.textContent = (!audio.paused) ? '⏸' : '▶';
-			if (zoomTimer) { clearTimeout(zoomTimer); zoomTimer = null; }
-			if (audio.paused) {
-				setThemeZoom(false);
-			} else {
-				// Every game action reloads the whole page, so "starts playing"
-				// here coincides with the browser also having to buffer/decode
-				// the audio fresh. Kicking off a brand-new CSS animation (and
-				// the compositor layer promotion that comes with it) at that
-				// exact instant was audibly stuttering the track -- so delay
-				// the zoom slightly, past the moment playback actually settles
-				// in, instead of starting it the instant 'play' fires.
-				zoomTimer = setTimeout(function() { setThemeZoom(true); zoomTimer = null; }, 600);
-			}
+			// Slow ambient zoom on the theme art while music is actually
+			// playing -- a "vibe check," purely decorative. querySelectorAll
+			// because game_over(lost)/active each render their own
+			// .cc-theme-bg; no-ops fine on no_run/game_over(won), which have
+			// none. cc-zoom itself is a no-op animation-wise under
+			// prefers-reduced-motion (see that media query above).
+			document.querySelectorAll('.cc-theme-bg').forEach(function(el) {
+				el.classList.toggle('cc-zoom', !audio.paused);
+			});
 		}
 
 		function loadTrack(index, resumePosition) {
