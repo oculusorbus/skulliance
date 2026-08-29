@@ -508,6 +508,12 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 </div>
 <script>
 (function() {
+	// Baked straight in from the exact same $user_id PHP computed this page
+	// load with (top of file), not re-derived client-side from a DOM
+	// attribute -- same pattern skullswap.php uses for its own IS_LOGGED_IN.
+	// One less layer between "the server knows who's logged in" and "the
+	// button that depends on it."
+	var IS_LOGGED_IN = <?php echo $user_id > 0 ? 'true' : 'false'; ?>;
 	var gameArea = document.getElementById('cc-game-area');
 	// Assigned once the audio player sets itself up (below) -- exposed here
 	// so initGameArea() can call it again after every AJAX swap, since the
@@ -737,7 +743,7 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	// homepage. Delegated on document (like the submit listener below) so
 	// it survives every AJAX swap without needing to be re-attached to
 	// each button.
-	var IS_LOGGED_IN = document.querySelector('.cc-wrap').getAttribute('data-logged-in') === '1';
+	// (IS_LOGGED_IN itself is declared once, at the top of the enclosing IIFE.)
 	// Compares hostnames with any leading "www." stripped from both sides,
 	// not window.location.origin string-prefix matching -- the site is
 	// reachable as both skulliance.io and www.skulliance.io (the homepage
