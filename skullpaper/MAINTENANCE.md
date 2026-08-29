@@ -158,6 +158,12 @@ records verified constants, and tracks what still needs to be written.
   (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain range input,
   0-100) defaults to 50 - the source tracks are mixed loud - also persisted in `sessionStorage`
   (`cc_audio_volume`), applied straight to `audio.volume` and independent of track/position.
+  If the initial autoplay attempt is blocked (no prior trusted gesture on the origin - browser
+  policy, not bypassable from JS: synthetic clicks/`dispatchEvent` don't count, `AudioContext`
+  is gated identically), a one-time capturing listener on `window` for `pointerdown`/`keydown`/
+  `touchstart` retries `tryPlay()` off the very first real interaction anywhere on the page, not
+  just a tap on the player's own button - most players' first move is something else entirely
+  (Start Delve, playing a card).
 
 ---
 

@@ -852,7 +852,22 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		}
 
 		loadTrack(trackIndex, true);
-		if (enabled) tryPlay();
+		if (enabled) {
+			tryPlay();
+			// Browsers only allow unmuted autoplay off the back of a *trusted*
+			// user gesture -- nothing in JS can fake that (see Skull Paper /
+			// MAINTENANCE.md for why). If the tryPlay() above got blocked,
+			// catch the very first real interaction anywhere on the page --
+			// not just a tap on this player's own button -- and use it to
+			// start audio too, since a player's first move is usually
+			// something else entirely (Start Delve, playing a card).
+			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
+			var unlockAudio = function() {
+				unlockEvents.forEach(function(evt) { window.removeEventListener(evt, unlockAudio, true); });
+				if (audio.paused && getEnabled()) tryPlay();
+			};
+			unlockEvents.forEach(function(evt) { window.addEventListener(evt, unlockAudio, true); });
+		}
 		updateToggleIcon();
 
 		audio.addEventListener('timeupdate', function() { setPosition(audio.currentTime); });
