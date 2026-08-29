@@ -255,6 +255,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.skulliance.io/staking/cryptcrawlgame.php</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.skulliance.io/staking/gallery.php</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>daily</changefreq>
