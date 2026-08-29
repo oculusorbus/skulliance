@@ -168,6 +168,12 @@ records verified constants, and tracks what still needs to be written.
   read it) does a slow ambient zoom (`ccThemeZoom`, 18s ease-in-out, scale 1 -> 1.08 -> 1) only
   while a track is actually playing - toggled via the `.cc-zoom` class in the same play/pause
   handler that updates the toggle icon. Purely decorative; respects prefers-reduced-motion.
+  The `.cc-zoom` class add is deliberately delayed 600ms after `play` fires (`::before` also
+  carries `will-change: transform` up front) rather than added instantly - every game action
+  reloads the whole page, so playback starting coincides with the browser having to buffer the
+  audio fresh, and starting a brand-new CSS animation (compositor layer promotion included) at
+  that exact instant was audibly stuttering the track. Removed instantly on pause - no delay
+  needed there.
 
 ---
 
