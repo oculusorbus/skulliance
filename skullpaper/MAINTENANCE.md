@@ -102,6 +102,15 @@ records verified constants, and tracks what still needs to be written.
   heal half (floor, min 1) instead of nothing. Last Stand: first hit that would hit 0 HP per
   delve instead clamps to 1 HP, once per delve, automatic (internal column/var name stays
   second_wind_used - display-only rename, not worth a migration).
+- Crypt Crawl per-delve CARBON (db.php `cryptcrawlPayoutCarbon`, accrual in `cryptcrawlPlayCard`):
+  every card resolved (any type) adds `10 * rank` to `carbon_earned` on the run row, regardless
+  of outcome. Paid out via `updateBalance()` + `logCredit()` (project_id 15 = CARBON) in one lump
+  the moment the run actually ends (status guard, so it's a no-op on every other card played
+  while still active) -- called from both a natural win/loss in `cryptcrawlPlayCard` and a
+  deliberate `cryptcrawlAbandonRun`. Guest runs still accrue `carbon_earned` for the game_over
+  screen's display, but the payout itself is gated on a real DB row (`id > 0`) and never fires
+  for them. Requires a `carbon_earned` INT column on `cryptcrawls` (see the migration note in
+  the commit that added it).
 - Crypt Crawl leaderboard (db.php `checkCryptCrawlLeaderboard`/`resetCryptCrawls`, same shape
   as `checkGauntletsLeaderboard`): ranks by wins DESC, best single-run rooms_cleared ("crypt
   depth", 0-15) DESC, losses ASC. Only status won/lost runs count (not in-progress). Weekly

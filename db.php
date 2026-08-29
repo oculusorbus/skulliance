@@ -10815,9 +10815,9 @@ function cryptcrawlStartRun($conn, $user_id) {
 		$room_esc = $conn->real_escape_string($room_json);
 		$conn->query("
 			INSERT INTO cryptcrawls
-				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared, second_wind_used, reward)
+				(user_id, status, hp, max_hp, deck, room, weapon_power, weapon_name, weapon_beaten_rank, last_card_type, potion_used_this_room, fled_last_room, rooms_cleared, second_wind_used, reward, carbon_earned)
 			VALUES
-				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0)
+				($user_id, 'active', $hp, $hp, '$deck_esc', '$room_esc', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0)
 		");
 		return $conn->insert_id;
 	}
@@ -10828,6 +10828,7 @@ function cryptcrawlStartRun($conn, $user_id) {
 		'weapon_power' => null, 'weapon_name' => null, 'weapon_beaten_rank' => null,
 		'last_card_type' => null, 'potion_used_this_room' => 0, 'fled_last_room' => 0, 'rooms_cleared' => 0,
 		'second_wind_used' => 0, 'reward' => 0, // guest runs never reach the leaderboard anyway (no DB row at all)
+		'carbon_earned' => 0, // tracked for display even for guests, just never actually paid out (see cryptcrawlPayoutCarbon)
 	);
 	return 0;
 }
@@ -10867,6 +10868,15 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 	array_splice($room, $card_index, 1);
 	$room = array_values($room);
 	$run['room'] = json_encode($room);
+
+	// CARBON accrues per card resolved -- every type counts (a weapon
+	// equipped, a medkit drunk, an enemy fought), 10x the card's own rank, so
+	// it stacks up over the whole delve regardless of how it ends. Paid out
+	// in one lump via cryptcrawlPayoutCarbon() the moment the run actually
+	// ends (see below and cryptcrawlAbandonRun) -- not per card, since a
+	// mid-delve balance update would mean a DB write (and a real-money
+	// transaction) on every single click.
+	$run['carbon_earned'] = intval($run['carbon_earned'] ?? 0) + (10 * intval($card['rank']));
 
 	if ($card['type'] === 'weapon') {
 		$run['weapon_power']       = intval($card['rank']);
@@ -10925,6 +10935,7 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	$run['fled_last_room'] = 0; // resolving a card always clears the flee-lock
 	cryptcrawlSaveRun($conn, $run);
+	cryptcrawlPayoutCarbon($conn, $run);
 	cryptcrawlAnnounceResult($conn, $run);
 	return $run;
 }
@@ -10969,8 +10980,27 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 	if (!$run) return null;
 	$run['status'] = 'lost';
 	cryptcrawlSaveRun($conn, $run);
+	cryptcrawlPayoutCarbon($conn, $run);
 	cryptcrawlAnnounceResult($conn, $run);
 	return $run;
+}
+
+// Credits the CARBON a run accumulated (10x the rank of every card resolved,
+// win or lose -- see cryptcrawlPlayCard) the moment the run actually ends.
+// Called from both a natural completion and cryptcrawlAbandonRun; guarded on
+// status so it's a no-op on every other call while the run is still active
+// (cryptcrawlPlayCard calls this unconditionally after every card, not just
+// the run-ending one). Real accounts only -- a guest run has no DB row and
+// no balance to credit; carbon_earned still accrues for them, just purely
+// for display (see the game_over screen), never paid out.
+function cryptcrawlPayoutCarbon($conn, $run) {
+	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
+	$run_id = intval($run['id']);
+	$amount = intval($run['carbon_earned'] ?? 0);
+	if ($run_id <= 0 || $amount <= 0) return;
+	$user_id = intval($run['user_id']);
+	updateBalance($conn, $user_id, 15, $amount);
+	logCredit($conn, $user_id, $amount, 15);
 }
 
 // True if $depth is strictly deeper than this user's best rooms_cleared among
@@ -11086,6 +11116,7 @@ function cryptcrawlSaveRun($conn, $run) {
 	// game logic itself ever sets it; only resetCryptCrawls() does, after a
 	// weekly payout. Falls back to 0 for a freshly-inserted run's first save.
 	$reward                = intval($run['reward'] ?? 0);
+	$carbon_earned         = intval($run['carbon_earned'] ?? 0);
 
 	$conn->query("
 		UPDATE cryptcrawls SET
@@ -11093,7 +11124,8 @@ function cryptcrawlSaveRun($conn, $run) {
 			weapon_power = $weapon_power, weapon_name = $weapon_name,
 			weapon_beaten_rank = $weapon_beaten_rank, last_card_type = $last_card_type,
 			potion_used_this_room = $potion_used_this_room, fled_last_room = $fled_last_room,
-			rooms_cleared = $rooms_cleared, second_wind_used = $second_wind_used, reward = $reward, updated_at = NOW()
+			rooms_cleared = $rooms_cleared, second_wind_used = $second_wind_used, reward = $reward,
+			carbon_earned = $carbon_earned, updated_at = NOW()
 		WHERE id = $id
 	");
 }

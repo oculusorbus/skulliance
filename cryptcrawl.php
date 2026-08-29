@@ -331,6 +331,12 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-result.lost .cc-result-title { color: #ff7070; }
 .cc-result.won  .cc-result-title { color: #00c8a0; }
 .cc-result-sub { font-size: .85rem; color: rgba(255,255,255,.5); animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .3s both; }
+.cc-result-carbon {
+	margin-top: 10px; font-size: 1rem; font-weight: 700; color: #ffcc4d;
+	display: flex; align-items: center; justify-content: center; gap: 6px;
+	animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .4s both;
+}
+.cc-result-carbon img { width: 20px; height: 20px; object-fit: contain; }
 .cc-flee-row {
 	text-align: center; margin-bottom: 20px;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -339,7 +345,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 @media (prefers-reduced-motion: reduce) {
 	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-instructions-backdrop.show,
 	.cc-instructions-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
-	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
+	.cc-result-icon, .cc-result-title, .cc-result-sub, .cc-result-carbon { animation: none !important; }
 	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
 /* Mobile: cards and buttons at 75% scale, with the button panel pulled up
@@ -437,6 +443,17 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
 				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
 			</div>
+			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
+			<?php if ($user_id > 0 && $carbon_earned > 0): ?>
+				<!-- Guests never see this: carbon_earned still accrues for them
+				     (cryptcrawlPlayCard), but there's no account to actually
+				     credit (cryptcrawlPayoutCarbon no-ops on a guest run), so
+				     showing an amount they didn't really get would be misleading. -->
+				<div class="cc-result-carbon">
+					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
+					+<?php echo number_format($carbon_earned); ?> CARBON earned
+				</div>
+			<?php endif; ?>
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
