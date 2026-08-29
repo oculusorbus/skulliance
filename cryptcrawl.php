@@ -668,13 +668,13 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		<div class="cc-flee-row">
 			<div class="cc-flee-cell">
 				<form method="post"><input type="hidden" name="action" value="flee">
-					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee this crypt</button>
+					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee This Crypt</button>
 				</form>
 				<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
 			</div>
 			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
 				<input type="hidden" name="action" value="abandon">
-				<button type="submit" class="cc-btn secondary">🏳️ Abandon run</button>
+				<button type="submit" class="cc-btn secondary">🏳️ Abandon Run</button>
 			</form>
 			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
 			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
