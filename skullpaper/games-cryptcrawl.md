@@ -32,7 +32,7 @@ The **first hit that would take you to 0 HP** in a delve doesn't - it leaves you
 
 ## CARBON Per Delve
 
-Every card you resolve - a weapon equipped, a medkit used, an enemy fought, win or lose - earns **10x its own rank** in CARBON, stacking up over the whole delve. The moment your delve ends (cleared, died, or abandoned), the total is credited straight to your balance with a matching transaction, and the game_over screen shows how much you earned. Guest delves still show a running total for reference, but nothing is actually credited - there's no account to pay it into.
+Every card you resolve - a weapon equipped, a medkit used, an enemy fought, win or lose - earns **10x its own rank** in CARBON, stacking up over the whole delve. A running total is visible right in the HUD as you play, and the moment your delve ends (cleared, died, or abandoned), the total is credited straight to your balance with a matching transaction and shown again on the game_over screen. Logged-in players only - a guest's delve still tracks the same total internally, but neither the HUD nor the result screen shows it, since there's no account to actually pay it into.
 
 ## Leaderboard & Rewards
 
