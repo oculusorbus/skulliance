@@ -325,7 +325,13 @@ records verified constants, and tracks what still needs to be written.
   covering **every** Crypties NFT actually used as card art, built by iterating
   `CRYPTCRAWL_CARD_ART` against `cryptcrawlGetCardArt($conn)`'s resolved URLs (the exact same
   lookup the game itself uses, so the marquee can never drift out of sync with what's really in
-  the deck) + mechanics/tips/FAQ sections + a final CTA + a full-width "Go Back" row.
+  the deck) + mechanics/tips/FAQ sections + a final CTA + a footer (`.cc-footer`, matching
+  skullswap.php's own `.ss-footer` exactly). No "Go Back" button on this page - fixed 2026-08-29,
+  reported directly by the user ("the go back button doesn't make sense on the marketing landing
+  page and where is the footer like on skull swap?"). It's the front door of the funnel, not a
+  page a visitor drills into and needs an escape hatch from - Skull Swap's own landing has no Go
+  Back either, just its footer. Removed the row, its CSS, and its entire `ccIsSameSite()`/
+  `data-go-back` click-listener script block (nothing else on this page used it).
   `cryptcrawl.php` went back to being just the game - `$state` (`no_run`/`active`/`game_over`)
   computed from `cryptcrawlGetActiveRun()`/`cryptcrawlGetMostRecentRun()` same as before,
   `no_run` back to a simple rules+Start Delve prompt with a "Learn more about Crypt Crawl" link to
@@ -358,13 +364,13 @@ records verified constants, and tracks what still needs to be written.
   out the entire class of session/caching-coupling bugs structurally, rather than patching around
   one more instance of it.
   **"Go Back"** (`data-go-back`, one delegated `click` listener on `document` - survives every
-  AJAX swap without re-attaching, present on both files): a full-width row under every state's own
-  bottom buttons. On `cryptcrawlgame.php` (no game state at all) it falls straight back to the
-  public homepage. On `cryptcrawl.php` it prefers real browser history (`history.back()`, only
-  when the referrer is same-site and there's actually history to go back to) over a fixed
-  destination, falling back to `dashboard.php` for a logged-in visitor (`.cc-wrap`'s
-  `data-logged-in` attribute, read once) or the public homepage for a guest. **Same-site check
-  fixed 2026-08-29** - originally a plain `document.referrer.indexOf(window.location.origin) === 0`
+  AJAX swap without re-attaching): a full-width row under every state's own bottom buttons on
+  `cryptcrawl.php` only (see above - `cryptcrawlgame.php` dropped this entirely, it isn't a page
+  that needs one). Prefers real browser history (`history.back()`, only when the referrer is
+  same-site and there's actually history to go back to) over a fixed destination, falling back to
+  `dashboard.php` for a logged-in visitor (`.cc-wrap`'s `data-logged-in` attribute, read once) or
+  the public homepage for a guest. **Same-site check fixed 2026-08-29** - originally a plain
+  `document.referrer.indexOf(window.location.origin) === 0`
   string-prefix match, which broke for any visitor arriving from the bare domain: the public
   homepage lives at `https://skulliance.io/` (no `www`), while this page's own origin is
   `https://www.skulliance.io` - a referrer from the homepage therefore never starts with this

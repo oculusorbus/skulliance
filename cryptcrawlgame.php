@@ -208,8 +208,13 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 .cc-faq summary { cursor: pointer; font-weight: 700; color: #e8eaed; }
 .cc-faq p { margin: 10px 0 0; }
 .cc-final { text-align: center; background: linear-gradient(180deg, rgba(0,200,160,.08), transparent); border-radius: 18px; padding: 40px 24px; }
-.cc-go-back-row { margin-top: 10px; }
-.cc-go-back-row .cc-btn { width: 100%; }
+/* Footer -- matches skullswap.php's .ss-footer exactly. No "Go Back"
+   button on this page: it's the front door, not a page someone drills
+   into and needs an escape hatch from -- visitors arrive here from the
+   nav/homepage/a shared link, and this footer link plus the browser's
+   own back button cover it, same as Skull Swap's own landing. */
+.cc-footer { padding: 28px 20px; text-align: center; color: #8a96a3; font-size: .88rem; border-top: 1px solid rgba(255,255,255,.06); }
+.cc-footer a { color: #8a96a3; }
 </style>
 </head>
 <body>
@@ -352,37 +357,13 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 				<p>The deck is shuffled and waiting. No download. No signup. Just play.</p>
 				<a href="#" class="cc-cta" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;">💀 Start Delve</a>
 			</div>
-			<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 		</div>
 	</section>
+
+	<footer class="cc-footer">
+		<p>&copy; Skulliance &middot; Crypt Crawl is a free browser-based solo dungeon-delve card game. <a href="https://www.skulliance.io/">Visit Skulliance</a></p>
+	</footer>
 </div>
 </div>
-<script>
-(function() {
-	// "Go Back" -- same hostname-based same-site check as cryptcrawl.php
-	// (see that file for why: a plain origin string-prefix match breaks
-	// for a referrer from the bare skulliance.io domain vs this site's
-	// www.skulliance.io origin, even though they're the same site).
-	function ccIsSameSite(url) {
-		try {
-			var refHost = new URL(url).hostname.replace(/^www\./, '');
-			var curHost = window.location.hostname.replace(/^www\./, '');
-			return refHost === curHost;
-		} catch (e) {
-			return false;
-		}
-	}
-	document.addEventListener('click', function(e) {
-		var btn = e.target.closest ? e.target.closest('[data-go-back]') : null;
-		if (!btn) return;
-		e.preventDefault();
-		if (document.referrer && ccIsSameSite(document.referrer) && window.history.length > 1) {
-			window.history.back();
-		} else {
-			window.location.href = 'https://www.skulliance.io/';
-		}
-	});
-})();
-</script>
 </body>
 </html>
