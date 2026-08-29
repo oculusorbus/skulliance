@@ -333,10 +333,22 @@ records verified constants, and tracks what still needs to be written.
   **"Go Back"** (`data-go-back`, one delegated `click` listener on `document` - survives every
   AJAX swap without re-attaching): a full-width row under every state's own bottom buttons
   (landing, active's flee-row, game_over), since this page has zero site nav to fall back on
-  otherwise. Prefers real browser history (`history.back()`, only when `document.referrer` is
-  same-origin and there's actually history to go back to) over a fixed destination; falls back to
+  otherwise. Prefers real browser history (`history.back()`, only when the referrer is same-site
+  and there's actually history to go back to) over a fixed destination; falls back to
   `dashboard.php` for a logged-in visitor (`.cc-wrap`'s `data-logged-in` attribute, read once) or
-  the public homepage for a guest. Homepage integration (homepage.php): a third `.hp-game` card
+  the public homepage for a guest. **Same-site check fixed 2026-08-29** - originally a plain
+  `document.referrer.indexOf(window.location.origin) === 0` string-prefix match, which broke for
+  any visitor arriving from the bare domain: the public homepage lives at `https://skulliance.io/`
+  (no `www`), while this page's own origin is `https://www.skulliance.io` - a referrer from the
+  homepage therefore never starts with this page's origin string even though it's genuinely the
+  same site, so Go Back silently fell through to the fallback destination every time instead of
+  real history. Reported directly by the user ("hitting go back... takes you back to the
+  skulliance homepage" - the fallback firing when it shouldn't have) and reproduced/confirmed live
+  via `javascript_tool` before fixing (`document.referrer` from a real homepage click-through:
+  `https://skulliance.io/`, `window.location.origin` on cryptcrawl.php: `https://www.skulliance.io` -
+  old check `false`, correct answer `true`). Fixed with `ccIsSameSite()`: compares `new
+  URL(referrer).hostname` against `location.hostname`, both with a leading `www.` stripped, instead
+  of an origin string prefix. Homepage integration (homepage.php): a third `.hp-game` card
   alongside Monstrocity/Skull Swap, a third `VideoGame` entry in the JSON-LD `ItemList`, a
   standalone `.hp-shot-card` in the platform screenshots grid (hardcoded full path, not folded
   into the `$hp_shots` loop - that loop's shared `$hp_shot_base` points at `images/screenshots/`,

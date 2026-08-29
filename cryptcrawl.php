@@ -823,11 +823,29 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	// submit listener below) so it survives every AJAX swap without
 	// needing to be re-attached to each button.
 	var IS_LOGGED_IN = document.querySelector('.cc-wrap').getAttribute('data-logged-in') === '1';
+	// Compares hostnames with any leading "www." stripped from both sides,
+	// not window.location.origin string-prefix matching -- the site is
+	// reachable as both skulliance.io and www.skulliance.io (the homepage
+	// itself lives at the bare domain), so a visitor arriving from
+	// https://skulliance.io/ has a referrer that will never start with
+	// this page's own https://www.skulliance.io origin even though it's
+	// genuinely the same site. That mismatch was silently sending every
+	// "Go Back" press to the fallback destination instead of real history,
+	// even when the visitor really did just come from the homepage.
+	function ccIsSameSite(url) {
+		try {
+			var refHost = new URL(url).hostname.replace(/^www\./, '');
+			var curHost = window.location.hostname.replace(/^www\./, '');
+			return refHost === curHost;
+		} catch (e) {
+			return false;
+		}
+	}
 	document.addEventListener('click', function(e) {
 		var btn = e.target.closest ? e.target.closest('[data-go-back]') : null;
 		if (!btn) return;
 		e.preventDefault();
-		if (document.referrer && document.referrer.indexOf(window.location.origin) === 0 && window.history.length > 1) {
+		if (document.referrer && ccIsSameSite(document.referrer) && window.history.length > 1) {
 			window.history.back();
 		} else {
 			window.location.href = IS_LOGGED_IN ? 'dashboard.php' : 'https://www.skulliance.io/';
