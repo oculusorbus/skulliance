@@ -163,11 +163,7 @@ records verified constants, and tracks what still needs to be written.
   is gated identically), a one-time capturing listener on `window` for `pointerdown`/`keydown`/
   `touchstart` retries `tryPlay()` off the very first real interaction anywhere on the page, not
   just a tap on the player's own button - most players' first move is something else entirely
-  (Start Delve, playing a card). Theme art (`.cc-theme-bg::before`, backed by a `--theme-img`
-  CSS custom property rather than a plain inline `background-image` so the pseudo-element can
-  read it) does a slow ambient zoom (`ccThemeZoom`, 18s ease-in-out, scale 1 -> 1.08 -> 1) only
-  while a track is actually playing - toggled via the `.cc-zoom` class in the same play/pause
-  handler that updates the toggle icon. Purely decorative; respects prefers-reduced-motion.
+  (Start Delve, playing a card).
 
 ---
 
