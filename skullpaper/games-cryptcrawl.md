@@ -43,6 +43,14 @@ Every completed delve (won or lost - an in-progress one doesn't count yet) feeds
 
 Every delve you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel: how deep you got, illustrated with the theme art for the crypt you reached, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
 
+## Ambience
+
+A small music player sits below the buttons on every screen - play/pause and
+prev/next controls cycling between the theme song and its reprise. It's on by
+default; your on/off choice, current track, and playback position stick for
+the rest of your browser session, so a delve full of page reloads doesn't
+keep restarting the music from the top.
+
 ## Playing as a Guest
 
 Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your delves saved to your account and counted toward both leaderboards.

@@ -145,6 +145,17 @@ records verified constants, and tracks what still needs to be written.
   ranks, plus the top of the weapon and medkit ranges) carries the 17 Legendary pieces plus
   both Mythic pieces (Spades 6, Diamonds 6). Update CRYPTCRAWL_CARD_ART directly to change any
   card's art.
+- Crypt Crawl ambient player (cryptcrawl.php, markup+JS in the render section, `#cc-audio-player`):
+  two tracks committed straight into the repo (`audio/tracks/Crypt Crawl Theme.mp3`,
+  `audio/tracks/Crypt Crawl Reprise.mp3` - URL-encoded to `%20` for the spaces when referenced),
+  a deliberate one-off exception to this project's usual FTP-deployed-images convention, per the
+  user. Rendered unconditionally, outside the no_run/active/game_over chain, so it's in the same
+  spot below the bottom buttons on every state. On/off, current track index, and `currentTime`
+  persist in `sessionStorage` (not the PHP session) - required because this is a full-page-reload
+  app (every action is POST->redirect->GET); without it the music would restart from 0:00 on
+  every single card played. Defaults on and attempts to autoplay; browsers that block autoplay
+  without a prior user gesture just leave it paused until the toggle is tapped. Auto-advances
+  (cycles) to the other track on `ended`.
 
 ---
 

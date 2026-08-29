@@ -328,6 +328,21 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-note { font-size: 0.68rem; opacity: 0.5; margin-top: 4px; }
 .cc-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
+/* Ambient music player -- sits below every state's bottom buttons (in normal
+   flow, not fixed) so it's always in the same spot regardless of no_run /
+   active / game_over. Deliberately minimal: 3 icon buttons + a track name. */
+.cc-audio-player {
+	max-width: 720px; margin: 14px auto 0; display: flex; align-items: center; gap: 8px;
+	background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+	padding: 8px 14px; box-sizing: border-box; font-size: 0.72rem; color: #9fb4c2;
+}
+.cc-audio-btn {
+	background: none; border: none; color: #c8dce8; cursor: pointer;
+	font-size: 1rem; line-height: 1; padding: 0; border-radius: 50%; flex: none;
+	display: flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+}
+.cc-audio-btn:hover { background: rgba(255,255,255,.1); }
+.cc-audio-track { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cc-result {
 	text-align: center; border-radius: 12px; padding: 30px 20px; margin-bottom: 20px; box-sizing: border-box;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -693,6 +708,20 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			</div>
 		</div>
 	<?php endif; ?>
+
+	<!-- Ambient music player -- unconditional (outside the no_run/active/
+	     game_over chain above) so it's present on every state, always in the
+	     same spot below whatever that state's bottom buttons are. Playback
+	     state (on/off, track, position) persists in sessionStorage: this is
+	     a full-page-reload app (every action is a POST->redirect->GET), so
+	     without that the music would restart from 0:00 on every click. -->
+	<div class="cc-audio-player" id="cc-audio-player">
+		<button type="button" class="cc-audio-btn" id="cc-audio-prev" title="Previous track">⏮</button>
+		<button type="button" class="cc-audio-btn" id="cc-audio-toggle" title="Play/Pause">▶</button>
+		<button type="button" class="cc-audio-btn" id="cc-audio-next" title="Next track">⏭</button>
+		<span class="cc-audio-track" id="cc-audio-track-name">Crypt Crawl Theme</span>
+	</div>
+	<audio id="cc-audio-el" preload="metadata"></audio>
 </div>
 <script>
 (function() {
@@ -743,6 +772,102 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			});
 		}
 	}
+
+	// Ambient music player. Two tracks, cycled on 'ended'. State (on/off,
+	// which track, playback position) lives in sessionStorage because this
+	// page reloads on every single game action -- without saving position,
+	// the music would restart from 0:00 on every card played.
+	(function() {
+		var audio = document.getElementById('cc-audio-el');
+		var toggleBtn = document.getElementById('cc-audio-toggle');
+		var prevBtn = document.getElementById('cc-audio-prev');
+		var nextBtn = document.getElementById('cc-audio-next');
+		var trackNameEl = document.getElementById('cc-audio-track-name');
+		if (!audio || !toggleBtn) return;
+
+		var TRACKS = [
+			{ name: 'Crypt Crawl Theme', src: 'audio/tracks/Crypt%20Crawl%20Theme.mp3' },
+			{ name: 'Crypt Crawl Reprise', src: 'audio/tracks/Crypt%20Crawl%20Reprise.mp3' }
+		];
+
+		function getEnabled() {
+			var v = sessionStorage.getItem('cc_audio_enabled');
+			return v === null ? true : v === '1'; // ambience on by default
+		}
+		function setEnabled(v) { try { sessionStorage.setItem('cc_audio_enabled', v ? '1' : '0'); } catch (e) {} }
+		function getTrackIndex() {
+			var v = parseInt(sessionStorage.getItem('cc_audio_track'), 10);
+			return (v === 0 || v === 1) ? v : 0;
+		}
+		function setTrackIndex(v) { try { sessionStorage.setItem('cc_audio_track', String(v)); } catch (e) {} }
+		function getPosition() {
+			var v = parseFloat(sessionStorage.getItem('cc_audio_position'));
+			return isNaN(v) ? 0 : v;
+		}
+		function setPosition(v) { try { sessionStorage.setItem('cc_audio_position', String(v)); } catch (e) {} }
+
+		var trackIndex = getTrackIndex();
+		var enabled = getEnabled();
+
+		function updateToggleIcon() {
+			toggleBtn.textContent = (!audio.paused) ? '⏸' : '▶';
+		}
+
+		function loadTrack(index, resumePosition) {
+			trackIndex = index;
+			setTrackIndex(index);
+			trackNameEl.textContent = TRACKS[index].name;
+			audio.src = TRACKS[index].src;
+			if (resumePosition) {
+				var resumeAt = getPosition();
+				audio.addEventListener('loadedmetadata', function once() {
+					audio.currentTime = resumeAt;
+					audio.removeEventListener('loadedmetadata', once);
+				});
+			}
+			audio.load();
+		}
+
+		function tryPlay() {
+			var p = audio.play();
+			if (p && p.catch) {
+				// Autoplay blocked -- normal on a fresh visit with no prior
+				// interaction yet. Leave it paused/ready; the toggle button
+				// (or any click that lands after this) will work.
+				p.catch(function() { updateToggleIcon(); });
+			}
+		}
+
+		loadTrack(trackIndex, true);
+		if (enabled) tryPlay();
+		updateToggleIcon();
+
+		audio.addEventListener('timeupdate', function() { setPosition(audio.currentTime); });
+		audio.addEventListener('play', updateToggleIcon);
+		audio.addEventListener('pause', updateToggleIcon);
+		audio.addEventListener('ended', function() {
+			setPosition(0);
+			loadTrack((trackIndex + 1) % TRACKS.length, false);
+			tryPlay();
+		});
+
+		toggleBtn.addEventListener('click', function() {
+			if (audio.paused) { setEnabled(true); tryPlay(); }
+			else { setEnabled(false); audio.pause(); }
+		});
+		prevBtn.addEventListener('click', function() {
+			setPosition(0);
+			loadTrack((trackIndex - 1 + TRACKS.length) % TRACKS.length, false);
+			setEnabled(true);
+			tryPlay();
+		});
+		nextBtn.addEventListener('click', function() {
+			setPosition(0);
+			loadTrack((trackIndex + 1) % TRACKS.length, false);
+			setEnabled(true);
+			tryPlay();
+		});
+	})();
 
 	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
 	// nudging it to its real data-target-width one frame later animates the
