@@ -177,6 +177,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-hp-wrap.low .cc-hp-bar-bg { animation: ccPulse 1.1s ease-in-out infinite; border-radius: 6px; }
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
 .cc-second-wind { color: #00c8a0; font-weight: 700; white-space: nowrap; }
+.cc-second-wind.used { color: rgba(255,255,255,.4); }
 .cc-weapon-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cc-card { text-align: center; }
@@ -427,6 +428,12 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 					<span>HP <?php echo $hp; ?> / <?php echo $max_hp; ?></span>
 					<?php if (intval($active_run['second_wind_used'] ?? 0) === 0): ?>
 						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Last Stand ready</span>
+					<?php else: ?>
+						<!-- Previously just vanished with no state to check -- a player
+						     couldn't glance at the HUD mid-run and confirm whether
+						     they'd already spent it (only a flash toast said so, and
+						     it auto-dismisses in 4s). Shown explicitly now instead. -->
+						<span class="cc-second-wind used" title="Already used this delve -- the next lethal hit ends it for real.">🛡️ Last Stand used</span>
 					<?php endif; ?>
 				</div>
 				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" data-target-width="<?php echo 100 - $hp_pct; ?>" style="width:100%;"></div></div>
