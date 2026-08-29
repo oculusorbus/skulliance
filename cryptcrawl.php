@@ -137,23 +137,41 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 @keyframes ccCardFlip { from { transform: rotateY(180deg); } to { transform: rotateY(0deg); } }
 @keyframes ccResultPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes ccFlashIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ccFlashBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ccFlashModalIn { from { opacity: 0; transform: scale(.85) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes ccPulse { 0%, 100% { box-shadow: 0 0 0 rgba(255,68,68,0); } 50% { box-shadow: 0 0 16px 2px rgba(255,68,68,.65); } }
 @keyframes ccBtnSheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(220%) skewX(-20deg); } }
 
 .cc-wrap { padding: 20px 16px 60px; }
 .cc-inner { max-width: 720px; width: 100%; margin: 0 auto; }
-/* Floats over the game instead of sitting in normal document flow at the top
-   of the page -- the old in-flow placement pushed the HUD/room down every
-   time a flash fired, and stuck around "hanging" there until the next action
-   reloaded the page. pointer-events:none on the stack so it never blocks a
-   tap on whatever's underneath; each toast still gets its own auto-dismiss
-   (see the bottom script block) so it clears itself instead of lingering. */
-.cc-flash-stack { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 460px); pointer-events: none; }
-.cc-flash { padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; text-align: center; background: rgba(5,12,20,.92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: ccFlashIn .4s ease both; }
-.cc-flash.win  { border: 1px solid rgba(0,200,160,.5); color: #00c8a0; }
-.cc-flash.loss { border: 1px solid rgba(255,68,68,.5); color: #ff7070; }
-.cc-flash.error{ border: 1px solid rgba(255,68,68,.5); color: #ff7070; }
-.cc-flash.info { border: 1px solid rgba(255,255,255,.25); color: #c8dce8; }
+/* A real modal instead of an edge/corner toast -- a small floating banner
+   was easy to miss entirely on mobile (fixed-position elements can end up
+   fighting the browser's own address-bar chrome, and a corner is rarely
+   where the eye is looking right after tapping a button). The backdrop
+   covers and dims the whole game, blocking taps on whatever's underneath
+   until it's dismissed -- tapping anywhere closes it, and it also
+   auto-dismisses on its own (see the bottom script block) so it never
+   blocks play if left alone. */
+.cc-flash-backdrop {
+	position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.65);
+	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+	padding: 24px; box-sizing: border-box; cursor: pointer;
+	animation: ccFlashBackdropIn .25s ease both;
+}
+.cc-flash-modal {
+	background: rgba(10,16,24,.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+	border-radius: 16px; padding: 26px 24px; max-width: 380px; width: 100%; box-sizing: border-box;
+	text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+	animation: ccFlashModalIn .35s cubic-bezier(.18,.89,.32,1.28) both;
+}
+.cc-flash-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
+.cc-flash-text { font-size: 1rem; font-weight: 700; line-height: 1.4; }
+.cc-flash-modal.win  { border: 1px solid rgba(0,200,160,.5); }
+.cc-flash-modal.win .cc-flash-text { color: #00c8a0; }
+.cc-flash-modal.loss, .cc-flash-modal.error { border: 1px solid rgba(255,68,68,.5); }
+.cc-flash-modal.loss .cc-flash-text, .cc-flash-modal.error .cc-flash-text { color: #ff7070; }
+.cc-flash-modal.info { border: 1px solid rgba(255,255,255,.25); }
+.cc-flash-modal.info .cc-flash-text { color: #c8dce8; }
 .cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
 .cc-hud {
 	display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both;
@@ -305,7 +323,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 	border-radius: 12px; padding: 14px; box-sizing: border-box;
 }
 @media (prefers-reduced-motion: reduce) {
-	.cc-card-flip-inner, .cc-card-controls, .cc-flash, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
+	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
 	.cc-result-icon, .cc-result-title, .cc-result-sub { animation: none !important; }
 	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
@@ -354,9 +372,14 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 <div class="cc-wrap">
 <div class="cc-inner">
 	<?php if ($flashes): ?>
-	<div class="cc-flash-stack">
-		<?php foreach ($flashes as $f): ?>
-			<div class="cc-flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
+	<div class="cc-flash-backdrop" id="cc-flash-backdrop">
+		<?php foreach ($flashes as $f):
+			$flash_icon = $f['type'] === 'win' ? '🎉' : (($f['type'] === 'loss' || $f['type'] === 'error') ? '⚠️' : 'ℹ️');
+		?>
+			<div class="cc-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
+				<div class="cc-flash-icon"><?php echo $flash_icon; ?></div>
+				<div class="cc-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
+			</div>
 		<?php endforeach; ?>
 	</div>
 	<?php endif; ?>
@@ -587,23 +610,30 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 </div>
 <script>
 (function() {
-	// Flash toasts float over the game now instead of sitting in the page
-	// flow, so nothing dismisses them automatically the way scrolling past an
-	// in-flow banner used to -- clear each one on a timer instead of letting
-	// it sit there until the next action reloads the page. Reduced-motion
-	// still gets the timed removal, just without the opacity transition.
+	// Flash notifications are a real modal now (backdrop + centered card),
+	// not a small corner toast -- easy to miss on mobile, especially fixed-
+	// position elements fighting the browser's own address-bar chrome.
+	// Dismissible by tapping anywhere (nothing inside is interactive, so a
+	// tap on the card itself is just as valid as tapping the dimmed area
+	// around it) and auto-dismisses on its own after a hold so it never
+	// blocks play if left alone. Reduced-motion still gets the timed
+	// removal, just without the fade transition.
 	var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	document.querySelectorAll('.cc-flash').forEach(function(el) {
-		setTimeout(function() {
+	var flashBackdrop = document.getElementById('cc-flash-backdrop');
+	if (flashBackdrop) {
+		var dismissFlash = function() {
+			if (!flashBackdrop.isConnected) return; // already dismissed
 			if (reduceMotion) {
-				el.remove();
+				flashBackdrop.remove();
 				return;
 			}
-			el.style.transition = 'opacity .4s ease';
-			el.style.opacity = '0';
-			setTimeout(function() { el.remove(); }, 400);
-		}, 4000);
-	});
+			flashBackdrop.style.transition = 'opacity .3s ease';
+			flashBackdrop.style.opacity = '0';
+			setTimeout(function() { flashBackdrop.remove(); }, 300);
+		};
+		flashBackdrop.addEventListener('click', dismissFlash);
+		setTimeout(dismissFlash, 4000);
+	}
 
 	// HP bar renders fully covered (width:100%, i.e. empty-looking) so that
 	// nudging it to its real data-target-width one frame later animates the
