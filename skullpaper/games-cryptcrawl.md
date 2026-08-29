@@ -54,6 +54,14 @@ reload the page either - fighting, healing, fleeing, all of it updates in
 place - so the music just keeps playing straight through a delve instead of
 restarting.
 
+The music also reacts to how the delve is actually going, automatically:
+score a win and Triumph plays; die and it's Death instead. Land in a crypt
+where every enemy still standing would force your Last Stand no matter how
+well you play it, and the music turns Frantic; if Last Stand is already
+spent and that's still true, it turns to Doom - there's no safety net left.
+None of these four are reachable through prev/next - the only way to hear
+Triumph is to actually win.
+
 ## Playing as a Guest
 
 Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your delves saved to your account and counted toward both leaderboards.

@@ -162,6 +162,31 @@ records verified constants, and tracks what still needs to be written.
   `AudioContext` is gated identically - hard browser policy, confirmed, not a gap in this code).
   Auto-advances (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain
   range input, 0-100) defaults to 50 - the source tracks are mixed loud.
+- Crypt Crawl situational music (`#cc-mood`, added 2026-08-29 ahead of the actual audio files
+  existing - tracks TBD from the user, wired as if they're already there): `cryptcrawlRenderGameArea()`
+  computes `$cc_mood` (`normal`/`frantic`/`doom`/`death`/`triumph`) from the same state it already
+  has and emits it as a `data-mood` attribute on a hidden `#cc-mood` marker div, the very first
+  thing the function echoes (stable across every state's own div-open/close dance further down).
+  `game_over`: `triumph` on a win, `death` on a loss. `active`: for every monster still in the
+  room, best-case damage = rank minus equipped weapon's power if the weapon can beat it (current
+  gear only, no lookahead into playing the room's own weapon card first - deliberately a simple
+  "can't survive this with what I've got right now" check, not a full solver over which 3 of 4
+  cards to resolve and in what order) else the full rank; if any monster's best-case damage >=
+  current HP, that's an unavoidable Last-Stand-triggering hit either way you play it -
+  `frantic` if `second_wind_used` is still 0 (the safety net is about to fire), `doom` if it's
+  already 1 (no net left, next hit like that is real). Client-side (cryptcrawl.php's audio-player
+  IIFE): `MOOD_TRACKS` is a separate map from the normal-loop `TRACKS` array on purpose - prev/
+  next only ever touch `TRACKS`, so a mood track is never reachable by cycling, only by the game
+  itself demanding it. `syncMood()` (exposed to the outer `initGameArea()` via a closure variable,
+  called after every AJAX swap - see the actions entry above) diffs the new `data-mood` against a
+  `currentMood` JS var and only switches when it actually changed, so it never interrupts
+  something already playing for no reason. Frantic/Doom loop natively (`audio.loop = true`) since
+  they're an ongoing state, not an event; Death/Triumph are one-shot (`ended` falls back to
+  resuming the normal loop, not silence). An `error` listener falls back to the normal loop too,
+  guarded against retrying forever - covers a mood file that's 404 (not generated/uploaded yet)
+  without leaving the player on dead silent audio. Manually pressing prev/next while a mood track
+  is playing hands control back to the normal loop immediately (`loadTrack()` always resets
+  `currentMood` to `normal`) and stays there until the mood value itself next changes.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

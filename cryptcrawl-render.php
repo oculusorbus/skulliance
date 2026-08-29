@@ -42,7 +42,46 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 
 	$suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
 	$suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
+
+	// Ambient-music "mood" -- read by the audio player in cryptcrawl.php's
+	// script block (see #cc-mood below) to swap in one of the 4 situational
+	// tracks (Frantic/Doom/Death/Triumph), or fall back to the normal
+	// Theme/Reprise loop. Computed server-side, from the same state the
+	// rest of this function already has, so the client never needs to know
+	// any game rules -- it just reacts to a value.
+	//   - death/triumph: the delve just ended (loss/win).
+	//   - frantic: Last Stand is still available, but every monster still in
+	//     this room would drop the player to (or past) 0 HP even with the
+	//     best possible weapon reduction -- i.e. even playing perfectly,
+	//     using Last Stand this room is unavoidable.
+	//   - doom: same lethal-threat check, but Last Stand is already spent --
+	//     there's no safety net left, so the next such hit is a real death.
+	// Deliberately a simple "any monster the player can't survive with
+	// current gear" check, not a full game-tree solver over which 3 of 4
+	// cards to resolve and in what order -- good enough to catch a genuinely
+	// inescapable spot without trying to out-think every edge case.
+	$cc_mood = 'normal';
+	if ($state === 'game_over') {
+		$cc_mood = ($recent_run['status'] === 'won') ? 'triumph' : 'death';
+	} elseif ($state === 'active') {
+		$mood_room = json_decode($active_run['room'], true) ?: [];
+		$mood_hp = intval($active_run['hp']);
+		$mood_weapon_power = $active_run['weapon_power'] !== null ? intval($active_run['weapon_power']) : null;
+		$mood_weapon_beaten_rank = $active_run['weapon_beaten_rank'] !== null ? intval($active_run['weapon_beaten_rank']) : null;
+		$lethal_threat = false;
+		foreach ($mood_room as $mood_card) {
+			if ($mood_card['type'] !== 'monster') continue;
+			$mood_rank = intval($mood_card['rank']);
+			$mood_weapon_helps = $mood_weapon_power !== null && ($mood_weapon_beaten_rank === null || $mood_rank <= $mood_weapon_beaten_rank);
+			$mood_best_case_damage = $mood_weapon_helps ? max(0, $mood_rank - $mood_weapon_power) : $mood_rank;
+			if ($mood_best_case_damage >= $mood_hp) { $lethal_threat = true; break; }
+		}
+		if ($lethal_threat) {
+			$cc_mood = (intval($active_run['second_wind_used'] ?? 0) === 1) ? 'doom' : 'frantic';
+		}
+	}
 ?>
+<div id="cc-mood" data-mood="<?php echo htmlspecialchars($cc_mood); ?>" style="display:none;"></div>
 <div class="cc-inner">
 	<?php if ($flashes): ?>
 	<div class="cc-flash-backdrop" id="cc-flash-backdrop">

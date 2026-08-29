@@ -392,6 +392,10 @@ include 'header.php';
 <script>
 (function() {
 	var gameArea = document.getElementById('cc-game-area');
+	// Assigned once the audio player sets itself up (below) -- exposed here
+	// so initGameArea() can call it again after every AJAX swap, since the
+	// server recomputes #cc-mood fresh on every render.
+	var syncMood = null;
 
 	// .cc-theme-bg sizing -- one resize listener attached once below (not
 	// re-added on every AJAX swap, which would stack up a fresh listener
@@ -537,6 +541,13 @@ include 'header.php';
 				});
 			});
 		}
+
+		// Re-check the situational music track (Frantic/Doom/Death/Triumph
+		// vs. the normal loop) against whatever #cc-mood the server just
+		// rendered. null on the very first call (page load) -- the audio
+		// player checks its own initial mood itself once it sets up, just
+		// below this function in source order.
+		if (syncMood) syncMood();
 	}
 
 	initGameArea();
@@ -599,6 +610,17 @@ include 'header.php';
 			{ name: 'Crypt Crawl Theme', src: 'audio/tracks/Crypt%20Crawl%20Theme.mp3' },
 			{ name: 'Crypt Crawl Reprise', src: 'audio/tracks/Crypt%20Crawl%20Reprise.mp3' }
 		];
+		// Situational tracks the game itself cues up (see #cc-mood, set by
+		// cryptcrawlRenderGameArea() in cryptcrawl-render.php) -- deliberately
+		// NOT part of TRACKS above, so prev/next can never cycle to them.
+		// The only way to hear Triumph is to actually win.
+		var MOOD_TRACKS = {
+			frantic: { name: 'Crypt Crawl Frantic', src: 'audio/tracks/Crypt%20Crawl%20Frantic.mp3', loop: true },
+			doom:    { name: 'Crypt Crawl Doom',    src: 'audio/tracks/Crypt%20Crawl%20Doom.mp3',    loop: true },
+			death:   { name: 'Crypt Crawl Death',   src: 'audio/tracks/Crypt%20Crawl%20Death.mp3',   loop: false },
+			triumph: { name: 'Crypt Crawl Triumph', src: 'audio/tracks/Crypt%20Crawl%20Triumph.mp3', loop: false }
+		};
+		var currentMood = 'normal';
 
 		function getEnabled() {
 			var v = sessionStorage.getItem('cc_audio_enabled');
@@ -632,6 +654,8 @@ include 'header.php';
 		}
 
 		function loadTrack(index, resumePosition) {
+			currentMood = 'normal'; // back to the regular loop -- also resets any stale loop flag a mood track left set
+			audio.loop = false;
 			trackIndex = index;
 			setTrackIndex(index);
 			trackNameEl.textContent = TRACKS[index].name;
@@ -675,14 +699,62 @@ include 'header.php';
 		}
 		updateToggleIcon();
 
-		audio.addEventListener('timeupdate', function() { setPosition(audio.currentTime); });
+		// Only track position for the normal loop -- while a mood track (see
+		// below) is playing, its currentTime has nothing to do with where
+		// the normal loop should resume, and would corrupt that saved spot.
+		audio.addEventListener('timeupdate', function() { if (currentMood === 'normal') setPosition(audio.currentTime); });
 		audio.addEventListener('play', updateToggleIcon);
 		audio.addEventListener('pause', updateToggleIcon);
 		audio.addEventListener('ended', function() {
+			// Death/Triumph are one-shot stings, not loops -- once one
+			// finishes, fall back to the normal loop rather than sitting in
+			// silence (a fresh delve's own state change will re-cue the
+			// right mood again if needed, e.g. game_over -> no_run).
+			if (currentMood === 'death' || currentMood === 'triumph') {
+				loadTrack(getTrackIndex(), true);
+				tryPlay();
+				return;
+			}
+			// Frantic/Doom loop natively (audio.loop = true) so 'ended'
+			// shouldn't fire for them at all -- guard anyway, just in case.
+			if (currentMood !== 'normal') return;
 			setPosition(0);
 			loadTrack((trackIndex + 1) % TRACKS.length, false);
 			tryPlay();
 		});
+		audio.addEventListener('error', function() {
+			// A mood track that hasn't been generated/uploaded yet (or any
+			// other load failure) shouldn't leave the player stuck on dead,
+			// silent audio -- fall back to the normal loop. Guarded so a
+			// genuine failure loading a *normal* track can't retry forever.
+			if (currentMood !== 'normal') {
+				loadTrack(getTrackIndex(), true);
+				if (getEnabled()) tryPlay();
+			}
+		});
+
+		// Cued automatically by the server (#cc-mood, set in
+		// cryptcrawlRenderGameArea()) -- never reachable via prev/next, so a
+		// player can't skip straight to Triumph without actually winning.
+		syncMood = function() {
+			var moodEl = document.getElementById('cc-mood');
+			var mood = moodEl ? moodEl.getAttribute('data-mood') : 'normal';
+			if (!mood || mood === currentMood) return; // no change -- don't interrupt what's already playing
+			if (mood === 'normal') {
+				loadTrack(getTrackIndex(), true); // resumes the normal loop where it left off
+				if (getEnabled()) tryPlay();
+				return;
+			}
+			var special = MOOD_TRACKS[mood];
+			if (!special) return; // unrecognized value -- ignore rather than break
+			currentMood = mood;
+			audio.loop = special.loop;
+			trackNameEl.textContent = special.name;
+			audio.src = special.src;
+			audio.load();
+			if (getEnabled()) tryPlay();
+		};
+		syncMood(); // handle whatever mood the very first render already has
 
 		toggleBtn.addEventListener('click', function() {
 			if (audio.paused) { setEnabled(true); tryPlay(); }
