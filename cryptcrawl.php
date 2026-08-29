@@ -210,7 +210,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-weapon { font-size: 0.8rem; opacity: 0.8; display: flex; align-items: center; gap: 6px; }
 .cc-second-wind { color: #00c8a0; font-weight: 700; white-space: nowrap; }
 .cc-second-wind.used { color: rgba(255,255,255,.4); }
-.cc-hud-carbon { display: inline-flex; align-items: center; gap: 3px; color: #ffcc4d; font-weight: 700; white-space: nowrap; }
+.cc-hud-carbon { display: inline-flex; align-items: center; gap: 3px; color: #ffcc4d; font-weight: 700; white-space: nowrap; margin-left: auto; }
 .cc-hud-carbon img { width: 14px; height: 14px; object-fit: contain; }
 .cc-weapon-icon { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
 .cc-room { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
@@ -496,19 +496,6 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 					<span>HP <?php echo $hp; ?> / <?php echo $max_hp; ?></span>
-					<?php if ($user_id > 0): ?>
-						<!-- Running total, updates every card (10x its rank -- see
-						     cryptcrawlPlayCard in db.php) so it's visible building up
-						     over the whole delve, not just revealed at the end. Guests
-						     don't see it here either: it exists for them too (accrues
-						     in the guest session run same as a real one), but showing
-						     a live "earning" counter for something that'll never
-						     actually pay out reads as more misleading mid-game than it
-						     does as a one-time number on the result screen. -->
-						<span class="cc-hud-carbon" title="CARBON earned so far this delve">
-							<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
-						</span>
-					<?php endif; ?>
 					<?php if (intval($active_run['second_wind_used'] ?? 0) === 0): ?>
 						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Last Stand ready</span>
 					<?php else: ?>
@@ -517,6 +504,22 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 						     they'd already spent it (only a flash toast said so, and
 						     it auto-dismisses in 4s). Shown explicitly now instead. -->
 						<span class="cc-second-wind used" title="Already used this delve -- the next lethal hit ends it for real.">🛡️ Last Stand used</span>
+					<?php endif; ?>
+					<?php if ($user_id > 0): ?>
+						<!-- Running total, updates every card (10x its rank -- see
+						     cryptcrawlPlayCard in db.php) so it's visible building up
+						     over the whole delve, not just revealed at the end. Pushed
+						     to the far right of the row (margin-left:auto) instead of
+						     sitting in DOM order after HP -- HP/Last Stand cluster on
+						     the left, this stands apart on the right. Guests don't see
+						     it here either: it exists for them too (accrues in the
+						     guest session run same as a real one), but showing a live
+						     "earning" counter for something that'll never actually pay
+						     out reads as more misleading mid-game than it does as a
+						     one-time number on the result screen. -->
+						<span class="cc-hud-carbon" title="CARBON earned so far this delve">
+							<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
+						</span>
 					<?php endif; ?>
 				</div>
 				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" data-target-width="<?php echo 100 - $hp_pct; ?>" style="width:100%;"></div></div>
