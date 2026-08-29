@@ -346,10 +346,18 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-result-carbon img { width: 20px; height: 20px; object-fit: contain; }
 .cc-flee-row {
+	display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
 	text-align: center; margin-bottom: 20px;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 	border-radius: 12px; padding: 14px; box-sizing: border-box;
 }
+/* Flee's button and its conditional "can't flee" note need to land in the
+   SAME grid cell, not two -- otherwise a 3-button-plus-a-note layout would
+   throw off the clean 2x2 (5 items instead of 4) exactly when the note is
+   showing. */
+.cc-flee-cell { display: flex; flex-direction: column; }
+.cc-flee-cell form { height: 100%; }
+.cc-flee-cell .cc-btn { height: 100%; }
 @media (prefers-reduced-motion: reduce) {
 	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-instructions-backdrop.show,
 	.cc-instructions-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
@@ -658,15 +666,18 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		</div>
 
 		<div class="cc-flee-row">
-			<form method="post"><input type="hidden" name="action" value="flee">
-				<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee this crypt</button>
-			</form>
-			<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
-			<form method="post" style="margin-top:8px;" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
+			<div class="cc-flee-cell">
+				<form method="post"><input type="hidden" name="action" value="flee">
+					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee this crypt</button>
+				</form>
+				<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
+			</div>
+			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
 				<input type="hidden" name="action" value="abandon">
-				<button type="submit" class="cc-btn secondary" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;">🏳️ Abandon run</button>
+				<button type="submit" class="cc-btn secondary">🏳️ Abandon run</button>
 			</form>
-			<button type="button" class="cc-btn secondary" id="cc-instructions-btn" style="font-size:0.68rem;opacity:0.6;padding:4px 8px;margin-top:8px;">📖 View Instructions</button>
+			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
+			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
 		</div>
 		</div><!-- /cc-inner -->
 		</div><!-- /cc-theme-bg -->
