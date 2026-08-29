@@ -34,7 +34,7 @@ records verified constants, and tracks what still needs to be written.
 | games-boss-battles.md *(new)*       | Boss encounters        | ajax/get-bosses.php, db.php:5139-5258 |
 | games-skull-swap.md *(new)*         | Match-3 score chase    | skullswap.php, db.php:5019-5136 |
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
-| games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawl.php, cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
+| games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-drop-ship.md                  | External game          | madballs.net (external) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
@@ -309,81 +309,80 @@ records verified constants, and tracks what still needs to be written.
   the whole backdrop too only if that emptied it out entirely (an untagged flash queued alongside
   a suppressed one, if that ever happens, still shows). Doesn't retroactively touch a flash modal
   already on-screen when the button is toggled - only affects what shows up starting next render.
-- Crypt Crawl is a standalone page with a public marketing landing (cryptcrawl.php, added
-  2026-08-29 - "build a public facing marketing page in the same vein as Skull Swap... integrate
-  with the homepage," per the user): dropped `include 'header.php'` entirely - own full
-  `<!doctype html>` document (title/meta/OG/Twitter/JSON-LD VideoGame+BreadcrumbList schema,
-  matching skullswap.php's exact pattern) instead of the shared site nav, same treatment as
-  skullswap.php/match3rpg.php. Unlike Skull Swap (no server state, landing always shown, JS
-  reveals the game), Crypt Crawl has a persistent multi-session run to respect - the landing only
-  renders when `$state === 'no_run'` in `cryptcrawlRenderGameArea()` (a first-ever visit, or
-  every run finished with none in progress); an active or just-finished run skips straight to the
-  game/result screen, unaffected. Landing content: hero + `/staking/images/cryptcrawl.png`
-  screenshot (clickable, `requestSubmit()`s the same `#cc-start-delve-form` the button uses) +
-  feature cards + a "dueling" two-row counter-scrolling marquee (`.cc-strip`/`.cc-strip-track`,
-  same technique as skullswap.php's icon strip - reversed direction on the second row, duplicated
-  track for the seamless -50% loop) covering **every** Crypties NFT actually used as card art -
-  built by iterating `CRYPTCRAWL_CARD_ART` against `cryptcrawlGetCardArt($conn)`'s resolved URLs
-  (the exact same lookup the game itself uses, so the marquee can never drift out of sync with
-  what's really in the deck) + mechanics/tips/FAQ sections + a final CTA. Deliberately breaks out
-  of `.cc-inner`'s 720px cap into its own wider `.cc-landing`/`.cc-land-wrap` (1000px) - a hero
-  page reads better roomier; `.cc-inner` closes before it and reopens empty right after so the
-  function's single final `</div><!-- /cc-inner -->` stays correctly balanced either way (same
-  balanced-open/close-per-branch technique the Ken Burns refactor above already established).
+- Crypt Crawl marketing/game split (`cryptcrawlgame.php` + `cryptcrawl.php`, split
+  2026-08-29): the marketing page and the actual game are **two separate files** now, not one
+  state-dependent page. `cryptcrawlgame.php` is the public marketing page ("build a public facing
+  marketing page in the same vein as Skull Swap... integrate with the homepage," per the user) -
+  own full `<!doctype html>` document (title/meta/OG/Twitter/JSON-LD VideoGame+BreadcrumbList
+  schema, matching skullswap.php's exact pattern), `include_once 'db.php'` only for
+  `cryptcrawlGetCardArt($conn)`, and deliberately **zero** session/login/game-state logic of any
+  kind - no `session_start()`, no `$state`, no run lookups. The same content renders for every
+  visitor every time. Content: hero + `/staking/images/cryptcrawl.png` screenshot (clickable,
+  `requestSubmit()`s a real `<form method="post" action="cryptcrawl.php">` that POSTs
+  `action=start_run` straight to the game) + feature cards + a "dueling" two-row
+  counter-scrolling marquee (`.cc-strip`/`.cc-strip-track`, same technique as skullswap.php's icon
+  strip - reversed direction on the second row, duplicated track for the seamless -50% loop)
+  covering **every** Crypties NFT actually used as card art, built by iterating
+  `CRYPTCRAWL_CARD_ART` against `cryptcrawlGetCardArt($conn)`'s resolved URLs (the exact same
+  lookup the game itself uses, so the marquee can never drift out of sync with what's really in
+  the deck) + mechanics/tips/FAQ sections + a final CTA + a full-width "Go Back" row.
+  `cryptcrawl.php` went back to being just the game - `$state` (`no_run`/`active`/`game_over`)
+  computed from `cryptcrawlGetActiveRun()`/`cryptcrawlGetMostRecentRun()` same as before,
+  `no_run` back to a simple rules+Start Delve prompt with a "Learn more about Crypt Crawl" link to
+  `cryptcrawlgame.php`, `game_over` back to its own compact result panel (with its own themed
+  `#cc-theme-bg` backdrop again on a loss - `/staking/images/themes/8.jpg`). Its own SEO surface
+  is intentionally minimal now: `<meta name="robots" content="noindex,follow">` and no VideoGame
+  JSON-LD of its own, since `cryptcrawlgame.php` is the canonical indexed/shareable URL for the
+  game and duplicating structured data across both would be redundant. `header.php`'s nav link and
+  all of homepage.php's Crypt Crawl references (the `.hp-game` card, the JSON-LD `ItemList` entry,
+  the platform screenshots grid card, the footer link) point at `cryptcrawlgame.php`, not
+  `cryptcrawl.php`.
+  **Why the split, not another patch**: this replaced an earlier single-page design where
+  `cryptcrawl.php` itself rendered a merged marketing-landing-or-game view depending on `$state`.
+  That design broke twice in a row. First, gating the landing on `$state === 'no_run'` made it
+  permanently unreachable after a player's very first-ever delve completed, since
+  `cryptcrawlGetMostRecentRun()` always returns something once any run has ever finished -
+  reported directly by the user ("clicking the game again doesn't take you to the public marketing
+  page anymore") and fixed at the time by widening the gate to `$state !== 'active'` (unifying
+  `no_run` and `game_over` into one landing branch with a result banner inserted at the top).
+  Second, the user then reported the opposite symptom from a fresh incognito session - the
+  homepage link went straight into the game instead of the landing, and Go Back couldn't get back
+  to it either. Every live reproduction attempt (cookieless `fetch()`, a real click-through under
+  an existing session, a real click-through with cookies genuinely cleared) showed the correct
+  landing/game_over branch rendering server-side, and response headers confirmed proper
+  `Cache-Control: no-store` - the live routing/caching cause was never pinned down. Rather than
+  keep chasing an elusive, session-adjacent bug on a single state-dependent URL, the user's
+  explicit instruction was to split the marketing page out to its own file entirely: "create
+  cryptcrawlgame.php and have that be the marketing page separate from the actual game so that
+  this problem is fixed once and for all." Two static URLs with no shared state between them rule
+  out the entire class of session/caching-coupling bugs structurally, rather than patching around
+  one more instance of it.
   **"Go Back"** (`data-go-back`, one delegated `click` listener on `document` - survives every
-  AJAX swap without re-attaching): a full-width row under every state's own bottom buttons
-  (landing, active's flee-row, game_over), since this page has zero site nav to fall back on
-  otherwise. Prefers real browser history (`history.back()`, only when the referrer is same-site
-  and there's actually history to go back to) over a fixed destination; falls back to
-  `dashboard.php` for a logged-in visitor (`.cc-wrap`'s `data-logged-in` attribute, read once) or
-  the public homepage for a guest. **Same-site check fixed 2026-08-29** - originally a plain
-  `document.referrer.indexOf(window.location.origin) === 0` string-prefix match, which broke for
-  any visitor arriving from the bare domain: the public homepage lives at `https://skulliance.io/`
-  (no `www`), while this page's own origin is `https://www.skulliance.io` - a referrer from the
-  homepage therefore never starts with this page's origin string even though it's genuinely the
-  same site, so Go Back silently fell through to the fallback destination every time instead of
-  real history. Reported directly by the user ("hitting go back... takes you back to the
-  skulliance homepage" - the fallback firing when it shouldn't have) and reproduced/confirmed live
-  via `javascript_tool` before fixing (`document.referrer` from a real homepage click-through:
-  `https://skulliance.io/`, `window.location.origin` on cryptcrawl.php: `https://www.skulliance.io` -
-  old check `false`, correct answer `true`). Fixed with `ccIsSameSite()`: compares `new
-  URL(referrer).hostname` against `location.hostname`, both with a leading `www.` stripped, instead
-  of an origin string prefix. Homepage integration (homepage.php): a third `.hp-game` card
-  alongside Monstrocity/Skull Swap, a third `VideoGame` entry in the JSON-LD `ItemList`, a
-  standalone `.hp-shot-card` in the platform screenshots grid (hardcoded full path, not folded
-  into the `$hp_shots` loop - that loop's shared `$hp_shot_base` points at `images/screenshots/`,
-  and this screenshot lives directly under `images/` instead), and a footer link.
-  **Ambient music does NOT autoplay on the landing** - fixed the same day, reported directly by
-  the user ("the game music autoplays when visiting the public page and not logged into the
-  staking platform"). The `<audio>`/`#cc-audio-player` markup is a permanent sibling of
-  `#cc-game-area` (unconditional, present on every state - needed so the swap on every action
-  never touches it), so it was attempting autoplay even on a cold landing visit, before anyone
-  had shown any intent to play. `maybeStartAudioAmbience()` (exposed to `initGameArea()` via a
-  closure var, same pattern as `syncMood()`/`applyThemeState()`) checks `document.querySelector('.cc-landing')`
-  first and no-ops while it's still in the DOM; called once at initial setup and again after
-  every AJAX swap, since Start Delve -> active is a swap, not a fresh page load - that swap is
-  what actually starts ambience for a landing visitor now, the same moment they've shown real
-  intent to play. `syncMood()`'s own `crossfadeTo()` calls were independently checked and
-  confirmed NOT to need the same gate: `$cc_mood` defaults to `'normal'` for `no_run` in
-  `cryptcrawlRenderGameArea()`, matching the JS `currentMood` var's own initial value, so
-  `syncMood()`'s `mood === currentMood` no-op check already prevented it from ever reaching a
-  `.play()` call on a landing visit.
-  **The landing is gated on `$state !== 'active'`, not `$state === 'no_run'`** - fixed the same
-  day, reported directly by the user ("clicking the game again doesn't take you to the public
-  marketing page anymore"). `cryptcrawlGetMostRecentRun()` always returns something once ANY
-  delve has ever completed, so `$state` never falls back to `'no_run'` again after a player's
-  very first delve ends - gating the landing purely on `no_run` meant it became permanently
-  unreachable from that point on, for every future visit, forever (any return visit would show
-  `game_over` - the player's last result - instead). Fixed by unifying `no_run` and `game_over`
-  into one landing branch: `game_over` now renders the exact same landing content, with a result
-  banner (win/loss, crypts cleared, CARBON earned, the Weekly Leaderboard link when lost) inserted
-  at the top and the CTA button/heading text swapping to "Delve Again"/"Ready for Another?"
-  (`$cc_cta_label`, computed once). Only a genuinely **active** delve skips the landing now.
-  Consequence also fixed: `game_over` no longer gets its own themed `#cc-theme-bg` backdrop (the
-  `/staking/images/themes/8.jpg` death image) either - that treatment (flex-centered, sized for a
-  small result panel) looked broken stretched around a whole multi-section scrolling landing page
-  instead of the compact screen it used to wrap. `$cc_mood`'s own death/triumph situational-music
-  cueing is unaffected by any of this - still fires independently of the visual backdrop decision.
+  AJAX swap without re-attaching, present on both files): a full-width row under every state's own
+  bottom buttons. On `cryptcrawlgame.php` (no game state at all) it falls straight back to the
+  public homepage. On `cryptcrawl.php` it prefers real browser history (`history.back()`, only
+  when the referrer is same-site and there's actually history to go back to) over a fixed
+  destination, falling back to `dashboard.php` for a logged-in visitor (`.cc-wrap`'s
+  `data-logged-in` attribute, read once) or the public homepage for a guest. **Same-site check
+  fixed 2026-08-29** - originally a plain `document.referrer.indexOf(window.location.origin) === 0`
+  string-prefix match, which broke for any visitor arriving from the bare domain: the public
+  homepage lives at `https://skulliance.io/` (no `www`), while this page's own origin is
+  `https://www.skulliance.io` - a referrer from the homepage therefore never starts with this
+  page's origin string even though it's genuinely the same site, so Go Back silently fell through
+  to the fallback destination every time instead of real history. Reported directly by the user
+  ("hitting go back... takes you back to the skulliance homepage" - the fallback firing when it
+  shouldn't have) and reproduced/confirmed live via `javascript_tool` before fixing
+  (`document.referrer` from a real homepage click-through: `https://skulliance.io/`,
+  `window.location.origin`: `https://www.skulliance.io` - old check `false`, correct answer
+  `true`). Fixed with `ccIsSameSite()`: compares `new URL(referrer).hostname` against
+  `location.hostname`, both with a leading `www.` stripped, instead of an origin string prefix.
+  **Ambient music does not autoplay on the marketing page** - moot by construction now rather than
+  a runtime gate: `cryptcrawlgame.php` has no `<audio>` element or audio system at all, so there is
+  nothing to autoplay until a visitor actually clicks through to `cryptcrawl.php` and starts a
+  delve. (Originally reported and fixed as a `.cc-landing`-presence check in
+  `maybeStartAudioAmbience()` back when the landing lived inside `cryptcrawl.php` itself; that
+  check was removed as dead code once the landing moved out - reaching `cryptcrawl.php` at all now
+  means Start Delve was already clicked, so ambience is fair game in every state there.)
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

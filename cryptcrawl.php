@@ -64,9 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // computed inside cryptcrawlRenderGameArea() now (cryptcrawl-render.php),
 // since that function needs to be independently callable from the AJAX
 // endpoint too, not just this page's own initial GET.
+// SEO ownership lives on cryptcrawlgame.php now (the standalone marketing
+// page) -- this file is the actual gameplay surface, kept out of the
+// index so search engines don't see it as duplicate content next to the
+// marketing page's own VideoGame schema. Still fully crawlable/followable
+// (its "Learn more" and Go Back links matter for link equity), just not
+// a result page in its own right.
 $cc_canonical = 'https://www.skulliance.io/staking/cryptcrawl.php';
 $cc_og_image  = 'https://www.skulliance.io/staking/images/cryptcrawl.png';
-$cc_title     = 'Crypt Crawl - Free Solo Dungeon Card Game | Play in Your Browser';
+$cc_title     = 'Crypt Crawl - Play Now | Skulliance';
 $cc_desc      = 'Play Crypt Crawl free - a solo dungeon-delve card game with a 44-card deck illustrated entirely in Crypties NFT art, a Last Stand save, and a weekly CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
 $cc_short     = 'A free browser dungeon-delve card game illustrated in Crypties NFT art, with a Last Stand save and a weekly CARBON leaderboard. Play on any device - no download.';
 ?>
@@ -79,7 +85,7 @@ $cc_short     = 'A free browser dungeon-delve card game illustrated in Crypties 
 <meta name="description" content="<?php echo htmlspecialchars($cc_desc); ?>">
 <meta name="keywords" content="free card game, solo dungeon crawler, roguelike card game, browser card game, no download card game, free rogue-like game, Cardano NFT game, Crypties NFT, dungeon delve card game">
 <meta name="theme-color" content="#07111d">
-<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta name="robots" content="noindex,follow">
 <link rel="canonical" href="<?php echo $cc_canonical; ?>">
 
 <!-- OpenGraph -->
@@ -99,39 +105,9 @@ $cc_short     = 'A free browser dungeon-delve card game illustrated in Crypties 
 <meta name="twitter:image" content="<?php echo $cc_og_image; ?>">
 <meta name="twitter:image:alt" content="Crypt Crawl dungeon-delve card game board, illustrated in Crypties NFT art">
 
-<!-- Schema.org structured data: VideoGame + BreadcrumbList -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "VideoGame",
-      "name": "Crypt Crawl",
-      "alternateName": ["Crypt Crawl Card Game", "Crypt Crawl Dungeon Delve"],
-      "url": "<?php echo $cc_canonical; ?>",
-      "image": "<?php echo $cc_og_image; ?>",
-      "screenshot": "<?php echo $cc_og_image; ?>",
-      "description": "<?php echo $cc_short; ?>",
-      "genre": ["Card Game", "Roguelike", "Dungeon Crawler"],
-      "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
-      "playMode": "SinglePlayer",
-      "applicationCategory": "Game",
-      "operatingSystem": "Any",
-      "inLanguage": "en",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
-      "publisher": { "@type": "Organization", "name": "Skulliance", "url": "https://www.skulliance.io/" },
-      "potentialAction": { "@type": "PlayAction", "target": "<?php echo $cc_canonical; ?>" }
-    },
-    {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Skulliance", "item": "https://www.skulliance.io/" },
-        { "@type": "ListItem", "position": 2, "name": "Crypt Crawl - Free Solo Dungeon Card Game", "item": "<?php echo $cc_canonical; ?>" }
-      ]
-    }
-  ]
-}
-</script>
+<!-- No VideoGame/BreadcrumbList schema here -- that structured data lives
+     on cryptcrawlgame.php (the canonical marketing/SEO page) now, so this
+     noindex'd gameplay page doesn't emit a duplicate. -->
 <style>
 html { scroll-behavior: smooth; }
 body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
@@ -483,69 +459,6 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	.cc-btn.punchy { min-height: 44px; padding: 6px 5px; gap: 1px; }
 }
 
-/* Marketing landing (no_run state only -- see cryptcrawl-render.php) --
-   design language matches skullswap.php's own standalone landing: brand
-   green-teal accents, navy base, glow hero, accent-bar mechanics list,
-   counter-scrolling icon marquee. Wider than the game's own 720px
-   .cc-inner cap (a hero page reads better roomier), so this deliberately
-   does NOT nest inside .cc-inner -- see the render function for how. */
-.cc-landing { padding-bottom: 20px; }
-.cc-land-wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
-.cc-hero-land {
-	text-align: center; padding: 48px 20px 44px; margin: 0 -16px 0;
-	background: radial-gradient(circle at 50% 0%, rgba(0, 200, 160, 0.18), transparent 60%), linear-gradient(180deg, #07111d 0%, #0b1a2b 100%);
-	border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.cc-title-land { text-transform: uppercase; letter-spacing: 0.04em; font-size: clamp(1.9rem, 4.5vw, 3.2rem); margin: 0 0 0.2em; }
-.cc-title-land img { display: inline-block; height: 0.9em; width: auto; vertical-align: -0.12em; margin: 0 0.08em; filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
-.cc-subtitle-land { display: block; font-size: clamp(1.05rem, 2.5vw, 1.6rem); font-weight: 600; color: #c7d0d9; }
-.cc-lead { max-width: 640px; margin: 14px auto 22px; color: #c7d0d9; font-size: 1.02rem; }
-.cc-shot-link { display: block; cursor: pointer; }
-.cc-shot-land {
-	display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto 26px;
-	border-radius: 14px; border: 1px solid rgba(255,255,255,.15);
-	box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(0,200,160,.1) inset;
-	transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-}
-.cc-shot-link:hover .cc-shot-land, .cc-shot-link:focus-visible .cc-shot-land {
-	transform: translateY(-3px); border-color: rgba(0,200,160,.5);
-	box-shadow: 0 36px 90px rgba(0,0,0,.75), 0 0 24px rgba(0,200,160,.25);
-}
-.cc-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
-.cc-badge { font-size: .8rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #c7d0d9; }
-.cc-land-section { padding: 40px 0; }
-.cc-land-section + .cc-land-section { border-top: 1px solid rgba(255,255,255,.06); }
-.cc-land-section h2 { font-size: clamp(1.4rem, 3vw, 2rem); text-align: center; margin: 0 0 .6em; }
-.cc-land-section p, .cc-land-section li { color: #c7d0d9; }
-.cc-land-center { text-align: center; }
-.cc-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 20px; }
-@media (max-width: 560px) { .cc-features { grid-template-columns: 1fr; } }
-.cc-feat-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 22px; }
-.cc-feat-card h3 { margin: 0 0 8px; font-size: 1.1rem; color: #00c8a0; }
-.cc-feat-card p { margin: 0; font-size: .96rem; }
-/* Two opposite-direction marquee rows of every Crypties NFT used as card
-   art in the game -- "dueling" rows, per the user. Same technique as
-   skullswap.php's icon strip: duplicated track sliding -50%, reversed
-   direction on the second row, pause on hover, edge fade masks. */
-.cc-strip { width: 100%; overflow: hidden; padding: 14px 0; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); }
-.cc-strip-track { display: flex; align-items: flex-start; gap: 20px; width: max-content; animation: cc-strip-scroll 55s linear infinite; will-change: transform; }
-.cc-strip-track.cc-reverse { animation-direction: reverse; animation-duration: 62s; }
-.cc-strip-track:hover { animation-play-state: paused; }
-@keyframes cc-strip-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .cc-strip-track { animation: none; } }
-.cc-strip-card { flex: 0 0 96px; text-align: center; }
-.cc-strip-card img { width: 88px; height: 123px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); box-shadow: 0 6px 14px rgba(0,0,0,.6); }
-.cc-strip-card .cc-ticker { margin-top: 6px; font-size: .68rem; color: #8a96a3; font-weight: 600; letter-spacing: .03em; }
-.cc-mechanics { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 10px; }
-.cc-mechanics li { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,.03); border-left: 3px solid #00c8a0; border-radius: 6px; font-size: .95rem; }
-.cc-mechanics li strong { color: #34e3bb; }
-.cc-mech-emoji { flex-shrink: 0; width: 32px; text-align: center; font-size: 1.5rem; line-height: 1.2; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
-.cc-tips { margin: 16px 0 0; padding-left: 22px; }
-.cc-tips li { margin-bottom: 8px; }
-.cc-faq details { border-bottom: 1px solid rgba(255,255,255,.08); padding: 14px 0; }
-.cc-faq summary { cursor: pointer; font-weight: 700; color: #e8eaed; }
-.cc-faq p { margin: 10px 0 0; }
-.cc-final { text-align: center; background: linear-gradient(180deg, rgba(0,200,160,.08), transparent); border-radius: 18px; padding: 40px 24px; }
 /* "Go Back" -- full row below every state's own bottom buttons, since this
    page has no site nav at all to fall back on otherwise. Delegated click
    handling (data-go-back) in the script block, not per-button wiring, so
@@ -611,8 +524,7 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	// Assigned once the audio player sets itself up (below) -- called once
 	// initially and again from initGameArea() after every AJAX swap (Start
 	// Delve -> active is itself a swap, not a fresh page load). No-ops once
-	// ambience has already started, and while #cc-landing is still in the
-	// DOM -- the marketing page should stay silent; see MAINTENANCE.md.
+	// ambience has already started.
 	var maybeStartAudioAmbience = null;
 
 	// Sizing only -- #cc-theme-bg's active/inactive state and image are
@@ -805,9 +717,8 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 		// below this function in source order.
 		if (syncMood) syncMood();
 		// Re-check whether ambience should start yet -- a no-op once it
-		// already has, or while #cc-landing is still showing (the
-		// marketing page stays silent). Catches Start Delve -> active,
-		// which is an AJAX swap, not a fresh page load.
+		// already has. Catches Start Delve -> active, which is an AJAX
+		// swap, not a fresh page load.
 		if (maybeStartAudioAmbience) maybeStartAudioAmbience();
 	}
 
@@ -1223,16 +1134,15 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 
 		loadTrack(trackIndex, true);
 
-		// Ambience should stay silent on the marketing landing (#cc-landing,
-		// the no_run state) -- "ambience by default" was always about the
-		// game itself, not a page visitors land on from a search result or
-		// a link before they've shown any intent to play. Exposed to the
-		// outer scope (initGameArea() calls it again after every AJAX swap)
-		// since Start Delve -> active is a swap, not a fresh page load --
-		// that's the moment ambience actually starts for a landing visitor.
+		// The marketing landing (cryptcrawlgame.php) is now a fully separate
+		// page with no audio system of its own -- reaching cryptcrawl.php at
+		// all (its own no_run prompt included) means the visitor already
+		// clicked Start Delve, so ambience is fair game in every state here.
+		// Exposed to the outer scope (initGameArea() calls it again after
+		// every AJAX swap) since it only actually needs to fire once.
 		var audioAmbienceStarted = false;
 		maybeStartAudioAmbience = function() {
-			if (audioAmbienceStarted || document.querySelector('.cc-landing')) return;
+			if (audioAmbienceStarted) return;
 			audioAmbienceStarted = true;
 			if (!enabled) return;
 			tryPlay();
