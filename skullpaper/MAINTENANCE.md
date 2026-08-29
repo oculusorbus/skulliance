@@ -145,6 +145,22 @@ records verified constants, and tracks what still needs to be written.
   ranks, plus the top of the weapon and medkit ranges) carries the 17 Legendary pieces plus
   both Mythic pieces (Spades 6, Diamonds 6). Update CRYPTCRAWL_CARD_ART directly to change any
   card's art.
+- Crypt Crawl counts toward platform Activity leaderboards (db.php `checkActivityLeaderboard()`,
+  added 2026-08-29 - "Players should be recognized for their attempts within here as well," per
+  the user, re: the top-level All-Time/Monthly/Weekly Activity dropdown options, distinct from
+  Crypt Crawl's own game-specific leaderboard): a `'crawl'` source counts completed delves (won or
+  lost - matches `checkCryptCrawlLeaderboard()`'s own "completed" definition, not every in-progress
+  row, so starting-and-abandoning runs for Activity points isn't a thing), weighted 5 alongside
+  mission/skullswap/gauntlet (a delve's roughly that same class of single-session attempt; nothing
+  more precise than that judgment call). **Requires a migration not yet run on the live table** -
+  `cryptcrawls` has no date/timestamp column today (`cryptcrawlGetMostRecentRun()` orders by
+  `id DESC` instead, not a date, which is the tell): `ALTER TABLE cryptcrawls ADD COLUMN
+  date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER carbon_earned;` - no PHP-side
+  change needed to populate it, the DEFAULT covers every existing INSERT
+  (`cryptcrawlStartRun()`) automatically. All-time is unaffected either way (never date-filters);
+  monthly/weekly will silently show zero crawl activity until this migration actually runs.
+  Verified via a dedicated PHP harness mocking all 8 sources' `$conn->query()` calls and checking
+  the merged per-user totals/ranking/stats output, not just that the code parses.
 - Crypt Crawl ambient player (`#cc-audio-player`/`#cc-audio-el`, markup lives in cryptcrawl.php,
   OUTSIDE `#cc-game-area` - see the AJAX entry below for why that placement matters): two tracks
   committed straight into the repo (`audio/tracks/Crypt Crawl Theme.mp3`,

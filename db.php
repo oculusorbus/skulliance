@@ -5563,6 +5563,14 @@ function resetCryptCrawls($conn) {
 // Check Activity Leaderboard — weighted aggregate across all platform features
 // Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5, raid=15, boss battle=25, monstrocity session=50
 function checkActivityLeaderboard($conn, $period = 'ath') {
+	// REQUIRES A MIGRATION -- cryptcrawls has no date/timestamp column today
+	// (cryptcrawlGetMostRecentRun() orders by `id DESC` instead, a signal
+	// nothing date-based exists yet). Run once against the live DB before
+	// this 'crawl' source below can work for monthly/weekly (ath is
+	// unaffected, it never filters by date):
+	//   ALTER TABLE cryptcrawls ADD COLUMN date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER carbon_earned;
+	// No PHP-side change needed to populate it -- the DEFAULT handles every
+	// existing INSERT (cryptcrawlStartRun()) automatically. See MAINTENANCE.md.
 	// Build date filters per period
 	if ($period === 'monthly') {
 		$dt   = date('Y-m-01');
@@ -5573,6 +5581,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$w_e  = "AND date_created  >= '$dt'";
 		$w_ss = "AND date_created  >= '$dt'";
 		$w_s  = "AND date_created  >= '$dt'";
+		$w_cc = "AND date_created  >= '$dt'";
 	} elseif ($period === 'weekly') {
 		$ws   = $conn->real_escape_string(gauntletGetWeekStart());
 		$w_t  = "AND date_created  >= '$ws'";
@@ -5582,8 +5591,9 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$w_e  = "AND date_created  >= '$ws'";
 		$w_ss = "AND date_created  >= '$ws'";
 		$w_s  = "AND date_created  >= '$ws'";
+		$w_cc = "AND date_created  >= '$ws'";
 	} else {
-		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = '';
+		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = '';
 	}
 
 	// Run each source as its own fast GROUP BY query, then merge in PHP.
@@ -5593,6 +5603,13 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		'mission'     => ["SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id",                                                                             5],
 		'skullswap'   => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id",                                                                         5],
 		'gauntlet'    => ["SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id",     5],
+		// Completed delves only (won or lost -- an abandon is recorded as a
+		// loss, same as everywhere else Crypt Crawl counts "completed"), not
+		// every in-progress row -- matches checkCryptCrawlLeaderboard()'s own
+		// definition and avoids rewarding Activity points for runs someone
+		// starts and never finishes. Weighted with mission/skullswap/gauntlet
+		// -- a delve is roughly that same class of single-session attempt.
+		'crawl'       => ["SELECT user_id, COUNT(*) AS cnt FROM cryptcrawls WHERE status IN ('won','lost') $w_cc GROUP BY user_id",                                                                5],
 		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
 		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
 		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
@@ -5606,7 +5623,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		while ($row = $res->fetch_assoc()) {
 			$uid = intval($row['user_id']);
 			if (!isset($activity[$uid])) {
-				$activity[$uid] = ['daily'=>0,'mission'=>0,'skullswap'=>0,'gauntlet'=>0,'raid'=>0,'boss'=>0,'monstrocity'=>0,'total_pts'=>0];
+				$activity[$uid] = ['daily'=>0,'mission'=>0,'skullswap'=>0,'gauntlet'=>0,'crawl'=>0,'raid'=>0,'boss'=>0,'monstrocity'=>0,'total_pts'=>0];
 			}
 			$cnt = intval($row['cnt']);
 			$activity[$uid][$key]       += $cnt;
@@ -5680,6 +5697,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 			'Missions'  => number_format($data['mission']),
 			'Swaps'     => number_format($data['skullswap']),
 			'Gauntlets' => number_format($data['gauntlet']),
+			'Crawls'    => number_format($data['crawl']),
 			'Raids'     => number_format($data['raid']),
 			'Bosses'    => number_format($data['boss']),
 			'M3RPG'     => number_format($data['monstrocity']),
