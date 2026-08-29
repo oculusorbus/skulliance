@@ -206,24 +206,40 @@ records verified constants, and tracks what still needs to be written.
   Theme specifically, from 0:00) regardless of `currentMood` or what the normal loop's last-saved
   track happened to be - covers both the AJAX path and the no-JS full-reload fallback the same
   way, since it's driven by session state read at render time either way.
-- Crypt Crawl theme-art Ken Burns drift (`.cc-theme-bg::before`, `--kb-*` custom properties,
-  `#cc-audio-zoom-toggle`, re-added 2026-08-29 now that actions are AJAX - see the entry below for
-  why a full-reload architecture made this genuinely risky the first time, not just theoretically):
-  background image lives on a `::before` pseudo (driven by a `--theme-img` custom property, not a
-  plain inline `background-image`, so the pseudo can read it) `inset: -5%` of its own container,
-  giving `transform: scale()+translate()` room to pan/zoom without ever exposing an edge -
-  `.cc-theme-bg` itself clips that oversized margin via `overflow: hidden`. JS
-  (`randomizeKenBurns()`) picks a fresh random scale range (1.00-1.04 -> 1.08-1.16), pan angle
-  (fully random 0-2π, `dist` 1.5%-3.5% - comfortably inside the 5% buffer even at the smallest
-  scale) and duration (20s-34s) per `.cc-theme-bg` element - i.e. on every fresh render, since a
-  swap always creates a new one - via a `kbInit` dataset marker so a `resize` re-running
-  `sizeTheme()` on the *same* element doesn't also re-randomize it. `animation-direction:
-  alternate` (CSS, `.cc-zoom` class) is what makes each pick loop seamlessly (ping-pongs back to
-  its start) instead of snapping. Gated on two things ANDed together via `updateZoomClass()`: the
+- Crypt Crawl theme-art Ken Burns drift (`#cc-theme-bg`, `.cc-theme-bg::before`, `--kb-*` custom
+  properties, `#cc-audio-zoom-toggle`, re-added 2026-08-29 now that actions are AJAX, **then
+  restructured the same day** - see below): background image lives on a `::before` pseudo (driven
+  by a `--theme-img` custom property, not a plain inline `background-image`, so the pseudo can
+  read it) `inset: -5%` of its own container, giving `transform: scale()+translate()` room to
+  pan/zoom without ever exposing an edge - `.cc-theme-active` clips that oversized margin via
+  `overflow: hidden`. JS (`randomizeKenBurns()`) picks a fresh random scale range (1.00-1.04 ->
+  1.08-1.16), pan angle (fully random 0-2π, `dist` 1.5%-3.5% - comfortably inside the 5% buffer
+  even at the smallest scale) and duration (20s-34s). `animation-direction: alternate` (CSS,
+  `.cc-zoom` class) is what makes each pick loop seamlessly (ping-pongs back to its start) instead
+  of snapping. Gated on two things ANDed together via `updateZoomClass()`: the
   `#cc-audio-zoom-toggle` on/off setting (`cc_zoom_enabled` in `sessionStorage`, defaults **on** -
   deliberate, so it's noticed once before anyone turns it off) and whether a track is actually
   playing right now (`!audio.paused`) - "max ambience when media is playing," per the user,
   meaning pausing the music also stops the drift, not just muting it.
+  **`#cc-theme-bg` is a PERMANENT element** (cryptcrawl.php markup, right after `.cc-wrap` opens,
+  wrapping `#cc-game-area`) - it used to be `cryptcrawlRenderGameArea()` itself that emitted/omitted
+  the `.cc-theme-bg` markup per state (open before game_over-lost/active, closed after), which
+  meant every single AJAX swap destroyed and recreated it, restarting the Ken Burns animation on
+  every card played, not just when the scene actually changed - reported directly by the user.
+  Fixed by making it a static element JS reconciles instead: `cryptcrawlRenderGameArea()` computes
+  `$cc_theme_active`/`$cc_theme_img` the same way it used to decide whether to open the wrapper,
+  and writes them as `data-theme-active`/`data-theme-img` on `#cc-mood` (the same hidden marker
+  div `#cc-mood`'s mood/restart signals already use). `applyThemeState()` (cryptcrawl.php, exposed
+  to `initGameArea()` via a closure var same as `syncMood()`) reads those after every render,
+  toggles `.cc-theme-active` on the permanent element, and - the actual fix - only calls
+  `randomizeKenBurns()` when the incoming `data-theme-img` differs from what's already applied
+  (`themeBg.dataset.currentImg`), not on every call. Same image (most actions, since
+  `cryptcrawlRoomThemeFile()` is keyed off `rooms_cleared`, which only advances on a room refill)
+  leaves the running animation completely untouched; a genuinely new image (room refill, or into/
+  out of game_over) picks a fresh direction. `sizeTheme()` no longer does double duty applying the
+  zoom too - `.cc-theme-active` also gates whether it forces the viewport-filling height at all
+  (skipped entirely in "bare" mode - no_run/game_over-won - where `#cc-theme-bg` just sizes
+  naturally around `#cc-game-area`'s own content, same as if it weren't there).
 - Crypt Crawl suppressible flow pop-ups (`#cc-audio-notif-toggle`, `cryptcrawlFlash()`'s optional
   `$source` param, added 2026-08-29): `cryptcrawlFlash($msg, $type, $source = null)` in
   cryptcrawl-actions.php tags the 3 specific flashes the user wanted a mute for -

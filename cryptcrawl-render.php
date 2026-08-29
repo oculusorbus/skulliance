@@ -85,8 +85,34 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			$cc_mood = (intval($active_run['second_wind_used'] ?? 0) === 1) ? 'doom' : 'frantic';
 		}
 	}
+
+	// Theme backdrop -- #cc-theme-bg is a PERMANENT element living outside
+	// #cc-game-area in cryptcrawl.php (never destroyed/recreated by an AJAX
+	// swap, unlike everything below), so it can no longer be PHP that
+	// literally emits/omits the themed-panel markup per state the way
+	// earlier versions of this page did -- that broke its Ken Burns
+	// animation, restarting it on every single action instead of only when
+	// the actual scene changed. Instead this just tells the client (via
+	// #cc-mood below) whether a themed backdrop applies right now and which
+	// image to use; applyThemeState() in cryptcrawl.php's script block
+	// reconciles the persistent element against it and only re-randomizes
+	// the pan/zoom when the image value itself is different from last time.
+	$cc_theme_active = false;
+	$cc_theme_img = '';
+	if ($state === 'game_over' && $recent_run['status'] === 'lost') {
+		$cc_theme_active = true;
+		$cc_theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg')";
+	} elseif ($state === 'active') {
+		$cc_theme_active = true;
+		// See cryptcrawlRoomThemeFile() in db.php -- shared with the Discord
+		// per-round announcement so there's one theme list, not two.
+		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
+		$cc_theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('" . $room_theme_url . "')";
+	}
 ?>
-<div id="cc-mood" data-mood="<?php echo htmlspecialchars($cc_mood); ?>" data-restarted="<?php echo $cc_just_started ? '1' : '0'; ?>" style="display:none;"></div>
+<div id="cc-mood" data-mood="<?php echo htmlspecialchars($cc_mood); ?>" data-restarted="<?php echo $cc_just_started ? '1' : '0'; ?>"
+	data-theme-active="<?php echo $cc_theme_active ? '1' : '0'; ?>" data-theme-img="<?php echo htmlspecialchars($cc_theme_img); ?>"
+	style="display:none;"></div>
 <div class="cc-inner">
 	<?php if ($flashes): ?>
 	<div class="cc-flash-backdrop" id="cc-flash-backdrop">
@@ -105,16 +131,10 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Start Delve</button>
 		</form>
-	</div><!-- /cc-inner -->
 
 	<?php elseif ($state === 'game_over'):
 			$fell = ($recent_run['status'] === 'lost');
 		?>
-		<?php if ($fell): ?>
-	</div><!-- /cc-inner -->
-		<div class="cc-theme-bg" style="--theme-img: linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
-		<div class="cc-inner">
-		<?php endif; ?>
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
 			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
 			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
@@ -139,10 +159,6 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		</form>
 		<?php if ($fell): ?>
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
-		</div><!-- /cc-inner -->
-		</div><!-- /cc-theme-bg -->
-		<?php else: ?>
-	</div><!-- /cc-inner -->
 		<?php endif; ?>
 
 	<?php else: // active
@@ -155,14 +171,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		$weapon_name  = $active_run['weapon_name'];
 		$weapon_beaten_rank = $active_run['weapon_beaten_rank'] !== null ? intval($active_run['weapon_beaten_rank']) : null;
 		$can_flee = (intval($active_run['fled_last_room']) === 0) && (count($room) === 4);
-
-		// See cryptcrawlRoomThemeFile() in db.php -- shared with the Discord
-		// per-round announcement so there's one theme list, not two.
-		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
 	?>
-	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
-		<div class="cc-theme-bg" style="--theme-img: linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
-		<div class="cc-inner">
 		<div class="cc-hud">
 			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -342,8 +351,6 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
 			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
 		</div>
-		</div><!-- /cc-inner -->
-		</div><!-- /cc-theme-bg -->
 
 		<!-- Pure client-side toggle -- the rules text is static, no server
 		     round trip needed to revisit it mid-delve. See the bottom script
@@ -356,5 +363,6 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			</div>
 		</div>
 	<?php endif; ?>
+</div><!-- /cc-inner -->
 <?php
 }

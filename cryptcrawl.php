@@ -133,27 +133,38 @@ include 'header.php';
 }
 .cc-instructions-modal h3 { margin: 0 0 10px; font-size: 1.05rem; }
 .cc-instructions-close { margin-top: 16px; width: 100%; }
-.cc-theme-bg {
-	position: relative; overflow: hidden; border-radius: 14px; padding: 18px; margin: 0 -16px;
+/* .cc-theme-bg is a PERMANENT element (see the markup, right after
+   .cc-wrap opens) -- present in every state, "bare" (this rule only) when
+   no themed backdrop applies, and switched into the actual themed-panel
+   look by JS adding .cc-theme-active once #cc-mood says so. It used to be
+   PHP itself that emitted/omitted this element per state, which meant an
+   AJAX swap destroyed and recreated it (and restarted its Ken Burns
+   animation below) on every single action, not just when the scene
+   actually changed -- see MAINTENANCE.md. */
+.cc-theme-bg { position: relative; }
+.cc-theme-bg.cc-theme-active {
+	overflow: hidden; border-radius: 14px; padding: 18px; margin: 0 -16px;
 	display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px;
 }
 /* Background image lives on a pseudo-element, not the box itself, so the Ken
    Burns drift below (transform only) animates just the art -- never the real
    content (.cc-inner) sitting on top of it. inset:-5% (bigger than its own
    container) gives the pan/zoom room to move without ever exposing an edge;
-   .cc-theme-bg's own overflow:hidden clips that oversized margin off. */
+   .cc-theme-active's overflow:hidden clips that oversized margin off. Hidden
+   entirely outside .cc-theme-active -- bare mode has no image to show. */
 .cc-theme-bg::before {
 	content: ''; position: absolute; inset: -5%; background-image: var(--theme-img);
 	background-size: cover; background-position: center; transition: background-image .6s ease;
-	will-change: transform;
+	will-change: transform; display: none;
 }
+.cc-theme-bg.cc-theme-active::before { display: block; }
 /* Ken Burns drift while the music is playing (toggleable -- see the audio
    player's zoom button) and a track is actually audible. --kb-* custom
-   properties are randomized in JS per render (see initGameArea() ->
-   randomizeKenBurns()) so the pan/zoom direction is never the same twice --
-   this rule just plays back whatever values got set. animation-direction:
-   alternate is what makes it loop seamlessly (ping-pongs back to its start
-   rather than snapping), regardless of which random pair got picked. */
+   properties are randomized in JS only when the theme image actually
+   changes (see applyThemeState() in the script block) -- this rule just
+   plays back whatever values got set. animation-direction: alternate is
+   what makes it loop seamlessly (ping-pongs back to its start rather than
+   snapping), regardless of which random pair got picked. */
 .cc-theme-bg.cc-zoom::before {
 	animation: ccKenBurns var(--kb-duration, 26s) ease-in-out infinite alternate;
 }
@@ -399,7 +410,17 @@ include 'header.php';
 }
 </style>
 <div class="cc-wrap">
+<!-- Permanent wrapper -- unlike #cc-game-area inside it, this element is
+     NEVER destroyed/recreated by an AJAX swap, specifically so its Ken
+     Burns CSS animation (.cc-zoom, further up) keeps running continuously
+     across actions instead of restarting on every single one. Starts
+     "bare" (no cc-theme-active class, no background) since PHP no longer
+     decides whether to emit it at all -- that's now a class JS toggles
+     based on #cc-mood's data-theme-* attributes, applied by
+     applyThemeState() in the script block below. -->
+<div class="cc-theme-bg" id="cc-theme-bg">
 <div id="cc-game-area"><?php cryptcrawlRenderGameArea($conn, $user_id); ?></div>
+</div>
 
 	<!-- Ambient music player -- OUTSIDE #cc-game-area above on purpose, so
 	     AJAX-swapping the game area on every action (see the script block
@@ -426,20 +447,26 @@ include 'header.php';
 	// so initGameArea() can call it again after every AJAX swap, since the
 	// server recomputes #cc-mood fresh on every render.
 	var syncMood = null;
-	// Assigned once the audio player sets itself up (below) -- picks a fresh
-	// random Ken Burns pan/zoom for a .cc-theme-bg element and applies the
-	// on/off + playing-state class. Called from sizeTheme() below since
-	// that already finds a fresh .cc-theme-bg on every swap.
-	var applyThemeZoom = null;
+	// Assigned once the audio player sets itself up (below) -- reconciles
+	// the PERMANENT #cc-theme-bg element against whatever #cc-mood's
+	// data-theme-* says this render's theme state is (see the markup right
+	// after .cc-wrap opens, and MAINTENANCE.md, for why it's permanent:
+	// letting an AJAX swap destroy/recreate it was restarting its Ken Burns
+	// animation on every single action instead of only when the actual
+	// scene changed).
+	var applyThemeState = null;
 
-	// .cc-theme-bg sizing -- one resize listener attached once below (not
-	// re-added on every AJAX swap, which would stack up a fresh listener
-	// per action), re-querying .cc-theme-bg fresh each time it fires so it
-	// always matches whatever's currently in #cc-game-area.
+	// Sizing only -- #cc-theme-bg's active/inactive state and image are
+	// applyThemeState()'s job (called from initGameArea() below, once per
+	// render), not this. One resize listener, attached once (not re-added
+	// per swap, which would stack up a fresh listener per action).
 	function sizeTheme() {
-		var el = document.querySelector('.cc-theme-bg');
+		var el = document.getElementById('cc-theme-bg');
 		if (!el) return;
-		if (applyThemeZoom) applyThemeZoom(el);
+		if (!el.classList.contains('cc-theme-active')) {
+			el.style.height = ''; // bare mode -- size naturally, no forced viewport-filling height
+			return;
+		}
 		var top = el.getBoundingClientRect().top;
 		var bottomPad = 60; // matches .cc-wrap's bottom padding
 		var available = window.innerHeight - top - bottomPad;
@@ -552,7 +579,14 @@ include 'header.php';
 			});
 		}
 
-		sizeTheme();
+		// Reconciles #cc-theme-bg's active/inactive state + image against
+		// this render's #cc-mood, then sizes it. applyThemeState() is null
+		// on the very first call (this whole function runs once before the
+		// audio player -- and applyThemeState with it -- has set itself up
+		// further down); sizeTheme() alone still keeps it sized correctly
+		// for the "bare" case, and the audio setup re-applies the real
+		// theme state for the initial page once it's ready (see below).
+		if (applyThemeState) applyThemeState(); else sizeTheme();
 
 		// Desktop-only card tilt — skip entirely on touch devices so there's
 		// no stuck "hover" state after a tap. Targets .cc-card-flip
@@ -744,18 +778,13 @@ include 'header.php';
 
 		// Ken Burns drift on the theme art -- max ambience while a track is
 		// actually audible, so it's tied to play/pause as well as the
-		// on/off toggle below. Picks a brand new random pan/zoom direction
-		// per .cc-theme-bg element (i.e. on every fresh render, since a
-		// swap always creates a new one) rather than one fixed pattern --
-		// see the CSS @keyframes ccKenBurns for how the --kb-* custom
-		// properties set here get played back, and .cc-zoom's
+		// on/off toggle below. See @keyframes ccKenBurns (CSS) for how the
+		// --kb-* custom properties set here get played back, and .cc-zoom's
 		// animation-direction:alternate for why it loops seamlessly rather
 		// than snapping at the end of each pass.
 		function updateZoomClass() {
-			var active = getZoomEnabled() && !audio.paused;
-			document.querySelectorAll('.cc-theme-bg').forEach(function(el) {
-				el.classList.toggle('cc-zoom', active);
-			});
+			var el = document.getElementById('cc-theme-bg');
+			if (el) el.classList.toggle('cc-zoom', getZoomEnabled() && !audio.paused);
 		}
 		function randomizeKenBurns(el) {
 			var scaleFrom = 1 + Math.random() * 0.04;   // 1.00 - 1.04
@@ -779,25 +808,38 @@ include 'header.php';
 			el.style.setProperty('--kb-y-to', yTo);
 			el.style.setProperty('--kb-duration', duration);
 		}
-		// Exposed to sizeTheme() (outer scope) -- only randomizes once per
-		// element (a resize firing sizeTheme() again on the SAME element
-		// shouldn't pick a new direction, only a genuinely fresh one from a
-		// swap should) via the kbInit marker; always reconciles the on/off
-		// + playing-state class either way.
-		applyThemeZoom = function(el) {
-			if (!el.dataset.kbInit) {
-				randomizeKenBurns(el);
-				el.dataset.kbInit = '1';
+		// Exposed to initGameArea() (outer scope), called once per render.
+		// #cc-theme-bg is PERMANENT now (never destroyed by an AJAX swap --
+		// see the markup and MAINTENANCE.md), so re-randomizing on every
+		// single call would be wrong the same way the old kbInit-per-swap
+		// approach was: it'd restart the drift on every card played, not
+		// just when the scene actually changed. Comparing the incoming
+		// image against what's already applied (data-current-img) is what
+		// actually fixes that -- same image, same running animation,
+		// completely untouched; different image, fresh random direction.
+		applyThemeState = function() {
+			var themeBg = document.getElementById('cc-theme-bg');
+			var moodEl = document.getElementById('cc-mood');
+			if (!themeBg || !moodEl) return;
+			var active = moodEl.getAttribute('data-theme-active') === '1';
+			var img = moodEl.getAttribute('data-theme-img') || '';
+			themeBg.classList.toggle('cc-theme-active', active);
+			if (active) {
+				if (themeBg.dataset.currentImg !== img) {
+					themeBg.style.setProperty('--theme-img', img);
+					themeBg.dataset.currentImg = img;
+					randomizeKenBurns(themeBg);
+				}
+				updateZoomClass();
 			}
-			updateZoomClass();
+			sizeTheme();
 		};
-		// sizeTheme() already ran once for the very first render, before
-		// applyThemeZoom existed yet (this whole setup runs after
-		// initGameArea()'s first call in source order) -- run it again now
-		// so the initial page's own .cc-theme-bg (if any) actually gets its
-		// Ken Burns applied instead of only ever picking one up starting
-		// with the next swap.
-		sizeTheme();
+		// initGameArea()'s first call ran before applyThemeState existed yet
+		// (this whole setup runs after that first call, in source order) --
+		// run it again now so the initial page's own theme state (if any)
+		// actually gets applied instead of only ever picking one up
+		// starting with the next swap.
+		applyThemeState();
 
 		if (zoomToggleBtn) {
 			zoomToggleBtn.addEventListener('click', function() {
