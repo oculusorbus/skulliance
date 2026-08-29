@@ -449,7 +449,14 @@ include 'header.php';
 		<button type="button" class="cc-audio-btn" id="cc-audio-zoom-toggle" title="Background zoom: on">🎥</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-notif-toggle" title="Flee/medkit/Last Stand pop-ups: on">🔔</button>
 	</div>
-	<audio id="cc-audio-el" preload="metadata"></audio>
+	<!-- Two elements, not one -- crossfading between tracks (mood changes,
+	     manual skips, the normal loop's own advance) means briefly playing
+	     the outgoing and incoming track at once while one ramps down and
+	     the other ramps up. A single <audio> can only ever hold one src, so
+	     that's not possible with just one element. See the script block's
+	     crossfadeTo() for how these two take turns being "active". -->
+	<audio id="cc-audio-el-a" preload="metadata"></audio>
+	<audio id="cc-audio-el-b" preload="metadata"></audio>
 </div>
 <script>
 (function() {
@@ -721,7 +728,15 @@ include 'header.php';
 	// AJAX (the <audio> element itself just never gets destroyed between
 	// actions), but a manual refresh or a brand-new tab still needs it.
 	(function() {
-		var audio = document.getElementById('cc-audio-el');
+		// Two <audio> elements taking turns being "active" (see crossfadeTo()
+		// below) so a track change can briefly overlap the outgoing and
+		// incoming track instead of a hard cut -- especially noticeable
+		// flapping in and out of Frantic, per the user.
+		var players = [document.getElementById('cc-audio-el-a'), document.getElementById('cc-audio-el-b')];
+		var activeIdx = 0;
+		function active() { return players[activeIdx]; }
+		function inactive() { return players[1 - activeIdx]; }
+
 		var toggleBtn = document.getElementById('cc-audio-toggle');
 		var prevBtn = document.getElementById('cc-audio-prev');
 		var nextBtn = document.getElementById('cc-audio-next');
@@ -729,7 +744,7 @@ include 'header.php';
 		var volumeEl = document.getElementById('cc-audio-volume');
 		var zoomToggleBtn = document.getElementById('cc-audio-zoom-toggle');
 		var notifToggleBtn = document.getElementById('cc-audio-notif-toggle');
-		if (!audio || !toggleBtn) return;
+		if (!players[0] || !players[1] || !toggleBtn) return;
 
 		var TRACKS = [
 			{ name: 'Crypt Crawl Theme', src: 'audio/tracks/Crypt%20Crawl%20Theme.mp3' },
@@ -746,6 +761,7 @@ include 'header.php';
 			triumph: { name: 'Crypt Crawl Triumph', src: 'audio/tracks/Crypt%20Crawl%20Triumph.mp3', loop: false }
 		};
 		var currentMood = 'normal';
+		var FADE_MS = 1200; // long enough to actually read as a crossfade, short enough not to feel sluggish on a deliberate skip
 
 		function getEnabled() {
 			var v = sessionStorage.getItem('cc_audio_enabled');
@@ -775,8 +791,10 @@ include 'header.php';
 
 		var trackIndex = getTrackIndex();
 		var enabled = getEnabled();
+		var targetVolume = getVolume() / 100; // the user's actual volume setting -- what a fade ramps TOWARD, not necessarily what's playing right now mid-fade
 
-		audio.volume = getVolume() / 100;
+		players[0].volume = targetVolume;
+		players[1].volume = 0; // inactive by default; only ever raised by a crossfade
 		if (volumeEl) volumeEl.value = getVolume();
 		if (zoomToggleBtn) {
 			zoomToggleBtn.classList.toggle('off', !getZoomEnabled());
@@ -795,7 +813,7 @@ include 'header.php';
 		// than snapping at the end of each pass.
 		function updateZoomClass() {
 			var el = document.getElementById('cc-theme-bg');
-			if (el) el.classList.toggle('cc-zoom', getZoomEnabled() && !audio.paused);
+			if (el) el.classList.toggle('cc-zoom', getZoomEnabled() && !active().paused);
 		}
 		function randomizeKenBurns(el) {
 			var scaleFrom = 1 + Math.random() * 0.04;   // 1.00 - 1.04
@@ -875,34 +893,146 @@ include 'header.php';
 		}
 
 		function updateToggleIcon() {
-			toggleBtn.textContent = (!audio.paused) ? '⏸' : '▶';
+			toggleBtn.textContent = (!active().paused) ? '⏸' : '▶';
 			updateZoomClass();
 		}
 
+		// Hard cut, no fade -- for the initial page load (nothing playing
+		// yet to fade from) and manual prev/next (a deliberate skip should
+		// feel instant, not crossfade into it). Only ever touches active();
+		// inactive() is reset to silence too, in case it was mid-fade from
+		// something the user just cut across.
 		function loadTrack(index, resumePosition) {
+			stopFade();
 			currentMood = 'normal'; // back to the regular loop -- also resets any stale loop flag a mood track left set
-			audio.loop = false;
+			nearEndTriggered = false;
+			var a = active();
+			a.loop = false;
+			a.volume = targetVolume;
 			trackIndex = index;
 			setTrackIndex(index);
 			trackNameEl.textContent = TRACKS[index].name;
-			audio.src = TRACKS[index].src;
+			a.src = TRACKS[index].src;
 			if (resumePosition) {
 				var resumeAt = getPosition();
-				audio.addEventListener('loadedmetadata', function once() {
-					audio.currentTime = resumeAt;
-					audio.removeEventListener('loadedmetadata', once);
+				a.addEventListener('loadedmetadata', function once() {
+					a.currentTime = resumeAt;
+					a.removeEventListener('loadedmetadata', once);
 				});
 			}
-			audio.load();
+			a.load();
+			inactive().pause();
+			inactive().volume = 0;
 		}
 
 		function tryPlay() {
-			var p = audio.play();
+			var p = active().play();
 			if (p && p.catch) {
 				// Autoplay blocked -- normal on a fresh visit with no prior
 				// interaction yet. Leave it paused/ready; the toggle button
 				// (or any click that lands after this) will work.
 				p.catch(function() { updateToggleIcon(); });
+			}
+		}
+
+		var fadeRAF = null;
+		function stopFade() { if (fadeRAF) { cancelAnimationFrame(fadeRAF); fadeRAF = null; } }
+
+		// Crossfades to src -- for transitions the GAME forces on its own
+		// (a mood change, a fresh delve forcing the Theme, the normal loop's
+		// own advance to its next track) so flapping in and out of Frantic
+		// (say) doesn't hard-cut the music every time, per the user. Manual
+		// prev/next deliberately does NOT go through this -- see loadTrack().
+		// If audio is currently off there's nothing audible to fade, so this
+		// just silently points the active player at the new track instead
+		// (still needed so turning audio back on later resumes the right
+		// thing, not something stale).
+		function crossfadeTo(src, opts) {
+			opts = opts || {};
+			stopFade();
+			nearEndTriggered = false;
+			if (!getEnabled()) {
+				var a = active();
+				a.loop = !!opts.loop;
+				if (opts.name) trackNameEl.textContent = opts.name;
+				a.src = src;
+				if (opts.resumeAt != null) {
+					var resumeAt2 = opts.resumeAt;
+					a.addEventListener('loadedmetadata', function once() {
+						a.currentTime = resumeAt2;
+						a.removeEventListener('loadedmetadata', once);
+					});
+				}
+				a.load();
+				return;
+			}
+			var outgoing = active();
+			var incoming = inactive();
+			incoming.loop = !!opts.loop;
+			incoming.volume = 0;
+			if (opts.name) trackNameEl.textContent = opts.name;
+			incoming.src = src;
+			if (opts.resumeAt != null) {
+				var resumeAt = opts.resumeAt;
+				incoming.addEventListener('loadedmetadata', function once() {
+					incoming.currentTime = resumeAt;
+					incoming.removeEventListener('loadedmetadata', once);
+				});
+			}
+			incoming.load();
+			activeIdx = 1 - activeIdx; // incoming is the new "active" immediately, even mid-fade-in
+
+			var p = incoming.play();
+			if (p && p.catch) p.catch(function() { updateToggleIcon(); });
+
+			var startOutVol = outgoing.volume;
+			var startTs = null;
+			// requestAnimationFrame always supplies a real timestamp to its
+			// callback -- calling step() directly (no rAF) would invoke it
+			// with ts=undefined on the first frame, making startTs itself
+			// undefined and every volume computation NaN (which .volume
+			// rejects outright, throwing). Always go through rAF, including
+			// for this first frame.
+			function step(ts) {
+				if (startTs === null) startTs = ts;
+				var t = Math.min(1, (ts - startTs) / FADE_MS);
+				incoming.volume = targetVolume * t;
+				outgoing.volume = startOutVol * (1 - t);
+				if (t < 1) {
+					fadeRAF = requestAnimationFrame(step);
+				} else {
+					outgoing.pause();
+					outgoing.volume = targetVolume; // resting state for next time this element gets reused
+					fadeRAF = null;
+				}
+			}
+			fadeRAF = requestAnimationFrame(step);
+			updateToggleIcon();
+		}
+
+		// Proactively crossfades a non-looping track to whatever comes next
+		// slightly BEFORE it actually finishes -- waiting for 'ended' would
+		// mean there's nothing left to fade FROM (it's already silent by
+		// then). Frantic/Doom loop natively (audio.loop = true) so they
+		// never reach this. 'ended' below is still wired as a safety net in
+		// case duration is ever unavailable for some reason.
+		var nearEndTriggered = false;
+		function maybeAdvanceNearEnd(player) {
+			if (player !== active() || fadeRAF) return;
+			if (currentMood === 'frantic' || currentMood === 'doom') return;
+			if (!player.duration || !isFinite(player.duration)) return;
+			if (player.duration - player.currentTime > FADE_MS / 1000 || nearEndTriggered) return;
+			nearEndTriggered = true;
+			if (currentMood === 'death' || currentMood === 'triumph') {
+				currentMood = 'normal';
+				var idx = getTrackIndex();
+				crossfadeTo(TRACKS[idx].src, { name: TRACKS[idx].name, resumeAt: getPosition() });
+			} else {
+				setPosition(0);
+				var next = (trackIndex + 1) % TRACKS.length;
+				trackIndex = next;
+				setTrackIndex(next);
+				crossfadeTo(TRACKS[next].src, { name: TRACKS[next].name });
 			}
 		}
 
@@ -932,49 +1062,62 @@ include 'header.php';
 				// a card, anywhere outside the player) still unlocks here as
 				// before.
 				if (playerEl && e && e.target && playerEl.contains(e.target)) return;
-				if (audio.paused && getEnabled()) tryPlay();
+				if (active().paused && getEnabled()) tryPlay();
 			};
 			unlockEvents.forEach(function(evt) { window.addEventListener(evt, unlockAudio, true); });
 		}
 		updateToggleIcon();
 
-		// Only track position for the normal loop -- while a mood track (see
-		// below) is playing, its currentTime has nothing to do with where
-		// the normal loop should resume, and would corrupt that saved spot.
-		audio.addEventListener('timeupdate', function() { if (currentMood === 'normal') setPosition(audio.currentTime); });
-		audio.addEventListener('play', updateToggleIcon);
-		audio.addEventListener('pause', updateToggleIcon);
-		audio.addEventListener('ended', function() {
-			// Death/Triumph are one-shot stings, not loops -- once one
-			// finishes, fall back to the normal loop rather than sitting in
-			// silence (a fresh delve's own state change will re-cue the
-			// right mood again if needed, e.g. game_over -> no_run).
-			if (currentMood === 'death' || currentMood === 'triumph') {
-				loadTrack(getTrackIndex(), true);
+		players.forEach(function(p) {
+			// Only track position for the normal loop -- while a mood track
+			// is playing, its currentTime has nothing to do with where the
+			// normal loop should resume, and would corrupt that saved spot.
+			// Guarded to the currently-active player so a still-fading-out
+			// outgoing player's own timeupdate doesn't fight over state.
+			p.addEventListener('timeupdate', function() {
+				if (this !== active()) return;
+				if (currentMood === 'normal') setPosition(this.currentTime);
+				maybeAdvanceNearEnd(this);
+			});
+			p.addEventListener('play', function() { if (this === active()) updateToggleIcon(); });
+			p.addEventListener('pause', function() { if (this === active()) updateToggleIcon(); });
+			p.addEventListener('ended', function() {
+				if (this !== active()) return;
+				// Safety net -- maybeAdvanceNearEnd() should already have
+				// crossfaded to the next track slightly before this could
+				// ever fire. Hard cut here (nothing left to fade from
+				// anyway, it's already silent) rather than a crossfade.
+				if (currentMood === 'death' || currentMood === 'triumph') {
+					var idx = getTrackIndex();
+					loadTrack(idx, true);
+					tryPlay();
+					return;
+				}
+				if (currentMood !== 'normal') return;
+				setPosition(0);
+				loadTrack((trackIndex + 1) % TRACKS.length, false);
 				tryPlay();
-				return;
-			}
-			// Frantic/Doom loop natively (audio.loop = true) so 'ended'
-			// shouldn't fire for them at all -- guard anyway, just in case.
-			if (currentMood !== 'normal') return;
-			setPosition(0);
-			loadTrack((trackIndex + 1) % TRACKS.length, false);
-			tryPlay();
-		});
-		audio.addEventListener('error', function() {
-			// A mood track that hasn't been generated/uploaded yet (or any
-			// other load failure) shouldn't leave the player stuck on dead,
-			// silent audio -- fall back to the normal loop. Guarded so a
-			// genuine failure loading a *normal* track can't retry forever.
-			if (currentMood !== 'normal') {
-				loadTrack(getTrackIndex(), true);
-				if (getEnabled()) tryPlay();
-			}
+			});
+			p.addEventListener('error', function() {
+				if (this !== active()) return;
+				// A mood track that hasn't been generated/uploaded yet (or
+				// any other load failure) shouldn't leave the player stuck
+				// on dead, silent audio -- fall back to the normal loop.
+				// Guarded so a genuine failure loading a *normal* track
+				// can't retry forever.
+				if (currentMood !== 'normal') {
+					currentMood = 'normal';
+					loadTrack(getTrackIndex(), true);
+					if (getEnabled()) tryPlay();
+				}
+			});
 		});
 
 		// Cued automatically by the server (#cc-mood, set in
 		// cryptcrawlRenderGameArea()) -- never reachable via prev/next, so a
 		// player can't skip straight to Triumph without actually winning.
+		// Always crossfades (see crossfadeTo()) -- every path here is the
+		// game forcing a transition, never a manual pick.
 		syncMood = function() {
 			var moodEl = document.getElementById('cc-mood');
 			var mood = moodEl ? moodEl.getAttribute('data-mood') : 'normal';
@@ -984,8 +1127,8 @@ include 'header.php';
 			// same-mood no-op (restarting while already on the Theme should
 			// still restart it from 0:00, not leave it mid-track).
 			if (moodEl && moodEl.getAttribute('data-restarted') === '1') {
-				loadTrack(0, false);
-				if (getEnabled()) tryPlay();
+				currentMood = 'normal';
+				crossfadeTo(TRACKS[0].src, { name: TRACKS[0].name });
 				return;
 			}
 			if (!mood || mood === currentMood) return; // no change -- don't interrupt what's already playing
@@ -997,27 +1140,37 @@ include 'header.php';
 					// from scratch. Land on the Reprise specifically
 					// (TRACKS[1]) rather than whatever the normal loop's
 					// last-saved track happened to be.
-					loadTrack(1, false);
+					currentMood = 'normal';
+					crossfadeTo(TRACKS[1].src, { name: TRACKS[1].name });
 				} else {
-					loadTrack(getTrackIndex(), true); // ordinary resume -- e.g. first load
+					currentMood = 'normal';
+					var idx = getTrackIndex();
+					crossfadeTo(TRACKS[idx].src, { name: TRACKS[idx].name, resumeAt: getPosition() }); // ordinary resume
 				}
-				if (getEnabled()) tryPlay();
 				return;
 			}
 			var special = MOOD_TRACKS[mood];
 			if (!special) return; // unrecognized value -- ignore rather than break
 			currentMood = mood;
-			audio.loop = special.loop;
-			trackNameEl.textContent = special.name;
-			audio.src = special.src;
-			audio.load();
-			if (getEnabled()) tryPlay();
+			crossfadeTo(special.src, { name: special.name, loop: special.loop });
 		};
 		syncMood(); // handle whatever mood the very first render already has
 
+		// Manual controls -- hard cuts via loadTrack(), deliberately NOT
+		// crossfaded (see loadTrack()'s own comment): a deliberate skip
+		// should feel instant, not fade into place.
 		toggleBtn.addEventListener('click', function() {
-			if (audio.paused) { setEnabled(true); tryPlay(); }
-			else { setEnabled(false); audio.pause(); }
+			if (active().paused) { setEnabled(true); tryPlay(); }
+			else {
+				// Also stop+silence the inactive player -- if this lands
+				// mid-crossfade, its own fade-out would otherwise keep
+				// audibly playing (just getting quieter) for up to FADE_MS
+				// after the user asked for silence right now.
+				setEnabled(false);
+				stopFade();
+				active().pause();
+				inactive().pause();
+			}
 		});
 		prevBtn.addEventListener('click', function() {
 			setPosition(0);
@@ -1034,7 +1187,8 @@ include 'header.php';
 		if (volumeEl) {
 			volumeEl.addEventListener('input', function() {
 				var v = parseInt(volumeEl.value, 10) || 0;
-				audio.volume = v / 100;
+				targetVolume = v / 100;
+				if (!fadeRAF) active().volume = targetVolume; // mid-fade, the fade loop itself reads targetVolume fresh each frame -- don't stomp on it directly
 				setVolume(v);
 			});
 		}

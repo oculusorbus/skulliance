@@ -168,8 +168,9 @@ records verified constants, and tracks what still needs to be written.
   back, thinking it was already playing. Every other first-interaction spot (Start Delve, a card,
   anywhere outside the player) still unlocks exactly as before - only the player's own controls,
   which always manage their own play state correctly on a genuine trusted click, are excluded.
-  Auto-advances (cycles) to the other track on `ended`. Volume slider (`#cc-audio-volume`, plain
-  range input, 0-100) defaults to 50 - the source tracks are mixed loud.
+  Auto-advances (cycles) to the other track (crossfading - see below) shortly before it actually
+  ends, not on `ended` itself. Volume slider (`#cc-audio-volume`, plain range input, 0-100)
+  defaults to 50 - the source tracks are mixed loud.
 - Crypt Crawl situational music (`#cc-mood`, added 2026-08-29 ahead of the actual audio files
   existing - tracks TBD from the user, wired as if they're already there): `cryptcrawlRenderGameArea()`
   computes `$cc_mood` (`normal`/`frantic`/`doom`/`death`/`triumph`) from the same state it already
@@ -202,10 +203,36 @@ records verified constants, and tracks what still needs to be written.
   priority signal though, not just another `normal` transition: `cryptcrawlHandleAction()` sets a
   one-shot `$_SESSION['cryptcrawl_just_started']` on `start_run`, read (and cleared) by
   `cryptcrawlRenderGameArea()` into `#cc-mood`'s `data-restarted="1"`. `syncMood()` checks that
-  *before* the mood-diffing logic and, if set, unconditionally forces `loadTrack(0, false)` (the
-  Theme specifically, from 0:00) regardless of `currentMood` or what the normal loop's last-saved
-  track happened to be - covers both the AJAX path and the no-JS full-reload fallback the same
-  way, since it's driven by session state read at render time either way.
+  *before* the mood-diffing logic and, if set, unconditionally crossfades to the Theme specifically
+  (from 0:00, `TRACKS[0]`) regardless of `currentMood` or what the normal loop's last-saved track
+  happened to be - covers both the AJAX path and the no-JS full-reload fallback the same way,
+  since it's driven by session state read at render time either way.
+- Crypt Crawl music crossfading (`crossfadeTo()`, two `<audio>` elements `#cc-audio-el-a`/`-b`,
+  added 2026-08-29 - "it's a bit jarring for the music to cut off and switch to another track,
+  especially if you're in and out of frantic", per the user): a single `<audio>` element can only
+  ever hold one `src`, so overlapping an outgoing and incoming track at once (one ramping down
+  while the other ramps up) needs two. `players = [a, b]` + `activeIdx` track which one is
+  currently "active" (`active()`/`inactive()` helpers); `crossfadeTo(src, {name, loop, resumeAt})`
+  loads `src` into `inactive()` at volume 0, flips `activeIdx` immediately (so `active()` reflects
+  the incoming track right away, even mid-fade-in), calls `.play()`, then ramps both players'
+  volume in a `requestAnimationFrame` loop over `FADE_MS` (1200) toward/away from `targetVolume`
+  (the user's slider setting, re-read live each frame rather than captured once - moving the
+  slider mid-fade is reflected immediately) before pausing and resetting the old `outgoing`. The
+  first `step()` call **must** go through `requestAnimationFrame` (never invoked directly) - a
+  direct call passes no timestamp, making `startTs` (and therefore every volume in that frame)
+  `NaN`, which `.volume` rejects outright (`IndexSizeError`); caught via a synthetic-timestamp
+  Node harness before shipping, not by manual testing. **Deliberately used only for transitions
+  the game forces on its own** (a mood change via `syncMood()`, a forced restart, the normal
+  loop's own advance) - manual prev/next still goes through the older hard-cut `loadTrack()`
+  unchanged, per the user: a deliberate skip should feel instant, not fade into place. The normal
+  Theme/Reprise loop's own advance no longer waits for `ended` to switch tracks - `timeupdate`
+  (`maybeAdvanceNearEnd()`) proactively crossfades once less than `FADE_MS` of a non-looping track
+  remains, since waiting for `ended` would mean the outgoing side is already silent with nothing
+  left to fade from; `ended` is still wired on both players as a hard-cut safety net in case
+  `duration` is ever unavailable. Frantic/Doom never reach either path since they loop natively
+  (`audio.loop = true`). If audio is currently paused/off, `crossfadeTo()` skips the whole two-
+  player dance and just silently repoints `active()` at the new track (nothing audible to fade),
+  so turning audio back on later resumes the right thing instead of something stale.
 - Crypt Crawl theme-art Ken Burns drift (`#cc-theme-bg`, `.cc-theme-bg::before`, `--kb-*` custom
   properties, `#cc-audio-zoom-toggle`, re-added 2026-08-29 now that actions are AJAX, **then
   restructured the same day** - see below): background image lives on a `::before` pseudo (driven

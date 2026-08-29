@@ -60,7 +60,10 @@ where every enemy still standing would force your Last Stand no matter how
 well you play it, and the music turns Frantic; if Last Stand is already
 spent and that's still true, it turns to Doom - there's no safety net left.
 None of these four are reachable through prev/next - the only way to hear
-Triumph is to actually win.
+Triumph is to actually win. All of these transitions crossfade smoothly into
+each other rather than cutting off - handy if you're darting in and out of
+Frantic. Manually skipping tracks yourself with prev/next is still an
+instant switch, on purpose.
 
 The crypt's own backdrop art slowly drifts and zooms while music is playing
 too - a different pan direction and pace every time, so it never settles
