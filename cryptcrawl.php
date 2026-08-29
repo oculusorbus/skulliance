@@ -311,6 +311,12 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 .cc-btn.attack:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,68,68,.4); }
 .cc-btn.bare { background: #a855f7; color: #012; }
 .cc-btn.bare:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(168,85,247,.4); }
+/* Solid, not the translucent .secondary treatment -- that one reads fine on
+   the app's own dark background, but washes out against the death screen's
+   black-and-white themed backdrop (images/themes/8.jpg). Same gold as the
+   CARBON accent elsewhere on this page for a bit of visual continuity. */
+.cc-btn.gold { background: #ffcc4d; color: #012; }
+.cc-btn.gold:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,204,77,.4); }
 .cc-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
 	.cc-btn:not(:disabled)::after {
@@ -461,7 +467,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
 		</form>
 		<?php if ($fell): ?>
-		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
+		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
 		</div><!-- /cc-inner -->
 		</div><!-- /cc-theme-bg -->
 		<?php else: ?>
