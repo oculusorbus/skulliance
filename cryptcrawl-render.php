@@ -97,12 +97,15 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 	// image to use; applyThemeState() in cryptcrawl.php's script block
 	// reconciles the persistent element against it and only re-randomizes
 	// the pan/zoom when the image value itself is different from last time.
+	// game_over used to get its own themed backdrop (a moody full-bleed
+	// image behind just the small result panel) -- no longer, now that a
+	// game_over render shows the full marketing landing instead (see the
+	// state-chain below): a multi-section scrolling page squeezed into the
+	// backdrop's flex-centered small-panel treatment looked broken, not
+	// atmospheric. Only genuine active gameplay uses it now.
 	$cc_theme_active = false;
 	$cc_theme_img = '';
-	if ($state === 'game_over' && $recent_run['status'] === 'lost') {
-		$cc_theme_active = true;
-		$cc_theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg')";
-	} elseif ($state === 'active') {
+	if ($state === 'active') {
 		$cc_theme_active = true;
 		// See cryptcrawlRoomThemeFile() in db.php -- shared with the Discord
 		// per-round announcement so there's one theme list, not two.
@@ -126,17 +129,52 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<?php endforeach; ?>
 	</div>
 	<?php endif; ?>
-	<?php if ($state === 'no_run'):
-			// Public marketing landing -- deliberately wider than the game's
-			// own 720px .cc-inner cap (a hero page reads better roomier), so
-			// it breaks out of .cc-inner entirely rather than nesting inside
-			// it. Only fetched here, not on every render, since nothing else
-			// needs it: every Crypties NFT actually used as card art, for
-			// the dueling marquee rows further down.
+	<?php if ($state !== 'active'):
+			// Public marketing landing -- shown whenever there's no run
+			// currently ACTIVE (a first-ever visit, or any later visit once
+			// a run has ended), not just a literal first-ever visit.
+			// cryptcrawlGetMostRecentRun() always returns something once ANY
+			// run has ever completed, so gating this purely on
+			// $state==='no_run' meant the landing became permanently
+			// unreachable the moment a player's very first delve ever
+			// finished -- reported directly by the user ("clicking the game
+			// again doesn't take you to the public marketing page
+			// anymore"). Only a genuine in-progress delve skips it now.
+			// Deliberately wider than the game's own 720px .cc-inner cap (a
+			// hero page reads better roomier), so it breaks out of
+			// .cc-inner entirely rather than nesting inside it.
 			$cc_land_art = cryptcrawlGetCardArt($conn);
+			$cc_fell = ($state === 'game_over' && $recent_run['status'] === 'lost');
+			$cc_cta_label = ($state === 'game_over') ? '💀 Delve Again' : '💀 Start Delve';
 		?>
 	</div><!-- /cc-inner -->
 	<div class="cc-landing">
+		<?php if ($state === 'game_over'): ?>
+		<div class="cc-land-wrap">
+			<div class="cc-result <?php echo $cc_fell ? 'lost' : 'won'; ?>">
+				<div class="cc-result-icon"><?php echo $cc_fell ? '💀' : '🏆'; ?></div>
+				<div class="cc-result-title"><?php echo $cc_fell ? 'You Died' : 'You Escaped'; ?></div>
+				<div class="cc-result-sub">
+					<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
+					<?php if (!$cc_fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
+				</div>
+				<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
+				<?php if ($user_id > 0 && $carbon_earned > 0): ?>
+					<!-- Guests never see this: carbon_earned still accrues for them
+					     (cryptcrawlPlayCard), but there's no account to actually
+					     credit (cryptcrawlPayoutCarbon no-ops on a guest run), so
+					     showing an amount they didn't really get would be misleading. -->
+					<div class="cc-result-carbon">
+						<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
+						+<?php echo number_format($carbon_earned); ?> CARBON earned
+					</div>
+				<?php endif; ?>
+			</div>
+			<?php if ($cc_fell): ?>
+			<p class="cc-land-center"><a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold">🏆 Weekly Leaderboard</a></p>
+			<?php endif; ?>
+		</div>
+		<?php endif; ?>
 		<header class="cc-hero-land">
 			<a class="cc-shot-link" href="#" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;" aria-label="Play Crypt Crawl now">
 				<img class="cc-shot-land" src="/staking/images/cryptcrawl.png" alt="Crypt Crawl gameplay - a dungeon room of four cards illustrated in Crypties NFT art" loading="eager" fetchpriority="high" decoding="async">
@@ -144,7 +182,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			<h1><span class="cc-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Crypt Crawl<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="cc-subtitle-land">Free Solo Dungeon Card Game</span></h1>
 			<p class="cc-lead">Delve a 44-card crypt deck alone - weapons that wear down, medkits that diminish, monsters that hit back, and one guaranteed Last Stand when it matters most. Every card is a real Crypties NFT. No download, no signup - just play.</p>
 			<form method="post" id="cc-start-delve-form"><input type="hidden" name="action" value="start_run">
-				<button type="submit" class="cc-btn">💀 Start Delve</button>
+				<button type="submit" class="cc-btn"><?php echo $cc_cta_label; ?></button>
 			</form>
 			<p><a href="#cc-how-it-works">How It Works</a></p>
 			<div class="cc-badges" aria-label="Game highlights">
@@ -270,45 +308,15 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<section class="cc-land-section">
 			<div class="cc-land-wrap">
 				<div class="cc-final">
-					<h2>Ready to Delve?</h2>
+					<h2><?php echo $state === 'game_over' ? 'Ready for Another?' : 'Ready to Delve?'; ?></h2>
 					<p>The deck is shuffled and waiting. No download. No signup. Just play.</p>
-					<a href="#" class="cc-btn" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;">💀 Start Delve</a>
+					<a href="#" class="cc-btn" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;"><?php echo $cc_cta_label; ?></a>
 				</div>
 				<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 			</div>
 		</section>
 	</div><!-- /cc-landing -->
 	<div class="cc-inner">
-
-	<?php elseif ($state === 'game_over'):
-			$fell = ($recent_run['status'] === 'lost');
-		?>
-		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
-			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
-			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
-			<div class="cc-result-sub">
-				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
-				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
-			</div>
-			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
-			<?php if ($user_id > 0 && $carbon_earned > 0): ?>
-				<!-- Guests never see this: carbon_earned still accrues for them
-				     (cryptcrawlPlayCard), but there's no account to actually
-				     credit (cryptcrawlPayoutCarbon no-ops on a guest run), so
-				     showing an amount they didn't really get would be misleading. -->
-				<div class="cc-result-carbon">
-					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
-					+<?php echo number_format($carbon_earned); ?> CARBON earned
-				</div>
-			<?php endif; ?>
-		</div>
-		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Delve Again</button>
-		</form>
-		<?php if ($fell): ?>
-		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
-		<?php endif; ?>
-		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];

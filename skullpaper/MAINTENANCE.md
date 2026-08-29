@@ -356,6 +356,22 @@ records verified constants, and tracks what still needs to be written.
   `cryptcrawlRenderGameArea()`, matching the JS `currentMood` var's own initial value, so
   `syncMood()`'s `mood === currentMood` no-op check already prevented it from ever reaching a
   `.play()` call on a landing visit.
+  **The landing is gated on `$state !== 'active'`, not `$state === 'no_run'`** - fixed the same
+  day, reported directly by the user ("clicking the game again doesn't take you to the public
+  marketing page anymore"). `cryptcrawlGetMostRecentRun()` always returns something once ANY
+  delve has ever completed, so `$state` never falls back to `'no_run'` again after a player's
+  very first delve ends - gating the landing purely on `no_run` meant it became permanently
+  unreachable from that point on, for every future visit, forever (any return visit would show
+  `game_over` - the player's last result - instead). Fixed by unifying `no_run` and `game_over`
+  into one landing branch: `game_over` now renders the exact same landing content, with a result
+  banner (win/loss, crypts cleared, CARBON earned, the Weekly Leaderboard link when lost) inserted
+  at the top and the CTA button/heading text swapping to "Delve Again"/"Ready for Another?"
+  (`$cc_cta_label`, computed once). Only a genuinely **active** delve skips the landing now.
+  Consequence also fixed: `game_over` no longer gets its own themed `#cc-theme-bg` backdrop (the
+  `/staking/images/themes/8.jpg` death image) either - that treatment (flex-centered, sized for a
+  small result panel) looked broken stretched around a whole multi-section scrolling landing page
+  instead of the compact screen it used to wrap. `$cc_mood`'s own death/triumph situational-music
+  cueing is unaffected by any of this - still fires independently of the visual backdrop decision.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and
