@@ -726,13 +726,17 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 
 	// "Go Back" -- this page has no site nav at all (standalone, like
 	// skullswap.php), so every state gets a full-row button back to
-	// wherever the player actually came from. Prefers real browser history
-	// (only when the referrer is this same site -- an external/blank
-	// referrer means there's nothing useful to go back to) over a fixed
-	// destination; falls back to the dashboard for a logged-in visitor or
-	// the public homepage for a guest. Delegated on document (like the
-	// submit listener below) so it survives every AJAX swap without
-	// needing to be re-attached to each button.
+	// wherever the player actually came from. A logged-in player always
+	// goes straight to their dashboard -- requested directly by the user,
+	// since real browser history could just as easily land them back on
+	// cryptcrawlgame.php (the marketing page's Start Delve form posts
+	// straight here) mid-session, which isn't useful once they're already
+	// logged in and playing. Guests keep real browser history (only when
+	// the referrer is this same site -- an external/blank referrer means
+	// there's nothing useful to go back to), falling back to the public
+	// homepage. Delegated on document (like the submit listener below) so
+	// it survives every AJAX swap without needing to be re-attached to
+	// each button.
 	var IS_LOGGED_IN = document.querySelector('.cc-wrap').getAttribute('data-logged-in') === '1';
 	// Compares hostnames with any leading "www." stripped from both sides,
 	// not window.location.origin string-prefix matching -- the site is
@@ -756,10 +760,12 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 		var btn = e.target.closest ? e.target.closest('[data-go-back]') : null;
 		if (!btn) return;
 		e.preventDefault();
-		if (document.referrer && ccIsSameSite(document.referrer) && window.history.length > 1) {
+		if (IS_LOGGED_IN) {
+			window.location.href = 'dashboard.php';
+		} else if (document.referrer && ccIsSameSite(document.referrer) && window.history.length > 1) {
 			window.history.back();
 		} else {
-			window.location.href = IS_LOGGED_IN ? 'dashboard.php' : 'https://www.skulliance.io/';
+			window.location.href = 'https://www.skulliance.io/';
 		}
 	});
 

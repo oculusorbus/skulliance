@@ -366,10 +366,15 @@ records verified constants, and tracks what still needs to be written.
   **"Go Back"** (`data-go-back`, one delegated `click` listener on `document` - survives every
   AJAX swap without re-attaching): a full-width row under every state's own bottom buttons on
   `cryptcrawl.php` only (see above - `cryptcrawlgame.php` dropped this entirely, it isn't a page
-  that needs one). Prefers real browser history (`history.back()`, only when the referrer is
-  same-site and there's actually history to go back to) over a fixed destination, falling back to
-  `dashboard.php` for a logged-in visitor (`.cc-wrap`'s `data-logged-in` attribute, read once) or
-  the public homepage for a guest. **Same-site check fixed 2026-08-29** - originally a plain
+  that needs one). **Logged-in players always go straight to `dashboard.php`** (`.cc-wrap`'s
+  `data-logged-in` attribute, read once) - fixed 2026-08-29, requested directly by the user ("have
+  the go back button take them to their dashboard.php" while signed in and playing). Real browser
+  history was the wrong default for a logged-in player specifically: `cryptcrawlgame.php`'s own
+  Start Delve form posts straight to `cryptcrawl.php`, so `history.back()` could just as easily
+  bounce a mid-session player back to the marketing page instead of anywhere useful. Guests keep
+  the history-preferring behavior - prefers real browser history (`history.back()`, only when the
+  referrer is same-site and there's actually history to go back to) over a fixed destination,
+  falling back to the public homepage. **Same-site check fixed 2026-08-29** - originally a plain
   `document.referrer.indexOf(window.location.origin) === 0`
   string-prefix match, which broke for any visitor arriving from the bare domain: the public
   homepage lives at `https://skulliance.io/` (no `www`), while this page's own origin is
