@@ -68,10 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$half_heal = max(1, intval(intval($card_before['rank']) / 2));
 				cryptcrawlFlash("Half effect - you've already used a medkit this crypt. (+$half_heal HP)", 'info');
 			}
-			// Second Wind fired this exact play if it was available going in
+			// Last Stand fired this exact play if it was available going in
 			// and is now spent -- the only place that flag ever changes.
 			if ($second_wind_was_available && $updated && intval($updated['second_wind_used']) === 1) {
-				cryptcrawlFlash('SECOND WIND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win');
+				cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win');
 			}
 		}
 
@@ -370,7 +370,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 			damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
 			into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
 			deck to win, or run out of HP and the delve ends - except the first hit that would take you to 0 HP each
-			delve instead leaves you standing at 1, <span class="cc-second-wind">Second Wind</span>, once per delve.
+			delve instead leaves you standing at 1, <span class="cc-second-wind">Last Stand</span>, once per delve.
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Start Delve</button>
@@ -426,7 +426,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 					<span>HP <?php echo $hp; ?> / <?php echo $max_hp; ?></span>
 					<?php if (intval($active_run['second_wind_used'] ?? 0) === 0): ?>
-						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Second Wind ready</span>
+						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Last Stand ready</span>
 					<?php endif; ?>
 				</div>
 				<div class="cc-hp-bar-bg"><div class="cc-hp-bar-fill" data-target-width="<?php echo 100 - $hp_pct; ?>" style="width:100%;"></div></div>

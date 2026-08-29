@@ -20,14 +20,14 @@ Four cards face up at a time:
 * **Use a medkit** and heal by its rank. The first one you use in a crypt heals in full; any more after that in the *same* crypt still heal, just for **half** (rounded down, minimum 1) - so hoarding several in one crypt is never a total waste, just a worse trade than spacing them out.
 * **Flee** a crypt you haven't touched yet (not twice in a row) to reshuffle all 4 cards back into the deck and draw a fresh crypt.
 
-## Second Wind
+## Last Stand
 
 The **first hit that would take you to 0 HP** in a delve doesn't - it leaves you standing at **1 HP** instead. This happens automatically, once per delve, whether you're fighting bare-handed or with a weapon. It's the one guaranteed save for a genuinely bad stretch (weapon worn out, flee already spent, a run of big enemies back to back) - after that one save, the next lethal hit ends the delve for real.
 
 ## Winning & Losing
 
 * Clear the entire 44-card deck to **win** the delve.
-* Run out of HP (after Second Wind is spent) and the delve **ends in a loss**.
+* Run out of HP (after Last Stand is spent) and the delve **ends in a loss**.
 * Giving up mid-delve counts as a loss too - there's no separate "abandoned" outcome.
 
 ## Leaderboard & Rewards

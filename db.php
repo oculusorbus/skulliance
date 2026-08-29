@@ -10898,7 +10898,7 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 			$damage = $rank;
 		}
 		$new_hp = intval($run['hp']) - $damage;
-		// Second Wind: the first time in a run a hit would drop HP to 0 or
+		// Last Stand: the first time in a run a hit would drop HP to 0 or
 		// below, survive at 1 HP instead -- once per delve, automatic (no
 		// button to remember). This is the one guaranteed out for a
 		// bad-luck stretch (weapon already worn out, flee already spent,

@@ -99,8 +99,9 @@ records verified constants, and tracks what still needs to be written.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
-  heal half (floor, min 1) instead of nothing. Second Wind: first hit that would hit 0 HP per
-  delve instead clamps to 1 HP, once per delve, automatic.
+  heal half (floor, min 1) instead of nothing. Last Stand: first hit that would hit 0 HP per
+  delve instead clamps to 1 HP, once per delve, automatic (internal column/var name stays
+  second_wind_used - display-only rename, not worth a migration).
 - Crypt Crawl leaderboard (db.php `checkCryptCrawlLeaderboard`/`resetCryptCrawls`, same shape
   as `checkGauntletsLeaderboard`): ranks by wins DESC, best single-run rooms_cleared ("crypt
   depth", 0-15) DESC, losses ASC. Only status won/lost runs count (not in-progress). Weekly
