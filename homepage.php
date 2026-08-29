@@ -143,6 +143,20 @@
               "isAccessibleForFree": true,
               "publisher": { "@id": "https://www.skulliance.io/#organization" }
             }
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "item": {
+              "@type": "VideoGame",
+              "name": "Crypt Crawl",
+              "url": "https://www.skulliance.io/staking/cryptcrawl.php",
+              "image": "https://www.skulliance.io/staking/images/cryptcrawl.png",
+              "genre": ["Card Game", "Roguelike", "Dungeon Crawler"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
           }
         ]
       }
@@ -572,6 +586,14 @@
             <p>A pure score chase: exactly 25 matches to forge Carbon and Diamond bombs, chain detonations for huge combos, and squeeze out every last point.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/skullswap.php">Play Skull Swap</a>
           </div>
+          <div class="hp-game">
+            <a class="hp-game-art" href="https://www.skulliance.io/staking/cryptcrawl.php" aria-label="Play Crypt Crawl, the free solo dungeon card game">
+              <img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl dungeon-delve card game board" loading="lazy" decoding="async">
+            </a>
+            <h3>Crypt Crawl - Dungeon Card Game</h3>
+            <p>Delve a 44-card crypt deck illustrated entirely in Crypties NFT art - weapons that wear down, medkits that diminish, and one guaranteed Last Stand when it matters most.</p>
+            <a class="hp-cta" href="https://www.skulliance.io/staking/cryptcrawl.php">Play Crypt Crawl</a>
+          </div>
         </div>
       </div>
     </section>
@@ -687,6 +709,13 @@
             <a href="<?php echo $hp_shot_url; ?>"><img src="<?php echo $hp_shot_base . $hp_shot_file; ?>" alt="<?php echo htmlspecialchars($hp_shot_name); ?> screenshot" loading="lazy" decoding="async"></a>
           </div>
           <?php endforeach; ?>
+          <!-- Lives directly at /staking/images/ (not the shared screenshots/
+               base above the loop uses), so it's its own card rather than
+               another $hp_shots row. -->
+          <div class="hp-shot-card">
+            <h3>Crypt Crawl</h3>
+            <a href="https://www.skulliance.io/staking/cryptcrawl.php"><img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl screenshot" loading="lazy" decoding="async"></a>
+          </div>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
       </div>
@@ -785,6 +814,7 @@
       <a href="https://www.skulliance.io/shop">Merch</a>
       <a href="https://www.skulliance.io/staking/match3rpg.php">Monstrocity</a>
       <a href="https://www.skulliance.io/staking/skullswap.php">Skull Swap</a>
+      <a href="https://www.skulliance.io/staking/cryptcrawl.php">Crypt Crawl</a>
       <a href="https://www.skulliance.io/staking/skullpaper.php">Skull Paper</a>
       <a href="https://discord.gg/JqqBZBrph2">Discord</a>
       <a href="https://www.x.com/skulliance">X</a>

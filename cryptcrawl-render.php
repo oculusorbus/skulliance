@@ -126,11 +126,159 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<?php endforeach; ?>
 	</div>
 	<?php endif; ?>
-	<?php if ($state === 'no_run'): ?>
-		<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
-		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Start Delve</button>
-		</form>
+	<?php if ($state === 'no_run'):
+			// Public marketing landing -- deliberately wider than the game's
+			// own 720px .cc-inner cap (a hero page reads better roomier), so
+			// it breaks out of .cc-inner entirely rather than nesting inside
+			// it. Only fetched here, not on every render, since nothing else
+			// needs it: every Crypties NFT actually used as card art, for
+			// the dueling marquee rows further down.
+			$cc_land_art = cryptcrawlGetCardArt($conn);
+		?>
+	</div><!-- /cc-inner -->
+	<div class="cc-landing">
+		<header class="cc-hero-land">
+			<a class="cc-shot-link" href="#" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;" aria-label="Play Crypt Crawl now">
+				<img class="cc-shot-land" src="/staking/images/cryptcrawl.png" alt="Crypt Crawl gameplay - a dungeon room of four cards illustrated in Crypties NFT art" loading="eager" fetchpriority="high" decoding="async">
+			</a>
+			<h1><span class="cc-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Crypt Crawl<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="cc-subtitle-land">Free Solo Dungeon Card Game</span></h1>
+			<p class="cc-lead">Delve a 44-card crypt deck alone - weapons that wear down, medkits that diminish, monsters that hit back, and one guaranteed Last Stand when it matters most. Every card is a real Crypties NFT. No download, no signup - just play.</p>
+			<form method="post" id="cc-start-delve-form"><input type="hidden" name="action" value="start_run">
+				<button type="submit" class="cc-btn">💀 Start Delve</button>
+			</form>
+			<p><a href="#cc-how-it-works">How It Works</a></p>
+			<div class="cc-badges" aria-label="Game highlights">
+				<span class="cc-badge">100% Free</span>
+				<span class="cc-badge">No Download</span>
+				<span class="cc-badge">No Signup</span>
+				<span class="cc-badge">Mobile &amp; Desktop</span>
+			</div>
+		</header>
+
+		<section class="cc-land-section" id="cc-how-it-works">
+			<div class="cc-land-wrap">
+				<h2>A Card Game With Teeth</h2>
+				<div class="cc-features">
+					<div class="cc-feat-card">
+						<h3>🛡️ Last Stand</h3>
+						<p>The first hit that would take you to 0 HP in a delve doesn't - it leaves you standing at 1 instead. Once per delve, automatic, no button to remember. The one guaranteed save for a genuinely bad stretch.</p>
+					</div>
+					<div class="cc-feat-card">
+						<h3>⚔️ Weapons That Wear Down</h3>
+						<p>Equip a weapon and it degrades with every kill - it can only beat enemies at or below the rank of the one it just fought. Save it for the fight that actually needs it.</p>
+					</div>
+					<div class="cc-feat-card">
+						<h3>🃏 44 Unique Crypties Cards</h3>
+						<p>Every card in the deck is hand-assigned to a real Crypties NFT, not a shuffled art pool - the toughest enemies carry the rarest pieces in the collection.</p>
+					</div>
+					<div class="cc-feat-card">
+						<h3>🏆 CARBON &amp; a Weekly Leaderboard</h3>
+						<p>Every card you resolve earns CARBON that pays out the moment your delve ends, win or lose. Log in and your best runs climb the weekly leaderboard for a share of a 50,000 CARBON pool.</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="cc-land-section">
+			<div class="cc-land-wrap cc-land-center">
+				<h2>Every Card Is a Real Crypties NFT</h2>
+				<p>Crypties are the OG collectible dead things on Cardano - and the entire 44-card deck is illustrated in their art, not generic icons. The toughest monsters in the crypt carry the rarest pieces in the collection.</p>
+			</div>
+			<?php
+			// Two opposite-direction ("dueling") marquee rows covering every
+			// Crypties NFT actually used as card art in the game (see
+			// CRYPTCRAWL_CARD_ART in db.php) -- same technique as
+			// skullswap.php's own icon strip: each track holds its list
+			// twice for the seamless -50% translate loop (second pass
+			// aria-hidden), reversed direction on the second row.
+			$cc_land_cards = [];
+			foreach (CRYPTCRAWL_CARD_ART as $cc_key => $cc_nft_name) {
+				if (!isset($cc_land_art[$cc_key])) continue;
+				$cc_land_cards[] = ['url' => $cc_land_art[$cc_key], 'name' => $cc_nft_name];
+			}
+			$cc_strip_rows = [
+				['cards' => $cc_land_cards, 'class' => ''],
+				['cards' => array_reverse($cc_land_cards), 'class' => ' cc-reverse'],
+			];
+			foreach ($cc_strip_rows as $cc_row): if (empty($cc_row['cards'])) continue; ?>
+			<div class="cc-strip">
+				<div class="cc-strip-track<?php echo $cc_row['class']; ?>">
+					<?php for ($cc_pass = 0; $cc_pass < 2; $cc_pass++):
+						foreach ($cc_row['cards'] as $cc_card): ?>
+					<div class="cc-strip-card"<?php if ($cc_pass) echo ' aria-hidden="true"'; ?>>
+						<img src="<?php echo htmlspecialchars($cc_card['url']); ?>"
+							alt="<?php echo $cc_pass ? '' : htmlspecialchars($cc_card['name']); ?>"
+							loading="lazy" decoding="async" onerror="this.closest('.cc-strip-card').style.display='none';">
+						<div class="cc-ticker"><?php echo htmlspecialchars($cc_card['name']); ?></div>
+					</div>
+					<?php endforeach; endfor; ?>
+				</div>
+			</div>
+			<?php endforeach; ?>
+		</section>
+
+		<section class="cc-land-section">
+			<div class="cc-land-wrap">
+				<h2>How a Crypt Works</h2>
+				<ul class="cc-mechanics">
+					<li><span class="cc-mech-emoji" aria-hidden="true">♦️</span><span><strong>Diamonds (2-10) are weapons</strong> - equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.</span></li>
+					<li><span class="cc-mech-emoji" aria-hidden="true">♥️</span><span><strong>Hearts (2-10) are medkits</strong> - the first one you use each crypt heals in full; any more in the same crypt still heal, just for half.</span></li>
+					<li><span class="cc-mech-emoji" aria-hidden="true">♣️</span><span><strong>Clubs &amp; Spades (2-14) are enemies</strong> - fight bare-handed and take full damage, or spend your weapon and take only the difference.</span></li>
+					<li><span class="cc-mech-emoji" aria-hidden="true">🏃</span><span><strong>Resolve 3 of 4 cards</strong> in a crypt and the last one carries into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck.</span></li>
+				</ul>
+			</div>
+		</section>
+
+		<section class="cc-land-section">
+			<div class="cc-land-wrap">
+				<h2>Think Like a Survivor</h2>
+				<ol class="cc-tips">
+					<li><strong>Save your weapon for the fight that needs it.</strong> It only degrades further once you use it - a fresh weapon on a weak enemy is a wasted edge later.</li>
+					<li><strong>Don't burn every medkit in one crypt.</strong> Only the first heals in full; spacing them across crypts is worth more than hoarding them into one.</li>
+					<li><strong>Flee when the room is genuinely bad.</strong> You only get it once between touches - use it on a crypt that would actually cost you Last Stand, not a mild inconvenience.</li>
+					<li><strong>Watch the music.</strong> The ambient track shifts to Frantic, then Doom, when a crypt has become genuinely unsurvivable even played perfectly - your ears will know before the HP bar makes it obvious.</li>
+				</ol>
+			</div>
+		</section>
+
+		<section class="cc-land-section">
+			<div class="cc-land-wrap cc-faq">
+				<h2>Crypt Crawl FAQ</h2>
+				<details>
+					<summary>Is Crypt Crawl really free to play?</summary>
+					<p>Yes - completely free. Open the page and play, no purchase or signup required.</p>
+				</details>
+				<details>
+					<summary>Do I need an account to play?</summary>
+					<p>No account is needed for casual play. Log in through Skulliance with Discord if you want your runs saved, counted toward the leaderboard, and paid out in CARBON - but it's never required to enjoy the game.</p>
+				</details>
+				<details>
+					<summary>Does Crypt Crawl work on mobile?</summary>
+					<p>Yes. The whole board is touch-friendly and resizes for phones and tablets - it plays just as well on mobile as on desktop.</p>
+				</details>
+				<details>
+					<summary>What happens if I lose?</summary>
+					<p>Running out of HP (after Last Stand is spent) ends the delve as a loss - the same as giving up mid-delve. Either way, whatever CARBON you'd earned that run still pays out, and you can start a fresh delve immediately.</p>
+				</details>
+				<details>
+					<summary>Where does the card art come from?</summary>
+					<p>Every card is hand-assigned to a specific Crypties NFT - the OG collectible dead things on Cardano - not a random or shuffled pool. The rarest pieces in the collection are reserved for the toughest enemies in the deck.</p>
+				</details>
+			</div>
+		</section>
+
+		<section class="cc-land-section">
+			<div class="cc-land-wrap">
+				<div class="cc-final">
+					<h2>Ready to Delve?</h2>
+					<p>The deck is shuffled and waiting. No download. No signup. Just play.</p>
+					<a href="#" class="cc-btn" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;">💀 Start Delve</a>
+				</div>
+				<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
+			</div>
+		</section>
+	</div><!-- /cc-landing -->
+	<div class="cc-inner">
 
 	<?php elseif ($state === 'game_over'):
 			$fell = ($recent_run['status'] === 'lost');
@@ -160,6 +308,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<?php if ($fell): ?>
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
 		<?php endif; ?>
+		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];
@@ -351,6 +500,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
 			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
 		</div>
+		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
 		<!-- Pure client-side toggle -- the rules text is static, no server
 		     round trip needed to revisit it mid-delve. See the bottom script

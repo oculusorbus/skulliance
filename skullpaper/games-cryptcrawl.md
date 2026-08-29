@@ -2,6 +2,8 @@
 
 Crypt Crawl is a **solo dungeon-delve card game**, played with a single 44-card deck reskinned in Crypties NFT art. No party, no dice - just the deck, your HP, and whatever crypt turns up next. Every one of the 44 cards is hand-assigned to a specific Crypties NFT (from the Crypties - Season 2 collection) rather than drawn from a shuffled art pool - the highest-ranking enemy cards use the rarest pieces the owner holds.
 
+`cryptcrawl.php` is a standalone page (no site nav), same as [[games-skull-swap]] and Monstrocity - it doubles as the game's public marketing landing. Visiting it fresh (no delve started, none finished) shows a full landing page instead of the bare rules screen: hero, feature highlights, two counter-scrolling rows showing every Crypties NFT actually used as card art, and a "Start Delve" button. Land on it with a delve already in progress or just finished and it skips straight to the game/result screen instead - the landing is a first-visit thing, not something you click through every time. Every screen has a "Go Back" button, since there's no site nav on this page to fall back on otherwise - it prefers real browser history (when you arrived from elsewhere on the site) over a fixed destination.
+
 ## The Deck
 
 44 cards, three kinds:

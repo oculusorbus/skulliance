@@ -309,6 +309,38 @@ records verified constants, and tracks what still needs to be written.
   the whole backdrop too only if that emptied it out entirely (an untagged flash queued alongside
   a suppressed one, if that ever happens, still shows). Doesn't retroactively touch a flash modal
   already on-screen when the button is toggled - only affects what shows up starting next render.
+- Crypt Crawl is a standalone page with a public marketing landing (cryptcrawl.php, added
+  2026-08-29 - "build a public facing marketing page in the same vein as Skull Swap... integrate
+  with the homepage," per the user): dropped `include 'header.php'` entirely - own full
+  `<!doctype html>` document (title/meta/OG/Twitter/JSON-LD VideoGame+BreadcrumbList schema,
+  matching skullswap.php's exact pattern) instead of the shared site nav, same treatment as
+  skullswap.php/match3rpg.php. Unlike Skull Swap (no server state, landing always shown, JS
+  reveals the game), Crypt Crawl has a persistent multi-session run to respect - the landing only
+  renders when `$state === 'no_run'` in `cryptcrawlRenderGameArea()` (a first-ever visit, or
+  every run finished with none in progress); an active or just-finished run skips straight to the
+  game/result screen, unaffected. Landing content: hero + `/staking/images/cryptcrawl.png`
+  screenshot (clickable, `requestSubmit()`s the same `#cc-start-delve-form` the button uses) +
+  feature cards + a "dueling" two-row counter-scrolling marquee (`.cc-strip`/`.cc-strip-track`,
+  same technique as skullswap.php's icon strip - reversed direction on the second row, duplicated
+  track for the seamless -50% loop) covering **every** Crypties NFT actually used as card art -
+  built by iterating `CRYPTCRAWL_CARD_ART` against `cryptcrawlGetCardArt($conn)`'s resolved URLs
+  (the exact same lookup the game itself uses, so the marquee can never drift out of sync with
+  what's really in the deck) + mechanics/tips/FAQ sections + a final CTA. Deliberately breaks out
+  of `.cc-inner`'s 720px cap into its own wider `.cc-landing`/`.cc-land-wrap` (1000px) - a hero
+  page reads better roomier; `.cc-inner` closes before it and reopens empty right after so the
+  function's single final `</div><!-- /cc-inner -->` stays correctly balanced either way (same
+  balanced-open/close-per-branch technique the Ken Burns refactor above already established).
+  **"Go Back"** (`data-go-back`, one delegated `click` listener on `document` - survives every
+  AJAX swap without re-attaching): a full-width row under every state's own bottom buttons
+  (landing, active's flee-row, game_over), since this page has zero site nav to fall back on
+  otherwise. Prefers real browser history (`history.back()`, only when `document.referrer` is
+  same-origin and there's actually history to go back to) over a fixed destination; falls back to
+  `dashboard.php` for a logged-in visitor (`.cc-wrap`'s `data-logged-in` attribute, read once) or
+  the public homepage for a guest. Homepage integration (homepage.php): a third `.hp-game` card
+  alongside Monstrocity/Skull Swap, a third `VideoGame` entry in the JSON-LD `ItemList`, a
+  standalone `.hp-shot-card` in the platform screenshots grid (hardcoded full path, not folded
+  into the `$hp_shots` loop - that loop's shared `$hp_shot_base` points at `images/screenshots/`,
+  and this screenshot lives directly under `images/` instead), and a footer link.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

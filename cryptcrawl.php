@@ -52,27 +52,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	exit;
 }
 
-// header.php's shared nav is entirely gated on isset($name) (plus $avatar_url for
-// the avatar image) — normally supplied by skulliance.php's extract($_SESSION
-// ['userData']). This page deliberately skips that hard-gated include (see the
-// header comment above) so a logged-in visitor needs the same two values computed
-// here, or the whole nav — Play/NFTs/Stats/Account menus, Logout, wallet button,
-// all of it — silently renders empty. Guests (user_id 0) get no $name, same as any
-// other page when logged out; that part is an existing site-wide convention, not
-// something specific to this page.
-if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
-	extract($_SESSION['userData']);
-	if (isset($discord_id) && isset($avatar)) {
-		$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
-	}
-}
-
-include 'header.php';
+// Standalone page for EVERYONE, same treatment as skullswap.php/match3rpg.php:
+// no header.php nav, no staking platform CSS (which would fight this page's
+// own design). A logged-in visitor's session still works fine (db.php/the
+// SessionCookie restore above already handle that) -- only the shared *nav
+// chrome* is skipped, not login state itself. The "Go Back" button further
+// down (every state has one -- see the script block) is what replaces the
+// nav as this page's way back to the rest of the site, since there's no nav
+// here to fall back on otherwise.
 // $active_run/$recent_run/$state/$flashes/$suit_symbol/$suit_color are all
 // computed inside cryptcrawlRenderGameArea() now (cryptcrawl-render.php),
 // since that function needs to be independently callable from the AJAX
 // endpoint too, not just this page's own initial GET.
+$cc_canonical = 'https://www.skulliance.io/staking/cryptcrawl.php';
+$cc_og_image  = 'https://www.skulliance.io/staking/images/cryptcrawl.png';
+$cc_title     = 'Crypt Crawl - Free Solo Dungeon Card Game | Play in Your Browser';
+$cc_desc      = 'Play Crypt Crawl free - a solo dungeon-delve card game with a 44-card deck illustrated entirely in Crypties NFT art, a Last Stand save, and a weekly CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
+$cc_short     = 'A free browser dungeon-delve card game illustrated in Crypties NFT art, with a Last Stand save and a weekly CARBON leaderboard. Play on any device - no download.';
 ?>
+<!doctype html>
+<html lang="en">
+<head>
+<title><?php echo htmlspecialchars($cc_title); ?></title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="<?php echo htmlspecialchars($cc_desc); ?>">
+<meta name="keywords" content="free card game, solo dungeon crawler, roguelike card game, browser card game, no download card game, free rogue-like game, Cardano NFT game, Crypties NFT, dungeon delve card game">
+<meta name="theme-color" content="#07111d">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="<?php echo $cc_canonical; ?>">
+
+<!-- OpenGraph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Skulliance">
+<meta property="og:url" content="<?php echo $cc_canonical; ?>">
+<meta property="og:title" content="<?php echo htmlspecialchars($cc_title); ?>">
+<meta property="og:description" content="<?php echo htmlspecialchars($cc_desc); ?>">
+<meta property="og:image" content="<?php echo $cc_og_image; ?>">
+<meta property="og:image:alt" content="Crypt Crawl dungeon-delve card game board, illustrated in Crypties NFT art">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?php echo htmlspecialchars($cc_title); ?>">
+<meta name="twitter:description" content="<?php echo htmlspecialchars($cc_short); ?>">
+<meta name="twitter:image" content="<?php echo $cc_og_image; ?>">
+<meta name="twitter:image:alt" content="Crypt Crawl dungeon-delve card game board, illustrated in Crypties NFT art">
+
+<!-- Schema.org structured data: VideoGame + BreadcrumbList -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "VideoGame",
+      "name": "Crypt Crawl",
+      "alternateName": ["Crypt Crawl Card Game", "Crypt Crawl Dungeon Delve"],
+      "url": "<?php echo $cc_canonical; ?>",
+      "image": "<?php echo $cc_og_image; ?>",
+      "screenshot": "<?php echo $cc_og_image; ?>",
+      "description": "<?php echo $cc_short; ?>",
+      "genre": ["Card Game", "Roguelike", "Dungeon Crawler"],
+      "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+      "playMode": "SinglePlayer",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "inLanguage": "en",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+      "publisher": { "@type": "Organization", "name": "Skulliance", "url": "https://www.skulliance.io/" },
+      "potentialAction": { "@type": "PlayAction", "target": "<?php echo $cc_canonical; ?>" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Skulliance", "item": "https://www.skulliance.io/" },
+        { "@type": "ListItem", "position": 2, "name": "Crypt Crawl - Free Solo Dungeon Card Game", "item": "<?php echo $cc_canonical; ?>" }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+html { scroll-behavior: smooth; }
+body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+</style>
 <style>
 /* Card index numerals only — rest of the page stays the site's normal Arial.
    Poppins ExtraBold approximates the bold, slightly-rounded look of a
@@ -419,8 +482,80 @@ include 'header.php';
 	.cc-btn-icon-big, .cc-btn-icon-big-img { display: none; }
 	.cc-btn.punchy { min-height: 44px; padding: 6px 5px; gap: 1px; }
 }
+
+/* Marketing landing (no_run state only -- see cryptcrawl-render.php) --
+   design language matches skullswap.php's own standalone landing: brand
+   green-teal accents, navy base, glow hero, accent-bar mechanics list,
+   counter-scrolling icon marquee. Wider than the game's own 720px
+   .cc-inner cap (a hero page reads better roomier), so this deliberately
+   does NOT nest inside .cc-inner -- see the render function for how. */
+.cc-landing { padding-bottom: 20px; }
+.cc-land-wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
+.cc-hero-land {
+	text-align: center; padding: 48px 20px 44px; margin: 0 -16px 0;
+	background: radial-gradient(circle at 50% 0%, rgba(0, 200, 160, 0.18), transparent 60%), linear-gradient(180deg, #07111d 0%, #0b1a2b 100%);
+	border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.cc-title-land { text-transform: uppercase; letter-spacing: 0.04em; font-size: clamp(1.9rem, 4.5vw, 3.2rem); margin: 0 0 0.2em; }
+.cc-title-land img { display: inline-block; height: 0.9em; width: auto; vertical-align: -0.12em; margin: 0 0.08em; filter: drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
+.cc-subtitle-land { display: block; font-size: clamp(1.05rem, 2.5vw, 1.6rem); font-weight: 600; color: #c7d0d9; }
+.cc-lead { max-width: 640px; margin: 14px auto 22px; color: #c7d0d9; font-size: 1.02rem; }
+.cc-shot-link { display: block; cursor: pointer; }
+.cc-shot-land {
+	display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto 26px;
+	border-radius: 14px; border: 1px solid rgba(255,255,255,.15);
+	box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(0,200,160,.1) inset;
+	transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.cc-shot-link:hover .cc-shot-land, .cc-shot-link:focus-visible .cc-shot-land {
+	transform: translateY(-3px); border-color: rgba(0,200,160,.5);
+	box-shadow: 0 36px 90px rgba(0,0,0,.75), 0 0 24px rgba(0,200,160,.25);
+}
+.cc-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+.cc-badge { font-size: .8rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #c7d0d9; }
+.cc-land-section { padding: 40px 0; }
+.cc-land-section + .cc-land-section { border-top: 1px solid rgba(255,255,255,.06); }
+.cc-land-section h2 { font-size: clamp(1.4rem, 3vw, 2rem); text-align: center; margin: 0 0 .6em; }
+.cc-land-section p, .cc-land-section li { color: #c7d0d9; }
+.cc-land-center { text-align: center; }
+.cc-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 20px; }
+@media (max-width: 560px) { .cc-features { grid-template-columns: 1fr; } }
+.cc-feat-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 22px; }
+.cc-feat-card h3 { margin: 0 0 8px; font-size: 1.1rem; color: #00c8a0; }
+.cc-feat-card p { margin: 0; font-size: .96rem; }
+/* Two opposite-direction marquee rows of every Crypties NFT used as card
+   art in the game -- "dueling" rows, per the user. Same technique as
+   skullswap.php's icon strip: duplicated track sliding -50%, reversed
+   direction on the second row, pause on hover, edge fade masks. */
+.cc-strip { width: 100%; overflow: hidden; padding: 14px 0; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); }
+.cc-strip-track { display: flex; align-items: flex-start; gap: 20px; width: max-content; animation: cc-strip-scroll 55s linear infinite; will-change: transform; }
+.cc-strip-track.cc-reverse { animation-direction: reverse; animation-duration: 62s; }
+.cc-strip-track:hover { animation-play-state: paused; }
+@keyframes cc-strip-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .cc-strip-track { animation: none; } }
+.cc-strip-card { flex: 0 0 96px; text-align: center; }
+.cc-strip-card img { width: 88px; height: 123px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); box-shadow: 0 6px 14px rgba(0,0,0,.6); }
+.cc-strip-card .cc-ticker { margin-top: 6px; font-size: .68rem; color: #8a96a3; font-weight: 600; letter-spacing: .03em; }
+.cc-mechanics { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.cc-mechanics li { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,.03); border-left: 3px solid #00c8a0; border-radius: 6px; font-size: .95rem; }
+.cc-mechanics li strong { color: #34e3bb; }
+.cc-mech-emoji { flex-shrink: 0; width: 32px; text-align: center; font-size: 1.5rem; line-height: 1.2; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+.cc-tips { margin: 16px 0 0; padding-left: 22px; }
+.cc-tips li { margin-bottom: 8px; }
+.cc-faq details { border-bottom: 1px solid rgba(255,255,255,.08); padding: 14px 0; }
+.cc-faq summary { cursor: pointer; font-weight: 700; color: #e8eaed; }
+.cc-faq p { margin: 10px 0 0; }
+.cc-final { text-align: center; background: linear-gradient(180deg, rgba(0,200,160,.08), transparent); border-radius: 18px; padding: 40px 24px; }
+/* "Go Back" -- full row below every state's own bottom buttons, since this
+   page has no site nav at all to fall back on otherwise. Delegated click
+   handling (data-go-back) in the script block, not per-button wiring, so
+   it survives every AJAX swap without needing to be re-attached. */
+.cc-go-back-row { margin-top: 10px; }
+.cc-go-back-row .cc-btn { width: 100%; }
 </style>
-<div class="cc-wrap">
+</head>
+<body>
+<div class="cc-wrap" data-logged-in="<?php echo $user_id > 0 ? '1' : '0'; ?>">
 <!-- Permanent wrapper -- unlike #cc-game-area inside it, this element is
      NEVER destroyed/recreated by an AJAX swap, specifically so its Ken
      Burns CSS animation (.cc-zoom, further up) keeps running continuously
@@ -666,6 +801,27 @@ include 'header.php';
 	}
 
 	initGameArea();
+
+	// "Go Back" -- this page has no site nav at all (standalone, like
+	// skullswap.php), so every state gets a full-row button back to
+	// wherever the player actually came from. Prefers real browser history
+	// (only when the referrer is this same site -- an external/blank
+	// referrer means there's nothing useful to go back to) over a fixed
+	// destination; falls back to the dashboard for a logged-in visitor or
+	// the public homepage for a guest. Delegated on document (like the
+	// submit listener below) so it survives every AJAX swap without
+	// needing to be re-attached to each button.
+	var IS_LOGGED_IN = document.querySelector('.cc-wrap').getAttribute('data-logged-in') === '1';
+	document.addEventListener('click', function(e) {
+		var btn = e.target.closest ? e.target.closest('[data-go-back]') : null;
+		if (!btn) return;
+		e.preventDefault();
+		if (document.referrer && document.referrer.indexOf(window.location.origin) === 0 && window.history.length > 1) {
+			window.history.back();
+		} else {
+			window.location.href = IS_LOGGED_IN ? 'dashboard.php' : 'https://www.skulliance.io/';
+		}
+	});
 
 	// Intercept every action form inside #cc-game-area and post to the AJAX
 	// endpoint instead of letting the browser navigate there -- this is what
@@ -1195,3 +1351,5 @@ include 'header.php';
 	})();
 })();
 </script>
+</body>
+</html>
