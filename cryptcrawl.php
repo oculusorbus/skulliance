@@ -186,7 +186,21 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 }
 .cc-instructions-modal h3 { margin: 0 0 10px; font-size: 1.05rem; }
 .cc-instructions-close { margin-top: 16px; width: 100%; }
-.cc-theme-bg { background-size: cover; background-position: center; border-radius: 14px; padding: 18px; margin: 0 -16px; transition: background-image .6s ease; display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px; }
+.cc-theme-bg {
+	position: relative; overflow: hidden; border-radius: 14px; padding: 18px; margin: 0 -16px;
+	display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px;
+}
+/* Background image lives on a pseudo-element, not the box itself, so the
+   ambient zoom below (transform: scale) affects only the art -- not the
+   real content (.cc-inner) sitting on top of it. */
+.cc-theme-bg::before {
+	content: ''; position: absolute; inset: 0; background-image: var(--theme-img);
+	background-size: cover; background-position: center; transition: background-image .6s ease;
+}
+/* Slow ambient zoom while the music is actually playing -- toggled in JS
+   alongside the audio player's play/pause state. */
+.cc-theme-bg.cc-zoom::before { animation: ccThemeZoom 18s ease-in-out infinite; }
+@keyframes ccThemeZoom { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 .cc-hud {
 	display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; animation: ccFlashIn .5s ease .15s both;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -378,7 +392,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 @media (prefers-reduced-motion: reduce) {
 	.cc-card-flip-inner, .cc-card-controls, .cc-flash-backdrop, .cc-flash-modal, .cc-instructions-backdrop.show,
 	.cc-instructions-modal, .cc-hud, .cc-hp-wrap.low .cc-hp-bar-bg, .cc-btn::after,
-	.cc-result-icon, .cc-result-title, .cc-result-sub, .cc-result-carbon { animation: none !important; }
+	.cc-result-icon, .cc-result-title, .cc-result-sub, .cc-result-carbon, .cc-theme-bg::before { animation: none !important; }
 	.cc-card-flip, .cc-btn, .cc-hp-bar-fill { transition: none !important; }
 }
 /* Mobile: cards and buttons at 75% scale, with the button panel pulled up
@@ -466,7 +480,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		?>
 		<?php if ($fell): ?>
 	</div><!-- /cc-inner -->
-		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
+		<div class="cc-theme-bg" style="--theme-img: linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg');">
 		<div class="cc-inner">
 		<?php endif; ?>
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
@@ -515,7 +529,7 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 		$room_theme_url = '/staking/images/themes/' . cryptcrawlRoomThemeFile($active_run['rooms_cleared']);
 	?>
 	</div><!-- /cc-inner (theme backdrop below spans the full page-content width) -->
-		<div class="cc-theme-bg" style="background-image:linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
+		<div class="cc-theme-bg" style="--theme-img: linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('<?php echo htmlspecialchars($room_theme_url); ?>');">
 		<div class="cc-inner">
 		<div class="cc-hud">
 			<div class="cc-hp-wrap<?php echo $hp_pct <= 30 ? ' low' : ''; ?>">
@@ -824,6 +838,15 @@ $suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#f
 
 		function updateToggleIcon() {
 			toggleBtn.textContent = (!audio.paused) ? '⏸' : '▶';
+			// Slow ambient zoom on the theme art while music is actually
+			// playing -- a "vibe check," purely decorative. querySelectorAll
+			// because game_over(lost)/active each render their own
+			// .cc-theme-bg; no-ops fine on no_run/game_over(won), which have
+			// none. cc-zoom itself is a no-op animation-wise under
+			// prefers-reduced-motion (see that media query above).
+			document.querySelectorAll('.cc-theme-bg').forEach(function(el) {
+				el.classList.toggle('cc-zoom', !audio.paused);
+			});
 		}
 
 		function loadTrack(index, resumePosition) {
