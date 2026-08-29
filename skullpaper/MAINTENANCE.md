@@ -186,7 +186,12 @@ records verified constants, and tracks what still needs to be written.
   guarded against retrying forever - covers a mood file that's 404 (not generated/uploaded yet)
   without leaving the player on dead silent audio. Manually pressing prev/next while a mood track
   is playing hands control back to the normal loop immediately (`loadTrack()` always resets
-  `currentMood` to `normal`) and stays there until the mood value itself next changes.
+  `currentMood` to `normal`) and stays there until the mood value itself next changes. Escaping
+  `frantic`/`doom` back to `normal` without the delve actually ending (healed up, geared up) lands
+  specifically on the Reprise (`TRACKS[1]`), not whatever the normal loop's last-saved track
+  happened to be - picking back up after a close call should feel like a reprise, not the intro
+  theme restarting. Restarting a fresh delve after game_over is unaffected by this - `death`/
+  `triumph` -> `normal` still falls through to the ordinary resume (last-saved track/position).
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

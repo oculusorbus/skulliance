@@ -754,7 +754,17 @@ include 'header.php';
 			var mood = moodEl ? moodEl.getAttribute('data-mood') : 'normal';
 			if (!mood || mood === currentMood) return; // no change -- don't interrupt what's already playing
 			if (mood === 'normal') {
-				loadTrack(getTrackIndex(), true); // resumes the normal loop where it left off
+				if (currentMood === 'frantic' || currentMood === 'doom') {
+					// Pulled out of danger (healed up, geared up -- survived
+					// without the delve actually ending) -- that should feel
+					// like picking back up, not restarting the intro theme
+					// from scratch. Land on the Reprise specifically
+					// (TRACKS[1]) rather than whatever the normal loop's
+					// last-saved track happened to be.
+					loadTrack(1, false);
+				} else {
+					loadTrack(getTrackIndex(), true); // ordinary resume -- e.g. first load, or leaving game_over
+				}
 				if (getEnabled()) tryPlay();
 				return;
 			}
