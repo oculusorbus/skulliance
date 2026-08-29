@@ -211,6 +211,14 @@ records verified constants, and tracks what still needs to be written.
   recreated) - falls back to a real `form.submit()` if the fetch itself fails. The `#cc-audio-player`
   markup being a sibling of `#cc-game-area`, never inside it, is what actually keeps the `<audio>`
   element continuously alive across actions now - the whole reason this refactor exists.
+  `#cc-game-area` stays inert (`pointer-events: none` + dimmed) for 400ms after a swap completes,
+  not just for the fetch's own duration - a fast response (very plausible, local/small) otherwise
+  leaves a window where a rapid second tap lands on whatever the swap just rendered in that same
+  screen position. Reported failure mode this fixed: a lethal hit's response (the loss screen)
+  rendering and getting immediately overtaken by an instinctive second tap on the fatal-attack
+  button's now-occupied spot, which had become "Delve Again" - starting a new run before the
+  player ever saw they'd died. 400ms comfortably covers a double-tap gesture (~300ms) without
+  reading as a delay on one deliberate tap.
 
 ---
 

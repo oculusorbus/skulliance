@@ -578,10 +578,23 @@ include 'header.php';
 			})
 			.then(function(html) {
 				gameArea.innerHTML = html;
-				gameArea.style.opacity = '';
-				gameArea.style.pointerEvents = '';
-				busy = false;
 				initGameArea();
+				// Stay inert a bit longer than just the fetch itself -- a
+				// fast response (very plausible when it's local/small) can
+				// otherwise let a rapid second tap land on whatever the
+				// swap just rendered in that same screen position. That's
+				// a real, reported failure mode: fighting for survival,
+				// tapping the fatal attack again out of instinct, and that
+				// second tap landing squarely on "Delve Again" the instant
+				// it appears there -- starting a new game before the loss
+				// screen was ever actually seen. 400ms comfortably covers
+				// a double-tap gesture (~300ms) without being noticeable
+				// as a delay on a single deliberate tap.
+				setTimeout(function() {
+					gameArea.style.opacity = '';
+					gameArea.style.pointerEvents = '';
+					busy = false;
+				}, 400);
 			})
 			.catch(function() {
 				// AJAX failed for some reason -- fall back to a real submit
