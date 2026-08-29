@@ -119,6 +119,30 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	.cc-btn:not(:disabled):hover::after { animation: ccBtnSheen .6s ease; }
 }
 
+/* Marketing CTAs -- pill-shaped, matches skullswap.php's own .ss-cta/
+   .ss-secondary exactly so the two marketing pages read as one product
+   line. Deliberately NOT .cc-btn above -- that's the small, full-width
+   rectangular style used for actual in-game actions on cryptcrawl.php
+   itself, a different button language for a different kind of page. The
+   Start Delve form is made inline-block so it sits on the same line as
+   the secondary link beside it, exactly like ss-cta + ss-secondary do. */
+.cc-cta {
+	display: inline-block; background: linear-gradient(135deg, #00c8a0, #0596c4);
+	color: #07111d !important; font-weight: 800; font-size: 1.08rem;
+	padding: 14px 32px; border: none; border-radius: 999px; cursor: pointer;
+	font-family: inherit; text-decoration: none !important;
+	box-shadow: 0 6px 20px rgba(0,200,160,.35);
+	transition: transform .15s ease, box-shadow .15s ease;
+}
+.cc-cta:hover, .cc-cta:focus { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,200,160,.5); }
+.cc-cta.cc-secondary { background: transparent; color: #00c8a0 !important; border: 1px solid rgba(0,200,160,.45); box-shadow: none; margin-left: 12px; }
+.cc-cta.cc-secondary:hover { background: rgba(0,200,160,.08); }
+#cc-start-delve-form { display: inline-block; margin: 0; }
+@media (max-width: 480px) {
+	.cc-cta { width: 100%; text-align: center; }
+	.cc-cta.cc-secondary { margin-left: 0; margin-top: 10px; }
+}
+
 /* Marketing landing -- design language matches skullswap.php's own
    standalone landing: brand green-teal accents, navy base, glow hero,
    accent-bar mechanics list, counter-scrolling icon marquee. */
@@ -198,9 +222,9 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 		<h1><span class="cc-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Crypt Crawl<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="cc-subtitle-land">Free Solo Dungeon Card Game</span></h1>
 		<p class="cc-lead">Delve a 44-card crypt deck alone - weapons that wear down, medkits that diminish, monsters that hit back, and one guaranteed Last Stand when it matters most. Every card is a real Crypties NFT. No download, no signup - just play.</p>
 		<form method="post" action="cryptcrawl.php" id="cc-start-delve-form"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Start Delve</button>
+			<button type="submit" class="cc-cta">💀 Start Delve</button>
 		</form>
-		<p><a href="#cc-how-it-works">How It Works</a></p>
+		<a class="cc-cta cc-secondary" href="#cc-how-it-works">How It Works</a>
 		<div class="cc-badges" aria-label="Game highlights">
 			<span class="cc-badge">100% Free</span>
 			<span class="cc-badge">No Download</span>
@@ -326,7 +350,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 			<div class="cc-final">
 				<h2>Ready to Delve?</h2>
 				<p>The deck is shuffled and waiting. No download. No signup. Just play.</p>
-				<a href="#" class="cc-btn" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;">💀 Start Delve</a>
+				<a href="#" class="cc-cta" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;">💀 Start Delve</a>
 			</div>
 			<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 		</div>
