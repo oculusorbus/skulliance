@@ -240,6 +240,19 @@ records verified constants, and tracks what still needs to be written.
   zoom too - `.cc-theme-active` also gates whether it forces the viewport-filling height at all
   (skipped entirely in "bare" mode - no_run/game_over-won - where `#cc-theme-bg` just sizes
   naturally around `#cc-game-area`'s own content, same as if it weren't there).
+  **Regression this same restructuring caused, fixed same day:** `#cc-game-area` (the AJAX swap
+  target, sitting between `#cc-theme-bg` and `.cc-inner`) had no CSS of its own. Harmless in "bare"
+  mode (plain block flow), but `.cc-theme-active` makes `#cc-theme-bg` a flex container
+  (`display:flex; justify-content:center`) to center its content - and a flex item with no
+  explicit width shrinks to its own content's size rather than stretching to fill available space,
+  so `.cc-inner`'s `max-width:720px` never actually got 720px of container to be 100% of. Real
+  desktop/wide-browser views quietly collapsed down toward `.cc-room`'s minimum column width
+  instead - reported directly by the user ("full browser view... shrinking down like it's in
+  mobile when it isn't"; mobile itself, sized off a *fixed* `.cc-room` column count rather than
+  `.cc-inner`'s own width, was never affected). Fixed with one rule: `#cc-game-area { width:
+  100%; }`. Confirmed live via Chrome DevTools before and after (injected the rule with
+  `javascript_tool`, screenshotted both states) rather than only reasoning about it - a plain
+  static-code read of the diff didn't make the flex-item sizing behavior obvious.
 - Crypt Crawl suppressible flow pop-ups (`#cc-audio-notif-toggle`, `cryptcrawlFlash()`'s optional
   `$source` param, added 2026-08-29): `cryptcrawlFlash($msg, $type, $source = null)` in
   cryptcrawl-actions.php tags the 3 specific flashes the user wanted a mute for -

@@ -91,6 +91,17 @@ include 'header.php';
 
 .cc-wrap { padding: 20px 16px 60px; }
 .cc-inner { max-width: 720px; width: 100%; margin: 0 auto; }
+/* #cc-game-area (the AJAX swap target -- see cryptcrawl-render.php) sits
+   between .cc-theme-bg and .cc-inner with no rules of its own. Harmless
+   when .cc-theme-bg is "bare" (plain block flow), but .cc-theme-active
+   makes it a flex container (display:flex; justify-content:center) to
+   center its content -- and a flex item with no explicit width shrinks to
+   its content's own size instead of stretching to fill available space,
+   so .cc-inner's own max-width:720px never actually got 720px of container
+   to be 100% of. Explicit width:100% here is what lets it reach that cap
+   at real desktop widths again -- without it, wide/desktop views quietly
+   collapsed down toward .cc-room's minimum column width instead. */
+#cc-game-area { width: 100%; }
 /* A real modal instead of an edge/corner toast -- a small floating banner
    was easy to miss entirely on mobile (fixed-position elements can end up
    fighting the browser's own address-bar chrome, and a corner is rarely
