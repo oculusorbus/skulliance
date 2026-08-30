@@ -309,200 +309,66 @@ records verified constants, and tracks what still needs to be written.
   the whole backdrop too only if that emptied it out entirely (an untagged flash queued alongside
   a suppressed one, if that ever happens, still shows). Doesn't retroactively touch a flash modal
   already on-screen when the button is toggled - only affects what shows up starting next render.
-- Crypt Crawl marketing/game split (`cryptcrawlgame.php` + `cryptcrawl.php`, split
-  2026-08-29): the marketing page and the actual game are **two separate files** now, not one
-  state-dependent page. `cryptcrawlgame.php` is the public marketing page ("build a public facing
-  marketing page in the same vein as Skull Swap... integrate with the homepage," per the user) -
-  own full `<!doctype html>` document (title/meta/OG/Twitter/JSON-LD VideoGame+BreadcrumbList
-  schema, matching skullswap.php's exact pattern), `include_once 'db.php'` only for
-  `cryptcrawlGetCardArt($conn)`, and deliberately **zero** session/login/game-state logic of any
-  kind - no `session_start()`, no `$state`, no run lookups. The same content renders for every
-  visitor every time. Content: hero + `/staking/images/cryptcrawl.png` screenshot (clickable,
-  `requestSubmit()`s a real `<form method="post" action="cryptcrawl.php">` that POSTs
-  `action=start_run` straight to the game) + feature cards + a "dueling" two-row
-  counter-scrolling marquee (`.cc-strip`/`.cc-strip-track`, same technique as skullswap.php's icon
-  strip - reversed direction on the second row, duplicated track for the seamless -50% loop)
-  covering **every** Crypties NFT actually used as card art, built by iterating
-  `CRYPTCRAWL_CARD_ART` against `cryptcrawlGetCardArt($conn)`'s resolved URLs (the exact same
-  lookup the game itself uses, so the marquee can never drift out of sync with what's really in
-  the deck) + mechanics/tips/FAQ sections + a final CTA + a footer (`.cc-footer`, matching
-  skullswap.php's own `.ss-footer` exactly). No "Go Back" button on this page - fixed 2026-08-29,
-  reported directly by the user ("the go back button doesn't make sense on the marketing landing
-  page and where is the footer like on skull swap?"). It's the front door of the funnel, not a
-  page a visitor drills into and needs an escape hatch from - Skull Swap's own landing has no Go
-  Back either, just its footer. Removed the row, its CSS, and its entire `ccIsSameSite()`/
-  `data-go-back` click-listener script block (nothing else on this page used it).
-  `cryptcrawl.php` went back to being just the game - `$state` (`no_run`/`active`/`game_over`)
-  computed from `cryptcrawlGetActiveRun()`/`cryptcrawlGetMostRecentRun()` same as before,
-  `no_run` back to a simple rules+Start Delve prompt with a "Learn more about Crypt Crawl" link to
-  `cryptcrawlgame.php`, `game_over` back to its own compact result panel (with its own themed
-  `#cc-theme-bg` backdrop again on a loss - `/staking/images/themes/8.jpg`). Its own SEO surface
-  is intentionally minimal now: `<meta name="robots" content="noindex,follow">` and no VideoGame
-  JSON-LD of its own, since `cryptcrawlgame.php` is the canonical indexed/shareable URL for the
-  game and duplicating structured data across both would be redundant. `header.php`'s nav link and
-  all of homepage.php's Crypt Crawl references (the `.hp-game` card, the JSON-LD `ItemList` entry,
-  the platform screenshots grid card, the footer link) point at `cryptcrawlgame.php`, not
-  `cryptcrawl.php`.
-  **Why the split, not another patch**: this replaced an earlier single-page design where
-  `cryptcrawl.php` itself rendered a merged marketing-landing-or-game view depending on `$state`.
-  That design broke twice in a row. First, gating the landing on `$state === 'no_run'` made it
-  permanently unreachable after a player's very first-ever delve completed, since
-  `cryptcrawlGetMostRecentRun()` always returns something once any run has ever finished -
-  reported directly by the user ("clicking the game again doesn't take you to the public marketing
-  page anymore") and fixed at the time by widening the gate to `$state !== 'active'` (unifying
-  `no_run` and `game_over` into one landing branch with a result banner inserted at the top).
-  Second, the user then reported the opposite symptom from a fresh incognito session - the
-  homepage link went straight into the game instead of the landing, and Go Back couldn't get back
-  to it either. Every live reproduction attempt (cookieless `fetch()`, a real click-through under
-  an existing session, a real click-through with cookies genuinely cleared) showed the correct
-  landing/game_over branch rendering server-side, and response headers confirmed proper
-  `Cache-Control: no-store` - the live routing/caching cause was never pinned down. Rather than
-  keep chasing an elusive, session-adjacent bug on a single state-dependent URL, the user's
-  explicit instruction was to split the marketing page out to its own file entirely: "create
-  cryptcrawlgame.php and have that be the marketing page separate from the actual game so that
-  this problem is fixed once and for all." Two static URLs with no shared state between them rule
-  out the entire class of session/caching-coupling bugs structurally, rather than patching around
-  one more instance of it.
-  **"Go Back"** (`data-go-back`, one delegated `click` listener on `document` - survives every
-  AJAX swap without re-attaching): a full-width row under every state's own bottom buttons on
-  `cryptcrawl.php` only (see above - `cryptcrawlgame.php` dropped this entirely, it isn't a page
-  that needs one). **Logged-in players always go straight to `dashboard.php`** - fixed 2026-08-29,
-  requested directly by the user ("have the go back button take them to their dashboard.php" while
-  signed in and playing). Real browser history was the wrong default for a logged-in player
-  specifically: `cryptcrawlgame.php`'s own Start Delve form is a genuine (unintercepted, no fetch)
-  `<form method="post" action="cryptcrawl.php">` submit, so that whole action is a real cross-page
-  POST -> `header('Location: cryptcrawl.php'); exit;` redirect, not an AJAX call - and
-  `history.back()` from the resulting page goes straight back to `cryptcrawlgame.php`, the page
-  that POST originated from, regardless of login state. First attempt gated this on `.cc-wrap`'s
-  `data-logged-in` DOM attribute (`document.querySelector(...).getAttribute(...)`, read back
-  client-side) but the user reported it still landing on the marketing page after that fix shipped.
-  Rather than keep chasing the DOM round-trip for a subtle rendering/timing gap, replaced it with
-  `IS_LOGGED_IN` baked directly into the script as a PHP-echoed JS literal
-  (`var IS_LOGGED_IN = <?php echo $user_id > 0 ? 'true' : 'false'; ?>;`, declared at the top of the
-  enclosing IIFE) - the exact same pattern skullswap.php already uses successfully for its own
-  `IS_LOGGED_IN`, computed from the identical `$user_id` the rest of the page already trusts, with
-  no DOM read in between. Guests keep the history-preferring behavior - prefers real browser
-  history (`history.back()`, only when the referrer is same-site and there's actually history to go
-  back to) over a fixed destination, falling back to the public homepage. **Same-site check fixed
-  2026-08-29** - originally a plain
-  `document.referrer.indexOf(window.location.origin) === 0`
-  string-prefix match, which broke for any visitor arriving from the bare domain: the public
-  homepage lives at `https://skulliance.io/` (no `www`), while this page's own origin is
-  `https://www.skulliance.io` - a referrer from the homepage therefore never starts with this
-  page's origin string even though it's genuinely the same site, so Go Back silently fell through
-  to the fallback destination every time instead of real history. Reported directly by the user
-  ("hitting go back... takes you back to the skulliance homepage" - the fallback firing when it
-  shouldn't have) and reproduced/confirmed live via `javascript_tool` before fixing
-  (`document.referrer` from a real homepage click-through: `https://skulliance.io/`,
-  `window.location.origin`: `https://www.skulliance.io` - old check `false`, correct answer
-  `true`). Fixed with `ccIsSameSite()`: compares `new URL(referrer).hostname` against
-  `location.hostname`, both with a leading `www.` stripped, instead of an origin string prefix.
-  **Ambient music does not autoplay on the marketing page** - moot by construction now rather than
-  a runtime gate: `cryptcrawlgame.php` has no `<audio>` element or audio system at all, so there is
-  nothing to autoplay until a visitor actually clicks through to `cryptcrawl.php` and starts a
-  delve. (Originally reported and fixed as a `.cc-landing`-presence check in
-  `maybeStartAudioAmbience()` back when the landing lived inside `cryptcrawl.php` itself; that
-  check was removed as dead code once the landing moved out - reaching `cryptcrawl.php` at all now
-  means Start Delve was already clicked, so ambience is fair game in every state there.)
-  **Force a real reload on a bfcache restore** - fixed 2026-08-29, reported directly by the user
-  ("when you lose, it just takes you immediately back into the game and sometimes your level
-  remains where you died for the fresh game... this locks staking users out of the platform").
-  `cryptcrawl.php`'s DOM is mutated entirely client-side after the initial load - every action
-  swaps `#cc-game-area` via `fetch()`, never a real navigation - so if the browser restores this
-  exact document from its back/forward cache (bfcache) instead of re-requesting it, the player gets
-  back the in-memory snapshot from whenever they last left the page (e.g. mid-delve, HP/room/
-  "crypts cleared" frozen at that instant), with nothing re-synced against the server, where the run
-  may already be `'lost'`/`'won'`. Splitting the marketing page out made the back-and-forth
-  navigation that triggers this (leaving `cryptcrawl.php` and returning to it, including via
-  `cryptcrawlgame.php`'s Start Delve -> `cryptcrawl.php` -> browser back) an actual normal flow for
-  the first time - previously the landing and the game were the same URL, so there was nowhere to
-  navigate away to and back from. `Cache-Control: no-store` (already set on this page) blocks
-  bfcache eligibility in some browsers but not reliably in every engine (notably older/other mobile
-  Safari builds), so it wasn't a full guarantee on its own. Fixed with a `pageshow` listener at the
-  very top of the script, before anything else runs: `if (e.persisted) window.location.reload();` -
-  the standard fix for this class of bug in any page whose state is mutated purely client-side after
-  load. Not root-caused with a live repro (no login access from this environment) - diagnosed from
-  the reported symptoms matching this failure mode exactly and confirmed via static reading that the
-  win/loss screen markup and server-side game-over logic are both fully intact and unchanged.
-  **Second net: reload on a stale foreground-resume too** - fixed 2026-08-29, same day, after the
-  user reported this happening specifically (and apparently *always*) on the installed PWA: "when I
-  play on mobile on the PWA app, it never displays the loss screen and jumps to the new game
-  immediately." A home-screen PWA's WebView is routinely suspended while backgrounded rather than
-  navigated away from at all, then just resumes exactly where it left off - which never fires a
-  bfcache `pageshow` event the way a real browser tab does, so the fix above doesn't catch it. Added
-  a `visibilitychange` listener: reload if the page was hidden for more than 2 seconds before coming
-  back to `'visible'` (a threshold, not unconditional, so a stray system dialog or quick app-switch
-  doesn't reload a mid-thought player - always safe regardless, since every action already persists
-  server-side before anything renders, so there's no unsaved local state a reload could ever lose).
-  **Discord announcements no longer depend on `$_SESSION`** - same day, after the user separately
-  reported a loss on mobile *browser* (not the PWA) that showed the loss screen but with no CARBON
-  line and no Discord post, even though the CARBON itself was genuinely paid out. `cryptcrawlPayoutCarbon()`
-  already didn't depend on session at all (just `$run['user_id']`, the DB row's own reliable owner
-  column) - which is exactly why the payout worked while the announcement silently no-op'd:
-  `cryptcrawlAnnounceResult()` used to read `discord_id`/`username`/`avatar` straight off
-  `$_SESSION['userData']`, which mobile Safari's ITP-driven PHPSESSID drops (see db.php's own
-  session-start comment) can leave as a stale/partial `SessionCookie` restore missing exactly those
-  fields even while `user_id` itself is present. Fixed by looking all three up fresh from `users` by
-  `$run['user_id']` instead (same query shape `checkActivityLeaderboard()` already uses) - the
-  announcement is now exactly as session-independent as the payout it's reporting on.
-  **The missing-CARBON-line half of that report turned out to be a separate, real bug, root-caused
-  the same day from a live DB query the user ran at request** (`SELECT id, user_id, status,
-  rooms_cleared, carbon_earned FROM cryptcrawls ORDER BY id DESC LIMIT 5`): a `lost` run's
-  `carbon_earned` was sitting in the table as a correct nonzero value (640), which first ruled out
-  an unrun migration (the `carbon_earned` column's own `ALTER TABLE` was flagged as required when
-  the CARBON feature was first added, same as `reward`/`date_created` above, and was never
-  confirmed as actually run against the live table - worth independently double-checking, but this
-  specific symptom isn't that) and then reframed the question entirely: if the DB row is right, the
-  render must be reading the *wrong* row. It was: `$_SESSION['cryptcrawl_guest_run']` (the entire
-  storage for a guest's one-and-only run - see the "Crypt Crawl is public" comment atop the CRYPT
-  CRAWL block in db.php) is written in four places (`cryptcrawlStartRun`, `cryptcrawlPlayCard`,
-  `cryptcrawlFleeRoom`, `cryptcrawlSaveRun`, all guarded on `$user_id`/`$run_id` <= 0) but was never
-  *cleared* anywhere. Every one of `cryptcrawlGetActiveRun`/`cryptcrawlGetMostRecentRun`/
-  `cryptcrawlPlayCard`/`cryptcrawlFleeRoom`/`cryptcrawlSaveRun` falls back to reading or writing
-  that same session key whenever `$user_id` (or the run id derived from it) is 0 for *that one
-  call* - so a guest run played before logging in (or created by any single request whose
-  `$user_id` misread as 0 - exactly the kind of hiccup mobile Safari's PHPSESSID-dropping behavior
-  causes) sits in session forever, ready to silently resurface and mask the player's real,
-  DB-backed run the instant a *later* request's own `$user_id` read hiccups - showing old/fake
-  guest progress instead of the real one, and since a guest render never shows CARBON
-  (`$user_id > 0` gates it), that's a coherent-looking loss screen with a correct-looking result and
-  a missing CARBON line, while the real row - 640 CARBON, right there in the table - goes
-  unread. Fixed at the one shared choke point every render already goes through:
-  `cryptcrawlRenderGameArea()` now unsets `$_SESSION['cryptcrawl_guest_run']` the instant it's ever
-  called with a real (`> 0`) `$user_id`, so once a player is correctly identified as a real account
-  even once, stale guest data is purged and can never resurface to confuse a later hiccup. This is
-  very likely the same underlying mechanism behind "every device/interface combo gets a different
-  experience," not purely the caching/bfcache theory above - the marketing split makes hitting
-  Start Delve from a not-yet-fully-authenticated moment (or any transient session read on
-  `cryptcrawlgame.php`'s zero-session-logic path into `cryptcrawl.php`) a much more common way to
-  first seed a guest run that then lingers.
-- Crypt Crawl's leaderboard links are relative, deliberately NOT an absolute URL - the user's first
-  report ("the view leaderboard link may need the www prefix... it keeps taking me to the skulliance
-  merch store 404 page and then killing my staking session") led to a same-day fix making both the
-  game_over(lost) "Weekly Leaderboard" button and the active-state flee-row's "View Leaderboard"
-  button (`cryptcrawl-render.php`) link to an absolute `https://www.skulliance.io/staking/leaderboards.php?filterby=weekly-cryptcrawl`.
-  **That absolute URL turned out to be wrong and got reverted the same day** once the actual
-  underlying bugs (see the platform-wide session-restore entry below, plus a bad cookie value that
-  clearing site data resolved) were fixed and the real cause of "signs me out" became visible: the
-  login cookie `process-oauth.php` sets is host-only (`session_set_cookie_params()` with no `domain`
-  parameter), scoped to exactly whichever hostname issued it. A user whose session lives on the bare
-  `skulliance.io` domain has no valid cookie on `www.skulliance.io` at all - the hardcoded `www.`
-  link was taking a logged-in player to a host where they'd never been authenticated, which looks
-  exactly like being signed out. Reverted to the plain relative `leaderboards.php?filterby=weekly-cryptcrawl`
-  so the link always stays on whatever host the visitor is already authenticated on. Checked every
-  other `www.skulliance.io` URL added the same day (canonical/OG/JSON-LD tags, `sitemap.xml`,
-  `homepage.php`'s game-card links, the guest Go Back fallback) - none of them require a login
-  cookie (pure SEO metadata, or pages that are deliberately public/stateless), so this was the only
-  one that could actually break a session this way. **Root cause not fixed at the source** - the
-  cookie's missing `domain` parameter is the real reason www/non-www don't share a session at all;
-  fixing that (`session_set_cookie_params()` in `process-oauth.php`, or wherever else establishes
-  the login session) would make cross-host links safe everywhere instead of relying on every future
-  link staying carefully relative, but that's a login/session-config change, out of scope for a
-  Crypt Crawl link fix. Confirmed while investigating this does NOT need to be a form - `leaderboards.php`'s
-  shared session/login include (`skulliance.php`) reads `filterby` from `$_GET` exactly as much as
-  `$_POST` (lines ~797-804), so a plain GET link with the query string is fully supported.
-  Also surfaced while investigating (see the platform-wide entry right below): `skulliance.php`'s
-  login-restore path used to do `$_SESSION = $cookie;`, a full *replace*.
+- Crypt Crawl's marketing page and game are two separate files; the game itself is a normal
+  nav'd page again after a standalone-page architecture was tried, caused a real mess, and got
+  reverted - full history below since it's a useful cautionary case, but the short version: don't
+  try again without a much stronger reason. `cryptcrawlgame.php` (added 2026-08-29, "build a public
+  facing marketing page in the same vein as Skull Swap... integrate with the homepage," per the
+  user) is a standalone page (no site nav, own full `<!doctype html>` document with SEO/OG/Twitter/
+  JSON-LD, same treatment as skullswap.php/match3rpg.php) with zero session/login/game-state logic
+  of any kind - hero + screenshot, feature cards, a "dueling" two-row counter-scrolling marquee
+  covering every Crypties NFT actually used as card art (`CRYPTCRAWL_CARD_ART` against
+  `cryptcrawlGetCardArt($conn)`), mechanics/tips/FAQ, a final CTA, and a footer (matching
+  skullswap.php's `.ss-footer`) rather than a "Go Back" button - it's the front door of the funnel,
+  not a page a visitor needs an escape hatch from. Its `#cc-start-delve-form` is a real
+  `<form method="post" action="cryptcrawl.php">` (no fetch/JS interception) that POSTs
+  `action=start_run` straight into the actual game. `header.php`'s nav link and all of
+  `homepage.php`'s Crypt Crawl references point at this file, not `cryptcrawl.php` - that part
+  never changed and never caused a problem.
+
+  **`cryptcrawl.php` itself, however, went through a failed detour.** It was originally (and is
+  again now) a normal page: `include 'header.php'`, full site nav, no special standalone chrome.
+  The marketing-page work changed that - made it standalone too (no header.php, its own SEO tags,
+  `noindex,follow` once `cryptcrawlgame.php` became canonical), which meant it needed its own way
+  back to the rest of the site with no nav to fall back on: a "Go Back" button
+  (`data-go-back`/`ccIsSameSite()`), which then needed its own same-site-referrer fix, then a
+  dashboard-vs-history-preference fix, then got replaced with a PHP-baked `IS_LOGGED_IN` constant
+  after the DOM-attribute version still misbehaved. Separately, going standalone made a new
+  navigation pattern normal for the first time (leaving `cryptcrawl.php` and coming back, e.g. via
+  the marketing page's Start Delve) that triggers browser back/forward-cache (bfcache) restores and
+  PWA background/foreground suspension - both surfaced as real reports (a loss sometimes skipping
+  straight to a live-looking game with frozen progress), each needing its own reload-on-restore
+  fix (`pageshow`/`persisted`, then a `visibilitychange` threshold for the PWA case specifically).
+  On top of that, a real, separately-confirmed bug (a stale `$_SESSION['cryptcrawl_guest_run']`
+  from playing as a guest at some point, never cleared, silently resurfacing and masking a real
+  account's actual run) got tangled up with all the standalone-page noise and took a live DB query
+  from the user to actually pin down. And a leaderboard link change made along the way, hardcoding
+  `https://www.skulliance.io/...`, broke login entirely for any visitor whose session cookie is
+  host-only-scoped to the bare `skulliance.io` domain (confirmed: `process-oauth.php` sets the
+  session cookie with no `domain` parameter, so `www.skulliance.io` and `skulliance.io` never share
+  a session) - which read as "clicking the leaderboard signs me out."
+
+  None of that individually was unreasonable, but the accumulation - "This has NEVER happened
+  before and everything was working fine before this evening," "something is disastrous with how
+  the session is being handled," "I've had enough" - was the user's own read on it, and the right
+  call. **Reverted 2026-08-30, explicit user instruction**, back to the exact pre-marketing-page
+  baseline (commit `609e2a10`) for both `cryptcrawl.php` and `cryptcrawl-render.php`: header.php
+  restored, no Go Back button, no bfcache/visibility reload hacks, no standalone SEO tags. Exactly
+  two changes survive on top of that baseline, both independently-proven bug fixes unrelated to
+  page architecture at all, kept deliberately minimal per the user's explicit ask ("do minimal
+  changes to the session as possible"): `cryptcrawl.php`'s own SessionCookie restore merges instead
+  of replacing (`array_merge((array)$_SESSION, $cookieData)`, matching the platform-wide fix
+  below), and `cryptcrawlRenderGameArea()` still purges a stale `cryptcrawl_guest_run` the instant
+  a real `user_id` is seen. `cryptcrawlgame.php` itself needed no changes and wasn't touched by the
+  revert - it never had any session logic to begin with, so it was never actually the source of any
+  of this. The Weekly/View Leaderboard links are back to relative URLs
+  (`leaderboards.php?filterby=weekly-cryptcrawl`), which was already the fix for the www/non-www
+  cookie issue and survives the revert unchanged. **The root cause of that last one is still
+  unfixed at the source** - the login cookie's missing `domain` parameter is why www/non-www don't
+  share a session at all; a proper fix would add one in `process-oauth.php` (or wherever else
+  establishes the login session) so no future link anywhere has to stay carefully relative to avoid
+  this - flagged to the user, not done, since it's a login/session-config change bigger than
+  anything Crypt Crawl itself needed.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with

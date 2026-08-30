@@ -56,66 +56,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	exit;
 }
 
-// Standalone page for EVERYONE, same treatment as skullswap.php/match3rpg.php:
-// no header.php nav, no staking platform CSS (which would fight this page's
-// own design). A logged-in visitor's session still works fine (db.php/the
-// SessionCookie restore above already handle that) -- only the shared *nav
-// chrome* is skipped, not login state itself. The "Go Back" button further
-// down (every state has one -- see the script block) is what replaces the
-// nav as this page's way back to the rest of the site, since there's no nav
-// here to fall back on otherwise.
+// header.php's shared nav is entirely gated on isset($name) (plus $avatar_url for
+// the avatar image) — normally supplied by skulliance.php's extract($_SESSION
+// ['userData']). This page deliberately skips that hard-gated include (see the
+// header comment above) so a logged-in visitor needs the same two values computed
+// here, or the whole nav — Play/NFTs/Stats/Account menus, Logout, wallet button,
+// all of it — silently renders empty. Guests (user_id 0) get no $name, same as any
+// other page when logged out; that part is an existing site-wide convention, not
+// something specific to this page.
+if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
+	extract($_SESSION['userData']);
+	if (isset($discord_id) && isset($avatar)) {
+		$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+	}
+}
+
+include 'header.php';
 // $active_run/$recent_run/$state/$flashes/$suit_symbol/$suit_color are all
 // computed inside cryptcrawlRenderGameArea() now (cryptcrawl-render.php),
 // since that function needs to be independently callable from the AJAX
 // endpoint too, not just this page's own initial GET.
-// SEO ownership lives on cryptcrawlgame.php now (the standalone marketing
-// page) -- this file is the actual gameplay surface, kept out of the
-// index so search engines don't see it as duplicate content next to the
-// marketing page's own VideoGame schema. Still fully crawlable/followable
-// (its "Learn more" and Go Back links matter for link equity), just not
-// a result page in its own right.
-$cc_canonical = 'https://www.skulliance.io/staking/cryptcrawl.php';
-$cc_og_image  = 'https://www.skulliance.io/staking/images/cryptcrawl.png';
-$cc_title     = 'Crypt Crawl - Play Now | Skulliance';
-$cc_desc      = 'Play Crypt Crawl free - a solo dungeon-delve card game with a 44-card deck illustrated entirely in Crypties NFT art, a Last Stand save, and a weekly CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
-$cc_short     = 'A free browser dungeon-delve card game illustrated in Crypties NFT art, with a Last Stand save and a weekly CARBON leaderboard. Play on any device - no download.';
 ?>
-<!doctype html>
-<html lang="en">
-<head>
-<title><?php echo htmlspecialchars($cc_title); ?></title>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="<?php echo htmlspecialchars($cc_desc); ?>">
-<meta name="keywords" content="free card game, solo dungeon crawler, roguelike card game, browser card game, no download card game, free rogue-like game, Cardano NFT game, Crypties NFT, dungeon delve card game">
-<meta name="theme-color" content="#07111d">
-<meta name="robots" content="noindex,follow">
-<link rel="canonical" href="<?php echo $cc_canonical; ?>">
-
-<!-- OpenGraph -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Skulliance">
-<meta property="og:url" content="<?php echo $cc_canonical; ?>">
-<meta property="og:title" content="<?php echo htmlspecialchars($cc_title); ?>">
-<meta property="og:description" content="<?php echo htmlspecialchars($cc_desc); ?>">
-<meta property="og:image" content="<?php echo $cc_og_image; ?>">
-<meta property="og:image:alt" content="Crypt Crawl dungeon-delve card game board, illustrated in Crypties NFT art">
-<meta property="og:locale" content="en_US">
-
-<!-- Twitter Cards -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="<?php echo htmlspecialchars($cc_title); ?>">
-<meta name="twitter:description" content="<?php echo htmlspecialchars($cc_short); ?>">
-<meta name="twitter:image" content="<?php echo $cc_og_image; ?>">
-<meta name="twitter:image:alt" content="Crypt Crawl dungeon-delve card game board, illustrated in Crypties NFT art">
-
-<!-- No VideoGame/BreadcrumbList schema here -- that structured data lives
-     on cryptcrawlgame.php (the canonical marketing/SEO page) now, so this
-     noindex'd gameplay page doesn't emit a duplicate. -->
-<style>
-html { scroll-behavior: smooth; }
-body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
-</style>
 <style>
 /* Card index numerals only — rest of the page stays the site's normal Arial.
    Poppins ExtraBold approximates the bold, slightly-rounded look of a
@@ -462,17 +423,8 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	.cc-btn-icon-big, .cc-btn-icon-big-img { display: none; }
 	.cc-btn.punchy { min-height: 44px; padding: 6px 5px; gap: 1px; }
 }
-
-/* "Go Back" -- full row below every state's own bottom buttons, since this
-   page has no site nav at all to fall back on otherwise. Delegated click
-   handling (data-go-back) in the script block, not per-button wiring, so
-   it survives every AJAX swap without needing to be re-attached. */
-.cc-go-back-row { margin-top: 10px; }
-.cc-go-back-row .cc-btn { width: 100%; }
 </style>
-</head>
-<body>
-<div class="cc-wrap" data-logged-in="<?php echo $user_id > 0 ? '1' : '0'; ?>">
+<div class="cc-wrap">
 <!-- Permanent wrapper -- unlike #cc-game-area inside it, this element is
      NEVER destroyed/recreated by an AJAX swap, specifically so its Ken
      Burns CSS animation (.cc-zoom, further up) keeps running continuously
@@ -512,56 +464,6 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 </div>
 <script>
 (function() {
-	// Force a real reload if this exact document is restored from the
-	// browser's back/forward cache (bfcache) instead of the browser
-	// re-requesting it. Added 2026-08-29, chasing a report that a loss
-	// sometimes skips straight back into a live-looking game with the room/
-	// HP/"crypts cleared" frozen at whatever they were the instant the
-	// player died -- classic bfcache symptom: the DOM here has been mutated
-	// entirely client-side since the actual page load (every action swaps
-	// #cc-game-area via fetch, never a real navigation), so a bfcache
-	// restore hands back that exact in-memory snapshot with none of it
-	// re-synced against the server, where the run is already 'lost'/'won'.
-	// Splitting the marketing page out (cryptcrawlgame.php) made the
-	// back-and-forth navigation that triggers a bfcache restore (leaving
-	// this page and returning to it) an actual normal flow for the first
-	// time -- previously the landing and the game were the same URL, so
-	// there was nowhere to navigate away to and back from. Cache-Control:
-	// no-store on this page blocks bfcache in some browsers but not
-	// reliably across all of them (notably older/other-engine mobile
-	// Safari) -- this is the one guarantee that actually holds everywhere.
-	window.addEventListener('pageshow', function(e) {
-		if (e.persisted) window.location.reload();
-	});
-	// Second, broader net: reload after the page has been backgrounded for a
-	// while and comes back to the foreground. Added 2026-08-29, reported
-	// directly by the user specifically on the installed PWA -- a home-screen
-	// app's WebView is routinely suspended (not navigated away from at all)
-	// while backgrounded and just resumes exactly where it left off when
-	// reopened, which never fires a bfcache pageshow event the way a real
-	// browser tab does. That's a plausible way to always land back on a
-	// mid-delve DOM snapshot instead of ever seeing a loss screen at all.
-	// Threshold (not an unconditional reload on every visibility flicker)
-	// so a stray system dialog or a 1-tap app-switch doesn't reload a
-	// mid-thought player; a genuine backgrounding comfortably clears it.
-	// Always safe regardless of threshold -- every action already persists
-	// to the server before anything renders, so there is no unsaved local
-	// state a reload could ever lose.
-	var hiddenAt = null;
-	document.addEventListener('visibilitychange', function() {
-		if (document.visibilityState === 'hidden') {
-			hiddenAt = Date.now();
-		} else if (document.visibilityState === 'visible' && hiddenAt && (Date.now() - hiddenAt) > 2000) {
-			window.location.reload();
-		}
-	});
-
-	// Baked straight in from the exact same $user_id PHP computed this page
-	// load with (top of file), not re-derived client-side from a DOM
-	// attribute -- same pattern skullswap.php uses for its own IS_LOGGED_IN.
-	// One less layer between "the server knows who's logged in" and "the
-	// button that depends on it."
-	var IS_LOGGED_IN = <?php echo $user_id > 0 ? 'true' : 'false'; ?>;
 	var gameArea = document.getElementById('cc-game-area');
 	// Assigned once the audio player sets itself up (below) -- exposed here
 	// so initGameArea() can call it again after every AJAX swap, since the
@@ -575,11 +477,6 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	// animation on every single action instead of only when the actual
 	// scene changed).
 	var applyThemeState = null;
-	// Assigned once the audio player sets itself up (below) -- called once
-	// initially and again from initGameArea() after every AJAX swap (Start
-	// Delve -> active is itself a swap, not a fresh page load). No-ops once
-	// ambience has already started.
-	var maybeStartAudioAmbience = null;
 
 	// Sizing only -- #cc-theme-bg's active/inactive state and image are
 	// applyThemeState()'s job (called from initGameArea() below, once per
@@ -770,58 +667,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 		// player checks its own initial mood itself once it sets up, just
 		// below this function in source order.
 		if (syncMood) syncMood();
-		// Re-check whether ambience should start yet -- a no-op once it
-		// already has. Catches Start Delve -> active, which is an AJAX
-		// swap, not a fresh page load.
-		if (maybeStartAudioAmbience) maybeStartAudioAmbience();
 	}
 
 	initGameArea();
-
-	// "Go Back" -- this page has no site nav at all (standalone, like
-	// skullswap.php), so every state gets a full-row button back to
-	// wherever the player actually came from. A logged-in player always
-	// goes straight to their dashboard -- requested directly by the user,
-	// since real browser history could just as easily land them back on
-	// cryptcrawlgame.php (the marketing page's Start Delve form posts
-	// straight here) mid-session, which isn't useful once they're already
-	// logged in and playing. Guests keep real browser history (only when
-	// the referrer is this same site -- an external/blank referrer means
-	// there's nothing useful to go back to), falling back to the public
-	// homepage. Delegated on document (like the submit listener below) so
-	// it survives every AJAX swap without needing to be re-attached to
-	// each button.
-	// (IS_LOGGED_IN itself is declared once, at the top of the enclosing IIFE.)
-	// Compares hostnames with any leading "www." stripped from both sides,
-	// not window.location.origin string-prefix matching -- the site is
-	// reachable as both skulliance.io and www.skulliance.io (the homepage
-	// itself lives at the bare domain), so a visitor arriving from
-	// https://skulliance.io/ has a referrer that will never start with
-	// this page's own https://www.skulliance.io origin even though it's
-	// genuinely the same site. That mismatch was silently sending every
-	// "Go Back" press to the fallback destination instead of real history,
-	// even when the visitor really did just come from the homepage.
-	function ccIsSameSite(url) {
-		try {
-			var refHost = new URL(url).hostname.replace(/^www\./, '');
-			var curHost = window.location.hostname.replace(/^www\./, '');
-			return refHost === curHost;
-		} catch (e) {
-			return false;
-		}
-	}
-	document.addEventListener('click', function(e) {
-		var btn = e.target.closest ? e.target.closest('[data-go-back]') : null;
-		if (!btn) return;
-		e.preventDefault();
-		if (IS_LOGGED_IN) {
-			window.location.href = 'dashboard.php';
-		} else if (document.referrer && ccIsSameSite(document.referrer) && window.history.length > 1) {
-			window.history.back();
-		} else {
-			window.location.href = 'https://www.skulliance.io/';
-		}
-	});
 
 	// Intercept every action form inside #cc-game-area and post to the AJAX
 	// endpoint instead of letting the browser navigate there -- this is what
@@ -1193,26 +1041,15 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 		}
 
 		loadTrack(trackIndex, true);
-
-		// The marketing landing (cryptcrawlgame.php) is now a fully separate
-		// page with no audio system of its own -- reaching cryptcrawl.php at
-		// all (its own no_run prompt included) means the visitor already
-		// clicked Start Delve, so ambience is fair game in every state here.
-		// Exposed to the outer scope (initGameArea() calls it again after
-		// every AJAX swap) since it only actually needs to fire once.
-		var audioAmbienceStarted = false;
-		maybeStartAudioAmbience = function() {
-			if (audioAmbienceStarted) return;
-			audioAmbienceStarted = true;
-			if (!enabled) return;
+		if (enabled) {
 			tryPlay();
 			// Browsers only allow unmuted autoplay off the back of a *trusted*
 			// user gesture -- nothing in JS can fake that (see Skull Paper /
 			// MAINTENANCE.md for why). If the tryPlay() above got blocked,
 			// catch the very first real interaction anywhere on the page --
 			// not just a tap on this player's own button -- and use it to
-			// start audio too, since a player's first move after this point
-			// is usually something else entirely (playing a card).
+			// start audio too, since a player's first move is usually
+			// something else entirely (Start Delve, playing a card).
 			var playerEl = document.getElementById('cc-audio-player');
 			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
 			var unlockAudio = function(e) {
@@ -1225,14 +1062,14 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 				// inside .play()), then the toggle button's own 'click'
 				// handler -- now seeing paused already false -- immediately
 				// paused it right back again, thinking it was already
-				// playing. Every other first-interaction spot (a card,
-				// anywhere outside the player) still unlocks here as before.
+				// playing. Every other first-interaction spot (Start Delve,
+				// a card, anywhere outside the player) still unlocks here as
+				// before.
 				if (playerEl && e && e.target && playerEl.contains(e.target)) return;
 				if (active().paused && getEnabled()) tryPlay();
 			};
 			unlockEvents.forEach(function(evt) { window.addEventListener(evt, unlockAudio, true); });
-		};
-		maybeStartAudioAmbience();
+		}
 		updateToggleIcon();
 
 		players.forEach(function(p) {
@@ -1362,5 +1199,3 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	})();
 })();
 </script>
-</body>
-</html>

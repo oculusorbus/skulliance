@@ -32,20 +32,17 @@
 function cryptcrawlRenderGameArea($conn, $user_id) {
 	// A leftover guest run (from playing before logging in, or from any
 	// single request whose $user_id misread as 0 -- e.g. mobile Safari
-	// dropping PHPSESSID, see the SessionCookie-restore comment in
-	// cryptcrawl.php) must never be allowed to resurface once we know for
-	// certain this is a real account. $_SESSION['cryptcrawl_guest_run'] is
-	// otherwise never cleared anywhere (see cryptcrawlGetActiveRun/
+	// dropping PHPSESSID) must never be allowed to resurface once we know
+	// for certain this is a real account. $_SESSION['cryptcrawl_guest_run']
+	// is otherwise never cleared anywhere (see cryptcrawlGetActiveRun/
 	// cryptcrawlGetMostRecentRun/cryptcrawlPlayCard/cryptcrawlFleeRoom/
 	// cryptcrawlSaveRun in db.php, all of which read or write it whenever
 	// $user_id is 0 for that one call) -- so a stale guest run sitting in
 	// session can silently mask the player's real, DB-backed run on some
 	// later request whose own $user_id read hiccuped, showing old fake
 	// progress and hiding real data (guest runs never display CARBON).
-	// Reported directly by the user: a loss screen with no CARBON line
-	// despite the DB row for that exact run holding a correct nonzero
-	// carbon_earned -- confirmed via a live DB query, ruling out a missing
-	// migration and pointing squarely at this instead.
+	// Confirmed via a live DB query: a lost run's carbon_earned was correct
+	// in the table (640) while the render showed no CARBON line at all.
 	if (intval($user_id) > 0 && isset($_SESSION['cryptcrawl_guest_run'])) {
 		unset($_SESSION['cryptcrawl_guest_run']);
 	}
@@ -150,8 +147,6 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Start Delve</button>
 		</form>
-		<p class="cc-note" style="text-align:center; margin-top:14px;"><a href="cryptcrawlgame.php">Learn more about Crypt Crawl</a></p>
-		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
 	<?php elseif ($state === 'game_over'):
 			$fell = ($recent_run['status'] === 'lost');
@@ -181,7 +176,6 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<?php if ($fell): ?>
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
 		<?php endif; ?>
-		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];
@@ -373,7 +367,6 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
 			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
 		</div>
-		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
 		<!-- Pure client-side toggle -- the rules text is static, no server
 		     round trip needed to revisit it mid-delve. See the bottom script
