@@ -696,19 +696,41 @@ include 'header.php';
 				return res.text();
 			})
 			.then(function(html) {
+				// A game-ending result (win or loss) forces a real page
+				// reload instead of the usual smooth in-place swap --
+				// deliberate, not a fallback. The previous approach (swap in
+				// place, then hold the board inert for a flat 400ms so a
+				// rapid second tap can't land on "Delve Again" before the
+				// result was ever actually seen) is a timing guard, and any
+				// fixed delay can in principle be beaten by input fast
+				// enough -- confirmed directly by the user "speed running"
+				// through fights, tapping through faster than normal play.
+				// A real navigation has no timing window to beat at all: the
+				// browser can't process another click until the new page has
+				// genuinely finished loading, and what loads is always a
+				// fresh, direct read of the true server state (the action
+				// this response is for already fully completed server-side
+				// before this code even runs), never a DOM patched in place
+				// under a countdown. The one accepted cost is narrow and
+				// deliberate: ambient music restarts for this one transition
+				// specifically (a full navigation tears down the <audio>
+				// element the smooth-swap design otherwise protects),
+				// instead of every action -- reliability for the one moment
+				// that must never be skippable, over smoothness everywhere
+				// else.
+				if (html.indexOf('class="cc-result ') !== -1) {
+					window.location.reload();
+					return;
+				}
 				gameArea.innerHTML = html;
 				initGameArea();
 				// Stay inert a bit longer than just the fetch itself -- a
 				// fast response (very plausible when it's local/small) can
 				// otherwise let a rapid second tap land on whatever the
-				// swap just rendered in that same screen position. That's
-				// a real, reported failure mode: fighting for survival,
-				// tapping the fatal attack again out of instinct, and that
-				// second tap landing squarely on "Delve Again" the instant
-				// it appears there -- starting a new game before the loss
-				// screen was ever actually seen. 400ms comfortably covers
-				// a double-tap gesture (~300ms) without being noticeable
-				// as a delay on a single deliberate tap.
+				// swap just rendered in that same screen position, same
+				// concern as above but for ordinary (non-game-ending)
+				// actions, where the smooth swap is worth keeping and this
+				// guard is sufficient in practice.
 				setTimeout(function() {
 					gameArea.style.opacity = '';
 					gameArea.style.pointerEvents = '';

@@ -408,30 +408,39 @@ records verified constants, and tracks what still needs to be written.
   login gate checks only `$_SESSION['logged_in']`, never `user_id`) - those remain most plausibly
   explained by the session-replace/host-only-cookie fixes already made, though not re-confirmed
   after this fix specifically.
-- **Loss-screen-doesn't-show is still unresolved as of this writing - one attempted fix already
-  tried and reverted.** With the `user_id` bug fixed and confirmed working on desktop through a
-  full logout/login cycle, the user reproduced this same symptom again, mobile-only (PWA and mobile
-  Safari, even from freshly cleared site data): CARBON paid out and the Discord notification posted
-  correctly, but the loss screen never appeared - it jumped straight to what looked like a new game.
-  Audited the whole client-side fetch/swap chain and the ambient-audio system specifically (the
-  user's own hypothesis, given "auto clicks for the music" wiring already exists here) - the audio
-  "unlock autoplay on first interaction" listener is one-shot and registered only once at initial
-  page load, not re-armed per swap, so it's long gone by the time of a loss reached after several
-  rooms; every `.play()` call is already wrapped in `.catch()`, so a blocked mobile autoplay attempt
-  fails silently rather than throwing - ruled out as the cause. Tried changing the fetch handler's
-  `.catch()` fallback from `form.submit()` (a real resubmit of the action) to `window.location.reload()`,
-  on the theory that a connection hiccup losing the *response* after the server had already fully
-  processed the action (consistent with CARBON/Discord firing while the screen didn't) was
-  resubmitting stale form data unpredictably. **Reverted the same day** - the user reported it
-  broke the loss screen on desktop browser too, which had been working, while testing a "speed
-  running" pattern (clicking through fights as fast as possible rather than playing at a normal
-  pace). Restored verbatim to `form.submit()`. Worth noting for whoever picks this back up: the
-  reverted fix only ever touched the `.catch()` (network-failure) path, which a rapid successful
-  click-through shouldn't reach at all - so either the "speed running" repro coincidentally
-  surfaced a separate, real, still-unidentified bug at the same time as this fix, or the fix
-  interacted with something not yet understood. The actual cause remains open; the working theory
-  going in should now be a race tied to rapid/repeated actions specifically (per the user's own
-  "speed running" report), not the network-failure fallback path.
+- **Loss-screen-doesn't-show, fixed for real 2026-08-30 by removing the race entirely instead of
+  tuning its timing.** Long chase: with the `user_id` bug fixed and confirmed working on desktop
+  through a full logout/login cycle, the user reproduced this same symptom again, mobile-only (PWA
+  and mobile Safari, even from freshly cleared site data) - CARBON paid out and the Discord
+  notification posted correctly, but the loss screen never appeared, jumping straight to what looked
+  like a new game. Audited the ambient-audio system specifically per the user's own hypothesis
+  ("auto clicks for the music") - the autoplay-unlock listener is one-shot, registered only once at
+  initial page load, long gone by the time of a loss reached several rooms in, and every `.play()`
+  call is already wrapped in `.catch()` so a blocked mobile autoplay attempt fails silently rather
+  than throwing - ruled out. A first attempted fix (swapping the fetch handler's `.catch()` fallback
+  from `form.submit()` to `window.location.reload()`, on the theory that a mobile connection hiccup
+  was losing the *response* after the server had already finished processing) was reverted the same
+  day after the user reported it broke the loss screen on desktop too while testing a "speed
+  running" pattern - rapid, deliberate fight-clicking, not double-tapping. That pointed at the real
+  mechanism: the smooth AJAX swap held the board inert for a flat 400ms after any action
+  specifically so a fast second tap couldn't land on whatever rendered next (e.g. "Delve Again")
+  before the result was ever perceived - but a **fixed time delay is a race with a beatable
+  deadline, not a guarantee**, and fast enough repeated input can in principle always find the edge
+  of any such window. Speed-running was reliably fast enough to find it in practice.
+  **The actual fix removes the race instead of widening it**: `cryptcrawl.php`'s fetch handler now
+  checks the response HTML for `class="cc-result ` (present only in the game_over win/loss panel,
+  verified against real rendered output for all four states - `no_run`/`active`/both game_over
+  outcomes - matching exactly the two game-ending ones and neither other) and, if found, calls
+  `window.location.reload()` instead of the normal in-place `innerHTML` swap. A real page navigation
+  has no timing window to beat at all - the browser cannot process another click until the new page
+  has genuinely finished loading, and what loads is always a fresh, direct server read of the true
+  (already-committed) state, never a DOM patched in place under a countdown. Ordinary (non-game-
+  ending) actions are completely unaffected - the smooth swap and its 400ms guard stay exactly as
+  they were, since a race on those is a smaller/different concern and the smooth, uninterrupted-
+  music experience is worth keeping there. The one accepted, deliberate cost: ambient music restarts
+  for this one specific transition (a full navigation tears down the `<audio>` element the smooth-
+  swap design otherwise protects) rather than crossfading through it like every other action -
+  reliability over smoothness for the one moment that must never be skippable.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with
