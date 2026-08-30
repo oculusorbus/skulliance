@@ -322,9 +322,17 @@ records verified constants, and tracks what still needs to be written.
   skullswap.php's `.ss-footer`) rather than a "Go Back" button - it's the front door of the funnel,
   not a page a visitor needs an escape hatch from. Its `#cc-start-delve-form` is a real
   `<form method="post" action="cryptcrawl.php">` (no fetch/JS interception) that POSTs
-  `action=start_run` straight into the actual game. `header.php`'s nav link and all of
-  `homepage.php`'s Crypt Crawl references point at this file, not `cryptcrawl.php` - that part
-  never changed and never caused a problem.
+  `action=start_run` straight into the actual game. `homepage.php`'s Crypt Crawl references point
+  at this file (public visitors, unauthenticated, always get the marketing funnel).
+  **`header.php`'s own nav link is the one exception, changed 2026-08-30** - it links straight to
+  `cryptcrawl.php` instead, skipping the marketing page entirely, per explicit user request ("nix
+  the display of the public crypt crawl marketing page when logged into the staking platform and
+  clicking the game... take the player straight to the game"). Safe/zero-risk change: this
+  particular link only ever renders for an already-authenticated session in the first place -
+  header.php's whole "Play" dropdown sits inside `if(isset($name))`, and header.php itself is only
+  reached on pages already gated by `skulliance.php` - so this doesn't touch session handling at
+  all, just which of the two existing pages one specific nav link points to for users who were
+  already going to see it.
 
   **`cryptcrawl.php` itself, however, went through a failed detour.** It was originally (and is
   again now) a normal page: `include 'header.php'`, full site nav, no special standalone chrome.
