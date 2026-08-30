@@ -230,6 +230,38 @@ identified before Second Wind/diminishing medkits were designed.
 
 ---
 
+## 4b. Design decisions (locked 2026-08-30)
+
+Both weak spots got a "one-time guaranteed save" fix — and on inspection
+they're the **same mechanic**, not two: both failure modes cash out as "the
+player is about to lose despite playing well," and both are caused by the
+Step 4 discard-to-cover check specifically (the King of Spades spike *is* a
+Step 4 failure — zero shield means the attack value stays full right when
+hand/deck are thinnest; a doomed shuffle's actual death moment is also
+always a Step 4 failure, whatever caused it). One mechanic covers both
+instead of shipping two overlapping safety nets that would confuse a player
+about which one just saved them.
+
+**Last Rally** (Crypt Crawl's precedent is "Last Stand" — deliberately a
+different word, not a reused name, same as the tier-name guidance in §2):
+the first time a Step 4 discard can't fully cover the current enemy's
+(shield-reduced) attack value, Last Rally fires automatically — discard
+whatever's in hand toward it, forgive the shortfall, survive with hand and
+deck otherwise untouched. No player choice involved (mirrors Last Stand
+being automatic, not opt-in). Once per run. Independent of suit immunity —
+it doesn't grant a shield or cancel immunity, it just forgives one lethal
+shortfall outright, so it still saves a King of Spades finale even though
+Spades are immune there.
+
+**Solo win tiers, renamed** (per §2's "don't copy-paste Bronze/Silver/Gold"
+guidance) — mapped from `jesters_used` (0/1/2), Last Rally firing doesn't
+affect the tier:
+- 0 Jesters flipped → **Flawless Conquest**
+- 1 Jester flipped → **Hard-Fought Conquest**
+- 2 Jesters flipped → **Narrow Conquest**
+
+---
+
 ## 5. Architecture notes for the build
 
 - Same shape as `cryptcrawl.php`: single-player, page/AJAX-driven, no
@@ -243,6 +275,44 @@ identified before Second Wind/diminishing medkits were designed.
 - Per project convention: update `skullpaper/MAINTENANCE.md` and add a
   Skull Paper page **once this ships**, not before — Crypt Crawl itself
   stayed undocumented in Skull Paper during its own vertical-slice phase.
+
+## 6. Build progress (started 2026-08-30)
+
+**Done:** `cryptconquest-engine.php` — the full solo rules engine (turn
+structure, all 4 suit powers with correct Hearts-before-Diamonds ordering,
+combos, Animal Companion pairing, enemy suit immunity, exact-damage
+recovery onto the tavern deck, Jester flip charges, Last Rally, win/loss,
+tier naming). Deliberately DB/session-free (see file header) so it's
+testable standalone — 50+ assertions covering every mechanic plus a
+200-game fuzz sweep, all passing, no committed test harness yet (lives in
+the builder's scratchpad pending a decision on where Crypt Conquest's
+tests should live long-term, same open question Crypt Crawl's own
+scratchpad-only tests have).
+
+**Found while fuzz-testing, not in the original research pass** — a third
+edge case, engine-level rather than a design weak spot: a solo player who
+burns through their entire hand *and* both Jester charges while the
+current enemy is heavily shielded can reach a position where nothing can
+ever be played, drawn, healed, or shielded again (Diamonds' draw power
+requires playing a card to trigger, and there are none left) -- yielding
+forever at 0 damage taken, never dying, never progressing. Raw Regicide
+doesn't need to handle this (a tabletop player just concedes); a digital
+run needs to resolve it on its own. `cryptconquestYield()` now detects it
+(empty hand + `jesters_used >= 2`) and ends the run in a loss immediately
+rather than hanging. Confirmed via the fuzz harness both before the fix
+(games pegged at the 500-turn cap, hand permanently empty, `pending_attack`
+permanently 0) and after (zero stuck games across 200 runs).
+
+**Not started yet:** the DB persistence layer (table `cryptconquests`,
+`cryptconquestStartRun`/`GetActiveRun`/`SaveRun`/etc. in db.php wrapping
+this engine, same shape as Crypt Crawl's) — no CREATE TABLE has been run
+anywhere, this ships as SQL for the site owner to run once the layer is
+written, same as every other schema change on this project (no migrations
+tooling exists). Also not started: `cryptconquest-actions.php`,
+`cryptconquest-render.php`, the page itself, art-pool wiring (placeholder
+suit/rank badges to start, per Crypt Crawl's own vertical-slice
+precedent), and any Skull Paper page (deliberately deferred until this
+ships, per project convention).
 
 ## Sources
 - [Regicide rules PDF](https://www.regicidegame.com/site_files/33132/upload_files/RegicideRulesA4.pdf)
