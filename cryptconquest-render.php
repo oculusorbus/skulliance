@@ -299,7 +299,6 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<button type="submit" class="cq-btn secondary">🏳️ Abandon Run</button>
 			</form>
 			<button type="button" class="cq-btn secondary" id="cq-instructions-btn">📖 View Instructions</button>
-			<button type="button" class="cq-btn secondary" id="cq-zoom-toggle" title="Background zoom: on">🎥 Zoom</button>
 		</div>
 	<?php endif; ?>
 

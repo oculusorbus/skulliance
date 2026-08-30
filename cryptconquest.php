@@ -233,7 +233,6 @@ include 'header.php';
 .cq-btn.attack { background: #ff4444; color: #012; }
 .cq-btn.attack:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,68,68,.4); }
 .cq-btn:disabled { opacity: 0.35; cursor: default; }
-.cq-btn.off { opacity: 0.55; } /* dimmed state for the zoom toggle when off -- not disabled, still clickable */
 @media (hover: hover) and (pointer: fine) {
 	.cq-btn:not(:disabled)::after {
 		content: ''; position: absolute; top: 0; left: 0; width: 40%; height: 100%;
@@ -260,6 +259,22 @@ include 'header.php';
 	animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .4s both;
 }
 .cq-result-carbon img { width: 20px; height: 20px; object-fit: contain; }
+
+/* Persistent control bar -- same pill shape/position as Crypt Crawl's own
+   #cc-audio-player (sits below the game content, in normal flow, so it's
+   in the same spot regardless of no_run/active/game_over). */
+.cq-player {
+	max-width: 720px; margin: 14px auto 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+	background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+	padding: 8px 14px; box-sizing: border-box; font-size: 0.78rem; color: #c8dce8;
+}
+.cq-player-btn {
+	background: none; border: none; color: #c8dce8; cursor: pointer;
+	font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+	display: flex; align-items: center; gap: 6px; transition: background .12s ease, opacity .12s ease;
+}
+.cq-player-btn:hover { background: rgba(255,255,255,.1); }
+.cq-player-btn.off { opacity: 0.5; }
 
 @media (prefers-reduced-motion: reduce) {
 	.cq-flash-backdrop, .cq-flash-modal, .cq-instructions-backdrop.show, .cq-instructions-modal,
@@ -288,6 +303,15 @@ include 'header.php';
      replaced: an in-place swap and a forced navigation both turned out to
      have real failure modes across browser/PWA/mobile that this doesn't. -->
 <div id="cq-result-overlay" style="display:none;"></div>
+</div>
+<!-- Persistent control bar -- OUTSIDE #cq-game-area/#cq-theme-bg on
+     purpose, so it's visible in every state (no_run/active/game_over),
+     not just tucked into the active-play controls row where it used to
+     live and was easy to miss. Same pill-bar position/style as Crypt
+     Crawl's own #cc-audio-player; just the zoom toggle for now -- if
+     ambient audio comes later, its controls belong in this same bar. -->
+<div class="cq-player" id="cq-player">
+	<button type="button" class="cq-player-btn" id="cq-zoom-toggle" title="Background zoom: on">🎥 Background Animation</button>
 </div>
 </div>
 <script>
@@ -399,22 +423,24 @@ include 'header.php';
 			}
 		}
 
-		// Lives inside #cq-game-area's own swapped markup (only shown during
-		// the active-play controls row), so it's re-bound here like the
-		// instructions button above rather than once at the top level.
-		var zoomBtn = document.getElementById('cq-zoom-toggle');
-		if (zoomBtn) {
+		applyThemeState();
+	}
+
+	// #cq-player (and the zoom toggle inside it) is a PERMANENT element,
+	// outside #cq-game-area -- bound once here instead of inside
+	// initGameArea(), unlike the instructions button above which lives
+	// inside the swapped markup and gets destroyed/recreated every render.
+	var zoomBtn = document.getElementById('cq-zoom-toggle');
+	if (zoomBtn) {
+		zoomBtn.classList.toggle('off', !getZoomEnabled());
+		zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
+		zoomBtn.addEventListener('click', function() {
+			setZoomEnabled(!getZoomEnabled());
 			zoomBtn.classList.toggle('off', !getZoomEnabled());
 			zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
-			zoomBtn.addEventListener('click', function() {
-				setZoomEnabled(!getZoomEnabled());
-				zoomBtn.classList.toggle('off', !getZoomEnabled());
-				zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
-				document.getElementById('cq-theme-bg') && document.getElementById('cq-theme-bg').classList.toggle('cq-zoom', getZoomEnabled());
-			});
-		}
-
-		applyThemeState();
+			var themeBg = document.getElementById('cq-theme-bg');
+			if (themeBg) themeBg.classList.toggle('cq-zoom', getZoomEnabled());
+		});
 	}
 
 	initGameArea();
