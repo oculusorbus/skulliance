@@ -476,7 +476,21 @@ records verified constants, and tracks what still needs to be written.
   Start Delve from a not-yet-fully-authenticated moment (or any transient session read on
   `cryptcrawlgame.php`'s zero-session-logic path into `cryptcrawl.php`) a much more common way to
   first seed a guest run that then lingers.
-- Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
+- Crypt Crawl's leaderboard links use an absolute URL - fixed 2026-08-29, reported directly by the
+  user ("the view leaderboard link may need the www prefix... it keeps taking me to the skulliance
+  merch store 404 page and then killing my staking session"). Both the game_over(lost) "Weekly
+  Leaderboard" button and the active-state flee-row's "View Leaderboard" button
+  (`cryptcrawl-render.php`) now link to `https://www.skulliance.io/staking/leaderboards.php?filterby=weekly-cryptcrawl`
+  instead of the bare relative `leaderboards.php`. Confirmed while investigating: this does NOT need
+  to be a form - `leaderboards.php`'s shared session/login include (`skulliance.php`) reads
+  `filterby` from `$_GET` exactly as much as `$_POST` (lines ~797-804), so a plain GET link with the
+  query string is fully supported. Also surfaced but NOT fixed here (pre-existing, unrelated to the
+  marketing split, out of scope for a link fix): `skulliance.php`'s login-restore path does
+  `$_SESSION = $cookie;` - a full *replace*, not a merge - whenever the live session doesn't already
+  show `logged_in` and a `SessionCookie` is present. `leaderboards.php` is one of the only gated
+  pages Crypt Crawl (deliberately guest-playable, unlike most of this platform) links straight out
+  to, so this is a plausible way a page transition could look like it "kills" a session rather than
+  just failing to load - worth its own investigation if reports continue after the absolute-URL fix.
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and
   rebuilt the `<audio>` element above on every single click, audibly stuttering the ambient

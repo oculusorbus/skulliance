@@ -179,7 +179,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
 		</form>
 		<?php if ($fell): ?>
-		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
+		<a href="https://www.skulliance.io/staking/leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
 		<?php endif; ?>
 		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
@@ -371,7 +371,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 				<button type="submit" class="cc-btn secondary">🏳️ Abandon Run</button>
 			</form>
 			<button type="button" class="cc-btn secondary" id="cc-instructions-btn">📖 View Instructions</button>
-			<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
+			<a href="https://www.skulliance.io/staking/leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn secondary">🏆 View Leaderboard</a>
 		</div>
 		<div class="cc-go-back-row"><a href="#" class="cc-btn secondary" data-go-back="1">↩️ Go Back</a></div>
 
