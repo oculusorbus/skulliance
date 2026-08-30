@@ -400,6 +400,25 @@ tl/br -- no more special-cased "no art" layout with a big centered badge.
 Hand grid is a fixed 4 columns (was auto-fill, which split an 8-card hand
 6-then-2 on desktop).
 
+**Also done (same day, verbiage):** Kingdom -> **Necropolis**, Castle deck
+-> **Mausoleum**, Tavern deck -> **Crypt** (display text only -- the
+underlying fields stay `castle_deck`/`tavern_deck`, no schema change).
+
+**Also done (same day, art -- reverted the S1 split above):** the owner
+played it and judged Season 1 doesn't have enough visual variety for this
+game, so everything switched to Season 2. Court cards and player cards
+now draw from the SAME S2 pool, but still can't share it naively (an
+enemy and a hand card could show the identical NFT) -- restructured to
+one query (`cryptconquestFetchArtPool()`) split into two non-overlapping
+slices (`cryptconquestGetCardArtPools()`: court claims indices 0-11,
+player claims 12-51). That combined function is now the actual
+render-path call (one query instead of the S1-era two);
+`cryptconquestGetEnemyCardArt()`/`GetPlayerCardArt()` still exist as thin
+wrappers for standalone/test use. `CRYPTCONQUEST_PLAYER_ART_COLLECTION_ID`
+renamed to `CRYPTCONQUEST_S1_COLLECTION_ID` -- it's now an exclusion, not
+a source, so the old name was actively misleading. S1 kept as a named
+constant rather than deleted, in case that verdict changes later.
+
 **Still not started:** ambient audio, Discord announce, leaderboard
 wiring, nav link, and any Skull Paper page (deliberately deferred until
 this ships, per project convention). Not linked from anywhere yet -- reachable only at
