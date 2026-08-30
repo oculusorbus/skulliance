@@ -384,6 +384,22 @@ covers key ordering + empty/undersized/overfull pool cases) and
 `cc_conquest_art_render_test.php` (full render pass, King of Spades enemy
 + a recovered Jack of Hearts in hand) -- both scratchpad, not committed.
 
+**Also done (same day):** player cards (numbers + Companions) now get real
+art too, deliberately from a DIFFERENT Crypties collection than court
+cards -- Season 1 (`collection_id = 7`), the owner's own call, so hand and
+enemies read as two distinct aesthetics rather than one pool. New
+`cryptconquestGetPlayerCardArt()` (db.php), and the original court-card
+function is renamed `cryptconquestGetEnemyCardArt()` with an explicit
+`collections.id != 7` exclusion so the two pools can't cross-contaminate.
+A recovered court card in hand still reads from the ENEMY pool, not the
+player pool -- it's the same enemy, just recovered, so it keeps the same
+art it had while you were fighting it. Every card (enemy badge and every
+hand card) now uses one unified template: art-or-plain-black + top-left/
+bottom-right corner index, same as Crypt Crawl's own `.cc-card-corner`
+tl/br -- no more special-cased "no art" layout with a big centered badge.
+Hand grid is a fixed 4 columns (was auto-fill, which split an 8-card hand
+6-then-2 on desktop).
+
 **Still not started:** ambient audio, Discord announce, leaderboard
 wiring, nav link, and any Skull Paper page (deliberately deferred until
 this ships, per project convention). Not linked from anywhere yet -- reachable only at
