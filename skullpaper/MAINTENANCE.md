@@ -444,12 +444,38 @@ records verified constants, and tracks what still needs to be written.
   session-start comment) can leave as a stale/partial `SessionCookie` restore missing exactly those
   fields even while `user_id` itself is present. Fixed by looking all three up fresh from `users` by
   `$run['user_id']` instead (same query shape `checkActivityLeaderboard()` already uses) - the
-  announcement is now exactly as session-independent as the payout it's reporting on. The specific
-  missing-CARBON-line half of that report wasn't independently root-caused (the render condition,
-  `$user_id > 0 && $carbon_earned > 0`, can only fail if that render's request genuinely resolved 0
-  crypts, which contradicts having seen a game_over screen at all) - most likely the same class of
-  stale/cached render as the other reports on this list, which the two reload fixes above should
-  also cover going forward.
+  announcement is now exactly as session-independent as the payout it's reporting on.
+  **The missing-CARBON-line half of that report turned out to be a separate, real bug, root-caused
+  the same day from a live DB query the user ran at request** (`SELECT id, user_id, status,
+  rooms_cleared, carbon_earned FROM cryptcrawls ORDER BY id DESC LIMIT 5`): a `lost` run's
+  `carbon_earned` was sitting in the table as a correct nonzero value (640), which first ruled out
+  an unrun migration (the `carbon_earned` column's own `ALTER TABLE` was flagged as required when
+  the CARBON feature was first added, same as `reward`/`date_created` above, and was never
+  confirmed as actually run against the live table - worth independently double-checking, but this
+  specific symptom isn't that) and then reframed the question entirely: if the DB row is right, the
+  render must be reading the *wrong* row. It was: `$_SESSION['cryptcrawl_guest_run']` (the entire
+  storage for a guest's one-and-only run - see the "Crypt Crawl is public" comment atop the CRYPT
+  CRAWL block in db.php) is written in four places (`cryptcrawlStartRun`, `cryptcrawlPlayCard`,
+  `cryptcrawlFleeRoom`, `cryptcrawlSaveRun`, all guarded on `$user_id`/`$run_id` <= 0) but was never
+  *cleared* anywhere. Every one of `cryptcrawlGetActiveRun`/`cryptcrawlGetMostRecentRun`/
+  `cryptcrawlPlayCard`/`cryptcrawlFleeRoom`/`cryptcrawlSaveRun` falls back to reading or writing
+  that same session key whenever `$user_id` (or the run id derived from it) is 0 for *that one
+  call* - so a guest run played before logging in (or created by any single request whose
+  `$user_id` misread as 0 - exactly the kind of hiccup mobile Safari's PHPSESSID-dropping behavior
+  causes) sits in session forever, ready to silently resurface and mask the player's real,
+  DB-backed run the instant a *later* request's own `$user_id` read hiccups - showing old/fake
+  guest progress instead of the real one, and since a guest render never shows CARBON
+  (`$user_id > 0` gates it), that's a coherent-looking loss screen with a correct-looking result and
+  a missing CARBON line, while the real row - 640 CARBON, right there in the table - goes
+  unread. Fixed at the one shared choke point every render already goes through:
+  `cryptcrawlRenderGameArea()` now unsets `$_SESSION['cryptcrawl_guest_run']` the instant it's ever
+  called with a real (`> 0`) `$user_id`, so once a player is correctly identified as a real account
+  even once, stale guest data is purged and can never resurface to confuse a later hiccup. This is
+  very likely the same underlying mechanism behind "every device/interface combo gets a different
+  experience," not purely the caching/bfcache theory above - the marketing split makes hitting
+  Start Delve from a not-yet-fully-authenticated moment (or any transient session read on
+  `cryptcrawlgame.php`'s zero-session-logic path into `cryptcrawl.php`) a much more common way to
+  first seed a guest run that then lingers.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

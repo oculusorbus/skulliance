@@ -30,6 +30,25 @@
 // (matches the established convention here, same as cryptcrawlRulesHtml()
 // above) rather than returning a string.
 function cryptcrawlRenderGameArea($conn, $user_id) {
+	// A leftover guest run (from playing before logging in, or from any
+	// single request whose $user_id misread as 0 -- e.g. mobile Safari
+	// dropping PHPSESSID, see the SessionCookie-restore comment in
+	// cryptcrawl.php) must never be allowed to resurface once we know for
+	// certain this is a real account. $_SESSION['cryptcrawl_guest_run'] is
+	// otherwise never cleared anywhere (see cryptcrawlGetActiveRun/
+	// cryptcrawlGetMostRecentRun/cryptcrawlPlayCard/cryptcrawlFleeRoom/
+	// cryptcrawlSaveRun in db.php, all of which read or write it whenever
+	// $user_id is 0 for that one call) -- so a stale guest run sitting in
+	// session can silently mask the player's real, DB-backed run on some
+	// later request whose own $user_id read hiccuped, showing old fake
+	// progress and hiding real data (guest runs never display CARBON).
+	// Reported directly by the user: a loss screen with no CARBON line
+	// despite the DB row for that exact run holding a correct nonzero
+	// carbon_earned -- confirmed via a live DB query, ruling out a missing
+	// migration and pointing squarely at this instead.
+	if (intval($user_id) > 0 && isset($_SESSION['cryptcrawl_guest_run'])) {
+		unset($_SESSION['cryptcrawl_guest_run']);
+	}
 	$active_run = cryptcrawlGetActiveRun($conn, $user_id);
 	$recent_run = $active_run ? null : cryptcrawlGetMostRecentRun($conn, $user_id);
 
