@@ -18,10 +18,10 @@ function cryptconquestRankBadge($rank) {
 
 // Corner "rank" display for a card -- Animal Companions have no numeric
 // rank, so they get a paw instead of cryptconquestRankBadge() (which
-// would otherwise render intval(null) as a bare "0"). The paw itself gets
-// a white-invert treatment at the call site (see the cq-companion-icon
-// class in cryptconquest.php) so it reads clearly against real S2 art
-// instead of blending into it.
+// would otherwise render intval(null) as a bare "0"). Keeps its native
+// emoji color; a white text-shadow (see the cq-companion-icon class in
+// cryptconquest.php, swapping the corner's usual black shadow for a
+// white one) is what makes it pop against real S2 art.
 function cryptconquestCornerRank($card) {
 	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
 }
@@ -249,8 +249,9 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					// that's a different source than court/number cards.
 					$art_pool = $is_court ? $enemy_art_pool : ($is_companion ? $companion_art_pool : $player_art_pool);
 					$hand_art = $art_pool[cryptconquestCardArtKey($card)] ?? null;
-					// White-invert just the paw glyph (not the suit symbol) so it
-					// reads clearly against real S2 art instead of blending in --
+					// Just the paw glyph (not the suit symbol) gets a white
+					// text-shadow instead of the corner's usual black one, so it
+					// pops against real S2 art without losing its native color --
 					// see .cq-companion-icon in cryptconquest.php.
 					$corner_rank_class = $is_companion ? ' cq-companion-icon' : '';
 					$footer = 'value ' . $value;

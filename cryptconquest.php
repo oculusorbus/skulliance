@@ -215,13 +215,23 @@ include 'header.php';
 	border: 2px solid rgba(255,255,255,.12); box-sizing: border-box; overflow: hidden;
 	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-/* Forced solid white via filter (same trick cryptcrawl.php uses on its own
-   weapon/potion icons: brightness(0) crushes the glyph to black, invert(1)
-   flips that to white) rather than relying on the emoji's native color --
-   the paw needs to read clearly over real S2 art now, not just a plain
-   black fallback card. */
-.cq-card-companion-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; filter: brightness(0) invert(1); }
-.cq-corner-rank.cq-companion-icon { filter: brightness(0) invert(1); }
+/* Keeps the paw's native emoji color (no filter) -- just swaps the
+   corner's usual BLACK text-shadow (see .cq-card-corner above, meant for
+   plain colored rank/suit text) for a WHITE one of the same shape, so the
+   glyph pops against real S2 art without being flattened to a silhouette. */
+.cq-card-companion-icon {
+	position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+	text-shadow:
+		-1.5px -1.5px 2px rgba(255,255,255,.95), 1.5px -1.5px 2px rgba(255,255,255,.95),
+		-1.5px  1.5px 2px rgba(255,255,255,.95), 1.5px  1.5px 2px rgba(255,255,255,.95),
+		0 0 8px rgba(255,255,255,.85), 0 0 3px rgba(255,255,255,.9);
+}
+.cq-corner-rank.cq-companion-icon {
+	text-shadow:
+		-1.5px -1.5px 2px rgba(255,255,255,.95), 1.5px -1.5px 2px rgba(255,255,255,.95),
+		-1.5px  1.5px 2px rgba(255,255,255,.95), 1.5px  1.5px 2px rgba(255,255,255,.95),
+		0 0 8px rgba(255,255,255,.85), 0 0 3px rgba(255,255,255,.9);
+}
 .cq-card-footer { font-size: 0.62rem; opacity: 0.6; text-align: center; margin-top: 4px; text-transform: uppercase; letter-spacing: .02em; }
 .cq-card:has(.cq-card-check:checked) .cq-card-face {
 	border-color: #ffcc4d; box-shadow: 0 0 0 2px rgba(255,204,77,.3), 0 6px 16px rgba(255,204,77,.25);
