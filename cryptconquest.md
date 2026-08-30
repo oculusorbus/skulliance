@@ -366,12 +366,27 @@ an actual browser yet -- no local MySQL was available to test the
 logged-in DB path end-to-end, only guest/session-backed play, and no
 visual/manual QA pass has happened.
 
-**Still not started:** curated art (Crypt Crawl's 44 cards are each
-hand-mapped to a specific held Cryptie NFT -- Crypt Conquest's 52 use
-plain suit/rank badges for now, same starting point Crypt Crawl itself
-had), ambient audio, Discord announce, leaderboard wiring, nav link, and
-any Skull Paper page (deliberately deferred until this ships, per project
-convention). Not linked from anywhere yet -- reachable only at
+**Also done (same day):** real Crypties art on the 12 court cards
+(Jacks/Queens/Kings) -- both the current-enemy badge and any recovered
+court card in hand. `cryptconquestGetCardArt()` (db.php) auto-assigns from
+whatever Crypties the same owner (`CRYPTCRAWL_ART_USER_ID`) currently
+holds, excluding names Crypt Crawl's own `CRYPTCRAWL_CARD_ART` already
+claimed, sorted by name for a stable assignment. This is NOT the
+hand-curated-by-rarity pass Crypt Crawl's own art got (a full review
+session picking WTF/Mythic/Legendary pieces one by one) -- just enough to
+get real art on screen quickly, per the owner's own framing ("get my head
+into the feel of the game"). Ordinary number cards and Companions stay
+plain badges, same "curated art reserved for enemies" call Crypt Crawl
+made for its own monster cards. A rarity-aware curation pass can follow
+the same way Crypt Crawl's did, if/when there's appetite for that review
+session. New test coverage: `cc_conquest_art_test.php` (mocked $conn,
+covers key ordering + empty/undersized/overfull pool cases) and
+`cc_conquest_art_render_test.php` (full render pass, King of Spades enemy
++ a recovered Jack of Hearts in hand) -- both scratchpad, not committed.
+
+**Still not started:** ambient audio, Discord announce, leaderboard
+wiring, nav link, and any Skull Paper page (deliberately deferred until
+this ships, per project convention). Not linked from anywhere yet -- reachable only at
 `/staking/cryptconquest.php` directly.
 
 ## Sources
