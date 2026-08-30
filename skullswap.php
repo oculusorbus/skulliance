@@ -14,7 +14,7 @@ if (session_status() === PHP_SESSION_ACTIVE
     $cookieData = json_decode($_COOKIE['SessionCookie'], true);
     if (is_array($cookieData)) {
         // Merge, not replace -- see skulliance.php's own fix for why.
-        $_SESSION = array_merge($_SESSION, $cookieData);
+        $_SESSION = array_merge((array)$_SESSION, $cookieData);
     }
 }
 $is_logged_in = isset($_SESSION['userData']['user_id']);

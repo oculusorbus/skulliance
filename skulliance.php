@@ -19,7 +19,11 @@ if(!isset($_SESSION['logged_in'])){
 		// directly by the user as pages elsewhere on the platform (not just
 		// Crypt Crawl) intermittently bouncing to the error page and
 		// killing an otherwise-valid session.
-		$_SESSION = array_merge($_SESSION, $cookie);
+		// (array) cast, not a bare $_SESSION -- array_merge() throws an
+		// uncaught TypeError (fatal, 500) in PHP 8 if $_SESSION isn't
+		// already an initialized array at this point, which it isn't
+		// guaranteed to be on every code path that reaches here.
+		$_SESSION = array_merge((array)$_SESSION, $cookie);
 	}else{
   		header('Location: error.php');
   		exit();

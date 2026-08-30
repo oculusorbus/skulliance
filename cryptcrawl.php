@@ -37,7 +37,7 @@ if (session_status() === PHP_SESSION_ACTIVE
         // key this same session already has (e.g. cryptcrawl_flash/
         // cryptcrawl_guest_run), not just restores login. See
         // skulliance.php's own fix for the platform-wide version of this.
-        $_SESSION = array_merge($_SESSION, $cookieData);
+        $_SESSION = array_merge((array)$_SESSION, $cookieData);
     }
 }
 $user_id = isset($_SESSION['userData']['user_id']) ? intval($_SESSION['userData']['user_id']) : 0;

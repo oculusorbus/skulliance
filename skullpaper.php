@@ -12,7 +12,7 @@ require_once 'lib/Parsedown.php';
  */
 if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
 	$cookie = json_decode($_COOKIE['SessionCookie'], true);
-	if (is_array($cookie)) { $_SESSION = array_merge($_SESSION, $cookie); } // merge, not replace -- see skulliance.php's own fix for why
+	if (is_array($cookie)) { $_SESSION = array_merge((array)$_SESSION, $cookie); } // merge, not replace -- see skulliance.php's own fix for why
 }
 if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	$name = $_SESSION['userData']['name'] ?? null;

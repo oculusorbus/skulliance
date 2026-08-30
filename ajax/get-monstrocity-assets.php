@@ -22,7 +22,7 @@ $sp_diag = array('stage' => 'start');
 // lightweight pattern skullpaper.php uses to stay public without the gate.)
 if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
 	$cookie = json_decode($_COOKIE['SessionCookie'], true);
-	if (is_array($cookie)) { $_SESSION = array_merge($_SESSION, $cookie); } // merge, not replace -- see skulliance.php's own fix for why
+	if (is_array($cookie)) { $_SESSION = array_merge((array)$_SESSION, $cookie); } // merge, not replace -- see skulliance.php's own fix for why
 }
 
 // Default roster shown to logged-out visitors (and logged-in players with no
