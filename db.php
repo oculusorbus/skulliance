@@ -11201,6 +11201,19 @@ include_once 'cryptconquest-engine.php';
 // rather than just deleted, in case that verdict changes later.
 define('CRYPTCONQUEST_S1_COLLECTION_ID', 7);
 
+// Themed Necropolis backdrops, one per depth through the Mausoleum
+// (enemies_defeated) -- owner-selected subset of the same images/themes/
+// *.jpg pool Crypt Crawl's own cryptcrawlRoomThemeFile() draws from, same
+// indexed-by-depth pattern: depth beyond the last index just reuses the
+// final theme rather than erroring or going bare.
+define('CRYPTCONQUEST_KINGDOM_THEMES', ['24.jpg', '23.jpg', '25.jpg', '12.jpg', '4.jpg', '9.jpg', '3.jpg', '2.jpg', '38.jpg', '1.jpg', '6.jpg']);
+
+function cryptconquestKingdomThemeFile($enemies_defeated) {
+	$themes = CRYPTCONQUEST_KINGDOM_THEMES;
+	$idx = min(max(intval($enemies_defeated), 0), count($themes) - 1);
+	return $themes[$idx];
+}
+
 // The 12 court-card art keys, in a fixed order (Kings, then Queens, then
 // Jacks, cycling suits within each rank) -- used only to zip a name-sorted
 // NFT pool onto card identities deterministically. Order here has no

@@ -66,10 +66,34 @@ include 'header.php';
 @keyframes cqFlashBackdropIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cqFlashModalIn { from { opacity: 0; transform: scale(.85) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 @keyframes cqBtnSheen { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(220%) skewX(-20deg); } }
+@keyframes cqKenBurns {
+	from { transform: scale(var(--kb-scale-from, 1)) translate(var(--kb-x-from, 0%), var(--kb-y-from, 0%)); }
+	to   { transform: scale(var(--kb-scale-to, 1.12)) translate(var(--kb-x-to, 2%), var(--kb-y-to, -2%)); }
+}
 
 .cq-wrap { padding: 20px 16px 60px; }
 .cq-inner { max-width: 720px; width: 100%; margin: 0 auto; }
 #cq-game-area, #cq-result-overlay { width: 100%; }
+/* #cq-theme-bg is a PERMANENT element (see the markup below) -- present in
+   every state, "bare" (this rule only) when no themed backdrop applies.
+   Ported directly from cryptcrawl.php's own #cc-theme-bg -- see that
+   file's comment for why it has to be permanent (an AJAX-swapped copy
+   would restart the Ken Burns drift on every single action instead of
+   only when the scene actually changes). */
+.cq-theme-bg { position: relative; }
+.cq-theme-bg.cq-theme-active {
+	overflow: hidden; border-radius: 14px; padding: 18px; margin: 0 -16px;
+	display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 200px;
+}
+.cq-theme-bg::before {
+	content: ''; position: absolute; inset: -5%; background-image: var(--theme-img);
+	background-size: cover; background-position: center; transition: background-image .6s ease;
+	will-change: transform; display: none;
+}
+.cq-theme-bg.cq-theme-active::before { display: block; }
+.cq-theme-bg.cq-zoom::before {
+	animation: cqKenBurns var(--kb-duration, 26s) ease-in-out infinite alternate;
+}
 
 .cq-flash-backdrop {
 	position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.65);
@@ -209,6 +233,7 @@ include 'header.php';
 .cq-btn.attack { background: #ff4444; color: #012; }
 .cq-btn.attack:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,68,68,.4); }
 .cq-btn:disabled { opacity: 0.35; cursor: default; }
+.cq-btn.off { opacity: 0.55; } /* dimmed state for the zoom toggle when off -- not disabled, still clickable */
 @media (hover: hover) and (pointer: fine) {
 	.cq-btn:not(:disabled)::after {
 		content: ''; position: absolute; top: 0; left: 0; width: 40%; height: 100%;
@@ -238,12 +263,22 @@ include 'header.php';
 
 @media (prefers-reduced-motion: reduce) {
 	.cq-flash-backdrop, .cq-flash-modal, .cq-instructions-backdrop.show, .cq-instructions-modal,
-	.cq-hud, .cq-btn::after, .cq-result-icon, .cq-result-title, .cq-result-sub, .cq-result-carbon { animation: none !important; }
-	.cq-btn, .cq-hp-bar-fill, .cq-card-face { transition: none !important; }
+	.cq-hud, .cq-btn::after, .cq-result-icon, .cq-result-title, .cq-result-sub, .cq-result-carbon,
+	.cq-theme-bg::before { animation: none !important; }
+	.cq-btn, .cq-hp-bar-fill, .cq-card-face, .cq-theme-bg::before { transition: none !important; }
 }
 </style>
 <div class="cq-wrap">
-<div class="cq-inner">
+<!-- Permanent wrapper -- unlike #cq-game-area inside it, this element is
+     NEVER destroyed/recreated by an AJAX swap, specifically so its Ken
+     Burns CSS animation (.cq-zoom, above) keeps running continuously
+     across actions instead of restarting on every single one. Starts
+     "bare" (no cq-theme-active class, no background) since PHP no longer
+     decides whether to emit it at all -- that's now a class JS toggles
+     based on #cq-theme-state's data-theme-* attributes (emitted fresh
+     inside #cq-game-area on every render), applied by applyThemeState()
+     below. Ported directly from cryptcrawl.php's #cc-theme-bg. -->
+<div class="cq-theme-bg" id="cq-theme-bg">
 <div id="cq-game-area"><?php cryptconquestRenderGameArea($conn, $user_id); ?></div>
 <!-- Permanent, hidden sibling of #cq-game-area -- a win/loss result gets
      dropped in here and revealed with a synchronous style.display flip
@@ -259,6 +294,82 @@ include 'header.php';
 (function() {
 	var gameArea = document.getElementById('cq-game-area');
 	var resultOverlay = document.getElementById('cq-result-overlay');
+
+	// Background zoom (Ken Burns drift) on/off -- persists for the rest of
+	// the browser session, same sessionStorage-backed on/off convention
+	// Crypt Crawl's own player controls use. On by default.
+	function getZoomEnabled() {
+		var v = sessionStorage.getItem('cq_zoom_enabled');
+		return v === null ? true : v === '1';
+	}
+	function setZoomEnabled(v) { try { sessionStorage.setItem('cq_zoom_enabled', v ? '1' : '0'); } catch (e) {} }
+
+	// Sizing only -- #cq-theme-bg's active/inactive state and image are
+	// applyThemeState()'s job below. One resize listener, attached once
+	// (not re-added per swap, which would stack up a fresh listener per
+	// action) -- same shape as cryptcrawl.php's own sizeTheme().
+	function sizeTheme() {
+		var el = document.getElementById('cq-theme-bg');
+		if (!el) return;
+		if (!el.classList.contains('cq-theme-active')) {
+			el.style.height = ''; // bare mode -- size naturally
+			return;
+		}
+		var top = el.getBoundingClientRect().top;
+		var bottomPad = 60; // matches .cq-wrap's bottom padding
+		var available = window.innerHeight - top - bottomPad;
+		el.style.height = 'auto';
+		var natural = el.scrollHeight;
+		el.style.height = Math.max(200, available, natural) + 'px';
+	}
+	window.addEventListener('resize', sizeTheme);
+
+	// Randomizes the Ken Burns pan/zoom direction -- same approach as
+	// cryptcrawl.php's own randomizeKenBurns(), opposite-corner drift so it
+	// never jerks toward one edge, random angle/pace so every theme change
+	// looks different.
+	function randomizeKenBurns(el) {
+		var scaleFrom = 1 + Math.random() * 0.04;
+		var scaleTo = 1.08 + Math.random() * 0.08;
+		var angle = Math.random() * Math.PI * 2;
+		var dist = 1.5 + Math.random() * 2;
+		var xFrom = (Math.cos(angle) * dist).toFixed(2) + '%';
+		var yFrom = (Math.sin(angle) * dist).toFixed(2) + '%';
+		var xTo = (Math.cos(angle + Math.PI) * dist).toFixed(2) + '%';
+		var yTo = (Math.sin(angle + Math.PI) * dist).toFixed(2) + '%';
+		var duration = (20 + Math.random() * 14).toFixed(1) + 's';
+		el.style.setProperty('--kb-scale-from', scaleFrom.toFixed(3));
+		el.style.setProperty('--kb-scale-to', scaleTo.toFixed(3));
+		el.style.setProperty('--kb-x-from', xFrom);
+		el.style.setProperty('--kb-y-from', yFrom);
+		el.style.setProperty('--kb-x-to', xTo);
+		el.style.setProperty('--kb-y-to', yTo);
+		el.style.setProperty('--kb-duration', duration);
+	}
+
+	// Reconciles the PERMANENT #cq-theme-bg element against whatever
+	// #cq-theme-state (emitted fresh inside #cq-game-area on every render)
+	// says this render's theme state is. Comparing the incoming image
+	// against what's already applied (dataset.currentImg) is what keeps
+	// the same background from restarting its drift on every action --
+	// only a genuinely different image gets a fresh random direction.
+	function applyThemeState() {
+		var themeBg = document.getElementById('cq-theme-bg');
+		var stateEl = document.getElementById('cq-theme-state');
+		if (!themeBg || !stateEl) return;
+		var active = stateEl.getAttribute('data-theme-active') === '1';
+		var img = stateEl.getAttribute('data-theme-img') || '';
+		themeBg.classList.toggle('cq-theme-active', active);
+		if (active) {
+			if (themeBg.dataset.currentImg !== img) {
+				themeBg.style.setProperty('--theme-img', img);
+				themeBg.dataset.currentImg = img;
+				randomizeKenBurns(themeBg);
+			}
+			themeBg.classList.toggle('cq-zoom', getZoomEnabled());
+		}
+		sizeTheme();
+	}
 
 	function initGameArea() {
 		var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -287,6 +398,23 @@ include 'header.php';
 				instrClose.addEventListener('click', function() { instrBackdrop.classList.remove('show'); });
 			}
 		}
+
+		// Lives inside #cq-game-area's own swapped markup (only shown during
+		// the active-play controls row), so it's re-bound here like the
+		// instructions button above rather than once at the top level.
+		var zoomBtn = document.getElementById('cq-zoom-toggle');
+		if (zoomBtn) {
+			zoomBtn.classList.toggle('off', !getZoomEnabled());
+			zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
+			zoomBtn.addEventListener('click', function() {
+				setZoomEnabled(!getZoomEnabled());
+				zoomBtn.classList.toggle('off', !getZoomEnabled());
+				zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
+				document.getElementById('cq-theme-bg') && document.getElementById('cq-theme-bg').classList.toggle('cq-zoom', getZoomEnabled());
+			});
+		}
+
+		applyThemeState();
 	}
 
 	initGameArea();

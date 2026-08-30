@@ -79,7 +79,36 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	$art_pools = $conn ? cryptconquestGetCardArtPools($conn) : ['enemy' => [], 'player' => []];
 	$enemy_art_pool = $art_pools['enemy'];
 	$player_art_pool = $art_pools['player'];
+
+	// Theme backdrop -- #cq-theme-bg is a PERMANENT element living outside
+	// #cq-game-area in cryptconquest.php (never destroyed/recreated by an
+	// AJAX swap), so PHP can't just emit/omit the themed-panel markup
+	// per state directly -- that would restart its Ken Burns animation on
+	// every single action instead of only when the scene actually changes.
+	// This just tells the client (via #cq-theme-state below) whether a
+	// themed backdrop applies right now and which image to use;
+	// applyThemeState() in cryptconquest.php's script block reconciles the
+	// permanent element against it. Same pattern as Crypt Crawl's own
+	// #cc-mood/#cc-theme-bg (see cryptcrawl-render.php/cryptcrawl.php).
+	$cq_theme_active = false;
+	$cq_theme_img = '';
+	if ($state === 'active') {
+		$cq_theme_active = true;
+		$theme_url = '/staking/images/themes/' . cryptconquestKingdomThemeFile($active_run['enemies_defeated']);
+		$cq_theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('" . $theme_url . "')";
+	} elseif ($state === 'game_over') {
+		// No dedicated "you lost"/"you won" image was supplied (unlike Crypt
+		// Crawl's fixed 8.jpg death backdrop) -- reusing the theme matching
+		// how far the run actually got reads as "this is where it ended"
+		// either way, win or loss, rather than picking one of the 11 owner-
+		// selected images arbitrarily to mean "defeat".
+		$cq_theme_active = true;
+		$theme_url = '/staking/images/themes/' . cryptconquestKingdomThemeFile($recent_run['enemies_defeated']);
+		$cq_theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('" . $theme_url . "')";
+	}
 	?>
+	<div id="cq-theme-state" data-theme-active="<?php echo $cq_theme_active ? '1' : '0'; ?>" data-theme-img="<?php echo htmlspecialchars($cq_theme_img); ?>" style="display:none;"></div>
+	<div class="cq-inner">
 	<?php if ($flashes): ?>
 	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
 		<?php foreach ($flashes as $f): ?>
@@ -270,6 +299,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<button type="submit" class="cq-btn secondary">🏳️ Abandon Run</button>
 			</form>
 			<button type="button" class="cq-btn secondary" id="cq-instructions-btn">📖 View Instructions</button>
+			<button type="button" class="cq-btn secondary" id="cq-zoom-toggle" title="Background zoom: on">🎥 Zoom</button>
 		</div>
 	<?php endif; ?>
 
@@ -280,5 +310,6 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			<button type="button" class="cq-btn" id="cq-instructions-close">Got it</button>
 		</div>
 	</div>
+	</div><!-- /cq-inner -->
 	<?php
 }
