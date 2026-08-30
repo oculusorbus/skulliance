@@ -19,9 +19,9 @@ function cryptconquestRankBadge($rank) {
 // Corner "rank" display for a card -- Animal Companions have no numeric
 // rank, so they get a paw instead of cryptconquestRankBadge() (which
 // would otherwise render intval(null) as a bare "0"). Keeps its native
-// emoji color; a white text-shadow (see the cq-companion-icon class in
-// cryptconquest.php, swapping the corner's usual black shadow for a
-// white one) is what makes it pop against real S2 art.
+// emoji color; a thin white outline (see the cq-companion-icon class in
+// cryptconquest.php -- a crisp zero-blur text-shadow ring, not a soft
+// glow) is what makes it pop against real S2 art.
 function cryptconquestCornerRank($card) {
 	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
 }

@@ -215,22 +215,22 @@ include 'header.php';
 	border: 2px solid rgba(255,255,255,.12); box-sizing: border-box; overflow: hidden;
 	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-/* Keeps the paw's native emoji color (no filter) -- just swaps the
-   corner's usual BLACK text-shadow (see .cq-card-corner above, meant for
-   plain colored rank/suit text) for a WHITE one of the same shape, so the
-   glyph pops against real S2 art without being flattened to a silhouette. */
+/* Keeps the paw's native emoji color (no filter) -- a thin, crisp white
+   OUTLINE (zero blur, eight 1px-offset copies fully surrounding the
+   glyph) rather than a soft glow, so it pops against real S2 art without
+   looking blurry. */
 .cq-card-companion-icon {
 	position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
 	text-shadow:
-		-1.5px -1.5px 2px rgba(255,255,255,.95), 1.5px -1.5px 2px rgba(255,255,255,.95),
-		-1.5px  1.5px 2px rgba(255,255,255,.95), 1.5px  1.5px 2px rgba(255,255,255,.95),
-		0 0 8px rgba(255,255,255,.85), 0 0 3px rgba(255,255,255,.9);
+		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
+		-1px  0   0 #fff,                1px  0   0 #fff,
+		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
 }
 .cq-corner-rank.cq-companion-icon {
 	text-shadow:
-		-1.5px -1.5px 2px rgba(255,255,255,.95), 1.5px -1.5px 2px rgba(255,255,255,.95),
-		-1.5px  1.5px 2px rgba(255,255,255,.95), 1.5px  1.5px 2px rgba(255,255,255,.95),
-		0 0 8px rgba(255,255,255,.85), 0 0 3px rgba(255,255,255,.9);
+		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
+		-1px  0   0 #fff,                1px  0   0 #fff,
+		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
 }
 .cq-card-footer { font-size: 0.62rem; opacity: 0.6; text-align: center; margin-top: 4px; text-transform: uppercase; letter-spacing: .02em; }
 .cq-card:has(.cq-card-check:checked) .cq-card-face {
