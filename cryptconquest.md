@@ -419,6 +419,19 @@ renamed to `CRYPTCONQUEST_S1_COLLECTION_ID` -- it's now an exclusion, not
 a source, so the old name was actively misleading. S1 kept as a named
 constant rather than deleted, in case that verdict changes later.
 
+**Also done (same day, themed backdrop):** ported Crypt Crawl's permanent
+`#cc-theme-bg` + Ken Burns pattern directly -- `CRYPTCONQUEST_KINGDOM_THEMES`
+(db.php) holds the 11 owner-selected images from `images/themes/`,
+indexed by `enemies_defeated` the same way `cryptcrawlRoomThemeFile()`
+indexes by `rooms_cleared` (clamps at the last image past depth 10, so a
+full 12-court-card win doesn't error). No dedicated win/loss image was
+supplied, so `game_over` reuses whichever theme matches the run's final
+depth, win or loss alike. Added a 🎥 zoom toggle to the active-state
+controls row (sessionStorage-backed, same convention as Crypt Crawl's
+player controls) -- no ambient audio to synchronize it with yet, so it's
+simpler than Crypt Crawl's own version (no null-guarded "audio sets this
+up after the fact" dance needed).
+
 **Still not started:** ambient audio, Discord announce, leaderboard
 wiring, nav link, and any Skull Paper page (deliberately deferred until
 this ships, per project convention). Not linked from anywhere yet -- reachable only at
