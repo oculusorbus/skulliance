@@ -16,15 +16,14 @@ function cryptconquestRankBadge($rank) {
 	return $labels[intval($rank)] ?? strval(intval($rank));
 }
 
-// Corner "rank" display for a card -- Companions (displayed as
-// "Familiar" -- see cryptconquestCardLabel() -- the underlying $card
-// type stays 'companion', this is a display-only rename same as
-// Kingdom/Castle/Tavern -> Necropolis/Mausoleum/Crypt elsewhere) have no
-// numeric rank, so they get a blood drop instead of
-// cryptconquestRankBadge() (which would otherwise render intval(null) as
-// a bare "0").
+// Corner "rank" display for a card -- Animal Companions have no numeric
+// rank, so they get a paw instead of cryptconquestRankBadge() (which
+// would otherwise render intval(null) as a bare "0"). The paw itself gets
+// a white-invert treatment at the call site (see the cq-companion-icon
+// class in cryptconquest.php) so it reads clearly against real S2 art
+// instead of blending into it.
 function cryptconquestCornerRank($card) {
-	return $card['type'] === 'companion' ? '🩸' : cryptconquestRankBadge($card['rank']);
+	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
 }
 
 // Shared by the no_run intro screen below and the in-game "View
@@ -72,17 +71,18 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	$flashes = $_SESSION['cryptconquest_flash'] ?? [];
 	$_SESSION['cryptconquest_flash'] = [];
 
-	// Court cards (enemies) and player cards (numbers + Companions) both
-	// draw from the same Season 2 Crypties pool now (S1 was tried and
-	// judged not visually varied enough for this game), split into two
-	// non-overlapping slices so an enemy and a hand card never show the
-	// same NFT -- see cryptconquestGetCardArtPools()'s own comment in
-	// db.php. One query, not two. Guarded on $conn so a null-$conn test
-	// harness (no live DB) degrades to plain card faces everywhere instead
-	// of fataling -- production always has a real $conn.
-	$art_pools = $conn ? cryptconquestGetCardArtPools($conn) : ['enemy' => [], 'player' => []];
+	// Three art sources: court cards + number cards draw from Season 1
+	// (two held wallets pooled together, court and numbers split into
+	// non-overlapping slices of it); Animal Companion cards draw from
+	// Season 2 specifically, since S2's actual subject matter is animals
+	// -- see cryptconquestGetCardArtPools()'s own comment in db.php.
+	// Guarded on $conn so a null-$conn test harness (no live DB) degrades
+	// to plain card faces everywhere instead of fataling -- production
+	// always has a real $conn.
+	$art_pools = $conn ? cryptconquestGetCardArtPools($conn) : ['enemy' => [], 'player' => [], 'companion' => []];
 	$enemy_art_pool = $art_pools['enemy'];
 	$player_art_pool = $art_pools['player'];
+	$companion_art_pool = $art_pools['companion'];
 
 	// Theme backdrop -- #cq-theme-bg is a PERMANENT element living outside
 	// #cq-game-area in cryptconquest.php (never destroyed/recreated by an
@@ -243,12 +243,19 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					// Recovered court cards keep reading from the ENEMY pool, not
 					// the player pool -- a recovered King of Spades shows the same
 					// art it had while you were fighting it, which is the point
-					// (it's still that same enemy, just now in your hand).
-					$art_pool = $is_court ? $enemy_art_pool : $player_art_pool;
+					// (it's still that same enemy, just now in your hand). Animal
+					// Companions read from their own S2 pool -- see
+					// cryptconquestGetCardArtPools()'s comment in db.php for why
+					// that's a different source than court/number cards.
+					$art_pool = $is_court ? $enemy_art_pool : ($is_companion ? $companion_art_pool : $player_art_pool);
 					$hand_art = $art_pool[cryptconquestCardArtKey($card)] ?? null;
+					// White-invert just the paw glyph (not the suit symbol) so it
+					// reads clearly against real S2 art instead of blending in --
+					// see .cq-companion-icon in cryptconquest.php.
+					$corner_rank_class = $is_companion ? ' cq-companion-icon' : '';
 					$footer = 'value ' . $value;
 					if ($is_court) $footer = 'recovered &middot; ' . $footer;
-					elseif ($is_companion) $footer = 'Familiar &middot; ' . $footer;
+					elseif ($is_companion) $footer = 'Companion &middot; ' . $footer;
 				?>
 					<label class="cq-card" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
@@ -263,14 +270,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 							<?php if ($hand_art): ?>
 								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($hand_art); ?>" alt="" loading="lazy" onerror="this.remove();">
 							<?php elseif ($is_companion): ?>
-								<div class="cq-card-companion-icon">🩸</div>
+								<div class="cq-card-companion-icon">🐾</div>
 							<?php endif; ?>
 							<div class="cq-card-corner tl">
-								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo cryptconquestCornerRank($card); ?></div>
 								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
 							</div>
 							<div class="cq-card-corner br">
-								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo cryptconquestCornerRank($card); ?></div>
 								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
 							</div>
 						</div>
@@ -292,7 +299,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<?php endif; ?>
 			</div>
 		</form>
-		<div class="cq-note">Select one card, or 2-4 of the <em>same rank</em> totalling 10 or less, or a Familiar paired with one other card.</div>
+		<div class="cq-note">Select one card, or 2-4 of the <em>same rank</em> totalling 10 or less, or an Animal Companion paired with one other card.</div>
 
 		<div class="cq-controls-row">
 			<form method="post"><input type="hidden" name="action" value="flip_jester">

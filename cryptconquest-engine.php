@@ -68,10 +68,7 @@ function cryptconquestCardLabel($card) {
 	$suitNames = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
 	$rankNames = [11 => 'Jack', 12 => 'Queen', 13 => 'King'];
 	$suit = $suitNames[$card['suit']] ?? $card['suit'];
-	// Display name only -- the underlying $card type stays 'companion'
-	// throughout the engine/DB, same display-only-rename shape as
-	// Kingdom/Castle/Tavern -> Necropolis/Mausoleum/Crypt in the render layer.
-	if ($card['type'] === 'companion') return "$suit Familiar";
+	if ($card['type'] === 'companion') return "$suit Animal Companion";
 	$rank = intval($card['rank']);
 	$rankLabel = $rankNames[$rank] ?? strval($rank);
 	return "$rankLabel of $suit";
@@ -96,12 +93,9 @@ function cryptconquestNewGame() {
 	$kings = cryptconquestShuffledCourtRank(13);
 	$castle = array_merge($jacks, $queens, $kings);
 
-	// Tavern deck: 2-10 of all 4 suits + 4 Companions (Regicide's own
-	// "Animal Companion" -- displayed to the player as "Familiar", see
-	// cryptconquestCardLabel(); $card['type'] stays 'companion'
-	// internally). Aces are not part of Regicide's component list at all
-	// (removed from the box, nothing to build here). Solo: no Jesters
-	// mixed in -- see §Solo.
+	// Tavern deck: 2-10 of all 4 suits + 4 Animal Companions. Aces are not
+	// part of Regicide's component list at all (removed from the box,
+	// nothing to build here). Solo: no Jesters mixed in -- see §Solo.
 	$tavern = [];
 	foreach (CRYPTCONQUEST_SUITS as $suit) {
 		for ($rank = 2; $rank <= 10; $rank++) {
@@ -154,7 +148,7 @@ function cryptconquestValidatePlay($run, $indices) {
 		return null; // companion+companion, or companion+any one other card
 	}
 	if ($companionCount > 0) {
-		return "Familiars can't join a combo -- play one alone or paired with a single other card.";
+		return "Animal Companions can't join a combo -- play one alone or paired with a single other card.";
 	}
 	if ($n > 4) return 'Combos are limited to 4 cards.';
 	$rank = $cards[0]['rank'];

@@ -11194,12 +11194,18 @@ function cryptcrawlSaveRun($conn, $run) {
    ============================================================ */
 include_once 'cryptconquest-engine.php';
 
-// Season 1 Crypties -- excluded from Crypt Conquest's art pool entirely
-// (2026-08-30: tried using it exclusively for player cards, the owner
-// judged it doesn't have enough visual variety for this game and asked
-// to switch everything to Season 2 instead). Kept as a named exclusion
-// rather than just deleted, in case that verdict changes later.
+// Split art sourcing, settled 2026-08-30 after two earlier iterations
+// (S1-for-player-cards, then S2-for-everything): Season 2's actual subject
+// matter is animals, a natural fit for the Animal Companion cards
+// specifically -- so those alone draw from S2. Everything else (court
+// cards AND ordinary number cards -- "the regency and user cards", the
+// owner's own phrasing) draws from Season 1 instead. S1 art is pulled
+// from BOTH held wallets (CRYPTCRAWL_ART_USER_ID and this second one) to
+// make sure there's enough of a pool for the 48 non-Companion identities;
+// the Companion/S2 pool stays scoped to CRYPTCRAWL_ART_USER_ID alone, per
+// the owner's own instruction.
 define('CRYPTCONQUEST_S1_COLLECTION_ID', 7);
+define('CRYPTCONQUEST_S1_EXTRA_USER_ID', 12);
 
 // Themed Necropolis backdrops, one per depth through the Mausoleum
 // (enemies_defeated) -- owner-selected subset of the same images/themes/
@@ -11227,41 +11233,35 @@ function cryptconquestCourtArtKeys() {
 	return $keys;
 }
 
-// The 40 player-card art keys (36 numbers + 4 Companions), high rank
-// first within each suit then the Companion, cycling suits -- same
-// "stable order, no gameplay meaning" purpose as cryptconquestCourtArtKeys().
-function cryptconquestPlayerArtKeys() {
+// The 36 number-card art keys (no Companions -- those get their own S2
+// pool/keys below), high rank first within each suit, cycling suits --
+// same "stable order, no gameplay meaning" purpose as
+// cryptconquestCourtArtKeys().
+function cryptconquestNumberArtKeys() {
 	$keys = [];
 	foreach (CRYPTCONQUEST_SUITS as $suit) {
 		for ($rank = 10; $rank >= 2; $rank--) $keys[] = $suit . $rank;
-		$keys[] = $suit . 'CO';
 	}
 	return $keys;
 }
 
-// Every Season 2 (i.e. not S1, see CRYPTCONQUEST_S1_COLLECTION_ID) Crypties
-// NFT the owner (CRYPTCRAWL_ART_USER_ID) holds, minus whatever Crypt
-// Crawl's own CRYPTCRAWL_CARD_ART already claimed by name, sorted by name
-// for a stable/deterministic assignment. One shared pool for BOTH court
-// and player cards now (previously two separately-sourced pools) --
-// resolved once per render and split by offset (see
-// cryptconquestGetCardArtPools() below) so the two card types never end
-// up claiming the same NFT, even though they're drawing from the same
-// underlying collection now.
-function cryptconquestFetchArtPool($conn) {
-	$user_id = CRYPTCRAWL_ART_USER_ID;
-	$exclude = array_values(CRYPTCRAWL_CARD_ART);
-	$exclude_sql = '';
-	if ($exclude) {
-		$escaped = array_map(function ($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, $exclude);
-		$exclude_sql = "AND nfts.name NOT IN (" . implode(',', $escaped) . ")";
-	}
-	$s1 = intval(CRYPTCONQUEST_S1_COLLECTION_ID);
+// The 4 Animal Companion art keys, one per suit.
+function cryptconquestCompanionArtKeys() {
+	$keys = [];
+	foreach (CRYPTCONQUEST_SUITS as $suit) $keys[] = $suit . 'CO';
+	return $keys;
+}
+
+// Shared by both pools below -- resolves $where_sql (already scoped to
+// whichever user_id(s)/collection matters to the caller) into an
+// ipfs-resolved, name-sorted list of image URLs. Sorting by name is what
+// makes the eventual key assignment stable/deterministic across requests.
+function cryptconquestFetchArtPool($conn, $where_sql) {
 	$result = $conn->query("
 		SELECT nfts.ipfs, nfts.collection_id, collections.project_id
 		FROM nfts
 		INNER JOIN collections ON collections.id = nfts.collection_id
-		WHERE nfts.user_id = $user_id AND collections.name LIKE '%Crypties%' AND collections.id != $s1 $exclude_sql
+		WHERE $where_sql
 		ORDER BY nfts.name ASC
 	");
 	$pool = [];
@@ -11271,6 +11271,38 @@ function cryptconquestFetchArtPool($conn) {
 		}
 	}
 	return $pool;
+}
+
+// Season 1, court cards + number cards (48 identities) -- pulled from
+// BOTH CRYPTCRAWL_ART_USER_ID and CRYPTCONQUEST_S1_EXTRA_USER_ID's held
+// S1 Crypties, since 48 identities is more than one wallet alone
+// comfortably covers. No name-exclusion needed here (unlike the S2 pool
+// below) -- Crypt Crawl's own art never touches S1 at all, so there's no
+// overlap risk to guard against.
+function cryptconquestGetS1ArtPool($conn) {
+	$user_ids = [intval(CRYPTCRAWL_ART_USER_ID), intval(CRYPTCONQUEST_S1_EXTRA_USER_ID)];
+	$s1 = intval(CRYPTCONQUEST_S1_COLLECTION_ID);
+	return cryptconquestFetchArtPool($conn, "nfts.user_id IN (" . implode(',', $user_ids) . ") AND collections.id = $s1");
+}
+
+// Season 2, Animal Companion cards only (4 identities) -- S2's actual
+// subject matter is animals, the owner's own observation and the reason
+// these specifically get real art instead of the usual plain-badge
+// treatment number cards get in Crypt Crawl. Scoped to
+// CRYPTCRAWL_ART_USER_ID alone (not the extra S1 wallet -- only 4 slots to
+// fill), excludes whatever Crypt Crawl's own CRYPTCRAWL_CARD_ART already
+// claimed by name (Crypt Crawl's art pool IS Season 2) so the two games
+// don't show identical art.
+function cryptconquestGetS2ArtPool($conn) {
+	$user_id = CRYPTCRAWL_ART_USER_ID;
+	$s1 = intval(CRYPTCONQUEST_S1_COLLECTION_ID);
+	$exclude = array_values(CRYPTCRAWL_CARD_ART);
+	$exclude_sql = '';
+	if ($exclude) {
+		$escaped = array_map(function ($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, $exclude);
+		$exclude_sql = "AND nfts.name NOT IN (" . implode(',', $escaped) . ")";
+	}
+	return cryptconquestFetchArtPool($conn, "nfts.user_id = $user_id AND collections.name LIKE '%Crypties%' AND collections.id != $s1 $exclude_sql");
 }
 
 // Zips $keys onto $pool starting at $offset -- pool exhaustion just means
@@ -11287,39 +11319,45 @@ function cryptconquestZipArtPool($pool, $keys, $offset) {
 	return $art;
 }
 
-// The actual per-render entry point -- ONE query (cryptconquestFetchArtPool),
-// split into the 12 court-card entries and the 40 player-card entries from
-// two DIFFERENT, non-overlapping slices of the same pool (court gets
-// indices 0-11, player gets 12-51) so an enemy and a hand card can never
-// end up showing the identical NFT. NOT the hand-curated-by-rarity pass
-// Crypt Crawl's own CRYPTCRAWL_CARD_ART got (a full review session
-// picking WTF/Mythic/Legendary pieces one by one) -- just an
+// The actual per-render entry point -- TWO queries now (S1 and S2 are
+// genuinely different sources with different exclusion rules, unlike the
+// brief S2-for-everything phase this replaced, which could share one).
+// The S1 pool is split into two non-overlapping slices (court gets
+// indices 0-11, numbers get 12-47) so a court card and a number card can
+// never end up showing the identical S1 NFT. NOT the hand-curated-by-
+// rarity pass Crypt Crawl's own CRYPTCRAWL_CARD_ART got (a full review
+// session picking WTF/Mythic/Legendary pieces one by one) -- just an
 // auto-assignment from current holdings. Resolved fresh on every render
 // rather than baked into the run at start -- simpler (no engine/schema
 // changes) and always reflects the owner's current holdings, at the cost
-// of one query per action; worth revisiting if that's ever measurably
+// of two queries per action; worth revisiting if that's ever measurably
 // slow (see cryptcrawlAnnounceResult's own webhook-latency note elsewhere
 // in this file for the same kind of "flagged, not fixed yet" call).
 function cryptconquestGetCardArtPools($conn) {
-	$pool = cryptconquestFetchArtPool($conn);
+	$s1_pool = cryptconquestGetS1ArtPool($conn);
 	$court_keys = cryptconquestCourtArtKeys();
+	$s2_pool = cryptconquestGetS2ArtPool($conn);
 	return [
-		'enemy' => cryptconquestZipArtPool($pool, $court_keys, 0),
-		'player' => cryptconquestZipArtPool($pool, cryptconquestPlayerArtKeys(), count($court_keys)),
+		'enemy' => cryptconquestZipArtPool($s1_pool, $court_keys, 0),
+		'player' => cryptconquestZipArtPool($s1_pool, cryptconquestNumberArtKeys(), count($court_keys)),
+		'companion' => cryptconquestZipArtPool($s2_pool, cryptconquestCompanionArtKeys(), 0),
 	];
 }
 
 // Thin single-pool wrappers -- kept for direct/standalone use (and test
 // coverage) even though cryptconquestGetCardArtPools() above is what the
-// render path actually calls, to avoid fetching the pool twice per
-// render. Calling both of THESE together, on the other hand, does fetch
-// it twice -- fine outside the hot path, just don't wire both into a
-// single render.
+// render path actually calls, to avoid fetching pools twice per render.
+// Calling more than one of THESE together, on the other hand, does
+// refetch -- fine outside the hot path, just don't wire more than one
+// into a single render.
 function cryptconquestGetEnemyCardArt($conn) {
 	return cryptconquestGetCardArtPools($conn)['enemy'];
 }
 function cryptconquestGetPlayerCardArt($conn) {
 	return cryptconquestGetCardArtPools($conn)['player'];
+}
+function cryptconquestGetCompanionCardArt($conn) {
+	return cryptconquestGetCardArtPools($conn)['companion'];
 }
 
 function cryptconquestRowToRun($row) {
