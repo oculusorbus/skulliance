@@ -403,6 +403,14 @@ Hand grid is a fixed 4 columns (was auto-fill, which split an 8-card hand
 **Also done (same day, verbiage):** Kingdom -> **Necropolis**, Castle deck
 -> **Mausoleum**, Tavern deck -> **Crypt** (display text only -- the
 underlying fields stay `castle_deck`/`tavern_deck`, no schema change).
+Later the same day, Animal Companion -> **Familiar** (🐾 -> 🩸), same
+display-only treatment (`$card['type']` stays `'companion'`) -- confirmed
+with the owner these were never meant to represent the Aces (Regicide's
+real rules drop Aces from the deck entirely; Companions/Familiars are a
+separate, non-standard component), "Animal Companion" was just Regicide's
+own leftover flavor and didn't fit the reskin. HUD deck-count icons also
+iterated: 🏰/🎴 -> 🪦/⚰️ -> settled on 🏛️ Mausoleum (an actual
+structure, not a grave marker) / 🪦 Crypt.
 
 **Also done (same day, art -- reverted the S1 split above):** the owner
 played it and judged Season 1 doesn't have enough visual variety for this
