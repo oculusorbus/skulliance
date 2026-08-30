@@ -671,6 +671,39 @@ include 'header.php';
 
 	initGameArea();
 
+	// Locks #cc-game-area against interaction for a beat, then releases it.
+	// Shared by every path that can land a visitor on a fresh render of
+	// this page -- the AJAX swap, and (below) a plain page load/reload --
+	// so a rapid, repeated tap can never land on whatever's newly
+	// interactive (most importantly "Delve Again") before there's been any
+	// real chance to see what just rendered. 400ms comfortably covers a
+	// fast repeated-tap gesture without being noticeable on a single
+	// deliberate action. `busy` itself is declared below (hoisted -- this
+	// function's body only ever runs later, inside a callback, by which
+	// point that declaration has always already executed).
+	function lockGameAreaBriefly() {
+		gameArea.style.opacity = '0.55';
+		gameArea.style.pointerEvents = 'none';
+		setTimeout(function() {
+			gameArea.style.opacity = '';
+			gameArea.style.pointerEvents = '';
+			busy = false;
+		}, 400);
+	}
+
+	// A fresh load of this exact page landing directly on a game-ending
+	// result needs the exact same protection the AJAX path gets -- added
+	// 2026-08-30 after the AJAX path's own game-ending reload (below)
+	// turned out to *remove* the only guard that used to exist for this
+	// moment instead of strengthening it: a freshly loaded page has no
+	// cooldown applied to it at all by default, so a rapid/repeated tap
+	// (fighting fast enough to trigger that reload in the first place)
+	// could land immediately on "Delve Again" the instant the reloaded
+	// page finished loading, completely unguarded. Also covers the plainer
+	// cases of a manual refresh or the no-JS POST->redirect fallback
+	// landing here directly.
+	if (gameArea && gameArea.querySelector('.cc-result')) lockGameAreaBriefly();
+
 	// Intercept every action form inside #cc-game-area and post to the AJAX
 	// endpoint instead of letting the browser navigate there -- this is what
 	// actually keeps the ambient <audio> element (a sibling of #cc-game-area,
@@ -724,18 +757,9 @@ include 'header.php';
 				}
 				gameArea.innerHTML = html;
 				initGameArea();
-				// Stay inert a bit longer than just the fetch itself -- a
-				// fast response (very plausible when it's local/small) can
-				// otherwise let a rapid second tap land on whatever the
-				// swap just rendered in that same screen position, same
-				// concern as above but for ordinary (non-game-ending)
-				// actions, where the smooth swap is worth keeping and this
-				// guard is sufficient in practice.
-				setTimeout(function() {
-					gameArea.style.opacity = '';
-					gameArea.style.pointerEvents = '';
-					busy = false;
-				}, 400);
+				// Ordinary (non-game-ending) action -- same lock, shared with
+				// the fresh-page-load case above.
+				lockGameAreaBriefly();
 			})
 			.catch(function() {
 				// AJAX failed for some reason -- fall back to a real submit

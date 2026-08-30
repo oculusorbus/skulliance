@@ -441,6 +441,31 @@ records verified constants, and tracks what still needs to be written.
   for this one specific transition (a full navigation tears down the `<audio>` element the smooth-
   swap design otherwise protects) rather than crossfading through it like every other action -
   reliability over smoothness for the one moment that must never be skippable.
+  **That reload fix immediately regressed further, same day - it removed the only guard that used to
+  exist for this exact moment instead of strengthening it.** The user reproduced it again and
+  captured the actual Network tab evidence: the response for the "final" fight was a completely
+  fresh `start_run` result (`HP 20/20`, `Last Stand ready`, `Crypts cleared: 0`) - the server had
+  correctly processed a *new game*, not the loss. Root cause: a full page reload has **zero
+  cooldown once it finishes loading** - a freshly-loaded page is immediately, fully interactive,
+  unlike the old in-place swap which stayed locked (`pointer-events: none`) for 400ms *after*
+  rendering specifically to absorb a rapid follow-up tap. The user's actual testing method - fighting
+  rapidly and repeatedly until Last Stand triggers, then immediately again - meant a tap landing the
+  instant the reloaded game_over page became interactive went straight through to "Delve Again"
+  completely unguarded, immediately starting a fresh run. The reload fix solved the *timing-window*
+  race only to reintroduce the exact *no-guard-at-all* version of the same problem on the page it
+  reloads to.
+  **Fixed by extending the same lock to a fresh page load, not just the AJAX swap** - a shared
+  `lockGameAreaBriefly()` (400ms `pointer-events: none`, same as before) is now called both after an
+  ordinary in-place swap *and*, once, on the very first `initGameArea()` call if the page's own
+  initial markup already contains a `.cc-result` element - covering the game-ending reload above,
+  a plain manual refresh landing on a result screen, and the no-JS POST->redirect fallback, all with
+  one check. Also surfaced but not yet fixed while investigating: the fatal action's own request took
+  **2.82 seconds** in the user's own Network tab capture, roughly 7-8x slower than an ordinary
+  action's ~350-400ms - almost certainly the live, synchronous Discord "run ended" webhook call
+  (`cryptcrawlAnnounceResult()` -> `discordmsg()` -> `curl_exec()`), which only ever fires on a
+  win/loss, executed inline inside the same PHP request building the player's own response. Worth
+  its own fix (making that notification non-blocking) independent of this bug - a multi-second stall
+  before any result appears is a bad experience even with the interaction race now closed.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with
