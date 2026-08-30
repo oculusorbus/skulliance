@@ -16,11 +16,15 @@ function cryptconquestRankBadge($rank) {
 	return $labels[intval($rank)] ?? strval(intval($rank));
 }
 
-// Corner "rank" display for a card -- Companions have no numeric rank, so
-// they get a paw instead of cryptconquestRankBadge() (which would
-// otherwise render intval(null) as a bare "0").
+// Corner "rank" display for a card -- Companions (displayed as
+// "Familiar" -- see cryptconquestCardLabel() -- the underlying $card
+// type stays 'companion', this is a display-only rename same as
+// Kingdom/Castle/Tavern -> Necropolis/Mausoleum/Crypt elsewhere) have no
+// numeric rank, so they get a blood drop instead of
+// cryptconquestRankBadge() (which would otherwise render intval(null) as
+// a bare "0").
 function cryptconquestCornerRank($card) {
-	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
+	return $card['type'] === 'companion' ? '🩸' : cryptconquestRankBadge($card['rank']);
 }
 
 // Shared by the no_run intro screen below and the in-game "View
@@ -244,7 +248,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					$hand_art = $art_pool[cryptconquestCardArtKey($card)] ?? null;
 					$footer = 'value ' . $value;
 					if ($is_court) $footer = 'recovered &middot; ' . $footer;
-					elseif ($is_companion) $footer = 'Companion &middot; ' . $footer;
+					elseif ($is_companion) $footer = 'Familiar &middot; ' . $footer;
 				?>
 					<label class="cq-card" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
@@ -259,7 +263,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 							<?php if ($hand_art): ?>
 								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($hand_art); ?>" alt="" loading="lazy" onerror="this.remove();">
 							<?php elseif ($is_companion): ?>
-								<div class="cq-card-companion-icon">🐾</div>
+								<div class="cq-card-companion-icon">🩸</div>
 							<?php endif; ?>
 							<div class="cq-card-corner tl">
 								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
@@ -288,7 +292,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<?php endif; ?>
 			</div>
 		</form>
-		<div class="cq-note">Select one card, or 2-4 of the <em>same rank</em> totalling 10 or less, or an Animal Companion paired with one other card.</div>
+		<div class="cq-note">Select one card, or 2-4 of the <em>same rank</em> totalling 10 or less, or a Familiar paired with one other card.</div>
 
 		<div class="cq-controls-row">
 			<form method="post"><input type="hidden" name="action" value="flip_jester">
