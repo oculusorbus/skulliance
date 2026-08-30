@@ -453,6 +453,43 @@ NOT in `sitemap.xml` (same as `cryptcrawl.php` itself, as opposed to its
 marketing page `cryptcrawlgame.php`) -- a nav link for logged-in testers
 isn't the same thing as inviting search engines to index a prototype.
 
+**Fixed (2026-08-30, mobile-reported):** the suffer-phase "Incoming: N
+damage" banner was invisible -- fully correct markup/data (verified via
+`outerHTML` on the live page), just painted behind `#cq-theme-bg::before`'s
+promoted compositor layer (the Ken Burns backdrop runs a continuous
+`will-change: transform` animation). Every other visible element happened
+to already have `position: relative` or its own transform for unrelated
+reasons (button sheen, corner badges, an intro animation), which is
+exactly why only this one prompt vanished. Fixed by giving `.cq-inner`
+(the whole content wrapper) `position: relative; z-index: 1;` once,
+rather than patching the one element -- confirmed live on the deployed
+page (reproduced the bug, tested the fix via direct style injection,
+*then* wrote it) before shipping.
+
+**Reverted (2026-08-30, same day as the Familiar rename above):** the
+owner reconsidered both the naming and the art split.
+- **Familiar -> back to Animal Companion**, paw emoji back (🐾, not the
+  blood drop) -- same display-only shape, `$card['type']` still
+  `'companion'`.
+- **Art sourcing inverted**: Season 2's actual subject matter is animals,
+  a natural fit for Animal Companion cards specifically -- so ONLY those
+  draw from S2 now (`cryptconquestGetS2ArtPool()`, still excludes Crypt
+  Crawl's claimed names since Crypt Crawl's own art IS S2). Court cards
+  AND ordinary number cards ("the regency and user cards," the owner's
+  phrasing) draw from Season 1 instead (`cryptconquestGetS1ArtPool()`),
+  split into non-overlapping slices so a court card and a number card
+  never share an S1 NFT. S1 is pulled from TWO wallets now
+  (`CRYPTCRAWL_ART_USER_ID` and a new `CRYPTCONQUEST_S1_EXTRA_USER_ID = 12`)
+  since 48 identities (12 court + 36 numbers) is more than one wallet
+  comfortably covers; S2/Companion stays scoped to just
+  `CRYPTCRAWL_ART_USER_ID` (only 4 slots). `cryptconquestGetCardArtPools()`
+  now returns three pools (enemy/player/companion) and costs two queries
+  per render (S1 and S2 have different exclusion rules, can't share one
+  query the way the brief single-S2-pool phase could).
+- The paw glyph gets a white-invert treatment (`filter: brightness(0)
+  invert(1)`, same trick `cryptcrawl.php` uses on its own weapon/potion
+  icons) so it reads clearly over real S2 art instead of blending in.
+
 **Still not started:** ambient audio, Discord announce, leaderboard
 wiring, and any Skull Paper page (deliberately deferred until this ships,
 per project convention).
