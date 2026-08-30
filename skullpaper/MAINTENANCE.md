@@ -492,6 +492,39 @@ records verified constants, and tracks what still needs to be written.
   be mistaken for a form resubmission, regardless of how the current document was originally
   reached, sidestepping the whole ambiguity instead of relying on "reload" meaning the same thing
   everywhere.
+  **Rebuilt from scratch 2026-08-30, same day, on the user's own suggested architecture, after the
+  explicit-navigation fix was confirmed working and then the user asked directly why this wasn't
+  just a local DOM swap in the first place.** Both attempts before this one (the in-place swap with
+  a timed lock, then the forced navigation) were still fundamentally "wait for some network- or
+  timing-dependent step to resolve correctly" - a navigation in particular is *reliable* (nothing
+  can race it) but not *simple*, and turned out to have its own real, unrelated failure mode. The
+  user's proposal removes the dependency entirely: keep a permanent, hidden `#cc-result-overlay` as
+  a sibling of `#cc-game-area` (declared once in `cryptcrawl.php`'s markup, alongside the other
+  permanent siblings - `#cc-theme-bg`, the `<audio>` elements - never touched by an ordinary
+  in-place swap). On a game-ending response (same `class="cc-result '` detection as the navigation
+  version used), the fetch handler drops that HTML into the overlay (a synchronous, always-succeeds
+  DOM write - the server already computed everything, including CARBON earned, in the exact same
+  single response that already told us the game ended, so no second request is needed for the
+  dynamic details either) and reveals it with a plain `style.display` flip - not a network round
+  trip, not a navigation, nothing with a timing window at all. "Delve Again"/"Weekly Leaderboard"
+  inside the overlay are deliberately *outside* `#cc-game-area`'s own DOM subtree, so the delegated
+  AJAX submit listener (scoped to `gameArea.contains(form)`) never intercepts them at all - clicking
+  either is a perfectly ordinary link/POST, the same kind of real navigation Start Delve itself
+  already is, which is completely fine for "start a fresh game" (there's no music-continuity or
+  race concern for that transition the way there is for "did you even see you died"). Also
+  incidentally fixes the music-restart cost the navigation version accepted on purpose - since
+  there's no real navigation anymore, the `<audio>` elements are never torn down, so `syncMood()`
+  crossfades into Death/Triumph exactly like every other mood change instead of hard-restarting.
+  `initGameArea()` (called on the overlay exactly like it's called after any other swap) works
+  unmodified here since none of its internal queries are scoped to `#cc-game-area` specifically -
+  they're all plain `document.` lookups, so they find the right elements regardless of which
+  container the fresh content actually lives in. The existing lock-on-fresh-page-load check (a few
+  entries above) is still correct and still needed for a narrower case this doesn't cover: a genuine
+  fresh page load/refresh/no-JS-fallback landing *directly* on a game_over state renders straight
+  into `#cc-game-area` (PHP always renders there on a full page load, never into the overlay, which
+  is a purely client-side JS construct for the AJAX path specifically) - so "Delve Again" *is*
+  inside `#cc-game-area` and *is* subject to AJAX interception in that specific scenario, same as
+  before.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with

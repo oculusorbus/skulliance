@@ -95,17 +95,21 @@ include 'header.php';
 
 .cc-wrap { padding: 20px 16px 60px; }
 .cc-inner { max-width: 720px; width: 100%; margin: 0 auto; }
-/* #cc-game-area (the AJAX swap target -- see cryptcrawl-render.php) sits
-   between .cc-theme-bg and .cc-inner with no rules of its own. Harmless
-   when .cc-theme-bg is "bare" (plain block flow), but .cc-theme-active
-   makes it a flex container (display:flex; justify-content:center) to
-   center its content -- and a flex item with no explicit width shrinks to
-   its content's own size instead of stretching to fill available space,
-   so .cc-inner's own max-width:720px never actually got 720px of container
-   to be 100% of. Explicit width:100% here is what lets it reach that cap
-   at real desktop widths again -- without it, wide/desktop views quietly
-   collapsed down toward .cc-room's minimum column width instead. */
-#cc-game-area { width: 100%; }
+/* #cc-game-area (the AJAX swap target -- see cryptcrawl-render.php) and
+   #cc-result-overlay (its hidden sibling a win/loss reveals into, see the
+   markup comment) both sit between .cc-theme-bg and .cc-inner with no
+   rules of their own otherwise. Harmless when .cc-theme-bg is "bare"
+   (plain block flow), but .cc-theme-active makes it a flex container
+   (display:flex; justify-content:center) to center its content -- and a
+   flex item with no explicit width shrinks to its content's own size
+   instead of stretching to fill available space, so .cc-inner's own
+   max-width:720px never actually got 720px of container to be 100% of.
+   Explicit width:100% here is what lets it reach that cap at real desktop
+   widths again -- without it, wide/desktop views quietly collapsed down
+   toward .cc-room's minimum column width instead. Both elements need it,
+   since either can be the one .cc-theme-bg is actually centering at any
+   given moment. */
+#cc-game-area, #cc-result-overlay { width: 100%; }
 /* A real modal instead of an edge/corner toast -- a small floating banner
    was easy to miss entirely on mobile (fixed-position elements can end up
    fighting the browser's own address-bar chrome, and a corner is rarely
@@ -435,6 +439,24 @@ include 'header.php';
      applyThemeState() in the script block below. -->
 <div class="cc-theme-bg" id="cc-theme-bg">
 <div id="cc-game-area"><?php cryptcrawlRenderGameArea($conn, $user_id); ?></div>
+<!-- Permanent, hidden sibling of #cc-game-area -- added 2026-08-30, replacing
+     an earlier approach that forced a real page navigation on a win/loss
+     specifically to guarantee the result could never be raced past by a
+     stray tap. That worked, but cost a full reload (music restart) and
+     turned out to have its own real failure mode (some engines resubmitting
+     stale POST data on reload() depending on how the page was originally
+     reached). This is simpler and has neither problem: the result HTML the
+     server already renders gets dropped in here, then revealing it is a
+     single synchronous style.display flip -- not a network-dependent swap,
+     not a navigation, nothing with a timing window at all. "Delve Again"/
+     "Weekly Leaderboard" inside it are deliberately OUTSIDE #cc-game-area,
+     so the delegated AJAX submit listener below (scoped to
+     gameArea.contains(form)) never intercepts them -- clicking either is a
+     perfectly ordinary link/POST, the exact same kind of real navigation
+     Start Delve itself already is, which is completely fine for the "start
+     a fresh game" moment (unlike the "did you even see you died" moment,
+     which is what this element exists to make bulletproof). -->
+<div id="cc-result-overlay" style="display:none;"></div>
 </div>
 
 	<!-- Ambient music player -- OUTSIDE #cc-game-area above on purpose, so
@@ -465,6 +487,15 @@ include 'header.php';
 <script>
 (function() {
 	var gameArea = document.getElementById('cc-game-area');
+	// Permanent, hidden sibling of gameArea -- see the markup comment where
+	// it's declared. A win/loss result gets dropped in here and revealed
+	// with a synchronous style.display flip instead of an innerHTML swap
+	// into gameArea itself, so "Delve Again" and "Weekly Leaderboard" end
+	// up outside gameArea's own DOM subtree -- the delegated submit
+	// listener further down only intercepts forms gameArea.contains(),
+	// so clicking either is deliberately just a normal, uninterrupted
+	// link/POST, not something this script touches at all.
+	var resultOverlay = document.getElementById('cc-result-overlay');
 	// Assigned once the audio player sets itself up (below) -- exposed here
 	// so initGameArea() can call it again after every AJAX swap, since the
 	// server recomputes #cc-mood fresh on every render.
@@ -729,47 +760,45 @@ include 'header.php';
 				return res.text();
 			})
 			.then(function(html) {
-				// A game-ending result (win or loss) forces a real page
-				// reload instead of the usual smooth in-place swap --
-				// deliberate, not a fallback. The previous approach (swap in
-				// place, then hold the board inert for a flat 400ms so a
-				// rapid second tap can't land on "Delve Again" before the
-				// result was ever actually seen) is a timing guard, and any
-				// fixed delay can in principle be beaten by input fast
-				// enough -- confirmed directly by the user "speed running"
-				// through fights, tapping through faster than normal play.
-				// A real navigation has no timing window to beat at all: the
-				// browser can't process another click until the new page has
-				// genuinely finished loading, and what loads is always a
-				// fresh, direct read of the true server state (the action
-				// this response is for already fully completed server-side
-				// before this code even runs), never a DOM patched in place
-				// under a countdown. The one accepted cost is narrow and
-				// deliberate: ambient music restarts for this one transition
-				// specifically (a full navigation tears down the <audio>
-				// element the smooth-swap design otherwise protects),
-				// instead of every action -- reliability for the one moment
-				// that must never be skippable, over smoothness everywhere
-				// else.
-				if (html.indexOf('class="cc-result ') !== -1) {
-					// An explicit navigation to a fixed URL, not
-					// window.location.reload() -- fixed 2026-08-30, found
-					// from a live capture showing the "reloaded" page came
-					// back as a completely fresh start_run result (full HP,
-					// Last Stand ready, 0 crypts cleared), reliably, not
-					// randomly. reload() reloads whatever this exact
-					// document's own navigation actually was -- and this
-					// document was very possibly first reached via a real
-					// POST (Start Delve on cryptcrawlgame.php, or an earlier
-					// Delve Again), which this server does correctly
-					// redirect POST->GET, but some engines (mobile WebKit
-					// and PWA/standalone contexts especially) can still
-					// resubmit that original POST body on reload() rather
-					// than doing a clean GET. Setting location.href to a
-					// fixed path is unambiguous -- it's a normal navigation,
-					// never a form resubmission, regardless of how this
-					// document was originally reached.
-					window.location.href = 'cryptcrawl.php';
+				// A game-ending result (win or loss) reveals a permanent,
+				// pre-existing hidden panel instead of swapping into
+				// gameArea -- rebuilt 2026-08-30, replacing two earlier
+				// attempts that both relied on gameArea's own AJAX-swap
+				// machinery in one form or another (an in-place swap with a
+				// timed lock, then a forced page navigation) to make this
+				// one transition reliable. Both were still fundamentally
+				// "wait for some network/timing-dependent step to resolve
+				// correctly" -- the navigation version in particular turned
+				// out to have a real failure mode (some engines resubmitting
+				// stale POST data on reload() depending on how the page was
+				// originally reached). This has none of that: the result
+				// HTML the server already rendered gets dropped into
+				// resultOverlay (a synchronous, always-succeeds DOM write),
+				// then revealing it is a single synchronous style.display
+				// flip -- nothing left that depends on a network round trip,
+				// a navigation, or a timing window to actually show up.
+				// "Delve Again"/"Weekly Leaderboard" inside it are outside
+				// gameArea's own subtree on purpose (see resultOverlay's
+				// declaration above) -- clicking either is a perfectly
+				// ordinary link/POST, not something this handler is
+				// involved in at all, so there's no interaction race to
+				// guard against here the way ordinary in-place actions
+				// still need lockGameAreaBriefly() for. Also fixes the one
+				// cost the navigation-based version accepted on purpose:
+				// since there's no real navigation at all now, the <audio>
+				// elements (permanent siblings of gameArea, never touched by
+				// this) are never torn down -- #cc-mood's data-theme-*/
+				// data-mood on the fresh content still drive
+				// applyThemeState()/syncMood() same as any other render, and
+				// now that means a real crossfade into Death/Triumph, the
+				// same smooth transition every other mood change already
+				// gets, instead of a hard restart.
+				if (html.indexOf('class="cc-result ') !== -1 && resultOverlay) {
+					resultOverlay.innerHTML = html;
+					gameArea.style.display = 'none';
+					resultOverlay.style.display = '';
+					initGameArea();
+					busy = false;
 					return;
 				}
 				gameArea.innerHTML = html;
