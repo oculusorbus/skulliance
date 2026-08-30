@@ -404,6 +404,26 @@ records verified constants, and tracks what still needs to be written.
   `maybeStartAudioAmbience()` back when the landing lived inside `cryptcrawl.php` itself; that
   check was removed as dead code once the landing moved out - reaching `cryptcrawl.php` at all now
   means Start Delve was already clicked, so ambience is fair game in every state there.)
+  **Force a real reload on a bfcache restore** - fixed 2026-08-29, reported directly by the user
+  ("when you lose, it just takes you immediately back into the game and sometimes your level
+  remains where you died for the fresh game... this locks staking users out of the platform").
+  `cryptcrawl.php`'s DOM is mutated entirely client-side after the initial load - every action
+  swaps `#cc-game-area` via `fetch()`, never a real navigation - so if the browser restores this
+  exact document from its back/forward cache (bfcache) instead of re-requesting it, the player gets
+  back the in-memory snapshot from whenever they last left the page (e.g. mid-delve, HP/room/
+  "crypts cleared" frozen at that instant), with nothing re-synced against the server, where the run
+  may already be `'lost'`/`'won'`. Splitting the marketing page out made the back-and-forth
+  navigation that triggers this (leaving `cryptcrawl.php` and returning to it, including via
+  `cryptcrawlgame.php`'s Start Delve -> `cryptcrawl.php` -> browser back) an actual normal flow for
+  the first time - previously the landing and the game were the same URL, so there was nowhere to
+  navigate away to and back from. `Cache-Control: no-store` (already set on this page) blocks
+  bfcache eligibility in some browsers but not reliably in every engine (notably older/other mobile
+  Safari builds), so it wasn't a full guarantee on its own. Fixed with a `pageshow` listener at the
+  very top of the script, before anything else runs: `if (e.persisted) window.location.reload();` -
+  the standard fix for this class of bug in any page whose state is mutated purely client-side after
+  load. Not root-caused with a live repro (no login access from this environment) - diagnosed from
+  the reported symptoms matching this failure mode exactly and confirmed via static reading that the
+  win/loss screen markup and server-side game-over logic are both fully intact and unchanged.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

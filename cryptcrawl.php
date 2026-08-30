@@ -508,6 +508,28 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 </div>
 <script>
 (function() {
+	// Force a real reload if this exact document is restored from the
+	// browser's back/forward cache (bfcache) instead of the browser
+	// re-requesting it. Added 2026-08-29, chasing a report that a loss
+	// sometimes skips straight back into a live-looking game with the room/
+	// HP/"crypts cleared" frozen at whatever they were the instant the
+	// player died -- classic bfcache symptom: the DOM here has been mutated
+	// entirely client-side since the actual page load (every action swaps
+	// #cc-game-area via fetch, never a real navigation), so a bfcache
+	// restore hands back that exact in-memory snapshot with none of it
+	// re-synced against the server, where the run is already 'lost'/'won'.
+	// Splitting the marketing page out (cryptcrawlgame.php) made the
+	// back-and-forth navigation that triggers a bfcache restore (leaving
+	// this page and returning to it) an actual normal flow for the first
+	// time -- previously the landing and the game were the same URL, so
+	// there was nowhere to navigate away to and back from. Cache-Control:
+	// no-store on this page blocks bfcache in some browsers but not
+	// reliably across all of them (notably older/other-engine mobile
+	// Safari) -- this is the one guarantee that actually holds everywhere.
+	window.addEventListener('pageshow', function(e) {
+		if (e.persisted) window.location.reload();
+	});
+
 	// Baked straight in from the exact same $user_id PHP computed this page
 	// load with (top of file), not re-derived client-side from a DOM
 	// attribute -- same pattern skullswap.php uses for its own IS_LOGGED_IN.
