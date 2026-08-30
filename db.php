@@ -11194,6 +11194,12 @@ function cryptcrawlSaveRun($conn, $run) {
    ============================================================ */
 include_once 'cryptconquest-engine.php';
 
+// Player cards (numbers + Companions) deliberately draw from a DIFFERENT
+// Crypties collection than court cards -- the owner's own call, so the
+// deck reads as two distinct aesthetics (your hand vs. the enemies you
+// face) rather than one undifferentiated pool. Season 1.
+define('CRYPTCONQUEST_PLAYER_ART_COLLECTION_ID', 7);
+
 // The 12 court-card art keys, in a fixed order (Kings, then Queens, then
 // Jacks, cycling suits within each rank) -- used only to zip a name-sorted
 // NFT pool onto card identities deterministically. Order here has no
@@ -11207,35 +11213,30 @@ function cryptconquestCourtArtKeys() {
 	return $keys;
 }
 
-// Auto-assigned art pool for the 12 court cards (Jacks/Queens/Kings) --
-// NOT the hand-curated-by-rarity pass Crypt Crawl's CRYPTCRAWL_CARD_ART
-// got (a full review session picking WTF/Mythic/Legendary pieces one by
-// one). This is a first pass to get real Crypties art on the enemy cards
-// quickly, same held wallet (CRYPTCRAWL_ART_USER_ID), same "curated art
-// reserved for enemies" call Crypt Crawl made for its own monster cards
-// (see cryptcrawlBuildDeck()'s comment) -- ordinary number cards/
-// Companions stay plain badges, same as Crypt Crawl's weapon/potion cards.
-// Excludes whatever Crypt Crawl already claimed so the two games don't
-// show identical art for different cards. Resolved fresh on every render
-// rather than baked into the run at start -- simpler (no engine/schema
-// changes) and always reflects the owner's current holdings, at the cost
-// of one extra query per action; worth revisiting if that's ever
-// measurably slow (see cryptcrawlAnnounceResult's own webhook-latency
-// note elsewhere in this file for the same kind of "flagged, not fixed
-// yet" call).
-function cryptconquestGetCardArt($conn) {
-	$user_id = CRYPTCRAWL_ART_USER_ID;
-	$exclude = array_values(CRYPTCRAWL_CARD_ART);
-	$exclude_sql = '';
-	if ($exclude) {
-		$escaped = array_map(function ($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, $exclude);
-		$exclude_sql = "AND nfts.name NOT IN (" . implode(',', $escaped) . ")";
+// The 40 player-card art keys (36 numbers + 4 Companions), high rank
+// first within each suit then the Companion, cycling suits -- same
+// "stable order, no gameplay meaning" purpose as cryptconquestCourtArtKeys().
+function cryptconquestPlayerArtKeys() {
+	$keys = [];
+	foreach (CRYPTCONQUEST_SUITS as $suit) {
+		for ($rank = 10; $rank >= 2; $rank--) $keys[] = $suit . $rank;
+		$keys[] = $suit . 'CO';
 	}
+	return $keys;
+}
+
+// Shared by both art pools below -- resolves $keys against whatever NFTs
+// $where_sql selects (already scoped to CRYPTCRAWL_ART_USER_ID by the
+// caller), ordered by name for a stable/deterministic assignment. Pool
+// exhaustion just means the remaining keys get no entry -- callers fall
+// back to a plain card face when a key's missing, same graceful
+// degradation cryptcrawlBuildDeck() already has for Crypt Crawl.
+function cryptconquestResolveArtPool($conn, $where_sql, $keys) {
 	$result = $conn->query("
-		SELECT nfts.name, nfts.ipfs, nfts.collection_id, collections.project_id
+		SELECT nfts.ipfs, nfts.collection_id, collections.project_id
 		FROM nfts
 		INNER JOIN collections ON collections.id = nfts.collection_id
-		WHERE nfts.user_id = $user_id AND collections.name LIKE '%Crypties%' $exclude_sql
+		WHERE $where_sql
 		ORDER BY nfts.name ASC
 	");
 	$pool = [];
@@ -11244,13 +11245,49 @@ function cryptconquestGetCardArt($conn) {
 			$pool[] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
 		}
 	}
-	$keys = cryptconquestCourtArtKeys();
 	$art = [];
 	foreach ($keys as $i => $key) {
-		if (!isset($pool[$i])) break; // pool exhausted -- remaining court cards fall back to plain badges
+		if (!isset($pool[$i])) break;
 		$art[$key] = $pool[$i];
 	}
 	return $art;
+}
+
+// Auto-assigned art pool for the 12 court cards (Jacks/Queens/Kings) --
+// NOT the hand-curated-by-rarity pass Crypt Crawl's CRYPTCRAWL_CARD_ART
+// got (a full review session picking WTF/Mythic/Legendary pieces one by
+// one). This is a first pass to get real Crypties art on the enemy cards
+// quickly, same held wallet (CRYPTCRAWL_ART_USER_ID). Excludes whatever
+// Crypt Crawl already claimed (by name) AND the whole Season 1 collection
+// (by id -- see CRYPTCONQUEST_PLAYER_ART_COLLECTION_ID) so player cards
+// and enemy cards never draw from the same pool. Resolved fresh on every
+// render rather than baked into the run at start -- simpler (no engine/
+// schema changes) and always reflects the owner's current holdings, at
+// the cost of one extra query per action; worth revisiting if that's ever
+// measurably slow (see cryptcrawlAnnounceResult's own webhook-latency
+// note elsewhere in this file for the same kind of "flagged, not fixed
+// yet" call).
+function cryptconquestGetEnemyCardArt($conn) {
+	$user_id = CRYPTCRAWL_ART_USER_ID;
+	$exclude = array_values(CRYPTCRAWL_CARD_ART);
+	$exclude_sql = '';
+	if ($exclude) {
+		$escaped = array_map(function ($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, $exclude);
+		$exclude_sql = "AND nfts.name NOT IN (" . implode(',', $escaped) . ")";
+	}
+	$player_collection = intval(CRYPTCONQUEST_PLAYER_ART_COLLECTION_ID);
+	$where = "nfts.user_id = $user_id AND collections.name LIKE '%Crypties%' AND collections.id != $player_collection $exclude_sql";
+	return cryptconquestResolveArtPool($conn, $where, cryptconquestCourtArtKeys());
+}
+
+// Auto-assigned art pool for player cards (numbers + Companions) --
+// Season 1 Crypties specifically (collection id 7), same owner, same
+// "first pass, not a rarity curation" caveat as the enemy pool above.
+function cryptconquestGetPlayerCardArt($conn) {
+	$user_id = CRYPTCRAWL_ART_USER_ID;
+	$collection = intval(CRYPTCONQUEST_PLAYER_ART_COLLECTION_ID);
+	$where = "nfts.user_id = $user_id AND collections.id = $collection";
+	return cryptconquestResolveArtPool($conn, $where, cryptconquestPlayerArtKeys());
 }
 
 function cryptconquestRowToRun($row) {

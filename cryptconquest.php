@@ -117,31 +117,29 @@ include 'header.php';
 .cq-enemy-badge {
 	flex: none; width: 64px; height: 88px; border-radius: 8px; background: #000;
 	border: 2px solid var(--cq-suit-color, rgba(255,255,255,.2)); box-sizing: border-box;
-	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+	position: relative; overflow: hidden;
 }
-.cq-enemy-badge .cq-enemy-rank { font-size: 1.6rem; font-weight: 800; color: var(--cq-suit-color); }
-.cq-enemy-badge .cq-enemy-suit { font-size: 1.9rem; color: var(--cq-suit-color); }
-/* Real Crypties art (court cards only -- see cryptconquestGetCardArt() in
-   db.php) fills the badge/card edge-to-edge, with the rank/suit as a
-   text-shadowed overlay instead of centered -- same corner-index idea
-   cryptcrawl.php's own .cc-card-corner uses for its monster art, just one
-   corner instead of two given how small the enemy badge is. */
-.cq-enemy-badge.cq-has-art, .cq-card-face.cq-has-art { justify-content: flex-start; padding: 0; }
-.cq-enemy-art-img, .cq-card-art-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px; }
+/* Real Crypties art fills the badge/card edge-to-edge (enemy pool for
+   court cards, player pool -- Season 1, a deliberately different
+   collection -- for numbers/Companions in hand, see
+   cryptconquestGetEnemyCardArt()/GetPlayerCardArt() in db.php), with
+   rank/suit as a text-shadowed corner overlay instead of centered text --
+   same top-left + bottom-right corner-index treatment as Crypt Crawl's
+   own .cc-card-corner tl/br, shown whether real art loaded or not (a
+   404'd <img> just leaves the plain black background under the corners,
+   see the onerror on each <img> itself). */
+.cq-enemy-art-img, .cq-card-art-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .cq-card-corner {
-	position: absolute; top: 6%; left: 8%; display: flex; flex-direction: column; align-items: center; line-height: 1;
+	position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1;
 	text-shadow:
 		-1.5px -1.5px 2px rgba(0,0,0,.95), 1.5px -1.5px 2px rgba(0,0,0,.95),
 		-1.5px  1.5px 2px rgba(0,0,0,.95), 1.5px  1.5px 2px rgba(0,0,0,.95),
 		0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9);
 }
+.cq-card-corner.tl { top: 6%; left: 10%; }
+.cq-card-corner.br { bottom: 6%; right: 10%; transform: rotate(180deg); }
 .cq-corner-rank { font-size: 1rem; font-weight: 800; color: #fff; }
 .cq-corner-suit { font-size: 1.2rem; color: #fff; margin-top: 1px; }
-.cq-card-type-label-art {
-	position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
-	font-size: 0.55rem; opacity: 0.85; text-transform: uppercase; letter-spacing: .03em;
-	background: rgba(0,0,0,.6); padding: 1px 6px; border-radius: 999px; white-space: nowrap;
-}
 .cq-enemy-info { flex: 1; min-width: 0; }
 .cq-enemy-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cq-enemy-immune { font-size: 0.65rem; opacity: 0.6; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .03em; }
@@ -165,26 +163,32 @@ include 'header.php';
 	padding: 10px 14px; font-size: 0.85rem; margin-bottom: 14px; text-align: center;
 }
 
-.cq-hand { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-bottom: 4px; }
+/* Fixed 4 columns (not auto-fill) -- an 8-card hand used to split 6-then-2
+   on a normal desktop width, which read as lopsided; this keeps it an
+   even 4-and-4 regardless of hand size. */
+.cq-hand { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 4px; }
 .cq-card { display: block; cursor: pointer; }
 .cq-card-check { position: absolute; opacity: 0; width: 0; height: 0; }
 .cq-card-face {
 	position: relative; aspect-ratio: 5 / 7; border-radius: 10px; background: #000;
-	border: 2px solid rgba(255,255,255,.12); box-sizing: border-box;
-	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+	border: 2px solid rgba(255,255,255,.12); box-sizing: border-box; overflow: hidden;
 	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-.cq-card-face .cq-card-rank { font-size: 1.5rem; font-weight: 800; color: var(--cq-suit-color); }
-.cq-card-face .cq-card-suit { font-size: 1.7rem; color: var(--cq-suit-color); }
-.cq-card-face .cq-card-companion { font-size: 1.8rem; }
-.cq-card-type-label { font-size: 0.6rem; opacity: 0.55; text-transform: uppercase; letter-spacing: .03em; }
-.cq-card-value { font-size: 0.62rem; opacity: 0.5; position: absolute; bottom: 6px; }
+.cq-card-companion-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+.cq-card-footer { font-size: 0.62rem; opacity: 0.6; text-align: center; margin-top: 4px; text-transform: uppercase; letter-spacing: .02em; }
 .cq-card:has(.cq-card-check:checked) .cq-card-face {
 	border-color: #ffcc4d; box-shadow: 0 0 0 2px rgba(255,204,77,.3), 0 6px 16px rgba(255,204,77,.25);
 	transform: translateY(-4px);
 }
 @media (hover: hover) and (pointer: fine) {
 	.cq-card:hover .cq-card-face { border-color: rgba(255,255,255,.35); }
+}
+@media (max-width: 480px) {
+	/* 4 columns is snug under ~480px -- shrink the gap rather than drop to
+	   fewer columns, so the "4 and 4" layout stays even at every width. */
+	.cq-hand { gap: 6px; }
+	.cq-corner-rank { font-size: 0.8rem; }
+	.cq-corner-suit { font-size: 0.95rem; }
 }
 
 .cq-hand-controls { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }

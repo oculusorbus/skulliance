@@ -54,10 +54,13 @@ function cryptconquestCardValue($card) {
 }
 
 // Stable identity key for art lookup -- "H13" (King of Hearts),
-// "S11" (Jack of Spades) etc. Only court cards get real curated art (see
-// cryptconquestGetCardArt() in db.php), same design call Crypt Crawl made
-// for its own monster cards -- reserved for enemies, not every card.
+// "S11" (Jack of Spades), "DCO" (Diamonds Companion, no numeric rank so it
+// gets its own suffix instead). Court cards and player cards (numbers +
+// Companions) draw from two separate art pools -- see
+// cryptconquestGetEnemyCardArt()/cryptconquestGetPlayerCardArt() in
+// db.php -- but share this one key function either way.
 function cryptconquestCardArtKey($card) {
+	if ($card['type'] === 'companion') return $card['suit'] . 'CO';
 	return $card['suit'] . intval($card['rank']);
 }
 

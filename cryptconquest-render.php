@@ -16,6 +16,13 @@ function cryptconquestRankBadge($rank) {
 	return $labels[intval($rank)] ?? strval(intval($rank));
 }
 
+// Corner "rank" display for a card -- Companions have no numeric rank, so
+// they get a paw instead of cryptconquestRankBadge() (which would
+// otherwise render intval(null) as a bare "0").
+function cryptconquestCornerRank($card) {
+	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
+}
+
 // Shared by the no_run intro screen below and the in-game "View
 // Instructions" modal -- one copy of the rules text instead of two that
 // could quietly drift apart (same convention cryptcrawlRulesHtml() uses).
@@ -61,12 +68,15 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	$flashes = $_SESSION['cryptconquest_flash'] ?? [];
 	$_SESSION['cryptconquest_flash'] = [];
 
-	// Real Crypties art for court cards only (Jacks/Queens/Kings) -- see
-	// cryptconquestGetCardArt()'s own comment in db.php for why it's
-	// resolved fresh here rather than baked into the run. Guarded on $conn
-	// so a null-$conn test harness (no live DB) degrades to plain badges
-	// everywhere instead of fataling -- production always has a real $conn.
-	$card_art = $conn ? cryptconquestGetCardArt($conn) : [];
+	// Two separate art pools -- court cards (enemies) and player cards
+	// (numbers + Companions) deliberately draw from different Crypties
+	// collections for a different aesthetic between the two (see
+	// cryptconquestGetEnemyCardArt()/GetPlayerCardArt()'s own comments in
+	// db.php). Guarded on $conn so a null-$conn test harness (no live DB)
+	// degrades to plain card faces everywhere instead of fataling --
+	// production always has a real $conn.
+	$enemy_art_pool = $conn ? cryptconquestGetEnemyCardArt($conn) : [];
+	$player_art_pool = $conn ? cryptconquestGetPlayerCardArt($conn) : [];
 	?>
 	<?php if ($flashes): ?>
 	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
@@ -117,25 +127,27 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	?>
 		<div class="cq-hud">
 			<?php if ($enemy):
-				$enemy_art = $card_art[cryptconquestCardArtKey(['suit' => $enemy['suit'], 'rank' => $enemy['rank']])] ?? null;
+				$enemy_art = $enemy_art_pool[cryptconquestCardArtKey(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']])] ?? null;
 			?>
 			<div class="cq-enemy" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$enemy['suit']]; ?>;">
+				<!-- Same top-left + bottom-right corner-index treatment as
+				     Crypt Crawl's own cards (.cc-card-corner tl/br) -- always
+				     shown, art or not, rather than a big centered badge as a
+				     special fallback case. onerror only removes the <img>
+				     itself, not the corners, so a 404'd image still leaves
+				     the card legible against the black background. -->
 				<div class="cq-enemy-badge<?php echo $enemy_art ? ' cq-has-art' : ''; ?>">
 					<?php if ($enemy_art): ?>
-						<!-- Corner label is a sibling of the img, not nested inside it --
-						     onerror only removes the img itself, so a 404'd image still
-						     leaves the rank/suit legible against the badge's own black
-						     background, same graceful-degradation shape cryptcrawl-render.php
-						     uses for its own monster card art. -->
 						<img class="cq-enemy-art-img" src="<?php echo htmlspecialchars($enemy_art); ?>" alt="" loading="lazy" onerror="this.remove();">
-						<div class="cq-card-corner tl">
-							<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
-							<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
-						</div>
-					<?php else: ?>
-						<div class="cq-enemy-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
-						<div class="cq-enemy-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
 					<?php endif; ?>
+					<div class="cq-card-corner tl">
+						<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
+						<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
+					</div>
+					<div class="cq-card-corner br">
+						<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
+						<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
+					</div>
 				</div>
 				<div class="cq-enemy-info">
 					<div class="cq-enemy-name">
@@ -187,34 +199,41 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					$is_companion = $card['type'] === 'companion';
 					$is_court = $card['type'] === 'court';
 					$value = cryptconquestCardValue($card);
-					$hand_art = $is_court ? ($card_art[cryptconquestCardArtKey($card)] ?? null) : null;
+					// Recovered court cards keep reading from the ENEMY pool, not
+					// the player pool -- a recovered King of Spades shows the same
+					// art it had while you were fighting it, which is the point
+					// (it's still that same enemy, just now in your hand).
+					$art_pool = $is_court ? $enemy_art_pool : $player_art_pool;
+					$hand_art = $art_pool[cryptconquestCardArtKey($card)] ?? null;
+					$footer = 'value ' . $value;
+					if ($is_court) $footer = 'recovered &middot; ' . $footer;
+					elseif ($is_companion) $footer = 'Companion &middot; ' . $footer;
 				?>
 					<label class="cq-card" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
+						<!-- Unified card face: art (or plain black) + top-left/
+						     bottom-right corner index, same as Crypt Crawl's own
+						     .cc-card-corner tl/br -- no separate "has no art" layout,
+						     just an optional <img> underneath the same corners. Value/
+						     type text lives in .cq-card-footer BELOW the face instead
+						     of overlaid on it, so real art never gets text stamped
+						     across it. -->
 						<div class="cq-card-face<?php echo $hand_art ? ' cq-has-art' : ''; ?>">
 							<?php if ($hand_art): ?>
 								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($hand_art); ?>" alt="" loading="lazy" onerror="this.remove();">
-								<div class="cq-card-corner tl">
-									<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($card['rank']); ?></div>
-									<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
-								</div>
-								<!-- Value folded into this same pill instead of the usual
-								     separate .cq-card-value badge -- both anchor to the
-								     card's bottom edge, so a recovered card showing both
-								     would just stack one on top of the other. -->
-								<div class="cq-card-type-label cq-card-type-label-art">recovered &middot; value <?php echo $value; ?></div>
 							<?php elseif ($is_companion): ?>
-								<div class="cq-card-companion">🐾</div>
-								<div class="cq-card-type-label">Companion</div>
-								<div class="cq-card-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
-								<div class="cq-card-value">value <?php echo $value; ?></div>
-							<?php else: ?>
-								<div class="cq-card-rank"><?php echo cryptconquestRankBadge($card['rank']); ?></div>
-								<?php if ($is_court): ?><div class="cq-card-type-label">recovered</div><?php endif; ?>
-								<div class="cq-card-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
-								<div class="cq-card-value">value <?php echo $value; ?></div>
+								<div class="cq-card-companion-icon">🐾</div>
 							<?php endif; ?>
+							<div class="cq-card-corner tl">
+								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
+							</div>
+							<div class="cq-card-corner br">
+								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
+							</div>
 						</div>
+						<div class="cq-card-footer"><?php echo $footer; ?></div>
 					</label>
 				<?php endforeach; ?>
 			</div>
