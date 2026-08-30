@@ -529,6 +529,28 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 	window.addEventListener('pageshow', function(e) {
 		if (e.persisted) window.location.reload();
 	});
+	// Second, broader net: reload after the page has been backgrounded for a
+	// while and comes back to the foreground. Added 2026-08-29, reported
+	// directly by the user specifically on the installed PWA -- a home-screen
+	// app's WebView is routinely suspended (not navigated away from at all)
+	// while backgrounded and just resumes exactly where it left off when
+	// reopened, which never fires a bfcache pageshow event the way a real
+	// browser tab does. That's a plausible way to always land back on a
+	// mid-delve DOM snapshot instead of ever seeing a loss screen at all.
+	// Threshold (not an unconditional reload on every visibility flicker)
+	// so a stray system dialog or a 1-tap app-switch doesn't reload a
+	// mid-thought player; a genuine backgrounding comfortably clears it.
+	// Always safe regardless of threshold -- every action already persists
+	// to the server before anything renders, so there is no unsaved local
+	// state a reload could ever lose.
+	var hiddenAt = null;
+	document.addEventListener('visibilitychange', function() {
+		if (document.visibilityState === 'hidden') {
+			hiddenAt = Date.now();
+		} else if (document.visibilityState === 'visible' && hiddenAt && (Date.now() - hiddenAt) > 2000) {
+			window.location.reload();
+		}
+	});
 
 	// Baked straight in from the exact same $user_id PHP computed this page
 	// load with (top of file), not re-derived client-side from a DOM

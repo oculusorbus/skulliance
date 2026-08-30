@@ -424,6 +424,32 @@ records verified constants, and tracks what still needs to be written.
   load. Not root-caused with a live repro (no login access from this environment) - diagnosed from
   the reported symptoms matching this failure mode exactly and confirmed via static reading that the
   win/loss screen markup and server-side game-over logic are both fully intact and unchanged.
+  **Second net: reload on a stale foreground-resume too** - fixed 2026-08-29, same day, after the
+  user reported this happening specifically (and apparently *always*) on the installed PWA: "when I
+  play on mobile on the PWA app, it never displays the loss screen and jumps to the new game
+  immediately." A home-screen PWA's WebView is routinely suspended while backgrounded rather than
+  navigated away from at all, then just resumes exactly where it left off - which never fires a
+  bfcache `pageshow` event the way a real browser tab does, so the fix above doesn't catch it. Added
+  a `visibilitychange` listener: reload if the page was hidden for more than 2 seconds before coming
+  back to `'visible'` (a threshold, not unconditional, so a stray system dialog or quick app-switch
+  doesn't reload a mid-thought player - always safe regardless, since every action already persists
+  server-side before anything renders, so there's no unsaved local state a reload could ever lose).
+  **Discord announcements no longer depend on `$_SESSION`** - same day, after the user separately
+  reported a loss on mobile *browser* (not the PWA) that showed the loss screen but with no CARBON
+  line and no Discord post, even though the CARBON itself was genuinely paid out. `cryptcrawlPayoutCarbon()`
+  already didn't depend on session at all (just `$run['user_id']`, the DB row's own reliable owner
+  column) - which is exactly why the payout worked while the announcement silently no-op'd:
+  `cryptcrawlAnnounceResult()` used to read `discord_id`/`username`/`avatar` straight off
+  `$_SESSION['userData']`, which mobile Safari's ITP-driven PHPSESSID drops (see db.php's own
+  session-start comment) can leave as a stale/partial `SessionCookie` restore missing exactly those
+  fields even while `user_id` itself is present. Fixed by looking all three up fresh from `users` by
+  `$run['user_id']` instead (same query shape `checkActivityLeaderboard()` already uses) - the
+  announcement is now exactly as session-independent as the payout it's reporting on. The specific
+  missing-CARBON-line half of that report wasn't independently root-caused (the render condition,
+  `$user_id > 0 && $carbon_earned > 0`, can only fail if that render's request genuinely resolved 0
+  crypts, which contradicts having seen a game_over screen at all) - most likely the same class of
+  stale/cached render as the other reports on this list, which the two reload fixes above should
+  also cover going forward.
 - Crypt Crawl actions are AJAX, not full page reloads (cryptcrawl-render.php, cryptcrawl-actions.php,
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and

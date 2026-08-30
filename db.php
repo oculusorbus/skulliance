@@ -11073,17 +11073,34 @@ function cryptcrawlLeaderboardLeaderUserId($conn, $weekly = false) {
 // default/notifications webhook instead, not this one.
 function cryptcrawlAnnounceResult($conn, $run) {
 	if (intval($run['id']) <= 0) return; // guest run, no DB row, nothing to announce
-	if (!isset($_SESSION['userData']['discord_id'])) return;
 	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
 
-	$cc_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
-	$cc_discord    = $_SESSION['userData']['discord_id'];
-	$cc_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+	// Looked up fresh from `users` by the run's own owner column, not
+	// $_SESSION['userData'] -- this used to read discord_id/username/avatar
+	// straight off the session, which silently no-ops the whole announcement
+	// (and used to look wrong even when it fired) whenever that request's
+	// session was a stale/partial restore missing those specific keys.
+	// Mobile Safari (ITP) routinely drops PHPSESSID while a request still
+	// carries a valid SessionCookie/6-month restore that may not carry every
+	// field the live session normally would (see db.php's own session-start
+	// comment above) -- reported directly by the user: CARBON paid out fine
+	// (cryptcrawlPayoutCarbon above already doesn't depend on session, only
+	// $run['user_id']) but no Discord post went out for that same loss. This
+	// makes the announcement exactly as session-independent as the payout.
+	$cc_user_id = intval($run['user_id']);
+	if ($cc_user_id <= 0) return;
+	$user_r = $conn->query("SELECT username, discord_id, avatar FROM users WHERE id = $cc_user_id LIMIT 1");
+	if (!$user_r || !$user_r->num_rows) return;
+	$user_row = $user_r->fetch_assoc();
+	if (empty($user_row['discord_id'])) return;
+
+	$cc_username   = !empty($user_row['username']) ? $user_row['username'] : 'Unknown';
+	$cc_discord    = $user_row['discord_id'];
+	$cc_avatar     = $user_row['avatar'] ?? '';
 	$cc_avatar_url = ($cc_discord && $cc_avatar) ? "https://cdn.discordapp.com/avatars/" . $cc_discord . "/" . $cc_avatar . ".png" : "";
 	$cc_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($cc_username);
 	$cc_mention    = "<@" . $cc_discord . ">";
 	$cc_depth      = intval($run['rooms_cleared']);
-	$cc_user_id    = intval($run['user_id']);
 	$cc_author     = array("name" => $cc_username, "icon_url" => $cc_avatar_url, "url" => $cc_profile);
 	$cc_theme_url  = "https://skulliance.io/staking/images/themes/" . cryptcrawlRoomThemeFile($cc_depth);
 
