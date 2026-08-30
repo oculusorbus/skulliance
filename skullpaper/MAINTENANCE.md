@@ -408,6 +408,31 @@ records verified constants, and tracks what still needs to be written.
   login gate checks only `$_SESSION['logged_in']`, never `user_id`) - those remain most plausibly
   explained by the session-replace/host-only-cookie fixes already made, though not re-confirmed
   after this fix specifically.
+- **Loss-screen-doesn't-show, isolated to mobile after the `user_id` fix landed - the AJAX
+  failure fallback resubmits a form instead of just reloading** - fixed 2026-08-30. With the
+  `user_id` bug fixed and confirmed working on desktop through a full logout/login cycle, the user
+  reproduced this same symptom again, mobile-only (PWA and mobile Safari, even from freshly cleared
+  site data): CARBON paid out and the Discord notification posted correctly, but the loss screen
+  never appeared - it jumped straight to what looked like a new game. Since CARBON/Discord both only
+  fire from fully-completed server-side processing, the action itself was always succeeding; only
+  the client's view of the result was going missing. Audited the whole client-side fetch/swap chain
+  and the ambient-audio system specifically (the user's own hypothesis, given "auto clicks for the
+  music" wiring already exists here) - the audio "unlock autoplay on first interaction" listener is
+  one-shot (self-removing after firing) and registered only once at initial page load, not
+  re-armed per swap, so it's long gone by the time of a loss reached after several rooms; every
+  `.play()` call in the audio code (`tryPlay()`/`crossfadeTo()`) is already wrapped in `.catch()`,
+  so a blocked mobile autoplay attempt fails silently rather than throwing - ruled out as the cause.
+  The actual candidate: the fetch handler's `.catch()` (any network failure - a connection hiccup
+  switching WiFi/cellular, a weak signal, all far more common on mobile than desktop) used to call
+  `form.submit()`, resubmitting the same action as a real POST. Since the server-side work behind
+  an action already completes independent of whether the response ever reaches the client, that
+  resubmission almost always hit an already-`lost` run and safely no-op'd - but it's a redundant,
+  unpredictable full-page reload on a connection that had just dropped once already, using a stale
+  form reference rather than just asking the server what the current state actually is. Changed the
+  catch handler to `window.location.reload()` instead - a plain GET, no form resubmission, no
+  dependency on old DOM state surviving. Not confirmed with a live mobile repro (this session has no
+  device access) - the strongest candidate found from a full code audit, not a caught-in-the-act
+  fix; worth confirming on the next mobile loss.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with

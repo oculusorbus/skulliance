@@ -716,12 +716,27 @@ include 'header.php';
 				}, 400);
 			})
 			.catch(function() {
-				// AJAX failed for some reason -- fall back to a real submit
-				// (full page reload) rather than leaving the action stuck.
+				// AJAX failed for some reason -- reload instead of leaving the
+				// action stuck. A plain reload, not form.submit() (fixed
+				// 2026-08-30): the server-side work behind an action already
+				// runs to completion independent of whether the client ever
+				// receives the response -- confirmed directly by a mobile
+				// report where CARBON paid out and the Discord notification
+				// posted correctly (both purely server-side) on a loss whose
+				// result screen never showed. That's consistent with a
+				// connection hiccup on mobile losing the *response* partway
+				// through (switching networks, a weak signal) after the
+				// action had already fully succeeded server-side --
+				// form.submit() then resubmitted that same already-processed
+				// action as a real POST, a redundant, unpredictable step on a
+				// connection that had just dropped once already, instead of
+				// simply asking the server what the current state actually
+				// is. A reload does exactly that with a plain GET -- no stale
+				// form data involved at all.
 				gameArea.style.opacity = '';
 				gameArea.style.pointerEvents = '';
 				busy = false;
-				form.submit();
+				window.location.reload();
 			});
 	});
 
