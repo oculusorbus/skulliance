@@ -1,0 +1,221 @@
+<?php
+// cryptconquest-render.php — shared game-area renderer for Crypt Conquest.
+//
+// Same split as cryptcrawl-render.php: both cryptconquest.php's own GET
+// (full page load, and the no-JS POST->redirect->GET fallback) and
+// ajax/cryptconquest-action.php (fragment response after an action) render
+// from exactly one copy of this markup. See cryptconquest.md for the
+// design doc and cryptconquest-engine.php for the ruleset this displays.
+
+$CRYPTCONQUEST_SUIT_SYMBOL = ['H' => '♥', 'D' => '♦', 'C' => '♣', 'S' => '♠'];
+$CRYPTCONQUEST_SUIT_COLOR  = ['H' => '#ff6b6b', 'D' => '#ff9900', 'C' => '#c8dce8', 'S' => '#c8dce8'];
+$CRYPTCONQUEST_SUIT_NAME   = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
+
+function cryptconquestRankBadge($rank) {
+	$labels = [11 => 'J', 12 => 'Q', 13 => 'K'];
+	return $labels[intval($rank)] ?? strval(intval($rank));
+}
+
+// Shared by the no_run intro screen below and the in-game "View
+// Instructions" modal -- one copy of the rules text instead of two that
+// could quietly drift apart (same convention cryptcrawlRulesHtml() uses).
+function cryptconquestRulesHtml() { ?>
+	Conquer a 52-card kingdom alone, one court card at a time: 4
+	<strong>Jacks</strong>, then 4 <strong>Queens</strong>, then 4
+	<strong>Kings</strong> -- each one immune to its own suit's power (the
+	numeric damage still counts). Play a card from your hand (or several of
+	the <em>same rank</em> totalling 10 or less) to attack and trigger its
+	suit: <strong style="color:#ff6b6b;">♥ Hearts</strong> heals cards back
+	from your discard into the deck, <strong style="color:#ff9900;">♦ Diamonds</strong>
+	draws you fresh cards, <strong style="color:#c8dce8;">♣ Clubs</strong>
+	doubles your damage, <strong style="color:#c8dce8;">♠ Spades</strong>
+	shields you from that enemy's counterattack. Deal exactly enough damage
+	to kill and the card returns to your hand later as a powerful attack;
+	overkill just discards it. Whatever's left of the enemy's attack after
+	your shield hits you back -- discard cards from hand totalling enough to
+	cover it, or yield outright and skip straight to that. Run dry on cards
+	entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong>
+	(twice per run) discards your whole hand and deals you a fresh one. And
+	if your hand truly can't cover a hit even after discarding all of it,
+	<span class="cq-rally">Last Rally</span> saves you once per run --
+	after that, the next uncovered hit ends it. Defeat all 12 court cards to
+	conquer the kingdom.
+<?php }
+
+function cryptconquestRenderGameArea($conn, $user_id) {
+	global $CRYPTCONQUEST_SUIT_SYMBOL, $CRYPTCONQUEST_SUIT_COLOR, $CRYPTCONQUEST_SUIT_NAME;
+
+	// Same stale-guest-run guard cryptcrawlRenderGameArea() uses -- once a
+	// real user_id is confirmed, a leftover session-only guest run must
+	// never resurface and mask the account's real DB-backed run.
+	if (intval($user_id) > 0 && isset($_SESSION['cryptconquest_guest_run'])) {
+		unset($_SESSION['cryptconquest_guest_run']);
+	}
+	$active_run = cryptconquestGetActiveRun($conn, $user_id);
+	$recent_run = $active_run ? null : cryptconquestGetMostRecentRun($conn, $user_id);
+
+	if ($active_run) $state = 'active';
+	elseif ($recent_run && in_array($recent_run['status'], ['won', 'lost'], true)) $state = 'game_over';
+	else $state = 'no_run';
+
+	$flashes = $_SESSION['cryptconquest_flash'] ?? [];
+	$_SESSION['cryptconquest_flash'] = [];
+	?>
+	<?php if ($flashes): ?>
+	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
+		<?php foreach ($flashes as $f): ?>
+			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
+				<div class="cq-flash-icon"><?php echo $f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️'); ?></div>
+				<div class="cq-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
+			</div>
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
+
+	<?php if ($state === 'no_run'): ?>
+		<div class="cq-rules"><?php cryptconquestRulesHtml(); ?></div>
+		<form method="post"><input type="hidden" name="action" value="start_run">
+			<button type="submit" class="cq-btn">⚔️ Begin the Conquest</button>
+		</form>
+
+	<?php elseif ($state === 'game_over'):
+			$won = ($recent_run['status'] === 'won');
+			$defeated = intval($recent_run['enemies_defeated']);
+		?>
+		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
+			<div class="cq-result-icon"><?php echo $won ? '👑' : '💀'; ?></div>
+			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($recent_run) : 'The Kingdom Prevails'; ?></div>
+			<div class="cq-result-sub"><?php echo $defeated; ?> / 12 court cards defeated</div>
+			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
+			<?php if ($user_id > 0 && $carbon_earned > 0): ?>
+				<div class="cq-result-carbon">
+					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
+					+<?php echo number_format($carbon_earned); ?> CARBON earned
+				</div>
+			<?php endif; ?>
+		</div>
+		<form method="post"><input type="hidden" name="action" value="start_run">
+			<button type="submit" class="cq-btn">⚔️ New Conquest</button>
+		</form>
+
+	<?php else: // active
+		$hand = $active_run['hand'];
+		$enemy = $active_run['current_enemy'];
+		$enemy_stats = $enemy ? cryptconquestEnemyStats($enemy['rank']) : ['attack' => 0, 'health' => 0];
+		$enemy_hp_left = $enemy ? max(0, $enemy_stats['health'] - intval($enemy['damage_taken'])) : 0;
+		$enemy_hp_pct = $enemy_stats['health'] > 0 ? max(0, min(100, round(($enemy_hp_left / $enemy_stats['health']) * 100))) : 0;
+		$enemy_attack_after_shield = $enemy ? max(0, $enemy_stats['attack'] - intval($enemy['shield'])) : 0;
+		$suffering = ($active_run['phase'] === 'suffer');
+		$jesters_left = 2 - intval($active_run['jesters_used']);
+	?>
+		<div class="cq-hud">
+			<?php if ($enemy): ?>
+			<div class="cq-enemy" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$enemy['suit']]; ?>;">
+				<div class="cq-enemy-badge">
+					<div class="cq-enemy-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
+					<div class="cq-enemy-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
+				</div>
+				<div class="cq-enemy-info">
+					<div class="cq-enemy-name">
+						<?php echo cryptconquestCardLabel(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']]); ?>
+						<?php if (in_array(intval($enemy['rank']), [11, 12, 13], true)): ?>
+							<span class="cq-enemy-immune" title="Immune to its own suit's power -- numeric damage still counts.">
+								immune to <?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?>
+							</span>
+						<?php endif; ?>
+					</div>
+					<div class="cq-hp-bar-bg"><div class="cq-hp-bar-fill" style="width:<?php echo 100 - $enemy_hp_pct; ?>%;"></div></div>
+					<div class="cq-enemy-stats">
+						<span><?php echo $enemy_hp_left; ?> / <?php echo $enemy_stats['health']; ?> HP</span>
+						<?php if (intval($enemy['shield']) > 0): ?>
+							<span class="cq-shield">🛡️ -<?php echo intval($enemy['shield']); ?></span>
+						<?php endif; ?>
+						<span class="cq-attack">⚔️ <?php echo $enemy_attack_after_shield; ?> atk<?php echo $enemy_attack_after_shield < $enemy_stats['attack'] ? ' (shielded)' : ''; ?></span>
+					</div>
+				</div>
+			</div>
+			<?php endif; ?>
+			<div class="cq-hud-meta">
+				<span title="Court cards defeated so far">👑 <?php echo intval($active_run['enemies_defeated']); ?> / 12</span>
+				<span class="cq-rally<?php echo intval($active_run['last_rally_used']) ? ' used' : ''; ?>" title="The first time your whole hand can't cover an attack, you're saved instead of dying. Once per run.">
+					🛡️ Last Rally <?php echo intval($active_run['last_rally_used']) ? 'used' : 'ready'; ?>
+				</span>
+				<span title="Discard your whole hand and refill -- twice per run">🃏 Jesters: <?php echo $jesters_left; ?> left</span>
+				<span>🏰 Castle: <?php echo count($active_run['castle_deck']); ?> left</span>
+				<span>🎴 Tavern: <?php echo count($active_run['tavern_deck']); ?> left</span>
+				<?php if ($user_id > 0): ?>
+					<span class="cq-hud-carbon" title="CARBON earned so far this run">
+						<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
+					</span>
+				<?php endif; ?>
+			</div>
+		</div>
+
+		<?php if ($suffering): ?>
+			<div class="cq-suffer-banner">
+				⚔️ Incoming: <strong><?php echo intval($active_run['pending_attack']); ?> damage</strong> --
+				select cards totalling enough to cover it (or your whole hand if you can't).
+			</div>
+		<?php endif; ?>
+
+		<form method="post" id="cq-hand-form">
+			<div class="cq-hand">
+				<?php foreach ($hand as $i => $card):
+					$suit = $card['suit'];
+					$is_companion = $card['type'] === 'companion';
+					$is_court = $card['type'] === 'court';
+					$value = cryptconquestCardValue($card);
+				?>
+					<label class="cq-card" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
+						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
+						<div class="cq-card-face">
+							<?php if ($is_companion): ?>
+								<div class="cq-card-companion">🐾</div>
+								<div class="cq-card-type-label">Companion</div>
+							<?php else: ?>
+								<div class="cq-card-rank"><?php echo cryptconquestRankBadge($card['rank']); ?></div>
+								<?php if ($is_court): ?><div class="cq-card-type-label">recovered</div><?php endif; ?>
+							<?php endif; ?>
+							<div class="cq-card-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
+							<div class="cq-card-value">value <?php echo $value; ?></div>
+						</div>
+					</label>
+				<?php endforeach; ?>
+			</div>
+			<div class="cq-hand-controls">
+				<?php if ($suffering): ?>
+					<!-- The ONLY control on this form -- deliberately no hidden
+					     action field plus a same-named button (that ambiguity is
+					     what a duplicate-key bug looks like: PHP would just take
+					     whichever one the browser happens to encode last). Every
+					     submit button here names its own action instead. -->
+					<button type="submit" class="cq-btn attack" name="action" value="suffer">Cover Damage</button>
+				<?php else: ?>
+					<button type="submit" class="cq-btn" name="action" value="play">Play Selected</button>
+					<button type="submit" class="cq-btn secondary" name="action" value="yield">Yield</button>
+				<?php endif; ?>
+			</div>
+		</form>
+		<div class="cq-note">Select one card, or 2-4 of the <em>same rank</em> totalling 10 or less, or an Animal Companion paired with one other card.</div>
+
+		<div class="cq-controls-row">
+			<form method="post"><input type="hidden" name="action" value="flip_jester">
+				<button type="submit" class="cq-btn secondary" <?php echo $jesters_left > 0 ? '' : 'disabled'; ?>>🃏 Flip Jester (<?php echo $jesters_left; ?> left)</button>
+			</form>
+			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
+				<input type="hidden" name="action" value="abandon">
+				<button type="submit" class="cq-btn secondary">🏳️ Abandon Run</button>
+			</form>
+			<button type="button" class="cq-btn secondary" id="cq-instructions-btn">📖 View Instructions</button>
+		</div>
+	<?php endif; ?>
+
+	<div class="cq-instructions-backdrop" id="cq-instructions-backdrop">
+		<div class="cq-instructions-modal">
+			<h3>How Crypt Conquest Works</h3>
+			<div class="cq-rules"><?php cryptconquestRulesHtml(); ?></div>
+			<button type="button" class="cq-btn" id="cq-instructions-close">Got it</button>
+		</div>
+	</div>
+	<?php
+}

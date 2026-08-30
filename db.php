@@ -11175,4 +11175,242 @@ function cryptcrawlSaveRun($conn, $run) {
 /* ============================================================
    END CRYPT CRAWL
    ============================================================ */
+
+/* ============================================================
+   CRYPT CONQUEST — persistence layer wrapping cryptconquest-engine.php's
+   pure rules engine (see that file's own header for the ruleset and the
+   $run shape this serializes). Same split cryptcrawl-actions.php/
+   cryptcrawl-render.php use for Crypt Crawl above: the engine never
+   touches $conn or $_SESSION, everything here does.
+
+   Vertical-slice prototype (built 2026-08-30, see cryptconquest.md for
+   the research/design handoff): suit/rank badges only, no curated NFT art
+   yet (Crypt Crawl itself started the same way -- see its own vertical-
+   slice comment further up this file); no Discord announce or leaderboard
+   wiring yet either. Requires table `cryptconquests` -- CREATE TABLE
+   given directly to the site owner to run (no migrations tooling exists
+   on this project, same as every other schema change here), not
+   committed anywhere in the repo.
+   ============================================================ */
+include_once 'cryptconquest-engine.php';
+
+function cryptconquestRowToRun($row) {
+	return [
+		'id' => intval($row['id']),
+		'user_id' => intval($row['user_id']),
+		'status' => $row['status'],
+		'phase' => $row['phase'],
+		'pending_attack' => intval($row['pending_attack']),
+		'castle_deck' => json_decode($row['castle_deck'], true) ?: [],
+		'current_enemy' => $row['current_enemy'] !== null ? json_decode($row['current_enemy'], true) : null,
+		'tavern_deck' => json_decode($row['tavern_deck'], true) ?: [],
+		'hand' => json_decode($row['hand'], true) ?: [],
+		'discard' => json_decode($row['discard'], true) ?: [],
+		'jesters_used' => intval($row['jesters_used']),
+		'last_rally_used' => intval($row['last_rally_used']),
+		'enemies_defeated' => intval($row['enemies_defeated']),
+		'carbon_earned' => intval($row['carbon_earned']),
+		'reward' => intval($row['reward']),
+		'log' => [],
+	];
+}
+
+function cryptconquestGetActiveRun($conn, $user_id) {
+	$user_id = intval($user_id);
+	if ($user_id > 0) {
+		$result = $conn->query("SELECT * FROM cryptconquests WHERE user_id = $user_id AND status = 'active' ORDER BY id DESC LIMIT 1");
+		return ($result && $result->num_rows) ? cryptconquestRowToRun($result->fetch_assoc()) : null;
+	}
+	$run = $_SESSION['cryptconquest_guest_run'] ?? null;
+	return ($run && $run['status'] === 'active') ? $run : null;
+}
+
+function cryptconquestGetMostRecentRun($conn, $user_id) {
+	$user_id = intval($user_id);
+	if ($user_id > 0) {
+		$result = $conn->query("SELECT * FROM cryptconquests WHERE user_id = $user_id ORDER BY id DESC LIMIT 1");
+		return ($result && $result->num_rows) ? cryptconquestRowToRun($result->fetch_assoc()) : null;
+	}
+	return $_SESSION['cryptconquest_guest_run'] ?? null;
+}
+
+// Loads the CALLER's own active run by id (guests: ignores $run_id and
+// just reads the session, same simplification cryptcrawlPlayCard() etc.
+// make -- a guest only ever has one active run at a time). Used by every
+// action wrapper below so none of them can accidentally act on someone
+// else's run (the WHERE user_id=... is what actually enforces that).
+function cryptconquestLoadOwnActiveRun($conn, $user_id, $run_id) {
+	$user_id = intval($user_id);
+	if ($user_id > 0) {
+		$run_id = intval($run_id);
+		$result = $conn->query("SELECT * FROM cryptconquests WHERE id = $run_id AND user_id = $user_id AND status = 'active' LIMIT 1");
+		if (!$result || !$result->num_rows) return null;
+		return cryptconquestRowToRun($result->fetch_assoc());
+	}
+	$run = $_SESSION['cryptconquest_guest_run'] ?? null;
+	return ($run && $run['status'] === 'active') ? $run : null;
+}
+
+function cryptconquestStartRun($conn, $user_id) {
+	$user_id = intval($user_id);
+	$run = cryptconquestNewGame();
+	$run['id'] = 0;
+	$run['user_id'] = $user_id;
+	$run['carbon_earned'] = 0;
+	$run['reward'] = 0;
+
+	if ($user_id > 0) {
+		$status  = $conn->real_escape_string($run['status']);
+		$phase   = $conn->real_escape_string($run['phase']);
+		$pending = intval($run['pending_attack']);
+		$castle  = $conn->real_escape_string(json_encode($run['castle_deck']));
+		$enemy   = $conn->real_escape_string(json_encode($run['current_enemy']));
+		$tavern  = $conn->real_escape_string(json_encode($run['tavern_deck']));
+		$hand    = $conn->real_escape_string(json_encode($run['hand']));
+		$discard = $conn->real_escape_string(json_encode($run['discard']));
+		$conn->query("
+			INSERT INTO cryptconquests
+				(user_id, status, phase, pending_attack, castle_deck, current_enemy, tavern_deck, hand, discard, jesters_used, last_rally_used, enemies_defeated, carbon_earned, reward)
+			VALUES
+				($user_id, '$status', '$phase', $pending, '$castle', '$enemy', '$tavern', '$hand', '$discard', 0, 0, 0, 0, 0)
+		");
+		return $conn->insert_id;
+	}
+
+	$_SESSION['cryptconquest_guest_run'] = $run;
+	return 0;
+}
+
+function cryptconquestSaveRun($conn, $run) {
+	$id = intval($run['id']);
+	if ($id <= 0) {
+		$_SESSION['cryptconquest_guest_run'] = $run;
+		return;
+	}
+	$status           = $conn->real_escape_string($run['status']);
+	$phase            = $conn->real_escape_string($run['phase']);
+	$pending          = intval($run['pending_attack']);
+	$castle           = $conn->real_escape_string(json_encode($run['castle_deck']));
+	$enemy            = $conn->real_escape_string(json_encode($run['current_enemy']));
+	$tavern           = $conn->real_escape_string(json_encode($run['tavern_deck']));
+	$hand             = $conn->real_escape_string(json_encode($run['hand']));
+	$discard          = $conn->real_escape_string(json_encode($run['discard']));
+	$jesters_used     = intval($run['jesters_used']);
+	$last_rally_used  = intval($run['last_rally_used']);
+	$enemies_defeated = intval($run['enemies_defeated']);
+	$carbon_earned    = intval($run['carbon_earned'] ?? 0);
+	$reward           = intval($run['reward'] ?? 0);
+
+	$conn->query("
+		UPDATE cryptconquests SET
+			status = '$status', phase = '$phase', pending_attack = $pending,
+			castle_deck = '$castle', current_enemy = '$enemy', tavern_deck = '$tavern',
+			hand = '$hand', discard = '$discard', jesters_used = $jesters_used,
+			last_rally_used = $last_rally_used, enemies_defeated = $enemies_defeated,
+			carbon_earned = $carbon_earned, reward = $reward, updated_at = NOW()
+		WHERE id = $id
+	");
+}
+
+// Sum of cryptconquestCardValue() across $hand[$i] for each $i in
+// $indices -- used to price a play/discard in CARBON BEFORE handing
+// $indices to the engine (both cryptconquestPlay()/cryptconquestSufferDamage()
+// take $indices by value, not reference, so reading $run['hand'] here first
+// is always the pre-action hand, regardless of what the engine call does
+// to its own local copy).
+function cryptconquestCardsValue($hand, $indices) {
+	$sum = 0;
+	foreach ($indices as $i) {
+		if (isset($hand[$i])) $sum += cryptconquestCardValue($hand[$i]);
+	}
+	return $sum;
+}
+
+// Every card a player resolves -- played for attack, or discarded to cover
+// Step 4 damage -- earns 10x its own value, same formula and same "stacks
+// up over the whole run, win or lose" spirit as Crypt Crawl's carbon_earned
+// (see cryptcrawlPlayCard above). Enemy cards moving to/from the discard
+// pile on defeat are NOT hand cards the player resolved, so defeating an
+// enemy doesn't itself earn anything extra here -- only what was actually
+// spent from hand does.
+function cryptconquestApplyCarbon(&$run, $value) {
+	$run['carbon_earned'] = intval($run['carbon_earned'] ?? 0) + (10 * $value);
+}
+
+// Credits the CARBON a run accumulated the moment it actually ends --
+// same guard-on-status, real-accounts-only shape as cryptcrawlPayoutCarbon.
+function cryptconquestPayoutCarbon($conn, $run) {
+	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
+	$run_id = intval($run['id']);
+	$amount = intval($run['carbon_earned'] ?? 0);
+	if ($run_id <= 0 || $amount <= 0) return;
+	$user_id = intval($run['user_id']);
+	updateBalance($conn, $user_id, 15, $amount);
+	logCredit($conn, $user_id, $amount, 15);
+}
+
+// Saves the run, then pays out if it just ended -- the one place every
+// action wrapper below funnels through, so none of them can save a
+// completed run without also crediting it (or vice versa).
+function cryptconquestPersist($conn, &$run) {
+	cryptconquestSaveRun($conn, $run);
+	cryptconquestPayoutCarbon($conn, $run); // no-op unless status is won/lost
+}
+
+function cryptconquestDoPlay($conn, $user_id, $run_id, $indices) {
+	$run = cryptconquestLoadOwnActiveRun($conn, $user_id, $run_id);
+	if (!$run) return null;
+	$value = cryptconquestCardsValue($run['hand'], $indices);
+	$res = cryptconquestPlay($run, $indices);
+	if ($res['ok']) {
+		cryptconquestApplyCarbon($run, $value);
+		cryptconquestPersist($conn, $run);
+	}
+	return ['run' => $run, 'result' => $res];
+}
+
+function cryptconquestDoYield($conn, $user_id, $run_id) {
+	$run = cryptconquestLoadOwnActiveRun($conn, $user_id, $run_id);
+	if (!$run) return null;
+	$res = cryptconquestYield($run);
+	if ($res['ok']) cryptconquestPersist($conn, $run);
+	return ['run' => $run, 'result' => $res];
+}
+
+function cryptconquestDoSuffer($conn, $user_id, $run_id, $indices) {
+	$run = cryptconquestLoadOwnActiveRun($conn, $user_id, $run_id);
+	if (!$run) return null;
+	$value = cryptconquestCardsValue($run['hand'], $indices);
+	$res = cryptconquestSufferDamage($run, $indices);
+	if ($res['ok']) {
+		// A rejected short selection (see the engine's own comment on
+		// cryptconquestSufferDamage) leaves the hand untouched and $res['ok']
+		// false -- so this only ever fires for a selection that actually
+		// got spent, whole-hand Last-Rally/loss included.
+		cryptconquestApplyCarbon($run, $value);
+		cryptconquestPersist($conn, $run);
+	}
+	return ['run' => $run, 'result' => $res];
+}
+
+function cryptconquestDoFlipJester($conn, $user_id, $run_id) {
+	$run = cryptconquestLoadOwnActiveRun($conn, $user_id, $run_id);
+	if (!$run) return null;
+	$res = cryptconquestFlipJester($run);
+	if ($res['ok']) cryptconquestSaveRun($conn, $run); // still active either way -- never a payout trigger
+	return ['run' => $run, 'result' => $res];
+}
+
+function cryptconquestAbandonRun($conn, $user_id) {
+	$run = cryptconquestGetActiveRun($conn, $user_id);
+	if (!$run) return null;
+	$run['status'] = 'lost';
+	$run['phase'] = 'over';
+	cryptconquestPersist($conn, $run);
+	return $run;
+}
+
+/* ============================================================
+   END CRYPT CONQUEST
+   ============================================================ */
 ?>

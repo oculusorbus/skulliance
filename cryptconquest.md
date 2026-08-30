@@ -303,16 +303,76 @@ rather than hanging. Confirmed via the fuzz harness both before the fix
 (games pegged at the 500-turn cap, hand permanently empty, `pending_attack`
 permanently 0) and after (zero stuck games across 200 runs).
 
-**Not started yet:** the DB persistence layer (table `cryptconquests`,
-`cryptconquestStartRun`/`GetActiveRun`/`SaveRun`/etc. in db.php wrapping
-this engine, same shape as Crypt Crawl's) — no CREATE TABLE has been run
-anywhere, this ships as SQL for the site owner to run once the layer is
-written, same as every other schema change on this project (no migrations
-tooling exists). Also not started: `cryptconquest-actions.php`,
-`cryptconquest-render.php`, the page itself, art-pool wiring (placeholder
-suit/rank badges to start, per Crypt Crawl's own vertical-slice
-precedent), and any Skull Paper page (deliberately deferred until this
-ships, per project convention).
+**Also done (2026-08-30, same day):** the full vertical slice is wired up
+and playable end-to-end.
+
+- `db.php` — new CRYPT CONQUEST block (persistence layer wrapping the
+  engine: `cryptconquestStartRun`/`GetActiveRun`/`GetMostRecentRun`/
+  `SaveRun`/`AbandonRun`, the `cryptconquestDoPlay`/`DoYield`/`DoSuffer`/
+  `DoFlipJester` action wrappers, and the CARBON economy --
+  `cryptconquestApplyCarbon`/`PayoutCarbon`, 10x a card's value for every
+  card actually resolved -- played to attack, or discarded to cover
+  damage -- same formula and spirit as Crypt Crawl's own `carbon_earned`).
+- `cryptconquest-actions.php` / `cryptconquest-render.php` -- same split
+  as Crypt Crawl's own two files. Render covers all three states (no_run
+  rules prompt, active board with a checkbox-selectable hand for
+  combos/companion pairings, game_over result panel with tier name) plus a
+  dedicated `suffer`-phase view (incoming damage banner, discard-to-cover
+  selection) that Crypt Crawl's turn structure never needed.
+- `cryptconquest.php` / `ajax/cryptconquest-action.php` -- the page and
+  AJAX endpoint. Ported Crypt Crawl's hidden-`#cq-result-overlay` pattern
+  directly (including the duplicate-ID lesson: `gameArea.innerHTML = ''`
+  before hiding it), since that's exactly the failure mode this build
+  wants to avoid repeating. No ambient audio or Ken Burns backdrop this
+  round -- no audio/art assets exist for this game yet, and neither was
+  part of getting the core loop working.
+- **Not yet run anywhere:** the `cryptconquests` table itself -- no
+  migrations tooling exists on this project (same as every other schema
+  change here), so this is SQL for the site owner to run by hand:
+
+  ```sql
+  CREATE TABLE cryptconquests (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    status VARCHAR(10) NOT NULL DEFAULT 'active',
+    phase VARCHAR(10) NOT NULL DEFAULT 'play',
+    pending_attack INT NOT NULL DEFAULT 0,
+    castle_deck MEDIUMTEXT NOT NULL,
+    current_enemy MEDIUMTEXT NULL,
+    tavern_deck MEDIUMTEXT NOT NULL,
+    hand MEDIUMTEXT NOT NULL,
+    discard MEDIUMTEXT NOT NULL,
+    jesters_used TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    last_rally_used TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    enemies_defeated TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    carbon_earned INT UNSIGNED NOT NULL DEFAULT 0,
+    reward TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_status (user_id, status),
+    INDEX idx_user (user_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  ```
+
+  (`reward` mirrors `cryptcrawls.reward`'s shape for future weekly-payout
+  wiring -- nothing in the current game logic sets it yet.)
+
+**Tested:** the engine's own 50+ assertions/fuzz sweep (see above) plus a
+new full-stack guest-mode test (start/play/yield/suffer/flip_jester/
+abandon, every render state, div-balance) run 25x against reshuffled
+hands with zero failures. Both harnesses live in the builder's scratchpad,
+not committed. NOT run against a real `cryptconquests` table or through
+an actual browser yet -- no local MySQL was available to test the
+logged-in DB path end-to-end, only guest/session-backed play, and no
+visual/manual QA pass has happened.
+
+**Still not started:** curated art (Crypt Crawl's 44 cards are each
+hand-mapped to a specific held Cryptie NFT -- Crypt Conquest's 52 use
+plain suit/rank badges for now, same starting point Crypt Crawl itself
+had), ambient audio, Discord announce, leaderboard wiring, nav link, and
+any Skull Paper page (deliberately deferred until this ships, per project
+convention). Not linked from anywhere yet -- reachable only at
+`/staking/cryptconquest.php` directly.
 
 ## Sources
 - [Regicide rules PDF](https://www.regicidegame.com/site_files/33132/upload_files/RegicideRulesA4.pdf)
