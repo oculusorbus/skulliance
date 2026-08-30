@@ -53,6 +53,14 @@ function cryptconquestCardValue($card) {
 	return intval($card['rank']);
 }
 
+// Stable identity key for art lookup -- "H13" (King of Hearts),
+// "S11" (Jack of Spades) etc. Only court cards get real curated art (see
+// cryptconquestGetCardArt() in db.php), same design call Crypt Crawl made
+// for its own monster cards -- reserved for enemies, not every card.
+function cryptconquestCardArtKey($card) {
+	return $card['suit'] . intval($card['rank']);
+}
+
 function cryptconquestCardLabel($card) {
 	$suitNames = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
 	$rankNames = [11 => 'Jack', 12 => 'Queen', 13 => 'King'];

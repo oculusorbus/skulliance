@@ -121,6 +121,27 @@ include 'header.php';
 }
 .cq-enemy-badge .cq-enemy-rank { font-size: 1.6rem; font-weight: 800; color: var(--cq-suit-color); }
 .cq-enemy-badge .cq-enemy-suit { font-size: 1.9rem; color: var(--cq-suit-color); }
+/* Real Crypties art (court cards only -- see cryptconquestGetCardArt() in
+   db.php) fills the badge/card edge-to-edge, with the rank/suit as a
+   text-shadowed overlay instead of centered -- same corner-index idea
+   cryptcrawl.php's own .cc-card-corner uses for its monster art, just one
+   corner instead of two given how small the enemy badge is. */
+.cq-enemy-badge.cq-has-art, .cq-card-face.cq-has-art { justify-content: flex-start; padding: 0; }
+.cq-enemy-art-img, .cq-card-art-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px; }
+.cq-card-corner {
+	position: absolute; top: 6%; left: 8%; display: flex; flex-direction: column; align-items: center; line-height: 1;
+	text-shadow:
+		-1.5px -1.5px 2px rgba(0,0,0,.95), 1.5px -1.5px 2px rgba(0,0,0,.95),
+		-1.5px  1.5px 2px rgba(0,0,0,.95), 1.5px  1.5px 2px rgba(0,0,0,.95),
+		0 0 8px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9);
+}
+.cq-corner-rank { font-size: 1rem; font-weight: 800; color: #fff; }
+.cq-corner-suit { font-size: 1.2rem; color: #fff; margin-top: 1px; }
+.cq-card-type-label-art {
+	position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+	font-size: 0.55rem; opacity: 0.85; text-transform: uppercase; letter-spacing: .03em;
+	background: rgba(0,0,0,.6); padding: 1px 6px; border-radius: 999px; white-space: nowrap;
+}
 .cq-enemy-info { flex: 1; min-width: 0; }
 .cq-enemy-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cq-enemy-immune { font-size: 0.65rem; opacity: 0.6; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .03em; }

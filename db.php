@@ -11194,6 +11194,65 @@ function cryptcrawlSaveRun($conn, $run) {
    ============================================================ */
 include_once 'cryptconquest-engine.php';
 
+// The 12 court-card art keys, in a fixed order (Kings, then Queens, then
+// Jacks, cycling suits within each rank) -- used only to zip a name-sorted
+// NFT pool onto card identities deterministically. Order here has no
+// gameplay meaning, it just needs to be stable across requests so the
+// same NFT always lands on the same card.
+function cryptconquestCourtArtKeys() {
+	$keys = [];
+	foreach ([13, 12, 11] as $rank) {
+		foreach (CRYPTCONQUEST_SUITS as $suit) $keys[] = $suit . $rank;
+	}
+	return $keys;
+}
+
+// Auto-assigned art pool for the 12 court cards (Jacks/Queens/Kings) --
+// NOT the hand-curated-by-rarity pass Crypt Crawl's CRYPTCRAWL_CARD_ART
+// got (a full review session picking WTF/Mythic/Legendary pieces one by
+// one). This is a first pass to get real Crypties art on the enemy cards
+// quickly, same held wallet (CRYPTCRAWL_ART_USER_ID), same "curated art
+// reserved for enemies" call Crypt Crawl made for its own monster cards
+// (see cryptcrawlBuildDeck()'s comment) -- ordinary number cards/
+// Companions stay plain badges, same as Crypt Crawl's weapon/potion cards.
+// Excludes whatever Crypt Crawl already claimed so the two games don't
+// show identical art for different cards. Resolved fresh on every render
+// rather than baked into the run at start -- simpler (no engine/schema
+// changes) and always reflects the owner's current holdings, at the cost
+// of one extra query per action; worth revisiting if that's ever
+// measurably slow (see cryptcrawlAnnounceResult's own webhook-latency
+// note elsewhere in this file for the same kind of "flagged, not fixed
+// yet" call).
+function cryptconquestGetCardArt($conn) {
+	$user_id = CRYPTCRAWL_ART_USER_ID;
+	$exclude = array_values(CRYPTCRAWL_CARD_ART);
+	$exclude_sql = '';
+	if ($exclude) {
+		$escaped = array_map(function ($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, $exclude);
+		$exclude_sql = "AND nfts.name NOT IN (" . implode(',', $escaped) . ")";
+	}
+	$result = $conn->query("
+		SELECT nfts.name, nfts.ipfs, nfts.collection_id, collections.project_id
+		FROM nfts
+		INNER JOIN collections ON collections.id = nfts.collection_id
+		WHERE nfts.user_id = $user_id AND collections.name LIKE '%Crypties%' $exclude_sql
+		ORDER BY nfts.name ASC
+	");
+	$pool = [];
+	if ($result) {
+		while ($row = $result->fetch_assoc()) {
+			$pool[] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
+		}
+	}
+	$keys = cryptconquestCourtArtKeys();
+	$art = [];
+	foreach ($keys as $i => $key) {
+		if (!isset($pool[$i])) break; // pool exhausted -- remaining court cards fall back to plain badges
+		$art[$key] = $pool[$i];
+	}
+	return $art;
+}
+
 function cryptconquestRowToRun($row) {
 	return [
 		'id' => intval($row['id']),

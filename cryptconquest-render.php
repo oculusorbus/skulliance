@@ -60,6 +60,13 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 
 	$flashes = $_SESSION['cryptconquest_flash'] ?? [];
 	$_SESSION['cryptconquest_flash'] = [];
+
+	// Real Crypties art for court cards only (Jacks/Queens/Kings) -- see
+	// cryptconquestGetCardArt()'s own comment in db.php for why it's
+	// resolved fresh here rather than baked into the run. Guarded on $conn
+	// so a null-$conn test harness (no live DB) degrades to plain badges
+	// everywhere instead of fataling -- production always has a real $conn.
+	$card_art = $conn ? cryptconquestGetCardArt($conn) : [];
 	?>
 	<?php if ($flashes): ?>
 	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
@@ -109,11 +116,26 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		$jesters_left = 2 - intval($active_run['jesters_used']);
 	?>
 		<div class="cq-hud">
-			<?php if ($enemy): ?>
+			<?php if ($enemy):
+				$enemy_art = $card_art[cryptconquestCardArtKey(['suit' => $enemy['suit'], 'rank' => $enemy['rank']])] ?? null;
+			?>
 			<div class="cq-enemy" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$enemy['suit']]; ?>;">
-				<div class="cq-enemy-badge">
-					<div class="cq-enemy-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
-					<div class="cq-enemy-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
+				<div class="cq-enemy-badge<?php echo $enemy_art ? ' cq-has-art' : ''; ?>">
+					<?php if ($enemy_art): ?>
+						<!-- Corner label is a sibling of the img, not nested inside it --
+						     onerror only removes the img itself, so a 404'd image still
+						     leaves the rank/suit legible against the badge's own black
+						     background, same graceful-degradation shape cryptcrawl-render.php
+						     uses for its own monster card art. -->
+						<img class="cq-enemy-art-img" src="<?php echo htmlspecialchars($enemy_art); ?>" alt="" loading="lazy" onerror="this.remove();">
+						<div class="cq-card-corner tl">
+							<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
+							<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
+						</div>
+					<?php else: ?>
+						<div class="cq-enemy-rank"><?php echo cryptconquestRankBadge($enemy['rank']); ?></div>
+						<div class="cq-enemy-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></div>
+					<?php endif; ?>
 				</div>
 				<div class="cq-enemy-info">
 					<div class="cq-enemy-name">
@@ -165,19 +187,33 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					$is_companion = $card['type'] === 'companion';
 					$is_court = $card['type'] === 'court';
 					$value = cryptconquestCardValue($card);
+					$hand_art = $is_court ? ($card_art[cryptconquestCardArtKey($card)] ?? null) : null;
 				?>
 					<label class="cq-card" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
-						<div class="cq-card-face">
-							<?php if ($is_companion): ?>
+						<div class="cq-card-face<?php echo $hand_art ? ' cq-has-art' : ''; ?>">
+							<?php if ($hand_art): ?>
+								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($hand_art); ?>" alt="" loading="lazy" onerror="this.remove();">
+								<div class="cq-card-corner tl">
+									<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($card['rank']); ?></div>
+									<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
+								</div>
+								<!-- Value folded into this same pill instead of the usual
+								     separate .cq-card-value badge -- both anchor to the
+								     card's bottom edge, so a recovered card showing both
+								     would just stack one on top of the other. -->
+								<div class="cq-card-type-label cq-card-type-label-art">recovered &middot; value <?php echo $value; ?></div>
+							<?php elseif ($is_companion): ?>
 								<div class="cq-card-companion">🐾</div>
 								<div class="cq-card-type-label">Companion</div>
+								<div class="cq-card-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
+								<div class="cq-card-value">value <?php echo $value; ?></div>
 							<?php else: ?>
 								<div class="cq-card-rank"><?php echo cryptconquestRankBadge($card['rank']); ?></div>
 								<?php if ($is_court): ?><div class="cq-card-type-label">recovered</div><?php endif; ?>
+								<div class="cq-card-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
+								<div class="cq-card-value">value <?php echo $value; ?></div>
 							<?php endif; ?>
-							<div class="cq-card-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
-							<div class="cq-card-value">value <?php echo $value; ?></div>
 						</div>
 					</label>
 				<?php endforeach; ?>
