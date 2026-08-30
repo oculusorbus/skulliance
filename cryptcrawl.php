@@ -752,7 +752,24 @@ include 'header.php';
 				// that must never be skippable, over smoothness everywhere
 				// else.
 				if (html.indexOf('class="cc-result ') !== -1) {
-					window.location.reload();
+					// An explicit navigation to a fixed URL, not
+					// window.location.reload() -- fixed 2026-08-30, found
+					// from a live capture showing the "reloaded" page came
+					// back as a completely fresh start_run result (full HP,
+					// Last Stand ready, 0 crypts cleared), reliably, not
+					// randomly. reload() reloads whatever this exact
+					// document's own navigation actually was -- and this
+					// document was very possibly first reached via a real
+					// POST (Start Delve on cryptcrawlgame.php, or an earlier
+					// Delve Again), which this server does correctly
+					// redirect POST->GET, but some engines (mobile WebKit
+					// and PWA/standalone contexts especially) can still
+					// resubmit that original POST body on reload() rather
+					// than doing a clean GET. Setting location.href to a
+					// fixed path is unambiguous -- it's a normal navigation,
+					// never a form resubmission, regardless of how this
+					// document was originally reached.
+					window.location.href = 'cryptcrawl.php';
 					return;
 				}
 				gameArea.innerHTML = html;

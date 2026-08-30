@@ -475,6 +475,23 @@ records verified constants, and tracks what still needs to be written.
   win/loss, executed inline inside the same PHP request building the player's own response. Worth
   its own fix (making that notification non-blocking) independent of this bug - a multi-second stall
   before any result appears is a bad experience even with the interaction race now closed.
+  **Still not fixed - the "reload" itself turned out to be resubmitting a stale POST, not a tap
+  race at all.** The user reproduced it again after a genuinely clean start (fully closed and
+  reopened the app, one careful deliberate tap, no rapid play) and captured what actually rendered:
+  a completely fresh `start_run` result, byte-for-byte the same shape as the very first mystery
+  capture (`HP 20/20`, `Last Stand ready`, `Crypts cleared: 0`). That ruled out every tap-timing
+  theory outright - there was no second tap to race. Root cause: `window.location.reload()` reloads
+  whatever this exact document's own navigation actually *was*, and this page can genuinely be
+  reached via a real POST (Start Delve on `cryptcrawlgame.php`, or an earlier Delve Again) - this
+  server does correctly redirect POST->GET (`cryptcrawl.php`'s own `if ($_SERVER['REQUEST_METHOD'] === 'POST')`
+  branch always ends in `header('Location: cryptcrawl.php'); exit;`), but some engines - mobile
+  WebKit and PWA/standalone contexts especially, matching every device this bug showed up on - can
+  still resubmit the *original* POST body on `reload()` instead of doing a clean GET, despite the
+  redirect. Fixed by replacing `window.location.reload()` with an explicit
+  `window.location.href = 'cryptcrawl.php';` - an unambiguous navigation to a fixed path can never
+  be mistaken for a form resubmission, regardless of how the current document was originally
+  reached, sidestepping the whole ambiguity instead of relying on "reload" meaning the same thing
+  everywhere.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with
