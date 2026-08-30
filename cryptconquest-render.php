@@ -212,7 +212,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				     'Necropolis' below is just what the rules text/result
 				     screen call the kingdom. Renaming the underlying fields
 				     would mean a schema migration for zero player-facing gain. -->
-				<span>🪦 Mausoleum: <?php echo count($active_run['castle_deck']); ?> left</span>
+				<span>🏛️ Mausoleum: <?php echo count($active_run['castle_deck']); ?> left</span>
 				<span>⚰️ Crypt: <?php echo count($active_run['tavern_deck']); ?> left</span>
 				<?php if ($user_id > 0): ?>
 					<span class="cq-hud-carbon" title="CARBON earned so far this run">
