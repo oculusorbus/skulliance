@@ -68,15 +68,17 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	$flashes = $_SESSION['cryptconquest_flash'] ?? [];
 	$_SESSION['cryptconquest_flash'] = [];
 
-	// Two separate art pools -- court cards (enemies) and player cards
-	// (numbers + Companions) deliberately draw from different Crypties
-	// collections for a different aesthetic between the two (see
-	// cryptconquestGetEnemyCardArt()/GetPlayerCardArt()'s own comments in
-	// db.php). Guarded on $conn so a null-$conn test harness (no live DB)
-	// degrades to plain card faces everywhere instead of fataling --
-	// production always has a real $conn.
-	$enemy_art_pool = $conn ? cryptconquestGetEnemyCardArt($conn) : [];
-	$player_art_pool = $conn ? cryptconquestGetPlayerCardArt($conn) : [];
+	// Court cards (enemies) and player cards (numbers + Companions) both
+	// draw from the same Season 2 Crypties pool now (S1 was tried and
+	// judged not visually varied enough for this game), split into two
+	// non-overlapping slices so an enemy and a hand card never show the
+	// same NFT -- see cryptconquestGetCardArtPools()'s own comment in
+	// db.php. One query, not two. Guarded on $conn so a null-$conn test
+	// harness (no live DB) degrades to plain card faces everywhere instead
+	// of fataling -- production always has a real $conn.
+	$art_pools = $conn ? cryptconquestGetCardArtPools($conn) : ['enemy' => [], 'player' => []];
+	$enemy_art_pool = $art_pools['enemy'];
+	$player_art_pool = $art_pools['player'];
 	?>
 	<?php if ($flashes): ?>
 	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
