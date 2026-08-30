@@ -33,7 +33,11 @@ if (session_status() === PHP_SESSION_ACTIVE
     && isset($_COOKIE['SessionCookie'])) {
     $cookieData = json_decode($_COOKIE['SessionCookie'], true);
     if (is_array($cookieData)) {
-        $_SESSION = $cookieData;
+        // Merge, not replace -- an outright assignment wipes every other
+        // key this same session already has (e.g. cryptcrawl_flash/
+        // cryptcrawl_guest_run), not just restores login. See
+        // skulliance.php's own fix for the platform-wide version of this.
+        $_SESSION = array_merge($_SESSION, $cookieData);
     }
 }
 $user_id = isset($_SESSION['userData']['user_id']) ? intval($_SESSION['userData']['user_id']) : 0;

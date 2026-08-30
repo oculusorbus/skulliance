@@ -6,17 +6,27 @@ error_reporting(E_ALL);
 // Check if logged in
 if(!isset($_SESSION['logged_in'])){
 	// Check is session cookie exists
-	if(isset($_COOKIE['SessionCookie'])){
-		$cookie = $_COOKIE['SessionCookie'];
-		$cookie = json_decode($cookie, true);
-		$_SESSION = $cookie;
+	$cookie = isset($_COOKIE['SessionCookie']) ? json_decode($_COOKIE['SessionCookie'], true) : null;
+	if(is_array($cookie)){
+		// Merge, don't replace -- $_SESSION = $cookie used to wipe out every
+		// other key any other page had already written this session (e.g.
+		// Crypt Crawl's own flash/guest-run state), on every single request
+		// where the live session hadn't yet picked up 'logged_in' for
+		// whatever reason. It also had no validation before the assignment:
+		// a malformed/corrupted SessionCookie value (json_decode returning
+		// null, e.g. a stale or tampered cookie) would null out the ENTIRE
+		// session instead of just failing to restore login -- reported
+		// directly by the user as pages elsewhere on the platform (not just
+		// Crypt Crawl) intermittently bouncing to the error page and
+		// killing an otherwise-valid session.
+		$_SESSION = array_merge($_SESSION, $cookie);
 	}else{
   		header('Location: error.php');
   		exit();
 	}
 }
 
-extract($_SESSION['userData']);
+extract($_SESSION['userData'] ?? []);
 //print_r($_SESSION['userData']);
 //print_r($_POST);
 //exit();

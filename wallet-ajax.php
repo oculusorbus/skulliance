@@ -11,7 +11,8 @@ if (!isset($_SESSION['logged_in'])) {
 		$cookie = $_COOKIE['SessionCookie'];
 		$cookie = json_decode($cookie, true);
 		if (is_array($cookie)) {
-			$_SESSION = $cookie;
+			// Merge, not replace -- see skulliance.php's own fix for why.
+			$_SESSION = array_merge($_SESSION, $cookie);
 		}
 	}
 }

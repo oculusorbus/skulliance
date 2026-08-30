@@ -484,13 +484,38 @@ records verified constants, and tracks what still needs to be written.
   instead of the bare relative `leaderboards.php`. Confirmed while investigating: this does NOT need
   to be a form - `leaderboards.php`'s shared session/login include (`skulliance.php`) reads
   `filterby` from `$_GET` exactly as much as `$_POST` (lines ~797-804), so a plain GET link with the
-  query string is fully supported. Also surfaced but NOT fixed here (pre-existing, unrelated to the
-  marketing split, out of scope for a link fix): `skulliance.php`'s login-restore path does
-  `$_SESSION = $cookie;` - a full *replace*, not a merge - whenever the live session doesn't already
-  show `logged_in` and a `SessionCookie` is present. `leaderboards.php` is one of the only gated
-  pages Crypt Crawl (deliberately guest-playable, unlike most of this platform) links straight out
-  to, so this is a plausible way a page transition could look like it "kills" a session rather than
-  just failing to load - worth its own investigation if reports continue after the absolute-URL fix.
+  query string is fully supported. Also surfaced while investigating (see the platform-wide entry
+  right below - initially left as a follow-up, then fixed the same day once the user reported the
+  identical symptom on `missions.php`, a page none of this work ever touched): `skulliance.php`'s
+  login-restore path used to do `$_SESSION = $cookie;`, a full *replace*.
+- **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
+  replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
+  (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with
+  zero connection to Crypt Crawl or any commit from this whole saga. That ruled out the marketing
+  split as the cause of this specific report and pointed at shared platform code instead: every
+  gated staking page includes `skulliance.php`, whose login-restore branch
+  (`if(!isset($_SESSION['logged_in']))`) used to do `$_SESSION = $cookie;` - an outright
+  *replacement* of the entire session, and with **no validation** that `json_decode($_COOKIE['SessionCookie'], true)`
+  actually produced an array first. A malformed/stale/corrupted `SessionCookie` value would silently
+  null out the *entire* session (`$_SESSION = null`), not just fail to restore login - any other page
+  that had already written other session state this request would lose it too, and `extract($_SESSION['userData'])`
+  right after would operate on `null`. Fixed with an `is_array()` guard before touching `$_SESSION`
+  at all, and `array_merge($_SESSION, $cookie)` instead of a raw assignment, so a restore only adds
+  the cookie's own keys on top of whatever's already there rather than wiping everything else.
+  The exact same unguarded/replacing pattern, copy-pasted across the codebase's other independent
+  `SessionCookie` restores, got the same fix for consistency: `cryptcrawl.php`,
+  `ajax/cryptcrawl-action.php`, `skullswap.php`, `match3rpg.php`, `monstrocity.php`,
+  `monstrocity-test.php`, `skullpaper.php`, `wallet-ajax.php`, `ajax/get-nft-assets.php`,
+  `ajax/get-monstrocity-assets.php` - all of these already had the `is_array()` guard (only
+  `skulliance.php` was missing it), but still did a full replace, which is real for any of them
+  since Crypt Crawl's own `cryptcrawl_flash`/`cryptcrawl_guest_run` session keys (or any other
+  page's own session state) could be silently wiped by a restore on a *different* page entirely,
+  same browser session. The user's initial ask, given how far this had spread ("something is
+  disastrous with how the session is being handled... can we just revert all the way back"), was
+  to revert Crypt Crawl's marketing split back to before it existed - talked through instead once
+  `header.php`'s only touch in that whole split (one line, the nav link's `href`) couldn't explain
+  an unrelated page breaking the same way: fixing the actual shared root cause directly, without a
+  revert, was the path taken.
   ajax/cryptcrawl-action.php, added 2026-08-29): every action (start_run/play_card/flee/abandon)
   used to be a real `<form method="post">` submit -> full page navigation, which tore down and
   rebuilt the `<audio>` element above on every single click, audibly stuttering the ambient

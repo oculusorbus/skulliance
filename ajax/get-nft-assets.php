@@ -10,7 +10,7 @@ include '../db.php';
 // owned NFTs (or none, when logged out, which yields the defaults instantly).
 if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
     $cookie = json_decode($_COOKIE['SessionCookie'], true);
-    if (is_array($cookie)) { $_SESSION = $cookie; }
+    if (is_array($cookie)) { $_SESSION = array_merge($_SESSION, $cookie); } // merge, not replace -- see skulliance.php's own fix for why
 }
 
 // Set JSON output
