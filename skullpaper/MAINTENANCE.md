@@ -476,17 +476,32 @@ records verified constants, and tracks what still needs to be written.
   Start Delve from a not-yet-fully-authenticated moment (or any transient session read on
   `cryptcrawlgame.php`'s zero-session-logic path into `cryptcrawl.php`) a much more common way to
   first seed a guest run that then lingers.
-- Crypt Crawl's leaderboard links use an absolute URL - fixed 2026-08-29, reported directly by the
-  user ("the view leaderboard link may need the www prefix... it keeps taking me to the skulliance
-  merch store 404 page and then killing my staking session"). Both the game_over(lost) "Weekly
-  Leaderboard" button and the active-state flee-row's "View Leaderboard" button
-  (`cryptcrawl-render.php`) now link to `https://www.skulliance.io/staking/leaderboards.php?filterby=weekly-cryptcrawl`
-  instead of the bare relative `leaderboards.php`. Confirmed while investigating: this does NOT need
-  to be a form - `leaderboards.php`'s shared session/login include (`skulliance.php`) reads
-  `filterby` from `$_GET` exactly as much as `$_POST` (lines ~797-804), so a plain GET link with the
-  query string is fully supported. Also surfaced while investigating (see the platform-wide entry
-  right below - initially left as a follow-up, then fixed the same day once the user reported the
-  identical symptom on `missions.php`, a page none of this work ever touched): `skulliance.php`'s
+- Crypt Crawl's leaderboard links are relative, deliberately NOT an absolute URL - the user's first
+  report ("the view leaderboard link may need the www prefix... it keeps taking me to the skulliance
+  merch store 404 page and then killing my staking session") led to a same-day fix making both the
+  game_over(lost) "Weekly Leaderboard" button and the active-state flee-row's "View Leaderboard"
+  button (`cryptcrawl-render.php`) link to an absolute `https://www.skulliance.io/staking/leaderboards.php?filterby=weekly-cryptcrawl`.
+  **That absolute URL turned out to be wrong and got reverted the same day** once the actual
+  underlying bugs (see the platform-wide session-restore entry below, plus a bad cookie value that
+  clearing site data resolved) were fixed and the real cause of "signs me out" became visible: the
+  login cookie `process-oauth.php` sets is host-only (`session_set_cookie_params()` with no `domain`
+  parameter), scoped to exactly whichever hostname issued it. A user whose session lives on the bare
+  `skulliance.io` domain has no valid cookie on `www.skulliance.io` at all - the hardcoded `www.`
+  link was taking a logged-in player to a host where they'd never been authenticated, which looks
+  exactly like being signed out. Reverted to the plain relative `leaderboards.php?filterby=weekly-cryptcrawl`
+  so the link always stays on whatever host the visitor is already authenticated on. Checked every
+  other `www.skulliance.io` URL added the same day (canonical/OG/JSON-LD tags, `sitemap.xml`,
+  `homepage.php`'s game-card links, the guest Go Back fallback) - none of them require a login
+  cookie (pure SEO metadata, or pages that are deliberately public/stateless), so this was the only
+  one that could actually break a session this way. **Root cause not fixed at the source** - the
+  cookie's missing `domain` parameter is the real reason www/non-www don't share a session at all;
+  fixing that (`session_set_cookie_params()` in `process-oauth.php`, or wherever else establishes
+  the login session) would make cross-host links safe everywhere instead of relying on every future
+  link staying carefully relative, but that's a login/session-config change, out of scope for a
+  Crypt Crawl link fix. Confirmed while investigating this does NOT need to be a form - `leaderboards.php`'s
+  shared session/login include (`skulliance.php`) reads `filterby` from `$_GET` exactly as much as
+  `$_POST` (lines ~797-804), so a plain GET link with the query string is fully supported.
+  Also surfaced while investigating (see the platform-wide entry right below): `skulliance.php`'s
   login-restore path used to do `$_SESSION = $cookie;`, a full *replace*.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
