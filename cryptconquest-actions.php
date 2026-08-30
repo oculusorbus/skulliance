@@ -32,7 +32,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			} elseif (!$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
 			} elseif (!empty($outcome['result']['defeated'])) {
-				cryptconquestFlash(!empty($outcome['result']['won']) ? '👑 The last King falls -- the kingdom is yours!' : 'Enemy defeated!', 'win');
+				cryptconquestFlash(!empty($outcome['result']['won']) ? '👑 The last King falls -- the Necropolis is yours!' : 'Enemy defeated!', 'win');
 			}
 		}
 

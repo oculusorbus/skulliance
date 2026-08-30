@@ -27,7 +27,7 @@ function cryptconquestCornerRank($card) {
 // Instructions" modal -- one copy of the rules text instead of two that
 // could quietly drift apart (same convention cryptcrawlRulesHtml() uses).
 function cryptconquestRulesHtml() { ?>
-	Conquer a 52-card kingdom alone, one court card at a time: 4
+	Conquer a 52-card Necropolis alone, one court card at a time: 4
 	<strong>Jacks</strong>, then 4 <strong>Queens</strong>, then 4
 	<strong>Kings</strong> -- each one immune to its own suit's power (the
 	numeric damage still counts). Play a card from your hand (or several of
@@ -46,7 +46,7 @@ function cryptconquestRulesHtml() { ?>
 	if your hand truly can't cover a hit even after discarding all of it,
 	<span class="cq-rally">Last Rally</span> saves you once per run --
 	after that, the next uncovered hit ends it. Defeat all 12 court cards to
-	conquer the kingdom.
+	conquer the Necropolis.
 <?php }
 
 function cryptconquestRenderGameArea($conn, $user_id) {
@@ -101,7 +101,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		?>
 		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
 			<div class="cq-result-icon"><?php echo $won ? '👑' : '💀'; ?></div>
-			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($recent_run) : 'The Kingdom Prevails'; ?></div>
+			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($recent_run) : 'The Necropolis Prevails'; ?></div>
 			<div class="cq-result-sub"><?php echo $defeated; ?> / 12 court cards defeated</div>
 			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
 			<?php if ($user_id > 0 && $carbon_earned > 0): ?>
@@ -175,8 +175,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					🛡️ Last Rally <?php echo intval($active_run['last_rally_used']) ? 'used' : 'ready'; ?>
 				</span>
 				<span title="Discard your whole hand and refill -- twice per run">🃏 Jesters: <?php echo $jesters_left; ?> left</span>
-				<span>🏰 Castle: <?php echo count($active_run['castle_deck']); ?> left</span>
-				<span>🎴 Tavern: <?php echo count($active_run['tavern_deck']); ?> left</span>
+				<!-- Display labels only -- 'Mausoleum'/'Crypt' are the in-game
+				     names for what the code/DB still calls the castle/tavern
+				     deck internally (castle_deck/tavern_deck), same way
+				     'Necropolis' below is just what the rules text/result
+				     screen call the kingdom. Renaming the underlying fields
+				     would mean a schema migration for zero player-facing gain. -->
+				<span>🏰 Mausoleum: <?php echo count($active_run['castle_deck']); ?> left</span>
+				<span>🎴 Crypt: <?php echo count($active_run['tavern_deck']); ?> left</span>
 				<?php if ($user_id > 0): ?>
 					<span class="cq-hud-carbon" title="CARBON earned so far this run">
 						<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
