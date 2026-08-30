@@ -432,10 +432,22 @@ player controls) -- no ambient audio to synchronize it with yet, so it's
 simpler than Crypt Crawl's own version (no null-guarded "audio sets this
 up after the fact" dance needed).
 
+**Linked in nav (2026-08-30):** added to header.php's Play dropdown,
+directly below Crypt Crawl -- `<a href="cryptconquest.php">Crypt
+Conquest</a>`, same `isset($name)`-gated block every other Play item
+lives in (visible to logged-in users; guests can still reach the page
+directly and play, just don't see it in the menu). Points straight at the
+game itself, not a marketing page -- there's no `cryptconquestgame.php`
+equivalent to Crypt Crawl's own marketing landing page, and the owner's
+framing for this step was explicitly "ready for players to test this
+prototype and provide feedback," not a public launch. Deliberately still
+NOT in `sitemap.xml` (same as `cryptcrawl.php` itself, as opposed to its
+marketing page `cryptcrawlgame.php`) -- a nav link for logged-in testers
+isn't the same thing as inviting search engines to index a prototype.
+
 **Still not started:** ambient audio, Discord announce, leaderboard
-wiring, nav link, and any Skull Paper page (deliberately deferred until
-this ships, per project convention). Not linked from anywhere yet -- reachable only at
-`/staking/cryptconquest.php` directly.
+wiring, and any Skull Paper page (deliberately deferred until this ships,
+per project convention).
 
 ## Sources
 - [Regicide rules PDF](https://www.regicidegame.com/site_files/33132/upload_files/RegicideRulesA4.pdf)
