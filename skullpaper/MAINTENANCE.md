@@ -377,6 +377,38 @@ records verified constants, and tracks what still needs to be written.
   establishes the login session) so no future link anywhere has to stay carefully relative to avoid
   this - flagged to the user, not done, since it's a login/session-config change bigger than
   anything Crypt Crawl itself needed.
+- **The actual root cause of "logged in but treated as a guest": `process-oauth.php` never set
+  `$_SESSION['userData']['user_id']` at all** - found and fixed 2026-08-30, after a long chase
+  through session-replace bugs, a `/tmp` session-storage theory, and a host-only-cookie theory, none
+  of which were wrong exactly but none of which were *this*. Root-caused from a live session dump
+  the user pulled via a temporary `debug-session.php` tool: right after a completely fresh login,
+  `$_SESSION` correctly showed `logged_in => 1` and a fully populated `userData` (real
+  `discord_id`/`name`/`avatar`/`roles`) - genuinely, correctly logged in - but `userData` had **no
+  `user_id` key at all**. Every Crypt Crawl file computes its login state as
+  `$user_id = isset($_SESSION['userData']['user_id']) ? intval(...) : 0;` - with the key simply
+  absent, that's unconditionally `0`, guest, regardless of session/cookie health. The only function
+  that ever backfills `user_id` into the session is `checkUser($conn)` (`db.php`) - a discord_id ->
+  users-table lookup - and it's called from `skulliance.php` (the shared login gate every *normal*
+  gated page includes), never from `process-oauth.php` (the actual OAuth callback) itself. So
+  `user_id` only ever entered the session as a side effect of visiting some other page that happened
+  to include `skulliance.php` first - Crypt Crawl (deliberately guest-playable, never includes
+  `skulliance.php`) had no such page to piggyback on. This explains the user's own precise
+  isolation exactly: "if a device was signed in during the whole of this development, everything is
+  fine" (an earlier page visit had already backfilled `user_id` once, and it just persisted for the
+  rest of that live session) - "it's the logging out and back in that destroys everything" (every
+  fresh login starts a session with no `user_id` again, and if Crypt Crawl - now linked straight
+  from the nav, skipping the marketing page, for a logged-in visitor - is the first or only page
+  visited afterward, it never gets backfilled at all). Fixed by calling `checkUser($conn)` directly
+  in `process-oauth.php`, right after `$_SESSION['userData']` is set and before the redirect to
+  `profile.php`, so `user_id` is present from the very first request after login onward, matching
+  what every `skulliance.php`-gated page already had. `db.php` is included in `process-oauth.php`
+  for the first time to get `checkUser()`/`$conn` - deliberately placed *after* `session_start()`
+  (not before), so `db.php`'s own conditional `session_start()` can never fire ahead of and undo
+  this file's `session.gc_maxlifetime`/`session_set_cookie_params()` calls just above it. Does not
+  explain the Missions/leaderboard "merch error page" reports on their own (`skulliance.php`'s hard
+  login gate checks only `$_SESSION['logged_in']`, never `user_id`) - those remain most plausibly
+  explained by the session-replace/host-only-cookie fixes already made, though not re-confirmed
+  after this fix specifically.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with

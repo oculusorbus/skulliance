@@ -152,6 +152,12 @@ session_set_cookie_params(2678400);
 
 session_start();
 
+// db.php is included here (after session_start(), not before) so its own
+// conditional session_start() -- triggered by isset($_COOKIE[...]) -- can
+// never fire ahead of the gc_maxlifetime/cookie_params calls above and
+// undo their effect for this exact login.
+include_once 'db.php';
+
 $guild_IDs = array();
 // Skulliance Guild
 $guild_IDs[0] = '944002913443938306';
@@ -169,6 +175,22 @@ $_SESSION['userData'] = [
 	'roles'=>getUsersGuildsRoles($result['id'],$access_token,$guild_IDs)
 /*	'guilds'=>getUsersGuilds($access_token)*/
 ];
+
+// The actual root cause of "logged in but treated as a guest" on any page
+// that doesn't happen to go through skulliance.php first (Crypt Crawl,
+// deliberately, since it's guest-playable): $_SESSION['userData']['user_id']
+// was never set here at all. Every other gated page backfills it via
+// skulliance.php's own checkUser($conn) call, which normally runs before
+// the visitor can reach anything -- but a page like cryptcrawl.php reads
+// $_SESSION['userData']['user_id'] directly and has no reason to ever call
+// checkUser() itself. A fresh login therefore had a fully valid, correctly
+// logged-in session (logged_in => true, real discord_id/name/avatar/roles)
+// that nonetheless read as user_id 0 -- guest -- for the very first page
+// visited after logging in, until some other page happened to backfill it.
+// Confirmed directly from a live session dump: userData had no user_id key
+// at all immediately after login. Calling checkUser() here means user_id
+// is present from the first request onward, same as every other page.
+checkUser($conn);
 
 header("location: profile.php");
 exit();
