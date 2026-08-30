@@ -525,6 +525,20 @@ records verified constants, and tracks what still needs to be written.
   is a purely client-side JS construct for the AJAX path specifically) - so "Delve Again" *is*
   inside `#cc-game-area` and *is* subject to AJAX interception in that specific scenario, same as
   before.
+  **Bug found immediately after this landed, same day: Doom kept playing instead of Death on a
+  loss.** Root cause: revealing the overlay only ever *hid* `#cc-game-area` (`style.display = 'none'`),
+  never cleared its contents - so the stale `#cc-mood` from the in-delve room (e.g.
+  `data-mood="doom"`, from the lethal-threat-with-Last-Stand-spent state right before the fatal
+  blow) was still sitting in the DOM the whole time, just invisible, alongside the fresh
+  `#cc-mood` (`data-mood="death"`) the new response HTML dropped into the overlay. Two elements
+  sharing an ID isn't valid HTML, and `document.getElementById('cc-mood')` - used by both
+  `syncMood()` and `applyThemeState()` - returns whichever comes first in document order, which was
+  the stale one in `#cc-game-area` (it sits before `#cc-result-overlay` in the markup), not the
+  correct one in the overlay. Same latent risk existed for the themed backdrop and anything else ID
+  based, not just the mood track - not confirmed as also visibly wrong, but the same fix covers it
+  either way. Fixed by clearing `gameArea.innerHTML = ''` immediately before hiding it, not just
+  setting `display: none` - once there's nothing left inside it, there's no possibility of a
+  duplicate-ID collision with whatever the overlay now holds, for `#cc-mood` or anything else.
 - **Platform-wide session-restore hazard, all `SessionCookie` restores now merge instead of
   replace** - fixed 2026-08-29, same day, after the user reported the *identical* symptom
   (bounced to an error/404 page, staking session apparently killed) on `missions.php` - a page with

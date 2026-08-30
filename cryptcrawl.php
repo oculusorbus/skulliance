@@ -795,6 +795,19 @@ include 'header.php';
 				// gets, instead of a hard restart.
 				if (html.indexOf('class="cc-result ') !== -1 && resultOverlay) {
 					resultOverlay.innerHTML = html;
+					// Empty gameArea, not just hide it -- fixed 2026-08-30,
+					// reported directly by the user (Doom still playing on a
+					// loss instead of Death). Hiding alone left the old
+					// #cc-mood (and everything else) still sitting in the
+					// DOM inside the now-invisible gameArea -- a real bug,
+					// not cosmetic: with two #cc-mood elements briefly
+					// existing at once (the stale one in gameArea, the fresh
+					// one in resultOverlay), document.getElementById('cc-mood')
+					// returns whichever comes first in document order, which
+					// was the stale one, so syncMood()/applyThemeState() were
+					// reading the leftover in-delve mood/theme instead of the
+					// result's own.
+					gameArea.innerHTML = '';
 					gameArea.style.display = 'none';
 					resultOverlay.style.display = '';
 					initGameArea();
