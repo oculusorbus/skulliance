@@ -72,7 +72,24 @@ include 'header.php';
 }
 
 .cq-wrap { padding: 20px 16px 60px; }
-.cq-inner { max-width: 720px; width: 100%; margin: 0 auto; }
+/* position:relative + a real z-index here is load-bearing, not decorative --
+   confirmed live (both desktop and reported on mobile): #cq-theme-bg::before
+   runs a continuous Ken Burns animation with will-change:transform, which
+   Chrome/WebKit promotes to its own compositor layer. Once that layer
+   exists, a plain static, non-positioned sibling can end up painted BEHIND
+   it despite coming later in DOM order -- that's exactly what was
+   happening to .cq-suffer-banner (the "Incoming: N damage" prompt): fully
+   correct markup/data (verified via outerHTML), valid layout, just
+   invisible, because it was the one piece of UI here with no transform/
+   position of its own to earn a competing stacking context. Every other
+   visible element (cards, buttons, the HUD box) happened to already have
+   position:relative or an animated transform for unrelated reasons (sheen
+   effects, corner badges, its own intro animation), which is why only this
+   one prompt vanished. Promoting the whole content wrapper once here is
+   the general fix -- any future plain child inherits a safe stacking
+   context instead of only patching the one element that happened to get
+   caught by it this time. */
+.cq-inner { max-width: 720px; width: 100%; margin: 0 auto; position: relative; z-index: 1; }
 #cq-game-area, #cq-result-overlay { width: 100%; }
 /* #cq-theme-bg is a PERMANENT element (see the markup below) -- present in
    every state, "bare" (this rule only) when no themed backdrop applies.
