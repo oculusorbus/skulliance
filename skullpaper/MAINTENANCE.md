@@ -134,7 +134,16 @@ records verified constants, and tracks what still needs to be written.
   against the state including this very run: `cryptcrawlIsNewBestDepth()` (strictly deeper than
   this user's prior best among their other completed runs; ties don't count) and
   `cryptcrawlLeaderboardLeaderUserId()` (checked once for all-time, once for weekly - exact
-  ties for 1st are a known simplification, only one tied user gets credited).
+  ties for 1st are a known simplification, only one tied user gets credited). **Footer shows the
+  CARBON earned that delve** (added 2026-08-30, requested directly by the user) - `discordmsg()`
+  (`webhooks.php`) gained a 9th, optional `$footer` parameter (`["text" => ..., "icon_url" => ...]`,
+  renders as a small icon + line of text at the very bottom of the embed - a slot distinct from
+  both `$thumbnail` and `$author`'s own `icon_url`, so it doesn't collide with Crypt Crawl's
+  existing use of both for the player's avatar) - every other `discordmsg()` call site is
+  unaffected, none pass a 9th argument. `cryptcrawlAnnounceResult()` passes
+  `"+" . number_format($run['carbon_earned']) . " CARBON earned"` with `icons/carbon.png` as the
+  icon, on both the win and loss embeds - the same figure and icon the player's own result screen
+  already shows them.
 - Crypt Crawl card art (db.php CRYPTCRAWL_CARD_ART, `cryptcrawlGetCardArt`): each of the 44
   cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - curated
   2026-08-28 from the owner's Crypties - Season 2 holdings (~108 candidates reviewed, 27 of

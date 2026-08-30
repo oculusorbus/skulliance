@@ -46,7 +46,7 @@ Every completed delve (won or lost - an in-progress one doesn't count yet) feeds
 Every completed delve also counts toward the platform's **Activity** leaderboards (all-time,
 monthly, and weekly) - see [[platform-leaderboards]].
 
-Every delve you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel: how deep you got, illustrated with the theme art for the crypt you reached, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
+Every delve you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel: how deep you got, illustrated with the theme art for the crypt you reached, the CARBON you earned that delve, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
 
 ## Ambience
 

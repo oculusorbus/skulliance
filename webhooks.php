@@ -3,7 +3,7 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null) {
+    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null) {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -61,6 +61,16 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 	    ];
 	    if ($imageurl !== "") $embed["image"] = ["url" => $imageurl];
 	    if($author) $embed["author"] = $author;
+	    // $footer is ["text" => ..., "icon_url" => ...] (icon_url optional) --
+	    // renders as a small icon + line of text at the very bottom of the
+	    // embed, a slot distinct from both $thumbnail (top-right corner) and
+	    // $author's own icon_url (top-left, next to the author line), so it
+	    // doesn't collide with either even when a caller already uses both --
+	    // e.g. Crypt Crawl's own result post, which puts the player's avatar
+	    // in $thumbnail and reserves this for the CARBON icon + amount
+	    // earned instead. Optional and additive -- every existing call site
+	    // that doesn't pass it renders exactly as it always has.
+	    if($footer) $embed["footer"] = $footer;
 
 	    $msg = json_encode([
 	        "username"   => "Skull Bot",
