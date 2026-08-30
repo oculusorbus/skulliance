@@ -347,6 +347,10 @@ include 'header.php';
 }
 .cc-audio-btn:hover { background: rgba(255,255,255,.1); }
 .cc-audio-track { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Default (desktop-width): full name shown, short word hidden -- the
+   @media (max-width: 700px) block further down flips both. */
+.cc-audio-track-full { display: inline; }
+.cc-audio-track-short { display: none; }
 .cc-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
 .cc-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
 .cc-audio-btn.off { opacity: 0.35; } /* shared dimmed state for the player's toggle buttons (zoom, notifications) */
@@ -426,6 +430,14 @@ include 'header.php';
 	   claim back vertical space for the rest of the UI. */
 	.cc-btn-icon-big, .cc-btn-icon-big-img { display: none; }
 	.cc-btn.punchy { min-height: 44px; padding: 6px 5px; gap: 1px; }
+	/* Less room for the audio player's track label here -- show just the
+	   last word ("Theme", "Reprise", "Doom"...) instead of the full
+	   "Crypt Crawl X" name. JS keeps both spans in sync on every track
+	   change (see #cc-audio-track-name); this media query is the only
+	   thing that decides which one's actually visible, so rotating the
+	   phone or resizing the window swaps it live with no JS involved. */
+	.cc-audio-track-full { display: none; }
+	.cc-audio-track-short { display: inline; }
 }
 </style>
 <div class="cc-wrap">
@@ -469,7 +481,7 @@ include 'header.php';
 		<button type="button" class="cc-audio-btn" id="cc-audio-prev" title="Previous track">⏮</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-toggle" title="Play/Pause">▶</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-next" title="Next track">⏭</button>
-		<span class="cc-audio-track" id="cc-audio-track-name">Crypt Crawl Theme</span>
+		<span class="cc-audio-track" id="cc-audio-track-name"><span class="cc-audio-track-full">Crypt Crawl Theme</span><span class="cc-audio-track-short">Theme</span></span>
 		<span class="cc-audio-vol-icon">🔊</span>
 		<input type="range" class="cc-audio-volume" id="cc-audio-volume" min="0" max="100" value="50" title="Volume">
 		<button type="button" class="cc-audio-btn" id="cc-audio-zoom-toggle" title="Background zoom: on">🎥</button>
@@ -850,10 +862,24 @@ include 'header.php';
 		var prevBtn = document.getElementById('cc-audio-prev');
 		var nextBtn = document.getElementById('cc-audio-next');
 		var trackNameEl = document.getElementById('cc-audio-track-name');
+		var trackNameFullEl = trackNameEl ? trackNameEl.querySelector('.cc-audio-track-full') : null;
+		var trackNameShortEl = trackNameEl ? trackNameEl.querySelector('.cc-audio-track-short') : null;
 		var volumeEl = document.getElementById('cc-audio-volume');
 		var zoomToggleBtn = document.getElementById('cc-audio-zoom-toggle');
 		var notifToggleBtn = document.getElementById('cc-audio-notif-toggle');
 		if (!players[0] || !players[1] || !toggleBtn) return;
+		// Keeps both spans in the track-name element in sync -- CSS (the
+		// @media max-width:700px block) decides which one's actually
+		// visible, so this doesn't need to know or care about viewport
+		// width itself. Last word of "Crypt Crawl X" is always the
+		// distinctive part (Theme/Reprise/Frantic/Doom/Death/Triumph).
+		function setTrackName(name) {
+			if (trackNameFullEl) trackNameFullEl.textContent = name;
+			if (trackNameShortEl) {
+				var words = name.trim().split(/\s+/);
+				trackNameShortEl.textContent = words[words.length - 1];
+			}
+		}
 
 		var TRACKS = [
 			{ name: 'Crypt Crawl Theme', src: 'audio/tracks/Crypt%20Crawl%20Theme.mp3' },
@@ -1020,7 +1046,7 @@ include 'header.php';
 			a.volume = targetVolume;
 			trackIndex = index;
 			setTrackIndex(index);
-			trackNameEl.textContent = TRACKS[index].name;
+			setTrackName(TRACKS[index].name);
 			a.src = TRACKS[index].src;
 			if (resumePosition) {
 				var resumeAt = getPosition();
@@ -1063,7 +1089,7 @@ include 'header.php';
 			if (!getEnabled()) {
 				var a = active();
 				a.loop = !!opts.loop;
-				if (opts.name) trackNameEl.textContent = opts.name;
+				if (opts.name) setTrackName(opts.name);
 				a.src = src;
 				if (opts.resumeAt != null) {
 					var resumeAt2 = opts.resumeAt;
@@ -1079,7 +1105,7 @@ include 'header.php';
 			var incoming = inactive();
 			incoming.loop = !!opts.loop;
 			incoming.volume = 0;
-			if (opts.name) trackNameEl.textContent = opts.name;
+			if (opts.name) setTrackName(opts.name);
 			incoming.src = src;
 			if (opts.resumeAt != null) {
 				var resumeAt = opts.resumeAt;
