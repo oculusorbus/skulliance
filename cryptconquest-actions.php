@@ -21,6 +21,12 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 
 	if ($action === 'start_run') {
 		cryptconquestStartRun($conn, $user_id);
+		// One-shot signal read (and cleared) by cryptconquestRenderGameArea()'s
+		// #cq-mood output -- the audio player forces the Theme track
+		// specifically on a fresh conquest, not whatever the normal loop's
+		// last-saved track happened to be. Same pattern as Crypt Crawl's
+		// cryptcrawl_just_started.
+		$_SESSION['cryptconquest_just_started'] = true;
 
 	} elseif ($action === 'play') {
 		$run = cryptconquestGetActiveRun($conn, $user_id);

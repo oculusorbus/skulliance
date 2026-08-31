@@ -17,13 +17,14 @@ function cryptconquestRankBadge($rank) {
 }
 
 // Corner "rank" display for a card -- Animal Companions have no numeric
-// rank, so they get a paw instead of cryptconquestRankBadge() (which
-// would otherwise render intval(null) as a bare "0"). Keeps its native
-// emoji color; a thin white outline (see the cq-companion-icon class in
-// cryptconquest.php -- a crisp zero-blur text-shadow ring, not a soft
-// glow) is what makes it pop against real S2 art.
+// rank (their $card['rank'] is null, so cryptconquestRankBadge() would
+// otherwise render intval(null) as a bare "0"). Shows "1" instead of a
+// paw glyph -- less thematic, but it's also literally their card value
+// (see cryptconquestCardValue()), which reads faster at a glance than a
+// decorative icon. Plain text now, same as any other rank -- no special
+// styling needed, it inherits the corner's usual shadow like everything else.
 function cryptconquestCornerRank($card) {
-	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
+	return $card['type'] === 'companion' ? '1' : cryptconquestRankBadge($card['rank']);
 }
 
 // Shared by the no_run intro screen below and the in-game "View
@@ -84,16 +85,57 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	$player_art_pool = $art_pools['player'];
 	$companion_art_pool = $art_pools['companion'];
 
+	// Enemy/hand computed here (not down in the 'active' render branch,
+	// even though that's the only place they're displayed) since the mood
+	// calc just below needs them too -- one computation, reused by both.
+	$enemy = ($state === 'active') ? $active_run['current_enemy'] : null;
+	$hand = ($state === 'active') ? $active_run['hand'] : [];
+	$enemy_stats = $enemy ? cryptconquestEnemyStats($enemy['rank']) : ['attack' => 0, 'health' => 0];
+
+	// One-shot, set by cryptconquestHandleAction() on start_run, read (and
+	// cleared) here -- see #cq-mood's data-restarted below. Same pattern
+	// as Crypt Crawl's cryptcrawl_just_started.
+	$cq_just_started = !empty($_SESSION['cryptconquest_just_started']);
+	unset($_SESSION['cryptconquest_just_started']);
+
+	// Ambient-music "mood" -- read by the audio player in cryptconquest.php's
+	// script block (see #cq-mood below) to swap in one of the 4 situational
+	// tracks (Frantic/Doom/Death/Triumph, re-leveraging Crypt Crawl's own
+	// audio files), or fall back to the normal Theme/Reprise loop.
+	//   - death/triumph: the run just ended (loss/win).
+	//   - frantic: Last Rally is still available, but the current hand's
+	//     total value can't cover the attack that's either already pending
+	//     (suffer phase) or would land if nothing changes (play phase,
+	//     computed from the enemy's own stats minus shield) -- i.e. this
+	//     exact fight is currently unsurvivable without Last Rally.
+	//   - doom: same lethal-threat check, but Last Rally is already spent --
+	//     there's no safety net left.
+	// Deliberately the same "simple, not a full game-tree solver" spirit as
+	// Crypt Crawl's own room-threat check (cryptcrawl-render.php).
+	$cq_mood = 'normal';
+	if ($state === 'game_over') {
+		$cq_mood = ($recent_run['status'] === 'won') ? 'triumph' : 'death';
+	} elseif ($state === 'active' && $enemy) {
+		$mood_hand_total = array_sum(array_map('cryptconquestCardValue', $hand));
+		$mood_pending = ($active_run['phase'] === 'suffer')
+			? intval($active_run['pending_attack'])
+			: max(0, $enemy_stats['attack'] - intval($enemy['shield']));
+		if ($mood_hand_total < $mood_pending) {
+			$cq_mood = (intval($active_run['last_rally_used']) === 0) ? 'frantic' : 'doom';
+		}
+	}
+
 	// Theme backdrop -- #cq-theme-bg is a PERMANENT element living outside
 	// #cq-game-area in cryptconquest.php (never destroyed/recreated by an
 	// AJAX swap), so PHP can't just emit/omit the themed-panel markup
 	// per state directly -- that would restart its Ken Burns animation on
 	// every single action instead of only when the scene actually changes.
-	// This just tells the client (via #cq-theme-state below) whether a
-	// themed backdrop applies right now and which image to use;
-	// applyThemeState() in cryptconquest.php's script block reconciles the
-	// permanent element against it. Same pattern as Crypt Crawl's own
-	// #cc-mood/#cc-theme-bg (see cryptcrawl-render.php/cryptcrawl.php).
+	// This just tells the client (via #cq-mood below) whether a themed
+	// backdrop applies right now and which image to use; applyThemeState()
+	// in cryptconquest.php's script block reconciles the permanent element
+	// against it. Same pattern as Crypt Crawl's own #cc-mood/#cc-theme-bg
+	// (see cryptcrawl-render.php/cryptcrawl.php) -- one hidden div carries
+	// both the theme and mood signals together now, not two separate ones.
 	$cq_theme_active = false;
 	$cq_theme_img = '';
 	if ($state === 'active') {
@@ -111,7 +153,9 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		$cq_theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('" . $theme_url . "')";
 	}
 	?>
-	<div id="cq-theme-state" data-theme-active="<?php echo $cq_theme_active ? '1' : '0'; ?>" data-theme-img="<?php echo htmlspecialchars($cq_theme_img); ?>" style="display:none;"></div>
+	<div id="cq-mood" data-mood="<?php echo htmlspecialchars($cq_mood); ?>" data-restarted="<?php echo $cq_just_started ? '1' : '0'; ?>"
+		data-theme-active="<?php echo $cq_theme_active ? '1' : '0'; ?>" data-theme-img="<?php echo htmlspecialchars($cq_theme_img); ?>"
+		style="display:none;"></div>
 	<div class="cq-inner">
 	<?php if ($flashes): ?>
 	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
@@ -150,10 +194,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			<button type="submit" class="cq-btn">⚔️ New Conquest</button>
 		</form>
 
-	<?php else: // active
-		$hand = $active_run['hand'];
-		$enemy = $active_run['current_enemy'];
-		$enemy_stats = $enemy ? cryptconquestEnemyStats($enemy['rank']) : ['attack' => 0, 'health' => 0];
+	<?php else: // active -- $hand/$enemy/$enemy_stats already computed above, for the mood calc
 		$enemy_hp_left = $enemy ? max(0, $enemy_stats['health'] - intval($enemy['damage_taken'])) : 0;
 		$enemy_hp_pct = $enemy_stats['health'] > 0 ? max(0, min(100, round(($enemy_hp_left / $enemy_stats['health']) * 100))) : 0;
 		$enemy_attack_after_shield = $enemy ? max(0, $enemy_stats['attack'] - intval($enemy['shield'])) : 0;
@@ -249,11 +290,6 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					// that's a different source than court/number cards.
 					$art_pool = $is_court ? $enemy_art_pool : ($is_companion ? $companion_art_pool : $player_art_pool);
 					$hand_art = $art_pool[cryptconquestCardArtKey($card)] ?? null;
-					// Just the paw glyph (not the suit symbol) gets a white
-					// text-shadow instead of the corner's usual black one, so it
-					// pops against real S2 art without losing its native color --
-					// see .cq-companion-icon in cryptconquest.php.
-					$corner_rank_class = $is_companion ? ' cq-companion-icon' : '';
 					$footer = 'value ' . $value;
 					if ($is_court) $footer = 'recovered &middot; ' . $footer;
 					elseif ($is_companion) $footer = 'Companion &middot; ' . $footer;
@@ -271,14 +307,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 							<?php if ($hand_art): ?>
 								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($hand_art); ?>" alt="" loading="lazy" onerror="this.remove();">
 							<?php elseif ($is_companion): ?>
-								<div class="cq-card-companion-icon">🐾</div>
+								<div class="cq-card-companion-icon">1</div>
 							<?php endif; ?>
 							<div class="cq-card-corner tl">
-								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
 								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
 							</div>
 							<div class="cq-card-corner br">
-								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($card); ?></div>
 								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
 							</div>
 						</div>

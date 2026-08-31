@@ -231,23 +231,11 @@ include 'header.php';
 	border: 2px solid rgba(255,255,255,.12); box-sizing: border-box; overflow: hidden;
 	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-/* Keeps the paw's native emoji color (no filter) -- a thin, crisp white
-   OUTLINE (zero blur, eight 1px-offset copies fully surrounding the
-   glyph) rather than a soft glow, so it pops against real S2 art without
-   looking blurry. */
-.cq-card-companion-icon {
-	position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
-	text-shadow:
-		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
-		-1px  0   0 #fff,                1px  0   0 #fff,
-		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
-}
-.cq-corner-rank.cq-companion-icon {
-	text-shadow:
-		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
-		-1px  0   0 #fff,                1px  0   0 #fff,
-		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
-}
+/* Standalone fallback shown when a Companion card has no S2 art yet --
+   just "1" now (its actual card value, see cryptconquestCardValue()),
+   plain text like everything else on the card face. No special color/
+   outline treatment needed anymore now that it's not an emoji. */
+.cq-card-companion-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; opacity: 0.85; }
 .cq-card-footer { font-size: 0.62rem; opacity: 0.6; text-align: center; margin-top: 4px; text-transform: uppercase; letter-spacing: .02em; }
 .cq-card:has(.cq-card-check:checked) .cq-card-face {
 	border-color: #ffcc4d; box-shadow: 0 0 0 2px rgba(255,204,77,.3), 0 6px 16px rgba(255,204,77,.25);
@@ -311,19 +299,46 @@ include 'header.php';
 
 /* Persistent control bar -- same pill shape/position as Crypt Crawl's own
    #cc-audio-player (sits below the game content, in normal flow, so it's
-   in the same spot regardless of no_run/active/game_over). */
+   in the same spot regardless of no_run/active/game_over). Now holds the
+   ambient music player too (prev/play-pause/next/track-name/volume,
+   re-leveraging Crypt Crawl's own audio files -- see the script block),
+   with the zoom toggle folded in alongside it instead of standing alone. */
 .cq-player {
-	max-width: 720px; margin: 14px auto 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+	max-width: 720px; margin: 14px auto 0; display: flex; align-items: center; gap: 8px;
 	background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
-	padding: 8px 14px; box-sizing: border-box; font-size: 0.78rem; color: #c8dce8;
+	padding: 8px 14px; box-sizing: border-box; font-size: 0.72rem; color: #9fb4c2;
 }
+/* Round icon buttons -- prev/play-pause/next, same shape as Crypt Crawl's
+   own .cc-audio-btn. Kept separate from .cq-player-btn (a labeled
+   text+icon button, used for the zoom toggle) since these are icon-only. */
+.cq-audio-btn {
+	background: none; border: none; color: #c8dce8; cursor: pointer;
+	font-size: 1rem; line-height: 1; padding: 0; border-radius: 50%; flex: none;
+	display: flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+}
+.cq-audio-btn:hover { background: rgba(255,255,255,.1); }
+.cq-audio-track { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Default (desktop-width): full name shown, short word hidden -- the
+   @media (max-width: 700px) block further down flips both, same
+   breakpoint/approach Crypt Crawl's own player uses. */
+.cq-audio-track-full { display: inline; }
+.cq-audio-track-short { display: none; }
+.cq-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
+.cq-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
 .cq-player-btn {
 	background: none; border: none; color: #c8dce8; cursor: pointer;
-	font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+	font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; flex: none;
 	display: flex; align-items: center; gap: 6px; transition: background .12s ease, opacity .12s ease;
 }
 .cq-player-btn:hover { background: rgba(255,255,255,.1); }
-.cq-player-btn.off { opacity: 0.5; }
+.cq-player-btn.off, .cq-audio-btn.off { opacity: 0.5; }
+@media (max-width: 700px) {
+	/* Less room for the track label on mobile -- show just the last word
+	   ("Theme", "Reprise", "Doom"...) instead of the full "Crypt Conquest
+	   X" name, same convention cryptcrawl.php's own player uses. */
+	.cq-audio-track-full { display: none; }
+	.cq-audio-track-short { display: inline; }
+}
 
 @media (prefers-reduced-motion: reduce) {
 	.cq-flash-backdrop, .cq-flash-modal, .cq-instructions-backdrop.show, .cq-instructions-modal,
@@ -339,9 +354,10 @@ include 'header.php';
      across actions instead of restarting on every single one. Starts
      "bare" (no cq-theme-active class, no background) since PHP no longer
      decides whether to emit it at all -- that's now a class JS toggles
-     based on #cq-theme-state's data-theme-* attributes (emitted fresh
-     inside #cq-game-area on every render), applied by applyThemeState()
-     below. Ported directly from cryptcrawl.php's #cc-theme-bg. -->
+     based on #cq-mood's data-theme-* attributes (emitted fresh inside
+     #cq-game-area on every render, alongside data-mood for the ambient
+     music player below), applied by applyThemeState(). Ported directly
+     from cryptcrawl.php's #cc-theme-bg/#cc-mood. -->
 <div class="cq-theme-bg" id="cq-theme-bg">
 <div id="cq-game-area"><?php cryptconquestRenderGameArea($conn, $user_id); ?></div>
 <!-- Permanent, hidden sibling of #cq-game-area -- a win/loss result gets
@@ -354,33 +370,50 @@ include 'header.php';
 <div id="cq-result-overlay" style="display:none;"></div>
 </div>
 <!-- Persistent control bar -- OUTSIDE #cq-game-area/#cq-theme-bg on
-     purpose, so it's visible in every state (no_run/active/game_over),
-     not just tucked into the active-play controls row where it used to
-     live and was easy to miss. Same pill-bar position/style as Crypt
-     Crawl's own #cc-audio-player; just the zoom toggle for now -- if
-     ambient audio comes later, its controls belong in this same bar. -->
+     purpose, so it's visible in every state (no_run/active/game_over) and
+     never destroyed/recreated by an AJAX swap (same reason the <audio>
+     elements below it have to live out here too -- an AJAX-swapped copy
+     would restart/stutter playback on every single action). Same
+     pill-bar position/style as Crypt Crawl's own #cc-audio-player, now
+     re-leveraging Crypt Crawl's own audio files/mood system directly
+     (see the script block) rather than duplicating fresh Conquest-only
+     tracks. -->
 <div class="cq-player" id="cq-player">
-	<button type="button" class="cq-player-btn" id="cq-zoom-toggle" title="Background zoom: on">🎥 Background Animation</button>
+	<button type="button" class="cq-audio-btn" id="cq-audio-prev" title="Previous track">⏮</button>
+	<button type="button" class="cq-audio-btn" id="cq-audio-toggle" title="Play/Pause">▶</button>
+	<button type="button" class="cq-audio-btn" id="cq-audio-next" title="Next track">⏭</button>
+	<span class="cq-audio-track" id="cq-audio-track-name"><span class="cq-audio-track-full">Crypt Conquest Theme</span><span class="cq-audio-track-short">Theme</span></span>
+	<span class="cq-audio-vol-icon">🔊</span>
+	<input type="range" class="cq-audio-volume" id="cq-audio-volume" min="0" max="100" value="50" title="Volume">
+	<button type="button" class="cq-player-btn" id="cq-zoom-toggle" title="Background zoom: on">🎥</button>
 </div>
+<!-- Two elements, not one -- crossfading between tracks (mood changes,
+     manual skips, the normal loop's own advance) means briefly playing
+     the outgoing and incoming track at once while one ramps down and the
+     other ramps up. Same reasoning as cryptcrawl.php's own pair -- see
+     crossfadeTo() in the script block for how these take turns being
+     "active". -->
+<audio id="cq-audio-el-a" preload="metadata"></audio>
+<audio id="cq-audio-el-b" preload="metadata"></audio>
 </div>
 <script>
 (function() {
 	var gameArea = document.getElementById('cq-game-area');
 	var resultOverlay = document.getElementById('cq-result-overlay');
 
-	// Background zoom (Ken Burns drift) on/off -- persists for the rest of
-	// the browser session, same sessionStorage-backed on/off convention
-	// Crypt Crawl's own player controls use. On by default.
-	function getZoomEnabled() {
-		var v = sessionStorage.getItem('cq_zoom_enabled');
-		return v === null ? true : v === '1';
-	}
-	function setZoomEnabled(v) { try { sessionStorage.setItem('cq_zoom_enabled', v ? '1' : '0'); } catch (e) {} }
+	// Assigned once the audio player sets itself up (below) -- exposed here
+	// so initGameArea() can call it again after every AJAX swap, since the
+	// server recomputes #cq-mood fresh on every render. null on the very
+	// first call (this whole IIFE runs after that first call, in source
+	// order) -- same null-guard shape as cryptcrawl.php's own pair.
+	var syncMood = null;
+	var applyThemeState = null;
 
 	// Sizing only -- #cq-theme-bg's active/inactive state and image are
-	// applyThemeState()'s job below. One resize listener, attached once
-	// (not re-added per swap, which would stack up a fresh listener per
-	// action) -- same shape as cryptcrawl.php's own sizeTheme().
+	// applyThemeState()'s job (assigned below, once per render). One
+	// resize listener, attached once (not re-added per swap, which would
+	// stack up a fresh listener per action) -- same shape as
+	// cryptcrawl.php's own sizeTheme().
 	function sizeTheme() {
 		var el = document.getElementById('cq-theme-bg');
 		if (!el) return;
@@ -396,53 +429,6 @@ include 'header.php';
 		el.style.height = Math.max(200, available, natural) + 'px';
 	}
 	window.addEventListener('resize', sizeTheme);
-
-	// Randomizes the Ken Burns pan/zoom direction -- same approach as
-	// cryptcrawl.php's own randomizeKenBurns(), opposite-corner drift so it
-	// never jerks toward one edge, random angle/pace so every theme change
-	// looks different.
-	function randomizeKenBurns(el) {
-		var scaleFrom = 1 + Math.random() * 0.04;
-		var scaleTo = 1.08 + Math.random() * 0.08;
-		var angle = Math.random() * Math.PI * 2;
-		var dist = 1.5 + Math.random() * 2;
-		var xFrom = (Math.cos(angle) * dist).toFixed(2) + '%';
-		var yFrom = (Math.sin(angle) * dist).toFixed(2) + '%';
-		var xTo = (Math.cos(angle + Math.PI) * dist).toFixed(2) + '%';
-		var yTo = (Math.sin(angle + Math.PI) * dist).toFixed(2) + '%';
-		var duration = (20 + Math.random() * 14).toFixed(1) + 's';
-		el.style.setProperty('--kb-scale-from', scaleFrom.toFixed(3));
-		el.style.setProperty('--kb-scale-to', scaleTo.toFixed(3));
-		el.style.setProperty('--kb-x-from', xFrom);
-		el.style.setProperty('--kb-y-from', yFrom);
-		el.style.setProperty('--kb-x-to', xTo);
-		el.style.setProperty('--kb-y-to', yTo);
-		el.style.setProperty('--kb-duration', duration);
-	}
-
-	// Reconciles the PERMANENT #cq-theme-bg element against whatever
-	// #cq-theme-state (emitted fresh inside #cq-game-area on every render)
-	// says this render's theme state is. Comparing the incoming image
-	// against what's already applied (dataset.currentImg) is what keeps
-	// the same background from restarting its drift on every action --
-	// only a genuinely different image gets a fresh random direction.
-	function applyThemeState() {
-		var themeBg = document.getElementById('cq-theme-bg');
-		var stateEl = document.getElementById('cq-theme-state');
-		if (!themeBg || !stateEl) return;
-		var active = stateEl.getAttribute('data-theme-active') === '1';
-		var img = stateEl.getAttribute('data-theme-img') || '';
-		themeBg.classList.toggle('cq-theme-active', active);
-		if (active) {
-			if (themeBg.dataset.currentImg !== img) {
-				themeBg.style.setProperty('--theme-img', img);
-				themeBg.dataset.currentImg = img;
-				randomizeKenBurns(themeBg);
-			}
-			themeBg.classList.toggle('cq-zoom', getZoomEnabled());
-		}
-		sizeTheme();
-	}
 
 	function initGameArea() {
 		var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -472,27 +458,411 @@ include 'header.php';
 			}
 		}
 
-		applyThemeState();
-	}
-
-	// #cq-player (and the zoom toggle inside it) is a PERMANENT element,
-	// outside #cq-game-area -- bound once here instead of inside
-	// initGameArea(), unlike the instructions button above which lives
-	// inside the swapped markup and gets destroyed/recreated every render.
-	var zoomBtn = document.getElementById('cq-zoom-toggle');
-	if (zoomBtn) {
-		zoomBtn.classList.toggle('off', !getZoomEnabled());
-		zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
-		zoomBtn.addEventListener('click', function() {
-			setZoomEnabled(!getZoomEnabled());
-			zoomBtn.classList.toggle('off', !getZoomEnabled());
-			zoomBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
-			var themeBg = document.getElementById('cq-theme-bg');
-			if (themeBg) themeBg.classList.toggle('cq-zoom', getZoomEnabled());
-		});
+		// Re-check the situational music track (Frantic/Doom/Death/Triumph
+		// vs. the normal loop) against whatever #cq-mood the server just
+		// rendered. null on the very first call (page load) -- the audio
+		// player checks its own initial mood itself once it sets up, just
+		// below this function in source order.
+		if (applyThemeState) applyThemeState(); else sizeTheme();
+		if (syncMood) syncMood();
 	}
 
 	initGameArea();
+
+	// Ambient music player. Re-leverages Crypt Crawl's own audio files
+	// directly (same audio/tracks/*.mp3 paths, just Conquest-branded
+	// display names) rather than duplicating fresh tracks, and the exact
+	// same mood-driven architecture -- two crossfading <audio> elements,
+	// a normal Theme/Reprise loop, and four situational tracks the game
+	// itself cues up via #cq-mood (see cryptconquest-render.php). State
+	// (on/off, track, position, volume, Ken Burns on/off) lives in
+	// sessionStorage under cq_-prefixed keys, distinct from Crypt Crawl's
+	// own cc_-prefixed keys -- both pages share the same origin, so a
+	// naming collision would leak one game's player state into the other's.
+	(function() {
+		var players = [document.getElementById('cq-audio-el-a'), document.getElementById('cq-audio-el-b')];
+		var activeIdx = 0;
+		function active() { return players[activeIdx]; }
+		function inactive() { return players[1 - activeIdx]; }
+
+		var toggleBtn = document.getElementById('cq-audio-toggle');
+		var prevBtn = document.getElementById('cq-audio-prev');
+		var nextBtn = document.getElementById('cq-audio-next');
+		var trackNameEl = document.getElementById('cq-audio-track-name');
+		var trackNameFullEl = trackNameEl ? trackNameEl.querySelector('.cq-audio-track-full') : null;
+		var trackNameShortEl = trackNameEl ? trackNameEl.querySelector('.cq-audio-track-short') : null;
+		var volumeEl = document.getElementById('cq-audio-volume');
+		var zoomToggleBtn = document.getElementById('cq-zoom-toggle');
+		if (!players[0] || !players[1] || !toggleBtn) return;
+		function setTrackName(name) {
+			if (trackNameFullEl) trackNameFullEl.textContent = name;
+			if (trackNameShortEl) {
+				var words = name.trim().split(/\s+/);
+				trackNameShortEl.textContent = words[words.length - 1];
+			}
+		}
+
+		var TRACKS = [
+			{ name: 'Crypt Conquest Theme', src: 'audio/tracks/Crypt%20Crawl%20Theme.mp3' },
+			{ name: 'Crypt Conquest Reprise', src: 'audio/tracks/Crypt%20Crawl%20Reprise.mp3' }
+		];
+		// Situational tracks the game itself cues up (see #cq-mood, set by
+		// cryptconquestRenderGameArea() in cryptconquest-render.php) --
+		// deliberately NOT part of TRACKS above, so prev/next can never
+		// cycle to them. The only way to hear Triumph is to actually win.
+		var MOOD_TRACKS = {
+			frantic: { name: 'Crypt Conquest Frantic', src: 'audio/tracks/Crypt%20Crawl%20Frantic.mp3', loop: true },
+			doom:    { name: 'Crypt Conquest Doom',    src: 'audio/tracks/Crypt%20Crawl%20Doom.mp3',    loop: true },
+			death:   { name: 'Crypt Conquest Death',   src: 'audio/tracks/Crypt%20Crawl%20Death.mp3',   loop: false },
+			triumph: { name: 'Crypt Conquest Triumph', src: 'audio/tracks/Crypt%20Crawl%20Triumph.mp3', loop: false }
+		};
+		var currentMood = 'normal';
+		var FADE_MS = 1200;
+
+		function getEnabled() {
+			var v = sessionStorage.getItem('cq_audio_enabled');
+			return v === null ? true : v === '1';
+		}
+		function setEnabled(v) { try { sessionStorage.setItem('cq_audio_enabled', v ? '1' : '0'); } catch (e) {} }
+		function getTrackIndex() {
+			var v = parseInt(sessionStorage.getItem('cq_audio_track'), 10);
+			return (v === 0 || v === 1) ? v : 0;
+		}
+		function setTrackIndex(v) { try { sessionStorage.setItem('cq_audio_track', String(v)); } catch (e) {} }
+		function getPosition() {
+			var v = parseFloat(sessionStorage.getItem('cq_audio_position'));
+			return isNaN(v) ? 0 : v;
+		}
+		function setPosition(v) { try { sessionStorage.setItem('cq_audio_position', String(v)); } catch (e) {} }
+		function getVolume() {
+			var v = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
+			return (v >= 0 && v <= 100) ? v : 50;
+		}
+		function setVolume(v) { try { sessionStorage.setItem('cq_audio_volume', String(v)); } catch (e) {} }
+		function getZoomEnabled() {
+			var v = sessionStorage.getItem('cq_zoom_enabled');
+			return v === null ? true : v === '1';
+		}
+		function setZoomEnabled(v) { try { sessionStorage.setItem('cq_zoom_enabled', v ? '1' : '0'); } catch (e) {} }
+
+		var trackIndex = getTrackIndex();
+		var enabled = getEnabled();
+		var targetVolume = getVolume() / 100;
+
+		players[0].volume = targetVolume;
+		players[1].volume = 0;
+		if (volumeEl) volumeEl.value = getVolume();
+		if (zoomToggleBtn) {
+			zoomToggleBtn.classList.toggle('off', !getZoomEnabled());
+			zoomToggleBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
+		}
+
+		// Ken Burns drift on the theme art -- max ambience while a track is
+		// actually audible, so it's tied to play/pause as well as the
+		// on/off toggle below. See @keyframes cqKenBurns (CSS) for how the
+		// --kb-* custom properties set here get played back.
+		function updateZoomClass() {
+			var el = document.getElementById('cq-theme-bg');
+			if (el) el.classList.toggle('cq-zoom', getZoomEnabled() && !active().paused);
+		}
+		function randomizeKenBurns(el) {
+			var scaleFrom = 1 + Math.random() * 0.04;
+			var scaleTo = 1.08 + Math.random() * 0.08;
+			var angle = Math.random() * Math.PI * 2;
+			var dist = 1.5 + Math.random() * 2;
+			var xFrom = (Math.cos(angle) * dist).toFixed(2) + '%';
+			var yFrom = (Math.sin(angle) * dist).toFixed(2) + '%';
+			var xTo = (Math.cos(angle + Math.PI) * dist).toFixed(2) + '%';
+			var yTo = (Math.sin(angle + Math.PI) * dist).toFixed(2) + '%';
+			var duration = (20 + Math.random() * 14).toFixed(1) + 's';
+			el.style.setProperty('--kb-scale-from', scaleFrom.toFixed(3));
+			el.style.setProperty('--kb-scale-to', scaleTo.toFixed(3));
+			el.style.setProperty('--kb-x-from', xFrom);
+			el.style.setProperty('--kb-y-from', yFrom);
+			el.style.setProperty('--kb-x-to', xTo);
+			el.style.setProperty('--kb-y-to', yTo);
+			el.style.setProperty('--kb-duration', duration);
+		}
+		// Exposed to initGameArea() (outer scope), called once per render.
+		// #cq-theme-bg is PERMANENT (never destroyed by an AJAX swap) --
+		// comparing the incoming image against what's already applied
+		// (dataset.currentImg) is what keeps the same background from
+		// restarting its drift on every action; only a genuinely different
+		// image gets a fresh random direction.
+		applyThemeState = function() {
+			var themeBg = document.getElementById('cq-theme-bg');
+			var moodEl = document.getElementById('cq-mood');
+			if (!themeBg || !moodEl) return;
+			var active = moodEl.getAttribute('data-theme-active') === '1';
+			var img = moodEl.getAttribute('data-theme-img') || '';
+			themeBg.classList.toggle('cq-theme-active', active);
+			if (active) {
+				if (themeBg.dataset.currentImg !== img) {
+					themeBg.style.setProperty('--theme-img', img);
+					themeBg.dataset.currentImg = img;
+					randomizeKenBurns(themeBg);
+				}
+				updateZoomClass();
+			}
+			sizeTheme();
+		};
+		// initGameArea()'s first call ran before applyThemeState existed yet
+		// -- run it again now so the initial page's own theme state (if
+		// any) actually gets applied instead of only picking one up
+		// starting with the next swap.
+		applyThemeState();
+
+		if (zoomToggleBtn) {
+			zoomToggleBtn.addEventListener('click', function() {
+				var next = !getZoomEnabled();
+				setZoomEnabled(next);
+				zoomToggleBtn.classList.toggle('off', !next);
+				zoomToggleBtn.title = 'Background zoom: ' + (next ? 'on' : 'off');
+				updateZoomClass();
+			});
+		}
+
+		function updateToggleIcon() {
+			toggleBtn.textContent = (!active().paused) ? '⏸' : '▶';
+			updateZoomClass();
+		}
+
+		// Hard cut, no fade -- initial page load and manual prev/next.
+		function loadTrack(index, resumePosition) {
+			stopFade();
+			currentMood = 'normal';
+			nearEndTriggered = false;
+			var a = active();
+			a.loop = false;
+			a.volume = targetVolume;
+			trackIndex = index;
+			setTrackIndex(index);
+			setTrackName(TRACKS[index].name);
+			a.src = TRACKS[index].src;
+			if (resumePosition) {
+				var resumeAt = getPosition();
+				a.addEventListener('loadedmetadata', function once() {
+					a.currentTime = resumeAt;
+					a.removeEventListener('loadedmetadata', once);
+				});
+			}
+			a.load();
+			inactive().pause();
+			inactive().volume = 0;
+		}
+
+		function tryPlay() {
+			var p = active().play();
+			if (p && p.catch) {
+				p.catch(function() { updateToggleIcon(); });
+			}
+		}
+
+		var fadeRAF = null;
+		function stopFade() { if (fadeRAF) { cancelAnimationFrame(fadeRAF); fadeRAF = null; } }
+
+		// Crossfades to src -- for transitions the GAME forces on its own
+		// (a mood change, a fresh conquest forcing the Theme, the normal
+		// loop's own advance). Manual prev/next deliberately does NOT go
+		// through this -- see loadTrack().
+		function crossfadeTo(src, opts) {
+			opts = opts || {};
+			stopFade();
+			nearEndTriggered = false;
+			if (!getEnabled()) {
+				var a = active();
+				a.loop = !!opts.loop;
+				if (opts.name) setTrackName(opts.name);
+				a.src = src;
+				if (opts.resumeAt != null) {
+					var resumeAt2 = opts.resumeAt;
+					a.addEventListener('loadedmetadata', function once() {
+						a.currentTime = resumeAt2;
+						a.removeEventListener('loadedmetadata', once);
+					});
+				}
+				a.load();
+				return;
+			}
+			var outgoing = active();
+			var incoming = inactive();
+			incoming.loop = !!opts.loop;
+			incoming.volume = 0;
+			if (opts.name) setTrackName(opts.name);
+			incoming.src = src;
+			if (opts.resumeAt != null) {
+				var resumeAt = opts.resumeAt;
+				incoming.addEventListener('loadedmetadata', function once() {
+					incoming.currentTime = resumeAt;
+					incoming.removeEventListener('loadedmetadata', once);
+				});
+			}
+			incoming.load();
+			activeIdx = 1 - activeIdx;
+
+			var p = incoming.play();
+			if (p && p.catch) p.catch(function() { updateToggleIcon(); });
+
+			var startOutVol = outgoing.volume;
+			var startTs = null;
+			function step(ts) {
+				if (startTs === null) startTs = ts;
+				var t = Math.min(1, (ts - startTs) / FADE_MS);
+				incoming.volume = targetVolume * t;
+				outgoing.volume = startOutVol * (1 - t);
+				if (t < 1) {
+					fadeRAF = requestAnimationFrame(step);
+				} else {
+					outgoing.pause();
+					outgoing.volume = targetVolume;
+					fadeRAF = null;
+				}
+			}
+			fadeRAF = requestAnimationFrame(step);
+			updateToggleIcon();
+		}
+
+		var nearEndTriggered = false;
+		function maybeAdvanceNearEnd(player) {
+			if (player !== active() || fadeRAF) return;
+			if (currentMood === 'frantic' || currentMood === 'doom') return;
+			if (!player.duration || !isFinite(player.duration)) return;
+			if (player.duration - player.currentTime > FADE_MS / 1000 || nearEndTriggered) return;
+			nearEndTriggered = true;
+			if (currentMood === 'death' || currentMood === 'triumph') {
+				currentMood = 'normal';
+				var idx = getTrackIndex();
+				crossfadeTo(TRACKS[idx].src, { name: TRACKS[idx].name, resumeAt: getPosition() });
+			} else {
+				setPosition(0);
+				var next = (trackIndex + 1) % TRACKS.length;
+				trackIndex = next;
+				setTrackIndex(next);
+				crossfadeTo(TRACKS[next].src, { name: TRACKS[next].name });
+			}
+		}
+
+		loadTrack(trackIndex, true);
+		if (enabled) {
+			tryPlay();
+			// Browsers only allow unmuted autoplay off the back of a
+			// *trusted* user gesture -- catch the very first real
+			// interaction anywhere on the page (not just this player's own
+			// controls) and use it to start audio if tryPlay() above got
+			// blocked.
+			var playerEl = document.getElementById('cq-player');
+			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
+			var unlockAudio = function(e) {
+				unlockEvents.forEach(function(evt) { window.removeEventListener(evt, unlockAudio, true); });
+				if (playerEl && e && e.target && playerEl.contains(e.target)) return;
+				if (active().paused && getEnabled()) tryPlay();
+			};
+			unlockEvents.forEach(function(evt) { window.addEventListener(evt, unlockAudio, true); });
+		}
+		updateToggleIcon();
+
+		players.forEach(function(p) {
+			p.addEventListener('timeupdate', function() {
+				if (this !== active()) return;
+				if (currentMood === 'normal') setPosition(this.currentTime);
+				maybeAdvanceNearEnd(this);
+			});
+			p.addEventListener('play', function() { if (this === active()) updateToggleIcon(); });
+			p.addEventListener('pause', function() { if (this === active()) updateToggleIcon(); });
+			p.addEventListener('ended', function() {
+				if (this !== active()) return;
+				if (currentMood === 'death' || currentMood === 'triumph') {
+					var idx = getTrackIndex();
+					loadTrack(idx, true);
+					tryPlay();
+					return;
+				}
+				if (currentMood !== 'normal') return;
+				setPosition(0);
+				loadTrack((trackIndex + 1) % TRACKS.length, false);
+				tryPlay();
+			});
+			p.addEventListener('error', function() {
+				if (this !== active()) return;
+				if (currentMood !== 'normal') {
+					currentMood = 'normal';
+					loadTrack(getTrackIndex(), true);
+					if (getEnabled()) tryPlay();
+				}
+			});
+		});
+
+		// Cued automatically by the server (#cq-mood, set in
+		// cryptconquestRenderGameArea()) -- never reachable via prev/next,
+		// so a player can't skip straight to Triumph without actually
+		// winning. Always crossfades -- every path here is the game
+		// forcing a transition, never a manual pick.
+		syncMood = function() {
+			var moodEl = document.getElementById('cq-mood');
+			var mood = moodEl ? moodEl.getAttribute('data-mood') : 'normal';
+			// A fresh conquest (Begin the Conquest / New Conquest) always
+			// opens on the Theme specifically -- checked first,
+			// unconditionally, so it wins over both the escape-from-danger
+			// case below and even a same-mood no-op.
+			if (moodEl && moodEl.getAttribute('data-restarted') === '1') {
+				currentMood = 'normal';
+				crossfadeTo(TRACKS[0].src, { name: TRACKS[0].name });
+				return;
+			}
+			if (!mood || mood === currentMood) return;
+			if (mood === 'normal') {
+				if (currentMood === 'frantic' || currentMood === 'doom') {
+					// Pulled out of danger (Last Rally saved you, or the
+					// threat otherwise resolved without the run actually
+					// ending) -- feels like picking back up, not restarting
+					// the intro theme from scratch. Land on the Reprise
+					// specifically (TRACKS[1]).
+					currentMood = 'normal';
+					crossfadeTo(TRACKS[1].src, { name: TRACKS[1].name });
+				} else {
+					currentMood = 'normal';
+					var idx = getTrackIndex();
+					crossfadeTo(TRACKS[idx].src, { name: TRACKS[idx].name, resumeAt: getPosition() });
+				}
+				return;
+			}
+			var special = MOOD_TRACKS[mood];
+			if (!special) return;
+			currentMood = mood;
+			crossfadeTo(special.src, { name: special.name, loop: special.loop });
+		};
+		syncMood();
+
+		toggleBtn.addEventListener('click', function() {
+			if (active().paused) { setEnabled(true); tryPlay(); }
+			else {
+				setEnabled(false);
+				stopFade();
+				active().pause();
+				inactive().pause();
+			}
+		});
+		prevBtn.addEventListener('click', function() {
+			setPosition(0);
+			loadTrack((trackIndex - 1 + TRACKS.length) % TRACKS.length, false);
+			setEnabled(true);
+			tryPlay();
+		});
+		nextBtn.addEventListener('click', function() {
+			setPosition(0);
+			loadTrack((trackIndex + 1) % TRACKS.length, false);
+			setEnabled(true);
+			tryPlay();
+		});
+		if (volumeEl) {
+			volumeEl.addEventListener('input', function() {
+				var v = parseInt(volumeEl.value, 10) || 0;
+				targetVolume = v / 100;
+				if (!fadeRAF) active().volume = targetVolume;
+				setVolume(v);
+			});
+		}
+	})();
 
 	function lockGameAreaBriefly() {
 		gameArea.style.opacity = '0.55';
