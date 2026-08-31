@@ -490,9 +490,33 @@ owner reconsidered both the naming and the art split.
   invert(1)`, same trick `cryptcrawl.php` uses on its own weapon/potion
   icons) so it reads clearly over real S2 art instead of blending in.
 
-**Still not started:** ambient audio, Discord announce, leaderboard
-wiring, and any Skull Paper page (deliberately deferred until this ships,
-per project convention).
+**Also done (same day, ambient music):** re-leverages Crypt Crawl's own
+`audio/tracks/*.mp3` files directly (Conquest-branded display names,
+same underlying assets -- not duplicated) and its exact mood-driven
+architecture: two crossfading `<audio>` elements, a normal Theme/Reprise
+loop, four situational tracks cued by the game itself via `#cq-mood`
+(renamed from `#cq-theme-state`, now carries `data-mood`/`data-restarted`
+alongside the theme signal, same single-element pattern as Crypt Crawl's
+own `#cc-mood`). Mood computation: death/triumph on `game_over`; while
+active, frantic (or doom if Last Rally is already spent) whenever the
+current hand's total value can't cover the attack that's either already
+pending (suffer phase) or would land if nothing changes (play phase) --
+same "simple, not a full game-tree solver" spirit as Crypt Crawl's own
+room-threat check. `cq_`-prefixed sessionStorage keys throughout (not
+`cc_`) since both pages share one origin. No 🔔 notification-toggle --
+Conquest's flashes aren't source-tagged for selective suppression the
+way Crypt Crawl's are, and it wasn't asked for.
+
+**Also done (same day, Companion icon):** the paw glyph (and its whole
+white-outline treatment from the last few commits) is gone -- Animal
+Companion cards just show **"1"** now, both corners and the standalone
+no-art fallback icon. Less thematic, but it's literally the card's own
+value, reads faster, and needs no special styling (plain text inherits
+the corner's usual shadow like every other rank).
+
+**Still not started:** Discord announce, leaderboard wiring, and any
+Skull Paper page (deliberately deferred until this ships, per project
+convention).
 
 ## Sources
 - [Regicide rules PDF](https://www.regicidegame.com/site_files/33132/upload_files/RegicideRulesA4.pdf)
