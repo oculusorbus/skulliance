@@ -213,7 +213,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "swaps" && $filterby != "weekly-swaps" && $filterby != "bosses" &&
 				           $filterby != "weekly-bosses" && $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
 				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
-			           $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" && $filterby != "realms" &&
+			           $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" &&
+		           $filterby != "cryptconquest" && $filterby != "monthly-cryptconquest" && $filterby != "realms" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
@@ -298,6 +299,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Weekly Crypt Crawl";
 				        $filterby = "weekly-cryptcrawl";
 				        break;
+				    case ($filterby == "cryptconquest"):
+				        $title = "All Crypt Conquests";
+				        $filterby = "cryptconquest";
+				        break;
+				    case ($filterby == "monthly-cryptconquest"):
+				        $title = date("F") . " Crypt Conquest";
+				        $filterby = "monthly-cryptconquest";
+				        break;
 				    case ($filterby == "activity-ath"):
 				        $title = "All-Time Activity";
 				        $filterby = "activity-ath";
@@ -330,7 +339,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "weekly-swaps" && $filterby != "bosses" && $filterby != "weekly-bosses" &&
 				              $filterby != "monstrocity" && $filterby != "monthly-monstrocity" &&
 				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
-				              $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" && $filterby != "realms" &&
+				              $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" &&
+				              $filterby != "cryptconquest" && $filterby != "monthly-cryptconquest" && $filterby != "realms" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
@@ -391,6 +401,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "weekly-cryptcrawl"):
 				            checkCryptCrawlLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "cryptconquest"):
+				            checkCryptConquestLeaderboard($conn);
+				            break;
+				        case ($filterby == "monthly-cryptconquest"):
+				            checkCryptConquestLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "activity-ath"):
 				            checkActivityLeaderboard($conn, 'ath');

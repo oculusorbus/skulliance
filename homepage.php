@@ -157,6 +157,20 @@
               "isAccessibleForFree": true,
               "publisher": { "@id": "https://www.skulliance.io/#organization" }
             }
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "item": {
+              "@type": "VideoGame",
+              "name": "Crypt Conquest",
+              "url": "https://www.skulliance.io/staking/cryptconquestgame.php",
+              "image": "https://www.skulliance.io/staking/images/cryptconquest.png",
+              "genre": ["Card Game", "Roguelike", "Strategy"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
           }
         ]
       }
@@ -407,18 +421,11 @@
 
     /* Platform screenshots */
     .hp-shots { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-    /* 15 $hp_shots cards + the standalone Crypt Crawl card below the loop =
-       16, which fills five 3-column rows exactly and leaves Crypt Crawl
-       (:last-child) alone in the left column of a sixth. Centers it in the
-       middle column instead once the grid genuinely lands on 3 columns --
-       .wrap's 1100px max-width (minus 40px padding = 1060px content) never
-       reaches a 4th 260px+18px-gap column, and 3 columns first fits at a
-       ~856px viewport, so this range is exactly "wide enough for 3, never
-       enough for 4." If $hp_shots ever grows/shrinks so Crypt Crawl stops
-       being the sole item in the last row, drop this rule along with it. */
-    @media (min-width: 900px) {
-      .hp-shots .hp-shot-card:last-child { grid-column: 2; }
-    }
+    /* 15 $hp_shots cards + the two standalone cards below the loop (Crypt
+       Crawl, Crypt Conquest) = 17, filling five 3-column rows plus two in
+       a sixth -- no lone straggler to center, so no :last-child override
+       is needed here. If $hp_shots count ever lands back on a single
+       leftover in the last row, a rule like the old one belongs here again. */
     .hp-shot-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -580,7 +587,7 @@
     <section id="games">
       <div class="wrap">
         <h2>Free Browser Games</h2>
-        <p class="hp-intro hp-center">No download, no signup, no paywall - both games run in any browser on phone, tablet, or desktop. Collectors can log in to save scores, climb weekly leaderboards, and battle with characters from their own NFT collections.</p>
+        <p class="hp-intro hp-center">No download, no signup, no paywall - every game runs in any browser on phone, tablet, or desktop. Collectors can log in to save scores, climb the leaderboards, and battle with characters from their own NFT collections.</p>
         <div class="hp-games">
           <div class="hp-game">
             <a class="hp-game-art" href="https://www.skulliance.io/staking/match3rpg.php" aria-label="Play Monstrocity, the free match 3 RPG">
@@ -605,6 +612,14 @@
             <h3>Crypt Crawl - Dungeon Card Game</h3>
             <p>Delve a 44-card crypt deck illustrated entirely in Crypties NFT art - weapons that wear down, medkits that diminish, and one guaranteed Last Stand when it matters most.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/cryptcrawlgame.php">Play Crypt Crawl</a>
+          </div>
+          <div class="hp-game">
+            <a class="hp-game-art" href="https://www.skulliance.io/staking/cryptconquestgame.php" aria-label="Play Crypt Conquest, the free solo Regicide-style card game">
+              <img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest card game board" loading="lazy" decoding="async">
+            </a>
+            <h3>Crypt Conquest - Regicide-Style Card Game</h3>
+            <p>Dethrone all 12 court cards of the Necropolis with suit powers, two Jesters, and one Last Rally - illustrated entirely in Crypties NFT art.</p>
+            <a class="hp-cta" href="https://www.skulliance.io/staking/cryptconquestgame.php">Play Crypt Conquest</a>
           </div>
         </div>
       </div>
@@ -727,6 +742,10 @@
           <div class="hp-shot-card">
             <h3>Crypt Crawl</h3>
             <a href="https://www.skulliance.io/staking/cryptcrawlgame.php"><img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl screenshot" loading="lazy" decoding="async"></a>
+          </div>
+          <div class="hp-shot-card">
+            <h3>Crypt Conquest</h3>
+            <a href="https://www.skulliance.io/staking/cryptconquestgame.php"><img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest screenshot" loading="lazy" decoding="async"></a>
           </div>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>

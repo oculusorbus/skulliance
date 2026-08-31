@@ -35,6 +35,7 @@ records verified constants, and tracks what still needs to be written.
 | games-skull-swap.md *(new)*         | Match-3 score chase    | skullswap.php, db.php:5019-5136 |
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
 | games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
+| games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
 | games-drop-ship.md                  | External game          | madballs.net (external) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
@@ -170,6 +171,48 @@ records verified constants, and tracks what still needs to be written.
   monthly/weekly will silently show zero crawl activity until this migration actually runs.
   Verified via a dedicated PHP harness mocking all 8 sources' `$conn->query()` calls and checking
   the merged per-user totals/ranking/stats output, not just that the code parses.
+- Crypt Conquest (built 2026-08-30, directly off Crypt Crawl's own architecture -- see
+  cryptconquest.php's own header comment): Regicide-style solo card game, table `cryptconquests`.
+  12 court cards (4 suits x Jack/Queen/King, Jacks first then Queens then Kings, shuffled within
+  rank), enemy stats `cryptconquestEnemyStats()` (Jack 10atk/20hp, Queen 15/30, King 20/40).
+  Tavern deck: 2-10 of all 4 suits + 4 Animal Companions (always worth 1, can pair with at most
+  one other card, never a bigger combo). Suit powers on the non-enemy-suit cards played:
+  Clubs double attack, Hearts heal (return cards from discard to tavern), Diamonds draw, Spades
+  shield (Hearts resolves before Diamonds when both trigger). 2 Jesters (discard hand + refill,
+  once each); win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
+  2=Narrow Conquest). 1 Last Rally (once per run: a whole-hand discard that still doesn't cover
+  the attack survives instead of ending the run; the *next* such failure is a real loss).
+  CARBON (`cryptconquestApplyCarbon`, same project_id 15 / `updateBalance`+`logCredit` shape as
+  Crypt Crawl): every card resolved (played or discarded to cover damage) earns `10 * its value`
+  (a Companion's value is 1), paid out in one lump the moment the run ends
+  (`cryptconquestPayoutCarbon`, status guard so it's a no-op mid-run) -- guests accrue
+  `carbon_earned` for display only, payout gated on a real DB row same as Crypt Crawl.
+  Leaderboard (`checkCryptConquestLeaderboard`/`resetCryptConquests`, same shape as
+  `checkCryptCrawlLeaderboard`): ranks by wins DESC, best single-run `enemies_defeated` (court
+  cards defeated, 0-12) DESC, losses ASC. **Deliberately monthly, not weekly** (explicit user
+  instruction) -- 100,000 CARBON pool, `round(100000/rank)` per rank, paid via
+  `rewards.php?cryptconquest=1` (needs its own monthly crontab entry -- nothing in this repo
+  schedules cron itself, see rewards.php's own comment on that line). Live-play announcements
+  (`cryptconquestAnnounceResult`) post to the "cryptconquest" webhooks.php channel
+  (`getCryptConquestWebhook()`) -- **deliberately guarded with `function_exists()`** in
+  webhooks.php (unlike every other channel case there), since that credential function does not
+  exist yet in `credentials/webhooks_credentials.php` (not in this repo, can't be added by
+  Claude) -- every other channel case calls its `getXWebhook()` unconditionally, this one no-ops
+  to an empty webhook URL instead of fataling until the user adds the real function. Counts
+  toward Activity leaderboards (`checkActivityLeaderboard`, source `'conquest'`, weight 5,
+  matching Crypt Crawl's own `'crawl'` weight) -- **same migration gap as Crypt Crawl, flagged
+  but not run**: `cryptconquests` has no date/timestamp column, so monthly/weekly Activity
+  filtering silently shows zero Conquest activity until `ALTER TABLE cryptconquests ADD COLUMN
+  date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER reward;` actually runs on the
+  live table; all-time is unaffected. Card art (`cryptconquestGetCardArtPools`): auto-assigned
+  from the owner's current Crypties holdings each render (NOT hand-curated like
+  `CRYPTCRAWL_CARD_ART`) -- court + number cards pull from the Crypties Season 1 collection
+  (`CRYPTCONQUEST_S1_COLLECTION_ID`, the primary art wallet's holdings exhausted first, then
+  `CRYPTCONQUEST_S1_EXTRA_USER_ID`'s), Animal Companions pull from the same wallet's Season 2
+  holdings excluding whatever `CRYPTCRAWL_CARD_ART` already claimed by name, so the two games
+  never show identical art. Reuses Crypt Crawl's own audio files/mood-track machinery verbatim
+  (`#cq-mood` mirrors `#cc-mood`'s frantic/doom/death/triumph shape, computed from whether the
+  current hand can cover the current/pending attack, and whether Last Rally is still available).
 - Crypt Crawl ambient player (`#cc-audio-player`/`#cc-audio-el`, markup lives in cryptcrawl.php,
   OUTSIDE `#cc-game-area` - see the AJAX entry below for why that placement matters): two tracks
   committed straight into the repo (`audio/tracks/Crypt Crawl Theme.mp3`,

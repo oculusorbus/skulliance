@@ -5560,6 +5560,124 @@ function resetCryptCrawls($conn) {
 	}
 }
 
+// Crypt Conquest leaderboard -- same shape as checkCryptCrawlLeaderboard()
+// above, MONTHLY instead of weekly (the owner's own call for this game's
+// payout cadence) and a 100,000 CARBON pool instead of 50,000. $monthly
+// filters to runs not yet counted toward a payout (reward=0, reset by
+// resetCryptConquests() below); $rewards actually pays out and is only
+// ever called from rewards.php's cron-triggered endpoint -- an EXTERNAL
+// crontab hitting rewards.php?cryptconquest=1 once a month is what
+// actually triggers this; nothing in this codebase schedules that itself,
+// see MAINTENANCE.md. Only resolved runs count (status won/lost). Ranked
+// by wins first, then best single-run depth (enemies_defeated, out of the
+// fixed 12 court cards), then fewest losses -- same 3-tuple Crypt Crawl
+// ranks by, just with Conquest's own depth metric.
+function checkCryptConquestLeaderboard($conn, $monthly=false, $rewards=false) {
+	$carbon = 100000;
+	$where  = ($monthly || $rewards) ? "AND cq.reward = 0" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			SUM(cq.status = 'won')  AS wins,
+			SUM(cq.status = 'lost') AS losses,
+			MAX(cq.enemies_defeated) AS best_depth
+		FROM cryptconquests cq
+		INNER JOIN users u ON u.id = cq.user_id
+		WHERE cq.status IN ('won', 'lost') $where
+		GROUP BY u.id
+		ORDER BY wins DESC, best_depth DESC, losses ASC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			$score = [intval($row['wins']), intval($row['best_depth']), intval($row['losses'])];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['wins']) . 'W · depth ' . min(intval($row['best_depth']), 12) . '/12',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col = ($monthly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
+			$stats      = [
+				'Wins'       => number_format($row['wins']),
+				'Best Depth' => min(intval($row['best_depth']), 12) . '/12',
+				'Losses'     => number_format($row['losses']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Wins: " . $row['wins'] . ", Best Depth: " . min(intval($row['best_depth']), 12) . "/12, Losses: " . $row['losses'] . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			resetCryptConquests($conn);
+			// Notifications/default webhook, not the "cryptconquest" channel --
+			// that one is for live per-round updates as people actually play
+			// (see cryptconquestAnnounceResult()), same split Crypt Crawl uses.
+			discordmsg("👑 Monthly Crypt Conquest Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($monthly || $rewards) ? "for the month" : "";
+		echo "<p>No Crypt Conquest runs have been completed yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="cryptconquest"><input type="submit" class="small-button" value="View All Crypt Conquest Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+function resetCryptConquests($conn) {
+	$sql = "UPDATE cryptconquests SET reward = 1 WHERE reward = 0";
+	if ($conn->query($sql) !== TRUE) {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
 // Check Activity Leaderboard — weighted aggregate across all platform features
 // Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5, raid=15, boss battle=25, monstrocity session=50
 function checkActivityLeaderboard($conn, $period = 'ath') {
@@ -5571,6 +5689,11 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 	//   ALTER TABLE cryptcrawls ADD COLUMN date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER carbon_earned;
 	// No PHP-side change needed to populate it -- the DEFAULT handles every
 	// existing INSERT (cryptcrawlStartRun()) automatically. See MAINTENANCE.md.
+	// cryptconquests has the exact same gap -- the table's original CREATE
+	// TABLE (see cryptconquest.md) didn't include a date column either, so
+	// the 'conquest' source below needs this run once too before
+	// monthly/weekly can work for it:
+	//   ALTER TABLE cryptconquests ADD COLUMN date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER reward;
 	// Build date filters per period
 	if ($period === 'monthly') {
 		$dt   = date('Y-m-01');
@@ -5582,6 +5705,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$w_ss = "AND date_created  >= '$dt'";
 		$w_s  = "AND date_created  >= '$dt'";
 		$w_cc = "AND date_created  >= '$dt'";
+		$w_cq = "AND date_created  >= '$dt'";
 	} elseif ($period === 'weekly') {
 		$ws   = $conn->real_escape_string(gauntletGetWeekStart());
 		$w_t  = "AND date_created  >= '$ws'";
@@ -5592,8 +5716,9 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$w_ss = "AND date_created  >= '$ws'";
 		$w_s  = "AND date_created  >= '$ws'";
 		$w_cc = "AND date_created  >= '$ws'";
+		$w_cq = "AND date_created  >= '$ws'";
 	} else {
-		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = '';
+		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = $w_cq = '';
 	}
 
 	// Run each source as its own fast GROUP BY query, then merge in PHP.
@@ -5610,6 +5735,8 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		// starts and never finishes. Weighted with mission/skullswap/gauntlet
 		// -- a delve is roughly that same class of single-session attempt.
 		'crawl'       => ["SELECT user_id, COUNT(*) AS cnt FROM cryptcrawls WHERE status IN ('won','lost') $w_cc GROUP BY user_id",                                                                5],
+		// Same "completed runs only" definition as 'crawl' above, same weight.
+		'conquest'    => ["SELECT user_id, COUNT(*) AS cnt FROM cryptconquests WHERE status IN ('won','lost') $w_cq GROUP BY user_id",                                                             5],
 		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
 		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
 		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
@@ -5623,7 +5750,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		while ($row = $res->fetch_assoc()) {
 			$uid = intval($row['user_id']);
 			if (!isset($activity[$uid])) {
-				$activity[$uid] = ['daily'=>0,'mission'=>0,'skullswap'=>0,'gauntlet'=>0,'crawl'=>0,'raid'=>0,'boss'=>0,'monstrocity'=>0,'total_pts'=>0];
+				$activity[$uid] = ['daily'=>0,'mission'=>0,'skullswap'=>0,'gauntlet'=>0,'crawl'=>0,'conquest'=>0,'raid'=>0,'boss'=>0,'monstrocity'=>0,'total_pts'=>0];
 			}
 			$cnt = intval($row['cnt']);
 			$activity[$uid][$key]       += $cnt;
@@ -5698,6 +5825,7 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 			'Swaps'     => number_format($data['skullswap']),
 			'Gauntlets' => number_format($data['gauntlet']),
 			'Crawls'    => number_format($data['crawl']),
+			'Conquests' => number_format($data['conquest']),
 			'Raids'     => number_format($data['raid']),
 			'Bosses'    => number_format($data['boss']),
 			'M3RPG'     => number_format($data['monstrocity']),
@@ -11524,12 +11652,111 @@ function cryptconquestPayoutCarbon($conn, $run) {
 	logCredit($conn, $user_id, $amount, 15);
 }
 
-// Saves the run, then pays out if it just ended -- the one place every
-// action wrapper below funnels through, so none of them can save a
-// completed run without also crediting it (or vice versa).
+// True if $depth is strictly deeper than this user's best enemies_defeated
+// among their OTHER completed runs -- same shape as Crypt Crawl's own
+// cryptcrawlIsNewBestDepth(), just against Conquest's own depth metric
+// (court cards defeated, out of 12) instead of rooms cleared.
+function cryptconquestIsNewBestDepth($conn, $user_id, $current_run_id, $depth) {
+	$user_id = intval($user_id);
+	$current_run_id = intval($current_run_id);
+	$result = $conn->query("SELECT MAX(enemies_defeated) AS best FROM cryptconquests WHERE user_id = $user_id AND status IN ('won','lost') AND id != $current_run_id");
+	if ($result && $result->num_rows > 0) {
+		$row = $result->fetch_assoc();
+		$prev_best = ($row['best'] !== null) ? intval($row['best']) : -1;
+		return intval($depth) > $prev_best;
+	}
+	return true;
+}
+
+// user_id currently sitting in 1st place -- same ranking as
+// checkCryptConquestLeaderboard() (wins DESC, best depth DESC, losses ASC),
+// collapsed to just the winner. Same known simplification as Crypt
+// Crawl's own cryptcrawlLeaderboardLeaderUserId(): a fully-tied co-leader
+// may not get credited here, not worth a more elaborate tie-set query for
+// a "did you just take the top spot" badge.
+function cryptconquestLeaderboardLeaderUserId($conn, $monthly = false) {
+	$where = $monthly ? "AND cq.reward = 0" : "";
+	$result = $conn->query("
+		SELECT u.id AS user_id
+		FROM cryptconquests cq
+		INNER JOIN users u ON u.id = cq.user_id
+		WHERE cq.status IN ('won', 'lost') $where
+		GROUP BY u.id
+		ORDER BY SUM(cq.status = 'won') DESC, MAX(cq.enemies_defeated) DESC, SUM(cq.status = 'lost') ASC
+		LIMIT 1
+	");
+	if ($result && $result->num_rows > 0) {
+		return intval($result->fetch_assoc()['user_id']);
+	}
+	return null;
+}
+
+// Posts a live "run finished" update to the Crypt Conquest Discord channel
+// -- same shape as cryptcrawlAnnounceResult(), fires from cryptconquestPersist()
+// below on any natural completion or a deliberate abandon (also recorded
+// as a loss). Real accounts only -- a guest's session has no discord_id/
+// profile and never reaches the leaderboard either. Looked up fresh from
+// `users` by the run's own owner column, not $_SESSION, for the same
+// session-independence reason cryptcrawlAnnounceResult() was fixed to --
+// CARBON payout shouldn't ever succeed while the Discord post silently
+// no-ops because of a stale/partial session on that particular request.
+function cryptconquestAnnounceResult($conn, $run) {
+	if (intval($run['id']) <= 0) return; // guest run, no DB row, nothing to announce
+	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
+
+	$cq_user_id = intval($run['user_id']);
+	if ($cq_user_id <= 0) return;
+	$user_r = $conn->query("SELECT username, discord_id, avatar FROM users WHERE id = $cq_user_id LIMIT 1");
+	if (!$user_r || !$user_r->num_rows) return;
+	$user_row = $user_r->fetch_assoc();
+	if (empty($user_row['discord_id'])) return;
+
+	$cq_username   = !empty($user_row['username']) ? $user_row['username'] : 'Unknown';
+	$cq_discord    = $user_row['discord_id'];
+	$cq_avatar     = $user_row['avatar'] ?? '';
+	$cq_avatar_url = ($cq_discord && $cq_avatar) ? "https://cdn.discordapp.com/avatars/" . $cq_discord . "/" . $cq_avatar . ".png" : "";
+	$cq_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($cq_username);
+	$cq_mention    = "<@" . $cq_discord . ">";
+	$cq_depth      = intval($run['enemies_defeated']);
+	$cq_author     = array("name" => $cq_username, "icon_url" => $cq_avatar_url, "url" => $cq_profile);
+	$cq_theme_url  = "https://skulliance.io/staking/images/themes/" . cryptconquestKingdomThemeFile($cq_depth);
+
+	// Personal-best and leaderboard-leader badges, checked AFTER this run is
+	// already saved -- so "best" and "leader" both reflect the world
+	// including this very run.
+	$badges = array();
+	if (cryptconquestIsNewBestDepth($conn, $cq_user_id, intval($run['id']), $cq_depth)) {
+		$badges[] = "🏅 **New personal best!**";
+	}
+	if (cryptconquestLeaderboardLeaderUserId($conn, false) === $cq_user_id) {
+		$badges[] = "👑 **#1 All-Time!**";
+	}
+	if (cryptconquestLeaderboardLeaderUserId($conn, true) === $cq_user_id) {
+		$badges[] = "🔥 **#1 This Month!**";
+	}
+	$cq_badge_text = $badges ? ("\n\n" . implode("\n", $badges)) : "";
+
+	$cq_carbon = intval($run['carbon_earned'] ?? 0);
+	$cq_footer = ["text" => "+" . number_format($cq_carbon) . " CARBON earned", "icon_url" => "https://skulliance.io/staking/icons/carbon.png"];
+
+	if ($run['status'] === 'won') {
+		$cq_tier = cryptconquestTier($run);
+		$cq_desc = $cq_mention . " conquered the Necropolis! 👑\n\n👑 **" . $cq_tier . "**\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_badge_text;
+		discordmsg("👑 Crypt Conquest Won", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "00C8A0", $cq_author, $cq_footer);
+	} else {
+		$cq_desc = $cq_mention . " fell to the Necropolis. 💀\n\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_badge_text;
+		discordmsg("💀 Crypt Conquest Ended", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "FF4444", $cq_author, $cq_footer);
+	}
+}
+
+// Saves the run, then pays out and announces if it just ended -- the one
+// place every action wrapper below funnels through, so none of them can
+// save a completed run without also crediting/announcing it (or vice
+// versa).
 function cryptconquestPersist($conn, &$run) {
 	cryptconquestSaveRun($conn, $run);
 	cryptconquestPayoutCarbon($conn, $run); // no-op unless status is won/lost
+	cryptconquestAnnounceResult($conn, $run); // no-op unless status is won/lost
 }
 
 function cryptconquestDoPlay($conn, $user_id, $run_id, $indices) {

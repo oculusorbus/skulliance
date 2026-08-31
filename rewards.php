@@ -46,4 +46,11 @@ if(isset($_GET['gauntlets'])){
 if(isset($_GET['cryptcrawl'])){
 	checkCryptCrawlLeaderboard($conn, false, true);
 }
+if(isset($_GET['cryptconquest'])){
+	// Monthly, not weekly -- needs its OWN crontab entry hitting
+	// rewards.php?cryptconquest=1 once a month (e.g. midnight on the 1st),
+	// separate from whatever schedule triggers ?cryptcrawl=1. Nothing in
+	// this codebase schedules that itself -- see cryptconquest.md.
+	checkCryptConquestLeaderboard($conn, false, true);
+}
 ?>

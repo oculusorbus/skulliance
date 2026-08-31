@@ -193,6 +193,9 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cq-btn">⚔️ New Conquest</button>
 		</form>
+		<?php if (!$won): ?>
+		<a href="leaderboards.php?filterby=monthly-cryptconquest" class="cq-btn gold" style="margin-top:8px;">👑 Monthly Leaderboard</a>
+		<?php endif; ?>
 
 	<?php else: // active -- $hand/$enemy/$enemy_stats already computed above, for the mood calc
 		$enemy_hp_left = $enemy ? max(0, $enemy_stats['health'] - intval($enemy['damage_taken'])) : 0;

@@ -269,6 +269,12 @@ include 'header.php';
 .cq-btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,.15); box-shadow: 0 6px 16px rgba(255,255,255,.12); }
 .cq-btn.attack { background: #ff4444; color: #012; }
 .cq-btn.attack:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,68,68,.4); }
+/* Solid, not the translucent .secondary treatment -- washes out against
+   the loss screen's themed backdrop. Same gold as the CARBON accent
+   elsewhere, same choice cryptcrawl.php's own .cc-btn.gold makes for its
+   loss-screen leaderboard link. */
+.cq-btn.gold { background: #ffcc4d; color: #012; }
+.cq-btn.gold:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,204,77,.4); }
 .cq-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
 	.cq-btn:not(:disabled)::after {

@@ -42,6 +42,18 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			$webhook = getGauntletsWebhook();
 		}else if($channel == "cryptcrawl"){
 			$webhook = getCryptCrawlWebhook();
+		}else if($channel == "cryptconquest"){
+			// function_exists guard (unlike every other channel case here) --
+			// this is a brand-new channel with no credential added to
+			// credentials/webhooks_credentials.php yet. Every other case
+			// assumes its getXWebhook() function already exists because it
+			// always has by the time that channel went live; this one
+			// hasn't, and a plain undefined-function call would fatal the
+			// whole request (game action, leaderboard reward run, etc.) that
+			// tried to post here, not just silently skip the Discord post.
+			// Safe to remove this guard once getCryptConquestWebhook() is
+			// actually added.
+			$webhook = function_exists('getCryptConquestWebhook') ? getCryptConquestWebhook() : "";
 		}else{
 			$webhook = getWebhook();
 		}
