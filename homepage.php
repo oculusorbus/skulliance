@@ -310,8 +310,15 @@
     .hp-card h3 { margin-bottom: 8px; }
     .hp-card p { margin: 0 0 14px; color: #c7d0d9; font-size: 0.96rem; }
 
-    /* Games */
-    .hp-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; margin-top: 24px; }
+    /* Games -- fixed 2-column grid so the 4 current games (Monstrocity,
+       Skull Swap, Crypt Crawl, Crypt Conquest) sit in a clean 2x2 instead
+       of auto-fit's 3-then-1 lone-straggler split at this section's
+       ~1060px content width. Revisit (back to auto-fit, or add a 3rd
+       column) if the game count ever changes. */
+    .hp-games { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 24px; }
+    @media (max-width: 640px) {
+      .hp-games { grid-template-columns: 1fr; }
+    }
     .hp-game {
       display: flex; flex-direction: column; align-items: center; text-align: center;
       background: rgba(255, 255, 255, 0.03);
