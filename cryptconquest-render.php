@@ -17,27 +17,13 @@ function cryptconquestRankBadge($rank) {
 }
 
 // Corner "rank" display for a card -- Animal Companions have no numeric
-// rank, so they get cryptconquestPawIconHtml() instead of
-// cryptconquestRankBadge() (which would otherwise render intval(null) as
-// a bare "0"). Not used for the paw itself (see the two-span markup
-// below) -- kept plain-text for the numeric-rank case, which is still
-// most calls to this function.
+// rank, so they get a paw instead of cryptconquestRankBadge() (which
+// would otherwise render intval(null) as a bare "0"). Keeps its native
+// emoji color; a thin white outline (see the cq-companion-icon class in
+// cryptconquest.php -- a crisp zero-blur text-shadow ring, not a soft
+// glow) is what makes it pop against real S2 art.
 function cryptconquestCornerRank($card) {
 	return $card['type'] === 'companion' ? '🐾' : cryptconquestRankBadge($card['rank']);
-}
-
-// Two stacked copies of the paw, not one -- filter (see .cq-paw-fill in
-// cryptconquest.php) darkens an element's ENTIRE rendered output
-// uniformly, including its own text-shadow, so a solid-black paw and a
-// white outline around it can't be the same element. The outline layer
-// (white zero-blur text-shadow ring, natural emoji color otherwise) sits
-// behind the fill layer (filter: brightness(0), no shadow of its own) at
-// the exact same position -- the fill's black shape covers the outline
-// layer's own glyph entirely, leaving only the white ring visible around
-// the edges. Used for both the corner-badge paw and the standalone
-// fallback icon (shown when a Companion has no S2 art).
-function cryptconquestPawIconHtml() {
-	return '<span class="cq-paw-layer cq-paw-outline">🐾</span><span class="cq-paw-layer cq-paw-fill">🐾</span>';
 }
 
 // Shared by the no_run intro screen below and the in-game "View
@@ -285,14 +271,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 							<?php if ($hand_art): ?>
 								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($hand_art); ?>" alt="" loading="lazy" onerror="this.remove();">
 							<?php elseif ($is_companion): ?>
-								<div class="cq-card-companion-icon"><?php echo cryptconquestPawIconHtml(); ?></div>
+								<div class="cq-card-companion-icon">🐾</div>
 							<?php endif; ?>
 							<div class="cq-card-corner tl">
-								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo $is_companion ? cryptconquestPawIconHtml() : cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo cryptconquestCornerRank($card); ?></div>
 								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
 							</div>
 							<div class="cq-card-corner br">
-								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo $is_companion ? cryptconquestPawIconHtml() : cryptconquestCornerRank($card); ?></div>
+								<div class="cq-corner-rank<?php echo $corner_rank_class; ?>"><?php echo cryptconquestCornerRank($card); ?></div>
 								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></div>
 							</div>
 						</div>
