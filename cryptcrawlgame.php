@@ -137,6 +137,12 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 .cc-cta:hover, .cc-cta:focus { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,200,160,.5); }
 .cc-cta.cc-secondary { background: transparent; color: #00c8a0 !important; border: 1px solid rgba(0,200,160,.45); box-shadow: none; margin-left: 12px; }
 .cc-cta.cc-secondary:hover { background: rgba(0,200,160,.08); }
+/* The submit <button> (nested in its own inline-block <form>) and the
+   plain <a> beside it default to different baselines -- inline-block's
+   default vertical-align:baseline then lines them up on those mismatched
+   baselines instead of visually centering them. Force both onto the same
+   line-box middle instead. */
+#cc-start-delve-form, .cc-cta { vertical-align: middle; }
 #cc-start-delve-form { display: inline-block; margin: 0; }
 @media (max-width: 480px) {
 	.cc-cta { width: 100%; text-align: center; }

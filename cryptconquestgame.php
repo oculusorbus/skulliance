@@ -124,6 +124,12 @@ body { background: #07111d; margin: 0; color: #e8eaed; font-family: -apple-syste
 .cq-cta:hover, .cq-cta:focus { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,204,77,.5); text-decoration: none; color: #07111d !important; }
 .cq-cta.cq-secondary { background: transparent; color: #00c8a0 !important; border: 1px solid rgba(0,200,160,.45); box-shadow: none; margin-left: 12px; }
 .cq-cta.cq-secondary:hover { background: rgba(0,200,160,.08); }
+/* The submit <button> (nested in its own inline-block <form>) and the
+   plain <a> beside it default to different baselines -- inline-block's
+   default vertical-align:baseline then lines them up on those mismatched
+   baselines instead of visually centering them. Force both onto the same
+   line-box middle instead. */
+#cq-start-conquest-form, .cq-cta { vertical-align: middle; }
 #cq-start-conquest-form { display: inline-block; margin: 0; }
 @media (hover: hover) and (pointer: fine) {
 	.cq-cta:not(.cq-secondary)::after {
