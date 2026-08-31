@@ -28,6 +28,26 @@ if(isset($_SESSION['userData']['discord_id'])){
 	}
 }
 
+// PHP 8.1 changed mysqli's default error-reporting mode to throw a
+// mysqli_sql_exception on any query error, instead of the pre-8.1 default
+// of just returning false. This codebase was written entirely against the
+// old behavior -- literally every query result across db.php is guarded
+// with `if ($result && $result->num_rows > 0)` or equivalent, never a
+// try/catch -- so on 8.1+ a real query error (a schema drift, a stale
+// reference, any edge case in a specific account's own data) throws
+// straight past every one of those guards and fatals the whole request
+// instead of gracefully degrading the way the code clearly intends.
+// Confirmed as the likely cause of reports like "missions won't load" /
+// "the Realms Manage button is dead" for specific long-standing accounts:
+// a fatal partway through page render truncates the response before the
+// script tags defining the page's own JS functions are ever sent, so
+// buttons that render fine end up with no handler bound to them at all.
+// Restoring the legacy behavior here (once, platform-wide) is the correct
+// fix rather than adding try/catch at every one of hundreds of call
+// sites -- MYSQLI_REPORT_OFF is what mysqli defaulted to before 8.1, and
+// what this codebase's own error-handling style has always assumed.
+mysqli_report(MYSQLI_REPORT_OFF);
+
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 // Check connection
