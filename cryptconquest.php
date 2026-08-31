@@ -215,23 +215,33 @@ include 'header.php';
 	border: 2px solid rgba(255,255,255,.12); box-sizing: border-box; overflow: hidden;
 	transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
-/* Keeps the paw's native emoji color (no filter) -- a thin, crisp white
-   OUTLINE (zero blur, eight 1px-offset copies fully surrounding the
-   glyph) rather than a soft glow, so it pops against real S2 art without
-   looking blurry. */
-.cq-card-companion-icon {
-	position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+/* Solid black paw with a thin white outline -- needs TWO stacked copies
+   of the glyph, not one. `filter` darkens an element's ENTIRE rendered
+   output uniformly, including its own text-shadow -- brightness(0) and a
+   white text-shadow on the same element would crush the shadow to black
+   too, losing the outline. So: an outline layer (white zero-blur
+   text-shadow ring, natural emoji color otherwise) sits behind a fill
+   layer (filter: brightness(0), no shadow of its own) directly on top of
+   it, at the exact same position -- the fill's black shape completely
+   covers the outline layer's own glyph, leaving only the white ring
+   peeking out around the edges. See the two <span> markup in
+   cryptconquest-render.php. */
+.cq-card-companion-icon { position: absolute; inset: 0; font-size: 1.8rem; }
+.cq-card-companion-icon .cq-paw-layer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+/* Explicit em-based box (not just position:relative) -- once its two text
+   children become position:absolute, the div itself has no in-flow
+   content left to size itself by, and would collapse to 0x0 without
+   this. em units so it still tracks .cq-corner-rank's own font-size
+   (including the mobile media query that shrinks it further down). */
+.cq-corner-rank.cq-companion-icon { position: relative; display: inline-block; width: 1em; height: 1em; }
+.cq-corner-rank.cq-companion-icon .cq-paw-layer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.cq-paw-outline {
 	text-shadow:
 		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
 		-1px  0   0 #fff,                1px  0   0 #fff,
 		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
 }
-.cq-corner-rank.cq-companion-icon {
-	text-shadow:
-		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
-		-1px  0   0 #fff,                1px  0   0 #fff,
-		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
-}
+.cq-paw-fill { filter: brightness(0); }
 .cq-card-footer { font-size: 0.62rem; opacity: 0.6; text-align: center; margin-top: 4px; text-transform: uppercase; letter-spacing: .02em; }
 .cq-card:has(.cq-card-check:checked) .cq-card-face {
 	border-color: #ffcc4d; box-shadow: 0 0 0 2px rgba(255,204,77,.3), 0 6px 16px rgba(255,204,77,.25);
