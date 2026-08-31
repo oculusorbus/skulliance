@@ -11081,8 +11081,25 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	$run['fled_last_room'] = 0; // resolving a card always clears the flee-lock
 	cryptcrawlSaveRun($conn, $run);
-	cryptcrawlPayoutCarbon($conn, $run);
-	cryptcrawlAnnounceResult($conn, $run);
+	// Payout + Discord announce are side effects, not the critical path --
+	// wrapped so neither can ever stop the caller (ajax/cryptcrawl-
+	// action.php) from reaching its render step afterward. Same fix as
+	// cryptconquestPersist() in this file: this codebase's mysqli
+	// connection never overrides PHP 8.1's default report mode
+	// (MYSQLI_REPORT_ERROR|MYSQLI_REPORT_STRICT), so a query error in
+	// either call below throws uncaught and would abort the whole request
+	// before the game-over overlay's HTML is ever generated. Logged, not
+	// silently dropped.
+	try {
+		cryptcrawlPayoutCarbon($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	}
+	try {
+		cryptcrawlAnnounceResult($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	}
 	return $run;
 }
 
@@ -11126,8 +11143,17 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 	if (!$run) return null;
 	$run['status'] = 'lost';
 	cryptcrawlSaveRun($conn, $run);
-	cryptcrawlPayoutCarbon($conn, $run);
-	cryptcrawlAnnounceResult($conn, $run);
+	// Same isolation as cryptcrawlPlayCard() above -- see its own comment.
+	try {
+		cryptcrawlPayoutCarbon($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	}
+	try {
+		cryptcrawlAnnounceResult($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	}
 	return $run;
 }
 
@@ -11755,8 +11781,30 @@ function cryptconquestAnnounceResult($conn, $run) {
 // versa).
 function cryptconquestPersist($conn, &$run) {
 	cryptconquestSaveRun($conn, $run);
-	cryptconquestPayoutCarbon($conn, $run); // no-op unless status is won/lost
-	cryptconquestAnnounceResult($conn, $run); // no-op unless status is won/lost
+	// Payout + Discord announce are side effects, not the critical path --
+	// wrapped so neither can ever stop the caller (ajax/cryptconquest-
+	// action.php) from reaching cryptconquestRenderGameArea() afterward.
+	// This codebase's mysqli connection never overrides PHP 8.1's default
+	// report mode (MYSQLI_REPORT_ERROR|MYSQLI_REPORT_STRICT, confirmed:
+	// no mysqli_report() call anywhere in the repo), so a query error in
+	// either call below throws uncaught -- which used to abort the whole
+	// request before the game-over overlay's HTML was ever generated.
+	// That's the live "loss screen sometimes doesn't show, only when
+	// logged in" symptom: a guest run skips both calls entirely via their
+	// own run_id<=0 guards, so it was never at risk -- only a real
+	// account's win/loss, which is exactly what reached this then-
+	// untested-against-the-live-DB code. Logged, not silently dropped, so
+	// a real failure here is still visible in the server error log.
+	try {
+		cryptconquestPayoutCarbon($conn, $run); // no-op unless status is won/lost
+	} catch (\Throwable $e) {
+		error_log('cryptconquestPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	}
+	try {
+		cryptconquestAnnounceResult($conn, $run); // no-op unless status is won/lost
+	} catch (\Throwable $e) {
+		error_log('cryptconquestAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	}
 }
 
 function cryptconquestDoPlay($conn, $user_id, $run_id, $indices) {
