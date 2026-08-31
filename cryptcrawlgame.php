@@ -20,9 +20,9 @@ include_once 'db.php';
 
 $cc_canonical = 'https://www.skulliance.io/staking/cryptcrawlgame.php';
 $cc_og_image  = 'https://www.skulliance.io/staking/images/cryptcrawl.png';
-$cc_title     = 'Crypt Crawl - Free Solo Dungeon Card Game | Play in Your Browser';
-$cc_desc      = 'Play Crypt Crawl free - a solo dungeon-delve card game with a 44-card deck illustrated entirely in Crypties NFT art, a Last Stand save, and a weekly CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
-$cc_short     = 'A free browser dungeon-delve card game illustrated in Crypties NFT art, with a Last Stand save and a weekly CARBON leaderboard. Play on any device - no download.';
+$cc_title     = 'Crypt Crawl - Free Solo Scoundrel-Style Dungeon Card Game | Play in Your Browser';
+$cc_desc      = 'Play Crypt Crawl free - a solo Scoundrel-style dungeon-delve card game with a 44-card deck illustrated entirely in Crypties NFT art, a Last Stand save, and a weekly CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
+$cc_short     = 'A free browser Scoundrel-style dungeon-delve card game illustrated in Crypties NFT art, with a Last Stand save and a weekly CARBON leaderboard. Play on any device - no download.';
 
 // Every Crypties NFT actually used as card art in the game -- the exact
 // same lookup cryptcrawl.php itself uses, so the marquee below can never
@@ -36,7 +36,7 @@ $cc_land_art = cryptcrawlGetCardArt($conn);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="<?php echo htmlspecialchars($cc_desc); ?>">
-<meta name="keywords" content="free card game, solo dungeon crawler, roguelike card game, browser card game, no download card game, free rogue-like game, Cardano NFT game, Crypties NFT, dungeon delve card game">
+<meta name="keywords" content="free card game, Scoundrel card game, solo dungeon crawler, roguelike card game, browser card game, no download card game, free rogue-like game, Cardano NFT game, Crypties NFT, dungeon delve card game">
 <meta name="theme-color" content="#07111d">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <link rel="canonical" href="<?php echo $cc_canonical; ?>">
@@ -66,7 +66,7 @@ $cc_land_art = cryptcrawlGetCardArt($conn);
     {
       "@type": "VideoGame",
       "name": "Crypt Crawl",
-      "alternateName": ["Crypt Crawl Card Game", "Crypt Crawl Dungeon Delve"],
+      "alternateName": ["Crypt Crawl Card Game", "Crypt Crawl Dungeon Delve", "Crypt Crawl Scoundrel"],
       "url": "<?php echo $cc_canonical; ?>",
       "image": "<?php echo $cc_og_image; ?>",
       "screenshot": "<?php echo $cc_og_image; ?>",
@@ -85,7 +85,7 @@ $cc_land_art = cryptcrawlGetCardArt($conn);
       "@type": "BreadcrumbList",
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "Skulliance", "item": "https://www.skulliance.io/" },
-        { "@type": "ListItem", "position": 2, "name": "Crypt Crawl - Free Solo Dungeon Card Game", "item": "<?php echo $cc_canonical; ?>" }
+        { "@type": "ListItem", "position": 2, "name": "Crypt Crawl - Free Solo Scoundrel-Style Dungeon Card Game", "item": "<?php echo $cc_canonical; ?>" }
       ]
     }
   ]
@@ -230,7 +230,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 		<a class="cc-shot-link" href="#" onclick="document.getElementById('cc-start-delve-form').requestSubmit(); return false;" aria-label="Play Crypt Crawl now">
 			<img class="cc-shot-land" src="/staking/images/cryptcrawl.png" alt="Crypt Crawl gameplay - a dungeon room of four cards illustrated in Crypties NFT art" loading="eager" fetchpriority="high" decoding="async">
 		</a>
-		<h1><span class="cc-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Crypt Crawl<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="cc-subtitle-land">Free Solo Dungeon Card Game</span></h1>
+		<h1><span class="cc-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Crypt Crawl<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="cc-subtitle-land">Free Solo Scoundrel-Style Dungeon Card Game</span></h1>
 		<p class="cc-lead">Delve a 44-card crypt deck alone - weapons that wear down, medkits that diminish, monsters that hit back, and one guaranteed Last Stand when it matters most. Every card is a real Crypties NFT. No download, no signup - just play.</p>
 		<form method="post" action="cryptcrawl.php" id="cc-start-delve-form"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-cta">💀 Start Delve</button>
@@ -367,7 +367,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 	</section>
 
 	<footer class="cc-footer">
-		<p>&copy; Skulliance &middot; Crypt Crawl is a free browser-based solo dungeon-delve card game. <a href="https://www.skulliance.io/">Visit Skulliance</a></p>
+		<p>&copy; Skulliance &middot; Crypt Crawl is a free browser-based solo Scoundrel-style dungeon-delve card game. <a href="https://www.skulliance.io/">Visit Skulliance</a></p>
 	</footer>
 </div>
 </div>

@@ -10,7 +10,7 @@ Skulliance is home to a growing suite of games that turn your NFT collections in
 | [[games-boss-battles]] | Co-op boss encounters | Weekly | CLAW + CARBON |
 | [[games-skull-swap]] | Match-3 score chase | Weekly | CARBON |
 | [[games-gauntlets]] | NFT roguelike | Weekly | CARBON |
-| [[games-cryptcrawl]] | Solo dungeon-delve card game | Weekly | CARBON |
+| [[games-cryptcrawl]] | Solo Scoundrel-style card game | Weekly | CARBON |
 | [[games-cryptconquest]] | Solo Regicide-style card game | Monthly | CARBON |
 
 ## External Games

@@ -613,10 +613,10 @@
             <a class="hp-cta" href="https://www.skulliance.io/staking/skullswap.php">Play Skull Swap</a>
           </div>
           <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/cryptcrawlgame.php" aria-label="Play Crypt Crawl, the free solo dungeon card game">
+            <a class="hp-game-art" href="https://www.skulliance.io/staking/cryptcrawlgame.php" aria-label="Play Crypt Crawl, the free solo Scoundrel-style card game">
               <img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl dungeon-delve card game board" loading="lazy" decoding="async">
             </a>
-            <h3>Crypt Crawl - Dungeon Card Game</h3>
+            <h3>Crypt Crawl - Scoundrel-Style Card Game</h3>
             <p>Delve a 44-card crypt deck illustrated entirely in Crypties NFT art - weapons that wear down, medkits that diminish, and one guaranteed Last Stand when it matters most.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/cryptcrawlgame.php">Play Crypt Crawl</a>
           </div>
