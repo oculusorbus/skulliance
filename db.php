@@ -10977,6 +10977,38 @@ function cryptcrawlStartRun($conn, $user_id) {
 	$room_json = json_encode(array_values($room));
 
 	if ($user_id > 0) {
+		// ONE active run per player, always. This guard is the fix for the
+		// long-running "the loss screen doesn't show / it restarted my game"
+		// bug -- reproduced deterministically 2026-08-31, see
+		// cryptcrawl-loss-screen-bug.md.
+		//
+		// This INSERT used to be unconditional, so a player could end up with
+		// SEVERAL rows at status='active' at once. That was trivially easy to
+		// hit by accident: cryptcrawlgame.php's "Start Delve" POSTs start_run
+		// unconditionally, and that page is the Play-menu nav link -- so
+		// simply navigating to Crypt Crawl through the menu while a delve was
+		// already in progress silently created a duplicate active row.
+		//
+		// cryptcrawlGetActiveRun() returns the NEWEST active row
+		// (ORDER BY id DESC LIMIT 1), so the older one just went invisible --
+		// until the newer run ENDED. At that moment the orphan resurfaced as
+		// "the active run", so cryptcrawlRenderGameArea() computed
+		// state='active' and rendered a live board INSTEAD of the game-over
+		// screen. The player saw their delve end and get replaced by a
+		// different, often untouched (HP 20/20, 0 crypts) board -- which
+		// reads exactly like "it skipped the loss screen and restarted the
+		// game" -- and it kept happening on every subsequent death, because
+		// the orphan stayed active indefinitely.
+		//
+		// Resuming rather than replacing: an in-progress delve is real player
+		// progress, and "Start Delve" is a nav link that's easy to hit by
+		// accident, so silently discarding (or worse, recording a loss for)
+		// that run would be the wrong trade. A player who genuinely wants a
+		// fresh delve still has Abandon Run, which is the explicit,
+		// already-existing way to end one.
+		$existing = cryptcrawlGetActiveRun($conn, $user_id);
+		if ($existing) return intval($existing['id']);
+
 		$deck_esc = $conn->real_escape_string($deck_json);
 		$room_esc = $conn->real_escape_string($room_json);
 		$conn->query("

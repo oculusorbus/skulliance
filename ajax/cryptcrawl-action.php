@@ -65,13 +65,26 @@ header('Content-Type: text/html; charset=utf-8');
 // far they got no matter what else fails. If the render fails on an
 // action that DIDN'T end the delve, there's no safe minimal fallback for
 // mid-game board state, so this re-throws.
-try {
+if ($ended_run && in_array($ended_run['status'] ?? '', ['won', 'lost'], true)) {
+	// THIS REQUEST ENDED A DELVE -> the player sees THAT delve's result,
+	// full stop. Deliberately does NOT go through cryptcrawlRenderGameArea(),
+	// because that function decides what to show by asking "does this player
+	// have any active run?" -- and answers with a live board if one exists.
+	// That's the wrong question at this exact moment: the run the player was
+	// just playing has ended, and its result is the only correct thing to
+	// show, whatever else happens to be sitting in the table.
+	//
+	// The duplicate-active-run bug that made this matter is fixed at the
+	// source in cryptcrawlStartRun() (see its comment). This is the second
+	// half of that fix: accounts that ALREADY accumulated orphaned active
+	// rows before the guard existed would otherwise keep hitting the old
+	// symptom on every death until each orphan was played out. Rendering the
+	// just-ended run's own result heals that immediately, without rewriting
+	// anyone's run history or inventing losses they didn't earn.
+	$_SESSION['cryptcrawl_flash'] = []; // drained, same as the normal render does
+	cryptcrawlMinimalGameOverHtml($ended_run, $user_id);
+} else {
+	// Ordinary mid-delve action. No safe minimal fallback exists for live
+	// board state, so a genuine render failure still propagates.
 	cryptcrawlRenderGameArea($conn, $user_id);
-} catch (\Throwable $e) {
-	if ($ended_run && in_array($ended_run['status'] ?? '', ['won', 'lost'], true)) {
-		error_log('cryptcrawlRenderGameArea failed after a delve ended, falling back to minimal game-over: ' . $e->getMessage());
-		cryptcrawlMinimalGameOverHtml($ended_run, $user_id);
-	} else {
-		throw $e;
-	}
 }

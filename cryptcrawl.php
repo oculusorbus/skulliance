@@ -888,6 +888,43 @@ try {
 					gameArea.innerHTML = '';
 					gameArea.style.display = 'none';
 					resultOverlay.style.display = '';
+					// TAP-GUARD THE RESULT SCREEN. This is the actual cause of
+					// the long-running "loss screen doesn't show" bug --
+					// reproduced live 2026-08-31, see
+					// cryptcrawl-loss-screen-bug.md.
+					//
+					// Every ORDINARY action ends in lockGameAreaBriefly(), which
+					// makes the freshly-rendered board untappable for 400ms so a
+					// rapid repeated tap can't land on whatever just appeared
+					// under the player's finger. The game-ending path returns
+					// early (below) and never called it -- so the single most
+					// important screen in the game was the ONLY one with no tap
+					// guard at all. lockGameAreaBriefly() wouldn't have helped
+					// here either: it locks gameArea, which by this point is
+					// empty and display:none, while the result (and its "Delve
+					// Again" button) lives in resultOverlay.
+					//
+					// "Delve Again" is deliberately outside gameArea so the
+					// delegated submit listener ignores it (see resultOverlay's
+					// declaration) -- which means it is a raw, real POST
+					// navigation that immediately starts a NEW delve. A tap
+					// already in flight from fighting fast (exactly how a player
+					// dies) landed on it the instant the overlay appeared: the
+					// browser navigated, the loss screen was destroyed before it
+					// could be read, and the player landed in a fresh HP 20/20
+					// run. Confirmed live: after a failed-to-show loss, the page
+					// had navCount=1 (a real document load) with HP 20/20 and 0
+					// crypts cleared -- an unmistakable start_run, not a render
+					// failure. That is why every server-side fix in this saga
+					// changed nothing: the server was always sending the right
+					// HTML, and the client was throwing it away.
+					//
+					// 700ms rather than lockGameAreaBriefly()'s 400ms: this is
+					// the highest-stakes moment in the game and the action being
+					// guarded discards the result outright. Imperceptible on a
+					// deliberate click, decisive against an in-flight tap.
+					resultOverlay.style.pointerEvents = 'none';
+					setTimeout(function() { resultOverlay.style.pointerEvents = ''; }, 700);
 					// The win/loss screen is genuinely on screen now -- vanilla
 					// synchronous DOM writes above, nothing left to wait on for
 					// that part. CARBON payout + the Discord announce happen in
