@@ -8,9 +8,23 @@
 // rebuilding the ambient <audio> element every time, audibly stuttering the
 // music player. cryptcrawl.php itself keeps its old POST-and-redirect
 // handling too, as the no-JS fallback — see the comment there.
+//
+// Deliberately does NOTHING beyond the game logic, the save, and the
+// render -- no CARBON payout, no Discord announce, nothing slow. Three
+// different attempts at keeping that work in THIS request (queued and
+// deferred past fastcgi_finish_request(); X-Accel-Buffering + an explicit
+// flush() as a portable fallback) all failed to get the response to the
+// browser before the slow work finished, in production, on a PWA -- most
+// likely a CDN/proxy in front of this server buffers the full origin
+// response regardless of anything the origin does. The only fix that
+// doesn't depend on guessing right about server/CDN internals: this
+// request no longer has any slow work in it AT ALL. cryptcrawl.php's own
+// JS fires a completely separate, fire-and-forget request to
+// ajax/cryptcrawl-finalize.php for the CARBON/Discord side of things, and
+// only AFTER the win/loss screen is already on screen.
 include_once '../db.php';
-include '../message.php'; // pulled in for cryptcrawlAnnounceResult()'s Discord post (discordmsg(), via verify.php below)
-include '../verify.php';  // also pulls in webhooks.php/Bech32.php -- same include cryptcrawl.php itself uses, for the same reason
+include '../message.php';
+include '../verify.php';
 include_once '../cryptcrawl-actions.php';
 include_once '../cryptcrawl-render.php';
 
@@ -39,37 +53,18 @@ if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
 // $ended_run is null unless this exact action just won/lost/abandoned a
 // delve (see cryptcrawlHandleAction()'s own return-value comment) --
 // already-known, zero-further-query data used below as a guaranteed
-// fallback if the real render throws. Nothing about the fallback depends
-// on anything that happened inside cryptcrawlHandleAction() beyond this
-// return value, so it's just as reliable as the action itself succeeding.
+// fallback if the real render throws.
 $ended_run = cryptcrawlHandleAction($conn, $user_id, $_POST);
 
 header('Content-Type: text/html; charset=utf-8');
-// Tell nginx not to buffer this response -- same header missions.php's own
-// loading spinner already relies on to flush early in production, proven
-// working on this exact server/hosting setup. Needed regardless of
-// fastcgi_finish_request() below: if this server isn't actually running
-// PHP-FPM (or it's disabled for some other reason), fastcgi_finish_request
-// silently does nothing and the whole request -- including the CARBON
-// payout queries and the Discord webhook POST, which has its own 8-second
-// timeout -- runs to completion BEFORE any response reaches the browser,
-// which is indistinguishable from "the loss screen is broken" even though
-// the server eventually sends a perfectly correct response. Confirmed this
-// was happening live: Discord notifications were firing (proof the whole
-// request, deferred side effects included, was running end-to-end) while
-// the client still saw nothing -- meaning the earlier fastcgi_finish_request
-// deferral wasn't actually taking effect on this server.
-header('X-Accel-Buffering: no');
 // The real render can fail for reasons that have nothing to do with the
 // delve actually ending (a fresh DB re-read glitching, art lookups,
-// anything else added here later) -- reported live: the win/loss screen
-// went missing on a PWA mid-recording despite the delve genuinely having
-// ended. If that happens on a run that DID just end, fall back to the
-// guaranteed-minimal confirmation instead of leaving the response broken;
-// the player sees "you died"/"you escaped" and how far they got no matter
-// what else fails. If the render fails on an action that DIDN'T end the
-// delve, there's no safe minimal fallback for mid-game board state, so
-// this re-throws -- that's not the failure mode being guarded against here.
+// anything else added here later). If that happens on a run that DID just
+// end, fall back to the guaranteed-minimal confirmation instead of leaving
+// the response broken -- the player sees "you died"/"you escaped" and how
+// far they got no matter what else fails. If the render fails on an
+// action that DIDN'T end the delve, there's no safe minimal fallback for
+// mid-game board state, so this re-throws.
 try {
 	cryptcrawlRenderGameArea($conn, $user_id);
 } catch (\Throwable $e) {
@@ -80,26 +75,3 @@ try {
 		throw $e;
 	}
 }
-
-// Send the response now; run CARBON payout + Discord announce (queued by
-// cryptcrawlPlayCard()/cryptcrawlAbandonRun() above, if this action ended
-// a delve) afterward, off the client's critical path -- see
-// cryptcrawlFlushPendingSideEffects() in db.php for why, and
-// ajax/cryptconquest-action.php's own copy of this comment for the full
-// rationale (same fix, same shape, both games) including why
-// session_write_close() has to come first.
-session_write_close();
-// Let payout/announce actually finish even if the client navigates away or
-// closes the tab right after getting its response (which is the whole
-// point -- the player doesn't need to keep the connection open for any of
-// this anymore).
-ignore_user_abort(true);
-if (function_exists('fastcgi_finish_request')) {
-	fastcgi_finish_request();
-} else {
-	// Portable fallback for non-FPM SAPIs -- the exact technique
-	// missions.php's own loader already uses successfully in production.
-	if (ob_get_level() > 0) { @ob_end_flush(); }
-	flush();
-}
-cryptcrawlFlushPendingSideEffects($conn);

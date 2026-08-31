@@ -11183,6 +11183,60 @@ function cryptcrawlFlushPendingSideEffects($conn) {
 	}
 }
 
+// Called from ajax/cryptcrawl-finalize.php -- a genuinely SEPARATE HTTP
+// request the client fires only after it has already displayed the win/
+// loss screen (see cryptcrawl.php's own JS), not something
+// ajax/cryptcrawl-action.php calls itself anymore. This exists because
+// three different attempts at making one single request both "answer
+// fast" and "still do the slow stuff" all failed in production (tried:
+// deferring the slow work after fastcgi_finish_request(); tried adding
+// X-Accel-Buffering + an explicit flush() as a portable fallback) -- the
+// most likely explanation is a CDN/proxy in front of this server buffers
+// the full origin response before relaying it, which no amount of
+// origin-side flushing can work around. The only way to GUARANTEE the
+// browser has the result before the slow work even starts is to make the
+// slow work happen in a request the browser was never waiting on in the
+// first place.
+//
+// Idempotency: since this is now reachable as its own request (a flaky
+// connection or an accidental double-fire could call it twice for the
+// same run), $_SESSION['cryptcrawl_finalized_runs'][$run_id] guards
+// against paying out twice. Deliberately session-based rather than a new
+// DB column -- this isn't a payments system, a same-browser-session guard
+// against accidental duplicate calls is proportionate, and it ships
+// without needing a migration (nothing here can hand a migration to the
+// user and wait on it while this bug is live). $conn, not $GLOBALS -- this
+// runs in a fresh request with none of ajax/cryptcrawl-action.php's
+// in-memory state, so it re-fetches the run from the DB itself rather
+// than trusting anything the client claims about it.
+function cryptcrawlFinalizeRun($conn, $user_id, $run_id) {
+	$run_id = intval($run_id);
+	$user_id = intval($user_id);
+	if ($run_id <= 0 || $user_id <= 0) return;
+	if (!empty($_SESSION['cryptcrawl_finalized_runs'][$run_id])) return;
+
+	$result = $conn->query("SELECT * FROM cryptcrawls WHERE id = $run_id AND user_id = $user_id LIMIT 1");
+	if (!$result || !$result->num_rows) return;
+	$run = $result->fetch_assoc();
+	if (!in_array($run['status'], ['won', 'lost'], true)) return;
+
+	try {
+		cryptcrawlPayoutCarbon($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlPayoutCarbon failed in cryptcrawlFinalizeRun for run ' . $run_id . ': ' . $e->getMessage());
+	}
+	try {
+		cryptcrawlAnnounceResult($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlAnnounceResult failed in cryptcrawlFinalizeRun for run ' . $run_id . ': ' . $e->getMessage());
+	}
+	// Marked consumed even if one of the calls above failed -- retrying
+	// forever isn't the goal here (both are already individually error-
+	// logged), and re-attempting on every subsequent page load/action
+	// would be worse than a rare missed announce/payout going unnoticed.
+	$_SESSION['cryptcrawl_finalized_runs'][$run_id] = true;
+}
+
 // Credits the CARBON a run accumulated (10x the rank of every card resolved,
 // win or lose -- see cryptcrawlPlayCard) the moment the run actually ends.
 // Called from both a natural completion and cryptcrawlAbandonRun; guarded on

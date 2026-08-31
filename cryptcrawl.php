@@ -52,24 +52,16 @@ if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
 // single action, audibly stuttering the ambient music player.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	cryptcrawlHandleAction($conn, $user_id, $_POST);
-	header('Location: cryptcrawl.php');
-	header('X-Accel-Buffering: no'); // see ajax/cryptcrawl-action.php's own comment on this header
-	// Same deferral as ajax/cryptcrawl-action.php -- flush the redirect to
-	// the client, then run CARBON payout/Discord announce in the
-	// background rather than making a no-JS visitor's browser wait on
-	// them before the redirect even fires. See
-	// cryptcrawlFlushPendingSideEffects() in db.php, and
-	// ajax/cryptconquest-action.php for why session_write_close() has to
-	// come first.
-	session_write_close();
-	ignore_user_abort(true);
-	if (function_exists('fastcgi_finish_request')) {
-		fastcgi_finish_request();
-	} else {
-		if (ob_get_level() > 0) { @ob_end_flush(); }
-		flush();
-	}
+	// No-JS visitor, a real page navigation either way -- unlike
+	// ajax/cryptcrawl-action.php's fetch() (which a user can watch sit
+	// there with nothing happening), a redirect+reload has its own
+	// browser-native loading state, so there's no "looks stuck" risk in
+	// just running CARBON payout/Discord announce inline before it fires.
+	// See cryptcrawlFlushPendingSideEffects() in db.php -- still needed
+	// here since cryptcrawlPersist() queues rather than pays out inline
+	// regardless of caller.
 	cryptcrawlFlushPendingSideEffects($conn);
+	header('Location: cryptcrawl.php');
 	exit;
 }
 
@@ -479,6 +471,24 @@ include 'header.php';
      based on #cc-mood's data-theme-* attributes, applied by
      applyThemeState() in the script block below. -->
 <div class="cc-theme-bg" id="cc-theme-bg">
+<?php
+// Safety net for the rare case the fire-and-forget finalize fetch (see the
+// AJAX swap handler's script block, further down) never actually reaches
+// the server -- e.g. truly instant tab close despite keepalive:true.
+// Idempotent (cryptcrawlFinalizeRun()'s own session-based guard) and cheap
+// insurance run on every normal page load, not just this specific
+// scenario -- try/catch since a page load must never break over this.
+if ($user_id > 0) {
+	try {
+		$__cc_recent = cryptcrawlGetMostRecentRun($conn, $user_id);
+		if ($__cc_recent && in_array($__cc_recent['status'] ?? '', ['won', 'lost'], true)) {
+			cryptcrawlFinalizeRun($conn, $user_id, intval($__cc_recent['id']));
+		}
+	} catch (\Throwable $e) {
+		error_log('cryptcrawlFinalizeRun safety-net call failed: ' . $e->getMessage());
+	}
+}
+?>
 <div id="cc-game-area"><?php
 // Full-page-load context, unlike ajax/cryptcrawl-action.php's own fragment
 // response -- a real exception here would fatal everything after this
@@ -874,6 +884,29 @@ try {
 					gameArea.innerHTML = '';
 					gameArea.style.display = 'none';
 					resultOverlay.style.display = '';
+					// The win/loss screen is genuinely on screen now -- vanilla
+					// synchronous DOM writes above, nothing left to wait on for
+					// that part. CARBON payout + the Discord announce happen in
+					// a completely separate, fire-and-forget request fired only
+					// from here, never before -- ajax/cryptcrawl-action.php
+					// (the request that just resolved, above) no longer does
+					// any of that itself. See ajax/cryptcrawl-finalize.php's
+					// own comment for the full story: three earlier attempts at
+					// keeping this in the same request/response all failed to
+					// actually get the result to the browser first in
+					// production. Not awaited on purpose -- the player never
+					// needs to wait on this succeeding, and doesn't need to
+					// know if it fails (server-side error_log covers that).
+					var resultEl = resultOverlay.querySelector('.cc-result');
+					var runId = resultEl ? resultEl.getAttribute('data-run-id') : null;
+					if (runId && runId !== '0') {
+						// keepalive: true -- this request must survive even if
+						// the player closes the tab/app right after seeing the
+						// result (the whole reason this is fire-and-forget in
+						// the first place). Without it, a browser can abort an
+						// in-flight fetch on page unload.
+						fetch('ajax/cryptcrawl-finalize.php', { method: 'POST', body: new URLSearchParams({ run_id: runId }), keepalive: true }).catch(function() {});
+					}
 					initGameArea();
 					busy = false;
 					return;
