@@ -116,13 +116,30 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// non-overlapping slices of it); Animal Companion cards draw from
 	// Season 2 specifically, since S2's actual subject matter is animals
 	// -- see cryptconquestGetCardArtPools()'s own comment in db.php.
-	// Guarded on $conn so a null-$conn test harness (no live DB) degrades
-	// to plain card faces everywhere instead of fataling -- production
-	// always has a real $conn.
-	$art_pools = $conn ? cryptconquestGetCardArtPools($conn) : ['enemy' => [], 'player' => [], 'companion' => []];
-	$enemy_art_pool = $art_pools['enemy'];
-	$player_art_pool = $art_pools['player'];
-	$companion_art_pool = $art_pools['companion'];
+	// Only fetched for the 'active' state -- the only place any of these
+	// three pools actually get used (hand cards, the enemy badge); the
+	// game_over screen shows none of it. This used to run unconditionally
+	// for every render including game_over -- three extra queries plus
+	// IPFS URL resolution, all wasted, and each one a chance for the very
+	// screen a player needs most reliably (the win/loss result) to fail
+	// for a reason that has nothing to do with it. Also try/catch-wrapped
+	// now regardless of state: a real query error here (or anywhere else
+	// in this function) must never take down the whole render -- see the
+	// try/catch wrapper around this function's real body, further down.
+	$enemy_art_pool = []; $player_art_pool = []; $companion_art_pool = [];
+	if ($state === 'active' && $conn) {
+		try {
+			$art_pools = cryptconquestGetCardArtPools($conn);
+			$enemy_art_pool = $art_pools['enemy'];
+			$player_art_pool = $art_pools['player'];
+			$companion_art_pool = $art_pools['companion'];
+		} catch (\Throwable $e) {
+			error_log('cryptconquestGetCardArtPools failed: ' . $e->getMessage());
+			// Falls through to plain card faces (no art) -- every card face
+			// already has an onerror handler for a 404'd <img>, this is the
+			// same graceful-degradation path, just triggered earlier.
+		}
+	}
 
 	// Enemy/hand computed here (not down in the 'active' render branch,
 	// even though that's the only place they're displayed) since the mood

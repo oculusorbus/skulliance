@@ -474,7 +474,30 @@ include 'header.php';
      based on #cc-mood's data-theme-* attributes, applied by
      applyThemeState() in the script block below. -->
 <div class="cc-theme-bg" id="cc-theme-bg">
-<div id="cc-game-area"><?php cryptcrawlRenderGameArea($conn, $user_id); ?></div>
+<div id="cc-game-area"><?php
+// Full-page-load context, unlike ajax/cryptcrawl-action.php's own fragment
+// response -- a real exception here would fatal everything after this
+// point in the page (the closing markup, every script tag), not just this
+// one div. Same guarantee, adapted for having no in-memory $run to fall
+// back on (a fresh GET has none): try the minimal confirmation off a
+// fresh, much simpler re-fetch, and if even THAT fails, a plain message
+// beats a broken page.
+try {
+	cryptcrawlRenderGameArea($conn, $user_id);
+} catch (\Throwable $e) {
+	error_log('cryptcrawlRenderGameArea failed on full page load: ' . $e->getMessage());
+	try {
+		$fallback_run = cryptcrawlGetMostRecentRun($conn, $user_id);
+		if ($fallback_run && in_array($fallback_run['status'] ?? '', ['won', 'lost'], true)) {
+			cryptcrawlMinimalGameOverHtml($fallback_run, $user_id);
+		} else {
+			echo '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Something went wrong loading your delve. <a href="cryptcrawl.php" style="color:#00c8a0;">Try reloading</a>.</p>';
+		}
+	} catch (\Throwable $e2) {
+		echo '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Something went wrong loading your delve. <a href="cryptcrawl.php" style="color:#00c8a0;">Try reloading</a>.</p>';
+	}
+}
+?></div>
 <!-- Permanent, hidden sibling of #cc-game-area -- added 2026-08-30, replacing
      an earlier approach that forced a real page navigation on a win/loss
      specifically to guarantee the result could never be raced past by a

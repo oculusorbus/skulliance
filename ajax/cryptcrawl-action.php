@@ -36,10 +36,35 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
-cryptcrawlHandleAction($conn, $user_id, $_POST);
+// $ended_run is null unless this exact action just won/lost/abandoned a
+// delve (see cryptcrawlHandleAction()'s own return-value comment) --
+// already-known, zero-further-query data used below as a guaranteed
+// fallback if the real render throws. Nothing about the fallback depends
+// on anything that happened inside cryptcrawlHandleAction() beyond this
+// return value, so it's just as reliable as the action itself succeeding.
+$ended_run = cryptcrawlHandleAction($conn, $user_id, $_POST);
 
 header('Content-Type: text/html; charset=utf-8');
-cryptcrawlRenderGameArea($conn, $user_id);
+// The real render can fail for reasons that have nothing to do with the
+// delve actually ending (a fresh DB re-read glitching, art lookups,
+// anything else added here later) -- reported live: the win/loss screen
+// went missing on a PWA mid-recording despite the delve genuinely having
+// ended. If that happens on a run that DID just end, fall back to the
+// guaranteed-minimal confirmation instead of leaving the response broken;
+// the player sees "you died"/"you escaped" and how far they got no matter
+// what else fails. If the render fails on an action that DIDN'T end the
+// delve, there's no safe minimal fallback for mid-game board state, so
+// this re-throws -- that's not the failure mode being guarded against here.
+try {
+	cryptcrawlRenderGameArea($conn, $user_id);
+} catch (\Throwable $e) {
+	if ($ended_run && in_array($ended_run['status'] ?? '', ['won', 'lost'], true)) {
+		error_log('cryptcrawlRenderGameArea failed after a delve ended, falling back to minimal game-over: ' . $e->getMessage());
+		cryptcrawlMinimalGameOverHtml($ended_run, $user_id);
+	} else {
+		throw $e;
+	}
+}
 
 // Send the response now; run CARBON payout + Discord announce (queued by
 // cryptcrawlPlayCard()/cryptcrawlAbandonRun() above, if this action ended

@@ -63,6 +63,58 @@
 	<?php } ?>
 
 <?php
+// Guaranteed-minimal game-over confirmation -- built ENTIRELY from the
+// $run already sitting in memory the moment an action ends a delve
+// (cryptcrawlPlayCard()/cryptcrawlAbandonRun()'s own return value), with
+// zero DB queries and zero dependency on anything that could fail: no
+// fresh cryptcrawlGetMostRecentRun() re-fetch, no art, nothing. This is
+// the fallback ajax/cryptcrawl-action.php (and cryptcrawl.php's own no-JS
+// POST handler) reach for when the real cryptcrawlRenderGameArea() call
+// throws for any reason -- added directly in response to a live report:
+// the win/loss screen went missing on a PWA mid-recording, again, despite
+// the earlier fix that isolated CARBON payout/Discord announce from the
+// render step. That fix stopped a slow/failing SIDE EFFECT from blocking
+// the response; it did nothing about the render itself failing. This
+// closes that gap: whatever else breaks -- CARBON, Discord, art, a fresh
+// DB read glitching -- the player still sees "you died" or "you escaped"
+// and how far they got, because none of that is needed to know it.
+// Same markup shape as the real game_over branch below (.cc-result,
+// #cc-mood) so it's visually identical and the client's existing
+// dedup-#cc-mood fix (see the "empty gameArea, not just hide it" comment
+// in cryptcrawl.php) still applies unchanged.
+function cryptcrawlMinimalGameOverHtml($run, $user_id) {
+	$fell = ($run['status'] === 'lost');
+	$mood = $fell ? 'death' : 'triumph';
+	$theme_active = $fell ? '1' : '0';
+	$theme_img = $fell ? "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg')" : '';
+	$carbon_earned = intval($run['carbon_earned'] ?? 0);
+	?>
+	<div id="cc-mood" data-mood="<?php echo $mood; ?>" data-restarted="0" data-theme-active="<?php echo $theme_active; ?>" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>" style="display:none;"></div>
+	<div class="cc-inner">
+		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>">
+			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
+			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
+			<div class="cc-result-sub">
+				<?php echo intval($run['rooms_cleared'] ?? 0); ?> crypts cleared
+				<?php if (!$fell): ?> &middot; <?php echo intval($run['hp'] ?? 0); ?> HP remaining<?php endif; ?>
+			</div>
+			<?php if (intval($user_id) > 0 && $carbon_earned > 0): ?>
+				<div class="cc-result-carbon">
+					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
+					+<?php echo number_format($carbon_earned); ?> CARBON earned
+				</div>
+			<?php endif; ?>
+		</div>
+		<form method="post"><input type="hidden" name="action" value="start_run">
+			<button type="submit" class="cc-btn">💀 Delve Again</button>
+		</form>
+		<?php if ($fell): ?>
+		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
 // Renders the entire swappable game area -- flash modal, and whichever of
 // no_run/game_over/active applies -- for the given user. Echoes directly
 // (matches the established convention here, same as cryptcrawlRulesHtml()
