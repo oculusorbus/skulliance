@@ -7,7 +7,10 @@
 
   <!-- PWA -->
   <link rel="manifest" href="/staking/manifest.webmanifest">
-  <meta name="app-version" content="<?php echo @filemtime(__FILE__) ?: time(); ?>">
+  <!-- Same VERSION-file mtime signal version.php serves -- see that file's
+       own comment. Was filemtime(__FILE__) (header.php's own mtime), which
+       missed any push that didn't happen to touch header.php itself. -->
+  <meta name="app-version" content="<?php echo @filemtime(__DIR__ . '/VERSION') ?: time(); ?>">
   <meta name="theme-color" content="#161616">
   <meta name="application-name" content="Skulliance">
   <meta name="apple-mobile-web-app-capable" content="yes">
