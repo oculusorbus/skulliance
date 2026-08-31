@@ -199,7 +199,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 						<?php if (intval($enemy['shield']) > 0): ?>
 							<span class="cq-shield">🛡️ -<?php echo intval($enemy['shield']); ?></span>
 						<?php endif; ?>
-						<span class="cq-attack">⚔️ <?php echo $enemy_attack_after_shield; ?> atk<?php echo $enemy_attack_after_shield < $enemy_stats['attack'] ? ' (shielded)' : ''; ?></span>
+						<span class="cq-attack">⚔️ <?php echo $enemy_attack_after_shield; ?> attack<?php echo $enemy_attack_after_shield < $enemy_stats['attack'] ? ' (shielded)' : ''; ?></span>
 					</div>
 				</div>
 			</div>
