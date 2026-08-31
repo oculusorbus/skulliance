@@ -296,7 +296,7 @@ function cryptconquestYield(&$run) {
 // A short selection that isn't the whole hand is just rejected as a mistake
 // (not a loss) so the UI can safely let a player under-select and retry.
 // Only a whole-hand selection that still doesn't cover it can trigger
-// Last Rally (once per run) or the loss -- see cryptconquest.md §4b.
+// Last Stand (once per run) or the loss -- see cryptconquest.md §4b.
 function cryptconquestSufferDamage(&$run, $indices) {
 	if ($run['phase'] !== 'suffer') return ['ok' => false, 'error' => "Nothing to cover right now."];
 	$attack = intval($run['pending_attack']);
@@ -322,14 +322,14 @@ function cryptconquestSufferDamage(&$run, $indices) {
 		if (!$isWholeHand) {
 			return ['ok' => false, 'error' => "That only covers $chosenTotal of the $attack damage -- discard more, or your whole hand if you can't reach it."];
 		}
-		// Whole hand discarded and still short -- Last Rally, or the run ends.
+		// Whole hand discarded and still short -- Last Stand, or the run ends.
 		rsort($indices);
 		foreach ($indices as $i) { $run['discard'][] = $run['hand'][$i]; array_splice($run['hand'], $i, 1); }
 		if (intval($run['last_rally_used']) === 0) {
 			$run['last_rally_used'] = 1;
 			$run['phase'] = 'play';
 			$run['pending_attack'] = 0;
-			$run['log'] = ["LAST RALLY! Only $handTotal of $attack damage covered -- you refuse to fall. (once per run)"];
+			$run['log'] = ["LAST STAND! Only $handTotal of $attack damage covered -- you refuse to fall. (once per run)"];
 			return ['ok' => true, 'died' => false, 'rallied' => true];
 		}
 		$run['status'] = 'lost';
@@ -361,7 +361,7 @@ function cryptconquestFlipJester(&$run) {
 	return ['ok' => true];
 }
 
-// Solo win tier, keyed off Jesters flipped (Last Rally firing doesn't
+// Solo win tier, keyed off Jesters flipped (Last Stand firing doesn't
 // affect it) -- see cryptconquest.md §4b for the renaming rationale.
 function cryptconquestTier($run) {
 	switch (intval($run['jesters_used'])) {

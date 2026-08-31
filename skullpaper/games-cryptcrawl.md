@@ -22,6 +22,15 @@ Four cards face up at a time:
 * **Use a medkit** and heal by its rank. The first one you use in a crypt heals in full; any more after that in the *same* crypt still heal, just for **half** (rounded down, minimum 1) - so hoarding several in one crypt is never a total waste, just a worse trade than spacing them out.
 * **Flee** a crypt you haven't touched yet (not twice in a row) to reshuffle all 4 cards back into the deck and draw a fresh crypt.
 
+## Strategy Tips
+
+Wisdom distilled from the game's own Discord community, not just house-written:
+
+* **Save your weapon for the fight that needs it.** It only degrades further once you use it - a fresh weapon spent on a weak enemy is a wasted edge later.
+* **Don't burn every medkit in one crypt.** Only the first heals in full; spacing them across crypts is worth more than hoarding them into one.
+* **Take out tough enemies while you still can.** Avoiding a dangerous Club or Spade doesn't make it go away - it's still in the deck, waiting for a moment when you're weaker. Clear it while you can actually afford to.
+* **Fighting bare-handed on purpose is a real move.** Taking the HP hit instead of spending your weapon on an enemy it could still beat isn't a mistake - it keeps your weapon's shrinking range open for something worse.
+
 ## Last Stand
 
 The **first hit that would take you to 0 HP** in a delve doesn't - it leaves you standing at **1 HP** instead. This happens automatically, once per delve, whether you're fighting bare-handed or with a weapon. It's the one guaranteed save for a genuinely bad stretch (weapon worn out, flee already spent, a run of big enemies back to back) - after that one save, the next lethal hit ends the delve for real.

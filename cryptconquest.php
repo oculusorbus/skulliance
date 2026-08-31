@@ -159,7 +159,18 @@ include 'header.php';
 .cq-instructions-close { margin-top: 16px; width: 100%; }
 
 .cq-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
-.cq-rules-tips { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; gap: 8px; }
+/* Rules broken into labeled sections instead of one prose block -- direct
+   feedback that a wall of text made separate ideas hard to tell apart.
+   Section label is a small uppercase tag, not a full heading -- this
+   renders inside both the no_run intro screen and the instructions
+   modal, neither of which should feel like a wiki page. */
+.cq-rules-section { margin-bottom: 16px; }
+.cq-rules-section:last-child { margin-bottom: 0; }
+.cq-rules-section p { margin: 0; }
+.cq-rules-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #ffcc4d; opacity: 0.9; margin-bottom: 6px; }
+.cq-rules-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.cq-rules-list li { padding-left: 2px; }
+.cq-rules-tips { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .cq-rules-tips li { font-size: 0.8rem; line-height: 1.5; opacity: 0.95; padding: 8px 10px; background: rgba(0,200,160,.08); border-left: 3px solid #00c8a0; border-radius: 6px; }
 .cq-rules-tips li strong { color: #34e3bb; }
 .cq-note { font-size: 0.68rem; opacity: 0.5; margin: 8px 0 16px; }
@@ -850,7 +861,7 @@ include 'header.php';
 			if (!mood || mood === currentMood) return;
 			if (mood === 'normal') {
 				if (currentMood === 'frantic' || currentMood === 'doom') {
-					// Pulled out of danger (Last Rally saved you, or the
+					// Pulled out of danger (Last Stand saved you, or the
 					// threat otherwise resolved without the run actually
 					// ending) -- feels like picking back up, not restarting
 					// the intro theme from scratch. Land on the Reprise

@@ -12,8 +12,8 @@ include_once 'db.php';
 $cq_canonical = 'https://www.skulliance.io/staking/cryptconquestgame.php';
 $cq_og_image  = 'https://www.skulliance.io/staking/images/cryptconquest.png';
 $cq_title     = 'Crypt Conquest - Free Solo Regicide-Style Card Game | Play in Your Browser';
-$cq_desc      = 'Play Crypt Conquest free - a solo Regicide-style card game where you dethrone all 12 court cards of the Necropolis using nothing but suit powers, Jesters, and one Last Rally. Illustrated entirely in Crypties NFT art, with a monthly 100,000 CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
-$cq_short     = 'A free browser card game where you dethrone 12 court cards using suit powers, Jesters, and one Last Rally - illustrated in Crypties NFT art, with a monthly CARBON leaderboard. Play on any device - no download.';
+$cq_desc      = 'Play Crypt Conquest free - a solo Regicide-style card game where you dethrone all 12 court cards of the Necropolis using nothing but suit powers, Jesters, and one Last Stand. Illustrated entirely in Crypties NFT art, with a monthly 100,000 CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
+$cq_short     = 'A free browser card game where you dethrone 12 court cards using suit powers, Jesters, and one Last Stand - illustrated in Crypties NFT art, with a monthly CARBON leaderboard. Play on any device - no download.';
 
 // Every court + Animal Companion art key actually used as card art in the
 // game -- the exact same pools cryptconquest-render.php itself pulls from,
@@ -244,7 +244,7 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 			<img class="cq-shot-land" src="/staking/images/cryptconquest.png" alt="Crypt Conquest board - a court card enemy facing the player's hand, illustrated in Crypties NFT art" loading="eager" fetchpriority="high" decoding="async">
 		</a>
 		<h1><span class="cq-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Crypt Conquest<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="cq-subtitle-land">Free Solo Regicide-Style Card Game</span></h1>
-		<p class="cq-lead">Dethrone all 12 court cards of the Necropolis alone - no HP bar, just a hand you have to make last. Clubs hit harder, Hearts heal, Diamonds draw, Spades shield, and one Last Rally waits for the run that would otherwise end. Every court card and Animal Companion is real Crypties NFT art. No download, no signup - just play.</p>
+		<p class="cq-lead">Dethrone all 12 court cards of the Necropolis alone - no HP bar, just a hand you have to make last. Clubs hit harder, Hearts heal, Diamonds draw, Spades shield, and one Last Stand waits for the run that would otherwise end. Every court card and Animal Companion is real Crypties NFT art. No download, no signup - just play.</p>
 		<form method="post" action="cryptconquest.php" id="cq-start-conquest-form"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cq-cta">👑 Start Conquest</button>
 		</form>
@@ -270,7 +270,7 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 					<p>Twice a run, discard your whole hand and refill it on demand - a reset valve for the moment your hand stops working, whenever you decide to spend it.</p>
 				</div>
 				<div class="cq-feat-card">
-					<h3>🛡️ One Last Rally</h3>
+					<h3>🛡️ One Last Stand</h3>
 					<p>The first time your whole hand still can't cover the damage, you refuse to fall instead of losing - once per run, automatic, no button to remember.</p>
 				</div>
 				<div class="cq-feat-card">
@@ -328,7 +328,7 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 				<li><strong>Covering damage only needs to reach the total, not match it exactly.</strong> Discard the fewest cards you can spare - a natural instinct is to hunt for a clean number using more cards, but every card left in your hand is worth more than a tidy total.</li>
 				<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin is worth more than a big off-suit card that doesn't do anything useful right now - save your high cards for when a court card actually demands them.</li>
 				<li><strong>Save a Jester for when your hand truly stalls.</strong> You only get two, and a full discard-and-refill is worth more mid-crisis than spent early out of habit.</li>
-				<li><strong>Don't rely on Last Rally as a plan.</strong> It only fires once - treat it as the emergency it is, not a second life you can play around.</li>
+				<li><strong>Don't rely on Last Stand as a plan.</strong> It only fires once - treat it as the emergency it is, not a second life you can play around.</li>
 				<li><strong>Spades before a hard court card.</strong> Shielding ahead of a King's attack is worth more than the same cards spent chasing extra damage.</li>
 				<li><strong>Animal Companions are flexible, not free.</strong> They're always worth 1 and can pair with a single other card, but they can't join a bigger combo - spend them on the turn that actually needs the flexibility.</li>
 			</ol>
@@ -352,7 +352,7 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 			</details>
 			<details>
 				<summary>What happens if I lose?</summary>
-				<p>Failing to cover a court card's attack even with your whole hand - after Last Rally is spent - ends the run as a loss. Either way, whatever CARBON you'd earned that run still pays out, and you can start a fresh conquest immediately.</p>
+				<p>Failing to cover a court card's attack even with your whole hand - after Last Stand is spent - ends the run as a loss. Either way, whatever CARBON you'd earned that run still pays out, and you can start a fresh conquest immediately.</p>
 			</details>
 			<details>
 				<summary>Where does the card art come from?</summary>

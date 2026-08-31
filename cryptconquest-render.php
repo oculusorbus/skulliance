@@ -37,37 +37,59 @@ function cryptconquestCornerRank($card) {
 // Shared by the no_run intro screen below and the in-game "View
 // Instructions" modal -- one copy of the rules text instead of two that
 // could quietly drift apart (same convention cryptcrawlRulesHtml() uses).
+//
+// Restructured 2026-08-31 from one dense prose paragraph into labeled
+// sections -- direct feedback that the wall of text made it hard to tell
+// separate ideas apart. Also the point the exact-kill/recruit mechanic (a
+// real new player reported it wasn't landing as an actual instruction even
+// though the old paragraph technically mentioned it in one clause) got its
+// own section instead of a half-sentence aside, and where the two
+// intuitive-but-wrong-play warnings (below, .cq-rules-tips) moved from a
+// bolted-on afterthought to a proper "Common Mistakes" section.
 function cryptconquestRulesHtml() { ?>
-	Conquer a 52-card Necropolis alone, one court card at a time: 4
-	<strong>Jacks</strong>, then 4 <strong>Queens</strong>, then 4
-	<strong>Kings</strong> -- each one immune to its own suit's power (the
-	numeric damage still counts). Play a card from your hand (or several of
-	the <em>same rank</em> totalling 10 or less) to attack and trigger its
-	suit: <strong style="color:#ff6b6b;">♥ Hearts</strong> heals cards back
-	from your discard into the deck, <strong style="color:#ff9900;">♦ Diamonds</strong>
-	draws you fresh cards, <strong style="color:#c8dce8;">♣ Clubs</strong>
-	doubles your damage, <strong style="color:#c8dce8;">♠ Spades</strong>
-	shields you from that enemy's counterattack. Deal exactly enough damage
-	to kill and the card returns to your hand later as a powerful attack;
-	overkill just discards it. Whatever's left of the enemy's attack after
-	your shield hits you back -- discard cards from hand totalling enough to
-	cover it, or yield outright and skip straight to that. Run dry on cards
-	entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong>
-	(twice per run) discards your whole hand and deals you a fresh one. And
-	if your hand truly can't cover a hit even after discarding all of it,
-	<span class="cq-rally">Last Rally</span> saves you once per run --
-	after that, the next uncovered hit ends it. Defeat all 12 court cards to
-	conquer the Necropolis.
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">🎯 The Goal</div>
+		<p>Defeat all 12 court cards -- 4 <strong>Jacks</strong>, then 4 <strong>Queens</strong>, then 4 <strong>Kings</strong> -- to conquer the Necropolis. Each court card is immune to its own suit's power (numeric damage still counts against it).</p>
+	</div>
+
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">🃏 Your Turn</div>
+		<p>Play a card from your hand -- or several of the <em>same rank</em> totalling 10 or less, or an Animal Companion -- to attack and trigger its suit. Or <strong>Yield</strong>: no card played, no suit power, straight to covering whatever hits back.</p>
+	</div>
+
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">✨ Suit Powers</div>
+		<ul class="cq-rules-list">
+			<li><strong style="color:#ff6b6b;">♥ Hearts</strong> -- heals cards back from your discard into the deck.</li>
+			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws you fresh cards.</li>
+			<li><strong style="color:#c8dce8;">♣ Clubs</strong> -- doubles your damage.</li>
+			<li><strong style="color:#c8dce8;">♠ Spades</strong> -- shields you from that enemy's counterattack.</li>
+		</ul>
+	</div>
+
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">👑 Exact Kills Recruit the Enemy</div>
+		<p>Deal <strong>exactly</strong> enough damage to defeat a court card and it doesn't go to the discard -- it goes face-down on top of your deck instead. Draw it back later and it fights <em>for</em> you: a powerful attack card worth its full value, still carrying its suit power. Overkill (more damage than needed) just discards it like normal -- only an exact hit recruits it.</p>
+	</div>
+
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">🛡️ Covering Damage</div>
+		<p>Whatever the court card hits back with (after your shield, if any) has to be covered by discarding cards from hand totalling <strong>at least</strong> that much. Run dry on cards entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong> (twice per run) discards your whole hand and deals you a fresh one. And if your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run -- after that, the next uncovered hit ends it.</p>
+	</div>
+
 	<!-- Added directly in response to a real new player's reported
 	     approach: highest off-suit card on attack, exact-match-with-most-
 	     cards on defense -- both textbook, intuitive-but-wrong plays the
-	     mechanics description above doesn't rule out on its own. These two
-	     bullets exist specifically to head those off before they become
-	     habits, not to duplicate the fuller tips list on cryptconquestgame.php. -->
-	<ul class="cq-rules-tips">
-		<li><strong>Covering damage only needs to reach the total, not match it.</strong> Discard the fewest cards you can spare -- extra cards left in hand matter more than landing on a clean number.</li>
-		<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin beats a big off-suit card that doesn't do anything you actually need right now.</li>
-	</ul>
+	     sections above don't rule out on their own. These exist
+	     specifically to head those off before they become habits, not to
+	     duplicate the fuller tips list on cryptconquestgame.php. -->
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">⚠️ Common Mistakes</div>
+		<ul class="cq-rules-tips">
+			<li><strong>Covering damage only needs to reach the total, not match it.</strong> Discard the fewest cards you can spare -- extra cards left in hand matter more than landing on a clean number.</li>
+			<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin beats a big off-suit card that doesn't do anything you actually need right now.</li>
+		</ul>
+	</div>
 <?php }
 
 function cryptconquestRenderGameArea($conn, $user_id) {
@@ -120,12 +142,12 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// tracks (Frantic/Doom/Death/Triumph, re-leveraging Crypt Crawl's own
 	// audio files), or fall back to the normal Theme/Reprise loop.
 	//   - death/triumph: the run just ended (loss/win).
-	//   - frantic: Last Rally is still available, but the current hand's
+	//   - frantic: Last Stand is still available, but the current hand's
 	//     total value can't cover the attack that's either already pending
 	//     (suffer phase) or would land if nothing changes (play phase,
 	//     computed from the enemy's own stats minus shield) -- i.e. this
-	//     exact fight is currently unsurvivable without Last Rally.
-	//   - doom: same lethal-threat check, but Last Rally is already spent --
+	//     exact fight is currently unsurvivable without Last Stand.
+	//   - doom: same lethal-threat check, but Last Stand is already spent --
 	//     there's no safety net left.
 	// Deliberately the same "simple, not a full game-tree solver" spirit as
 	// Crypt Crawl's own room-threat check (cryptcrawl-render.php).
@@ -268,7 +290,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			<div class="cq-hud-meta">
 				<span title="Court cards defeated so far">👑 <?php echo intval($active_run['enemies_defeated']); ?> / 12</span>
 				<span class="cq-rally<?php echo intval($active_run['last_rally_used']) ? ' used' : ''; ?>" title="The first time your whole hand can't cover an attack, you're saved instead of dying. Once per run.">
-					🛡️ Last Rally <?php echo intval($active_run['last_rally_used']) ? 'used' : 'ready'; ?>
+					🛡️ Last Stand <?php echo intval($active_run['last_rally_used']) ? 'used' : 'ready'; ?>
 				</span>
 				<span title="Discard your whole hand and refill -- twice per run">🃏 Jesters: <?php echo $jesters_left; ?> left</span>
 				<!-- Display labels only -- 'Mausoleum'/'Crypt' are the in-game

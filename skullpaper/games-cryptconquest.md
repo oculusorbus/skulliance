@@ -49,19 +49,19 @@ Exact damage kills (see Winning & Losing below) are the one place precision *is*
 
 Twice per run - once per Jester - you can discard your whole hand and draw a fresh one, on demand, in place of a normal turn. No cost beyond the charge itself. Flipping both Jesters (rather than zero or one) affects your final conquest tier - see Winning below.
 
-## Last Rally
+## Last Stand
 
-The **first time** your whole hand still can't cover an attack, you don't fall - you **Last Rally** instead: the attempt still happens (your whole hand still goes to the discard pile), but the run continues rather than ending. This fires **once per run**, automatically. The next time it happens, the run ends in a loss for real.
+The **first time** your whole hand still can't cover an attack, you don't fall - **Last Stand** fires instead: the attempt still happens (your whole hand still goes to the discard pile), but the run continues rather than ending. This fires **once per run**, automatically. The next time it happens, the run ends in a loss for real.
 
 ## Winning & Losing
 
 * Defeat all **12 court cards** to **conquer the Necropolis** and win the run.
-* Fail to cover an attack with your entire hand a **second** time (Last Rally already spent) and the run **ends in a loss**.
+* Fail to cover an attack with your entire hand a **second** time (Last Stand already spent) and the run **ends in a loss**.
 * Defeating a court card with the **exact** amount of damage recovers it face-down atop your tavern deck instead of sending it to the discard pile - a small edge for precise play.
 
 ### Conquest Tier
 
-A won run is graded by how many Jesters you flipped along the way (Last Rally firing doesn't affect it):
+A won run is graded by how many Jesters you flipped along the way (Last Stand firing doesn't affect it):
 
 * **Flawless Conquest** - zero Jesters flipped.
 * **Hard-Fought Conquest** - one Jester flipped.
@@ -86,7 +86,7 @@ Every run you finish while logged in - won or not - also posts a quick result to
 
 Same music player as Crypt Crawl, sitting below the game content - play/pause and prev/next controls, a volume slider, and your on/off choice, current track, and position sticking for the rest of your browser session. Actions update in place without reloading the page, so the music plays straight through a run.
 
-The music also reacts to how the run is actually going: win and Triumph plays, lose and it's Death instead. Land in a fight your current hand genuinely can't survive and the music turns Frantic if Last Rally is still available, or Doom if it's already spent - there's no safety net left. The court card's own backdrop art slowly drifts and zooms while music plays, same Ken Burns treatment as Crypt Crawl's own crypt backdrops.
+The music also reacts to how the run is actually going: win and Triumph plays, lose and it's Death instead. Land in a fight your current hand genuinely can't survive and the music turns Frantic if Last Stand is still available, or Doom if it's already spent - there's no safety net left. The court card's own backdrop art slowly drifts and zooms while music plays, same Ken Burns treatment as Crypt Crawl's own crypt backdrops.
 
 ## Playing as a Guest
 

@@ -12,16 +12,54 @@
 	// Shared by the no_run intro screen below and the in-game "View
 	// Instructions" modal (see the flee-row further down) -- one copy of the
 	// rules text instead of two that could quietly drift apart.
+	//
+	// Restructured 2026-08-31 into labeled sections instead of one dense
+	// prose paragraph -- same fix, same reason, as cryptconquestRulesHtml()
+	// in cryptconquest-render.php: a wall of text made separate ideas hard
+	// to tell apart. Also fixed a real inaccuracy caught in the rewrite --
+	// the old text said a weapon "can only beat weaker enemies after each
+	// kill," but the actual rule (see cardcrawl-crypt-crawl-prototype.md
+	// memory / weapon-degrade validation harness) is EQUAL or lesser rank,
+	// not strictly weaker.
 	function cryptcrawlRulesHtml() { ?>
-		Delve a 44-card crypt deck alone. <strong style="color:#ff9900;">♦ Diamonds</strong> are weapons -
-		equip one and it stays until you use it, degrading so it can only beat weaker enemies after each kill.
-		<strong style="color:#ff6b6b;">♥ Hearts</strong> are medkits - the first one you use each crypt heals in
-		full, and any more after that in the same crypt still heal, just for half.
-		<strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> are enemies - fight bare-handed and take full
-		damage, or spend your weapon and take the difference. Resolve 3 of the 4 cards in a crypt and the 4th carries
-		into the next; or flee a fresh crypt once (not twice in a row) to reshuffle it back into the deck. Clear the
-		deck to win, or run out of HP and the delve ends - except the first hit that would take you to 0 HP each
-		delve instead leaves you standing at 1, <span class="cc-second-wind">Last Stand</span>, once per delve.
+		<div class="cc-rules-section">
+			<div class="cc-rules-label">🎯 The Goal</div>
+			<p>Clear the entire 44-card deck to win the delve.</p>
+		</div>
+
+		<div class="cc-rules-section">
+			<div class="cc-rules-label">🃏 A Crypt (Room)</div>
+			<p>Four cards face up at a time. Resolve 3 of the 4 and the last one carries into the next crypt alongside 3 fresh cards. Or flee a fresh crypt once (not twice in a row) to reshuffle all 4 back into the deck and draw a new one.</p>
+		</div>
+
+		<div class="cc-rules-section">
+			<div class="cc-rules-label">⚔️ Card Types</div>
+			<ul class="cc-rules-list">
+				<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- weapons. Equip one and it stays until you use it, degrading so it can only beat an enemy at or below the rank of the one it just killed.</li>
+				<li><strong style="color:#ff6b6b;">♥ Hearts</strong> -- medkits. The first one you use each crypt heals in full; any more after that in the same crypt still heal, just for half.</li>
+				<li><strong style="color:#c8dce8;">♣♠ Clubs &amp; Spades</strong> -- enemies. Fight bare-handed and take full damage, or spend your weapon and take only the difference.</li>
+			</ul>
+		</div>
+
+		<div class="cc-rules-section">
+			<div class="cc-rules-label">🛡️ Last Stand</div>
+			<p>The first hit that would take you to 0 HP each delve instead leaves you standing at 1 -- <span class="cc-second-wind">Last Stand</span>, once per delve, automatic.</p>
+		</div>
+
+		<div class="cc-rules-section">
+			<!-- The last two of these four are distilled from the game's own
+			     Discord community, not house-written -- players who improved
+			     their win rate specifically called out prioritizing tough
+			     enemies over avoiding them, and taking a bare-handed hit on
+			     purpose to save the weapon. -->
+			<div class="cc-rules-label">⚠️ Common Mistakes</div>
+			<ul class="cc-rules-tips">
+				<li><strong>Save your weapon for the fight that needs it.</strong> It only degrades further once you use it -- a fresh weapon spent on a weak enemy is a wasted edge later.</li>
+				<li><strong>Don't burn every medkit in one crypt.</strong> Only the first heals in full; spacing them across crypts is worth more than hoarding them into one.</li>
+				<li><strong>Take out tough enemies while you still can.</strong> Avoiding a dangerous Club or Spade doesn't make it go away -- it's still in the deck, waiting for a moment when you're weaker. Clear it while you can actually afford to.</li>
+				<li><strong>Fighting bare-handed on purpose is a real move.</strong> Taking the HP hit instead of spending your weapon on an enemy it could still beat isn't a mistake -- it keeps your weapon's shrinking range open for something worse.</li>
+			</ul>
+		</div>
 	<?php } ?>
 
 <?php

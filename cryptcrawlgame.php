@@ -325,6 +325,8 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 				<li><strong>Save your weapon for the fight that needs it.</strong> It only degrades further once you use it - a fresh weapon on a weak enemy is a wasted edge later.</li>
 				<li><strong>Don't burn every medkit in one crypt.</strong> Only the first heals in full; spacing them across crypts is worth more than hoarding them into one.</li>
 				<li><strong>Flee when the room is genuinely bad.</strong> You only get it once between touches - use it on a crypt that would actually cost you Last Stand, not a mild inconvenience.</li>
+				<li><strong>Take out tough enemies while you still can.</strong> Avoiding a dangerous Club or Spade doesn't make it go away - it's still in the deck, waiting for a moment when you're weaker. Clear it while you can actually afford to.</li>
+				<li><strong>Fighting bare-handed on purpose is a real move.</strong> Taking the HP hit instead of spending your weapon on an enemy it could still beat isn't a mistake - it keeps your weapon's shrinking range open for something worse.</li>
 				<li><strong>Watch the music.</strong> The ambient track shifts to Frantic, then Doom, when a crypt has become genuinely unsurvivable even played perfectly - your ears will know before the HP bar makes it obvious.</li>
 			</ol>
 		</div>

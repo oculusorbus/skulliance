@@ -242,19 +242,26 @@ always a Step 4 failure, whatever caused it). One mechanic covers both
 instead of shipping two overlapping safety nets that would confuse a player
 about which one just saved them.
 
-**Last Rally** (Crypt Crawl's precedent is "Last Stand" — deliberately a
-different word, not a reused name, same as the tier-name guidance in §2):
-the first time a Step 4 discard can't fully cover the current enemy's
-(shield-reduced) attack value, Last Rally fires automatically — discard
+**Last Rally, later renamed to Last Stand** (2026-08-31, per the owner —
+reverses the original reasoning right below this line: Last Stand turned
+out to already be a Skulliance-wide term, live in both Monstrocity and
+Crypt Crawl, and platform-naming consistency won out over keeping this
+game's version distinct. Display text only — the internal field stays
+`last_rally_used`, same no-migration precedent as the Necropolis/
+Mausoleum/Crypt renames above. Original reasoning, kept for the record):
+Crypt Crawl's precedent is "Last Stand" — deliberately a different word,
+not a reused name, same as the tier-name guidance in §2. The mechanic
+itself: the first time a Step 4 discard can't fully cover the current
+enemy's (shield-reduced) attack value, it fires automatically — discard
 whatever's in hand toward it, forgive the shortfall, survive with hand and
-deck otherwise untouched. No player choice involved (mirrors Last Stand
-being automatic, not opt-in). Once per run. Independent of suit immunity —
-it doesn't grant a shield or cancel immunity, it just forgives one lethal
-shortfall outright, so it still saves a King of Spades finale even though
-Spades are immune there.
+deck otherwise untouched. No player choice involved (mirrors Crypt
+Crawl's Last Stand being automatic, not opt-in). Once per run. Independent
+of suit immunity — it doesn't grant a shield or cancel immunity, it just
+forgives one lethal shortfall outright, so it still saves a King of Spades
+finale even though Spades are immune there.
 
 **Solo win tiers, renamed** (per §2's "don't copy-paste Bronze/Silver/Gold"
-guidance) — mapped from `jesters_used` (0/1/2), Last Rally firing doesn't
+guidance) — mapped from `jesters_used` (0/1/2), Last Stand firing doesn't
 affect the tier:
 - 0 Jesters flipped → **Flawless Conquest**
 - 1 Jester flipped → **Hard-Fought Conquest**
@@ -281,7 +288,7 @@ affect the tier:
 **Done:** `cryptconquest-engine.php` — the full solo rules engine (turn
 structure, all 4 suit powers with correct Hearts-before-Diamonds ordering,
 combos, Animal Companion pairing, enemy suit immunity, exact-damage
-recovery onto the tavern deck, Jester flip charges, Last Rally, win/loss,
+recovery onto the tavern deck, Jester flip charges, Last Stand, win/loss,
 tier naming). Deliberately DB/session-free (see file header) so it's
 testable standalone — 50+ assertions covering every mechanic plus a
 200-game fuzz sweep, all passing, no committed test harness yet (lives in
@@ -498,7 +505,7 @@ loop, four situational tracks cued by the game itself via `#cq-mood`
 (renamed from `#cq-theme-state`, now carries `data-mood`/`data-restarted`
 alongside the theme signal, same single-element pattern as Crypt Crawl's
 own `#cc-mood`). Mood computation: death/triumph on `game_over`; while
-active, frantic (or doom if Last Rally is already spent) whenever the
+active, frantic (or doom if Last Stand is already spent) whenever the
 current hand's total value can't cover the attack that's either already
 pending (suffer phase) or would land if nothing changes (play phase) --
 same "simple, not a full game-tree solver" spirit as Crypt Crawl's own

@@ -344,6 +344,18 @@ include 'header.php';
 }
 .cc-note { font-size: 0.68rem; opacity: 0.5; margin-top: 4px; }
 .cc-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
+/* Rules broken into labeled sections instead of one prose block -- same
+   fix as cryptconquest.php's own .cq-rules-section/.cq-rules-label, see
+   cryptcrawlRulesHtml()'s own comment for why. */
+.cc-rules-section { margin-bottom: 16px; }
+.cc-rules-section:last-child { margin-bottom: 0; }
+.cc-rules-section p { margin: 0; }
+.cc-rules-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #34e3bb; opacity: 0.9; margin-bottom: 6px; }
+.cc-rules-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.cc-rules-list li { padding-left: 2px; }
+.cc-rules-tips { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.cc-rules-tips li { font-size: 0.8rem; line-height: 1.5; opacity: 0.95; padding: 8px 10px; background: rgba(0,200,160,.08); border-left: 3px solid #00c8a0; border-radius: 6px; }
+.cc-rules-tips li strong { color: #34e3bb; }
 /* Ambient music player -- sits below every state's bottom buttons (in normal
    flow, not fixed) so it's always in the same spot regardless of no_run /
    active / game_over. Deliberately minimal: 3 icon buttons + a track name. */

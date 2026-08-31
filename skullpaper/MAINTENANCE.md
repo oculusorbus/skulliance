@@ -180,8 +180,13 @@ records verified constants, and tracks what still needs to be written.
   Clubs double attack, Hearts heal (return cards from discard to tavern), Diamonds draw, Spades
   shield (Hearts resolves before Diamonds when both trigger). 2 Jesters (discard hand + refill,
   once each); win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
-  2=Narrow Conquest). 1 Last Rally (once per run: a whole-hand discard that still doesn't cover
-  the attack survives instead of ending the run; the *next* such failure is a real loss).
+  2=Narrow Conquest). 1 Last Stand (renamed from "Last Rally" per the owner -- Last Stand is
+  already a Skulliance-wide term, Monstrocity and Crypt Crawl both use it, and platform
+  consistency won out over the original "deliberately a different word" reasoning in
+  cryptconquest.md §4b; internal field stays `last_rally_used`, same no-migration
+  display-only-rename precedent as Necropolis/Mausoleum/Crypt above -- once per run: a
+  whole-hand discard that still doesn't cover the attack survives instead of ending the run;
+  the *next* such failure is a real loss).
   CARBON (`cryptconquestApplyCarbon`, same project_id 15 / `updateBalance`+`logCredit` shape as
   Crypt Crawl): every card resolved (played or discarded to cover damage) earns `10 * its value`
   (a Companion's value is 1), paid out in one lump the moment the run ends
@@ -212,7 +217,7 @@ records verified constants, and tracks what still needs to be written.
   holdings excluding whatever `CRYPTCRAWL_CARD_ART` already claimed by name, so the two games
   never show identical art. Reuses Crypt Crawl's own audio files/mood-track machinery verbatim
   (`#cq-mood` mirrors `#cc-mood`'s frantic/doom/death/triumph shape, computed from whether the
-  current hand can cover the current/pending attack, and whether Last Rally is still available).
+  current hand can cover the current/pending attack, and whether Last Stand is still available).
 - Crypt Crawl ambient player (`#cc-audio-player`/`#cc-audio-el`, markup lives in cryptcrawl.php,
   OUTSIDE `#cc-game-area` - see the AJAX entry below for why that placement matters): two tracks
   committed straight into the repo (`audio/tracks/Crypt Crawl Theme.mp3`,

@@ -63,7 +63,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			} elseif (!$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
 			} elseif (!empty($outcome['result']['rallied'])) {
-				cryptconquestFlash("LAST RALLY! Your hand alone couldn't cover it -- you refuse to fall. (once per run)", 'win');
+				cryptconquestFlash("LAST STAND! Your hand alone couldn't cover it -- you refuse to fall. (once per run)", 'win');
 			} elseif (!empty($outcome['result']['died'])) {
 				cryptconquestFlash('The crypt claims you.', 'error');
 			}
