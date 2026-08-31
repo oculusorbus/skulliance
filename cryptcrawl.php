@@ -53,6 +53,7 @@ if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	cryptcrawlHandleAction($conn, $user_id, $_POST);
 	header('Location: cryptcrawl.php');
+	header('X-Accel-Buffering: no'); // see ajax/cryptcrawl-action.php's own comment on this header
 	// Same deferral as ajax/cryptcrawl-action.php -- flush the redirect to
 	// the client, then run CARBON payout/Discord announce in the
 	// background rather than making a no-JS visitor's browser wait on
@@ -61,8 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	// ajax/cryptconquest-action.php for why session_write_close() has to
 	// come first.
 	session_write_close();
+	ignore_user_abort(true);
 	if (function_exists('fastcgi_finish_request')) {
 		fastcgi_finish_request();
+	} else {
+		if (ob_get_level() > 0) { @ob_end_flush(); }
+		flush();
 	}
 	cryptcrawlFlushPendingSideEffects($conn);
 	exit;

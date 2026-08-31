@@ -45,6 +45,21 @@ if (!isset($_SESSION['cryptcrawl_flash'])) $_SESSION['cryptcrawl_flash'] = [];
 $ended_run = cryptcrawlHandleAction($conn, $user_id, $_POST);
 
 header('Content-Type: text/html; charset=utf-8');
+// Tell nginx not to buffer this response -- same header missions.php's own
+// loading spinner already relies on to flush early in production, proven
+// working on this exact server/hosting setup. Needed regardless of
+// fastcgi_finish_request() below: if this server isn't actually running
+// PHP-FPM (or it's disabled for some other reason), fastcgi_finish_request
+// silently does nothing and the whole request -- including the CARBON
+// payout queries and the Discord webhook POST, which has its own 8-second
+// timeout -- runs to completion BEFORE any response reaches the browser,
+// which is indistinguishable from "the loss screen is broken" even though
+// the server eventually sends a perfectly correct response. Confirmed this
+// was happening live: Discord notifications were firing (proof the whole
+// request, deferred side effects included, was running end-to-end) while
+// the client still saw nothing -- meaning the earlier fastcgi_finish_request
+// deferral wasn't actually taking effect on this server.
+header('X-Accel-Buffering: no');
 // The real render can fail for reasons that have nothing to do with the
 // delve actually ending (a fresh DB re-read glitching, art lookups,
 // anything else added here later) -- reported live: the win/loss screen
@@ -74,7 +89,17 @@ try {
 // rationale (same fix, same shape, both games) including why
 // session_write_close() has to come first.
 session_write_close();
+// Let payout/announce actually finish even if the client navigates away or
+// closes the tab right after getting its response (which is the whole
+// point -- the player doesn't need to keep the connection open for any of
+// this anymore).
+ignore_user_abort(true);
 if (function_exists('fastcgi_finish_request')) {
 	fastcgi_finish_request();
+} else {
+	// Portable fallback for non-FPM SAPIs -- the exact technique
+	// missions.php's own loader already uses successfully in production.
+	if (ob_get_level() > 0) { @ob_end_flush(); }
+	flush();
 }
 cryptcrawlFlushPendingSideEffects($conn);
