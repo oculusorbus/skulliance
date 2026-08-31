@@ -183,7 +183,13 @@ include 'header.php';
 .cq-corner-suit { font-size: 1.2rem; color: #fff; margin-top: 1px; }
 .cq-enemy-info { flex: 1; min-width: 0; }
 .cq-enemy-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cq-enemy-immune { font-size: 0.65rem; opacity: 0.6; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 2px 8px; text-transform: uppercase; letter-spacing: .03em; }
+/* The "immune to" label stays small/uppercase, but the suit glyph itself
+   -- the part that actually matters for deciding which cards not to play
+   -- gets its own larger, full-opacity, suit-colored treatment instead of
+   inheriting the label's tiny size and 60% opacity. That combination was
+   what made it genuinely hard to make out, not just small on its own. */
+.cq-enemy-immune { font-size: 0.65rem; opacity: 0.85; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 2px 10px; text-transform: uppercase; letter-spacing: .03em; display: inline-flex; align-items: center; gap: 4px; }
+.cq-enemy-immune-suit { font-size: 1.15rem; line-height: 1; font-weight: 700; opacity: 1; text-transform: none; color: var(--cq-suit-color); }
 .cq-hp-bar-bg {
 	background: linear-gradient(90deg,#ff4444,#ff9900,#00c8a0); border-radius: 6px; height: 12px;
 	overflow: hidden; position: relative; margin-bottom: 6px;

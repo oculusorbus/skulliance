@@ -189,7 +189,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 						<?php echo cryptconquestCardLabel(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']]); ?>
 						<?php if (in_array(intval($enemy['rank']), [11, 12, 13], true)): ?>
 							<span class="cq-enemy-immune" title="Immune to its own suit's power -- numeric damage still counts.">
-								immune to <?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?>
+								immune to <span class="cq-enemy-immune-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$enemy['suit']]; ?></span>
 							</span>
 						<?php endif; ?>
 					</div>
