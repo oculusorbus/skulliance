@@ -11081,25 +11081,15 @@ function cryptcrawlPlayCard($conn, $run_id, $card_index, $use_weapon) {
 
 	$run['fled_last_room'] = 0; // resolving a card always clears the flee-lock
 	cryptcrawlSaveRun($conn, $run);
-	// Payout + Discord announce are side effects, not the critical path --
-	// wrapped so neither can ever stop the caller (ajax/cryptcrawl-
-	// action.php) from reaching its render step afterward. Same fix as
-	// cryptconquestPersist() in this file: this codebase's mysqli
-	// connection never overrides PHP 8.1's default report mode
-	// (MYSQLI_REPORT_ERROR|MYSQLI_REPORT_STRICT), so a query error in
-	// either call below throws uncaught and would abort the whole request
-	// before the game-over overlay's HTML is ever generated. Logged, not
-	// silently dropped.
-	try {
-		cryptcrawlPayoutCarbon($conn, $run);
-	} catch (\Throwable $e) {
-		error_log('cryptcrawlPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
-	}
-	try {
-		cryptcrawlAnnounceResult($conn, $run);
-	} catch (\Throwable $e) {
-		error_log('cryptcrawlAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
-	}
+	// Queued, not run inline -- see cryptcrawlFlushPendingSideEffects()
+	// below (and cryptconquestPersist()'s own comment, same fix) for why:
+	// cryptcrawlRenderGameArea() reads carbon_earned straight off the row
+	// cryptcrawlSaveRun() just wrote, so payout/announce running later
+	// doesn't change what the player sees -- but running them inline HERE
+	// used to make the caller (ajax/cryptcrawl-action.php) wait on several
+	// DB queries plus a possible Discord webhook POST before it could even
+	// start rendering the game-over overlay.
+	$GLOBALS['cryptcrawl_pending_side_effects'][] = $run;
 	return $run;
 }
 
@@ -11143,18 +11133,34 @@ function cryptcrawlAbandonRun($conn, $user_id) {
 	if (!$run) return null;
 	$run['status'] = 'lost';
 	cryptcrawlSaveRun($conn, $run);
-	// Same isolation as cryptcrawlPlayCard() above -- see its own comment.
-	try {
-		cryptcrawlPayoutCarbon($conn, $run);
-	} catch (\Throwable $e) {
-		error_log('cryptcrawlPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
-	}
-	try {
-		cryptcrawlAnnounceResult($conn, $run);
-	} catch (\Throwable $e) {
-		error_log('cryptcrawlAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
-	}
+	// Same deferral as cryptcrawlPlayCard() above -- see its own comment.
+	$GLOBALS['cryptcrawl_pending_side_effects'][] = $run;
 	return $run;
+}
+
+// Called once, after the response has already been sent to the client
+// (ajax/cryptcrawl-action.php and cryptcrawl.php's own no-JS POST handler
+// both call this right before they'd otherwise finish/exit, wrapping it
+// in fastcgi_finish_request() where available). Same shape as
+// cryptconquestFlushPendingSideEffects() -- see that function's own
+// comment for the full rationale. Each call individually try/catch-wrapped
+// and logged via error_log(), not left to throw uncaught.
+function cryptcrawlFlushPendingSideEffects($conn) {
+	if (empty($GLOBALS['cryptcrawl_pending_side_effects'])) return;
+	$pending = $GLOBALS['cryptcrawl_pending_side_effects'];
+	$GLOBALS['cryptcrawl_pending_side_effects'] = [];
+	foreach ($pending as $run) {
+		try {
+			cryptcrawlPayoutCarbon($conn, $run);
+		} catch (\Throwable $e) {
+			error_log('cryptcrawlPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+		}
+		try {
+			cryptcrawlAnnounceResult($conn, $run);
+		} catch (\Throwable $e) {
+			error_log('cryptcrawlAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+		}
+	}
 }
 
 // Credits the CARBON a run accumulated (10x the rank of every card resolved,
@@ -11779,31 +11785,58 @@ function cryptconquestAnnounceResult($conn, $run) {
 // place every action wrapper below funnels through, so none of them can
 // save a completed run without also crediting/announcing it (or vice
 // versa).
+// Payout + Discord announce are queued here, not run inline -- see
+// cryptconquestFlushPendingSideEffects() just below for why: both are
+// pure side effects the render step never depends on
+// (cryptconquestRenderGameArea() reads carbon_earned straight off the row
+// cryptconquestSaveRun() just wrote, confirmed by reading that code path --
+// payout/announce never touch that column, they only read it), yet both
+// used to run synchronously, sequentially, BEFORE the caller
+// (ajax/cryptconquest-action.php) ever got control back to render and
+// return the game-over overlay's HTML. That's real latency (several DB
+// queries, potentially a Discord webhook POST) sitting directly between
+// the action finishing and the player ever seeing the result -- on a
+// slow/flaky connection that's enough to make the response feel hung or
+// time out client-side, which reads exactly like "the loss screen isn't
+// showing." (A prior pass here wrapped both calls in try/catch instead,
+// which stops a query error from crashing the whole request -- still true
+// and still needed, see cryptconquestFlushPendingSideEffects() -- but
+// doesn't address latency from a call that succeeds slowly.) Guest runs
+// are unaffected either way: payoutCarbon/announceResult's own
+// run_id<=0 guards make queuing-then-flushing them a no-op.
+$GLOBALS['cryptconquest_pending_side_effects'] = $GLOBALS['cryptconquest_pending_side_effects'] ?? [];
+
 function cryptconquestPersist($conn, &$run) {
 	cryptconquestSaveRun($conn, $run);
-	// Payout + Discord announce are side effects, not the critical path --
-	// wrapped so neither can ever stop the caller (ajax/cryptconquest-
-	// action.php) from reaching cryptconquestRenderGameArea() afterward.
-	// This codebase's mysqli connection never overrides PHP 8.1's default
-	// report mode (MYSQLI_REPORT_ERROR|MYSQLI_REPORT_STRICT, confirmed:
-	// no mysqli_report() call anywhere in the repo), so a query error in
-	// either call below throws uncaught -- which used to abort the whole
-	// request before the game-over overlay's HTML was ever generated.
-	// That's the live "loss screen sometimes doesn't show, only when
-	// logged in" symptom: a guest run skips both calls entirely via their
-	// own run_id<=0 guards, so it was never at risk -- only a real
-	// account's win/loss, which is exactly what reached this then-
-	// untested-against-the-live-DB code. Logged, not silently dropped, so
-	// a real failure here is still visible in the server error log.
-	try {
-		cryptconquestPayoutCarbon($conn, $run); // no-op unless status is won/lost
-	} catch (\Throwable $e) {
-		error_log('cryptconquestPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
-	}
-	try {
-		cryptconquestAnnounceResult($conn, $run); // no-op unless status is won/lost
-	} catch (\Throwable $e) {
-		error_log('cryptconquestAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+	$GLOBALS['cryptconquest_pending_side_effects'][] = $run;
+}
+
+// Called once, after the response has already been sent to the client
+// (ajax/cryptconquest-action.php and cryptconquest.php's own no-JS POST
+// handler both call this right before they'd otherwise finish/exit,
+// wrapping it in fastcgi_finish_request() where available so the PHP
+// process keeps running these in the background instead of the client
+// waiting on them). Each call is still individually try/catch-wrapped --
+// this now runs AFTER the response, so a crash here can no longer take
+// the overlay down with it, but it also can't just be left to throw
+// uncaught (that would still hit the server's error log as a fatal, and
+// on a setup without fastcgi_finish_request it would still be running
+// before the connection closes) -- logged via error_log() either way.
+function cryptconquestFlushPendingSideEffects($conn) {
+	if (empty($GLOBALS['cryptconquest_pending_side_effects'])) return;
+	$pending = $GLOBALS['cryptconquest_pending_side_effects'];
+	$GLOBALS['cryptconquest_pending_side_effects'] = [];
+	foreach ($pending as $run) {
+		try {
+			cryptconquestPayoutCarbon($conn, $run); // no-op unless status is won/lost
+		} catch (\Throwable $e) {
+			error_log('cryptconquestPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+		}
+		try {
+			cryptconquestAnnounceResult($conn, $run); // no-op unless status is won/lost
+		} catch (\Throwable $e) {
+			error_log('cryptconquestAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+		}
 	}
 }
 

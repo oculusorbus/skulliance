@@ -34,3 +34,23 @@ cryptconquestHandleAction($conn, $user_id, $_POST);
 
 header('Content-Type: text/html; charset=utf-8');
 cryptconquestRenderGameArea($conn, $user_id);
+
+// Send the response now; run CARBON payout + Discord announce (queued by
+// cryptconquestPersist() above, if this action ended a run) afterward,
+// off the client's critical path -- see cryptconquestFlushPendingSideEffects()
+// in db.php for why. fastcgi_finish_request() actually flushes the
+// connection to the client and keeps this PHP-FPM worker alive to keep
+// running past it; without it (no FPM), this still runs in the same
+// order it always did, just after render instead of before -- no worse
+// than before, and every game action stays independently try/catch-
+// wrapped inside the flush itself either way. session_write_close() first
+// -- PHP's default session handler holds a file lock for the whole
+// request, and everything here that needed to write to $_SESSION already
+// did (above, before render); without releasing it, a player's very next
+// request (e.g. reloading right after this one) would stall waiting on
+// that lock for however long the background work below takes.
+session_write_close();
+if (function_exists('fastcgi_finish_request')) {
+	fastcgi_finish_request();
+}
+cryptconquestFlushPendingSideEffects($conn);

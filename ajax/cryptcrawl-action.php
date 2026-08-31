@@ -40,3 +40,16 @@ cryptcrawlHandleAction($conn, $user_id, $_POST);
 
 header('Content-Type: text/html; charset=utf-8');
 cryptcrawlRenderGameArea($conn, $user_id);
+
+// Send the response now; run CARBON payout + Discord announce (queued by
+// cryptcrawlPlayCard()/cryptcrawlAbandonRun() above, if this action ended
+// a delve) afterward, off the client's critical path -- see
+// cryptcrawlFlushPendingSideEffects() in db.php for why, and
+// ajax/cryptconquest-action.php's own copy of this comment for the full
+// rationale (same fix, same shape, both games) including why
+// session_write_close() has to come first.
+session_write_close();
+if (function_exists('fastcgi_finish_request')) {
+	fastcgi_finish_request();
+}
+cryptcrawlFlushPendingSideEffects($conn);
