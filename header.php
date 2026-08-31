@@ -159,7 +159,7 @@
 		      <a href="gauntlets.php">Gauntlets</a>
 		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
 		      <a href="cryptconquestgame.php">Crypt Conquest</a>
-		      <a href="match3rpg.php">Match 3 RPG</a>
+		      <a href="match3rpg.php">Monstrocity</a>
 		      <a href="monstrocity.php#boss">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
 		      <a href="https://www.madballs.net/drop-ship" target="_blank">Drop Ship</a>
