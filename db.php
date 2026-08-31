@@ -11273,16 +11273,25 @@ function cryptconquestFetchArtPool($conn, $where_sql) {
 	return $pool;
 }
 
-// Season 1, court cards + number cards (48 identities) -- pulled from
-// BOTH CRYPTCRAWL_ART_USER_ID and CRYPTCONQUEST_S1_EXTRA_USER_ID's held
-// S1 Crypties, since 48 identities is more than one wallet alone
-// comfortably covers. No name-exclusion needed here (unlike the S2 pool
-// below) -- Crypt Crawl's own art never touches S1 at all, so there's no
-// overlap risk to guard against.
+// Season 1, court cards + number cards (48 identities) -- prioritized:
+// CRYPTCRAWL_ART_USER_ID's own S1 holdings are exhausted FIRST (name-sorted,
+// same determinism as every other pool here), with
+// CRYPTCONQUEST_S1_EXTRA_USER_ID's only reached into to fill whatever's
+// still short. This matters most for court cards ("the regency") since
+// they claim the FIRST slice of this pool in cryptconquestGetCardArtPools()
+// -- two separate queries concatenated in priority order, rather than one
+// combined query whose ORDER BY name would interleave the two wallets
+// alphabetically and leave which wallet "wins" the early slots to chance.
+// No name-exclusion needed here (unlike the S2 pool below) -- Crypt
+// Crawl's own art never touches S1 at all, so there's no overlap risk to
+// guard against.
 function cryptconquestGetS1ArtPool($conn) {
-	$user_ids = [intval(CRYPTCRAWL_ART_USER_ID), intval(CRYPTCONQUEST_S1_EXTRA_USER_ID)];
+	$primary_id = intval(CRYPTCRAWL_ART_USER_ID);
+	$extra_id = intval(CRYPTCONQUEST_S1_EXTRA_USER_ID);
 	$s1 = intval(CRYPTCONQUEST_S1_COLLECTION_ID);
-	return cryptconquestFetchArtPool($conn, "nfts.user_id IN (" . implode(',', $user_ids) . ") AND collections.id = $s1");
+	$primary_pool = cryptconquestFetchArtPool($conn, "nfts.user_id = $primary_id AND collections.id = $s1");
+	$extra_pool = cryptconquestFetchArtPool($conn, "nfts.user_id = $extra_id AND collections.id = $s1");
+	return array_merge($primary_pool, $extra_pool);
 }
 
 // Season 2, Animal Companion cards only (4 identities) -- S2's actual
@@ -11319,18 +11328,18 @@ function cryptconquestZipArtPool($pool, $keys, $offset) {
 	return $art;
 }
 
-// The actual per-render entry point -- TWO queries now (S1 and S2 are
-// genuinely different sources with different exclusion rules, unlike the
-// brief S2-for-everything phase this replaced, which could share one).
-// The S1 pool is split into two non-overlapping slices (court gets
-// indices 0-11, numbers get 12-47) so a court card and a number card can
-// never end up showing the identical S1 NFT. NOT the hand-curated-by-
-// rarity pass Crypt Crawl's own CRYPTCRAWL_CARD_ART got (a full review
-// session picking WTF/Mythic/Legendary pieces one by one) -- just an
+// The actual per-render entry point -- THREE queries now (S1's own two
+// wallets, prioritized rather than merged, see cryptconquestGetS1ArtPool();
+// S2 is its own separate source with different exclusion rules). The S1
+// pool is split into two non-overlapping slices (court gets indices
+// 0-11, numbers get 12-47) so a court card and a number card can never
+// end up showing the identical S1 NFT. NOT the hand-curated-by-rarity
+// pass Crypt Crawl's own CRYPTCRAWL_CARD_ART got (a full review session
+// picking WTF/Mythic/Legendary pieces one by one) -- just an
 // auto-assignment from current holdings. Resolved fresh on every render
 // rather than baked into the run at start -- simpler (no engine/schema
 // changes) and always reflects the owner's current holdings, at the cost
-// of two queries per action; worth revisiting if that's ever measurably
+// of three queries per action; worth revisiting if that's ever measurably
 // slow (see cryptcrawlAnnounceResult's own webhook-latency note elsewhere
 // in this file for the same kind of "flagged, not fixed yet" call).
 function cryptconquestGetCardArtPools($conn) {
