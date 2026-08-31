@@ -277,20 +277,6 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			</div>
 		</div>
 
-		<!-- Always-on quick reference, not a click-to-open modal (that's
-		     what "View Instructions" below is for) -- one row, icon + a
-		     couple words per suit, so a new player never has to leave the
-		     board to remember what a suit does. Enemy's own suit being
-		     immune is already called out on the enemy card itself
-		     (.cq-enemy-immune above), not repeated here. -->
-		<div class="cq-suit-key">
-			<?php foreach ($CRYPTCONQUEST_SUIT_EFFECT as $suit => $effect): ?>
-				<span class="cq-suit-key-item" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
-					<span class="cq-suit-key-icon"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></span><?php echo $effect; ?>
-				</span>
-			<?php endforeach; ?>
-		</div>
-
 		<?php if ($suffering): ?>
 			<div class="cq-suffer-banner">
 				⚔️ Incoming: <strong><?php echo intval($active_run['pending_attack']); ?> damage</strong> --
@@ -371,6 +357,20 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<button type="submit" class="cq-btn secondary">🏳️ Abandon Run</button>
 			</form>
 			<button type="button" class="cq-btn secondary" id="cq-instructions-btn">📖 View Instructions</button>
+		</div>
+
+		<!-- Always-on quick reference, not a click-to-open modal (that's
+		     what "View Instructions" above is for) -- one row, icon + a
+		     couple words per suit, so a new player never has to leave the
+		     board to remember what a suit does. Enemy's own suit being
+		     immune is already called out on the enemy card itself
+		     (.cq-enemy-immune above), not repeated here. -->
+		<div class="cq-suit-key">
+			<?php foreach ($CRYPTCONQUEST_SUIT_EFFECT as $suit => $effect): ?>
+				<span class="cq-suit-key-item" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
+					<span class="cq-suit-key-icon"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></span><?php echo $effect; ?>
+				</span>
+			<?php endforeach; ?>
 		</div>
 	<?php endif; ?>
 

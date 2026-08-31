@@ -225,7 +225,7 @@ include 'header.php';
    on purpose: a newer player scans it once and it otherwise stays out of
    the way, not another stats panel competing for attention. Wraps to 2
    rows on the narrowest phones rather than truncating or scrolling. */
-.cq-suit-key { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; font-size: 0.7rem; }
+.cq-suit-key { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; font-size: 0.7rem; }
 .cq-suit-key-item {
 	display: inline-flex; align-items: center; gap: 5px;
 	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
