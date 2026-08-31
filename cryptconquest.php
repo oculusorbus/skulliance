@@ -199,8 +199,18 @@ include 'header.php';
 .cq-hud-carbon { display: inline-flex; align-items: center; gap: 3px; color: #ffcc4d; font-weight: 700; white-space: nowrap; margin-left: auto; }
 .cq-hud-carbon img { width: 14px; height: 14px; object-fit: contain; }
 
+/* Was a near-transparent rgba(255,68,68,.12) tint -- fine over the plain
+   dark page background, but a themed backdrop can have bright/white
+   patches behind it (see .cq-theme-bg's own art), and the pale text
+   inside washed out against those. Layered on the same dark, blurred,
+   near-opaque base every other HUD panel here uses (.cq-hud, .cq-result,
+   etc.) instead of relying on backdrop darkness for contrast -- the red
+   tint sits on TOP of that as a gradient overlay, not as the panel's only
+   background, so it stays legible regardless of what's behind it. */
 .cq-suffer-banner {
-	background: rgba(255,68,68,.12); border: 1px solid rgba(255,68,68,.4); border-radius: 10px;
+	background: linear-gradient(rgba(255,68,68,.22), rgba(255,68,68,.22)), rgba(5,12,20,.88);
+	backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border: 1px solid rgba(255,68,68,.5); border-radius: 10px;
 	padding: 10px 14px; font-size: 0.85rem; margin-bottom: 14px; text-align: center;
 }
 
