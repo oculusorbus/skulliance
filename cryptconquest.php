@@ -159,6 +159,9 @@ include 'header.php';
 .cq-instructions-close { margin-top: 16px; width: 100%; }
 
 .cq-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
+.cq-rules-tips { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; gap: 8px; }
+.cq-rules-tips li { font-size: 0.8rem; line-height: 1.5; opacity: 0.95; padding: 8px 10px; background: rgba(0,200,160,.08); border-left: 3px solid #00c8a0; border-radius: 6px; }
+.cq-rules-tips li strong { color: #34e3bb; }
 .cq-note { font-size: 0.68rem; opacity: 0.5; margin: 8px 0 16px; }
 .cq-rally { color: #00c8a0; font-weight: 700; white-space: nowrap; }
 .cq-rally.used { color: rgba(255,255,255,.4); }

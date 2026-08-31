@@ -325,6 +325,8 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 		<div class="cq-land-wrap">
 			<h2>Think Like a Claimant to the Throne</h2>
 			<ol class="cq-tips">
+				<li><strong>Covering damage only needs to reach the total, not match it exactly.</strong> Discard the fewest cards you can spare - a natural instinct is to hunt for a clean number using more cards, but every card left in your hand is worth more than a tidy total.</li>
+				<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin is worth more than a big off-suit card that doesn't do anything useful right now - save your high cards for when a court card actually demands them.</li>
 				<li><strong>Save a Jester for when your hand truly stalls.</strong> You only get two, and a full discard-and-refill is worth more mid-crisis than spent early out of habit.</li>
 				<li><strong>Don't rely on Last Rally as a plan.</strong> It only fires once - treat it as the emergency it is, not a second life you can play around.</li>
 				<li><strong>Spades before a hard court card.</strong> Shielding ahead of a King's attack is worth more than the same cards spent chasing extra damage.</li>

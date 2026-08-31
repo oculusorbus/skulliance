@@ -58,6 +58,16 @@ function cryptconquestRulesHtml() { ?>
 	<span class="cq-rally">Last Rally</span> saves you once per run --
 	after that, the next uncovered hit ends it. Defeat all 12 court cards to
 	conquer the Necropolis.
+	<!-- Added directly in response to a real new player's reported
+	     approach: highest off-suit card on attack, exact-match-with-most-
+	     cards on defense -- both textbook, intuitive-but-wrong plays the
+	     mechanics description above doesn't rule out on its own. These two
+	     bullets exist specifically to head those off before they become
+	     habits, not to duplicate the fuller tips list on cryptconquestgame.php. -->
+	<ul class="cq-rules-tips">
+		<li><strong>Covering damage only needs to reach the total, not match it.</strong> Discard the fewest cards you can spare -- extra cards left in hand matter more than landing on a clean number.</li>
+		<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin beats a big off-suit card that doesn't do anything you actually need right now.</li>
+	</ul>
 <?php }
 
 function cryptconquestRenderGameArea($conn, $user_id) {

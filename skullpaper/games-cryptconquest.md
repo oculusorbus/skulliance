@@ -36,6 +36,15 @@ Hearts resolves before Diamonds when a combo triggers both at once.
 
 Whatever the court card hits back with (after Spades shield, if any) has to be covered by discarding cards from your hand worth at least that much - a partial selection that doesn't reach the total is just rejected so you can try again, but discarding your **entire hand** and still coming up short is what actually threatens the run.
 
+## Strategy Tips
+
+Two habits that feel intuitive but aren't rewarded by the rules above:
+
+* **Covering an attack only needs to reach the total, not match it exactly.** There's no bonus for landing on a clean number, and no penalty for overpaying by a card or two - discard the fewest cards you can spare, not the most. Every card left in hand is a card you can still play.
+* **Attack for the suit power you need, not just the highest number.** A small Diamond when your hand is thin (to refill it) is worth more than a big off-suit card that doesn't do anything useful against the current court card. Hoard high cards and Diamonds for the fight that actually needs them rather than spending them on the first legal play.
+
+Exact damage kills (see Winning & Losing below) are the one place precision *is* rewarded - the distinction is worth keeping straight: exact on offense is a bonus, exact on defense is not required.
+
 ## Jesters
 
 Twice per run - once per Jester - you can discard your whole hand and draw a fresh one, on demand, in place of a normal turn. No cost beyond the charge itself. Flipping both Jesters (rather than zero or one) affects your final conquest tier - see Winning below.
