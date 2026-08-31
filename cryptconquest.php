@@ -1,13 +1,15 @@
 <?php
-// CRYPT CONQUEST — Regicide-inspired solo card game. Vertical-slice
-// prototype (2026-08-30) built directly off Crypt Crawl's own architecture,
-// including its two hardest-won fixes: the merge-not-replace SessionCookie
-// restore (see skulliance.php's own comment for why a raw replace is
-// dangerous), and the hidden-overlay pattern for a reliable win/loss
-// screen (see cryptconquest.md and cryptcrawl.php's own long comment on
-// #cc-result-overlay for the saga that pattern came out of). Not linked in
-// nav yet -- see cryptconquest.md §6 for what's still outstanding before
-// this is a real, announced feature. Public/guest-playable, same as
+// CRYPT CONQUEST — Regicide-inspired solo card game, built directly off
+// Crypt Crawl's own architecture, including its two hardest-won fixes: the
+// merge-not-replace SessionCookie restore (see skulliance.php's own
+// comment for why a raw replace is dangerous), and the hidden-overlay
+// pattern for a reliable win/loss screen (see cryptconquest.md and
+// cryptcrawl.php's own long comment on #cc-result-overlay for the saga
+// that pattern came out of). Fully platform-integrated as of 2026-08-30
+// (leaderboard, monthly CARBON payout, Discord announcements, marketing
+// page at cryptconquestgame.php linked from nav/homepage/sitemap) -- see
+// skullpaper/games-cryptconquest.md and MAINTENANCE.md's "Games constants"
+// section for the current, verified state. Public/guest-playable, same as
 // cryptcrawl.php, only persisted to the DB for a real account.
 include_once 'db.php';
 include 'message.php';
