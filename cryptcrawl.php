@@ -472,22 +472,26 @@ include 'header.php';
      applyThemeState() in the script block below. -->
 <div class="cc-theme-bg" id="cc-theme-bg">
 <?php
-// Safety net for the rare case the fire-and-forget finalize fetch (see the
-// AJAX swap handler's script block, further down) never actually reaches
-// the server -- e.g. truly instant tab close despite keepalive:true.
-// Idempotent (cryptcrawlFinalizeRun()'s own session-based guard) and cheap
-// insurance run on every normal page load, not just this specific
-// scenario -- try/catch since a page load must never break over this.
-if ($user_id > 0) {
-	try {
-		$__cc_recent = cryptcrawlGetMostRecentRun($conn, $user_id);
-		if ($__cc_recent && in_array($__cc_recent['status'] ?? '', ['won', 'lost'], true)) {
-			cryptcrawlFinalizeRun($conn, $user_id, intval($__cc_recent['id']));
-		}
-	} catch (\Throwable $e) {
-		error_log('cryptcrawlFinalizeRun safety-net call failed: ' . $e->getMessage());
-	}
-}
+// A "safety net" finalize call used to run here on every normal page load
+// (removed 2026-08-31) -- it was a real bug, not a safety net. Its
+// idempotency guard is $_SESSION-based (cryptcrawlFinalizeRun() in
+// db.php), which does not survive a cleared cache / fresh login / new
+// browser session -- exactly the condition a returning player hits
+// constantly. On a brand-new session it ran a full re-payout attempt
+// (a DB fetch, updateBalance/logCredit, a Discord webhook POST with its
+// own 8-second timeout) for whatever the player's most recent WON/LOST
+// run happened to be -- on EVERY page load, not just right after an
+// action -- meaning CARBON they'd already been paid could get re-credited
+// on every fresh session, and ordinary page loads on a fresh session
+// carried real hidden latency this file's own history is full of chasing.
+// Live symptom that caught it: worked fine on the PWA (a warm, reused
+// session already had the guard set) and broke specifically on a freshly
+// cleared/logged-in browser session (an empty guard, so this ran for
+// real, every time). The one real finalize trigger is the fire-and-forget
+// fetch(..., {keepalive:true}) in the AJAX swap handler below, fired only
+// once, only right after the result screen it belongs to is on screen --
+// see cryptcrawl-loss-screen-bug.md for the full history before adding
+// anything like this back.
 ?>
 <div id="cc-game-area"><?php
 // Full-page-load context, unlike ajax/cryptcrawl-action.php's own fragment
