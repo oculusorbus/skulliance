@@ -10,6 +10,13 @@
 $CRYPTCONQUEST_SUIT_SYMBOL = ['H' => '♥', 'D' => '♦', 'C' => '♣', 'S' => '♠'];
 $CRYPTCONQUEST_SUIT_COLOR  = ['H' => '#ff6b6b', 'D' => '#ff9900', 'C' => '#c8dce8', 'S' => '#c8dce8'];
 $CRYPTCONQUEST_SUIT_NAME   = ['H' => 'Hearts', 'D' => 'Diamonds', 'C' => 'Clubs', 'S' => 'Spades'];
+// Short quick-reference wording for the always-on .cq-suit-key strip below
+// the HUD -- verb+noun, parallel across all four so none reads longer than
+// the others at a glance. Keyed/ordered C/H/D/S to match both the actual
+// resolution order in cryptconquestPlay() (db.php) and the order
+// cryptconquestgame.php's own mechanics section already lists them in --
+// one convention, three surfaces.
+$CRYPTCONQUEST_SUIT_EFFECT = ['C' => 'Doubles Damage', 'H' => 'Heals Discards', 'D' => 'Draws Cards', 'S' => 'Grants Shield'];
 
 function cryptconquestRankBadge($rank) {
 	$labels = [11 => 'J', 12 => 'Q', 13 => 'K'];
@@ -54,7 +61,7 @@ function cryptconquestRulesHtml() { ?>
 <?php }
 
 function cryptconquestRenderGameArea($conn, $user_id) {
-	global $CRYPTCONQUEST_SUIT_SYMBOL, $CRYPTCONQUEST_SUIT_COLOR, $CRYPTCONQUEST_SUIT_NAME;
+	global $CRYPTCONQUEST_SUIT_SYMBOL, $CRYPTCONQUEST_SUIT_COLOR, $CRYPTCONQUEST_SUIT_NAME, $CRYPTCONQUEST_SUIT_EFFECT;
 
 	// Same stale-guest-run guard cryptcrawlRenderGameArea() uses -- once a
 	// real user_id is confirmed, a leftover session-only guest run must
@@ -268,6 +275,20 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					</span>
 				<?php endif; ?>
 			</div>
+		</div>
+
+		<!-- Always-on quick reference, not a click-to-open modal (that's
+		     what "View Instructions" below is for) -- one row, icon + a
+		     couple words per suit, so a new player never has to leave the
+		     board to remember what a suit does. Enemy's own suit being
+		     immune is already called out on the enemy card itself
+		     (.cq-enemy-immune above), not repeated here. -->
+		<div class="cq-suit-key">
+			<?php foreach ($CRYPTCONQUEST_SUIT_EFFECT as $suit => $effect): ?>
+				<span class="cq-suit-key-item" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
+					<span class="cq-suit-key-icon"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></span><?php echo $effect; ?>
+				</span>
+			<?php endforeach; ?>
 		</div>
 
 		<?php if ($suffering): ?>

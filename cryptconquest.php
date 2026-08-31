@@ -219,6 +219,21 @@ include 'header.php';
 .cq-hud-carbon { display: inline-flex; align-items: center; gap: 3px; color: #ffcc4d; font-weight: 700; white-space: nowrap; margin-left: auto; }
 .cq-hud-carbon img { width: 14px; height: 14px; object-fit: contain; }
 
+/* Always-on suit quick reference (cryptconquest-render.php's .cq-suit-key,
+   fed by $CRYPTCONQUEST_SUIT_EFFECT) -- a row of small pill chips, same
+   dark/blurred panel language as .cq-hud/.cq-suffer-banner but low-profile
+   on purpose: a newer player scans it once and it otherwise stays out of
+   the way, not another stats panel competing for attention. Wraps to 2
+   rows on the narrowest phones rather than truncating or scrolling. */
+.cq-suit-key { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; font-size: 0.7rem; }
+.cq-suit-key-item {
+	display: inline-flex; align-items: center; gap: 5px;
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border: 1px solid rgba(255,255,255,.08); border-radius: 999px;
+	padding: 5px 10px 5px 8px; white-space: nowrap; color: rgba(255,255,255,.75);
+}
+.cq-suit-key-icon { color: var(--cq-suit-color, #fff); font-size: 0.95rem; font-weight: 700; line-height: 1; }
+
 /* Was a near-transparent rgba(255,68,68,.12) tint -- fine over the plain
    dark page background, but a themed backdrop can have bright/white
    patches behind it (see .cq-theme-bg's own art), and the pale text
