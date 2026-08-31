@@ -11701,6 +11701,29 @@ function cryptconquestStartRun($conn, $user_id) {
 	$run['reward'] = 0;
 
 	if ($user_id > 0) {
+		// ONE active run per player -- same guard, same reason, as
+		// cryptcrawlStartRun() (see its much longer comment, and
+		// cryptcrawl-loss-screen-bug.md). Crypt Conquest has never been
+		// reported showing that bug, but the code shape here was identical
+		// and therefore exposed to it: this INSERT was unconditional, and
+		// cryptconquestgame.php's "Start Conquest" CTA -- which is the
+		// Play-menu nav link -- POSTs start_run unconditionally, so
+		// navigating to Conquest through the menu mid-run would have
+		// silently created a second status='active' row. Since
+		// cryptconquestGetActiveRun() also returns the NEWEST active row,
+		// the older one would have gone invisible until the newer run
+		// ended, then resurfaced and rendered a live board instead of the
+		// win/loss result -- permanently.
+		//
+		// Applied 2026-08-31 at the owner's request right after the Crypt
+		// Crawl fix, explicitly on the understanding it's revertible if it
+		// disturbs Conquest's current stability. Behaviour only changes for
+		// a player who starts a conquest while already having one in
+		// progress: they now resume it instead of silently orphaning it.
+		// Abandon Run remains the explicit way to end a run.
+		$existing = cryptconquestGetActiveRun($conn, $user_id);
+		if ($existing) return intval($existing['id']);
+
 		$status  = $conn->real_escape_string($run['status']);
 		$phase   = $conn->real_escape_string($run['phase']);
 		$pending = intval($run['pending_attack']);
