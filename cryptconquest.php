@@ -235,17 +235,11 @@ include 'header.php';
    (including the mobile media query that shrinks it further down). */
 .cq-corner-rank.cq-companion-icon { position: relative; display: inline-block; width: 1em; height: 1em; }
 .cq-corner-rank.cq-companion-icon .cq-paw-layer { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-/* A single 1px ring read as barely-there at this glyph size -- stacked
-   1px + 2px rings instead, for a border that's actually thick enough to
-   register while staying zero-blur/crisp (not a soft glow). */
 .cq-paw-outline {
 	text-shadow:
 		-1px -1px 0 #fff, 0 -1px 0 #fff, 1px -1px 0 #fff,
 		-1px  0   0 #fff,                1px  0   0 #fff,
-		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff,
-		-2px -2px 0 #fff, 0 -2px 0 #fff, 2px -2px 0 #fff,
-		-2px  0   0 #fff,                2px  0   0 #fff,
-		-2px  2px 0 #fff, 0  2px 0 #fff, 2px  2px 0 #fff;
+		-1px  1px 0 #fff, 0  1px 0 #fff, 1px  1px 0 #fff;
 }
 .cq-paw-fill { filter: brightness(0); }
 .cq-card-footer { font-size: 0.62rem; opacity: 0.6; text-align: center; margin-top: 4px; text-transform: uppercase; letter-spacing: .02em; }
