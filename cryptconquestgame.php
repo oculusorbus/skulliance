@@ -34,6 +34,23 @@ foreach (cryptconquestCompanionArtKeys() as $cq_key) {
 	$cq_suit = substr($cq_key, 0, 1);
 	$cq_land_cards[] = ['url' => $cq_art_pools['companion'][$cq_key], 'name' => cryptconquestCardLabel(['type' => 'companion', 'suit' => $cq_suit, 'rank' => null])];
 }
+// Repeat the unique card list enough times that a single marquee pass is
+// comfortably wider than any real viewport. Conquest only has 16
+// identities here (12 court + 4 companions -- the only cards with real
+// NFT art), unlike Crypt Crawl's fixed, hand-curated 44-card pool --
+// confirmed live that 16 cards' single-pass width (~1846px) can be
+// narrower than a wide desktop viewport, which breaks the duplicate-and-
+// translate(-50%) seamless-loop technique: once the animation scrolls
+// past the real content, blank track shows until it loops. 116px/card
+// matches .cq-strip-card's 96px flex-basis + 20px gap; the ~5100px
+// target mirrors Crypt Crawl's own real single-pass width (44 * 116px)
+// so both marquees read equally dense regardless of screen size.
+if (!empty($cq_land_cards)) {
+	$cq_card_px = 116;
+	$cq_target_px = 5100;
+	$cq_repeats = max(1, (int) ceil($cq_target_px / (count($cq_land_cards) * $cq_card_px)));
+	$cq_land_cards = array_merge(...array_fill(0, $cq_repeats, $cq_land_cards));
+}
 ?>
 <!doctype html>
 <html lang="en">
