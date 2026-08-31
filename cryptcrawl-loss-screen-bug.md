@@ -2,11 +2,13 @@
 
 **Status: fixed (2026-08-31), confirmed by the user in both a normal browser and
 the installed PWA.** This doc exists because getting here took multiple
-sessions and, in the final push alone, five sequential "fixes" that each
-solved something real without solving the actual problem. If this bug shows
-any sign of coming back, read this whole file before touching the code again
-— the failure mode is subtle and every earlier attempt looked correct in
-isolation.
+sessions and, along the way, SEVEN sequential "fixes" that each solved
+something real without solving the actual problem — including one, #7,
+that was a regression introduced by fix #6 itself, caught only because it
+broke in a specific new way (fine on PWA, broken on a fresh browser
+session) that pointed straight at it. If this bug shows any sign of coming
+back, read this whole file before touching the code again — the failure
+mode is subtle and every earlier attempt looked correct in isolation.
 
 ## The symptom
 
@@ -161,13 +163,42 @@ Split it instead:
   payout/announce inline before its redirect — safe there, because a real
   page navigation has its own native browser loading state; there's no
   "looks silently stuck" risk the way a JS fetch has.
-- A **passive safety-net finalize call** runs on every normal page load
-  (idempotent, so free on every load except the rare one where it matters)
-  in case the fire-and-forget request genuinely never reached the server at
-  all.
 
-This is the one that held. Confirmed by the user in both a regular browser
-and the installed PWA, loading quickly.
+The core split (two requests, fire-and-forget finalize, idempotency guard)
+is the one that held. It also originally shipped with a **passive
+safety-net finalize call on every normal page load** "in case the
+fire-and-forget request genuinely never reached the server" — this turned
+out to be its own bug, see #7.
+
+### 7. The page-load safety net was itself a real bug
+**Commit `2cf0975b`.** Reported: worked fine on the PWA, broke again on a
+freshly cleared-cache/logged-in browser session specifically. That pattern
+is what gave it away. The safety net added in fix #6 ran
+`cryptcrawlFinalizeRun()` on *every* normal page load of `cryptcrawl.php`,
+guarded only by `$_SESSION['cryptcrawl_finalized_runs']`. A fresh login or
+a cleared cache means a brand-new, empty session — exactly the condition a
+returning player hits constantly, and exactly what the user had just done.
+With an empty guard, the "safety net" wasn't a cheap no-op at all: it ran a
+full re-payout attempt (a DB fetch, `updateBalance`/`logCredit`, a Discord
+webhook POST with its own 8-second timeout) for whatever the player's most
+recent won/lost run happened to be, on *every single page load* — not just
+the one right after that run ended. Two real problems from one bad
+assumption: uncontrolled latency on ordinary page loads for anyone on a
+fresh session (reads exactly like "broken"), and CARBON that had already
+been paid potentially getting re-credited every time that session guard
+resets.
+**Fix**: removed the safety net entirely rather than patched. Any
+session-based guard has this identical fresh-session gap by construction —
+there's no version of "check a session flag" that survives a cleared
+session, so patching it further would just move the bug rather than close
+it. The one real finalize trigger left is the fire-and-forget
+`fetch(..., {keepalive:true})`, fired once, only right after the result
+screen it belongs to is already on screen. If a page-load fallback is ever
+wanted again, it needs a DB-level idempotency check (a real column,
+migration required), not a session flag — see "If this recurs" below.
+
+**This is the one that (as of this writing) held.** Confirmed by the user
+in both a regular browser and the installed PWA, loading quickly.
 
 ## Why this is "overkill" for showing a result screen — and why it's not
 
@@ -223,6 +254,16 @@ saga above needed them:
    to actually locate the cause than any amount of code reading — get it
    again if this recurs, don't try to re-derive the cause from the code
    alone first.
+
+## A known side effect of fix #7's bug: check for duplicate CARBON credits
+
+While the page-load safety net was live, anyone who loaded `cryptcrawl.php`
+on a fresh session (cleared cache, new browser, freshly logged in) while
+their most recent run was won/lost would have had that run's CARBON
+re-credited again. If duplicate `transactions` rows for the same amount
+show up for Crypt Crawl players around 2026-08-31, this is why — worth a
+spot-check of the transactions table for that window before assuming it's
+unrelated.
 
 ## Crypt Conquest
 
