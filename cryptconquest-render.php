@@ -92,6 +92,53 @@ function cryptconquestRulesHtml() { ?>
 	</div>
 <?php }
 
+// Guaranteed win/loss confirmation built ENTIRELY from the run already in
+// memory (the one cryptconquestHandleAction() just reported as finished) --
+// no DB re-read, no art lookups, nothing that can fail or pick a different
+// run. Mirrors cryptcrawlMinimalGameOverHtml(); see
+// cryptcrawl-loss-screen-bug.md for why this exists.
+//
+// The specific failure it prevents: cryptconquestRenderGameArea() below picks
+// what to show by asking "does this player have any active run?", and answers
+// with a live board whenever an orphaned status='active' row exists. Orphans
+// were possible until cryptconquestStartRun() got its duplicate guard, so
+// accounts that accumulated them beforehand would otherwise keep getting a
+// stray board instead of their result on every single finished run.
+// Deliberately emits the same class="cq-result " marker the client's swap
+// handler looks for, plus its own #cq-mood, so it behaves identically to a
+// normal game-over render.
+function cryptconquestMinimalGameOverHtml($run, $user_id) {
+	$won      = ($run['status'] === 'won');
+	$defeated = intval($run['enemies_defeated'] ?? 0);
+	$carbon   = intval($run['carbon_earned'] ?? 0);
+	$theme    = '/staking/images/themes/' . cryptconquestKingdomThemeFile($defeated);
+	$theme_img = "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('" . $theme . "')";
+	?>
+	<div id="cq-mood" data-mood="<?php echo $won ? 'triumph' : 'death'; ?>" data-restarted="0"
+		data-theme-active="1" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>"
+		style="display:none;"></div>
+	<div class="cq-inner">
+		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
+			<div class="cq-result-icon"><?php echo $won ? '👑' : '💀'; ?></div>
+			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($run) : 'The Necropolis Prevails'; ?></div>
+			<div class="cq-result-sub"><?php echo $defeated; ?> / 12 court cards defeated</div>
+			<?php if (intval($user_id) > 0 && $carbon > 0): ?>
+				<div class="cq-result-carbon">
+					<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">
+					+<?php echo number_format($carbon); ?> CARBON earned
+				</div>
+			<?php endif; ?>
+		</div>
+		<form method="post"><input type="hidden" name="action" value="start_run">
+			<button type="submit" class="cq-btn">⚔️ New Conquest</button>
+		</form>
+		<?php if (!$won): ?>
+		<a href="leaderboards.php?filterby=monthly-cryptconquest" class="cq-btn gold" style="margin-top:8px;">👑 Monthly Leaderboard</a>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
 function cryptconquestRenderGameArea($conn, $user_id) {
 	global $CRYPTCONQUEST_SUIT_SYMBOL, $CRYPTCONQUEST_SUIT_COLOR, $CRYPTCONQUEST_SUIT_NAME, $CRYPTCONQUEST_SUIT_EFFECT;
 

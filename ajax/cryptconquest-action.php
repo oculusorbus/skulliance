@@ -30,10 +30,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!isset($_SESSION['cryptconquest_flash'])) $_SESSION['cryptconquest_flash'] = [];
-cryptconquestHandleAction($conn, $user_id, $_POST);
+// Non-null only when THIS request finished a run -- see
+// cryptconquestHandleAction()'s own comment, and cryptcrawl-loss-screen-bug.md.
+$ended_run = cryptconquestHandleAction($conn, $user_id, $_POST);
 
 header('Content-Type: text/html; charset=utf-8');
-cryptconquestRenderGameArea($conn, $user_id);
+if ($ended_run) {
+	// THIS REQUEST ENDED A RUN -> show THAT run's result, full stop.
+	// Bypasses cryptconquestRenderGameArea() on purpose: it decides what to
+	// show by asking "does this player have any active run?", which renders
+	// a live board whenever an orphaned status='active' row exists -- the
+	// exact bug that replaced a completed conquest's win/loss screen with a
+	// stray, untouched board. The root cause is guarded at the source in
+	// cryptconquestStartRun(); this heals accounts that had already
+	// accumulated orphans before that guard existed.
+	$_SESSION['cryptconquest_flash'] = []; // drained, same as the normal render does
+	cryptconquestMinimalGameOverHtml($ended_run, $user_id);
+} else {
+	cryptconquestRenderGameArea($conn, $user_id);
+}
 
 // Send the response now; run CARBON payout + Discord announce (queued by
 // cryptconquestPersist() above, if this action ended a run) afterward,

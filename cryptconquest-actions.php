@@ -15,9 +15,19 @@ function cryptconquestFlash($msg, $type = 'info') {
 // flip_jester/abandon) for $user_id, queuing any resulting flash message.
 // $post is $_POST (or an equivalent array): 'action', and for play/suffer
 // also 'card_indices' (array of hand indices).
+// Returns the run THIS request just ended (status won/lost), or null. Mirrors
+// cryptcrawlHandleAction()'s own return value and exists for the same reason:
+// ajax/cryptconquest-action.php needs to know "did this request finish a run"
+// so it can render THAT run's result, rather than asking
+// cryptconquestRenderGameArea() "is any run active?" -- which answers with a
+// live board whenever an orphaned active row exists. See
+// cryptcrawl-loss-screen-bug.md.
 function cryptconquestHandleAction($conn, $user_id, $post) {
 	if (!isset($_SESSION['cryptconquest_flash'])) $_SESSION['cryptconquest_flash'] = [];
 	$action = $post['action'] ?? '';
+	// Set by whichever branch below actually resolves a run; returned at the
+	// end only if that run genuinely finished.
+	$final_run = null;
 
 	if ($action === 'start_run') {
 		cryptconquestStartRun($conn, $user_id);
@@ -33,6 +43,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 		if ($run) {
 			$indices = array_values(array_unique(array_map('intval', (array)($post['card_indices'] ?? []))));
 			$outcome = cryptconquestDoPlay($conn, $user_id, intval($run['id']), $indices);
+			if ($outcome) $final_run = $outcome['run'];
 			if (!$outcome) {
 				cryptconquestFlash('No active run.', 'error');
 			} elseif (!$outcome['result']['ok']) {
@@ -46,6 +57,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 		$run = cryptconquestGetActiveRun($conn, $user_id);
 		if ($run) {
 			$outcome = cryptconquestDoYield($conn, $user_id, intval($run['id']));
+			if ($outcome) $final_run = $outcome['run'];
 			if ($outcome && !$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
 			} elseif ($outcome && !empty($outcome['result']['dead_end'])) {
@@ -58,6 +70,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 		if ($run) {
 			$indices = array_values(array_unique(array_map('intval', (array)($post['card_indices'] ?? []))));
 			$outcome = cryptconquestDoSuffer($conn, $user_id, intval($run['id']), $indices);
+			if ($outcome) $final_run = $outcome['run'];
 			if (!$outcome) {
 				cryptconquestFlash('No active run.', 'error');
 			} elseif (!$outcome['result']['ok']) {
@@ -73,6 +86,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 		$run = cryptconquestGetActiveRun($conn, $user_id);
 		if ($run) {
 			$outcome = cryptconquestDoFlipJester($conn, $user_id, intval($run['id']));
+			if ($outcome) $final_run = $outcome['run'];
 			if (!$outcome || !$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'] ?? 'No active run.', 'error');
 			} else {
@@ -81,7 +95,13 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 		}
 
 	} elseif ($action === 'abandon') {
-		cryptconquestAbandonRun($conn, $user_id);
+		$final_run = cryptconquestAbandonRun($conn, $user_id);
 		cryptconquestFlash('Conquest abandoned.', 'info');
 	}
+
+	// Only report a run that actually FINISHED this request.
+	if ($final_run && in_array($final_run['status'] ?? '', ['won', 'lost'], true)) {
+		return $final_run;
+	}
+	return null;
 }
