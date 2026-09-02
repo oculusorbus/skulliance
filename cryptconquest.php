@@ -245,6 +245,17 @@ include 'header.php';
 .cq-enemy-owner-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex: none; background: #000; }
 .cq-enemy-owner-text strong { color: #ffcc4d; font-weight: 700; }
 .cq-enemy-owner:hover .cq-enemy-owner-text strong { color: #ffe08a; }
+/* Narrow screens: the enemy badge already eats ~64px of a ~350px row, so the
+   full "NFT owned by <name>" sentence is what pushes this onto a second line
+   and squeezes the block. Drop the prefix (an avatar plus a bold username
+   already reads as ownership), shrink it, and truncate rather than wrap so
+   the credit can never add height or force horizontal overflow. */
+@media (max-width: 560px) {
+	.cq-enemy-owner { margin-top: 6px; padding: 3px 8px 3px 3px; font-size: 0.66rem; max-width: 100%; }
+	.cq-enemy-owner-avatar { width: 18px; height: 18px; }
+	.cq-enemy-owner-prefix { display: none; }
+	.cq-enemy-owner-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
 .cq-shield { color: #c8dce8; }
 .cq-attack { color: #ff7070; }
 .cq-hud-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.72rem; opacity: 0.8; align-items: center; border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }

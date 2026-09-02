@@ -396,7 +396,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 						<?php else: ?>
 							<img class="cq-enemy-owner-avatar" src="icons/skull.png" alt="">
 						<?php endif; ?>
-						<span class="cq-enemy-owner-text">NFT owned by <strong><?php echo htmlspecialchars($enemy_owner['username']); ?></strong></span>
+						<span class="cq-enemy-owner-text"><span class="cq-enemy-owner-prefix">NFT owned by </span><strong><?php echo htmlspecialchars($enemy_owner['username']); ?></strong></span>
 					</a>
 					<?php endif; ?>
 				</div>
