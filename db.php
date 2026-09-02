@@ -5574,7 +5574,12 @@ function checkCryptCrawlLeaderboard($conn, $weekly=false, $rewards=false) {
 }
 
 function resetCryptCrawls($conn) {
-	$sql = "UPDATE cryptcrawls SET reward = 1 WHERE reward = 0";
+	// AND status IN ('won','lost') for exactly the same reason as
+	// resetCryptConquests() -- see its comment. checkCryptCrawlLeaderboard()
+	// also only counts status IN ('won','lost'), so flagging still-active
+	// delves as already-rewarded silently disqualifies any delve that happens
+	// to be in progress when the weekly payout fires.
+	$sql = "UPDATE cryptcrawls SET reward = 1 WHERE reward = 0 AND status IN ('won', 'lost')";
 	if ($conn->query($sql) !== TRUE) {
 		echo "Error: " . $sql . "<br>" . $conn->error;
 	}
@@ -5692,7 +5697,22 @@ function checkCryptConquestLeaderboard($conn, $monthly=false, $rewards=false) {
 }
 
 function resetCryptConquests($conn) {
-	$sql = "UPDATE cryptconquests SET reward = 1 WHERE reward = 0";
+	// AND status IN ('won','lost') is load-bearing -- fixed 2026-09-01 after a
+	// user reported completed conquests missing from the monthly board.
+	//
+	// checkCryptConquestLeaderboard() only ever COUNTS (and therefore only ever
+	// pays for) runs with status IN ('won','lost'). This reset used to have no
+	// status filter at all, so it also stamped reward = 1 onto runs that were
+	// still 'active' -- runs nobody had been paid for. When the player later
+	// finished one, cryptconquestSaveRun() faithfully wrote back the reward = 1
+	// it had loaded, so the run completed permanently ineligible and could
+	// never appear on any future monthly board.
+	//
+	// Confirmed directly in the data: after the 2026-09-01 00:00:22 payout, a
+	// row belonging to another player sat at status='active' with reward=1, and
+	// several runs created 08-31 but finished later that day all carried
+	// reward=1 despite never having been counted in any payout.
+	$sql = "UPDATE cryptconquests SET reward = 1 WHERE reward = 0 AND status IN ('won', 'lost')";
 	if ($conn->query($sql) !== TRUE) {
 		echo "Error: " . $sql . "<br>" . $conn->error;
 	}
