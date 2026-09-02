@@ -10695,6 +10695,15 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord>" : $wh_opp_uname;
 	$wh_opp_ava_url = ($wh_opp_discord && $wh_opp_avatar) ? "https://cdn.discordapp.com/avatars/$wh_opp_discord/$wh_opp_avatar.png" : "";
 	$wh_opp_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_opp_uname);
+	// Real ping (message content, not just the embed) for the OPPONENT only --
+	// third-party inclusion is the point (an inactive holder finding out their
+	// NFT is fighting in a Gauntlet is the hook to bring them back), while the
+	// initiating player already knows the result and doesn't need a ping for
+	// their own action. Discord only notifies for mentions in a webhook's
+	// content field, not ones embedded in the description -- $wh_opp_mention
+	// above still renders inline there, this is what actually pings them.
+	// Guarded against self-fights (own NFT as its own opponent) just in case.
+	$wh_opp_ping = ($wh_opp_discord && $wh_opp_discord !== $wh_discord) ? "<@$wh_opp_discord>" : "";
 	// Reward currency name
 	$wh_reward_proj  = ($outcome === 'win') ? $opponent_project_id : $player_project_id;
 	$wh_curr_r       = $conn->query("SELECT currency FROM projects WHERE id=$wh_reward_proj LIMIT 1");
@@ -10732,7 +10741,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		if ($random_reward) $wh_desc .= " *(Random Currency)*";
 		$wh_desc .= "\n🏆 **Win #$wh_wins** of " . GAUNTLET_MAX_WINS;
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile], null, $wh_opp_ping);
 	} else {
 		$wh_desc  = $wh_mention . " was defeated by $wh_opp_mention — run ends here.\n\n";
 		$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
@@ -10741,7 +10750,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$wh_desc .= "💰 **Opponent Earns:** " . number_format($reward) . " $wh_currency\n";
 		$wh_desc .= "🏆 **Final Record:** $wh_wins win" . ($wh_wins !== 1 ? "s" : "") . " / " . intval($wh_stats['losses']) . " loss" . (intval($wh_stats['losses']) !== 1 ? "es" : "");
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile]);
+		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile], null, $wh_opp_ping);
 	}
 	return $outcome;
 }
@@ -11779,6 +11788,7 @@ function cryptconquestGetCardArtPools($conn, $seed = 0) {
 			'user_id'    => intval($row['user_id']),
 			'username'   => $row['username'],
 			'avatar_url' => $avatar_url,
+			'discord_id' => $row['discord_id'] ?? null,
 		];
 	}
 
@@ -12133,6 +12143,8 @@ function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 	if ($run['status'] === 'won') {
 		$cq_tier = cryptconquestTier($run);
 		$cq_desc = $cq_mention . " conquered the Necropolis! 👑\n\n👑 **" . $cq_tier . "**\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_badge_text;
+		// No third party in a win -- nothing to ping. The player already
+		// knows they won; a self-ping would just be notification noise.
 		discordmsg("👑 Crypt Conquest Won", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "00C8A0", $cq_author, $cq_footer);
 	} else {
 		// Name the holder whose NFT landed the killing blow, and how much the
@@ -12140,21 +12152,39 @@ function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 		// and self-kills-with-nothing-owed -- in which case this reads exactly
 		// as it always did.
 		$cq_slain = "";
+		// Only the killer (third party) gets a real ping, not the victim --
+		// same reasoning as the Gauntlet opponent ping: surfacing an inactive
+		// holder's Cryptie doing something cool in a game they don't play is
+		// the actual hook to bring them back, while the player who just lost
+		// already knows and doesn't need a notification for it.
+		$cq_content = "";
 		if ($killer && !empty($killer['username'])) {
-			// Discord embed descriptions render markdown links, but there's no
-			// second author slot to reuse (the embed's one author line is
-			// already the victim, per $cq_author above) -- so the killer's
-			// name is linked inline instead, same profile.php URL shape as
-			// $cq_profile just uses a different username.
-			$cq_killer_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($killer['username']);
-			$cq_killer_link = "[" . $killer['username'] . "](" . $cq_killer_profile . ")";
+			// The embed text below still gets an <@id> (or a profile.php link,
+			// for the rare court-card owner with no discord_id -- unlikely
+			// given the court pool is already filtered to visibility=2
+			// accounts) so the "Slain by" line reads as a real name either
+			// way. But a mention INSIDE the embed never actually notifies
+			// anyone -- Discord only pings for mentions in the message's
+			// content field -- so the killer is also placed in $cq_content
+			// below, which is what actually triggers a notification.
+			// Skipped for a self-kill: pinging yourself for killing yourself
+			// is just noise, not a hook.
+			if (!empty($killer['discord_id'])) {
+				$cq_killer_link = "<@" . $killer['discord_id'] . ">";
+				if (intval($killer['user_id']) !== $cq_user_id) {
+					$cq_content = $cq_killer_link;
+				}
+			} else {
+				$cq_killer_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($killer['username']);
+				$cq_killer_link = "[" . $killer['username'] . "](" . $cq_killer_profile . ")";
+			}
 			$cq_slain = "\n\n☠️ **Slain by " . $cq_killer_link . "'s " . ($killer['card'] ?? 'court card') . "**";
 			if ($cq_carbon > 0 && intval($killer['user_id']) !== $cq_user_id) {
 				$cq_slain .= "\n💰 " . $cq_killer_link . " collects **" . number_format($cq_carbon) . " CARBON** as the bounty.";
 			}
 		}
 		$cq_desc = $cq_mention . " fell to the Necropolis. 💀\n\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_slain . $cq_badge_text;
-		discordmsg("💀 Crypt Conquest Ended", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "FF4444", $cq_author, $cq_footer);
+		discordmsg("💀 Crypt Conquest Ended", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "FF4444", $cq_author, $cq_footer, $cq_content);
 	}
 }
 

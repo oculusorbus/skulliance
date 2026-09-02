@@ -3,7 +3,16 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null) {
+    // $content, if passed, is a SEPARATE top-level message field from
+    // $description -- required because Discord only delivers an actual
+    // notification/ping for <@id> mentions placed in a webhook message's
+    // content field. A mention written inside the embed (title/description/
+    // fields) still renders as a clickable highlighted name, but never
+    // notifies that user -- verified against Discord's own webhook
+    // behavior, not an assumption. Leave $content empty (the default) for
+    // every existing call site that doesn't need to actually ping anyone;
+    // this is purely additive.
+    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="") {
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -84,12 +93,15 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 	    // that doesn't pass it renders exactly as it always has.
 	    if($footer) $embed["footer"] = $footer;
 
-	    $msg = json_encode([
+	    $payload = [
 	        "username"   => "Skull Bot",
 	        "avatar_url" => "https://skulliance.io/staking/icons/skulliance.png",
 	        "tts"        => false,
 	        "embeds"     => [$embed],
-		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		];
+		if ($content !== "") $payload["content"] = $content;
+
+	    $msg = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
         if($webhook != "") {
             $ch = curl_init( $webhook );
