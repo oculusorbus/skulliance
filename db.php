@@ -11986,6 +11986,53 @@ function cryptconquestApplyCarbon(&$run, $value) {
 
 // Credits the CARBON a run accumulated the moment it actually ends --
 // same guard-on-status, real-accounts-only shape as cryptcrawlPayoutCarbon.
+// The NFT owner whose court card landed the killing blow, or null.
+//
+// Resolved from the SAME seeded pool the board was rendered from
+// (cryptconquestGetCardArtPools() keyed off the run id), so no mapping has to
+// be stored anywhere. Deliberately resolved AT DEATH TIME rather than
+// recomputed later: cryptconquestPickUniqueOwnerArt() prefers locally-cached
+// art, which means the mapping depends on what's on disk, and disk state
+// changes (e.g. after a bulk pre-cache run). Resolving now, while the run is
+// ending, is the only point where the answer is guaranteed to match the board
+// the player actually just lost to.
+function cryptconquestResolveKiller($conn, $run) {
+	if (($run['status'] ?? '') !== 'lost') return null;   // wins have no killer
+	if (!empty($run['abandoned'])) return null;            // quitting isn't a kill
+	if (intval($run['id'] ?? 0) <= 0) return null;         // guest run, nobody to pay
+	$enemy = $run['current_enemy'] ?? null;
+	if (empty($enemy['suit']) || !isset($enemy['rank'])) return null;
+
+	$pools = cryptconquestGetCardArtPools($conn, intval($run['id']));
+	$key = cryptconquestCardArtKey(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']]);
+	$owner = $pools['enemy_owners'][$key] ?? null;
+	if (!$owner || intval($owner['user_id']) <= 0) return null;
+	$owner['card'] = cryptconquestCardLabel(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']]);
+	return $owner;
+}
+
+// Mirrors the run's CARBON to the owner of the NFT that killed the player --
+// a second, newly-minted credit of the same amount, not a split of theirs.
+// Returns the killer (for the Discord post) even when nothing was paid, so a
+// 0-CARBON run still gets credited in the notification.
+//
+// Self-kills pay nothing: if the player owns the NFT that killed them they'd
+// otherwise collect twice for one run. Rare (your card has to be in the
+// 12-card lineup AND be the one that finishes you), but it's free to guard,
+// and "your own Cryptie killed you" is its own reward. Flip this if you'd
+// rather it always pay.
+function cryptconquestPayoutKiller($conn, $run) {
+	$owner = cryptconquestResolveKiller($conn, $run);
+	if (!$owner) return null;
+	$amount = intval($run['carbon_earned'] ?? 0);
+	$killer_id = intval($owner['user_id']);
+	if ($amount > 0 && $killer_id !== intval($run['user_id'])) {
+		updateBalance($conn, $killer_id, 15, $amount);
+		logCredit($conn, $killer_id, $amount, 15);
+	}
+	return $owner;
+}
+
 function cryptconquestPayoutCarbon($conn, $run) {
 	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
 	$run_id = intval($run['id']);
@@ -12044,7 +12091,7 @@ function cryptconquestLeaderboardLeaderUserId($conn, $monthly = false) {
 // session-independence reason cryptcrawlAnnounceResult() was fixed to --
 // CARBON payout shouldn't ever succeed while the Discord post silently
 // no-ops because of a stale/partial session on that particular request.
-function cryptconquestAnnounceResult($conn, $run) {
+function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 	if (intval($run['id']) <= 0) return; // guest run, no DB row, nothing to announce
 	if ($run['status'] !== 'won' && $run['status'] !== 'lost') return;
 
@@ -12088,7 +12135,18 @@ function cryptconquestAnnounceResult($conn, $run) {
 		$cq_desc = $cq_mention . " conquered the Necropolis! 👑\n\n👑 **" . $cq_tier . "**\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_badge_text;
 		discordmsg("👑 Crypt Conquest Won", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "00C8A0", $cq_author, $cq_footer);
 	} else {
-		$cq_desc = $cq_mention . " fell to the Necropolis. 💀\n\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_badge_text;
+		// Name the holder whose NFT landed the killing blow, and how much the
+		// mirrored bounty paid them. $killer is null for abandons, guest runs,
+		// and self-kills-with-nothing-owed -- in which case this reads exactly
+		// as it always did.
+		$cq_slain = "";
+		if ($killer && !empty($killer['username'])) {
+			$cq_slain = "\n\n☠️ **Slain by " . $killer['username'] . "'s " . ($killer['card'] ?? 'court card') . "**";
+			if ($cq_carbon > 0 && intval($killer['user_id']) !== $cq_user_id) {
+				$cq_slain .= "\n💰 " . $killer['username'] . " collects **" . number_format($cq_carbon) . " CARBON** as the bounty.";
+			}
+		}
+		$cq_desc = $cq_mention . " fell to the Necropolis. 💀\n\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_slain . $cq_badge_text;
 		discordmsg("💀 Crypt Conquest Ended", $cq_desc, $cq_theme_url, "https://skulliance.io/staking/cryptconquest.php", "cryptconquest", $cq_avatar_url, "FF4444", $cq_author, $cq_footer);
 	}
 }
@@ -12144,8 +12202,16 @@ function cryptconquestFlushPendingSideEffects($conn) {
 		} catch (\Throwable $e) {
 			error_log('cryptconquestPayoutCarbon failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
 		}
+		// Mirrored bounty to whoever's NFT landed the killing blow. Runs
+		// BEFORE the announcement so the Discord post can name them.
+		$killer = null;
 		try {
-			cryptconquestAnnounceResult($conn, $run); // no-op unless status is won/lost
+			$killer = cryptconquestPayoutKiller($conn, $run);
+		} catch (\Throwable $e) {
+			error_log('cryptconquestPayoutKiller failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
+		}
+		try {
+			cryptconquestAnnounceResult($conn, $run, $killer); // no-op unless status is won/lost
 		} catch (\Throwable $e) {
 			error_log('cryptconquestAnnounceResult failed for run ' . intval($run['id'] ?? 0) . ': ' . $e->getMessage());
 		}
@@ -12201,6 +12267,12 @@ function cryptconquestAbandonRun($conn, $user_id) {
 	if (!$run) return null;
 	$run['status'] = 'lost';
 	$run['phase'] = 'over';
+	// Transient marker (never a column -- cryptconquestSaveRun() writes an
+	// explicit column list). Giving up isn't being slain, so an abandoned run
+	// credits no killer and pays no mirrored bounty. It also happens to close
+	// the cheapest farm: start, abandon, repeat until your own NFT is the
+	// current enemy.
+	$run['abandoned'] = true;
 	cryptconquestPersist($conn, $run);
 	return $run;
 }
