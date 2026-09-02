@@ -444,6 +444,11 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		</form>
 		<div class="cq-note">Select one card, or 2-4 of the <em>same rank</em> totalling 10 or less, or an Animal Companion paired with one other card.</div>
 
+		<!-- Two deliberate rows, not one wrapping row: the run-affecting
+		     actions (Flip Jester, Abandon Run) are kept visually separate
+		     from the read-only ones (View Instructions, View Leaderboard),
+		     so a stray tap in the reference row can never reach something
+		     that changes or ends the run. -->
 		<div class="cq-controls-row">
 			<form method="post"><input type="hidden" name="action" value="flip_jester">
 				<button type="submit" class="cq-btn secondary" <?php echo $jesters_left > 0 ? '' : 'disabled'; ?>>🃏 Flip Jester (<?php echo $jesters_left; ?> left)</button>
@@ -452,7 +457,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<input type="hidden" name="action" value="abandon">
 				<button type="submit" class="cq-btn secondary">🏳️ Abandon Run</button>
 			</form>
+		</div>
+		<div class="cq-controls-row">
 			<button type="button" class="cq-btn secondary" id="cq-instructions-btn">📖 View Instructions</button>
+			<!-- Mid-run leaderboard link, matching the one Crypt Crawl's own
+			     controls row has had all along (Conquest previously had no
+			     equivalent). Ordinary <a>, outside any form -- nothing for
+			     the AJAX submit handler to intercept. -->
+			<a href="leaderboards.php?filterby=monthly-cryptconquest" class="cq-btn secondary">👑 View Leaderboard</a>
 		</div>
 
 		<!-- Always-on quick reference, not a click-to-open modal (that's

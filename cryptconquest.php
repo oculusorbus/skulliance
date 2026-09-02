@@ -297,13 +297,21 @@ include 'header.php';
 
 .cq-hand-controls { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }
 .cq-hand-controls .cq-btn { flex: 1; min-width: 140px; }
-.cq-controls-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-.cq-controls-row .cq-btn { flex: 1; min-width: 140px; }
+/* Two fixed columns, matching Crypt Crawl's own .cc-flee-row, rather than
+   flex-wrap. The buttons here are wrapped in <form> elements, so the FORM is
+   the flex child -- the old `.cq-controls-row .cq-btn { flex: 1 }` was being
+   applied to a nested element that was never a flex item, so the columns
+   never actually evened out. Grid sizes the cells directly and the button
+   fills its cell via .cq-btn's own width:100%. */
+.cq-controls-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.cq-controls-row + .cq-controls-row { margin-top: 8px; }
+.cq-controls-row form { display: block; }
 
 .cq-btn {
 	position: relative; overflow: hidden; background: #00c8a0; color: #012; border: 1px solid transparent; border-radius: 6px;
 	padding: 10px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer; box-sizing: border-box;
 	width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: center; text-align: center;
+	text-decoration: none; /* some .cq-btn are <a> (View/Monthly Leaderboard), not <button> */
 	transition: transform .12s ease, filter .12s ease, box-shadow .2s ease;
 }
 .cq-btn:hover:not(:disabled) { filter: brightness(1.12); box-shadow: 0 6px 16px rgba(0,200,160,.35); }
