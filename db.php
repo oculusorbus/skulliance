@@ -10692,7 +10692,13 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$wh_opp_uname  = $wh_onft['opp_username'] ?? 'Unknown';
 	$wh_opp_discord = $wh_onft['opp_discord']  ?? '';
 	$wh_opp_avatar  = $wh_onft['opp_avatar']   ?? '';
-	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord>" : $wh_opp_uname;
+	// Plain-text username tags along right after the mention, same reason as
+	// Crypt Conquest's killer line: a bare <@id> sometimes renders as the raw
+	// numeric ID instead of a name (Discord resolves it client-side per
+	// viewer, and doesn't always have this user cached), so the readable
+	// name needs to stand on its own rather than depend on the mention
+	// resolving.
+	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord> ($wh_opp_uname)" : $wh_opp_uname;
 	$wh_opp_ava_url = ($wh_opp_discord && $wh_opp_avatar) ? "https://cdn.discordapp.com/avatars/$wh_opp_discord/$wh_opp_avatar.png" : "";
 	$wh_opp_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_opp_uname);
 	// Real ping (message content, not just the embed) for the OPPONENT only --
@@ -12159,20 +12165,20 @@ function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 		// already knows and doesn't need a notification for it.
 		$cq_content = "";
 		if ($killer && !empty($killer['username'])) {
-			// The embed text below still gets an <@id> (or a profile.php link,
-			// for the rare court-card owner with no discord_id -- unlikely
-			// given the court pool is already filtered to visibility=2
-			// accounts) so the "Slain by" line reads as a real name either
-			// way. But a mention INSIDE the embed never actually notifies
-			// anyone -- Discord only pings for mentions in the message's
-			// content field -- so the killer is also placed in $cq_content
-			// below, which is what actually triggers a notification.
-			// Skipped for a self-kill: pinging yourself for killing yourself
-			// is just noise, not a hook.
+			// A bare <@id> mention sometimes renders as the raw numeric ID
+			// instead of a name -- Discord resolves it client-side per viewer,
+			// and it doesn't always have the killer cached (they may not even
+			// be in the server). So the mention appears exactly ONCE, in the
+			// "Slain by" line, immediately followed by the plain-text
+			// username as a fallback that can't fail to render -- and every
+			// OTHER reference (the bounty line) uses that plain username
+			// alone, no repeated mention. This is purely about what's legible
+			// in the embed TEXT; $cq_content below is the separate field that
+			// actually fires the notification and stays a bare mention.
 			if (!empty($killer['discord_id'])) {
-				$cq_killer_link = "<@" . $killer['discord_id'] . ">";
+				$cq_killer_link = "<@" . $killer['discord_id'] . "> (" . $killer['username'] . ")";
 				if (intval($killer['user_id']) !== $cq_user_id) {
-					$cq_content = $cq_killer_link;
+					$cq_content = "<@" . $killer['discord_id'] . ">";
 				}
 			} else {
 				$cq_killer_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($killer['username']);
@@ -12180,7 +12186,7 @@ function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 			}
 			$cq_slain = "\n\n☠️ **Slain by " . $cq_killer_link . "'s " . ($killer['card'] ?? 'court card') . "**";
 			if ($cq_carbon > 0 && intval($killer['user_id']) !== $cq_user_id) {
-				$cq_slain .= "\n💰 " . $cq_killer_link . " collects **" . number_format($cq_carbon) . " CARBON** as the bounty.";
+				$cq_slain .= "\n💰 " . $killer['username'] . " collects **" . number_format($cq_carbon) . " CARBON** as the bounty.";
 			}
 		}
 		$cq_desc = $cq_mention . " fell to the Necropolis. 💀\n\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_slain . $cq_badge_text;
