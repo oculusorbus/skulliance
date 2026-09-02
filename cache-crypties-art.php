@@ -15,14 +15,10 @@
 // meant to include. Running this once fixes it properly -- every Crypties
 // holder becomes equally eligible, because every Crypties image is on disk.
 //
-// USAGE (CLI is strongly preferred -- this makes slow network calls):
+// USAGE -- CLI ONLY (see the SAPI guard below; over HTTP this 404s):
+//   php cache-crypties-art.php                       # dry run: just report
 //   php cache-crypties-art.php run=1                 # cache everything missing
 //   php cache-crypties-art.php run=1 limit=100       # do 100, then stop
-//   php cache-crypties-art.php                       # dry run: just report
-//
-// Browser use works too (rewards.php's own convention) but a large batch will
-// outlive most request timeouts -- use limit= if you go that route:
-//   /staking/cache-crypties-art.php?run=1&limit=50
 //
 // SAFE TO RE-RUN. Anything already on disk is skipped without a network call,
 // so repeat runs cost almost nothing and only pick up whatever is new or
@@ -38,11 +34,20 @@ $is_cli  = (php_sapi_name() === 'cli');
 $do_run  = isset($_GET['run']);
 $limit   = isset($_GET['limit']) ? max(0, intval($_GET['limit'])) : 0;
 
+// CLI ONLY. This has no auth and calls cacheNFTImage() directly, which
+// bypasses the per-IP rate limiting ajax/cache-nft-image.php applies -- so
+// over HTTP it was a free way for any anonymous visitor to make this server
+// perform hundreds of outbound IPFS fetches. Not theoretical: a browser hit
+// on ?run=1&limit=10 during testing really did execute it, and collided with
+// the CLI run that was already going (harmless -- the library's lock caught
+// it -- but it proved the endpoint was live and unauthenticated).
+//
+// Kept rather than deleted because it stays useful: any Cryptie staked in
+// future that wasn't on the platform before will need its art cached, and
+// re-running is free for everything already on disk.
 if (!$is_cli) {
-	header('Content-Type: text/plain; charset=utf-8');
-	// Long batches over HTTP are a bad idea, but don't die halfway either.
-	set_time_limit(0);
-	@ini_set('zlib.output_compression', '0');
+	http_response_code(404);
+	exit;
 }
 
 function cc_out($line) {
