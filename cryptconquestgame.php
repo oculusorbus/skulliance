@@ -312,9 +312,10 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 		<div class="cq-land-wrap">
 			<h2>How a Conquest Works</h2>
 			<ul class="cq-mechanics">
+				<li><span class="cq-mech-emoji" aria-hidden="true">🔄</span><span><strong>Your hand only shrinks</strong> - it never refills at the end of a turn. Cards you play AND cards you discard to cover damage are both gone for good, so your hand is effectively your health bar.</span></li>
 				<li><span class="cq-mech-emoji" aria-hidden="true">♣️</span><span><strong>Clubs double your attack</strong> - play a Club into a hit and the whole total is doubled against the current court card.</span></li>
-				<li><span class="cq-mech-emoji" aria-hidden="true">♥️</span><span><strong>Hearts heal your discard pile</strong> - cards come back into the tavern deck for a fresh draw later, instead of staying gone for good.</span></li>
-				<li><span class="cq-mech-emoji" aria-hidden="true">♦️</span><span><strong>Diamonds draw you cards</strong> - refill your hand straight off the attack you just made, no extra cost.</span></li>
+				<li><span class="cq-mech-emoji" aria-hidden="true">♥️</span><span><strong>Hearts heal your discard pile</strong> - random cards move from the discard to the <em>bottom</em> of the deck. Not into your hand: it stops the deck running dry rather than helping you this turn.</span></li>
+				<li><span class="cq-mech-emoji" aria-hidden="true">♦️</span><span><strong>Diamonds draw you cards</strong> - straight into your hand, off the attack you just made. The only routine way to refill, which makes it a lifeline rather than a bonus.</span></li>
 				<li><span class="cq-mech-emoji" aria-hidden="true">♠️</span><span><strong>Spades shield you</strong> - blunt the court card's next attack before it ever reaches your hand.</span></li>
 				<li><span class="cq-mech-emoji" aria-hidden="true">👑</span><span><strong>Defeat all 12 court cards</strong> - four Jacks, four Queens, four Kings - to conquer the Necropolis. Exact-damage kills recover the card face-down atop your deck instead of losing it to the discard.</span></li>
 			</ul>

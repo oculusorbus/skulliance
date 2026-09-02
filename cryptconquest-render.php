@@ -57,11 +57,31 @@ function cryptconquestRulesHtml() { ?>
 		<p>Play a card from your hand -- or several of the <em>same rank</em> totalling 10 or less, or an Animal Companion -- to attack and trigger its suit. Or <strong>Yield</strong>: no card played, no suit power, straight to covering whatever hits back.</p>
 	</div>
 
+	<!-- Added 2026-09-01 after a player reported cards seeming to vanish from
+	     hand ("I see 5, play a couple, expect 3, there's just 1"). Nothing was
+	     wrong -- verified by a 300-game card-conservation simulation -- but
+	     NOTHING in the rules said the hand never auto-refills, or that
+	     covering damage also spends hand cards. That's the single most
+	     important thing about this game and it was missing entirely. The same
+	     player also assumed you could play cards FROM the discard pile, which
+	     is why that's now stated explicitly rather than just implied. -->
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">🔄 Your Hand Only Shrinks</div>
+		<p><strong>Your hand is your health, and it does not refill at the end of a turn.</strong> Cards leave your hand two ways, and both are permanent:</p>
+		<ul class="cq-rules-list">
+			<li><strong>Playing them</strong> -- any card you attack with goes to the discard pile, whatever its suit.</li>
+			<li><strong>Covering damage</strong> -- cards you discard to survive a hit are gone too.</li>
+		</ul>
+		<p>You <em>never</em> play cards out of the discard pile -- every play comes from your hand. The only ways to gain cards back are <strong style="color:#ff9900;">♦ Diamonds</strong> and a <strong style="color:#00c8a0;">Jester flip</strong>.</p>
+		<p style="opacity:.85;">Card flow: <strong>Deck → Hand → Discard.</strong> ♥ Hearts is the only route back, and it returns cards to the <em>deck</em>, not your hand.</p>
+	</div>
+
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">✨ Suit Powers</div>
+		<p style="opacity:.85;">Each power is worth the total value of what you played, and only fires if the suit differs from the court card's own.</p>
 		<ul class="cq-rules-list">
-			<li><strong style="color:#ff6b6b;">♥ Hearts</strong> -- heals cards back from your discard into the deck.</li>
-			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws you fresh cards.</li>
+			<li><strong style="color:#ff6b6b;">♥ Hearts</strong> -- moves that many <em>random</em> cards from your discard pile to the <strong>bottom of the deck</strong>. Not into your hand, and you won't draw them again for a while -- it keeps the deck from running dry rather than helping you right now.</li>
+			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws that many cards from the deck <strong>into your hand</strong>. The only routine way to refill, so this is usually your lifeline, not a bonus.</li>
 			<li><strong style="color:#c8dce8;">♣ Clubs</strong> -- doubles your damage.</li>
 			<li><strong style="color:#c8dce8;">♠ Spades</strong> -- shields you from that enemy's counterattack.</li>
 		</ul>

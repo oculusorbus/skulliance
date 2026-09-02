@@ -21,13 +21,29 @@ Your hand draws from a **tavern deck**: the number cards 2-10 of all four suits,
 * **Play a card, a same-rank combo of cards, or an Animal Companion** (a Companion can join at most one other card, never a bigger combo) to attack the current court card, **or**
 * **Yield** - no card played, no suit power triggers, straight to covering whatever the court card hits back with.
 
+## Your Hand Only Shrinks
+
+This is the single most important thing to understand, and the easiest to miss:
+**your hand is your health, and it does not refill at the end of a turn.**
+
+Cards leave your hand two ways, and both are permanent:
+
+* **Playing them** - any card you attack with goes to the discard pile, whatever its suit.
+* **Covering damage** - cards discarded to survive a hit are gone too.
+
+You never play cards *out of* the discard pile; every play comes from your hand.
+The only ways to gain cards back are **♦ Diamonds** and a **Jester flip**.
+
+Card flow is one direction - **deck → hand → discard** - with ♥ Hearts the only
+route back, and it returns cards to the *deck*, not your hand.
+
 ## Suit Powers
 
 Playing a card whose suit differs from the current court card's own suit (the court card's own suit is immune) triggers that suit's power, based on the total value of everything you just played:
 
 * **♣ Clubs double your attack** - the whole total against the court card is doubled.
-* **♥ Hearts heal** - that many cards return from your discard pile back into the tavern deck.
-* **♦ Diamonds draw** - draw that many fresh cards, up to your hand size cap.
+* **♥ Hearts heal** - that many *random* cards return from your discard pile to the **bottom** of the tavern deck. Not into your hand, and you won't draw them again for a while: it keeps the deck from running dry rather than helping you this turn.
+* **♦ Diamonds draw** - draw that many fresh cards from the deck into your hand, up to your hand size cap. The only routine way to refill, which makes Diamonds a lifeline rather than a bonus.
 * **♠ Spades shield** - the court card takes that much off its next attack against you.
 
 Hearts resolves before Diamonds when a combo triggers both at once.
