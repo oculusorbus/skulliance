@@ -12141,9 +12141,16 @@ function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 		// as it always did.
 		$cq_slain = "";
 		if ($killer && !empty($killer['username'])) {
-			$cq_slain = "\n\n☠️ **Slain by " . $killer['username'] . "'s " . ($killer['card'] ?? 'court card') . "**";
+			// Discord embed descriptions render markdown links, but there's no
+			// second author slot to reuse (the embed's one author line is
+			// already the victim, per $cq_author above) -- so the killer's
+			// name is linked inline instead, same profile.php URL shape as
+			// $cq_profile just uses a different username.
+			$cq_killer_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($killer['username']);
+			$cq_killer_link = "[" . $killer['username'] . "](" . $cq_killer_profile . ")";
+			$cq_slain = "\n\n☠️ **Slain by " . $cq_killer_link . "'s " . ($killer['card'] ?? 'court card') . "**";
 			if ($cq_carbon > 0 && intval($killer['user_id']) !== $cq_user_id) {
-				$cq_slain .= "\n💰 " . $killer['username'] . " collects **" . number_format($cq_carbon) . " CARBON** as the bounty.";
+				$cq_slain .= "\n💰 " . $cq_killer_link . " collects **" . number_format($cq_carbon) . " CARBON** as the bounty.";
 			}
 		}
 		$cq_desc = $cq_mention . " fell to the Necropolis. 💀\n\n💀 **Court Cards Defeated:** " . $cq_depth . "/12" . $cq_slain . $cq_badge_text;
