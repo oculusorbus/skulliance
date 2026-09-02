@@ -197,7 +197,17 @@ records verified constants, and tracks what still needs to be written.
   cards defeated, 0-12) DESC, losses ASC. **Deliberately monthly, not weekly** (explicit user
   instruction) -- 100,000 CARBON pool, `round(100000/rank)` per rank, paid via
   `rewards.php?cryptconquest=1` (needs its own monthly crontab entry -- nothing in this repo
-  schedules cron itself, see rewards.php's own comment on that line). Live-play announcements
+  schedules cron itself, see rewards.php's own comment on that line).
+  **An EMPTY monthly board right after a payout is expected, not a bug** (confirmed live
+  2026-09-01 after it was reported as one). The monthly view filters on `cq.reward = 0`, i.e.
+  "runs since the last payout" -- not "runs this calendar month". `resetCryptConquests()` flips
+  every counted run to `reward = 1` as part of paying out, so the board is empty by design until
+  someone completes a new run, and refills immediately when they do. The all-time view
+  (`filterby=cryptconquest`, no reward filter) still shows the full history throughout, which is
+  the quickest way to confirm nothing was actually lost. Same reward-flag pattern as Crypt Crawl,
+  Gauntlets, Skull Swap and Missions, so the same "looks broken, isn't" applies to all of them.
+  Genuinely worth checking if this ever looks wrong: that the crontab entry is really monthly --
+  a daily schedule would pay the full 100,000 pool out every day and wipe the board each time. Live-play announcements
   (`cryptconquestAnnounceResult`) post to the "cryptconquest" webhooks.php channel
   (`getCryptConquestWebhook()`) -- **deliberately guarded with `function_exists()`** in
   webhooks.php (unlike every other channel case there), since that credential function does not
