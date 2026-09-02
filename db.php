@@ -11645,7 +11645,28 @@ function cryptconquestFetchCourtCandidates($conn) {
 // deterministically by $seed. Falls back to allowing repeat owners only if
 // there genuinely aren't enough distinct ones to fill the slots (a tiny/test
 // dataset) -- graceful degradation beats leaving cards blank.
-function cryptconquestPickUniqueOwnerArt($rows, $seed, $slots) {
+// True when this NFT has a locally cached image on disk -- the same lookup
+// getIPFS() does before falling back to a public IPFS gateway. Used to PREFER
+// art that will actually render: the gateway fallback (ipfs.io) is slow and
+// frequently fails, and a court card whose image never loads just shows a
+// blank black card. That was invisible while the pool was scoped to the
+// owner's own (fully cached) wallets, and surfaced immediately once it went
+// platform-wide -- reported 2026-09-01, an NFT from an inactive user whose
+// art had never been cached locally.
+function cryptconquestHasLocalArt($ipfs, $collection_id, $project_id) {
+	if (str_contains($ipfs, 'data:image/svg+xml;base64')) return true;
+	if (intval($project_id) <= 0) return false;
+	$matches = glob(__DIR__ . '/images/nfts/' . intval($project_id) . '/' . intval($collection_id) . '/' . md5($ipfs) . '.*');
+	return !empty($matches);
+}
+
+// $hasArtFn: optional callable($row) => bool. When supplied, owners
+// represented by a locally-cached NFT are filled FIRST, and an owner's own
+// cached pieces are preferred over their uncached ones. Nobody is excluded
+// outright -- an owner with no cached art can still be featured if there
+// aren't enough cached owners to fill the board, since silently dropping
+// holders would defeat the point of opening the pool up.
+function cryptconquestPickUniqueOwnerArt($rows, $seed, $slots, $hasArtFn = null) {
 	$byOwner = [];
 	foreach ($rows as $r) $byOwner[intval($r['user_id'])][] = $r;
 
@@ -11654,17 +11675,33 @@ function cryptconquestPickUniqueOwnerArt($rows, $seed, $slots) {
 		return strcmp(md5($seed . ':owner:' . $a), md5($seed . ':owner:' . $b));
 	});
 
-	$picked = [];
+	// One representative per owner, stable within the owner's own holdings so
+	// which of their NFTs represents them is fixed for the run rather than
+	// depending on row order coming back from MySQL. Cached art sorts first.
+	$reps = [];
 	foreach ($owners as $uid) {
-		if (count($picked) >= $slots) break;
 		$mine = $byOwner[$uid];
-		// stable pick WITHIN the owner's own holdings too, so which of their
-		// NFTs represents them is also fixed for this run rather than
-		// depending on row order coming back from MySQL.
 		usort($mine, function ($a, $b) use ($seed) {
 			return strcmp(md5($seed . ':nft:' . $a['id']), md5($seed . ':nft:' . $b['id']));
 		});
-		$picked[] = $mine[0];
+		$rep = $mine[0];
+		$cached = false;
+		if ($hasArtFn) {
+			foreach ($mine as $cand) {
+				if ($hasArtFn($cand)) { $rep = $cand; $cached = true; break; }
+			}
+		}
+		$reps[] = ['row' => $rep, 'cached' => $cached];
+	}
+	// Owners whose art will actually render go first.
+	$picked = [];
+	foreach ([true, false] as $wantCached) {
+		foreach ($reps as $r) {
+			if (count($picked) >= $slots) break 2;
+			if ($hasArtFn && $r['cached'] !== $wantCached) continue;
+			if (!$hasArtFn && !$wantCached) continue; // no checker: single pass
+			$picked[] = $r['row'];
+		}
 	}
 	// Not enough distinct owners -- top up from everything else, still stable.
 	if (count($picked) < $slots) {
@@ -11726,7 +11763,8 @@ function cryptconquestGetCardArtPools($conn, $seed = 0) {
 
 	// Court cards: platform-wide, one per owner, seeded per run.
 	$court_rows = cryptconquestPickUniqueOwnerArt(
-		cryptconquestFetchCourtCandidates($conn), $seed, count($court_keys)
+		cryptconquestFetchCourtCandidates($conn), $seed, count($court_keys),
+		function ($row) { return cryptconquestHasLocalArt($row['ipfs'], $row['collection_id'], $row['project_id']); }
 	);
 	$court_urls = [];
 	$court_owners = [];
