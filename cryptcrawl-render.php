@@ -108,9 +108,11 @@ function cryptcrawlMinimalGameOverHtml($run, $user_id) {
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
 		</form>
-		<?php if ($fell): ?>
+		<!-- Shown on a WIN as well as a loss (fixed 2026-09-01): this was
+		     wrapped in if ($fell), so clearing the deck -- the exact moment a
+		     player most wants to see where they placed -- was the one outcome
+		     with no route to the leaderboard. -->
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
-		<?php endif; ?>
 	</div>
 	<?php
 }
@@ -263,9 +265,11 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<form method="post"><input type="hidden" name="action" value="start_run">
 			<button type="submit" class="cc-btn">💀 Delve Again</button>
 		</form>
-		<?php if ($fell): ?>
+		<!-- Shown on a WIN as well as a loss (fixed 2026-09-01): this was
+		     wrapped in if ($fell), so clearing the deck -- the exact moment a
+		     player most wants to see where they placed -- was the one outcome
+		     with no route to the leaderboard. -->
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
-		<?php endif; ?>
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];
