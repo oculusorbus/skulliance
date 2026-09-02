@@ -227,6 +227,24 @@ include 'header.php';
 	transition: width .6s cubic-bezier(.22,1,.36,1);
 }
 .cq-enemy-stats { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; opacity: 0.85; }
+/* Owner credit for the NFT used as the current court card. Sits under the
+   enemy's stats as its own row rather than on the card art -- an arbitrary
+   Discord avatar stamped into a curated card face reads as noise and is too
+   small to identify anyway. Only one is ever visible at a time (you face one
+   court card at once), which is what keeps it feeling like a callout instead
+   of clutter. Underline suppressed since .cq-btn's own reset doesn't apply
+   here; hover lifts it just enough to read as clickable. */
+.cq-enemy-owner {
+	display: inline-flex; align-items: center; gap: 7px; margin-top: 8px;
+	padding: 4px 10px 4px 4px; border-radius: 999px;
+	background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);
+	text-decoration: none; color: rgba(255,255,255,.72); font-size: 0.7rem;
+	transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.cq-enemy-owner:hover { background: rgba(255,204,77,.10); border-color: rgba(255,204,77,.35); color: #ffe08a; text-decoration: none; }
+.cq-enemy-owner-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex: none; background: #000; }
+.cq-enemy-owner-text strong { color: #ffcc4d; font-weight: 700; }
+.cq-enemy-owner:hover .cq-enemy-owner-text strong { color: #ffe08a; }
 .cq-shield { color: #c8dce8; }
 .cq-attack { color: #ff7070; }
 .cq-hud-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 0.72rem; opacity: 0.8; align-items: center; border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }

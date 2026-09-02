@@ -11600,6 +11600,88 @@ function cryptconquestGetS2ArtPool($conn) {
 	return cryptconquestFetchArtPool($conn, "nfts.user_id = $user_id AND collections.name LIKE '%Crypties%' AND collections.id != $s1 $exclude_sql");
 }
 
+// PLATFORM-WIDE court-card art (added 2026-09-01). Unlike every other pool
+// here, this one is NOT scoped to the owner's own wallets -- it draws the 12
+// court cards from Crypties Season 1 held by ANY staker, so the enemies you
+// fight are real players' NFTs and their owner can be credited in the UI.
+//
+// Three rules, all deliberate:
+//   1. PRIVACY -- only users with visibility = 2 (public profile) are ever
+//      eligible. Same gate gauntlets' own opponent selection already uses
+//      when it surfaces another player's NFTs, and the reason this is safe
+//      to display a username/avatar/profile link for at all.
+//   2. ONE CARD PER OWNER -- the 12 court cards always come from 12
+//      DIFFERENT owners, so the run showcases as many holders as possible
+//      rather than 12 cards from whoever happens to hold the most.
+//   3. DETERMINISTIC PER RUN -- selection is seeded off the run's own id,
+//      so every render of the same run resolves to exactly the same 12
+//      cards/owners, while a different run gets a completely different
+//      lineup. This is what makes per-run rotation possible WITHOUT storing
+//      the choice on the row (no schema change, nothing to migrate): the
+//      art is recomputed on every action, and recomputing has to be stable
+//      or the whole board would reshuffle owners on every click.
+//
+// Ordering by md5(seed:id) rather than shuffle()/mt_srand() on purpose --
+// no global RNG state to disturb, and identical results across PHP
+// versions/platforms, which mt_srand() does not guarantee.
+function cryptconquestFetchCourtCandidates($conn) {
+	$s1 = intval(CRYPTCONQUEST_S1_COLLECTION_ID);
+	$result = $conn->query("
+		SELECT nfts.id, nfts.ipfs, nfts.collection_id, collections.project_id,
+		       nfts.user_id, users.username, users.discord_id, users.avatar
+		FROM nfts
+		INNER JOIN collections ON collections.id = nfts.collection_id
+		INNER JOIN users ON users.id = nfts.user_id
+		WHERE collections.id = $s1
+		  AND nfts.user_id > 0
+		  AND users.visibility = 2
+	");
+	$rows = [];
+	if ($result) { while ($row = $result->fetch_assoc()) $rows[] = $row; }
+	return $rows;
+}
+
+// Picks up to $slots entries from $rows, at most ONE per owner, ordered
+// deterministically by $seed. Falls back to allowing repeat owners only if
+// there genuinely aren't enough distinct ones to fill the slots (a tiny/test
+// dataset) -- graceful degradation beats leaving cards blank.
+function cryptconquestPickUniqueOwnerArt($rows, $seed, $slots) {
+	$byOwner = [];
+	foreach ($rows as $r) $byOwner[intval($r['user_id'])][] = $r;
+
+	$owners = array_keys($byOwner);
+	usort($owners, function ($a, $b) use ($seed) {
+		return strcmp(md5($seed . ':owner:' . $a), md5($seed . ':owner:' . $b));
+	});
+
+	$picked = [];
+	foreach ($owners as $uid) {
+		if (count($picked) >= $slots) break;
+		$mine = $byOwner[$uid];
+		// stable pick WITHIN the owner's own holdings too, so which of their
+		// NFTs represents them is also fixed for this run rather than
+		// depending on row order coming back from MySQL.
+		usort($mine, function ($a, $b) use ($seed) {
+			return strcmp(md5($seed . ':nft:' . $a['id']), md5($seed . ':nft:' . $b['id']));
+		});
+		$picked[] = $mine[0];
+	}
+	// Not enough distinct owners -- top up from everything else, still stable.
+	if (count($picked) < $slots) {
+		$usedIds = [];
+		foreach ($picked as $p) $usedIds[intval($p['id'])] = true;
+		$rest = array_values(array_filter($rows, function ($r) use ($usedIds) { return empty($usedIds[intval($r['id'])]); }));
+		usort($rest, function ($a, $b) use ($seed) {
+			return strcmp(md5($seed . ':fill:' . $a['id']), md5($seed . ':fill:' . $b['id']));
+		});
+		foreach ($rest as $r) {
+			if (count($picked) >= $slots) break;
+			$picked[] = $r;
+		}
+	}
+	return $picked;
+}
+
 // Zips $keys onto $pool starting at $offset -- pool exhaustion just means
 // the remaining keys get no entry, same graceful degradation
 // cryptcrawlBuildDeck() already has for Crypt Crawl (a card with no
@@ -11628,13 +11710,56 @@ function cryptconquestZipArtPool($pool, $keys, $offset) {
 // of three queries per action; worth revisiting if that's ever measurably
 // slow (see cryptcrawlAnnounceResult's own webhook-latency note elsewhere
 // in this file for the same kind of "flagged, not fixed yet" call).
-function cryptconquestGetCardArtPools($conn) {
-	$s1_pool = cryptconquestGetS1ArtPool($conn);
+// $seed: the run's own id, so the court lineup is fixed for a run but
+// different between runs (see cryptconquestFetchCourtCandidates()). 0 is a
+// valid seed -- it just means "the default lineup" (used by the marketing
+// page's marquee, which has no run).
+//
+// Returns the same three url-keyed pools it always did, so existing callers
+// are untouched, PLUS 'enemy_owners': key => owner info for the court cards.
+// Kept as a separate parallel map rather than nesting owner data inside the
+// 'enemy' values specifically so nothing that already reads these pools as
+// plain URL strings (cryptconquest-render.php's card faces,
+// cryptconquestgame.php's marquee) has to change.
+function cryptconquestGetCardArtPools($conn, $seed = 0) {
 	$court_keys = cryptconquestCourtArtKeys();
+
+	// Court cards: platform-wide, one per owner, seeded per run.
+	$court_rows = cryptconquestPickUniqueOwnerArt(
+		cryptconquestFetchCourtCandidates($conn), $seed, count($court_keys)
+	);
+	$court_urls = [];
+	$court_owners = [];
+	foreach ($court_rows as $i => $row) {
+		if (!isset($court_keys[$i])) break;
+		$key = $court_keys[$i];
+		$court_urls[$key] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
+		$avatar_url = (!empty($row['discord_id']) && !empty($row['avatar']))
+			? "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".png"
+			: "";
+		$court_owners[$key] = [
+			'user_id'    => intval($row['user_id']),
+			'username'   => $row['username'],
+			'avatar_url' => $avatar_url,
+		];
+	}
+
+	// Player number cards keep coming from the owner's own wallets exactly as
+	// before -- only the ENEMIES were opened up. Any NFT already claimed by a
+	// court card is filtered out so the same piece can't appear twice on one
+	// board (possible now that the two pools are drawn from different
+	// queries; they used to be non-overlapping slices of one list).
+	$court_used = [];
+	foreach ($court_rows as $row) $court_used[getIPFS($row['ipfs'], $row['collection_id'], $row['project_id'])] = true;
+	$s1_pool = array_values(array_filter(cryptconquestGetS1ArtPool($conn), function ($url) use ($court_used) {
+		return empty($court_used[$url]);
+	}));
+
 	$s2_pool = cryptconquestGetS2ArtPool($conn);
 	return [
-		'enemy' => cryptconquestZipArtPool($s1_pool, $court_keys, 0),
-		'player' => cryptconquestZipArtPool($s1_pool, cryptconquestNumberArtKeys(), count($court_keys)),
+		'enemy' => $court_urls,
+		'enemy_owners' => $court_owners,
+		'player' => cryptconquestZipArtPool($s1_pool, cryptconquestNumberArtKeys(), 0),
 		'companion' => cryptconquestZipArtPool($s2_pool, cryptconquestCompanionArtKeys(), 0),
 	];
 }

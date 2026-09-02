@@ -194,12 +194,20 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// in this function) must never take down the whole render -- see the
 	// try/catch wrapper around this function's real body, further down.
 	$enemy_art_pool = []; $player_art_pool = []; $companion_art_pool = [];
+	$enemy_owner_pool = [];
 	if ($state === 'active' && $conn) {
 		try {
-			$art_pools = cryptconquestGetCardArtPools($conn);
+			// Seed the court lineup off the run's own id so it's fixed for
+			// this run but different between runs. Guest runs have id 0, so
+			// they fall back to the session id -- otherwise every guest on
+			// the platform would face the exact same 12 owners forever.
+			$art_seed = intval($active_run['id'] ?? 0);
+			if ($art_seed <= 0) $art_seed = crc32(session_id() ?: 'guest');
+			$art_pools = cryptconquestGetCardArtPools($conn, $art_seed);
 			$enemy_art_pool = $art_pools['enemy'];
 			$player_art_pool = $art_pools['player'];
 			$companion_art_pool = $art_pools['companion'];
+			$enemy_owner_pool = $art_pools['enemy_owners'] ?? [];
 		} catch (\Throwable $e) {
 			error_log('cryptconquestGetCardArtPools failed: ' . $e->getMessage());
 			// Falls through to plain card faces (no art) -- every card face
@@ -329,7 +337,12 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	?>
 		<div class="cq-hud">
 			<?php if ($enemy):
-				$enemy_art = $enemy_art_pool[cryptconquestCardArtKey(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']])] ?? null;
+				$enemy_art_key = cryptconquestCardArtKey(['type' => 'court', 'suit' => $enemy['suit'], 'rank' => $enemy['rank']]);
+				$enemy_art = $enemy_art_pool[$enemy_art_key] ?? null;
+				// Who owns the NFT currently being used as this court card.
+				// Only ever populated for public (visibility = 2) profiles --
+				// see cryptconquestFetchCourtCandidates() in db.php.
+				$enemy_owner = $enemy_owner_pool[$enemy_art_key] ?? null;
 			?>
 			<div class="cq-enemy" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$enemy['suit']]; ?>;">
 				<!-- Same top-left + bottom-right corner-index treatment as
@@ -368,6 +381,24 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 						<?php endif; ?>
 						<span class="cq-attack">⚔️ <?php echo $enemy_attack_after_shield; ?> attack<?php echo $enemy_attack_after_shield < $enemy_stats['attack'] ? ' (shielded)' : ''; ?></span>
 					</div>
+					<?php if ($enemy_owner && !empty($enemy_owner['username'])): ?>
+					<!-- Owner credit for the NFT being used as this court card.
+					     Deliberately its own element rather than a badge stamped
+					     on the card art: cramming an arbitrary Discord avatar
+					     into the corner of a curated card face was judged too
+					     visually noisy, and it'd be too small to read anyway.
+					     Only one is ever on screen (you face one court card at a
+					     time), which is what keeps this a moment rather than
+					     clutter. Links to the holder's profile. -->
+					<a class="cq-enemy-owner" href="profile.php?username=<?php echo urlencode($enemy_owner['username']); ?>" title="View <?php echo htmlspecialchars($enemy_owner['username']); ?>'s profile">
+						<?php if (!empty($enemy_owner['avatar_url'])): ?>
+							<img class="cq-enemy-owner-avatar" src="<?php echo htmlspecialchars($enemy_owner['avatar_url']); ?>" alt="" loading="lazy" onerror="this.src='icons/skull.png';">
+						<?php else: ?>
+							<img class="cq-enemy-owner-avatar" src="icons/skull.png" alt="">
+						<?php endif; ?>
+						<span class="cq-enemy-owner-text">NFT owned by <strong><?php echo htmlspecialchars($enemy_owner['username']); ?></strong></span>
+					</a>
+					<?php endif; ?>
 				</div>
 			</div>
 			<?php endif; ?>
