@@ -554,6 +554,10 @@ include 'header.php';
      "active". -->
 <audio id="cq-audio-el-a" preload="metadata"></audio>
 <audio id="cq-audio-el-b" preload="metadata"></audio>
+<!-- Card SFX. preload="auto" (not "metadata" like the music above) because
+     this fires on a click and any load delay would land it after the card
+     has already visibly moved -- it's 8KB, so eager-loading it is free. -->
+<audio id="cq-sfx-card" preload="auto" src="audio/sounds/card.mp3"></audio>
 </div>
 <script>
 (function() {
@@ -1023,6 +1027,34 @@ include 'header.php';
 		}
 	})();
 
+	// Card sound effect. Deliberately reads the SAME sessionStorage keys the
+	// music player owns rather than getting a toggle of its own: a player who
+	// muted this page expects it to be silent, and one who set the volume to
+	// 20% doesn't want a card click at full blast. Kept out of the music IIFE
+	// so it stays a plain reader of that state -- no coupling, and it still
+	// works if the player element is absent.
+	//
+	// Fires on the 'play' action only for now. Cover Damage and Yield also
+	// move cards, but they're a different beat and want their own sounds
+	// rather than borrowing this one.
+	function playCardSfx() {
+		var el = document.getElementById('cq-sfx-card');
+		if (!el) return;
+		try {
+			var enabled = sessionStorage.getItem('cq_audio_enabled');
+			if (enabled === '0') return; // null (never set) means on, same default as the music
+			var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
+			el.volume = (vol >= 0 && vol <= 100 ? vol : 50) / 100;
+			// Restart rather than overlap -- plays are ~1/turn, and a retriggered
+			// click reads as a new action, not a doubled one.
+			el.currentTime = 0;
+			// Chrome rejects this promise if the tab has no user gesture yet;
+			// it's a sound effect, so a silent failure is the right outcome.
+			var p = el.play();
+			if (p && p.catch) p.catch(function() {});
+		} catch (e) {}
+	}
+
 	function lockGameAreaBriefly() {
 		gameArea.style.opacity = '0.55';
 		gameArea.style.pointerEvents = 'none';
@@ -1060,6 +1092,18 @@ include 'header.php';
 		var formData = new FormData(form);
 		if (e.submitter && e.submitter.name) {
 			formData.set(e.submitter.name, e.submitter.value);
+		}
+
+		// Fired here, not on the response: the sound belongs to the click that
+		// played the card, and waiting for the round-trip would drift it a few
+		// hundred ms late. This is also still inside the user-gesture window,
+		// which is what keeps browser autoplay policy from blocking it.
+		//
+		// Gated on a card actually being selected -- "Play Selected" with an
+		// empty selection is rejected server-side ("Select at least one
+		// card."), and a card sound in front of that error would be a lie.
+		if (formData.get('action') === 'play' && formData.getAll('card_indices[]').length) {
+			playCardSfx();
 		}
 
 		fetch('ajax/cryptconquest-action.php', { method: 'POST', body: formData })
