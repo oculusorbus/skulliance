@@ -498,10 +498,12 @@ include 'header.php';
 .cq-result.lost .cq-result-title { color: #ff7070; }
 .cq-result.won .cq-result-title { color: #00c8a0; }
 /* Loss-only flourish -- the same animated Joker webp the Joker-flip flash
-   uses, here as a standalone illustration rather than a card-framed
-   thumbnail (no crowded card row to match on this screen, so it's allowed
-   to breathe). Slotted into the icon/title/sub pop-in sequence at .25s. */
-.cq-result-image { margin: 4px auto 12px; width: 180px; border-radius: 14px; overflow: hidden;
+   uses. Capped at the SAME 108px the flash modal uses (was 180px --
+   reported as too big; this screen has no crowded card row forcing a
+   small size the way the flash modal does, but the request was to match
+   it exactly regardless). Slotted into the icon/title/sub pop-in
+   sequence at .25s. */
+.cq-result-image { margin: 4px auto 12px; width: 108px; border-radius: 14px; overflow: hidden;
 	box-shadow: 0 0 28px rgba(255,112,112,.3), 0 12px 32px rgba(0,0,0,.5);
 	animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .25s both;
 }
