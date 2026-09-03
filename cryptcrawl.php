@@ -391,6 +391,15 @@ include 'header.php';
 .cc-result-title { font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .2s both; }
 .cc-result.lost .cc-result-title { color: #ff7070; }
 .cc-result.won  .cc-result-title { color: #00c8a0; }
+/* Loss-only flourish -- same animated Joker webp Crypt Conquest's own
+   loss screen and Joker-flip flash use, here as a standalone illustration
+   (no crowded card row to match on this screen, so it's allowed to
+   breathe). Slotted into the icon/title/sub pop-in sequence at .25s. */
+.cc-result-image { margin: 4px auto 12px; width: 180px; border-radius: 14px; overflow: hidden;
+	box-shadow: 0 0 28px rgba(255,112,112,.3), 0 12px 32px rgba(0,0,0,.5);
+	animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .25s both;
+}
+.cc-result-image img { display: block; width: 100%; height: auto; }
 .cc-result-sub { font-size: .85rem; color: rgba(255,255,255,.5); animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .3s both; }
 .cc-result-carbon {
 	margin-top: 10px; font-size: 1rem; font-weight: 700; color: #ffcc4d;

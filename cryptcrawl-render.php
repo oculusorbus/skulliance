@@ -119,6 +119,9 @@ function cryptcrawlMinimalGameOverHtml($run, $user_id) {
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>" data-run-id="<?php echo intval($run['id'] ?? 0); ?>">
 			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
 			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
+			<?php if ($fell): ?>
+				<div class="cc-result-image"><img src="images/joker.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
+			<?php endif; ?>
 			<div class="cc-result-sub">
 				<?php echo intval($run['rooms_cleared'] ?? 0); ?> crypts cleared
 				<?php if (!$fell): ?> &middot; <?php echo intval($run['hp'] ?? 0); ?> HP remaining<?php endif; ?>
@@ -291,6 +294,9 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>" data-run-id="<?php echo intval($recent_run['id'] ?? 0); ?>">
 			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
 			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
+			<?php if ($fell): ?>
+				<div class="cc-result-image"><img src="images/joker.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
+			<?php endif; ?>
 			<div class="cc-result-sub">
 				<?php echo intval($recent_run['rooms_cleared']); ?> crypts cleared
 				<?php if (!$fell): ?> &middot; <?php echo intval($recent_run['hp']); ?> HP remaining<?php endif; ?>
