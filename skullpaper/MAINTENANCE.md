@@ -157,15 +157,26 @@ records verified constants, and tracks what still needs to be written.
   icon, on both the win and loss embeds - the same figure and icon the player's own result screen
   already shows them.
 - Crypt Crawl card art (db.php CRYPTCRAWL_CARD_ART, `cryptcrawlGetCardArt`): each of the 44
-  cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - curated
-  2026-08-28 from the owner's Crypties - Season 2 holdings (~108 candidates reviewed, 27 of
-  them confirmed rare: 8 WTF, 2 Mythic, 17 Legendary - some via pool.pm attributes, the rest
-  per the owner's own identification of their collection). Rarity ladder, confirmed by the
-  owner as WTF > Mythic > Legendary > ...: all 8 top monster slots (rank 11-14, both suits)
-  carry WTF art; the next tier down (rank 6-10 across all four suits - both remaining monster
-  ranks, plus the top of the weapon and medkit ranges) carries the 17 Legendary pieces plus
-  both Mythic pieces (Spades 6, Diamonds 6). Update CRYPTCRAWL_CARD_ART directly to change any
-  card's art.
+  cards is mapped to one specific NFT by exact `nfts.name`, not a shuffled pool - re-curated
+  2026-09-03 from real on-chain metadata (crypties-s2-rarity-report.php, run against the
+  owner's actual Crypties: Season 2 holdings - 108 pieces; see cryptcrawl-s2-art-curation.md
+  for the full dataset/methodology). Real on-chain `attributes.rarity` tiers, confirmed not
+  assumed: WTF > Mythic > Legendary > Epic > Uncommon > Common. Unlike Crypt Conquest's S1
+  pool, Crypt Crawl's monster suits (Clubs/Spades, the only two that ever render Crypties art
+  - see below) are also species-aligned: the undocumented `carcass` trait was verified by
+  visual inspection + cnft.tools to encode skull species. Clubs = monkey, Spades = ram (picked
+  as the two suits since bear only has 10 owned pieces, too few for a 13-rank suit). Every
+  Ace/King/Queen/Jack on both suits is one of the collection's 8 real WTF pieces (WTF pieces
+  carry no carcass/species trait at all - special collab/chimera 1-of-1s - so they were split
+  onto a suit by visual fit: ram-skulled ones to Spades, animal-less ones to Clubs). Rank 10 on
+  both suits is a deliberate species exception: the collection's only two Mythic-tier pieces are
+  both TIGER, one seeded as a guest card in each suit since neither monkey nor ram has a native
+  Mythic of its own (Spades does also have ram's own Mythic, at rank 9). Everything below that
+  is each suit's own Legendary (then Epic to round out Spades), sorted by Cryptie #. Diamonds
+  (weapons) and Hearts (potions) never render Crypties art at all in-game (cryptcrawl.php's
+  `.cc-card-icon-face` - plain black card face plus a generic weapon/medkit icon, "curated
+  Crypties art is reserved for enemies"), so those 18 slots carry no rarity/species curation,
+  just leftover monkey/ram pieces. Update CRYPTCRAWL_CARD_ART directly to change any card's art.
 - Crypt Crawl counts toward platform Activity leaderboards (db.php `checkActivityLeaderboard()`,
   added 2026-08-29 - "Players should be recognized for their attempts within here as well," per
   the user, re: the top-level All-Time/Monthly/Weekly Activity dropdown options, distinct from

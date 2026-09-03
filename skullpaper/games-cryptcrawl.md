@@ -10,7 +10,7 @@ Crypt Crawl is two separate pages. `cryptcrawlgame.php` is the public marketing 
 
 * **♦ Diamonds (2-10)** are **weapons**. Equip one and it stays equipped until you use it - there's only ever one weapon at a time.
 * **♥ Hearts (2-10)** are **medkits**. They heal you.
-* **♣♠ Clubs & Spades (2-14, Ace high)** are **enemies**. Fight them bare-handed or with your weapon.
+* **♣♠ Clubs & Spades (2-14, Ace high)** are **enemies**. Fight them bare-handed or with your weapon. Each enemy suit is themed around one animal skull - Clubs are all monkeys, Spades are all rams - and every Ace/King/Queen/Jack in both suits is one of the collection's rarest WTF-tier pieces.
 
 ## A Crypt (Room)
 

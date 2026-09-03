@@ -10787,65 +10787,90 @@ define('CRYPTCRAWL_MAX_HP', 20);
 // not a "your NFTs become your deck" system). Change here if the wallet changes.
 define('CRYPTCRAWL_ART_USER_ID', 1);
 
-// Deliberate card -> art mapping (curated 2026-08-28, revised repeatedly the
-// same day as the owner identified their WTF/Mythic/Legendary pieces directly,
-// from the owner's Crypties - Season 2 holdings, ~108 candidates reviewed):
-// each of the 44 cards uses one specific NFT, not a shuffled pool. The rarity
-// ladder here (confirmed via pool.pm attributes + the owner's own IDs) is all
-// 8 WTF pieces on the 8 top monster slots (both Aces/Kings/Queens/Jacks, per
-// the owner's explicit priority for top-level cards), Legendary plus both
-// Mythic pieces on the next tier down (rank 6-10 across all four suits) -- see
-// skullpaper/MAINTENANCE.md for the full rarity notes. Keyed "SUIT+RANK", e.g.
-// "C14" = Ace of Clubs; the value is the exact nfts.name string ("Cryptie #NNNNN").
+// Deliberate card -> art mapping (curated 2026-09-03, from the owner's real
+// Crypties: Season 2 metadata -- see crypties-s2-rarity-report.php and
+// cryptcrawl-s2-art-curation.md for the full methodology). Each of the 44
+// cards uses one specific NFT, not a shuffled pool. Unlike Crypt Conquest's
+// S1 pool, Crypt Crawl's monsters (Clubs+Spades) are aligned by SPECIES, not
+// just rarity: the "carcass" trait -- not documented anywhere as a species
+// field, but verified by visual/cnft.tools inspection to be the one that
+// consistently determines skull shape -- puts every monster Cryptie into one
+// of four animal groups. Clubs = monkey (33 owned), Spades = ram (23 owned);
+// monkey+ram were picked over tiger (34) and bear (10) as the two suits since
+// ram's low native mythic count needed the WTF/guest padding described below,
+// and bear (only 10 owned) can't cover a 13-rank suit at all.
+//
+// Both suits' Ace/King/Queen/Jack are the collection's 8 real WTF-tier
+// pieces (the rarest tier that exists -- WTF > Mythic > Legendary > Epic >
+// Uncommon > Common, all confirmed via on-chain attributes.rarity, not
+// assumed). None of the 8 WTF pieces carry the carcass trait at all (they're
+// special collab/chimera 1-of-1s outside the standard schema), so they were
+// sorted onto a suit by visual fit instead: 4 are unambiguous ram/goat
+// skulls (curled horns) -> Spades; the other 4 are animal-less human/tech
+// heads with no carcass to contradict monkey -> Clubs. Rank 10 on both
+// suits is a deliberate species exception: the collection's two Mythic-tier
+// TIGER pieces (there is no third species-appropriate mythic for either
+// suit), one placed as a guest card in each suit per the owner's own pick.
+// Spades additionally has its own native Mythic ram at rank 9. Ranks below
+// that are plain Legendary (then Epic to round out Spades) pulled straight
+// from each suit's own species pool, sorted by Cryptie #.
+//
+// Diamonds (weapons) and Hearts (potions) never render Crypties art in-game
+// at all (cryptcrawl.php's .cc-card-icon-face -- plain black card face plus
+// a generic weapon/medkit icon; "curated Crypties art is reserved for
+// enemies"), so those 18 slots have no rarity/species curation -- just
+// leftover monkey/ram pieces not already used above, so nothing in this
+// array collides. Keyed "SUIT+RANK", e.g. "C14" = Ace of Clubs; the value is
+// the exact nfts.name string ("Cryptie #NNNNN").
 define('CRYPTCRAWL_CARD_ART', array(
-	// Clubs (monsters)
-	'C14' => 'Cryptie #11731', // WTF - Ada Dolls collab, variant "horny"
-	'C13' => 'Cryptie #11120', // WTF - Chimera subset, variant "the one"
-	'C12' => 'Cryptie #11903', // WTF - Chimera subset
-	'C11' => 'Cryptie #10340', // WTF (per owner's own ID)
-	'C10' => 'Cryptie #10351', // Legendary (per owner's own ID)
-	'C9'  => 'Cryptie #10464', // Legendary
-	'C8'  => 'Cryptie #10552', // Legendary
-	'C7'  => 'Cryptie #10760', // Legendary
-	'C6'  => 'Cryptie #11141', // Legendary
-	'C5'  => 'Cryptie #10218',
-	'C4'  => 'Cryptie #10473',
-	'C3'  => 'Cryptie #11416',
-	'C2'  => 'Cryptie #10031',
-	// Spades (monsters)
-	'S14' => 'Cryptie #10208', // WTF - Ada Dolls collab, variant "boombox"
-	'S13' => 'Cryptie #10316', // WTF - Chimera subset, variant "sketch platinum"
-	'S12' => 'Cryptie #10330', // WTF - withspaces collab, variant "static twist"
-	'S11' => 'Cryptie #10873', // WTF - Chimera subset
-	'S10' => 'Cryptie #11097', // Legendary
-	'S9'  => 'Cryptie #11279', // Legendary
-	'S8'  => 'Cryptie #11380', // Legendary
-	'S7'  => 'Cryptie #11470', // Legendary
-	'S6'  => 'Cryptie #10753', // Mythic - frost/blizzard gargoyle (moved down from C12 to make room for the WTF piece there)
-	'S5'  => 'Cryptie #10720',
-	'S4'  => 'Cryptie #11009',
-	'S3'  => 'Cryptie #11336',
-	'S2'  => 'Cryptie #10203',
-	// Diamonds (weapons)
-	'D10' => 'Cryptie #11472', // Legendary
-	'D9'  => 'Cryptie #11552', // Legendary
-	'D8'  => 'Cryptie #11862', // Legendary
-	'D7'  => 'Cryptie #11592', // Legendary
-	'D6'  => 'Cryptie #11216', // Mythic
-	'D5'  => 'Cryptie #11376',
-	'D4'  => 'Cryptie #11229',
-	'D3'  => 'Cryptie #10777',
-	'D2'  => 'Cryptie #11907',
-	// Hearts (medkits)
-	'H10' => 'Cryptie #11356', // Legendary
-	'H9'  => 'Cryptie #11543', // Legendary
-	'H8'  => 'Cryptie #11566', // Legendary
-	'H7'  => 'Cryptie #10823', // Legendary
-	'H6'  => 'Cryptie #10365',
-	'H5'  => 'Cryptie #11332',
-	'H4'  => 'Cryptie #10305',
-	'H3'  => 'Cryptie #11258',
-	'H2'  => 'Cryptie #11407',
+	// Clubs (monsters) -- monkey
+	'C14' => 'Cryptie #10340', // WTF - Never Engine collab, variant "mardi gras clementine"
+	'C13' => 'Cryptie #10208', // WTF - Ada Dolls collab, variant "boombox"
+	'C12' => 'Cryptie #11731', // WTF - Ada Dolls collab, variant "horny"
+	'C11' => 'Cryptie #10330', // WTF - withspaces collab, variant "static twist"
+	'C10' => 'Cryptie #10566', // Mythic - guest tiger "wild" (no monkey-native mythic exists)
+	'C9'  => 'Cryptie #10203', // Legendary
+	'C8'  => 'Cryptie #10351', // Legendary
+	'C7'  => 'Cryptie #10823', // Legendary
+	'C6'  => 'Cryptie #11097', // Legendary
+	'C5'  => 'Cryptie #11470', // Legendary
+	'C4'  => 'Cryptie #11552', // Legendary
+	'C3'  => 'Cryptie #11592', // Legendary
+	'C2'  => 'Cryptie #11753', // Legendary
+	// Spades (monsters) -- ram
+	'S14' => 'Cryptie #11120', // WTF - Chimera subset, variant "the one"
+	'S13' => 'Cryptie #10873', // WTF - Chimera subset, variant "summon morado"
+	'S12' => 'Cryptie #11903', // WTF - Chimera subset, variant "tribe saffron"
+	'S11' => 'Cryptie #10316', // WTF - Chimera subset, variant "sketch platinum"
+	'S10' => 'Cryptie #10753', // Mythic - guest tiger "frost"
+	'S9'  => 'Cryptie #11216', // Mythic (own, native ram)
+	'S8'  => 'Cryptie #10552', // Legendary
+	'S7'  => 'Cryptie #10760', // Legendary
+	'S6'  => 'Cryptie #11279', // Legendary
+	'S5'  => 'Cryptie #11356', // Legendary
+	'S4'  => 'Cryptie #11543', // Legendary
+	'S3'  => 'Cryptie #11566', // Legendary
+	'S2'  => 'Cryptie #11221', // Epic
+	// Diamonds (weapons) -- art never shown in-game, leftover pieces only
+	'D10' => 'Cryptie #11862',
+	'D9'  => 'Cryptie #10020',
+	'D8'  => 'Cryptie #10431',
+	'D7'  => 'Cryptie #11009',
+	'D6'  => 'Cryptie #11225',
+	'D5'  => 'Cryptie #11984',
+	'D4'  => 'Cryptie #11385',
+	'D3'  => 'Cryptie #11854',
+	'D2'  => 'Cryptie #10218',
+	// Hearts (medkits) -- art never shown in-game, leftover pieces only
+	'H10' => 'Cryptie #10444',
+	'H9'  => 'Cryptie #10462',
+	'H8'  => 'Cryptie #10896',
+	'H7'  => 'Cryptie #10953',
+	'H6'  => 'Cryptie #11376',
+	'H5'  => 'Cryptie #11462',
+	'H4'  => 'Cryptie #11656',
+	'H3'  => 'Cryptie #11771',
+	'H2'  => 'Cryptie #11961',
 ));
 
 function cryptcrawlRankLabel($rank) {
