@@ -10873,6 +10873,42 @@ define('CRYPTCRAWL_CARD_ART', array(
 	'H2'  => 'Cryptie #11961',
 ));
 
+// Monster flavor names shown on the card label (see cryptcrawl-render.php's
+// $type_label, "enemy" default replaced by this for monster-type cards). The
+// default per suit names the species Clubs/Spades were built around (see
+// CRYPTCRAWL_CARD_ART's own comment) -- "Cursed Ape" / "Cursed Ram". Every
+// WTF-tier card and both Mythic guest-tiger cards get a bespoke name instead,
+// since those specific pieces don't fit their suit's default species: the 4
+// ram-skulled WTFs share "Chimera" (they're literally the `subset: chimera`
+// pieces); the 4 animal-less WTFs each get their own name pulled from their
+// on-chain `variant`/`project` field; both guest tigers are "Cursed Tiger".
+// Keyed "SUIT+RANK" same as CRYPTCRAWL_CARD_ART; only overrides need an
+// entry here, everything else falls through to the per-suit default.
+define('CRYPTCRAWL_MONSTER_NAMES', array(
+	'C14' => 'Mardi Gras',   // Cryptie #10340 -- Never Engine collab, eyeball skull
+	'C13' => 'Boombox',      // Cryptie #10208 -- Ada Dolls collab
+	'C12' => 'Horny',        // Cryptie #11731 -- Ada Dolls collab
+	'C11' => 'Static',       // Cryptie #10330 -- withspaces collab, TV head
+	'C10' => 'Cursed Tiger', // Cryptie #10566 -- Mythic guest tiger "wild"
+	'S14' => 'Chimera',      // Cryptie #11120
+	'S13' => 'Chimera',      // Cryptie #10873
+	'S12' => 'Chimera',      // Cryptie #11903
+	'S11' => 'Chimera',      // Cryptie #10316
+	'S10' => 'Cursed Tiger', // Cryptie #10753 -- Mythic guest tiger "frost"
+));
+
+// Resolves a monster card's flavor name: CRYPTCRAWL_MONSTER_NAMES' override
+// if this exact card has one, else the per-suit default ("Cursed Ape" for
+// Clubs/monkey, "Cursed Ram" for Spades/ram -- see CRYPTCRAWL_CARD_ART's own
+// comment for why those two suits/species were picked). Diamonds/Hearts
+// don't call this at all -- they keep the generic "weapon"/"medkit" label,
+// since their art (and so their identity) is never curated or shown.
+function cryptcrawlMonsterName($suit, $rank) {
+	$key = $suit . intval($rank);
+	if (isset(CRYPTCRAWL_MONSTER_NAMES[$key])) return CRYPTCRAWL_MONSTER_NAMES[$key];
+	return $suit === 'C' ? 'Cursed Ape' : 'Cursed Ram';
+}
+
 function cryptcrawlRankLabel($rank) {
 	$rank = intval($rank);
 	if ($rank === 14) return 'A';

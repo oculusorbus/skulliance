@@ -177,6 +177,14 @@ records verified constants, and tracks what still needs to be written.
   `.cc-card-icon-face` - plain black card face plus a generic weapon/medkit icon, "curated
   Crypties art is reserved for enemies"), so those 18 slots carry no rarity/species curation,
   just leftover monkey/ram pieces. Update CRYPTCRAWL_CARD_ART directly to change any card's art.
+  Each monster's on-card label (`.cc-card-label`, cryptcrawl-render.php's `$type_label`) is a
+  matching flavor name, not the generic "enemy" text every other type keeps: db.php
+  `cryptcrawlMonsterName()` returns CRYPTCRAWL_MONSTER_NAMES' override for a card if one exists,
+  else the per-suit default ("Cursed Ape" / "Cursed Ram"). The 8 WTF cards and both guest-tiger
+  10s are the only overrides - 4 ram-skulled WTFs share "Chimera" (they're the real `subset:
+  chimera` pieces), the 4 animal-less WTFs each get a bespoke name from their own on-chain
+  `variant`/`project` (Boombox, Horny, Mardi Gras, Static), and both Mythic guest tigers are
+  "Cursed Tiger". Update CRYPTCRAWL_MONSTER_NAMES directly to change any card's name.
 - Crypt Crawl counts toward platform Activity leaderboards (db.php `checkActivityLeaderboard()`,
   added 2026-08-29 - "Players should be recognized for their attempts within here as well," per
   the user, re: the top-level All-Time/Monthly/Weekly Activity dropdown options, distinct from

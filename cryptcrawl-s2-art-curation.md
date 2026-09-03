@@ -111,54 +111,76 @@ leftover monkey/ram pieces not already used above (mostly monkey's spare
 Epic/Uncommon tier), chosen only to keep every one of the 44 slots pointing
 at a distinct NFT.
 
+## Card names
+
+The card label shown in-game (`.cc-card-label`, normally the generic "enemy"
+every other type keeps) is a flavor name instead for monster cards --
+`cryptcrawlMonsterName()` in db.php, backed by `CRYPTCRAWL_MONSTER_NAMES`.
+Default is the suit's species -- **Cursed Ape** (Clubs) / **Cursed Ram**
+(Spades) -- overridden only for the 8 WTF cards and both guest-tiger 10s,
+since those specific pieces don't actually match their suit's species:
+
+| Card(s) | Name | Why |
+|---|---|---|
+| `C14` | Mardi Gras | Cryptie #10340's own `variant`, "mardi gras clementine" |
+| `C13` | Boombox | Cryptie #10208's own `variant` |
+| `C12` | Horny | Cryptie #11731's own `variant` |
+| `C11` | Static | Cryptie #10330's own `variant`, "static twist" (withspaces collab) |
+| `C10`, `S10` | Cursed Tiger | both guest Mythic pieces are tiger, not the suit's own species |
+| `S14`, `S13`, `S12`, `S11` | Chimera | all 4 are the real `subset: chimera` pieces |
+
+Everything else -- both suits' 9/legendary/epic ranks, and `S9`'s native
+Mythic ram -- keeps the per-suit default (Cursed Ape / Cursed Ram), since
+those cards genuinely are that species.
+
 ## The 44 picks
 
-| Key | Suit | Rank | NFT | Rarity | Species/Note |
-|---|---|---|---|---|---|
-| `C14` | Clubs | Ace | Cryptie #10340 | wtf | special (Never Engine collab, "mardi gras clementine") |
-| `C13` | Clubs | King | Cryptie #10208 | wtf | special (Ada Dolls collab, "boombox") |
-| `C12` | Clubs | Queen | Cryptie #11731 | wtf | special (Ada Dolls collab, "horny") |
-| `C11` | Clubs | Jack | Cryptie #10330 | wtf | special (withspaces collab, "static twist") |
-| `C10` | Clubs | 10 | Cryptie #10566 | mythic | tiger (guest -- no monkey-native mythic) |
-| `C9` | Clubs | 9 | Cryptie #10203 | legendary | monkey |
-| `C8` | Clubs | 8 | Cryptie #10351 | legendary | monkey |
-| `C7` | Clubs | 7 | Cryptie #10823 | legendary | monkey |
-| `C6` | Clubs | 6 | Cryptie #11097 | legendary | monkey |
-| `C5` | Clubs | 5 | Cryptie #11470 | legendary | monkey |
-| `C4` | Clubs | 4 | Cryptie #11552 | legendary | monkey |
-| `C3` | Clubs | 3 | Cryptie #11592 | legendary | monkey |
-| `C2` | Clubs | 2 | Cryptie #11753 | legendary | monkey |
-| `S14` | Spades | Ace | Cryptie #11120 | wtf | special (Chimera, "the one") |
-| `S13` | Spades | King | Cryptie #10873 | wtf | special (Chimera, "summon morado") |
-| `S12` | Spades | Queen | Cryptie #11903 | wtf | special (Chimera, "tribe saffron") |
-| `S11` | Spades | Jack | Cryptie #10316 | wtf | special (Chimera, "sketch platinum") |
-| `S10` | Spades | 10 | Cryptie #10753 | mythic | tiger (guest) |
-| `S9` | Spades | 9 | Cryptie #11216 | mythic | ram (native) |
-| `S8` | Spades | 8 | Cryptie #10552 | legendary | ram |
-| `S7` | Spades | 7 | Cryptie #10760 | legendary | ram |
-| `S6` | Spades | 6 | Cryptie #11279 | legendary | ram |
-| `S5` | Spades | 5 | Cryptie #11356 | legendary | ram |
-| `S4` | Spades | 4 | Cryptie #11543 | legendary | ram |
-| `S3` | Spades | 3 | Cryptie #11566 | legendary | ram |
-| `S2` | Spades | 2 | Cryptie #11221 | epic | ram |
-| `D10` | Diamonds | 10 | Cryptie #11862 | legendary | monkey (leftover; art never shown) |
-| `D9` | Diamonds | 9 | Cryptie #10020 | epic | monkey (leftover) |
-| `D8` | Diamonds | 8 | Cryptie #10431 | epic | monkey (leftover) |
-| `D7` | Diamonds | 7 | Cryptie #11009 | epic | monkey (leftover) |
-| `D6` | Diamonds | 6 | Cryptie #11225 | epic | monkey (leftover) |
-| `D5` | Diamonds | 5 | Cryptie #11984 | epic | monkey (leftover) |
-| `D4` | Diamonds | 4 | Cryptie #11385 | epic | ram (leftover) |
-| `D3` | Diamonds | 3 | Cryptie #11854 | epic | ram (leftover) |
-| `D2` | Diamonds | 2 | Cryptie #10218 | uncommon | monkey (leftover) |
-| `H10` | Hearts | 10 | Cryptie #10444 | uncommon | monkey (leftover) |
-| `H9` | Hearts | 9 | Cryptie #10462 | uncommon | monkey (leftover) |
-| `H8` | Hearts | 8 | Cryptie #10896 | uncommon | monkey (leftover) |
-| `H7` | Hearts | 7 | Cryptie #10953 | uncommon | monkey (leftover) |
-| `H6` | Hearts | 6 | Cryptie #11376 | uncommon | monkey (leftover) |
-| `H5` | Hearts | 5 | Cryptie #11462 | uncommon | monkey (leftover) |
-| `H4` | Hearts | 4 | Cryptie #11656 | uncommon | monkey (leftover) |
-| `H3` | Hearts | 3 | Cryptie #11771 | uncommon | monkey (leftover) |
-| `H2` | Hearts | 2 | Cryptie #11961 | uncommon | monkey (leftover) |
+| Key | Suit | Rank | Name | NFT | Rarity | Species/Note |
+|---|---|---|---|---|---|---|
+| `C14` | Clubs | Ace | Mardi Gras | Cryptie #10340 | wtf | special (Never Engine collab, "mardi gras clementine") |
+| `C13` | Clubs | King | Boombox | Cryptie #10208 | wtf | special (Ada Dolls collab, "boombox") |
+| `C12` | Clubs | Queen | Horny | Cryptie #11731 | wtf | special (Ada Dolls collab, "horny") |
+| `C11` | Clubs | Jack | Static | Cryptie #10330 | wtf | special (withspaces collab, "static twist") |
+| `C10` | Clubs | 10 | Cursed Tiger | Cryptie #10566 | mythic | tiger (guest -- no monkey-native mythic) |
+| `C9` | Clubs | 9 | Cursed Ape | Cryptie #10203 | legendary | monkey |
+| `C8` | Clubs | 8 | Cursed Ape | Cryptie #10351 | legendary | monkey |
+| `C7` | Clubs | 7 | Cursed Ape | Cryptie #10823 | legendary | monkey |
+| `C6` | Clubs | 6 | Cursed Ape | Cryptie #11097 | legendary | monkey |
+| `C5` | Clubs | 5 | Cursed Ape | Cryptie #11470 | legendary | monkey |
+| `C4` | Clubs | 4 | Cursed Ape | Cryptie #11552 | legendary | monkey |
+| `C3` | Clubs | 3 | Cursed Ape | Cryptie #11592 | legendary | monkey |
+| `C2` | Clubs | 2 | Cursed Ape | Cryptie #11753 | legendary | monkey |
+| `S14` | Spades | Ace | Chimera | Cryptie #11120 | wtf | special (Chimera, "the one") |
+| `S13` | Spades | King | Chimera | Cryptie #10873 | wtf | special (Chimera, "summon morado") |
+| `S12` | Spades | Queen | Chimera | Cryptie #11903 | wtf | special (Chimera, "tribe saffron") |
+| `S11` | Spades | Jack | Chimera | Cryptie #10316 | wtf | special (Chimera, "sketch platinum") |
+| `S10` | Spades | 10 | Cursed Tiger | Cryptie #10753 | mythic | tiger (guest) |
+| `S9` | Spades | 9 | Cursed Ram | Cryptie #11216 | mythic | ram (native) |
+| `S8` | Spades | 8 | Cursed Ram | Cryptie #10552 | legendary | ram |
+| `S7` | Spades | 7 | Cursed Ram | Cryptie #10760 | legendary | ram |
+| `S6` | Spades | 6 | Cursed Ram | Cryptie #11279 | legendary | ram |
+| `S5` | Spades | 5 | Cursed Ram | Cryptie #11356 | legendary | ram |
+| `S4` | Spades | 4 | Cursed Ram | Cryptie #11543 | legendary | ram |
+| `S3` | Spades | 3 | Cursed Ram | Cryptie #11566 | legendary | ram |
+| `S2` | Spades | 2 | Cursed Ram | Cryptie #11221 | epic | ram |
+| `D10` | Diamonds | 10 | *(weapon, generic label)* | Cryptie #11862 | legendary | monkey (leftover; art never shown) |
+| `D9` | Diamonds | 9 | *(weapon, generic label)* | Cryptie #10020 | epic | monkey (leftover) |
+| `D8` | Diamonds | 8 | *(weapon, generic label)* | Cryptie #10431 | epic | monkey (leftover) |
+| `D7` | Diamonds | 7 | *(weapon, generic label)* | Cryptie #11009 | epic | monkey (leftover) |
+| `D6` | Diamonds | 6 | *(weapon, generic label)* | Cryptie #11225 | epic | monkey (leftover) |
+| `D5` | Diamonds | 5 | *(weapon, generic label)* | Cryptie #11984 | epic | monkey (leftover) |
+| `D4` | Diamonds | 4 | *(weapon, generic label)* | Cryptie #11385 | epic | ram (leftover) |
+| `D3` | Diamonds | 3 | *(weapon, generic label)* | Cryptie #11854 | epic | ram (leftover) |
+| `D2` | Diamonds | 2 | *(weapon, generic label)* | Cryptie #10218 | uncommon | monkey (leftover) |
+| `H10` | Hearts | 10 | *(medkit, generic label)* | Cryptie #10444 | uncommon | monkey (leftover) |
+| `H9` | Hearts | 9 | *(medkit, generic label)* | Cryptie #10462 | uncommon | monkey (leftover) |
+| `H8` | Hearts | 8 | *(medkit, generic label)* | Cryptie #10896 | uncommon | monkey (leftover) |
+| `H7` | Hearts | 7 | *(medkit, generic label)* | Cryptie #10953 | uncommon | monkey (leftover) |
+| `H6` | Hearts | 6 | *(medkit, generic label)* | Cryptie #11376 | uncommon | monkey (leftover) |
+| `H5` | Hearts | 5 | *(medkit, generic label)* | Cryptie #11462 | uncommon | monkey (leftover) |
+| `H4` | Hearts | 4 | *(medkit, generic label)* | Cryptie #11656 | uncommon | monkey (leftover) |
+| `H3` | Hearts | 3 | *(medkit, generic label)* | Cryptie #11771 | uncommon | monkey (leftover) |
+| `H2` | Hearts | 2 | *(medkit, generic label)* | Cryptie #11961 | uncommon | monkey (leftover) |
 
 ## Full 108-piece dataset
 
