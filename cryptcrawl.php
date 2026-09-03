@@ -161,6 +161,12 @@ include 'header.php';
 }
 .cc-instructions-modal h3 { margin: 0 0 10px; font-size: 1.05rem; }
 .cc-instructions-close { margin-top: 16px; width: 100%; }
+/* Reuses .cc-instructions-modal's own card (same backdrop, background,
+   blur, entrance) -- narrower, since this is one line and two buttons,
+   not a scrolling rules page. */
+.cc-confirm-modal { max-width: 320px; text-align: center; }
+.cc-confirm-modal p { margin: 0 0 16px; font-size: .95rem; line-height: 1.4; }
+.cc-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 /* .cc-theme-bg is a PERMANENT element (see the markup, right after
    .cc-wrap opens) -- present in every state, "bare" (this rule only) when
    no themed backdrop applies, and switched into the actual themed-panel
@@ -555,6 +561,21 @@ try {
      a fresh game" moment (unlike the "did you even see you died" moment,
      which is what this element exists to make bulletproof). -->
 <div id="cc-result-overlay" style="display:none;"></div>
+<!-- Permanent, hidden sibling of #cc-game-area -- a styled stand-in for
+     the browser's own confirm() dialog, used by any form marked
+     data-confirm="message text" (currently just Abandon Run). Lives here,
+     not inside #cc-game-area, so it survives every swap and only needs
+     wiring once; the submit delegate below reads data-confirm off
+     whichever form the player is submitting. -->
+<div class="cc-instructions-backdrop" id="cc-confirm-backdrop">
+	<div class="cc-instructions-modal cc-confirm-modal">
+		<p id="cc-confirm-text"></p>
+		<div class="cc-confirm-actions">
+			<button type="button" class="cc-btn secondary" id="cc-confirm-cancel">Cancel</button>
+			<button type="button" class="cc-btn attack" id="cc-confirm-ok">Abandon</button>
+		</div>
+	</div>
+</div>
 </div>
 
 	<!-- Ambient music player -- OUTSIDE #cc-game-area above on purpose, so
@@ -948,6 +969,42 @@ try {
 	// deliberate action. `busy` itself is declared below (hoisted -- this
 	// function's body only ever runs later, inside a callback, by which
 	// point that declaration has always already executed).
+	// Styled stand-in for the browser's own confirm() -- reported as looking
+	// out of place next to the rest of the game's own UI. Any form marked
+	// data-confirm="message" routes through here instead (currently just
+	// Abandon Run); see the submit delegate below for how a form actually
+	// gets past this gate. Wired once, here at the outer scope, rather than
+	// inside initGameArea() -- #cc-confirm-backdrop is a PERMANENT sibling
+	// of #cc-game-area (survives every swap), same reasoning as
+	// #cc-result-overlay and the audio elements.
+	var confirmBackdrop = document.getElementById('cc-confirm-backdrop');
+	var confirmText = document.getElementById('cc-confirm-text');
+	var confirmOkBtn = document.getElementById('cc-confirm-ok');
+	var confirmCancelBtn = document.getElementById('cc-confirm-cancel');
+	var confirmResolve = null;
+	function askConfirm(message) {
+		return new Promise(function(resolve) {
+			// No markup found (shouldn't happen, but never silently block a
+			// destructive action behind a modal that can't render) -- fall
+			// back to proceeding, same as if the player had confirmed.
+			if (!confirmBackdrop || !confirmText) { resolve(true); return; }
+			confirmText.textContent = message;
+			confirmBackdrop.classList.add('show');
+			confirmResolve = resolve;
+		});
+	}
+	function closeConfirm(result) {
+		if (confirmBackdrop) confirmBackdrop.classList.remove('show');
+		if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+	}
+	if (confirmBackdrop) {
+		if (confirmOkBtn) confirmOkBtn.addEventListener('click', function() { closeConfirm(true); });
+		if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', function() { closeConfirm(false); });
+		confirmBackdrop.addEventListener('click', function(e) {
+			if (e.target === confirmBackdrop) closeConfirm(false);
+		});
+	}
+
 	function lockGameAreaBriefly() {
 		gameArea.style.opacity = '0.55';
 		gameArea.style.pointerEvents = 'none';
@@ -982,9 +1039,32 @@ try {
 	// fallback for when this fails or JS is unavailable.
 	var busy = false;
 	document.addEventListener('submit', function(e) {
-		if (e.defaultPrevented) return; // e.g. Abandon Run's own confirm() said no
+		if (e.defaultPrevented) return;
 		var form = e.target;
 		if (!gameArea || form.tagName !== 'FORM' || !gameArea.contains(form)) return;
+
+		// data-confirm gate (Abandon Run) -- routes through the styled
+		// modal (#cc-confirm-backdrop) instead of the browser's own
+		// confirm(). The first time this form's submit reaches here it's
+		// NOT yet confirmed, so: block it, ask, and if the player says
+		// yes, re-submit the SAME form (form.dataset.confirmed marks it so
+		// this exact check is skipped on that second pass and the submit
+		// proceeds normally below -- including the data-sfx dispatch just
+		// past this block, which only ever sees a genuinely confirmed
+		// submit this way, same guarantee confirm() used to provide).
+		var confirmMsg = form.getAttribute('data-confirm');
+		if (confirmMsg && !form.dataset.confirmed) {
+			e.preventDefault();
+			var submitter = e.submitter;
+			askConfirm(confirmMsg).then(function(ok) {
+				if (!ok) return;
+				form.dataset.confirmed = '1';
+				form.requestSubmit(submitter || undefined);
+				delete form.dataset.confirmed;
+			});
+			return;
+		}
+
 		e.preventDefault();
 		if (busy) return;
 		busy = true;
@@ -994,7 +1074,8 @@ try {
 		// pressed is already enough to know the outcome), and firing at
 		// click time keeps it inside the user-gesture window autoplay
 		// policy requires. e.submitter is the actual button that triggered
-		// this submit -- Abandon Run carries no data-sfx, so it stays silent.
+		// this submit -- Abandon Run carries data-sfx="flee" too, fired
+		// here only on a genuinely confirmed submit (past the gate above).
 		if (e.submitter) playClickSfx(e.submitter.getAttribute('data-sfx'));
 		gameArea.style.opacity = '0.55';
 		gameArea.style.pointerEvents = 'none';

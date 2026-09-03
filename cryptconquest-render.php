@@ -640,7 +640,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<form method="post"><input type="hidden" name="action" value="flip_jester">
 					<button type="submit" class="cq-btn secondary" <?php echo $jesters_left > 0 ? '' : 'disabled'; ?>>🃏 Flip Joker (<?php echo $jesters_left; ?> left)</button>
 				</form>
-				<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
+				<form method="post" data-confirm="Abandon this run? It counts as a loss.">
 					<input type="hidden" name="action" value="abandon">
 					<button type="submit" class="cq-btn secondary">🏳️ Abandon Run</button>
 				</form>

@@ -255,6 +255,12 @@ include 'header.php';
 }
 .cq-instructions-modal h3 { margin: 0 0 10px; font-size: 1.05rem; }
 .cq-instructions-close { margin-top: 16px; width: 100%; }
+/* Reuses .cq-instructions-modal's own card (same backdrop, background,
+   blur, entrance) -- narrower, since this is one line and two buttons,
+   not a scrolling rules page. */
+.cq-confirm-modal { max-width: 320px; text-align: center; }
+.cq-confirm-modal p { margin: 0 0 16px; font-size: .95rem; line-height: 1.4; }
+.cq-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .cq-rules { font-size: 0.85rem; line-height: 1.6; opacity: 0.75; margin-bottom: 20px; }
 /* Rules broken into labeled sections instead of one prose block -- direct
@@ -599,6 +605,21 @@ include 'header.php';
      replaced: an in-place swap and a forced navigation both turned out to
      have real failure modes across browser/PWA/mobile that this doesn't. -->
 <div id="cq-result-overlay" style="display:none;"></div>
+<!-- Permanent, hidden sibling of #cq-game-area -- a styled stand-in for
+     the browser's own confirm() dialog, used by any form marked
+     data-confirm="message text" (currently just Abandon Run). Lives here,
+     not inside #cq-game-area, so it survives every swap and only needs
+     wiring once; the submit delegate below reads data-confirm off
+     whichever form the player is submitting. -->
+<div class="cq-instructions-backdrop" id="cq-confirm-backdrop">
+	<div class="cq-instructions-modal cq-confirm-modal">
+		<p id="cq-confirm-text"></p>
+		<div class="cq-confirm-actions">
+			<button type="button" class="cq-btn secondary" id="cq-confirm-cancel">Cancel</button>
+			<button type="button" class="cq-btn attack" id="cq-confirm-ok">Abandon</button>
+		</div>
+	</div>
+</div>
 </div>
 <!-- Persistent control bar -- OUTSIDE #cq-game-area/#cq-theme-bg on
      purpose, so it's visible in every state (no_run/active/game_over) and
@@ -1322,6 +1343,42 @@ include 'header.php';
 		} catch (e) {}
 	}
 
+	// Styled stand-in for the browser's own confirm() -- reported as looking
+	// out of place next to the rest of the game's own UI. Any form marked
+	// data-confirm="message" routes through here instead (currently just
+	// Abandon Run); see the submit delegate below for how a form actually
+	// gets past this gate. Wired once, here at the outer scope, rather than
+	// inside initGameArea() -- #cq-confirm-backdrop is a PERMANENT sibling
+	// of #cq-game-area (survives every swap), same reasoning as
+	// #cq-result-overlay and the audio elements.
+	var confirmBackdrop = document.getElementById('cq-confirm-backdrop');
+	var confirmText = document.getElementById('cq-confirm-text');
+	var confirmOkBtn = document.getElementById('cq-confirm-ok');
+	var confirmCancelBtn = document.getElementById('cq-confirm-cancel');
+	var confirmResolve = null;
+	function askConfirm(message) {
+		return new Promise(function(resolve) {
+			// No markup found (shouldn't happen, but never silently block a
+			// destructive action behind a modal that can't render) -- fall
+			// back to proceeding, same as if the player had confirmed.
+			if (!confirmBackdrop || !confirmText) { resolve(true); return; }
+			confirmText.textContent = message;
+			confirmBackdrop.classList.add('show');
+			confirmResolve = resolve;
+		});
+	}
+	function closeConfirm(result) {
+		if (confirmBackdrop) confirmBackdrop.classList.remove('show');
+		if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+	}
+	if (confirmBackdrop) {
+		if (confirmOkBtn) confirmOkBtn.addEventListener('click', function() { closeConfirm(true); });
+		if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', function() { closeConfirm(false); });
+		confirmBackdrop.addEventListener('click', function(e) {
+			if (e.target === confirmBackdrop) closeConfirm(false);
+		});
+	}
+
 	function lockGameAreaBriefly() {
 		gameArea.style.opacity = '0.55';
 		gameArea.style.pointerEvents = 'none';
@@ -1337,9 +1394,32 @@ include 'header.php';
 
 	var busy = false;
 	document.addEventListener('submit', function(e) {
-		if (e.defaultPrevented) return; // e.g. Abandon Run's own confirm() said no
+		if (e.defaultPrevented) return;
 		var form = e.target;
 		if (!gameArea || form.tagName !== 'FORM' || !gameArea.contains(form)) return;
+
+		// data-confirm gate (Abandon Run) -- routes through the styled
+		// modal above instead of the browser's own confirm(). The first
+		// time this form's submit reaches here it's NOT yet confirmed, so:
+		// block it, ask, and if the player says yes, re-submit the SAME
+		// form (form.dataset.confirmed marks it so this exact check is
+		// skipped on that second pass and the submit proceeds normally
+		// below -- including the data-sfx/sound dispatch further down,
+		// which only ever sees a genuinely confirmed submit this way, same
+		// guarantee confirm() used to provide).
+		var confirmMsg = form.getAttribute('data-confirm');
+		if (confirmMsg && !form.dataset.confirmed) {
+			e.preventDefault();
+			var submitter = e.submitter;
+			askConfirm(confirmMsg).then(function(ok) {
+				if (!ok) return;
+				form.dataset.confirmed = '1';
+				form.requestSubmit(submitter || undefined);
+				delete form.dataset.confirmed;
+			});
+			return;
+		}
+
 		e.preventDefault();
 		if (busy) return;
 		busy = true;
@@ -1375,9 +1455,10 @@ include 'header.php';
 			// undersell it.
 			playStinger('jester');
 		} else if (sfxAction === 'abandon') {
-			// Fires here, past the confirm() gate above -- if the player
-			// said no, e.defaultPrevented is already true and this whole
-			// function returned before reaching this line.
+			// Fires here, past the data-confirm gate above -- a declined
+			// confirm never reaches this far down the handler at all (see
+			// that gate's own comment), so this is only ever a genuinely
+			// confirmed abandon.
 			playNamedSfx('flee');
 		} else {
 			var movesCards = (sfxAction === 'play' || sfxAction === 'suffer' ||

@@ -516,7 +516,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 				</form>
 				<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
 			</div>
-			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
+			<form method="post" data-confirm="Abandon this run? It counts as a loss.">
 				<input type="hidden" name="action" value="abandon">
 				<button type="submit" class="cc-btn secondary" data-sfx="flee">🏳️ Abandon Run</button>
 			</form>
