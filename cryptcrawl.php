@@ -561,6 +561,31 @@ try {
 	     crossfadeTo() for how these two take turns being "active". -->
 	<audio id="cc-audio-el-a" preload="metadata"></audio>
 	<audio id="cc-audio-el-b" preload="metadata"></audio>
+	<!-- Card-action SFX -- see the SFX block in the script below for how
+	     each fires and at what level. Short, frequent ones preload="auto"
+	     (fired on click, no gap to hide); the long narrative cues
+	     (laststand/death/victory, shared mp3s with Crypt Conquest) and the
+	     rarer big-explosive weapons preload="metadata" instead, same
+	     reasoning as the music tracks above -- no point eagerly pulling
+	     100KB+ files that may never play this session. -->
+	<audio id="cc-sfx-fist" preload="auto" src="audio/sounds/fist.mp3"></audio>
+	<audio id="cc-sfx-equip" preload="auto" src="audio/sounds/equip.mp3"></audio>
+	<audio id="cc-sfx-heal" preload="auto" src="audio/sounds/heal.mp3"></audio>
+	<audio id="cc-sfx-card" preload="auto" src="audio/sounds/card.mp3"></audio>
+	<audio id="cc-sfx-kill" preload="auto" src="audio/sounds/kill.mp3"></audio>
+	<audio id="cc-sfx-melee" preload="auto" src="audio/sounds/melee.mp3"></audio>
+	<audio id="cc-sfx-tacticalkatana" preload="auto" src="audio/sounds/tacticalkatana.mp3"></audio>
+	<audio id="cc-sfx-pistol" preload="auto" src="audio/sounds/pistol.mp3"></audio>
+	<audio id="cc-sfx-sniperrifle" preload="auto" src="audio/sounds/sniperrifle.mp3"></audio>
+	<audio id="cc-sfx-machinegun" preload="auto" src="audio/sounds/machinegun.mp3"></audio>
+	<audio id="cc-sfx-rocketlauncher" preload="metadata" src="audio/sounds/rocketlauncher.mp3"></audio>
+	<audio id="cc-sfx-grenade" preload="metadata" src="audio/sounds/grenade.mp3"></audio>
+	<audio id="cc-sfx-demolition" preload="metadata" src="audio/sounds/demolition.mp3"></audio>
+	<audio id="cc-sfx-flamethrower" preload="metadata" src="audio/sounds/flamethrower.mp3"></audio>
+	<audio id="cc-sfx-artillery" preload="metadata" src="audio/sounds/artillery.mp3"></audio>
+	<audio id="cc-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
+	<audio id="cc-sfx-death" preload="metadata" src="audio/sounds/death.mp3"></audio>
+	<audio id="cc-sfx-victory" preload="metadata" src="audio/sounds/victory.mp3"></audio>
 </div>
 <script>
 (function() {
@@ -626,6 +651,112 @@ try {
 		return v === null ? true : v === '1'; // on by default -- opt out, not opt in
 	}
 	function setFlowNotifsEnabled(v) { try { sessionStorage.setItem('cc_flow_notifs_enabled', v ? '1' : '0'); } catch (e) {} }
+
+	// ── CARD-ACTION SFX ──────────────────────────────────────────────
+	// Same architecture as Crypt Conquest's own SFX block in
+	// cryptconquest.php (see that file's comments for the fuller
+	// rationale) -- ported here as-is rather than reinvented, so both
+	// games' sound systems stay maintainable as one mental model. cc_-
+	// prefixed sessionStorage keys, matching this page's own audio player
+	// above (not cq_ -- the two games' state has always been kept apart so
+	// muting one never silences the other).
+	//
+	// Effects play at up to 2x the slider's music level (clamped to 1.0),
+	// same reasoning as Conquest: a short action sound needs to cut through
+	// a sustained music bed to read at the same loudness, and at the
+	// default slider position (50) that 2x already saturates to the
+	// digital ceiling. Per-sound LEVEL then scales down from THAT ceiling.
+	//
+	// Every LEVEL value below was set from measured integrated loudness
+	// (LUFS) against the actual music track these sounds play over, not
+	// from file RMS or by ear -- RMS was tried first on Conquest's own
+	// exact-match cue and shipped it audibly louder than the music twice
+	// in a row before being caught. Two tiers:
+	//   "impact"  target -4.6 LU under the music -- matches Conquest's own
+	//             card/kill reference level, for the sounds a player hears
+	//             on nearly every action: fist, kill (shared), and the
+	//             faster weapons (melee/katana/pistol/sniper/machine gun).
+	//   "utility/long" target -8.5 LU under -- matches Conquest's own
+	//             exactmatch tier, for equip/heal (secondary feedback, not
+	//             combat impact) and the slow, sustained explosive weapons
+	//             (grenade/demolition/flamethrower/rocket launcher/
+	//             artillery) -- a 9-second artillery boom at the SAME
+	//             level as a 0.9s punch would dominate the mix simply by
+	//             lasting longer, the same mistake the impact tier exists
+	//             to avoid.
+	// laststand/death/victory reuse Conquest's own already-measured levels
+	// verbatim -- same mp3 files, same music tracks, so the same numbers
+	// are still correct; no need to remeasure.
+	var SFX_GAIN = 2;
+	var SFX_LEVEL = {
+		fist: 0.548, kill: 0.17, card: 1,
+		melee: 0.275, tacticalkatana: 0.162, pistol: 0.109,
+		sniperrifle: 0.524, machinegun: 0.073,
+		equip: 0.095, heal: 0.388,
+		grenade: 0.083, demolition: 0.148, rocketlauncher: 0.204,
+		artillery: 0.080, flamethrower: 0.090,
+		laststand: 0.5, death: 0.15, victory: 0.4
+	};
+	// Long, narrative "alert" cues only -- mutually exclusive so Last
+	// Stand, a death and a victory can never talk over each other. The big
+	// explosive WEAPON sounds are deliberately NOT in this set even though
+	// several run just as long: they're the direct result of the player's
+	// own click and should be free to overlap with a laststand/death/
+	// victory cue that lands on the very same action (e.g. an artillery
+	// shot that also triggers Last Stand is exactly the high-stakes
+	// moment where both sounds landing together is right, not a bug).
+	var SFX_STINGERS = { laststand: 1, death: 1, victory: 1 };
+	var ccCurrentStinger = null;
+	function sfxVolume() {
+		var vol = parseInt(sessionStorage.getItem('cc_audio_volume'), 10);
+		if (!(vol >= 0 && vol <= 100)) vol = 50;
+		return Math.min(1, (vol / 100) * SFX_GAIN);
+	}
+	function sfxVolumeFor(name) {
+		var lvl = SFX_LEVEL[name];
+		return sfxVolume() * (lvl === undefined ? 1 : lvl);
+	}
+	function playNamedSfx(name) {
+		var el = document.getElementById('cc-sfx-' + name);
+		if (!el) return;
+		var vol = sfxVolumeFor(name);
+		if (vol === 0) return;
+		try {
+			if (SFX_STINGERS[name]) {
+				if (ccCurrentStinger && ccCurrentStinger !== el) {
+					ccCurrentStinger.pause();
+					ccCurrentStinger.currentTime = 0;
+				}
+				ccCurrentStinger = el;
+			}
+			el.volume = Math.min(1, vol);
+			el.currentTime = 0;
+			// Chrome rejects this promise with no user gesture yet; it's a
+			// sound effect, so a silent failure is the right outcome.
+			var p = el.play();
+			if (p && p.catch) p.catch(function() {});
+		} catch (e) {}
+	}
+	// Fired from the submit handler at CLICK time, reading data-sfx off
+	// whichever button was actually pressed (see e.submitter there) -- a
+	// space-separated list, since e.g. "Use Weapon" queues both the
+	// weapon-specific sound and the shared 'kill' cue.
+	function playClickSfx(names) {
+		if (!names) return;
+		var list = names.split(/\s+/);
+		for (var i = 0; i < list.length; i++) if (list[i]) playNamedSfx(list[i]);
+	}
+	// Sounds the SERVER queued for this render, read off #cc-mood -- see
+	// cryptcrawlRenderGameArea()'s own data-sfx in cryptcrawl-render.php.
+	// Only Last Stand and death/victory arrive this way; everything else
+	// is click-fired above because Crypt Crawl's actions (unlike
+	// Conquest's multi-card combos) are each a single deterministic click.
+	function playMoodSfx() {
+		var el = document.getElementById('cc-mood');
+		if (!el) return;
+		var names = (el.getAttribute('data-sfx') || '').split(/\s+/);
+		for (var i = 0; i < names.length; i++) if (names[i]) playNamedSfx(names[i]);
+	}
 
 	// Everything below re-wires whatever's currently inside #cc-game-area --
 	// run once for the initial page load, then again after every AJAX swap
@@ -776,6 +907,13 @@ try {
 		// player checks its own initial mood itself once it sets up, just
 		// below this function in source order.
 		if (syncMood) syncMood();
+		// Runs on every render this function handles -- initial load, every
+		// in-place swap, and the result-overlay swap (see initGameArea()'s
+		// own two call sites below) -- exactly the renders where #cc-mood's
+		// data-sfx can carry something new. Safe on a plain page load too:
+		// there's no user gesture yet, so play() rejects silently (see
+		// playNamedSfx()'s own try/catch).
+		playMoodSfx();
 	}
 
 	initGameArea();
@@ -830,6 +968,14 @@ try {
 		e.preventDefault();
 		if (busy) return;
 		busy = true;
+		// Fired here, not on the response: the sound belongs to the click
+		// that actually resolved the card (Fist Fight/Use Weapon/Equip/
+		// Heal/Flee are each a single deterministic action, so the button
+		// pressed is already enough to know the outcome), and firing at
+		// click time keeps it inside the user-gesture window autoplay
+		// policy requires. e.submitter is the actual button that triggered
+		// this submit -- Abandon Run carries no data-sfx, so it stays silent.
+		if (e.submitter) playClickSfx(e.submitter.getAttribute('data-sfx'));
 		gameArea.style.opacity = '0.55';
 		gameArea.style.pointerEvents = 'none';
 		fetch('ajax/cryptcrawl-action.php', { method: 'POST', body: new FormData(form) })

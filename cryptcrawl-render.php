@@ -9,6 +9,31 @@
 // for why the AJAX path exists at all: every action used to be a full page
 // reload, which tore down and rebuilt the <audio> element every single
 // time, audibly stuttering the ambient music player.
+	// Weapon-name -> sound-effect basename, for the "Use Weapon" action.
+	// Keyed by the SAME hyphenated slug the weapon icon path already uses
+	// ($weapon_icon below), so both are derived from one lookup and can
+	// never point at a different weapon than what's actually equipped.
+	// A name with no entry here (there's currently no gap, but the
+	// "Rusty Blade" empty-table fallback in cryptcrawlWeaponName() has no
+	// sound and never will) just returns null -- the caller still gets the
+	// shared 'kill' cue, only the weapon-specific layer is skipped.
+	function cryptcrawlWeaponSfxName($weapon_name) {
+		static $map = [
+			'melee'           => 'melee',
+			'tactical-katana' => 'tacticalkatana',
+			'pistol'          => 'pistol',
+			'grenade'         => 'grenade',
+			'sniper-rifle'    => 'sniperrifle',
+			'machine-gun'     => 'machinegun',
+			'demolition'      => 'demolition',
+			'flamethrower'    => 'flamethrower',
+			'rocket-launcher' => 'rocketlauncher',
+			'artillery'       => 'artillery',
+		];
+		$slug = strtolower(str_replace(['%', ' '], ['', '-'], $weapon_name));
+		return $map[$slug] ?? null;
+	}
+
 	// Shared by the no_run intro screen below and the in-game "View
 	// Instructions" modal (see the flee-row further down) -- one copy of the
 	// rules text instead of two that could quietly drift apart.
@@ -89,7 +114,7 @@ function cryptcrawlMinimalGameOverHtml($run, $user_id) {
 	$theme_img = $fell ? "linear-gradient(180deg, rgba(7,17,26,.55), rgba(7,17,26,.88)), url('/staking/images/themes/8.jpg')" : '';
 	$carbon_earned = intval($run['carbon_earned'] ?? 0);
 	?>
-	<div id="cc-mood" data-mood="<?php echo $mood; ?>" data-restarted="0" data-theme-active="<?php echo $theme_active; ?>" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>" style="display:none;"></div>
+	<div id="cc-mood" data-mood="<?php echo $mood; ?>" data-restarted="0" data-theme-active="<?php echo $theme_active; ?>" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>" data-sfx="<?php echo $fell ? 'death' : 'victory'; ?>" style="display:none;"></div>
 	<div class="cc-inner">
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>" data-run-id="<?php echo intval($run['id'] ?? 0); ?>">
 			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
@@ -153,6 +178,16 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 	$cc_just_started = !empty($_SESSION['cryptcrawl_just_started']);
 	unset($_SESSION['cryptcrawl_just_started']);
 
+	// Sounds the action queued for the client (currently just Last Stand --
+	// see cryptcrawlSfx() in cryptcrawl-actions.php), same read-and-clear
+	// lifetime as $flashes so each plays on exactly one render. Emitted on
+	// #cc-mood below rather than a flash modal so it isn't tied to whether
+	// a modal happens to be showing. death/victory are appended further
+	// down once $state is known, derived from run status rather than
+	// queued -- see that comment for why.
+	$cc_sfx_queue = $_SESSION['cryptcrawl_sfx'] ?? [];
+	$_SESSION['cryptcrawl_sfx'] = [];
+
 	$suit_symbol = ['C' => '♣', 'S' => '♠', 'D' => '♦', 'H' => '♥'];
 	$suit_color  = ['C' => '#c8dce8', 'S' => '#c8dce8', 'D' => '#ff9900', 'H' => '#ff6b6b'];
 
@@ -176,6 +211,15 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 	$cc_mood = 'normal';
 	if ($state === 'game_over') {
 		$cc_mood = ($recent_run['status'] === 'won') ? 'triumph' : 'death';
+		// Derived from STATE here rather than queued as an event like Last
+		// Stand above: a delve can end via cryptcrawlMinimalGameOverHtml(),
+		// the zero-dependency fallback from the loss-screen bug, which never
+		// runs this function at all -- a session queue would only ever
+		// reach one of the two paths. Reading it off status keeps both
+		// paths sounding the same, which matters most on exactly the path
+		// that exists because something already went wrong. See that
+		// function's own #cc-mood line for the matching derivation.
+		$cc_sfx_queue[] = ($recent_run['status'] === 'won') ? 'victory' : 'death';
 	} elseif ($state === 'active') {
 		$mood_room = json_decode($active_run['room'], true) ?: [];
 		$mood_hp = intval($active_run['hp']);
@@ -220,6 +264,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 ?>
 <div id="cc-mood" data-mood="<?php echo htmlspecialchars($cc_mood); ?>" data-restarted="<?php echo $cc_just_started ? '1' : '0'; ?>"
 	data-theme-active="<?php echo $cc_theme_active ? '1' : '0'; ?>" data-theme-img="<?php echo htmlspecialchars($cc_theme_img); ?>"
+	data-sfx="<?php echo htmlspecialchars(implode(' ', $cc_sfx_queue)); ?>"
 	style="display:none;"></div>
 <div class="cc-inner">
 	<?php if ($flashes): ?>
@@ -322,11 +367,15 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 						// the same graceful onerror hide for any name with no icon
 						// on disk (e.g. the "Rusty Blade" fallback name).
 						$weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $weapon_name)) . '.png';
+						// One lookup from the same $weapon_name, reused on the "Use
+						// Weapon" button below so the icon and the sound can never
+						// point at two different weapons.
+						$weapon_sfx = cryptcrawlWeaponSfxName($weapon_name);
 					?>
 						<img class="cc-weapon-icon" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
 						<strong><?php echo htmlspecialchars($weapon_name); ?></strong> (pwr <?php echo $weapon_power; ?>) - <?php echo $weapon_beaten_rank !== null ? 'beats up to ' . cryptcrawlRankLabel($weapon_beaten_rank) : 'no limit yet, fresh'; ?>
 					<?php else: ?>
-						👊 Bare-handed
+						<img class="cc-weapon-icon" src="icons/fist.png" alt="" onerror="this.style.display='none';"> Bare-handed
 					<?php endif; ?>
 				</div>
 				<div style="font-size:0.72rem;opacity:0.5;">Crypts cleared: <?php echo intval($active_run['rooms_cleared']); ?> · Deck: <?php echo $deck_count; ?> left</div>
@@ -401,8 +450,8 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn bare punchy">
-									<span class="cc-btn-icon-big">👊</span>
+								<button type="submit" class="cc-btn bare punchy" data-sfx="fist kill">
+									<img class="cc-btn-icon-big-img" src="icons/fist.png" alt="" onerror="this.style.display='none';">
 									<span class="cc-btn-action">Fist Fight</span>
 									<span class="cc-btn-detail">-<?php echo $rank; ?> HP</span>
 								</button>
@@ -411,7 +460,14 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 								<form method="post"><input type="hidden" name="action" value="play_card">
 									<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 									<input type="hidden" name="use_weapon" value="1">
-									<button type="submit" class="cc-btn attack punchy" <?php echo $weapon_eligible ? '' : 'disabled'; ?>>
+									<!-- data-sfx is read at CLICK time (see the SFX block in
+									     cryptcrawl.php), before this even reaches the server --
+									     safe because $weapon_eligible already gates the whole
+									     button being clickable, same guarantee the disabled
+									     attribute below relies on. $weapon_sfx can be null (an
+									     unmapped weapon name); trim() drops the resulting extra
+									     space so the attribute is just "kill" instead of " kill". -->
+									<button type="submit" class="cc-btn attack punchy" <?php echo $weapon_eligible ? '' : 'disabled'; ?> data-sfx="<?php echo htmlspecialchars(trim(($weapon_sfx ?? '') . ' kill')); ?>">
 										<!-- Same $weapon_icon the HUD line above already computed for the
 										     currently equipped weapon -- reused as-is so this always matches. -->
 										<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($weapon_icon); ?>" alt="" onerror="this.style.display='none';">
@@ -424,7 +480,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn warn punchy">
+								<button type="submit" class="cc-btn warn punchy" data-sfx="equip">
 									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($preview_weapon_icon); ?>" alt="" onerror="this.style.display='none';">
 									<span class="cc-btn-action">Equip</span>
 									<span class="cc-btn-detail"><?php echo htmlspecialchars($preview_weapon_name); ?></span>
@@ -434,7 +490,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 							<form method="post"><input type="hidden" name="action" value="play_card">
 								<input type="hidden" name="card_index" value="<?php echo $i; ?>">
 								<input type="hidden" name="use_weapon" value="0">
-								<button type="submit" class="cc-btn heal punchy">
+								<button type="submit" class="cc-btn heal punchy" data-sfx="heal">
 									<img class="cc-btn-icon-big-img" src="<?php echo htmlspecialchars($medkit_icon); ?>" alt="" onerror="this.style.display='none';">
 									<span class="cc-btn-action">Heal</span>
 									<span class="cc-btn-detail"><?php echo intval($active_run['potion_used_this_room']) === 1 ? '+' . max(1, intval($rank / 2)) . ' HP (half)' : '+' . $rank . ' HP'; ?></span>
@@ -450,7 +506,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		<div class="cc-flee-row">
 			<div class="cc-flee-cell">
 				<form method="post"><input type="hidden" name="action" value="flee">
-					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?>>🏃 Flee This Crypt</button>
+					<button type="submit" class="cc-btn secondary" <?php echo $can_flee ? '' : 'disabled'; ?> data-sfx="card">🏃 Flee This Crypt</button>
 				</form>
 				<?php if (!$can_flee): ?><div class="cc-note">already fled last crypt, or mid-crypt - can't flee now</div><?php endif; ?>
 			</div>

@@ -17,6 +17,17 @@ function cryptcrawlFlash($msg, $type = 'info', $source = null) {
 	$_SESSION['cryptcrawl_flash'][] = ['msg' => $msg, 'type' => $type, 'source' => $source];
 }
 
+// Queues a sound for the client to play on the next render (emitted as
+// data-sfx on #cc-mood -- see cryptcrawlRenderGameArea() in
+// cryptcrawl-render.php). Needed for Last Stand specifically: whether it
+// fires depends on current HP vs. incoming damage, decided server-side
+// inside cryptcrawlPlayCard(), so there's no button click the client could
+// hang the sound off the way Fist Fight/Use Weapon/Equip/Heal/Flee do.
+// Mirrors cryptconquestSfx() in cryptconquest-actions.php.
+function cryptcrawlSfx($name) {
+	$_SESSION['cryptcrawl_sfx'][] = $name;
+}
+
 // Performs one Crypt Crawl action (start_run/play_card/flee/abandon) for
 // $user_id, queuing any resulting flash message the same way the page
 // always has. $post is $_POST (or an equivalent array) with at least
@@ -68,6 +79,7 @@ function cryptcrawlHandleAction($conn, $user_id, $post) {
 		// and is now spent -- the only place that flag ever changes.
 		if ($second_wind_was_available && $updated && intval($updated['second_wind_used']) === 1) {
 			cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win', 'laststand');
+			cryptcrawlSfx('laststand');
 		}
 		return $updated;
 
