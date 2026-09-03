@@ -67,10 +67,10 @@ function cryptconquestRulesHtml() { ?>
 	     is why that's now stated explicitly rather than just implied. -->
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">🔄 Your Hand Only Shrinks</div>
-		<p><strong>Your hand is your health, and it does not refill at the end of a turn.</strong> Cards leave your hand two ways, and both are permanent:</p>
+		<p><strong>Your hand is your health, and it does not refill at the end of a turn.</strong> Cards leave your hand two ways:</p>
 		<ul class="cq-rules-list">
 			<li><strong>Playing them</strong> -- any card you attack with goes to the discard pile, whatever its suit.</li>
-			<li><strong>Covering damage</strong> -- cards you discard to survive a hit are gone too.</li>
+			<li><strong>Covering damage</strong> -- cards you discard to survive a hit are gone too, <em>unless</em> you cover the hit exactly (see Perfect Guard below).</li>
 		</ul>
 		<p>You <em>never</em> play cards out of the discard pile -- every play comes from your hand. The only ways to gain cards back are <strong style="color:#ff9900;">♦ Diamonds</strong> and a <strong style="color:#00c8a0;">Jester flip</strong>.</p>
 		<p style="opacity:.85;">Card flow: <strong>Deck → Hand → Discard.</strong> ♥ Hearts is the only route back, and it returns cards to the <em>deck</em>, not your hand.</p>
@@ -81,7 +81,7 @@ function cryptconquestRulesHtml() { ?>
 		<p style="opacity:.85;">Each power is worth the total value of what you played, and only fires if the suit differs from the court card's own.</p>
 		<ul class="cq-rules-list">
 			<li><strong style="color:#ff6b6b;">♥ Hearts</strong> -- moves that many <em>random</em> cards from your discard pile to the <strong>bottom of the deck</strong>. Not into your hand, and you won't draw them again for a while -- it keeps the deck from running dry rather than helping you right now.</li>
-			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws that many cards from the deck <strong>into your hand</strong>. The only routine way to refill, so this is usually your lifeline, not a bonus.</li>
+			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws that many cards from the deck <strong>into your hand</strong>. The only routine way to refill, so this is usually your lifeline, not a bonus. Draws stop at your <strong>8-card hand limit</strong> and the rest are forfeited, so a big Diamond played on a full hand is mostly wasted.</li>
 			<li><strong style="color:#c8dce8;">♣ Clubs</strong> -- doubles your damage.</li>
 			<li><strong style="color:#c8dce8;">♠ Spades</strong> -- shields you from that enemy's counterattack.</li>
 		</ul>
@@ -97,6 +97,12 @@ function cryptconquestRulesHtml() { ?>
 		<p>Whatever the court card hits back with (after your shield, if any) has to be covered by discarding cards from hand totalling <strong>at least</strong> that much. Run dry on cards entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong> (twice per run) discards your whole hand and deals you a fresh one. And if your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run -- after that, the next uncovered hit ends it.</p>
 	</div>
 
+	<div class="cq-rules-section">
+		<div class="cq-rules-label">🛡️ Perfect Guard</div>
+		<p>Cover a hit <strong>exactly</strong> -- not a point over -- and your <strong>two highest-value</strong> cards held: they come straight back to your hand. Everything else you spent still goes to the discard.</p>
+		<p style="opacity:.85;">So a 2-card exact match costs you <em>nothing at all</em>, while hitting the number with four cards still costs you the smaller two. Overpaying by even one point returns nothing. It's the defensive twin of an exact kill -- precision is rewarded on both sides of the turn.</p>
+	</div>
+
 	<!-- Added directly in response to a real new player's reported
 	     approach: highest off-suit card on attack, exact-match-with-most-
 	     cards on defense -- both textbook, intuitive-but-wrong plays the
@@ -108,6 +114,8 @@ function cryptconquestRulesHtml() { ?>
 		<ul class="cq-rules-tips">
 			<li><strong>Covering damage only needs to reach the total, not match it.</strong> Discard the fewest cards you can spare -- extra cards left in hand matter more than landing on a clean number.</li>
 			<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin beats a big off-suit card that doesn't do anything you actually need right now.</li>
+			<li><strong>Don't spend a big Diamond on a full hand.</strong> Draws stop at 8 cards and the rest are forfeited -- a 9 of Diamonds played at a full hand does the work of a 1. Hold your big Diamonds until your hand is thin.</li>
+			<li><strong>Cover the number exactly when you can.</strong> Overpaying by a single point loses everything you spent; hitting it on the nose hands your two best cards back.</li>
 		</ul>
 	</div>
 <?php }

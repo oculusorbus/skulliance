@@ -29,7 +29,7 @@ This is the single most important thing to understand, and the easiest to miss:
 Cards leave your hand two ways, and both are permanent:
 
 * **Playing them** - any card you attack with goes to the discard pile, whatever its suit.
-* **Covering damage** - cards discarded to survive a hit are gone too.
+* **Covering damage** - cards discarded to survive a hit are gone too, *unless* you cover the hit exactly (see Perfect Guard).
 
 You never play cards *out of* the discard pile; every play comes from your hand.
 The only ways to gain cards back are **♦ Diamonds** and a **Jester flip**.
@@ -43,7 +43,7 @@ Playing a card whose suit differs from the current court card's own suit (the co
 
 * **♣ Clubs double your attack** - the whole total against the court card is doubled.
 * **♥ Hearts heal** - that many *random* cards return from your discard pile to the **bottom** of the tavern deck. Not into your hand, and you won't draw them again for a while: it keeps the deck from running dry rather than helping you this turn.
-* **♦ Diamonds draw** - draw that many fresh cards from the deck into your hand, up to your hand size cap. The only routine way to refill, which makes Diamonds a lifeline rather than a bonus.
+* **♦ Diamonds draw** - draw that many fresh cards from the deck into your hand. The only routine way to refill, which makes Diamonds a lifeline rather than a bonus. Draws stop at the **8-card hand limit** and any beyond it are forfeited, so a big Diamond played on a full hand is mostly wasted - a 9 played at 8 cards draws just one.
 * **♠ Spades shield** - the court card takes that much off its next attack against you.
 
 Hearts resolves before Diamonds when a combo triggers both at once.
@@ -52,11 +52,26 @@ Hearts resolves before Diamonds when a combo triggers both at once.
 
 Whatever the court card hits back with (after Spades shield, if any) has to be covered by discarding cards from your hand worth at least that much - a partial selection that doesn't reach the total is just rejected so you can try again, but discarding your **entire hand** and still coming up short is what actually threatens the run.
 
+## Perfect Guard
+
+Cover an incoming hit **exactly** - not a point over - and your **two highest-value**
+spent cards return to your hand. Everything else you spent still goes to the discard.
+
+* A **2-card exact match costs you nothing at all** - both come back.
+* A 4-card exact match still costs you the smaller two.
+* **Overpaying by even one point returns nothing**, exactly as before.
+
+It's the defensive twin of the exact-kill rule: precision is rewarded on both sides
+of the turn. Two cards rather than all of them is a deliberate balance point - see
+`cryptconquest.md` for the simulation behind it.
+
 ## Strategy Tips
 
 Two habits that feel intuitive but aren't rewarded by the rules above:
 
 * **Covering an attack only needs to reach the total, not match it exactly.** There's no bonus for landing on a clean number, and no penalty for overpaying by a card or two - discard the fewest cards you can spare, not the most. Every card left in hand is a card you can still play.
+* **Hold big Diamonds until your hand is thin.** Draws stop at 8 cards and the rest are forfeited, so a 9 of Diamonds on a full hand does the work of a 1.
+* **Cover the number exactly whenever you can.** Overpaying by one point loses everything you spent; hitting it exactly hands your two best cards back.
 * **Attack for the suit power you need, not just the highest number.** A small Diamond when your hand is thin (to refill it) is worth more than a big off-suit card that doesn't do anything useful against the current court card. Hoard high cards and Diamonds for the fight that actually needs them rather than spending them on the first legal play.
 
 Exact damage kills (see Winning & Losing below) are the one place precision *is* rewarded - the distinction is worth keeping straight: exact on offense is a bonus, exact on defense is not required.

@@ -180,6 +180,30 @@ records verified constants, and tracks what still needs to be written.
   Clubs double attack, Hearts heal (return cards from discard to tavern), Diamonds draw, Spades
   shield (Hearts resolves before Diamonds when both trigger). 2 Jesters (discard hand + refill,
   once each); win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
+  **Perfect Guard** (added 2026-09-02, cryptconquestSufferDamage): covering an attack EXACTLY
+  returns the player's two highest-value spent cards to hand; everything else spent still goes to
+  the discard, and overpaying returns nothing. Defensive twin of the exact-kill rule. The "two"
+  is a measured balance point, not a guess -- 2,500 simulated games per variant, identical
+  offense, only defense differing: no rule 0.0% win / depth 5.21; return highest 1 = 1.0% / 7.15;
+  **return top 2 = 11.4% / 8.51**; return all = 15.0% / 8.72. Returning everything makes defense
+  free ~68% of turns and guts the core "cards spent defending are cards you can't attack with"
+  tension; returning one barely moves the needle. Also measured and rejected: RANDOM two (exacts
+  average ~1.6 cards and only ~8% use 3+, so it's identical to top-two 92% of the time, costs
+  1.4pp, adds confusion) and DIMINISHED returns, i.e. give an 8 back as a 4 (0.0% win / depth
+  5.21 -- literally no better than having no rule, and it poisons the hand: 13.7% of exacts then
+  need 3+ cards vs 7.9%, because this game's scarcity is total VALUE not card count; it would
+  also break card identity since art keys are suit+rank, minting a duplicate 4 of spades).
+  UI is two-tier by design: exact defenses land on ~68% of turns, so a blocking modal every time
+  reads as nagging -- full modal on the FIRST perfect guard of a run only
+  ($_SESSION['cryptconquest_guard_taught'] keyed to run id), then the returned cards just glow
+  gold in hand with a SAVED badge ($_SESSION['cryptconquest_saved'], read-and-cleared per render).
+  **Diamonds draw is capped by HAND SPACE, not by the card's value** (cryptconquestDraw:
+  min(count, 8 - hand, deck)). Undrawn excess is forfeited but NOT lost from the deck -- it stays
+  in the tavern deck. So a 9 of Diamonds played on a full hand draws exactly 1. Documented in the
+  in-game rules, marketing page and games-cryptconquest.md as of 2026-09-02 since it's a real
+  strategic rule that was previously invisible. Drawn cards are marked
+  ($_SESSION['cryptconquest_drawn'], same read-and-clear lifetime) so they file into the hand
+  staggered with a "♦ NEW" badge rather than silently blending in.
   2=Narrow Conquest). 1 Last Stand (renamed from "Last Rally" per the owner -- Last Stand is
   already a Skulliance-wide term, Monstrocity and Crypt Crawl both use it, and platform
   consistency won out over the original "deliberately a different word" reasoning in
