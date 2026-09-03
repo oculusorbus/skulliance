@@ -1072,27 +1072,27 @@ include 'header.php';
 	//
 	// Above slider 50 this is already at digital maximum and can't go louder.
 	var SFX_GAIN = 2;
-	// Per-sound level, as a multiple of that click level. Not one number for
-	// everything: loudness is about duration as much as amplitude, and these
-	// sounds are 0.44s to 9.5s. A transient click can sit 6dB above the music
-	// and still read as an accent; anything SUSTAINED at that level just
-	// becomes the loudest thing on the page.
+	// Per-sound level, as a multiple of that click level.
 	//
-	//   card/kill  1.00  short transients, the reference level
-	//   exactmatch 0.50  1.0s and mastered hot (-0.5dB peak vs the click's
-	//                    -1.9dB) -- at full level it played over the music,
-	//                    which is what was reported. Halved = -6dB, putting
-	//                    it level with the music instead of above it.
-	//   stingers   0.50  ~9.5s cues; see playStinger()
-	//   death      0.15  6.5s, and mastered FAR hotter than anything else
-	//                    here: mean -6.5dB against the stingers' -16.6/-17.1
-	//                    and the click's -14.6. At the stingers' 0.50 it would
-	//                    land ~10dB above them. 0.15 puts its effective mean
-	//                    at -23.0dB, matching the stingers' -22.6dB, so it's
-	//                    level with them by measurement rather than by eye.
-	//   victory    0.40  3.0s, mean -15.1dB. 0.40 puts its effective mean at
-	//                    -23.1dB, alongside the other long cues.
-	var SFX_LEVEL = { card: 1, kill: 1, exactmatch: 0.5, jester: 0.5, laststand: 0.5, death: 0.15, victory: 0.4 };
+	// Set from INTEGRATED LOUDNESS (LUFS), not from file RMS. Tuning by RMS
+	// was wrong twice: these effects are short and densely mastered, so their
+	// mean badly understates how loud they actually read. Measured against
+	// the music they play over (Theme is -13.7 LUFS, played at 0.5, so -19.7
+	// LUFS effective), the "already quieter than the music" levels were in
+	// fact ABOVE it -- exactmatch by +2.6 LU even after being halved once.
+	//
+	// The card click is the reference: it's the one level that's been heard
+	// and approved, and it sits -4.6 LU under the music.
+	//
+	//   sound       file    level   effective   vs music
+	//   card       -24.3     1.00      -24.3      -4.6   reference, unchanged
+	//   kill        -9.0     0.17      -24.4      -4.7   was +10.7, by far the loudest thing here
+	//   exactmatch -11.1     0.14      -28.2      -8.5   was +2.6; deliberately the most subtle
+	//   jester     -12.7     0.50      -18.7      +1.0   } not yet retuned --
+	//   laststand  -12.4     0.50      -18.4      +1.3   } marginally over the
+	//   victory    -10.6     0.40      -18.6      +1.2   } music, no complaint yet
+	//   death       -7.0     0.15      -23.5      -3.8   already under
+	var SFX_LEVEL = { card: 1, kill: 0.17, exactmatch: 0.14, jester: 0.5, laststand: 0.5, death: 0.15, victory: 0.4 };
 	function sfxVolume() {
 		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
 		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
