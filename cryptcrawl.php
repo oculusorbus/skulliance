@@ -392,14 +392,17 @@ include 'header.php';
 .cc-result.lost .cc-result-title { color: #ff7070; }
 .cc-result.won  .cc-result-title { color: #00c8a0; }
 /* Loss-only flourish -- same animated Joker webp Crypt Conquest's own
-   loss screen and Joker-flip flash use. Capped at the SAME 108px the
-   flash modal uses (was 180px -- reported as too big). Slotted into the
-   icon/title/sub pop-in sequence at .25s. */
-.cc-result-image { margin: 4px auto 12px; width: 108px; border-radius: 14px; overflow: hidden;
+   loss screen and Joker-flip flash use, at the exact same 91x128 size
+   (was 180px, then 108px -- fixed at this exact pixel size now, same as
+   Conquest's own .cq-flash-image/.cq-result-image, so this art is one
+   consistent size everywhere it shows up in either game). Slotted into
+   the icon/title/sub pop-in sequence at .25s. */
+.cc-result-image { margin: 4px auto 12px; width: 91px; height: 128px; position: relative;
+	border-radius: 14px; overflow: hidden;
 	box-shadow: 0 0 28px rgba(255,112,112,.3), 0 12px 32px rgba(0,0,0,.5);
 	animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .25s both;
 }
-.cc-result-image img { display: block; width: 100%; height: auto; }
+.cc-result-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .cc-result-sub { font-size: .85rem; color: rgba(255,255,255,.5); animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .3s both; }
 .cc-result-carbon {
 	margin-top: 10px; font-size: 1rem; font-weight: 700; color: #ffcc4d;

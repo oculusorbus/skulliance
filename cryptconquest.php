@@ -160,10 +160,13 @@ include 'header.php';
    for showing a specific GAME card (suit/rank corners, art pool lookup);
    this is a static illustration tied to the flash's own meaning (currently
    just the Joker flip), so no corner index, no pool lookup, just the art.
-   Same frame as a single .cq-flash-card (108px, 5:7, black ground, gold
-   border) -- reported as way oversized at the old 200px-wide treatment;
-   this reads as "one more card" rather than a poster stuck in the modal. */
-.cq-flash-image { margin: 2px auto 12px; width: 108px; aspect-ratio: 5 / 7; position: relative;
+   Same frame as a single .cq-flash-card (black ground, gold border) --
+   reported as way oversized at the old 200px-wide treatment; this reads
+   as "one more card" rather than a poster stuck in the modal. Fixed at
+   91x128 (not aspect-ratio off a width) -- the exact size requested,
+   also used for .cq-result-image on the loss screen so both instances
+   of this art are the same size everywhere it appears. */
+.cq-flash-image { margin: 2px auto 12px; width: 91px; height: 128px; position: relative;
 	border-radius: 10px; background: #000; overflow: hidden; box-sizing: border-box;
 	border: 2px solid rgba(255,204,77,.85);
 	box-shadow: 0 0 22px rgba(255,204,77,.35), 0 10px 26px rgba(0,0,0,.55);
@@ -498,16 +501,16 @@ include 'header.php';
 .cq-result.lost .cq-result-title { color: #ff7070; }
 .cq-result.won .cq-result-title { color: #00c8a0; }
 /* Loss-only flourish -- the same animated Joker webp the Joker-flip flash
-   uses. Capped at the SAME 108px the flash modal uses (was 180px --
-   reported as too big; this screen has no crowded card row forcing a
-   small size the way the flash modal does, but the request was to match
-   it exactly regardless). Slotted into the icon/title/sub pop-in
-   sequence at .25s. */
-.cq-result-image { margin: 4px auto 12px; width: 108px; border-radius: 14px; overflow: hidden;
+   uses, at the exact same 91x128 size (was 180px, then 108px -- fixed at
+   this exact pixel size now, same as .cq-flash-image, so this art is one
+   consistent size everywhere it shows up). Slotted into the icon/title/
+   sub pop-in sequence at .25s. */
+.cq-result-image { margin: 4px auto 12px; width: 91px; height: 128px; position: relative;
+	border-radius: 14px; overflow: hidden;
 	box-shadow: 0 0 28px rgba(255,112,112,.3), 0 12px 32px rgba(0,0,0,.5);
 	animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .25s both;
 }
-.cq-result-image img { display: block; width: 100%; height: auto; }
+.cq-result-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .cq-result-sub { font-size: .85rem; color: rgba(255,255,255,.5); animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .3s both; }
 .cq-result-carbon {
 	margin-top: 10px; font-size: 1rem; font-weight: 700; color: #ffcc4d;
