@@ -412,7 +412,17 @@ include 'header.php';
    applied to a nested element that was never a flex item, so the columns
    never actually evened out. Grid sizes the cells directly and the button
    fills its cell via .cq-btn's own width:100%. */
-.cq-controls-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+/* Wraps both .cq-controls-row grids in one card, matching Crypt Crawl's own
+   .cc-flee-row -- reported as an inconsistency (Crawl's bottom buttons sit
+   on a panel, Conquest's didn't). Margin moved here from .cq-controls-row
+   itself: the wrapper is now the thing that needs space from what's above
+   it, and its own padding handles spacing inside. */
+.cq-controls-panel {
+	margin-top: 14px;
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border-radius: 12px; padding: 14px; box-sizing: border-box;
+}
+.cq-controls-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .cq-controls-row + .cq-controls-row { margin-top: 8px; }
 .cq-controls-row form { display: block; }
 
