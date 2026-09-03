@@ -50,6 +50,12 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 		if ($run) {
 			$indices = array_values(array_unique(array_map('intval', (array)($post['card_indices'] ?? []))));
 			$outcome = cryptconquestDoPlay($conn, $user_id, intval($run['id']), $indices);
+			// Mark cards Diamonds just pulled so the render can file them in
+			// distinctly -- otherwise they land mixed into the existing hand and
+			// the suit's actual effect is invisible.
+			if ($outcome && !empty($outcome['result']['drawn'])) {
+				$_SESSION['cryptconquest_drawn'] = array_map('cryptconquestCardArtKey', $outcome['result']['drawn']);
+			}
 			if ($outcome) $final_run = $outcome['run'];
 			if (!$outcome) {
 				cryptconquestFlash('No active run.', 'error');

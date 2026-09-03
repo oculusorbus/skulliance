@@ -233,8 +233,15 @@ function cryptconquestPlay(&$run, $indices) {
 		$healed = cryptconquestHeal($run, $attackValue);
 		$log[] = $healed > 0 ? "Hearts: $healed card(s) healed back from the discard pile." : 'Hearts: discard pile was empty, nothing to heal.';
 	}
+	$drawn_cards = [];
 	if (in_array('D', $activeSuits, true)) {
+		// Capture WHICH cards Diamonds pulled, not just how many. New cards get
+		// appended to the hand and immediately blend in with everything already
+		// there, so without this the player can't see what the suit actually
+		// did for them -- the UI marks these on the next render.
+		$before = count($run['hand']);
 		$drawn = cryptconquestDraw($run, $attackValue);
+		$drawn_cards = array_slice($run['hand'], $before);
 		$log[] = $drawn > 0 ? "Diamonds: drew $drawn card(s)." : 'Diamonds: hand already full, nothing drawn.';
 	}
 	if (in_array('S', $activeSuits, true)) {
@@ -262,14 +269,15 @@ function cryptconquestPlay(&$run, $indices) {
 		// whether the kill was exact and, when it was, shows the recovered
 		// card. The rules effect itself already happened above.
 		return ['ok' => true, 'defeated' => true, 'won' => $run['status'] === 'won',
-		        'exact' => $exact, 'card' => $defeated_card, 'card_label' => $label];
+		        'exact' => $exact, 'card' => $defeated_card, 'card_label' => $label,
+		        'drawn' => $drawn_cards];
 	}
 
 	$attack = max(0, $enemyStats['attack'] - $run['current_enemy']['shield']);
 	$run['phase'] = 'suffer';
 	$run['pending_attack'] = $attack;
 	$run['log'] = $log;
-	return ['ok' => true, 'defeated' => false];
+	return ['ok' => true, 'defeated' => false, 'drawn' => $drawn_cards];
 }
 
 // Step 1 alternative: skip straight to Step 4, no card played, no suit

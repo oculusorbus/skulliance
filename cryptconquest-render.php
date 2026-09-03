@@ -181,6 +181,11 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// cleared like a flash, so the glow shows for exactly one render.
 	$saved_keys = $_SESSION['cryptconquest_saved'] ?? [];
 	$_SESSION['cryptconquest_saved'] = [];
+	// Cards Diamonds just drew -- same read-and-clear lifetime, so they file
+	// in on exactly one render.
+	$drawn_keys = $_SESSION['cryptconquest_drawn'] ?? [];
+	$_SESSION['cryptconquest_drawn'] = [];
+	$drawn_i = 0;
 
 	// Three art sources: court cards + number cards draw from Season 1
 	// (two held wallets pooled together, court and numbers split into
@@ -505,9 +510,18 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					if ($is_court) $footer = 'recovered &middot; ' . $footer;
 					elseif ($is_companion) $footer = 'Companion &middot; ' . $footer;
 				?>
-					<?php $is_saved = in_array(cryptconquestCardArtKey($card), $saved_keys, true); ?>
-					<label class="cq-card<?php echo $is_saved ? ' cq-card-saved' : ''; ?>" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
+					<?php
+					$card_key = cryptconquestCardArtKey($card);
+					$is_saved = in_array($card_key, $saved_keys, true);
+					// Stagger index so drawn cards arrive one after another
+					// rather than all at once -- that sequencing is what makes
+					// it read as "Diamonds pulled THESE".
+					$is_drawn = in_array($card_key, $drawn_keys, true);
+					$draw_i = $is_drawn ? $drawn_i++ : 0;
+					?>
+					<label class="cq-card<?php echo $is_saved ? ' cq-card-saved' : ''; echo $is_drawn ? ' cq-card-drawn' : ''; ?>" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;--draw-i:<?php echo $draw_i; ?>;">
 						<?php if ($is_saved): ?><span class="cq-saved-badge">SAVED</span><?php endif; ?>
+						<?php if ($is_drawn): ?><span class="cq-drawn-badge">♦ NEW</span><?php endif; ?>
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
 						<!-- Unified card face: art (or plain black) + top-left/
 						     bottom-right corner index, same as Crypt Crawl's own

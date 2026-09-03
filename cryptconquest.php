@@ -166,6 +166,34 @@ include 'header.php';
 	0%   { box-shadow: 0 0 0 0 rgba(255,204,77,.85), 0 0 18px rgba(255,204,77,.7); }
 	100% { box-shadow: 0 0 0 0 rgba(255,204,77,0), 0 0 0 rgba(255,204,77,0); }
 }
+/* Cards Diamonds just drew. The hand re-renders as a whole after every
+   action, so new cards would otherwise appear already settled and
+   indistinguishable from what was there before -- making the suit's single
+   most important effect invisible. These instead FILE IN one after another
+   (--draw-i staggers the delay), in the Diamonds orange, with a badge naming
+   the cause. The rest of the hand is untouched and static, which is what
+   makes the arriving cards read as the result of the play. */
+@keyframes cqDrawIn {
+	from { opacity: 0; transform: translateY(16px) scale(.9); }
+	60%  { opacity: 1; transform: translateY(-3px) scale(1.03); }
+	to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes cqDrawGlow {
+	0%   { box-shadow: 0 0 20px rgba(255,153,0,.75); border-color: rgba(255,153,0,.95); }
+	100% { box-shadow: 0 0 0 rgba(255,153,0,0); }
+}
+.cq-card-drawn { position: relative; animation: cqDrawIn .42s cubic-bezier(.18,.89,.32,1.28) both; animation-delay: calc(var(--draw-i, 0) * .13s); }
+.cq-card-drawn .cq-card-face { animation: cqDrawGlow 1.9s ease-out both; animation-delay: calc(var(--draw-i, 0) * .13s); }
+.cq-drawn-badge {
+	position: absolute; top: -7px; left: 50%; transform: translateX(-50%); z-index: 3;
+	background: #ff9900; color: #07111d; font-size: .54rem; font-weight: 800;
+	letter-spacing: .05em; padding: 2px 7px; border-radius: 999px; pointer-events: none;
+	white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.5);
+	animation: cqDrawGlow 1.9s ease-out both; animation-delay: calc(var(--draw-i, 0) * .13s);
+}
+@media (prefers-reduced-motion: reduce) {
+	.cq-card-drawn, .cq-card-drawn .cq-card-face, .cq-drawn-badge { animation: none; }
+}
 .cq-card-saved { position: relative; }
 .cq-card-saved .cq-card-face { border-color: rgba(255,204,77,.9); animation: cqSavedGlow 2.2s ease-out both; }
 .cq-saved-badge {
