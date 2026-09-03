@@ -404,7 +404,16 @@ include 'header.php';
 	.cq-corner-suit { font-size: 0.95rem; }
 }
 
-.cq-hand-controls { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }
+/* Same panel card as .cq-controls-panel below (background/blur/radius/
+   padding) -- covers both states this row can be in: Play Selected+Yield,
+   or Cover Damage alone while suffering. Layout stays its own (flex, not
+   the controls panel's 2-col grid), so the properties are duplicated
+   rather than sharing a class. */
+.cq-hand-controls {
+	display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap;
+	background: rgba(5,12,20,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+	border-radius: 12px; padding: 14px; box-sizing: border-box;
+}
 .cq-hand-controls .cq-btn { flex: 1; min-width: 140px; }
 /* Two fixed columns, matching Crypt Crawl's own .cc-flee-row, rather than
    flex-wrap. The buttons here are wrapped in <form> elements, so the FORM is
