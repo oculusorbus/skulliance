@@ -571,7 +571,7 @@ try {
 	<audio id="cc-sfx-fist" preload="auto" src="audio/sounds/fist.mp3"></audio>
 	<audio id="cc-sfx-equip" preload="auto" src="audio/sounds/equip.mp3"></audio>
 	<audio id="cc-sfx-heal" preload="auto" src="audio/sounds/heal.mp3"></audio>
-	<audio id="cc-sfx-card" preload="auto" src="audio/sounds/card.mp3"></audio>
+	<audio id="cc-sfx-flee" preload="auto" src="audio/sounds/flee.mp3"></audio>
 	<audio id="cc-sfx-kill" preload="auto" src="audio/sounds/kill.mp3"></audio>
 	<audio id="cc-sfx-melee" preload="auto" src="audio/sounds/melee.mp3"></audio>
 	<audio id="cc-sfx-tacticalkatana" preload="auto" src="audio/sounds/tacticalkatana.mp3"></audio>
@@ -677,7 +677,7 @@ try {
 	//             on nearly every action: fist, kill (shared), and the
 	//             faster weapons (melee/katana/pistol/sniper/machine gun).
 	//   "utility/long" target -8.5 LU under -- matches Conquest's own
-	//             exactmatch tier, for equip/heal (secondary feedback, not
+	//             exactmatch tier, for equip/heal/flee (secondary feedback, not
 	//             combat impact) and the slow, sustained explosive weapons
 	//             (grenade/demolition/flamethrower/rocket launcher/
 	//             artillery) -- a 9-second artillery boom at the SAME
@@ -689,10 +689,10 @@ try {
 	// are still correct; no need to remeasure.
 	var SFX_GAIN = 2;
 	var SFX_LEVEL = {
-		fist: 0.548, kill: 0.17, card: 1,
+		fist: 0.548, kill: 0.17,
 		melee: 0.275, tacticalkatana: 0.162, pistol: 0.109,
 		sniperrifle: 0.524, machinegun: 0.073,
-		equip: 0.095, heal: 0.388,
+		equip: 0.095, heal: 0.388, flee: 0.446,
 		grenade: 0.083, demolition: 0.148, rocketlauncher: 0.204,
 		artillery: 0.080, flamethrower: 0.090,
 		laststand: 0.5, death: 0.15, victory: 0.4

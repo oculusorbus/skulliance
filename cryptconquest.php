@@ -572,6 +572,7 @@ include 'header.php';
 <audio id="cq-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
 <audio id="cq-sfx-death" preload="metadata" src="audio/sounds/death.mp3"></audio>
 <audio id="cq-sfx-victory" preload="metadata" src="audio/sounds/victory.mp3"></audio>
+<audio id="cq-sfx-flee" preload="auto" src="audio/sounds/flee.mp3"></audio>
 <!-- Killing a regent, and landing an exact match. Both short like the click
      (0.53s / 1.0s), not stingers, so they preload eagerly and play at the
      click's level. An exact KILL fires both at once, layered. -->
@@ -1092,7 +1093,7 @@ include 'header.php';
 	//   laststand  -12.4     0.50      -18.4      +1.3   } marginally over the
 	//   victory    -10.6     0.40      -18.6      +1.2   } music, no complaint yet
 	//   death       -7.0     0.15      -23.5      -3.8   already under
-	var SFX_LEVEL = { card: 1, kill: 0.17, exactmatch: 0.14, jester: 0.5, laststand: 0.5, death: 0.15, victory: 0.4 };
+	var SFX_LEVEL = { card: 1, kill: 0.17, exactmatch: 0.14, jester: 0.5, laststand: 0.5, death: 0.15, victory: 0.4, flee: 0.446 };
 	function sfxVolume() {
 		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
 		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
@@ -1247,14 +1248,19 @@ include 'header.php';
 		// hundred ms late. This is also still inside the user-gesture window,
 		// which is what keeps browser autoplay policy from blocking it.
 		//
-		// Every action that moves cards. Deliberately NOT 'abandon' (a
-		// destructive confirm, not a card move) or 'start_run'.
+		// Every action that moves cards, plus 'abandon' (its own sound
+		// below) -- deliberately NOT 'start_run'.
 		var sfxAction = formData.get('action');
 		if (sfxAction === 'flip_jester') {
 			// Its own stinger instead of the card click -- flipping a Jester
 			// discards and redeals the whole hand, so a single click would
 			// undersell it.
 			playStinger('jester');
+		} else if (sfxAction === 'abandon') {
+			// Fires here, past the confirm() gate above -- if the player
+			// said no, e.defaultPrevented is already true and this whole
+			// function returned before reaching this line.
+			playNamedSfx('flee');
 		} else {
 			var movesCards = (sfxAction === 'play' || sfxAction === 'suffer' ||
 			                  sfxAction === 'yield');
