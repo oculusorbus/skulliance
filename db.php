@@ -11508,6 +11508,59 @@ include_once 'cryptconquest-engine.php';
 define('CRYPTCONQUEST_S1_COLLECTION_ID', 7);
 define('CRYPTCONQUEST_S1_EXTRA_USER_ID', 12);
 
+// Curated 2026-09-03 from real on-chain CIP-25 metadata (rarity + aura
+// trait), NOT an eyeballed pass like Crypt Crawl's own CRYPTCRAWL_CARD_ART --
+// see cryptconquest-s1-art-curation.md for the full methodology, the
+// suit/rarity reasoning, and the complete 92-piece dataset this was chosen
+// from (kept so this can be revisited without another Koios round-trip).
+// Court cards (Jack/Queen/King) are NOT here -- those stay on the
+// platform-wide enemy pool, untouched; this only covers the 36 number-card
+// identities. Every name below is looked up across BOTH curation wallets
+// (CRYPTCRAWL_ART_USER_ID, CRYPTCONQUEST_S1_EXTRA_USER_ID) by
+// cryptconquestGetCuratedNumberArt() below -- names are unique mint serials,
+// so which of the two wallets currently holds a given piece doesn't matter.
+define('CRYPTCONQUEST_NUMBER_CARD_ART', array(
+	'H10' => 'Cryptie #08218', // legendary
+	'H9'  => 'Cryptie #00317', // epic
+	'H8'  => 'Cryptie #00606', // epic
+	'H7'  => 'Cryptie #01577', // epic
+	'H6'  => 'Cryptie #02040', // epic
+	'H5'  => 'Cryptie #02869', // epic
+	'H4'  => 'Cryptie #03543', // epic
+	'H3'  => 'Cryptie #03587', // epic
+	'H2'  => 'Cryptie #04647', // epic
+
+	'D10' => 'Cryptie #00891', // legendary
+	'D9'  => 'Cryptie #01896', // legendary
+	'D8'  => 'Cryptie #01994', // legendary
+	'D7'  => 'Cryptie #08507', // legendary
+	'D6'  => 'Cryptie #01614', // epic
+	'D5'  => 'Cryptie #01725', // epic
+	'D4'  => 'Cryptie #04439', // epic
+	'D3'  => 'Cryptie #04665', // epic
+	'D2'  => 'Cryptie #05515', // epic
+
+	'C10' => 'Cryptie #03600', // legendary
+	'C9'  => 'Cryptie #00901', // epic
+	'C8'  => 'Cryptie #01916', // epic
+	'C7'  => 'Cryptie #04113', // epic
+	'C6'  => 'Cryptie #05212', // epic
+	'C5'  => 'Cryptie #07564', // epic
+	'C4'  => 'Cryptie #08359', // epic
+	'C3'  => 'Cryptie #08454', // epic
+	'C2'  => 'Cryptie #00351', // common
+
+	'S10' => 'Cryptie #01478', // legendary
+	'S9'  => 'Cryptie #02818', // epic
+	'S8'  => 'Cryptie #04941', // epic
+	'S7'  => 'Cryptie #05609', // epic
+	'S6'  => 'Cryptie #06885', // epic
+	'S5'  => 'Cryptie #07892', // epic
+	'S4'  => 'Cryptie #08620', // epic
+	'S3'  => 'Cryptie #00202', // common
+	'S2'  => 'Cryptie #02230', // common
+));
+
 // Themed Necropolis backdrops, one per depth through the Mausoleum
 // (enemies_defeated) -- owner-selected subset of the same images/themes/
 // *.jpg pool Crypt Crawl's own cryptcrawlRoomThemeFile() draws from, same
@@ -11593,6 +11646,39 @@ function cryptconquestGetS1ArtPool($conn) {
 	$primary_pool = cryptconquestFetchArtPool($conn, "nfts.user_id = $primary_id AND collections.id = $s1");
 	$extra_pool = cryptconquestFetchArtPool($conn, "nfts.user_id = $extra_id AND collections.id = $s1");
 	return array_merge($primary_pool, $extra_pool);
+}
+
+// Resolves CRYPTCONQUEST_NUMBER_CARD_ART's 36 curated identities to real
+// image URLs -- same pattern as cryptcrawlGetCardArt(), but matched by name
+// ACROSS both curation wallets (not scoped to one user_id) since names are
+// unique mint serials and a piece can legitimately sit in either the
+// primary or backup wallet. A key whose named NFT isn't found in either
+// (moved out, renamed) is simply missing from the returned array --
+// cryptconquestZipArtPool()'s own caller already degrades gracefully for a
+// missing entry, same as Crypt Crawl's own plain-badge fallback.
+function cryptconquestGetCuratedNumberArt($conn) {
+	$primary_id = intval(CRYPTCRAWL_ART_USER_ID);
+	$extra_id = intval(CRYPTCONQUEST_S1_EXTRA_USER_ID);
+	$s1 = intval(CRYPTCONQUEST_S1_COLLECTION_ID);
+	$names = array_map(function ($n) use ($conn) { return "'" . $conn->real_escape_string($n) . "'"; }, array_values(CRYPTCONQUEST_NUMBER_CARD_ART));
+	$result = $conn->query("
+		SELECT nfts.name, nfts.ipfs, nfts.collection_id, collections.project_id
+		FROM nfts
+		INNER JOIN collections ON collections.id = nfts.collection_id
+		WHERE nfts.user_id IN ($primary_id, $extra_id) AND nfts.collection_id = $s1
+		  AND nfts.name IN (" . implode(',', $names) . ")
+	");
+	$by_name = array();
+	if ($result) {
+		while ($row = $result->fetch_assoc()) {
+			$by_name[$row['name']] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
+		}
+	}
+	$art = array();
+	foreach (CRYPTCONQUEST_NUMBER_CARD_ART as $key => $name) {
+		if (isset($by_name[$name])) $art[$key] = $by_name[$name];
+	}
+	return $art;
 }
 
 // Season 2, Animal Companion cards only (4 identities) -- S2's actual
@@ -11798,22 +11884,26 @@ function cryptconquestGetCardArtPools($conn, $seed = 0) {
 		];
 	}
 
-	// Player number cards keep coming from the owner's own wallets exactly as
-	// before -- only the ENEMIES were opened up. Any NFT already claimed by a
-	// court card is filtered out so the same piece can't appear twice on one
-	// board (possible now that the two pools are drawn from different
-	// queries; they used to be non-overlapping slices of one list).
-	$court_used = [];
-	foreach ($court_rows as $row) $court_used[getIPFS($row['ipfs'], $row['collection_id'], $row['project_id'])] = true;
-	$s1_pool = array_values(array_filter(cryptconquestGetS1ArtPool($conn), function ($url) use ($court_used) {
-		return empty($court_used[$url]);
-	}));
-
+	// Player number cards: curated (see CRYPTCONQUEST_NUMBER_CARD_ART's own
+	// comment and cryptconquest-s1-art-curation.md), NOT the old
+	// auto-assignment via cryptconquestGetS1ArtPool()/cryptconquestNumberArtKeys().
+	// Both of those are now unused (nothing else called them directly --
+	// the marketing page's own marquee goes through THIS function, so it
+	// picks up the curated set automatically); left in place rather than
+	// deleted since reverting to auto-assignment is a one-line swap back if
+	// this curation ever needs undoing. No court-collision filter needed
+	// here the way the old auto-assignment had one: these 36 identities are
+	// fixed regardless of render, rather than drawn from the same broad pool
+	// court cards sample from, so a same-render duplicate is possible only
+	// in the rare case one of these exact 36 NFTs also gets drawn as a
+	// random court card that run -- accepted as a low-odds cosmetic edge
+	// case rather than engineered around, since fixing it would mean
+	// re-rolling a court SLOT rather than filtering a pool entry.
 	$s2_pool = cryptconquestGetS2ArtPool($conn);
 	return [
 		'enemy' => $court_urls,
 		'enemy_owners' => $court_owners,
-		'player' => cryptconquestZipArtPool($s1_pool, cryptconquestNumberArtKeys(), 0),
+		'player' => cryptconquestGetCuratedNumberArt($conn),
 		'companion' => cryptconquestZipArtPool($s2_pool, cryptconquestCompanionArtKeys(), 0),
 	];
 }
