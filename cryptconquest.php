@@ -162,9 +162,16 @@ include 'header.php';
    demand a click: a brief gold glow plus a badge, then it settles. Shows
    which cards returned, which a modal can't do as clearly since they're
    already in your hand. */
+/* VIOLET, deliberately not the gold used everywhere else. Saved cards used
+   to glow #ffcc4d -- the exact color .cq-card:has(:checked) uses for the
+   current SELECTION -- so a card returned by a perfect guard was
+   indistinguishable from a card the player had just picked, on the one
+   screen where "which cards are selected" is the whole decision. Reported
+   as confusing, and it was. Violet is also distinct from Last Stand's teal,
+   which matters because both are defensive rewards. */
 @keyframes cqSavedGlow {
-	0%   { box-shadow: 0 0 0 0 rgba(255,204,77,.85), 0 0 18px rgba(255,204,77,.7); }
-	100% { box-shadow: 0 0 0 0 rgba(255,204,77,0), 0 0 0 rgba(255,204,77,0); }
+	0%   { box-shadow: 0 0 0 0 rgba(181,140,255,.85), 0 0 18px rgba(181,140,255,.7); }
+	100% { box-shadow: 0 0 0 0 rgba(181,140,255,0), 0 0 0 rgba(181,140,255,0); }
 }
 /* Cards Diamonds just drew. The hand re-renders as a whole after every
    action, so new cards would otherwise appear already settled and
@@ -183,24 +190,24 @@ include 'header.php';
 	100% { box-shadow: 0 0 0 rgba(255,153,0,0); }
 }
 .cq-card-drawn { position: relative; animation: cqDrawIn .42s cubic-bezier(.18,.89,.32,1.28) both; animation-delay: calc(var(--draw-i, 0) * .13s); }
-.cq-card-drawn .cq-card-face { animation: cqDrawGlow 1.9s ease-out both; animation-delay: calc(var(--draw-i, 0) * .13s); }
+.cq-card-drawn .cq-card-face { animation: cqDrawGlow 1.9s ease-out backwards; animation-delay: calc(var(--draw-i, 0) * .13s); }
 .cq-drawn-badge {
 	position: absolute; top: -7px; left: 50%; transform: translateX(-50%); z-index: 3;
 	background: #ff9900; color: #07111d; font-size: .54rem; font-weight: 800;
 	letter-spacing: .05em; padding: 2px 7px; border-radius: 999px; pointer-events: none;
 	white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.5);
-	animation: cqDrawGlow 1.9s ease-out both; animation-delay: calc(var(--draw-i, 0) * .13s);
+	animation: cqDrawGlow 1.9s ease-out backwards; animation-delay: calc(var(--draw-i, 0) * .13s);
 }
 @media (prefers-reduced-motion: reduce) {
 	.cq-card-drawn, .cq-card-drawn .cq-card-face, .cq-drawn-badge { animation: none; }
 }
 .cq-card-saved { position: relative; }
-.cq-card-saved .cq-card-face { border-color: rgba(255,204,77,.9); animation: cqSavedGlow 2.2s ease-out both; }
+.cq-card-saved .cq-card-face { border-color: rgba(181,140,255,.95); animation: cqSavedGlow 2.2s ease-out backwards; }
 .cq-saved-badge {
 	position: absolute; top: -7px; left: 50%; transform: translateX(-50%); z-index: 3;
-	background: #ffcc4d; color: #07111d; font-size: .54rem; font-weight: 800;
+	background: #b58cff; color: #07111d; font-size: .54rem; font-weight: 800;
 	letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; pointer-events: none;
-	box-shadow: 0 2px 8px rgba(0,0,0,.5); animation: cqSavedGlow 2.2s ease-out both;
+	box-shadow: 0 2px 8px rgba(0,0,0,.5); animation: cqSavedGlow 2.2s ease-out backwards;
 }
 @media (prefers-reduced-motion: reduce) {
 	.cq-card-saved .cq-card-face, .cq-saved-badge { animation: none; }
