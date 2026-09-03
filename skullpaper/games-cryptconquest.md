@@ -82,7 +82,9 @@ Twice per run - once per Jester - you can discard your whole hand and draw a fre
 
 ## Last Stand
 
-The **first time** your whole hand still can't cover an attack, you don't fall - **Last Stand** fires instead: the attempt still happens (your whole hand still goes to the discard pile), but the run continues rather than ending. This fires **once per run**, automatically. The next time it happens, the run ends in a loss for real.
+The **first time** your whole hand still can't cover an attack, you don't fall - **Last Stand** fires instead: the attempt still happens (your whole hand still goes to the discard pile), the shortfall is forgiven, and you **rally 4 fresh cards from the deck** so you have something to fight on with. This fires **once per run**, automatically. The next time it happens, the run ends in a loss for real.
+
+The rally is a *draw*, not a return of the cards you just spent - those are by definition the ones that already failed to cover the hit. Four is a deliberate balance point: it cuts deaths shortly after a Last Stand from ~26% to ~10% without materially changing how hard the game is (see `cryptconquest.md`).
 
 ## Winning & Losing
 

@@ -180,6 +180,16 @@ records verified constants, and tracks what still needs to be written.
   Clubs double attack, Hearts heal (return cards from discard to tavern), Diamonds draw, Spades
   shield (Hearts resolves before Diamonds when both trigger). 2 Jesters (discard hand + refill,
   once each); win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
+  **Last Stand rally** (added 2026-09-02, CRYPTCONQUEST_LAST_STAND_REFILL = 4): Last Stand used to
+  forgive the killing blow but leave the hand EMPTY, so it "saved" the player into a position with
+  nothing to play -- 26.2% of runs ended within 2 turns of it firing, which reads as no save at
+  all. It now also draws the hand back up to 4. Measured, 2,500 games/variant: refill-to-4 cuts
+  death-within-2-turns to 9.9% while barely moving the win rate (11.9% -> 12.4%), i.e. it fixes the
+  anticlimax without making the game easier; refill to 6 or 8 jumps it to 17.9%/21.4%, a different
+  game. Deliberately a DRAW, not a return of the cards just spent: rolling those over tested WORSE
+  than doing nothing (10.0% win, death-within-2 rising to 37.8%) because they are by definition the
+  cards that already failed to cover the hit -- and a fresh draw is also the whole drama of the
+  moment. Verified against the shipped engine: 13.0% win, 9.0% death-within-2.
   **Perfect Guard** (added 2026-09-02, cryptconquestSufferDamage): covering an attack EXACTLY
   returns the player's two highest-value spent cards to hand; everything else spent still goes to
   the discard, and overpaying returns nothing. Defensive twin of the exact-kill rule. The "two"

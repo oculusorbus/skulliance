@@ -94,7 +94,7 @@ function cryptconquestRulesHtml() { ?>
 
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">🛡️ Covering Damage</div>
-		<p>Whatever the court card hits back with (after your shield, if any) has to be covered by discarding cards from hand totalling <strong>at least</strong> that much. Run dry on cards entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong> (twice per run) discards your whole hand and deals you a fresh one. And if your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run -- after that, the next uncovered hit ends it.</p>
+		<p>Whatever the court card hits back with (after your shield, if any) has to be covered by discarding cards from hand totalling <strong>at least</strong> that much. Run dry on cards entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong> (twice per run) discards your whole hand and deals you a fresh one. And if your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run: the blow is forgiven <em>and</em> you rally <strong>4 fresh cards</strong> from the deck so you can actually fight on. After that, the next uncovered hit ends it.</p>
 	</div>
 
 	<div class="cq-rules-section">

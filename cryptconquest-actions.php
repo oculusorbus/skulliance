@@ -117,7 +117,20 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 				// Always flagged, so the render can highlight them in hand.
 				$_SESSION['cryptconquest_saved'] = array_map('cryptconquestCardArtKey', $saved);
 			} elseif (!empty($outcome['result']['rallied'])) {
-				cryptconquestFlash("LAST STAND! Your hand alone couldn't cover it -- you refuse to fall. (once per run)", 'win');
+				// Last Stand fires at most once per run, so this modal is the one
+				// and only chance to explain what happened. Spell it out rather
+				// than assuming the player connects an emptied hand, a survived
+				// hit, and a sudden fresh draw on their own.
+				$ls = $outcome['result'];
+				$ls_cards = $ls['rallied_cards'] ?? [];
+				$ls_atk = intval($ls['attack'] ?? 0);
+				cryptconquestFlash(
+					'LAST STAND! Your entire hand still fell short of the ' . $ls_atk . ' incoming damage -- '
+					. 'but instead of falling, the blow is forgiven and you rally ' . count($ls_cards)
+					. ' fresh card' . (count($ls_cards) === 1 ? '' : 's') . ' from the crypt to fight on. '
+					. 'This can only happen once per run.',
+					'win', null, $ls_cards
+				);
 			} elseif (!empty($outcome['result']['died'])) {
 				cryptconquestFlash('The crypt claims you.', 'error');
 			}

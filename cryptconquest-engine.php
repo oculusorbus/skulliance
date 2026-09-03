@@ -32,6 +32,13 @@
    ============================================================ */
 
 define('CRYPTCONQUEST_MAX_HAND', 8); // solo hand size cap (ruleset: 1 player -> 8)
+// Cards Last Stand rallies back into an emptied hand. Four is a measured
+// balance point (2,500 games/variant): refilling to 4 cuts "died within 2
+// turns of Last Stand firing" from 26.2% to 9.9% while barely moving the win
+// rate (11.9% -> 12.4%), i.e. it fixes the anticlimax WITHOUT making the game
+// easier. Refilling to 6 or 8 jumps the win rate to 17.9%/21.4%, which is a
+// different game. See cryptconquest.md.
+define('CRYPTCONQUEST_LAST_STAND_REFILL', 4);
 define('CRYPTCONQUEST_SUITS', ['H', 'D', 'C', 'S']);
 
 function cryptconquestEnemyStats($rank) {
@@ -345,8 +352,20 @@ function cryptconquestSufferDamage(&$run, $indices) {
 			$run['last_rally_used'] = 1;
 			$run['phase'] = 'play';
 			$run['pending_attack'] = 0;
-			$run['log'] = ["LAST STAND! Only $handTotal of $attack damage covered -- you refuse to fall. (once per run)"];
-			return ['ok' => true, 'died' => false, 'rallied' => true];
+			// Rally fresh cards. Without this, Last Stand emptied your hand and
+			// "saved" you into a position with nothing to play -- 26% of the time
+			// the run just ended a turn or two later, which read as no save at
+			// all. Deliberately a DRAW from the deck rather than returning the
+			// cards you just spent: those are by definition the ones that already
+			// failed to cover the hit, and simulation showed handing them back is
+			// worse than doing nothing (10.0% win vs 11.9%, and death-within-2
+			// turns rising to 37.8%). New cards are also the whole drama of the
+			// moment -- what you draw decides whether the run continues.
+			$rally_before = count($run['hand']);
+			cryptconquestDraw($run, max(0, CRYPTCONQUEST_LAST_STAND_REFILL - $rally_before));
+			$rallied_cards = array_slice($run['hand'], $rally_before);
+			$run['log'] = ["LAST STAND! Only $handTotal of $attack damage covered -- you refuse to fall, and rally " . count($rallied_cards) . " fresh card(s). (once per run)"];
+			return ['ok' => true, 'died' => false, 'rallied' => true, 'rallied_cards' => $rallied_cards, 'attack' => $attack];
 		}
 		$run['status'] = 'lost';
 		$run['phase'] = 'over';

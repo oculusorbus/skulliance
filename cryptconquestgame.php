@@ -271,7 +271,7 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 				</div>
 				<div class="cq-feat-card">
 					<h3>🛡️ One Last Stand</h3>
-					<p>The first time your whole hand still can't cover the damage, you refuse to fall instead of losing - once per run, automatic, no button to remember.</p>
+					<p>The first time your whole hand still can't cover the damage, you refuse to fall instead of losing - and you rally 4 fresh cards so you can actually fight on. Once per run, automatic, no button to remember.</p>
 				</div>
 				<div class="cq-feat-card">
 					<h3>👑 CARBON &amp; a Monthly Leaderboard</h3>
