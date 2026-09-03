@@ -563,6 +563,9 @@ include 'header.php';
      on every page load would cost far more than it saves. -->
 <audio id="cq-sfx-jester" preload="metadata" src="audio/sounds/jester.mp3"></audio>
 <audio id="cq-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
+<!-- Killing a regent. Short like the click (0.53s), not a stinger, so it
+     preloads eagerly and plays at the click's level. -->
+<audio id="cq-sfx-kill" preload="auto" src="audio/sounds/kill.mp3"></audio>
 </div>
 <script>
 (function() {
@@ -1135,7 +1138,26 @@ include 'header.php';
 	function playFlashSfx(container) {
 		if (!container) return;
 		var el = container.querySelector('[data-sfx]');
-		if (el) playStinger(el.getAttribute('data-sfx'));
+		if (el) playNamedSfx(el.getAttribute('data-sfx'));
+	}
+	// Two classes of sound, and they want opposite handling. Stingers are long
+	// (~9.5s), play at half level, and are mutually exclusive. Short one-shots
+	// (the kill, 0.53s) play at the click's level, and must NOT cut a stinger
+	// off -- killing a regent on the turn a Jester was flipped should layer
+	// over that cue, not silence it.
+	var STINGERS = { jester: 1, laststand: 1 };
+	function playNamedSfx(name) {
+		if (STINGERS[name]) { playStinger(name); return; }
+		var el = document.getElementById('cq-sfx-' + name);
+		if (!el) return;
+		var vol = sfxVolume();
+		if (vol === 0) return;
+		try {
+			el.volume = vol;
+			el.currentTime = 0;
+			var p = el.play();
+			if (p && p.catch) p.catch(function() {});
+		} catch (e) {}
 	}
 
 	function lockGameAreaBriefly() {

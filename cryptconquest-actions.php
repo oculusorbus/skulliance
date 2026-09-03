@@ -69,15 +69,18 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			} elseif (!empty($outcome['result']['defeated'])) {
 				$r = $outcome['result'];
 				$card_label = $r['card_label'] ?? 'The court card';
+				// All three branches are a regent dying, so all three carry the
+				// kill sound -- including the winning blow, which is still a
+				// King falling even though the result screen takes over after.
 				if (!empty($r['won'])) {
-					cryptconquestFlash('👑 The last King falls -- the Necropolis is yours!', 'win');
+					cryptconquestFlash('👑 The last King falls -- the Necropolis is yours!', 'win', null, null, 'kill');
 				} elseif (!empty($r['exact'])) {
 					// Exact kill: the card is recovered face-down on top of the deck,
 					// so show it. This is the game's one precision reward and it used
 					// to be indistinguishable from any other kill.
-					cryptconquestFlash('EXACT KILL! ' . $card_label . ' joins your deck, face-down on top -- you will draw it back.', 'win', $r['card'] ?? null);
+					cryptconquestFlash('EXACT KILL! ' . $card_label . ' joins your deck, face-down on top -- you will draw it back.', 'win', $r['card'] ?? null, null, 'kill');
 				} else {
-					cryptconquestFlash($card_label . ' defeated. Not an exact kill, so it goes to the discard pile.', 'win');
+					cryptconquestFlash($card_label . ' defeated. Not an exact kill, so it goes to the discard pile.', 'win', null, null, 'kill');
 				}
 			}
 		}
