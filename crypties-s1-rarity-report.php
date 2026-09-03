@@ -76,13 +76,15 @@ report_out('');
 // draws the player-card pool from (primary wallet's rows first, then the
 // backup's), just with the columns needed to ask Koios for on-chain
 // metadata (policy + asset_name) instead of just an image URL.
-// INNER JOIN collections for project_id, same as cryptconquestFetchArtPool()
-// -- needed so getIPFS() below can check the local image cache before
-// falling back to the slow public IPFS gateway (project_id=0 would skip
-// that check entirely and always hit the gateway).
+// INNER JOIN collections for project_id (needed so getIPFS() below can
+// check the local image cache before falling back to the slow public IPFS
+// gateway) AND for policy -- that lives on `collections`, not `nfts` (first
+// version of this script guessed nfts.policy from a misread of
+// getMonstrocityAssets()'s own unqualified column; a real run against
+// production caught it: "Unknown column 'nfts.policy'").
 $ids_sql = implode(',', array_keys($user_ids));
 $result = $conn->query("
-	SELECT nfts.id, nfts.name, nfts.asset_name, nfts.policy, nfts.ipfs, nfts.user_id, collections.project_id
+	SELECT nfts.id, nfts.name, nfts.asset_name, collections.policy, nfts.ipfs, nfts.user_id, collections.project_id
 	FROM nfts
 	INNER JOIN collections ON collections.id = nfts.collection_id
 	WHERE nfts.collection_id = $s1_collection_id
