@@ -372,7 +372,13 @@ include 'header.php';
    @media (max-width: 700px) block further down flips both. */
 .cc-audio-track-full { display: inline; }
 .cc-audio-track-short { display: none; }
-.cc-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
+.cc-audio-vol-icon {
+	flex: none; font-size: 0.8rem; opacity: 0.8; cursor: pointer;
+	/* Button reset -- was a plain <span>, now clickable (mute toggle), and
+	   should look exactly as it did before: no default button chrome. */
+	background: none; border: none; color: inherit; font-family: inherit; padding: 0; line-height: 1;
+}
+.cc-audio-vol-icon:hover { opacity: 1; }
 .cc-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
 .cc-audio-btn.off { opacity: 0.35; } /* shared dimmed state for the player's toggle buttons (zoom, notifications) */
 .cc-result {
@@ -548,7 +554,7 @@ try {
 		<button type="button" class="cc-audio-btn" id="cc-audio-toggle" title="Play/Pause">▶</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-next" title="Next track">⏭</button>
 		<span class="cc-audio-track" id="cc-audio-track-name"><span class="cc-audio-track-full">Crypt Crawl Theme</span><span class="cc-audio-track-short">Theme</span></span>
-		<span class="cc-audio-vol-icon">🔊</span>
+		<button type="button" class="cc-audio-vol-icon" id="cc-audio-mute" title="Mute">🔊</button>
 		<input type="range" class="cc-audio-volume" id="cc-audio-volume" min="0" max="100" value="50" title="Volume">
 		<button type="button" class="cc-audio-btn" id="cc-audio-zoom-toggle" title="Background zoom: on">🎥</button>
 		<button type="button" class="cc-audio-btn" id="cc-audio-notif-toggle" title="Flee/medkit/Last Stand pop-ups: on">🔔</button>
@@ -1137,6 +1143,7 @@ try {
 		var trackNameFullEl = trackNameEl ? trackNameEl.querySelector('.cc-audio-track-full') : null;
 		var trackNameShortEl = trackNameEl ? trackNameEl.querySelector('.cc-audio-track-short') : null;
 		var volumeEl = document.getElementById('cc-audio-volume');
+		var muteBtn = document.getElementById('cc-audio-mute');
 		var zoomToggleBtn = document.getElementById('cc-audio-zoom-toggle');
 		var notifToggleBtn = document.getElementById('cc-audio-notif-toggle');
 		if (!players[0] || !players[1] || !toggleBtn) return;
@@ -1190,6 +1197,17 @@ try {
 			return (v >= 0 && v <= 100) ? v : 50; // tracks are mixed loud -- half by default
 		}
 		function setVolume(v) { try { sessionStorage.setItem('cc_audio_volume', String(v)); } catch (e) {} }
+		// Remembers the slider position a mute was pressed FROM, so unmuting
+		// restores it rather than snapping back to 50 -- a separate key from
+		// cc_audio_volume itself, which the mute action drives to 0 (that same
+		// key is also what sfxVolume() reads, so muting the music slider mutes
+		// every card-action sound effect right along with it -- one control,
+		// not two).
+		function getPreMuteVolume() {
+			var v = parseInt(sessionStorage.getItem('cc_audio_premute'), 10);
+			return (v >= 0 && v <= 100) ? v : 50;
+		}
+		function setPreMuteVolume(v) { try { sessionStorage.setItem('cc_audio_premute', String(v)); } catch (e) {} }
 		function getZoomEnabled() {
 			var v = sessionStorage.getItem('cc_zoom_enabled');
 			return v === null ? true : v === '1'; // on by default -- noticed once, then a deliberate choice either way
@@ -1203,6 +1221,17 @@ try {
 		players[0].volume = targetVolume;
 		players[1].volume = 0; // inactive by default; only ever raised by a crossfade
 		if (volumeEl) volumeEl.value = getVolume();
+		// Reflects the CURRENT volume, not how muting happened -- a slider
+		// dragged to 0 by hand should look exactly as muted as the button
+		// having done it, and either path un-mutes the same way (drag the
+		// slider back up, or press the button again).
+		function updateMuteIcon() {
+			if (!muteBtn) return;
+			var muted = getVolume() === 0;
+			muteBtn.textContent = muted ? '🔇' : '🔊';
+			muteBtn.title = muted ? 'Unmute' : 'Mute';
+		}
+		updateMuteIcon();
 		if (zoomToggleBtn) {
 			zoomToggleBtn.classList.toggle('off', !getZoomEnabled());
 			zoomToggleBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
@@ -1597,6 +1626,27 @@ try {
 				targetVolume = v / 100;
 				if (!fadeRAF) active().volume = targetVolume; // mid-fade, the fade loop itself reads targetVolume fresh each frame -- don't stomp on it directly
 				setVolume(v);
+				updateMuteIcon();
+			});
+		}
+		if (muteBtn) {
+			muteBtn.addEventListener('click', function() {
+				var v;
+				if (getVolume() === 0) {
+					// Unmute -- restore whatever it was before, defaulting to
+					// 50 only if nothing was ever actually muted this session
+					// (getPreMuteVolume() itself already defaults there).
+					v = getPreMuteVolume();
+				} else {
+					// Mute -- remember where it was so unmuting isn't a guess.
+					setPreMuteVolume(getVolume());
+					v = 0;
+				}
+				setVolume(v);
+				if (volumeEl) volumeEl.value = v;
+				targetVolume = v / 100;
+				if (!fadeRAF) active().volume = targetVolume;
+				updateMuteIcon();
 			});
 		}
 	})();

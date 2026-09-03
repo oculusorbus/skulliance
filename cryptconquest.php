@@ -489,7 +489,13 @@ include 'header.php';
    breakpoint/approach Crypt Crawl's own player uses. */
 .cq-audio-track-full { display: inline; }
 .cq-audio-track-short { display: none; }
-.cq-audio-vol-icon { flex: none; font-size: 0.8rem; opacity: 0.8; }
+.cq-audio-vol-icon {
+	flex: none; font-size: 0.8rem; opacity: 0.8; cursor: pointer;
+	/* Button reset -- was a plain <span>, now clickable (mute toggle), and
+	   should look exactly as it did before: no default button chrome. */
+	background: none; border: none; color: inherit; font-family: inherit; padding: 0; line-height: 1;
+}
+.cq-audio-vol-icon:hover { opacity: 1; }
 .cq-audio-volume { flex: none; width: 64px; accent-color: #ffcc4d; cursor: pointer; }
 .cq-player-btn {
 	background: none; border: none; color: #c8dce8; cursor: pointer;
@@ -549,7 +555,7 @@ include 'header.php';
 	<button type="button" class="cq-audio-btn" id="cq-audio-toggle" title="Play/Pause">▶</button>
 	<button type="button" class="cq-audio-btn" id="cq-audio-next" title="Next track">⏭</button>
 	<span class="cq-audio-track" id="cq-audio-track-name"><span class="cq-audio-track-full">Crypt Conquest Theme</span><span class="cq-audio-track-short">Theme</span></span>
-	<span class="cq-audio-vol-icon">🔊</span>
+	<button type="button" class="cq-audio-vol-icon" id="cq-audio-mute" title="Mute">🔊</button>
 	<input type="range" class="cq-audio-volume" id="cq-audio-volume" min="0" max="100" value="50" title="Volume">
 	<button type="button" class="cq-player-btn" id="cq-zoom-toggle" title="Background zoom: on">🎥</button>
 </div>
@@ -679,6 +685,7 @@ include 'header.php';
 		var trackNameFullEl = trackNameEl ? trackNameEl.querySelector('.cq-audio-track-full') : null;
 		var trackNameShortEl = trackNameEl ? trackNameEl.querySelector('.cq-audio-track-short') : null;
 		var volumeEl = document.getElementById('cq-audio-volume');
+		var muteBtn = document.getElementById('cq-audio-mute');
 		var zoomToggleBtn = document.getElementById('cq-zoom-toggle');
 		if (!players[0] || !players[1] || !toggleBtn) return;
 		function setTrackName(name) {
@@ -726,6 +733,17 @@ include 'header.php';
 			return (v >= 0 && v <= 100) ? v : 50;
 		}
 		function setVolume(v) { try { sessionStorage.setItem('cq_audio_volume', String(v)); } catch (e) {} }
+		// Remembers the slider position a mute was pressed FROM, so unmuting
+		// restores it rather than snapping back to 50 -- a separate key from
+		// cq_audio_volume itself, which the mute action drives to 0 (that same
+		// key is also what sfxVolume() reads, so muting the music slider mutes
+		// every card-action sound effect right along with it -- one control,
+		// not two).
+		function getPreMuteVolume() {
+			var v = parseInt(sessionStorage.getItem('cq_audio_premute'), 10);
+			return (v >= 0 && v <= 100) ? v : 50;
+		}
+		function setPreMuteVolume(v) { try { sessionStorage.setItem('cq_audio_premute', String(v)); } catch (e) {} }
 		function getZoomEnabled() {
 			var v = sessionStorage.getItem('cq_zoom_enabled');
 			return v === null ? true : v === '1';
@@ -739,6 +757,17 @@ include 'header.php';
 		players[0].volume = targetVolume;
 		players[1].volume = 0;
 		if (volumeEl) volumeEl.value = getVolume();
+		// Reflects the CURRENT volume, not how muting happened -- a slider
+		// dragged to 0 by hand should look exactly as muted as the button
+		// having done it, and either path un-mutes the same way (drag the
+		// slider back up, or press the button again).
+		function updateMuteIcon() {
+			if (!muteBtn) return;
+			var muted = getVolume() === 0;
+			muteBtn.textContent = muted ? '🔇' : '🔊';
+			muteBtn.title = muted ? 'Unmute' : 'Mute';
+		}
+		updateMuteIcon();
 		if (zoomToggleBtn) {
 			zoomToggleBtn.classList.toggle('off', !getZoomEnabled());
 			zoomToggleBtn.title = 'Background zoom: ' + (getZoomEnabled() ? 'on' : 'off');
@@ -1047,6 +1076,27 @@ include 'header.php';
 				targetVolume = v / 100;
 				if (!fadeRAF) active().volume = targetVolume;
 				setVolume(v);
+				updateMuteIcon();
+			});
+		}
+		if (muteBtn) {
+			muteBtn.addEventListener('click', function() {
+				var v;
+				if (getVolume() === 0) {
+					// Unmute -- restore whatever it was before, defaulting to
+					// 50 only if nothing was ever actually muted this session
+					// (getPreMuteVolume() itself already defaults there).
+					v = getPreMuteVolume();
+				} else {
+					// Mute -- remember where it was so unmuting isn't a guess.
+					setPreMuteVolume(getVolume());
+					v = 0;
+				}
+				setVolume(v);
+				if (volumeEl) volumeEl.value = v;
+				targetVolume = v / 100;
+				if (!fadeRAF) active().volume = targetVolume;
+				updateMuteIcon();
 			});
 		}
 	})();
