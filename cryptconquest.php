@@ -568,7 +568,11 @@ include 'header.php';
 <!-- Stingers. preload="metadata", not "auto" like the click above: these are
      ~150KB each and fire at most once or twice a run, so eagerly pulling both
      on every page load would cost far more than it saves. -->
-<audio id="cq-sfx-jester" preload="metadata" src="audio/sounds/jester.mp3"></audio>
+<!-- Element id stays cq-sfx-jester (the SFX_LEVEL/STINGERS key is 'jester'
+     too) even though the file underneath is now joker.mp3 -- see
+     MAINTENANCE.md's note on the Jester -> Joker rename: internal naming was
+     deliberately left alone, only the player-facing word changed. -->
+<audio id="cq-sfx-jester" preload="metadata" src="audio/sounds/joker.mp3"></audio>
 <audio id="cq-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
 <audio id="cq-sfx-death" preload="metadata" src="audio/sounds/death.mp3"></audio>
 <audio id="cq-sfx-victory" preload="metadata" src="audio/sounds/victory.mp3"></audio>
@@ -1089,11 +1093,11 @@ include 'header.php';
 	//   card       -24.3     1.00      -24.3      -4.6   reference, unchanged
 	//   kill        -9.0     0.17      -24.4      -4.7   was +10.7, by far the loudest thing here
 	//   exactmatch -11.1     0.14      -28.2      -8.5   was +2.6; deliberately the most subtle
-	//   jester     -12.7     0.50      -18.7      +1.0   } not yet retuned --
-	//   laststand  -12.4     0.50      -18.4      +1.3   } marginally over the
-	//   victory    -10.6     0.40      -18.6      +1.2   } music, no complaint yet
-	//   death       -7.0     0.15      -23.5      -3.8   already under
-	var SFX_LEVEL = { card: 1, kill: 0.17, exactmatch: 0.14, jester: 0.5, laststand: 0.5, death: 0.15, victory: 0.4, flee: 0.446 };
+	//   jester      -8.8     0.107     -28.2      -8.5   joker.mp3 (2026-09-03 swap), retuned
+	//   laststand  -12.4     0.50      -18.4      +1.3   } not yet retuned --
+	//   victory    -10.6     0.40      -18.6      +1.2   } marginally over the
+	//   death       -7.0     0.15      -23.5      -3.8   } music, no complaint yet (death's already under)
+	var SFX_LEVEL = { card: 1, kill: 0.17, exactmatch: 0.14, jester: 0.107, laststand: 0.5, death: 0.15, victory: 0.4, flee: 0.446 };
 	function sfxVolume() {
 		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
 		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
@@ -1129,16 +1133,18 @@ include 'header.php';
 		} catch (e) {}
 	}
 
-	// Long one-shot stingers (Jester ~9.5s, Last Stand ~9.4s) as opposed to the
-	// card click. No pool: only one should ever be sounding, so starting either
-	// cuts off whichever is already running -- a Jester flipped during a Last
-	// Stand turn should replace that cue, not talk over it.
+	// One-shot narrative stingers, as opposed to the card click. No pool:
+	// only one should ever be sounding, so starting either cuts off whichever
+	// is already running -- a Joker flipped during a Last Stand turn should
+	// replace that cue, not talk over it. (Joker's own file is short now --
+	// 1.86s, swapped 2026-09-03 -- so in practice it rarely has anything left
+	// to cut off by the time Last Stand could fire again; kept in this set
+	// anyway since nothing about a short duration makes overlap desirable.)
 	//
-	// Level comes from SFX_LEVEL above (0.5 -- half the click). These are
-	// already mastered near 0dBFS (jester peaks -0.3dB, laststand -1.0dB,
-	// against the click's -1.9dB AFTER its +6dB pass), so applying the full
-	// click level would have made a 9-second cue overpower both the music and
-	// the click it follows.
+	// Level comes from SFX_LEVEL above, per-sound rather than a shared
+	// constant -- these came from measured LUFS against the music, not from
+	// file peak, and the joker/laststand pair used to share one level
+	// despite very different source loudness (see the retune note above).
 	var currentStinger = null;
 	function playStinger(name) {
 		var el = document.getElementById('cq-sfx-' + name);
