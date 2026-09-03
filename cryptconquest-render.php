@@ -164,6 +164,7 @@ function cryptconquestMinimalGameOverHtml($run, $user_id) {
 	?>
 	<div id="cq-mood" data-mood="<?php echo $won ? 'triumph' : 'death'; ?>" data-restarted="0"
 		data-theme-active="1" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>"
+		data-sfx="<?php echo $won ? '' : 'death'; ?>"
 		style="display:none;"></div>
 	<div class="cq-inner">
 		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
@@ -222,6 +223,17 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// per run, but has to click on every exact defense.
 	$sfx_queue = $_SESSION['cryptconquest_sfx'] ?? [];
 	$_SESSION['cryptconquest_sfx'] = [];
+	// Death is derived from the run's STATE rather than queued as an event,
+	// unlike every other sound here. A loss has two render paths -- this one
+	// and cryptconquestMinimalGameOverHtml(), the zero-dependency fallback
+	// from the loss-screen bug -- and a session queue only survives one of
+	// them. Reading it off status='lost' means both paths sound the same,
+	// which matters most on exactly the path that exists because things went
+	// wrong. Safe to re-derive on every render: the client only plays these
+	// on an AJAX swap, so reloading a result screen stays silent.
+	if ($state === 'game_over' && ($recent_run['status'] ?? '') === 'lost') {
+		$sfx_queue[] = 'death';
+	}
 
 	// Three art sources: court cards + number cards draw from Season 1
 	// (two held wallets pooled together, court and numbers split into
