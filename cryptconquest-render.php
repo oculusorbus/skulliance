@@ -604,7 +604,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					<button type="submit" class="cq-btn attack" name="action" value="suffer">Cover Damage</button>
 				<?php else: ?>
 					<button type="submit" class="cq-btn" name="action" value="play">Play Selected</button>
-					<button type="submit" class="cq-btn secondary" name="action" value="yield">Yield</button>
+					<button type="submit" class="cq-btn purple" name="action" value="yield">Yield</button>
 				<?php endif; ?>
 			</div>
 		</form>

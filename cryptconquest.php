@@ -445,6 +445,10 @@ include 'header.php';
    loss-screen leaderboard link. */
 .cq-btn.gold { background: #ffcc4d; color: #012; }
 .cq-btn.gold:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(255,204,77,.4); }
+/* Yield's own color -- a distinct purple, not the #b58cff already used for
+   Perfect Guard's saved-card glow, so the two don't read as related. */
+.cq-btn.purple { background: #9b6dff; color: #000; }
+.cq-btn.purple:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(155,109,255,.4); }
 .cq-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
 	.cq-btn:not(:disabled)::after {
