@@ -570,9 +570,11 @@ include 'header.php';
      on every page load would cost far more than it saves. -->
 <audio id="cq-sfx-jester" preload="metadata" src="audio/sounds/jester.mp3"></audio>
 <audio id="cq-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
-<!-- Killing a regent. Short like the click (0.53s), not a stinger, so it
-     preloads eagerly and plays at the click's level. -->
+<!-- Killing a regent, and landing an exact match. Both short like the click
+     (0.53s / 1.0s), not stingers, so they preload eagerly and play at the
+     click's level. An exact KILL fires both at once, layered. -->
 <audio id="cq-sfx-kill" preload="auto" src="audio/sounds/kill.mp3"></audio>
+<audio id="cq-sfx-exactmatch" preload="auto" src="audio/sounds/exactmatch.mp3"></audio>
 </div>
 <script>
 (function() {
@@ -1142,10 +1144,17 @@ include 'header.php';
 	// to hang it off, and the client can't know it happened until the response
 	// comes back. Sniffing the modal's TEXT would have worked too and would
 	// break the first time the wording changes.
+	// Reads the sounds the server queued for this render off #cq-mood. A
+	// space-separated LIST, not one name: an exact kill queues both 'kill' and
+	// 'exactmatch' and they're meant to layer.
 	function playFlashSfx(container) {
 		if (!container) return;
-		var el = container.querySelector('[data-sfx]');
-		if (el) playNamedSfx(el.getAttribute('data-sfx'));
+		var el = container.querySelector('#cq-mood[data-sfx]');
+		if (!el) return;
+		var names = (el.getAttribute('data-sfx') || '').split(/\s+/);
+		for (var i = 0; i < names.length; i++) {
+			if (names[i]) playNamedSfx(names[i]);
+		}
 	}
 	// Two classes of sound, and they want opposite handling. Stingers are long
 	// (~9.5s), play at half level, and are mutually exclusive. Short one-shots

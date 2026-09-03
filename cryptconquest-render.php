@@ -215,6 +215,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	$_SESSION['cryptconquest_drawn'] = [];
 	$drawn_i = 0;
 
+	// Sounds the action queued for the client (see cryptconquestSfx()), same
+	// read-and-clear lifetime so each one plays on exactly one render. Emitted
+	// on #cq-mood below rather than on a flash modal, because the outcomes that
+	// need sound don't all show a modal -- Perfect Guard only shows one once
+	// per run, but has to click on every exact defense.
+	$sfx_queue = $_SESSION['cryptconquest_sfx'] ?? [];
+	$_SESSION['cryptconquest_sfx'] = [];
+
 	// Three art sources: court cards + number cards draw from Season 1
 	// (two held wallets pooled together, court and numbers split into
 	// non-overlapping slices of it); Animal Companion cards draw from
@@ -323,6 +331,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	?>
 	<div id="cq-mood" data-mood="<?php echo htmlspecialchars($cq_mood); ?>" data-restarted="<?php echo $cq_just_started ? '1' : '0'; ?>"
 		data-theme-active="<?php echo $cq_theme_active ? '1' : '0'; ?>" data-theme-img="<?php echo htmlspecialchars($cq_theme_img); ?>"
+		data-sfx="<?php echo htmlspecialchars(implode(' ', $sfx_queue)); ?>"
 		style="display:none;"></div>
 	<div class="cq-inner">
 	<?php if ($flashes): ?>
@@ -341,12 +350,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			// printed "Undefined array key" straight into the modal.
 			$f_cards = $f['cards'] ?? (isset($f['card']) ? [$f['card']] : []);
 			?>
-			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>"<?php
-				// Sound for outcomes the SERVER decides (Last Stand), which have
-				// no click for the client to hang a sound off. Read once after
-				// each swap -- see the SFX block in cryptconquest.php.
-				if (!empty($f['sfx'])) echo ' data-sfx="' . htmlspecialchars($f['sfx']) . '"';
-			?>>
+			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
 				<div class="cq-flash-icon"><?php echo $f_cards ? '🎯' : ($f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️')); ?></div>
 				<?php if ($f_cards): ?>
 				<div class="cq-flash-cards">

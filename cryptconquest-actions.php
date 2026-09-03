@@ -11,16 +11,27 @@
 // used to show the actual card you just recovered on an exact kill. Only the
 // card's IDENTITY is stored; cryptconquestRenderGameArea() resolves its art
 // from the pools it already has, so no image URL is carried through session.
-// $sfx names a sound the client should play when this flash renders (see the
-// data-sfx attribute in cryptconquest-render.php). Needed for outcomes the
-// SERVER decides rather than the click -- Last Stand fires on its own, so
-// there's no button press the client could hang a sound off.
-function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null, $sfx = null) {
+function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null) {
 	$entry = ['msg' => $msg, 'type' => $type];
 	if ($card) $entry['card'] = $card;
 	if ($cards) $entry['cards'] = $cards;   // several cards at once, e.g. a perfect guard
-	if ($sfx) $entry['sfx'] = $sfx;
 	$_SESSION['cryptconquest_flash'][] = $entry;
+}
+
+// Queues a sound for the client to play on the next render (emitted as
+// data-sfx on #cq-mood -- see cryptconquest-render.php). Needed for outcomes
+// the SERVER decides rather than the click: a kill depends on damage
+// resolution and Last Stand fires on its own, so there's no button press the
+// client could hang either off.
+//
+// Deliberately NOT carried on the flash modal, which was the first attempt.
+// Perfect Guard only shows its modal once per run (see the guard_taught gate
+// below), so a modal-borne sound would have played on the first exact defense
+// of a run and stayed silent for every one after -- while the sound needs to
+// fire on all of them. #cq-mood renders on every swap regardless of modals.
+// Several sounds can be queued for one render; they layer.
+function cryptconquestSfx($name) {
+	$_SESSION['cryptconquest_sfx'][] = $name;
 }
 
 // Performs one Crypt Conquest action (start_run/play/yield/suffer/
@@ -69,18 +80,27 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			} elseif (!empty($outcome['result']['defeated'])) {
 				$r = $outcome['result'];
 				$card_label = $r['card_label'] ?? 'The court card';
-				// All three branches are a regent dying, so all three carry the
+				// Every branch here is a regent dying, so every branch gets the
 				// kill sound -- including the winning blow, which is still a
 				// King falling even though the result screen takes over after.
+				cryptconquestSfx('kill');
+				// Checked SEPARATELY from the message branches below, because
+				// the winning blow can itself be an exact kill -- and those
+				// branches are ordered won-first, so folding this in there
+				// would have silently dropped the exact-match sound on the
+				// single most satisfying hit in the game.
+				// Layered on top of the kill sound rather than replacing it:
+				// the regent still died, the precision is the extra.
+				if (!empty($r['exact'])) cryptconquestSfx('exactmatch');
 				if (!empty($r['won'])) {
-					cryptconquestFlash('👑 The last King falls -- the Necropolis is yours!', 'win', null, null, 'kill');
+					cryptconquestFlash('👑 The last King falls -- the Necropolis is yours!', 'win');
 				} elseif (!empty($r['exact'])) {
 					// Exact kill: the card is recovered face-down on top of the deck,
 					// so show it. This is the game's one precision reward and it used
 					// to be indistinguishable from any other kill.
-					cryptconquestFlash('EXACT KILL! ' . $card_label . ' joins your deck, face-down on top -- you will draw it back.', 'win', $r['card'] ?? null, null, 'kill');
+					cryptconquestFlash('EXACT KILL! ' . $card_label . ' joins your deck, face-down on top -- you will draw it back.', 'win', $r['card'] ?? null);
 				} else {
-					cryptconquestFlash($card_label . ' defeated. Not an exact kill, so it goes to the discard pile.', 'win', null, null, 'kill');
+					cryptconquestFlash($card_label . ' defeated. Not an exact kill, so it goes to the discard pile.', 'win');
 				}
 			}
 		}
@@ -107,7 +127,12 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 				cryptconquestFlash('No active run.', 'error');
 			} elseif (!$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
-			} elseif (!empty($outcome['result']['saved'])) {
+			} elseif (!empty($outcome['result']['exact_defense'])) {
+				// Keyed off exact_defense, NOT off 'saved' being non-empty:
+				// covering exactly with a full hand returns nothing (the
+				// perfect-guard loop stops at the 8-card limit), and that's
+				// still an exact match the player earned the sound for.
+				cryptconquestSfx('exactmatch');
 				// PERFECT GUARD. Exact defenses land on ~68% of turns (measured
 				// over 2,500 simulated games), so a blocking modal every time
 				// would read as the game nagging you for playing well. Celebrate
@@ -115,15 +140,22 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 				// just glow in hand, which also shows WHICH cards came back --
 				// something a modal can't do as clearly, since they're already
 				// sitting in your hand.
-				$saved = $outcome['result']['saved'];
-				if (($_SESSION['cryptconquest_guard_taught'] ?? null) !== intval($run['id'])) {
-					$_SESSION['cryptconquest_guard_taught'] = intval($run['id']);
-					$names = array_map('cryptconquestCardLabel', $saved);
-					cryptconquestFlash('PERFECT GUARD! You covered it exactly, so your strongest held: '
-						. implode(' and ', $names) . ' return to your hand.', 'win', null, $saved);
+				// An exact cover on a FULL hand returns nothing, so everything
+				// below is conditional on cards actually coming back -- the
+				// modal would otherwise read "your strongest held:  return to
+				// your hand", and worse, would burn the once-per-run teaching
+				// moment on a guard that demonstrated no reward.
+				$saved = $outcome['result']['saved'] ?? [];
+				if ($saved) {
+					if (($_SESSION['cryptconquest_guard_taught'] ?? null) !== intval($run['id'])) {
+						$_SESSION['cryptconquest_guard_taught'] = intval($run['id']);
+						$names = array_map('cryptconquestCardLabel', $saved);
+						cryptconquestFlash('PERFECT GUARD! You covered it exactly, so your strongest held: '
+							. implode(' and ', $names) . ' return to your hand.', 'win', null, $saved);
+					}
+					// Always flagged, so the render can highlight them in hand.
+					$_SESSION['cryptconquest_saved'] = array_map('cryptconquestCardArtKey', $saved);
 				}
-				// Always flagged, so the render can highlight them in hand.
-				$_SESSION['cryptconquest_saved'] = array_map('cryptconquestCardArtKey', $saved);
 			} elseif (!empty($outcome['result']['rallied'])) {
 				// Last Stand fires at most once per run, so this modal is the one
 				// and only chance to explain what happened. Spell it out rather
@@ -137,8 +169,9 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 					. 'but instead of falling, the blow is forgiven and you rally ' . count($ls_cards)
 					. ' fresh card' . (count($ls_cards) === 1 ? '' : 's') . ' from the crypt to fight on. '
 					. 'This can only happen once per run.',
-					'win', null, $ls_cards, 'laststand'
+					'win', null, $ls_cards
 				);
+				cryptconquestSfx('laststand');
 			} elseif (!empty($outcome['result']['died'])) {
 				cryptconquestFlash('The crypt claims you.', 'error');
 			}
