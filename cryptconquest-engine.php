@@ -426,10 +426,15 @@ function cryptconquestFlipJester(&$run) {
 	if (intval($run['jesters_used']) >= 2) return ['ok' => false, 'error' => 'No Jesters left to flip.'];
 	foreach ($run['hand'] as $c) $run['discard'][] = $c;
 	$run['hand'] = [];
-	$drawn = cryptconquestDraw($run, CRYPTCONQUEST_MAX_HAND);
+	// Captured the same way cryptconquestPlay() captures a Diamonds draw --
+	// the hand was JUST emptied above, so $run['hand'] after the draw IS the
+	// fresh hand in full, not a partial slice of a mixed one (0 cards drawn
+	// on an exhausted deck just means an empty array here, which is correct).
+	cryptconquestDraw($run, CRYPTCONQUEST_MAX_HAND);
+	$drawn_cards = $run['hand'];
 	$run['jesters_used'] = intval($run['jesters_used']) + 1;
-	$run['log'] = ["Flipped a Jester -- hand discarded and refilled ($drawn card(s))."];
-	return ['ok' => true];
+	$run['log'] = ["Flipped a Jester -- hand discarded and refilled (" . count($drawn_cards) . " card(s))."];
+	return ['ok' => true, 'drawn' => $drawn_cards];
 }
 
 // Solo win tier, keyed off Jesters flipped (Last Stand firing doesn't

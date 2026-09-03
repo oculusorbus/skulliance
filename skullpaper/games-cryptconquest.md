@@ -34,7 +34,7 @@ Cards leave your hand two ways, and both are permanent:
 * **Covering damage** - cards discarded to survive a hit are gone too, *unless* you cover the hit exactly (see Perfect Guard).
 
 You never play cards *out of* the discard pile; every play comes from your hand.
-The only ways to gain cards back are **♦ Diamonds** and a **Jester flip**.
+The only ways to gain cards back are **♦ Diamonds** and a **Joker flip**.
 
 Card flow is one direction - **deck → hand → discard** - with ♥ Hearts the only
 route back, and it returns cards to the *deck*, not your hand.
@@ -60,7 +60,7 @@ Pair an **Animal Companion** (worth 1) with your biggest card and that Companion
 
 Whatever the court card hits back with (after Spades shield, if any) has to be covered by discarding cards from your hand worth at least that much - a partial selection that doesn't reach the total is just rejected so you can try again, but discarding your **entire hand** and still coming up short is what actually threatens the run.
 
-**A Jester can be flipped mid-attack.** Facing a hit your hand can't cover, flipping a Jester right then discards your hand, deals a fresh 8, and leaves the attack still standing to be covered with the new hand. It's the strongest escape available and it costs only one of the two Jester charges - see Jesters below.
+**A Joker can be flipped mid-attack.** Facing a hit your hand can't cover, flipping a Joker right then discards your hand, deals a fresh 8, and leaves the attack still standing to be covered with the new hand. It's the strongest escape available and it costs only one of the two Joker charges - see Jokers below.
 
 ## Perfect Guard
 
@@ -82,19 +82,19 @@ Two habits that feel intuitive but aren't rewarded by the rules above:
 * **Covering an attack only needs to reach the total, not match it exactly.** There's no bonus for landing on a clean number, and no penalty for overpaying by a card or two - discard the fewest cards you can spare, not the most. Every card left in hand is a card you can still play.
 * **Refill with a Diamond Companion, not a big Diamond.** A Companion of Diamonds paired with your biggest card draws the full combined total, so you get the refill *and* keep the damage. Spend real Diamonds on damage, and never play one into a full hand - draws stop at 8 and the rest are forfeited.
 * **Stack Spades early against Kings.** Shield never wears off, so shield spent on turn one keeps paying every turn of that fight. Against a King it compounds faster than any other suit.
-* **Spend Jesters as escapes, not refreshes.** Their real value is flipping mid-attack to survive a hit your hand can't cover. Plenty of lost runs end with Jesters unused.
+* **Spend Jokers as escapes, not refreshes.** Their real value is flipping mid-attack to survive a hit your hand can't cover. Plenty of lost runs end with Jokers unused.
 * **Cover the number exactly whenever you can.** Overpaying by one point loses everything you spent; hitting it exactly hands your two best cards back.
 * **Attack for the suit power you need, not just the highest number.** A small Diamond when your hand is thin (to refill it) is worth more than a big off-suit card that doesn't do anything useful against the current court card. Hoard high cards and Diamonds for the fight that actually needs them rather than spending them on the first legal play.
 
 Exact damage kills (see Winning & Losing below) are the one place precision *is* rewarded - the distinction is worth keeping straight: exact on offense is a bonus, exact on defense is not required.
 
-## Jesters
+## Jokers
 
-Twice per run - once per Jester - you can discard your whole hand and draw a fresh one, on demand. No cost beyond the charge itself. Flipping both Jesters (rather than zero or one) affects your final conquest tier - see Winning below.
+Twice per run - once per Joker - you can discard your whole hand and draw a fresh one, on demand. No cost beyond the charge itself. Flipping both Jokers (rather than zero or one) affects your final conquest tier - see Winning below.
 
-Crucially, a Jester can be flipped at **either** point in a turn: in place of a normal attack, **or** while an incoming attack is waiting to be covered. The second is what makes Jesters a genuine lifeline rather than a convenience - a hand that can't survive the hit in front of it becomes a fresh 8 cards that can.
+Crucially, a Joker can be flipped at **either** point in a turn: in place of a normal attack, **or** while an incoming attack is waiting to be covered. The second is what makes Jokers a genuine lifeline rather than a convenience - a hand that can't survive the hit in front of it becomes a fresh 8 cards that can.
 
-One edge case the engine resolves on your behalf: an empty hand with both Jesters already spent is unrecoverable (Diamonds need a card in hand to play in the first place), so yielding there ends the run rather than looping forever.
+One edge case the engine resolves on your behalf: an empty hand with both Jokers already spent is unrecoverable (Diamonds need a card in hand to play in the first place), so yielding there ends the run rather than looping forever.
 
 ## Last Stand
 
@@ -112,11 +112,11 @@ A recruited court card is worth its own **attack** stat in your hand - a **Jack 
 
 ### Conquest Tier
 
-A won run is graded by how many Jesters you flipped along the way (Last Stand firing doesn't affect it):
+A won run is graded by how many Jokers you flipped along the way (Last Stand firing doesn't affect it):
 
-* **Flawless Conquest** - zero Jesters flipped.
-* **Hard-Fought Conquest** - one Jester flipped.
-* **Narrow Conquest** - both Jesters flipped.
+* **Flawless Conquest** - zero Jokers flipped.
+* **Hard-Fought Conquest** - one Joker flipped.
+* **Narrow Conquest** - both Jokers flipped.
 
 ## CARBON Per Run
 

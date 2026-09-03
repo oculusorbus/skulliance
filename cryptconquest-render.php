@@ -78,7 +78,7 @@ function cryptconquestRulesHtml() { ?>
 			<li><strong>Playing them</strong> -- any card you attack with goes to the discard pile, whatever its suit.</li>
 			<li><strong>Covering damage</strong> -- cards you discard to survive a hit are gone too, <em>unless</em> you cover the hit exactly (see Perfect Guard below).</li>
 		</ul>
-		<p>You <em>never</em> play cards out of the discard pile -- every play comes from your hand. The only ways to gain cards back are <strong style="color:#ff9900;">♦ Diamonds</strong> and a <strong style="color:#00c8a0;">Jester flip</strong>.</p>
+		<p>You <em>never</em> play cards out of the discard pile -- every play comes from your hand. The only ways to gain cards back are <strong style="color:#ff9900;">♦ Diamonds</strong> and a <strong style="color:#00c8a0;">Joker flip</strong>.</p>
 		<p style="opacity:.85;">Card flow: <strong>Deck → Hand → Discard.</strong> ♥ Hearts is the only route back, and it returns cards to the <em>deck</em>, not your hand.</p>
 	</div>
 
@@ -112,7 +112,7 @@ function cryptconquestRulesHtml() { ?>
 		     'suffer' as well as 'play', so a Jester is a genuine escape from a
 		     hit you can't cover. Players had no way to know that from the
 		     rules, which described it only as a turn replacement. -->
-		<p><strong style="color:#00c8a0;">You can flip a Jester mid-attack.</strong> Staring at a hit your hand can't cover? Flipping a Jester right then discards your hand and deals you a fresh 8 -- and the attack is still waiting to be covered, now with a full hand. It's the best escape in the game, and you get two per run.</p>
+		<p><strong style="color:#00c8a0;">You can flip a Joker mid-attack.</strong> Staring at a hit your hand can't cover? Flipping a Joker right then discards your hand and deals you a fresh 8 -- and the attack is still waiting to be covered, now with a full hand. It's the best escape in the game, and you get two per run.</p>
 		<p>If your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run: the blow is forgiven <em>and</em> you rally <strong>4 fresh cards</strong> from the deck so you can actually fight on. After that, the next uncovered hit ends it.</p>
 	</div>
 
@@ -134,7 +134,7 @@ function cryptconquestRulesHtml() { ?>
 			<li><strong>Covering damage only needs to reach the total, not match it.</strong> Discard the fewest cards you can spare -- extra cards left in hand matter more than landing on a clean number.</li>
 			<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin beats a big off-suit card that doesn't do anything you actually need right now.</li>
 			<li><strong>Don't spend a big Diamond to refill.</strong> You don't need one: a Diamond <em>Companion</em> paired with your biggest card draws just as many, and you keep the damage. Save real Diamonds for damage, and never play one into a full hand -- draws stop at 8 and the rest are forfeited.</li>
-			<li><strong>Don't hoard your Jesters to the end.</strong> A Jester is worth most as an escape from a hit you can't cover, not as a tidy hand refresh. Two go unused in a lot of lost runs.</li>
+			<li><strong>Don't hoard your Jokers to the end.</strong> A Joker is worth most as an escape from a hit you can't cover, not as a tidy hand refresh. Two go unused in a lot of lost runs.</li>
 			<li><strong>Cover the number exactly when you can.</strong> Overpaying by a single point loses everything you spent; hitting it on the nose hands your two best cards back.</li>
 		</ul>
 	</div>
@@ -214,6 +214,11 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// in on exactly one render.
 	$drawn_keys = $_SESSION['cryptconquest_drawn'] ?? [];
 	$_SESSION['cryptconquest_drawn'] = [];
+	// A Jester's fresh hand -- same stagger-in/glow/sound treatment as a
+	// Diamonds draw (shared .cq-card-drawn below), but tracked separately so
+	// the badge can say something true: this hand didn't come from Diamonds.
+	$jester_drawn_keys = $_SESSION['cryptconquest_jester_drawn'] ?? [];
+	$_SESSION['cryptconquest_jester_drawn'] = [];
 	$drawn_i = 0;
 
 	// Sounds the action queued for the client (see cryptconquestSfx()), same
@@ -498,7 +503,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 				<span class="cq-rally<?php echo intval($active_run['last_rally_used']) ? ' used' : ''; ?>" title="The first time your whole hand can't cover an attack, you're saved instead of dying. Once per run.">
 					🛡️ Last Stand <?php echo intval($active_run['last_rally_used']) ? 'used' : 'ready'; ?>
 				</span>
-				<span title="Discard your whole hand and refill -- twice per run">🃏 Jesters: <?php echo $jesters_left; ?> left</span>
+				<span title="Discard your whole hand and refill -- twice per run">🃏 Jokers: <?php echo $jesters_left; ?> left</span>
 				<!-- Display labels only -- 'Mausoleum'/'Crypt' are the in-game
 				     names for what the code/DB still calls the castle/tavern
 				     deck internally (castle_deck/tavern_deck), same way
@@ -547,13 +552,21 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					$is_saved = in_array($card_key, $saved_keys, true);
 					// Stagger index so drawn cards arrive one after another
 					// rather than all at once -- that sequencing is what makes
-					// it read as "Diamonds pulled THESE".
-					$is_drawn = in_array($card_key, $drawn_keys, true);
+					// it read as "Diamonds pulled THESE" (or, for a Jester
+					// flip, "the fresh hand arrived"). One shared counter
+					// across both sources -- a card can only be flagged by
+					// one of them in practice (Diamonds draws mid-hand,
+					// Jester empties the hand first), so there's never a
+					// meaningful ordering question between them.
+					$is_diamonds_drawn = in_array($card_key, $drawn_keys, true);
+					$is_jester_drawn = in_array($card_key, $jester_drawn_keys, true);
+					$is_drawn = $is_diamonds_drawn || $is_jester_drawn;
 					$draw_i = $is_drawn ? $drawn_i++ : 0;
 					?>
 					<label class="cq-card<?php echo $is_saved ? ' cq-card-saved' : ''; echo $is_drawn ? ' cq-card-drawn' : ''; ?>" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;--draw-i:<?php echo $draw_i; ?>;">
 						<?php if ($is_saved): ?><span class="cq-saved-badge">SAVED</span><?php endif; ?>
-						<?php if ($is_drawn): ?><span class="cq-drawn-badge">♦ NEW</span><?php endif; ?>
+						<?php if ($is_diamonds_drawn): ?><span class="cq-drawn-badge">♦ NEW</span>
+						<?php elseif ($is_jester_drawn): ?><span class="cq-drawn-badge">🃏 NEW</span><?php endif; ?>
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
 						<!-- Unified card face: art (or plain black) + top-left/
 						     bottom-right corner index, same as Crypt Crawl's own
@@ -604,7 +617,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		     that changes or ends the run. -->
 		<div class="cq-controls-row">
 			<form method="post"><input type="hidden" name="action" value="flip_jester">
-				<button type="submit" class="cq-btn secondary" <?php echo $jesters_left > 0 ? '' : 'disabled'; ?>>🃏 Flip Jester (<?php echo $jesters_left; ?> left)</button>
+				<button type="submit" class="cq-btn secondary" <?php echo $jesters_left > 0 ? '' : 'disabled'; ?>>🃏 Flip Joker (<?php echo $jesters_left; ?> left)</button>
 			</form>
 			<form method="post" onsubmit="return confirm('Abandon this run? It counts as a loss.');">
 				<input type="hidden" name="action" value="abandon">

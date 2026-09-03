@@ -178,8 +178,18 @@ records verified constants, and tracks what still needs to be written.
   Tavern deck: 2-10 of all 4 suits + 4 Animal Companions (always worth 1, can pair with at most
   one other card, never a bigger combo). Suit powers on the non-enemy-suit cards played:
   Clubs double attack, Hearts heal (return cards from discard to tavern), Diamonds draw, Spades
-  shield (Hearts resolves before Diamonds when both trigger). 2 Jesters (discard hand + refill,
-  once each); win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
+  shield (Hearts resolves before Diamonds when both trigger). 2 **Jokers** (discard hand + refill,
+  once each) -- renamed from "Jester" in every player-facing string (2026-09-03) but NOT
+  internally: the function is still `cryptconquestFlipJester()`/`cryptconquestDoFlipJester()`, the
+  DB column is still `jesters_used`, the POST action value is still `flip_jester`, the session keys
+  are still `cryptconquest_jester_drawn`/`cryptconquest_guard_taught`-adjacent naming, the SFX key/
+  audio files are still `jester`/`jester.mp3`/`jester.m4a`. Deliberate: renaming the DB column is a
+  migration, and none of this plumbing is user-visible, so there was nothing to gain by touching it
+  -- but it means "Jester" in code/schema and "Joker" in the UI are the SAME mechanic, not a
+  regression. `cryptconquest.md` (the private design doc citing actual Regicide rules, which really
+  does use "Jester" as a card name) is also deliberately untouched -- it's citing source material,
+  not describing this platform's UI.
+  win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
   **Undocumented-mechanics audit** (2026-09-02): a player asked why an 8 played with a 1-value
   Diamond Companion drew 9 cards. It was correct -- but auditing cryptconquest-engine.php against
   the docs turned up five real rules that existed in code and appeared NOWHERE in the in-game rules

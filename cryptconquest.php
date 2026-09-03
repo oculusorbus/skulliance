@@ -1157,12 +1157,15 @@ include 'header.php';
 			if (p && p.catch) p.catch(function() {});
 		} catch (e) {}
 	}
-	// One click per card drawn by Diamonds, stepped to match the .13s
-	// --draw-i stagger in the CSS so the sound lands with each card's
-	// animation rather than as one lump. Capped so a big Diamond into an
-	// empty hand is a flourish, not a machine-gun burst.
+	// One click per card drawn -- by Diamonds, or by a Jester/Joker flip
+	// refilling the whole hand -- stepped to match the .13s --draw-i stagger
+	// in the CSS so the sound lands with each card's animation rather than
+	// as one lump. Capped at 8, the actual hand limit (CRYPTCONQUEST_MAX_HAND):
+	// no draw of any kind can ever exceed it, so this is the true ceiling,
+	// not a deliberate cutoff -- every card that visibly arrives gets its
+	// own sound.
 	function playDrawSfx(count) {
-		var n = Math.min(count, 6);
+		var n = Math.min(count, 8);
 		for (var i = 0; i < n; i++) {
 			setTimeout(playCardSfx, i * 130);
 		}

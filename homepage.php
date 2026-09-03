@@ -625,7 +625,7 @@
               <img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest card game board" loading="lazy" decoding="async">
             </a>
             <h3>Crypt Conquest - Regicide-Style Card Game</h3>
-            <p>Dethrone all 12 court cards of the Necropolis with suit powers, two Jesters, and one Last Stand - illustrated entirely in Crypties NFT art.</p>
+            <p>Dethrone all 12 court cards of the Necropolis with suit powers, two Jokers, and one Last Stand - illustrated entirely in Crypties NFT art.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/cryptconquestgame.php">Play Crypt Conquest</a>
           </div>
         </div>

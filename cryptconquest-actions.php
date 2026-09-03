@@ -113,7 +113,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			if ($outcome && !$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
 			} elseif ($outcome && !empty($outcome['result']['dead_end'])) {
-				cryptconquestFlash('Hand empty, no Jesters left to refill it -- no way to fight on.', 'error');
+				cryptconquestFlash('Hand empty, no Jokers left to refill it -- no way to fight on.', 'error');
 			}
 		}
 
@@ -185,7 +185,14 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			if (!$outcome || !$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'] ?? 'No active run.', 'error');
 			} else {
-				cryptconquestFlash('Jester flipped -- hand discarded and refilled.', 'info');
+				cryptconquestFlash('Joker flipped -- hand discarded and refilled.', 'info');
+				// Flags the fresh hand for the render's card-drawn treatment
+				// (stagger-in animation + per-card click sound) -- kept in a
+				// SEPARATE key from the Diamonds one ($_SESSION['cryptconquest_drawn'])
+				// rather than merged into it, because the two need different
+				// badge text: this hand didn't come from Diamonds, and
+				// labeling it "♦ NEW" would just be wrong.
+				$_SESSION['cryptconquest_jester_drawn'] = array_map('cryptconquestCardArtKey', $outcome['result']['drawn'] ?? []);
 			}
 		}
 
