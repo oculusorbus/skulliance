@@ -164,7 +164,7 @@ function cryptconquestMinimalGameOverHtml($run, $user_id) {
 	?>
 	<div id="cq-mood" data-mood="<?php echo $won ? 'triumph' : 'death'; ?>" data-restarted="0"
 		data-theme-active="1" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>"
-		data-sfx="<?php echo $won ? '' : 'death'; ?>"
+		data-sfx="<?php echo $won ? 'victory' : 'death'; ?>"
 		style="display:none;"></div>
 	<div class="cq-inner">
 		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
@@ -231,8 +231,10 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	// which matters most on exactly the path that exists because things went
 	// wrong. Safe to re-derive on every render: the client only plays these
 	// on an AJAX swap, so reloading a result screen stays silent.
-	if ($state === 'game_over' && ($recent_run['status'] ?? '') === 'lost') {
-		$sfx_queue[] = 'death';
+	if ($state === 'game_over') {
+		$ended = $recent_run['status'] ?? '';
+		if ($ended === 'lost') $sfx_queue[] = 'death';
+		elseif ($ended === 'won') $sfx_queue[] = 'victory';
 	}
 
 	// Three art sources: court cards + number cards draw from Season 1

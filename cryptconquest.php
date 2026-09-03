@@ -571,6 +571,7 @@ include 'header.php';
 <audio id="cq-sfx-jester" preload="metadata" src="audio/sounds/jester.mp3"></audio>
 <audio id="cq-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
 <audio id="cq-sfx-death" preload="metadata" src="audio/sounds/death.mp3"></audio>
+<audio id="cq-sfx-victory" preload="metadata" src="audio/sounds/victory.mp3"></audio>
 <!-- Killing a regent, and landing an exact match. Both short like the click
      (0.53s / 1.0s), not stingers, so they preload eagerly and play at the
      click's level. An exact KILL fires both at once, layered. -->
@@ -1089,7 +1090,9 @@ include 'header.php';
 	//                    land ~10dB above them. 0.15 puts its effective mean
 	//                    at -23.0dB, matching the stingers' -22.6dB, so it's
 	//                    level with them by measurement rather than by eye.
-	var SFX_LEVEL = { card: 1, kill: 1, exactmatch: 0.5, jester: 0.5, laststand: 0.5, death: 0.15 };
+	//   victory    0.40  3.0s, mean -15.1dB. 0.40 puts its effective mean at
+	//                    -23.1dB, alongside the other long cues.
+	var SFX_LEVEL = { card: 1, kill: 1, exactmatch: 0.5, jester: 0.5, laststand: 0.5, death: 0.15, victory: 0.4 };
 	function sfxVolume() {
 		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
 		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
@@ -1185,7 +1188,7 @@ include 'header.php';
 	// (the kill, 0.53s) play at the click's level, and must NOT cut a stinger
 	// off -- killing a regent on the turn a Jester was flipped should layer
 	// over that cue, not silence it.
-	var STINGERS = { jester: 1, laststand: 1, death: 1 };
+	var STINGERS = { jester: 1, laststand: 1, death: 1, victory: 1 };
 	function playNamedSfx(name) {
 		if (STINGERS[name]) { playStinger(name); return; }
 		var el = document.getElementById('cq-sfx-' + name);
