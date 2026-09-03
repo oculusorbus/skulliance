@@ -370,7 +370,14 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			$f_cards = $f['cards'] ?? (isset($f['card']) ? [$f['card']] : []);
 			?>
 			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
+				<?php if (empty($f['image'])): ?>
+				<!-- Skipped when the flash carries its own themed image (the Joker
+				     flip) -- reported as a mismatched "i" sitting above the art;
+				     the image already IS the visual anchor, a generic icon on top
+				     of it was redundant, not complementary the way it is above an
+				     actual game card. -->
 				<div class="cq-flash-icon"><?php echo $f_cards ? '🎯' : ($f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️')); ?></div>
+				<?php endif; ?>
 				<?php if ($f_cards): ?>
 				<div class="cq-flash-cards">
 					<?php foreach ($f_cards as $fc):
