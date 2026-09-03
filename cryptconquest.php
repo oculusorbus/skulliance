@@ -1070,15 +1070,32 @@ include 'header.php';
 	//
 	// Above slider 50 this is already at digital maximum and can't go louder.
 	var SFX_GAIN = 2;
+	// Per-sound level, as a multiple of that click level. Not one number for
+	// everything: loudness is about duration as much as amplitude, and these
+	// sounds are 0.44s to 9.5s. A transient click can sit 6dB above the music
+	// and still read as an accent; anything SUSTAINED at that level just
+	// becomes the loudest thing on the page.
+	//
+	//   card/kill  1.00  short transients, the reference level
+	//   exactmatch 0.50  1.0s and mastered hot (-0.5dB peak vs the click's
+	//                    -1.9dB) -- at full level it played over the music,
+	//                    which is what was reported. Halved = -6dB, putting
+	//                    it level with the music instead of above it.
+	//   stingers   0.50  ~9.5s cues; see playStinger()
+	var SFX_LEVEL = { card: 1, kill: 1, exactmatch: 0.5, jester: 0.5, laststand: 0.5 };
 	function sfxVolume() {
 		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
 		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
 		return Math.min(1, (vol / 100) * SFX_GAIN);
 	}
+	function sfxVolumeFor(name) {
+		var lvl = SFX_LEVEL[name];
+		return sfxVolume() * (lvl === undefined ? 1 : lvl);
+	}
 	function playCardSfx() {
 		var base = document.getElementById('cq-sfx-card');
 		if (!base) return;
-		var vol = sfxVolume();
+		var vol = sfxVolumeFor('card');
 		if (vol === 0) return;
 		try {
 			if (!sfxPool.length) {
@@ -1106,16 +1123,16 @@ include 'header.php';
 	// cuts off whichever is already running -- a Jester flipped during a Last
 	// Stand turn should replace that cue, not talk over it.
 	//
-	// Played at HALF the card click's level. These are already mastered near
-	// 0dBFS (jester peaks -0.3dB, laststand -1.0dB, against the click's -1.9dB
-	// AFTER its +6dB pass), so applying the same 2x gain would have made a
-	// 9-second cue overpower both the music and the click it follows.
-	var STINGER_GAIN = 0.5;
+	// Level comes from SFX_LEVEL above (0.5 -- half the click). These are
+	// already mastered near 0dBFS (jester peaks -0.3dB, laststand -1.0dB,
+	// against the click's -1.9dB AFTER its +6dB pass), so applying the full
+	// click level would have made a 9-second cue overpower both the music and
+	// the click it follows.
 	var currentStinger = null;
 	function playStinger(name) {
 		var el = document.getElementById('cq-sfx-' + name);
 		if (!el) return;
-		var vol = sfxVolume() * STINGER_GAIN;
+		var vol = sfxVolumeFor(name);
 		if (vol <= 0) return;
 		try {
 			if (currentStinger && currentStinger !== el) {
@@ -1166,10 +1183,10 @@ include 'header.php';
 		if (STINGERS[name]) { playStinger(name); return; }
 		var el = document.getElementById('cq-sfx-' + name);
 		if (!el) return;
-		var vol = sfxVolume();
+		var vol = sfxVolumeFor(name);
 		if (vol === 0) return;
 		try {
-			el.volume = vol;
+			el.volume = Math.min(1, vol);
 			el.currentTime = 0;
 			var p = el.play();
 			if (p && p.catch) p.catch(function() {});
