@@ -159,14 +159,18 @@ include 'header.php';
 /* A themed image alongside a flash, distinct from .cq-flash-cards -- that's
    for showing a specific GAME card (suit/rank corners, art pool lookup);
    this is a static illustration tied to the flash's own meaning (currently
-   just the Joker flip), so no corner index, no pool lookup, just the art. */
-.cq-flash-image { margin: 2px 0 12px; }
-.cq-flash-image img {
-	max-width: 200px; width: 100%; border-radius: 12px; display: block; margin: 0 auto;
-	box-shadow: 0 8px 24px rgba(0,0,0,.5);
-	animation: cqFlashCardIn .4s cubic-bezier(.18,.89,.32,1.28) both;
+   just the Joker flip), so no corner index, no pool lookup, just the art.
+   Same frame as a single .cq-flash-card (108px, 5:7, black ground, gold
+   border) -- reported as way oversized at the old 200px-wide treatment;
+   this reads as "one more card" rather than a poster stuck in the modal. */
+.cq-flash-image { margin: 2px auto 12px; width: 108px; aspect-ratio: 5 / 7; position: relative;
+	border-radius: 10px; background: #000; overflow: hidden; box-sizing: border-box;
+	border: 2px solid rgba(255,204,77,.85);
+	box-shadow: 0 0 22px rgba(255,204,77,.35), 0 10px 26px rgba(0,0,0,.55);
+	animation: cqFlashCardIn .45s cubic-bezier(.18,.89,.32,1.28) both;
 }
-@media (prefers-reduced-motion: reduce) { .cq-flash-image img { animation: none; } }
+.cq-flash-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (prefers-reduced-motion: reduce) { .cq-flash-image { animation: none; } }
 
 /* Cards that just came back from a perfect guard. This is the QUIET path --
    it fires on every exact defense (~68% of turns), so it must never block or
