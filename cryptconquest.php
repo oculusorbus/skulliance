@@ -156,6 +156,17 @@ include 'header.php';
    and the message matters more here. */
 .cq-flash-cards { display: flex; gap: 8px; justify-content: center; margin: 2px 0 12px; }
 .cq-flash-cards .cq-flash-card { width: 78px; margin: 0; }
+/* A themed image alongside a flash, distinct from .cq-flash-cards -- that's
+   for showing a specific GAME card (suit/rank corners, art pool lookup);
+   this is a static illustration tied to the flash's own meaning (currently
+   just the Joker flip), so no corner index, no pool lookup, just the art. */
+.cq-flash-image { margin: 2px 0 12px; }
+.cq-flash-image img {
+	max-width: 200px; width: 100%; border-radius: 12px; display: block; margin: 0 auto;
+	box-shadow: 0 8px 24px rgba(0,0,0,.5);
+	animation: cqFlashCardIn .4s cubic-bezier(.18,.89,.32,1.28) both;
+}
+@media (prefers-reduced-motion: reduce) { .cq-flash-image img { animation: none; } }
 
 /* Cards that just came back from a perfect guard. This is the QUIET path --
    it fires on every exact defense (~68% of turns), so it must never block or

@@ -389,6 +389,11 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					<?php endforeach; ?>
 				</div>
 				<?php endif; ?>
+				<?php if (!empty($f['image'])): ?>
+				<div class="cq-flash-image">
+					<img src="<?php echo htmlspecialchars($f['image']); ?>" alt="" loading="lazy" onerror="this.parentElement.remove();">
+				</div>
+				<?php endif; ?>
 				<div class="cq-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
 			</div>
 		<?php endforeach; ?>

@@ -11,10 +11,15 @@
 // used to show the actual card you just recovered on an exact kill. Only the
 // card's IDENTITY is stored; cryptconquestRenderGameArea() resolves its art
 // from the pools it already has, so no image URL is carried through session.
-function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null) {
+// $image: optional static illustration path (relative, e.g. 'images/x.webp')
+// shown in the modal alongside the message -- distinct from $card/$cards,
+// which are actual GAME cards resolved through the art pools. Used for the
+// Joker flip flash (images/joker.webp), not tied to any specific card.
+function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null, $image = null) {
 	$entry = ['msg' => $msg, 'type' => $type];
 	if ($card) $entry['card'] = $card;
 	if ($cards) $entry['cards'] = $cards;   // several cards at once, e.g. a perfect guard
+	if ($image) $entry['image'] = $image;
 	$_SESSION['cryptconquest_flash'][] = $entry;
 }
 
@@ -185,7 +190,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			if (!$outcome || !$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'] ?? 'No active run.', 'error');
 			} else {
-				cryptconquestFlash('Joker flipped -- hand discarded and refilled.', 'info');
+				cryptconquestFlash('Joker flipped -- hand discarded and refilled.', 'info', null, null, 'images/joker.webp');
 				// Flags the fresh hand for the render's card-drawn treatment
 				// (stagger-in animation + per-card click sound) -- kept in a
 				// SEPARATE key from the Diamonds one ($_SESSION['cryptconquest_drawn'])
