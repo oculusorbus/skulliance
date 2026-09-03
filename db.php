@@ -11508,9 +11508,11 @@ include_once 'cryptconquest-engine.php';
 define('CRYPTCONQUEST_S1_COLLECTION_ID', 7);
 define('CRYPTCONQUEST_S1_EXTRA_USER_ID', 12);
 
-// Curated 2026-09-03 from real on-chain CIP-25 metadata (rarity + aura
-// trait), NOT an eyeballed pass like Crypt Crawl's own CRYPTCRAWL_CARD_ART --
-// see cryptconquest-s1-art-curation.md for the full methodology, the
+// Curated 2026-09-03 from real on-chain CIP-25 metadata (rarity + the aura/
+// head traits), NOT an eyeballed pass like Crypt Crawl's own
+// CRYPTCRAWL_CARD_ART -- see cryptconquest-s1-art-curation.md for the full
+// methodology (aura-based suits, with a head=tech carve-out into Spades
+// once the owner noticed the collection skews heavily toward it), the
 // suit/rarity reasoning, and the complete 92-piece dataset this was chosen
 // from (kept so this can be revisited without another Koios round-trip).
 // Court cards (Jack/Queen/King) are NOT here -- those stay on the
@@ -11525,10 +11527,10 @@ define('CRYPTCONQUEST_NUMBER_CARD_ART', array(
 	'H8'  => 'Cryptie #00606', // epic
 	'H7'  => 'Cryptie #01577', // epic
 	'H6'  => 'Cryptie #02040', // epic
-	'H5'  => 'Cryptie #02869', // epic
-	'H4'  => 'Cryptie #03543', // epic
-	'H3'  => 'Cryptie #03587', // epic
-	'H2'  => 'Cryptie #04647', // epic
+	'H5'  => 'Cryptie #03587', // epic
+	'H4'  => 'Cryptie #04647', // epic
+	'H3'  => 'Cryptie #05214', // epic
+	'H2'  => 'Cryptie #06034', // epic
 
 	'D10' => 'Cryptie #00891', // legendary
 	'D9'  => 'Cryptie #01896', // legendary
@@ -11541,24 +11543,24 @@ define('CRYPTCONQUEST_NUMBER_CARD_ART', array(
 	'D2'  => 'Cryptie #05515', // epic
 
 	'C10' => 'Cryptie #03600', // legendary
-	'C9'  => 'Cryptie #00901', // epic
-	'C8'  => 'Cryptie #01916', // epic
-	'C7'  => 'Cryptie #04113', // epic
-	'C6'  => 'Cryptie #05212', // epic
-	'C5'  => 'Cryptie #07564', // epic
-	'C4'  => 'Cryptie #08359', // epic
-	'C3'  => 'Cryptie #08454', // epic
-	'C2'  => 'Cryptie #00351', // common
+	'C9'  => 'Cryptie #01916', // epic
+	'C8'  => 'Cryptie #04113', // epic
+	'C7'  => 'Cryptie #05212', // epic
+	'C6'  => 'Cryptie #07564', // epic
+	'C5'  => 'Cryptie #08359', // epic
+	'C4'  => 'Cryptie #08454', // epic
+	'C3'  => 'Cryptie #00351', // common
+	'C2'  => 'Cryptie #00780', // common
 
 	'S10' => 'Cryptie #01478', // legendary
-	'S9'  => 'Cryptie #02818', // epic
-	'S8'  => 'Cryptie #04941', // epic
-	'S7'  => 'Cryptie #05609', // epic
-	'S6'  => 'Cryptie #06885', // epic
-	'S5'  => 'Cryptie #07892', // epic
-	'S4'  => 'Cryptie #08620', // epic
-	'S3'  => 'Cryptie #00202', // common
-	'S2'  => 'Cryptie #02230', // common
+	'S9'  => 'Cryptie #00901', // epic
+	'S8'  => 'Cryptie #02818', // epic
+	'S7'  => 'Cryptie #02869', // epic
+	'S6'  => 'Cryptie #03543', // epic
+	'S5'  => 'Cryptie #04941', // epic
+	'S4'  => 'Cryptie #05609', // epic
+	'S3'  => 'Cryptie #06885', // epic
+	'S2'  => 'Cryptie #07299', // epic
 ));
 
 // Themed Necropolis backdrops, one per depth through the Mausoleum

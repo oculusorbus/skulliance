@@ -2,10 +2,12 @@
 
 Reference data + the resulting rank/suit assignment for the 36 number-card
 identities (2-10 x 4 suits) in Crypt Conquest's PLAYER-hand art pool --
-`cryptconquestGetCardArtPools()`'s `'player'` key in db.php. Replaces that
-pool's auto-assignment (name-sorted, no rarity awareness) with a curated set,
-the same idea as Crypt Crawl's own `CRYPTCRAWL_CARD_ART` -- rarer pieces on
-higher ranks -- but built from real on-chain data instead of eyeballing.
+`cryptconquestGetCardArtPools()`'s `'player'` key in db.php, resolved by
+`cryptconquestGetCuratedNumberArt()` from `CRYPTCONQUEST_NUMBER_CARD_ART`.
+Replaces that pool's auto-assignment (name-sorted, no rarity awareness)
+with a curated set, the same idea as Crypt Crawl's own `CRYPTCRAWL_CARD_ART`
+-- rarer pieces on higher ranks -- but built from real on-chain data instead
+of eyeballing.
 
 **Explicitly out of scope, untouched:** the 12 court-card identities (Jack/
 Queen/King x 4 suits). Those stay on the platform-wide enemy pool (any public
@@ -30,9 +32,11 @@ real complete picture, not just what happened to be staked/verified.
 `UltimateCryptie006/047/226/253/282` -- a distinct special sub-type (the ADA
 symbol rendered in stacked skulls, animated GIF), not the standard portrait
 art card faces need, and known to have rendering problems on several
-marketplaces/platforms. Their metadata also didn't resolve cleanly through
-the same CIP-25 lookup path the other 92 use (different naming convention --
-worth knowing if anyone revisits this later, not worth chasing for this).
+marketplaces/platforms. (A still webp of this same Ultimate art is used
+elsewhere -- the Joker-flip flash modal -- just not in this number-card pool.)
+Their metadata also didn't resolve cleanly through the same CIP-25 lookup
+path the other 92 use (different naming convention -- worth knowing if
+anyone revisits this later, not worth chasing for this).
 
 ## Rarity tiers (real, on-chain, `attributes.rarity`)
 
@@ -44,28 +48,39 @@ Only 3 tiers exist -- **not** Crypt Crawl's WTF/Mythic/Legendary scheme:
 | epic | 36 |
 | common | 49 |
 
-## Suit assignment: by `attributes.aura`
+## Suit assignment: `aura`, with a `head` carve-out for Spades
 
-Legendary pieces are scarce and concentrated -- only 5 of the 10 aura values
-carry any legendary piece at all (geometric=2, teleporting=1, battle=1,
-starving=1, crypto=2), so those five had to anchor the four suit groups (with
-crypto folded into geometric's group) or a suit would end up with zero
-legendary for its top rank. `geometric` -> Diamonds was specifically
-requested (tech/digital reads as wealth/modernity, and it's thematically apt
-for an NFT game specifically); the other three groupings follow the same
-constraint plus loose theme (dark/hunger -> Spades, ethereal/light -> Hearts,
-war/smoke -> Clubs).
+Started as a pure `attributes.aura` split (documented in git history if
+anyone wants the earlier version) -- `geometric`/`crypto` -> Diamonds was
+requested specifically (tech/digital reads as wealth/modernity, and it's
+thematically apt for an NFT game). Revised once the owner noticed the
+collection skews heavily toward `attributes.head: tech`, and wanted that
+routed to Spades specifically. Final rule, applied in this priority order
+per piece:
 
-| Suit | Aura values | Legendary | Epic | Common | Pool size |
-|---|---|---|---|---|---|
-| Diamonds (D) | geometric + crypto | 4 | 9 | 15 | 28 |
-| Hearts (H) | teleporting + shimmering + glowing + summoning | 1 | 14 | 16 | 31 |
-| Clubs (C) | battle + smoking | 1 | 7 | 10 | 18 |
-| Spades (S) | starving + haunting | 1 | 6 | 8 | 15 |
+1. `aura` is `geometric` or `crypto` -> **Diamonds**.
+2. Otherwise, if the piece is **legendary**, fall through to its `aura` group
+   (rules 3-5) -- legendary is too scarce (7 total) to let a secondary trait
+   reroute it. Tried the `head`-first version without this guard first: it
+   silently stripped Hearts down to ZERO legendary pieces, because Hearts'
+   only legendary anchor (`Cryptie #08218`) also happens to have
+   `head: tech`. Caught before shipping by re-checking the per-suit tier
+   counts, not assumed safe.
+3. Otherwise, `head` is `tech` -> **Spades**.
+4. Otherwise, `aura` is `starving` or `haunting` -> **Spades**.
+5. Otherwise, `aura` is `teleporting`/`shimmering`/`glowing`/`summoning` ->
+   **Hearts**; `battle`/`smoking` -> **Clubs**.
+
+| Suit | Legendary | Epic | Common | Pool size |
+|---|---|---|---|---|
+| Diamonds (D) | 4 | 9 | 15 | 28 |
+| Hearts (H) | 1 | 11 | 15 | 27 |
+| Clubs (C) | 1 | 6 | 6 | 13 |
+| Spades (S) | 1 | 10 | 13 | 24 |
 
 Every group clears its own 9-slot requirement (ranks 2-10) with real margin
-and at least one legendary piece. Grand total checks out exactly against the
-real data: 7 legendary + 36 epic + 49 common = 92.
+(13 to 28 available) and at least one legendary piece. Grand total checks out
+exactly: 7 legendary + 36 epic + 49 common = 92.
 
 ## Rank assignment
 
@@ -73,52 +88,51 @@ Rarest to the top, same logic Crypt Crawl's own curation used: within each
 suit's own pool, legendary fills the highest ranks first, then epic, then
 common only once the rarer tiers run out -- independently per suit (not one
 global pass), since each suit's own supply mix differs. Across all 36 slots
-this used **all 7 legendary and 26 of 36 epic pieces**, common only needed
-for Clubs-2 and Spades-3/Spades-2 (3 slots) where that suit's epic ran out.
-Ties within a tier broken by NFT name, ascending -- arbitrary but stable, no
-gameplay or visual reason to prefer one legendary piece's card slot over
-another's.
+this used **all 7 legendary and 27 of 36 epic pieces**, common only needed
+for 2 of the 36 (Clubs' bottom two ranks, its smallest pool at 13). Ties
+within a tier broken by NFT name, ascending -- arbitrary but stable, no
+gameplay or visual reason to prefer one piece's card slot over another's.
 
 ## The 36 picks
 
-| Key | Suit | Rank | NFT | Rarity | Owner |
-|---|---|---|---|---|---|
-| `D10` | Diamonds | 10 | Cryptie #00891 | legendary | primary (my collection) |
-| `D9` | Diamonds | 9 | Cryptie #01896 | legendary | primary (my collection) |
-| `D8` | Diamonds | 8 | Cryptie #01994 | legendary | primary (my collection) |
-| `D7` | Diamonds | 7 | Cryptie #08507 | legendary | backup (Dean's collection) |
-| `D6` | Diamonds | 6 | Cryptie #01614 | epic | primary (my collection) |
-| `D5` | Diamonds | 5 | Cryptie #01725 | epic | primary (my collection) |
-| `D4` | Diamonds | 4 | Cryptie #04439 | epic | primary (my collection) |
-| `D3` | Diamonds | 3 | Cryptie #04665 | epic | primary (my collection) |
-| `D2` | Diamonds | 2 | Cryptie #05515 | epic | primary (my collection) |
-| `H10` | Hearts | 10 | Cryptie #08218 | legendary | primary (my collection) |
-| `H9` | Hearts | 9 | Cryptie #00317 | epic | primary (my collection) |
-| `H8` | Hearts | 8 | Cryptie #00606 | epic | primary (my collection) |
-| `H7` | Hearts | 7 | Cryptie #01577 | epic | primary (my collection) |
-| `H6` | Hearts | 6 | Cryptie #02040 | epic | primary (my collection) |
-| `H5` | Hearts | 5 | Cryptie #02869 | epic | backup (Dean's collection) |
-| `H4` | Hearts | 4 | Cryptie #03543 | epic | primary (my collection) |
-| `H3` | Hearts | 3 | Cryptie #03587 | epic | primary (my collection) |
-| `H2` | Hearts | 2 | Cryptie #04647 | epic | backup (Dean's collection) |
-| `C10` | Clubs | 10 | Cryptie #03600 | legendary | backup (Dean's collection) |
-| `C9` | Clubs | 9 | Cryptie #00901 | epic | primary (my collection) |
-| `C8` | Clubs | 8 | Cryptie #01916 | epic | primary (my collection) |
-| `C7` | Clubs | 7 | Cryptie #04113 | epic | primary (my collection) |
-| `C6` | Clubs | 6 | Cryptie #05212 | epic | backup (Dean's collection) |
-| `C5` | Clubs | 5 | Cryptie #07564 | epic | primary (my collection) |
-| `C4` | Clubs | 4 | Cryptie #08359 | epic | backup (Dean's collection) |
-| `C3` | Clubs | 3 | Cryptie #08454 | epic | primary (my collection) |
-| `C2` | Clubs | 2 | Cryptie #00351 | common | backup (Dean's collection) |
-| `S10` | Spades | 10 | Cryptie #01478 | legendary | primary (my collection) |
-| `S9` | Spades | 9 | Cryptie #02818 | epic | backup (Dean's collection) |
-| `S8` | Spades | 8 | Cryptie #04941 | epic | primary (my collection) |
-| `S7` | Spades | 7 | Cryptie #05609 | epic | primary (my collection) |
-| `S6` | Spades | 6 | Cryptie #06885 | epic | primary (my collection) |
-| `S5` | Spades | 5 | Cryptie #07892 | epic | primary (my collection) |
-| `S4` | Spades | 4 | Cryptie #08620 | epic | primary (my collection) |
-| `S3` | Spades | 3 | Cryptie #00202 | common | backup (Dean's collection) |
-| `S2` | Spades | 2 | Cryptie #02230 | common | backup (Dean's collection) |
+| Key | Suit | Rank | NFT | Rarity | Aura | Head |
+|---|---|---|---|---|---|---|
+| `D10` | Diamonds | 10 | Cryptie #00891 | legendary | crypto | tech |
+| `D9` | Diamonds | 9 | Cryptie #01896 | legendary | geometric | tech |
+| `D8` | Diamonds | 8 | Cryptie #01994 | legendary | geometric | x-ray |
+| `D7` | Diamonds | 7 | Cryptie #08507 | legendary | crypto | collector |
+| `D6` | Diamonds | 6 | Cryptie #01614 | epic | geometric | tech |
+| `D5` | Diamonds | 5 | Cryptie #01725 | epic | geometric | collector |
+| `D4` | Diamonds | 4 | Cryptie #04439 | epic | geometric | wise |
+| `D3` | Diamonds | 3 | Cryptie #04665 | epic | crypto | robot |
+| `D2` | Diamonds | 2 | Cryptie #05515 | epic | geometric | warrior |
+| `H10` | Hearts | 10 | Cryptie #08218 | legendary | teleporting | tech |
+| `H9` | Hearts | 9 | Cryptie #00317 | epic | teleporting | x-ray |
+| `H8` | Hearts | 8 | Cryptie #00606 | epic | glowing | demon |
+| `H7` | Hearts | 7 | Cryptie #01577 | epic | teleporting | collector |
+| `H6` | Hearts | 6 | Cryptie #02040 | epic | teleporting | warlock |
+| `H5` | Hearts | 5 | Cryptie #03587 | epic | teleporting | zombie |
+| `H4` | Hearts | 4 | Cryptie #04647 | epic | summoning | warrior |
+| `H3` | Hearts | 3 | Cryptie #05214 | epic | teleporting | collector |
+| `H2` | Hearts | 2 | Cryptie #06034 | epic | glowing | x-ray |
+| `C10` | Clubs | 10 | Cryptie #03600 | legendary | battle | warlock |
+| `C9` | Clubs | 9 | Cryptie #01916 | epic | smoking | warrior |
+| `C8` | Clubs | 8 | Cryptie #04113 | epic | battle | x-ray |
+| `C7` | Clubs | 7 | Cryptie #05212 | epic | battle | wise |
+| `C6` | Clubs | 6 | Cryptie #07564 | epic | smoking | x-ray |
+| `C5` | Clubs | 5 | Cryptie #08359 | epic | battle | emerald |
+| `C4` | Clubs | 4 | Cryptie #08454 | epic | smoking | zombie |
+| `C3` | Clubs | 3 | Cryptie #00351 | common | battle | robot |
+| `C2` | Clubs | 2 | Cryptie #00780 | common | smoking | x-ray |
+| `S10` | Spades | 10 | Cryptie #01478 | legendary | starving | zombie |
+| `S9` | Spades | 9 | Cryptie #00901 | epic | battle | tech |
+| `S8` | Spades | 8 | Cryptie #02818 | epic | haunting | collector |
+| `S7` | Spades | 7 | Cryptie #02869 | epic | teleporting | tech |
+| `S6` | Spades | 6 | Cryptie #03543 | epic | teleporting | tech |
+| `S5` | Spades | 5 | Cryptie #04941 | epic | starving | tech |
+| `S4` | Spades | 4 | Cryptie #05609 | epic | starving | collector |
+| `S3` | Spades | 3 | Cryptie #06885 | epic | starving | x-ray |
+| `S2` | Spades | 2 | Cryptie #07299 | epic | glowing | tech |
 
 ## Full 92-piece dataset (usable pool)
 
