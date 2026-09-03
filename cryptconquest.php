@@ -500,12 +500,15 @@ include 'header.php';
 .cq-result-title { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .2s both; }
 .cq-result.lost .cq-result-title { color: #ff7070; }
 .cq-result.won .cq-result-title { color: #00c8a0; }
-/* Loss-only flourish -- the same animated Joker webp the Joker-flip flash
-   uses, at the exact same 91x128 size (was 180px, then 108px -- fixed at
-   this exact pixel size now, same as .cq-flash-image, so this art is one
-   consistent size everywhere it shows up). Slotted into the icon/title/
-   sub pop-in sequence at .25s. */
-.cq-result-image { margin: 4px auto 12px; width: 91px; height: 128px; position: relative;
+/* Loss-only flourish -- a SEPARATE animated webp from the Joker-flip
+   flash's own art (death.webp, not joker.webp): the flash modal's
+   91x128 is right for its own cramped context, but this screen has
+   nothing else competing for space, so it gets its own bigger asset
+   (source encoded at 182x256, this being its actual CSS display size --
+   not a retina multiplier of the flash modal's box) rather than
+   stretching the small one up. Slotted into the icon/title/sub pop-in
+   sequence at .25s. */
+.cq-result-image { margin: 4px auto 12px; width: 182px; height: 256px; position: relative;
 	border-radius: 14px; overflow: hidden;
 	box-shadow: 0 0 28px rgba(255,112,112,.3), 0 12px 32px rgba(0,0,0,.5);
 	animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .25s both;

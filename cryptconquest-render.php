@@ -171,7 +171,7 @@ function cryptconquestMinimalGameOverHtml($run, $user_id) {
 			<div class="cq-result-icon"><?php echo $won ? '👑' : '💀'; ?></div>
 			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($run) : 'The Necropolis Prevails'; ?></div>
 			<?php if (!$won): ?>
-				<div class="cq-result-image"><img src="images/joker.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
+				<div class="cq-result-image"><img src="images/death.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
 			<?php endif; ?>
 			<div class="cq-result-sub"><?php echo $defeated; ?> / 12 court cards defeated</div>
 			<?php if (intval($user_id) > 0 && $carbon > 0): ?>
@@ -424,7 +424,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			<div class="cq-result-icon"><?php echo $won ? '👑' : '💀'; ?></div>
 			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($recent_run) : 'The Necropolis Prevails'; ?></div>
 			<?php if (!$won): ?>
-				<div class="cq-result-image"><img src="images/joker.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
+				<div class="cq-result-image"><img src="images/death.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
 			<?php endif; ?>
 			<div class="cq-result-sub"><?php echo $defeated; ?> / 12 court cards defeated</div>
 			<?php $carbon_earned = intval($recent_run['carbon_earned'] ?? 0); ?>
