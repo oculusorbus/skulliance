@@ -644,7 +644,16 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		     immune is already called out on the enemy card itself
 		     (.cq-enemy-immune above), not repeated here. -->
 		<div class="cq-suit-key">
-			<?php foreach ($CRYPTCONQUEST_SUIT_EFFECT as $suit => $effect): ?>
+			<?php
+			// Display order only -- deliberately NOT $CRYPTCONQUEST_SUIT_EFFECT's
+			// own key order (which stays C/H/D/S to match the engine's actual
+			// resolution order and cryptconquestgame.php's mechanics section; see
+			// that array's own comment). This row centers as a block, so the gap
+			// between the 2nd and 3rd pill only lands on the board's own center
+			// line if the two halves' TEXT WIDTH balances -- by letter count,
+			// "Doubles Damage"+"Draws Cards" (left) vs "Grants Shield"+"Heals
+			// Discards" (right) is the closest 2-2 split available (25 vs 27).
+			foreach (['C', 'D', 'S', 'H'] as $suit): $effect = $CRYPTCONQUEST_SUIT_EFFECT[$suit]; ?>
 				<span class="cq-suit-key-item" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
 					<span class="cq-suit-key-icon"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$suit]; ?></span><?php echo $effect; ?>
 				</span>
