@@ -208,7 +208,13 @@ $batches = array_chunk($asset_list, 35);
 $by_policy_asset = [];
 foreach ($batches as $i => $batch) {
 	report_out('Fetching metadata batch ' . ($i + 1) . '/' . count($batches) . ' (' . count($batch) . ' assets)...');
-	foreach (koios_post('asset_info', $batch) as $entry) {
+	// Bug fixed here: asset_info needs its batch wrapped as {"_asset_list":
+	// [...]}, same as account_assets wraps its own payload above -- the
+	// previous run posted the bare array, Koios 400'd ("All object keys
+	// must match"), which decodes to an array too so it wasn't an obvious
+	// crash, just four retries per batch before giving up empty. Confirmed
+	// live against a real (non-Crypties) asset before shipping this fix.
+	foreach (koios_post('asset_info', ['_asset_list' => $batch]) as $entry) {
 		$key = ($entry['policy_id'] ?? '') . ':' . ($entry['asset_name'] ?? '');
 		$by_policy_asset[$key] = $entry;
 	}
