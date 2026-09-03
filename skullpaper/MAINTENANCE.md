@@ -180,6 +180,31 @@ records verified constants, and tracks what still needs to be written.
   Clubs double attack, Hearts heal (return cards from discard to tavern), Diamonds draw, Spades
   shield (Hearts resolves before Diamonds when both trigger). 2 Jesters (discard hand + refill,
   once each); win tier `cryptconquestTier()` keyed off jesters_used (0=Flawless, 1=Hard-Fought,
+  **Undocumented-mechanics audit** (2026-09-02): a player asked why an 8 played with a 1-value
+  Diamond Companion drew 9 cards. It was correct -- but auditing cryptconquest-engine.php against
+  the docs turned up five real rules that existed in code and appeared NOWHERE in the in-game rules
+  panel or this page. All five verified against the engine before writing, and all now documented in
+  both cryptconquest-render.php's rules panel and games-cryptconquest.md:
+    1. Suit powers scale with the COMBINED play total (`$attackValue` = sum of the whole play,
+       cryptconquest-engine.php:227), not the value of the card carrying the suit. So a Companion
+       (value 1) hands its suit the whole play's value -- the core Regicide combo, and the single
+       most consequential rule in the game. Clubs doubles FIRST, so the others scale off the
+       doubled number too.
+    2. Spades shield ACCUMULATES and never wears off for that fight (`shield +=` at :255, only
+       ever subtracted at :283/:311, reset only on a new enemy at :207). Verified: 9 then 8 vs a
+       King leaves pending_attack at 3. The docs said "next attack", implying one-shot.
+    3. A Companion pair is EXEMPT from the 10-card-combo cap -- cryptconquestValidatePlay returns
+       null at :154 before the `$sum > 10` check. Verified: 10 + Companion (total 11) is legal
+       where 6+6 (total 12) is rejected. Companion + Companion is legal too, also undocumented.
+    4. A recovered court card is worth its ATTACK stat in hand (cryptconquestCardValue:59) --
+       Jack 10, Queen 15, King 20, bigger than any number card -- and triggers its suit at that
+       value. The docs called exact kills "a small edge"; they're the biggest payoff in the game.
+    5. A Jester can be flipped during the 'suffer' phase (cryptconquestFlipJester:425 accepts
+       'play' OR 'suffer'), and pending_attack survives the flip -- so it's a genuine escape from
+       an otherwise-fatal hit, with a fresh 8 cards to cover it. Verified. The docs described a
+       Jester only as a turn replacement, which hid the best defensive option in the game.
+  Also recorded (already correct, now stated): the yield dead-end auto-loss at :304 (empty hand +
+  both Jesters spent is unrecoverable, so yielding resolves the run instead of looping).
   **Last Stand rally** (added 2026-09-02, CRYPTCONQUEST_LAST_STAND_REFILL = 4): Last Stand used to
   forgive the killing blow but leave the hand EMPTY, so it "saved" the player into a position with
   nothing to play -- 26.2% of runs ended within 2 turns of it firing, which reads as no save at

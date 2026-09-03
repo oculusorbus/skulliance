@@ -54,7 +54,13 @@ function cryptconquestRulesHtml() { ?>
 
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">🃏 Your Turn</div>
-		<p>Play a card from your hand -- or several of the <em>same rank</em> totalling 10 or less, or an Animal Companion -- to attack and trigger its suit. Or <strong>Yield</strong>: no card played, no suit power, straight to covering whatever hits back.</p>
+		<p>Play one of the following to attack and trigger its suit, or <strong>Yield</strong>: no card played, no suit power, straight to covering whatever hits back.</p>
+		<ul class="cq-rules-list">
+			<li><strong>One card</strong>, any card.</li>
+			<li><strong>2-4 cards of the same rank</strong>, totalling 10 or less.</li>
+			<li><strong>An Animal Companion plus one other card</strong> -- any card, at any value. This pairing ignores the 10 limit, so a Companion can ride along with your 10.</li>
+			<li><strong>Two Animal Companions</strong> together.</li>
+		</ul>
 	</div>
 
 	<!-- Added 2026-09-01 after a player reported cards seeming to vanish from
@@ -78,23 +84,36 @@ function cryptconquestRulesHtml() { ?>
 
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">✨ Suit Powers</div>
-		<p style="opacity:.85;">Each power is worth the total value of what you played, and only fires if the suit differs from the court card's own.</p>
+		<p style="opacity:.85;">A power only fires if its suit differs from the court card's own.</p>
 		<ul class="cq-rules-list">
 			<li><strong style="color:#ff6b6b;">♥ Hearts</strong> -- moves that many <em>random</em> cards from your discard pile to the <strong>bottom of the deck</strong>. Not into your hand, and you won't draw them again for a while -- it keeps the deck from running dry rather than helping you right now.</li>
-			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws that many cards from the deck <strong>into your hand</strong>. The only routine way to refill, so this is usually your lifeline, not a bonus. Draws stop at your <strong>8-card hand limit</strong> and the rest are forfeited, so a big Diamond played on a full hand is mostly wasted.</li>
-			<li><strong style="color:#c8dce8;">♣ Clubs</strong> -- doubles your damage.</li>
-			<li><strong style="color:#c8dce8;">♠ Spades</strong> -- shields you from that enemy's counterattack.</li>
+			<li><strong style="color:#ff9900;">♦ Diamonds</strong> -- draws that many cards from the deck <strong>into your hand</strong>. The only routine way to refill, so this is usually your lifeline, not a bonus. Draws stop at your <strong>8-card hand limit</strong> and the rest are forfeited.</li>
+			<li><strong style="color:#c8dce8;">♣ Clubs</strong> -- doubles your damage. Resolves <em>first</em>, so the other suits in the same play scale off the doubled number too.</li>
+			<li><strong style="color:#c8dce8;">♠ Spades</strong> -- shields you against that court card. Shield <strong>stacks and never wears off</strong> -- it lasts the whole fight, so two Spades plays against a King (20 attack) can leave it hitting you for almost nothing.</li>
 		</ul>
+		<!-- The single most-missed rule in the game: a player asked why an 8
+		     played with a 1-value Companion drew far more than one card. Every
+		     power reads the COMBINED total (engine: $attackValue is the sum of
+		     the whole play), which the old "worth the total value of what you
+		     played" line stated too quietly to land. -->
+		<p><strong>Every power is worth the total of the whole play, not the value of the card carrying the suit.</strong> This is the most important thing on this page and the easiest to miss: pair an <strong>Animal Companion</strong> (worth 1) with your biggest card and that Companion's suit fires at the <em>combined</em> value. A Companion of Diamonds played with an 8 draws <strong>9 cards</strong>, not 1 -- and you never had to spend a big Diamond to do it.</p>
 	</div>
 
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">👑 Exact Kills Recruit the Enemy</div>
-		<p>Deal <strong>exactly</strong> enough damage to defeat a court card and it doesn't go to the discard -- it goes face-down on top of your deck instead. Draw it back later and it fights <em>for</em> you: a powerful attack card worth its full value, still carrying its suit power. Overkill (more damage than needed) just discards it like normal -- only an exact hit recruits it.</p>
+		<p>Deal <strong>exactly</strong> enough damage to defeat a court card and it doesn't go to the discard -- it goes face-down on <strong>top</strong> of your deck, so it's the very next card you draw. It then fights <em>for</em> you, worth its own attack stat: a <strong>Jack is 10, a Queen 15, a King 20</strong> -- far bigger than any number card in the deck, and it still triggers its suit at that value. A recruited King paired with an Animal Companion is the strongest play in the game.</p>
+		<p style="opacity:.85;">Overkill just discards it like normal -- only an exact hit recruits it.</p>
 	</div>
 
 	<div class="cq-rules-section">
 		<div class="cq-rules-label">🛡️ Covering Damage</div>
-		<p>Whatever the court card hits back with (after your shield, if any) has to be covered by discarding cards from hand totalling <strong>at least</strong> that much. Run dry on cards entirely and a one-time <strong style="color:#00c8a0;">Jester flip</strong> (twice per run) discards your whole hand and deals you a fresh one. And if your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run: the blow is forgiven <em>and</em> you rally <strong>4 fresh cards</strong> from the deck so you can actually fight on. After that, the next uncovered hit ends it.</p>
+		<p>Whatever the court card hits back with (after your shield, if any) has to be covered by discarding cards from hand totalling <strong>at least</strong> that much. Coming up short doesn't hurt you -- the selection is just rejected so you can try again.</p>
+		<!-- Undocumented until now: cryptconquestFlipJester() accepts phase
+		     'suffer' as well as 'play', so a Jester is a genuine escape from a
+		     hit you can't cover. Players had no way to know that from the
+		     rules, which described it only as a turn replacement. -->
+		<p><strong style="color:#00c8a0;">You can flip a Jester mid-attack.</strong> Staring at a hit your hand can't cover? Flipping a Jester right then discards your hand and deals you a fresh 8 -- and the attack is still waiting to be covered, now with a full hand. It's the best escape in the game, and you get two per run.</p>
+		<p>If your hand truly can't cover a hit even after discarding all of it, <span class="cq-rally">Last Stand</span> saves you once per run: the blow is forgiven <em>and</em> you rally <strong>4 fresh cards</strong> from the deck so you can actually fight on. After that, the next uncovered hit ends it.</p>
 	</div>
 
 	<div class="cq-rules-section">
@@ -114,7 +133,8 @@ function cryptconquestRulesHtml() { ?>
 		<ul class="cq-rules-tips">
 			<li><strong>Covering damage only needs to reach the total, not match it.</strong> Discard the fewest cards you can spare -- extra cards left in hand matter more than landing on a clean number.</li>
 			<li><strong>Attack for the power you need, not just the biggest number.</strong> A small Diamond when your hand is thin beats a big off-suit card that doesn't do anything you actually need right now.</li>
-			<li><strong>Don't spend a big Diamond on a full hand.</strong> Draws stop at 8 cards and the rest are forfeited -- a 9 of Diamonds played at a full hand does the work of a 1. Hold your big Diamonds until your hand is thin.</li>
+			<li><strong>Don't spend a big Diamond to refill.</strong> You don't need one: a Diamond <em>Companion</em> paired with your biggest card draws just as many, and you keep the damage. Save real Diamonds for damage, and never play one into a full hand -- draws stop at 8 and the rest are forfeited.</li>
+			<li><strong>Don't hoard your Jesters to the end.</strong> A Jester is worth most as an escape from a hit you can't cover, not as a tidy hand refresh. Two go unused in a lot of lost runs.</li>
 			<li><strong>Cover the number exactly when you can.</strong> Overpaying by a single point loses everything you spent; hitting it on the nose hands your two best cards back.</li>
 		</ul>
 	</div>

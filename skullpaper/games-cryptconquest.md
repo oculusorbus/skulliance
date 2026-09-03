@@ -16,10 +16,12 @@ You face them one at a time, in a fixed order (Jacks first, then Queens, then Ki
 
 ## Your Hand
 
-Your hand draws from a **tavern deck**: the number cards 2-10 of all four suits, plus 4 **Animal Companions** (one per suit, always worth 1 regardless of rank). Numbered cards are worth their own rank. On your turn you either:
+Your hand draws from a **tavern deck**: the number cards 2-10 of all four suits, plus 4 **Animal Companions** (one per suit, always worth 1 regardless of rank). Numbered cards are worth their own rank. On your turn you either **attack** with one of the following, **or Yield** - no card played, no suit power triggers, straight to covering whatever the court card hits back with.
 
-* **Play a card, a same-rank combo of cards, or an Animal Companion** (a Companion can join at most one other card, never a bigger combo) to attack the current court card, **or**
-* **Yield** - no card played, no suit power triggers, straight to covering whatever the court card hits back with.
+* **One card** - any card, always legal.
+* **2-4 cards of the same rank**, totalling 10 or less.
+* **An Animal Companion plus one other card** - any card, at any value. This pairing is exempt from the 10 limit, so a Companion can ride along with a 10.
+* **Two Animal Companions** together.
 
 ## Your Hand Only Shrinks
 
@@ -39,18 +41,26 @@ route back, and it returns cards to the *deck*, not your hand.
 
 ## Suit Powers
 
-Playing a card whose suit differs from the current court card's own suit (the court card's own suit is immune) triggers that suit's power, based on the total value of everything you just played:
+Playing a card whose suit differs from the current court card's own suit (the court card's own suit is immune) triggers that suit's power:
 
-* **♣ Clubs double your attack** - the whole total against the court card is doubled.
+* **♣ Clubs double your attack** - the whole total against the court card is doubled. Clubs resolves **first**, so any other suit in the same play scales off the doubled number too.
 * **♥ Hearts heal** - that many *random* cards return from your discard pile to the **bottom** of the tavern deck. Not into your hand, and you won't draw them again for a while: it keeps the deck from running dry rather than helping you this turn.
-* **♦ Diamonds draw** - draw that many fresh cards from the deck into your hand. The only routine way to refill, which makes Diamonds a lifeline rather than a bonus. Draws stop at the **8-card hand limit** and any beyond it are forfeited, so a big Diamond played on a full hand is mostly wasted - a 9 played at 8 cards draws just one.
-* **♠ Spades shield** - the court card takes that much off its next attack against you.
+* **♦ Diamonds draw** - draw that many fresh cards from the deck into your hand. The only routine way to refill, which makes Diamonds a lifeline rather than a bonus. Draws stop at the **8-card hand limit** and any beyond it are forfeited.
+* **♠ Spades shield** - reduces that court card's attack. Shield **accumulates across turns and never wears off**, lasting the whole fight rather than a single attack: two Spades plays worth 9 and 8 against a King leave it hitting for 3 every turn thereafter.
 
 Hearts resolves before Diamonds when a combo triggers both at once.
+
+### Powers Scale With the Whole Play
+
+**A suit power is worth the total value of everything you played that turn, not the value of the card carrying the suit.** This is the most easily missed rule in the game and the one that most changes how it's played.
+
+Pair an **Animal Companion** (worth 1) with your biggest card and that Companion's suit fires at the *combined* total. A Companion of Diamonds played alongside an 8 draws **9 cards**, not 1. That is what Animal Companions are for: they contribute a single point of damage but hand their suit the whole play's value, which means you never need to spend a big Diamond to refill your hand.
 
 ## Covering an Attack
 
 Whatever the court card hits back with (after Spades shield, if any) has to be covered by discarding cards from your hand worth at least that much - a partial selection that doesn't reach the total is just rejected so you can try again, but discarding your **entire hand** and still coming up short is what actually threatens the run.
+
+**A Jester can be flipped mid-attack.** Facing a hit your hand can't cover, flipping a Jester right then discards your hand, deals a fresh 8, and leaves the attack still standing to be covered with the new hand. It's the strongest escape available and it costs only one of the two Jester charges - see Jesters below.
 
 ## Perfect Guard
 
@@ -70,7 +80,9 @@ of the turn. Two cards rather than all of them is a deliberate balance point - s
 Two habits that feel intuitive but aren't rewarded by the rules above:
 
 * **Covering an attack only needs to reach the total, not match it exactly.** There's no bonus for landing on a clean number, and no penalty for overpaying by a card or two - discard the fewest cards you can spare, not the most. Every card left in hand is a card you can still play.
-* **Hold big Diamonds until your hand is thin.** Draws stop at 8 cards and the rest are forfeited, so a 9 of Diamonds on a full hand does the work of a 1.
+* **Refill with a Diamond Companion, not a big Diamond.** A Companion of Diamonds paired with your biggest card draws the full combined total, so you get the refill *and* keep the damage. Spend real Diamonds on damage, and never play one into a full hand - draws stop at 8 and the rest are forfeited.
+* **Stack Spades early against Kings.** Shield never wears off, so shield spent on turn one keeps paying every turn of that fight. Against a King it compounds faster than any other suit.
+* **Spend Jesters as escapes, not refreshes.** Their real value is flipping mid-attack to survive a hit your hand can't cover. Plenty of lost runs end with Jesters unused.
 * **Cover the number exactly whenever you can.** Overpaying by one point loses everything you spent; hitting it exactly hands your two best cards back.
 * **Attack for the suit power you need, not just the highest number.** A small Diamond when your hand is thin (to refill it) is worth more than a big off-suit card that doesn't do anything useful against the current court card. Hoard high cards and Diamonds for the fight that actually needs them rather than spending them on the first legal play.
 
@@ -78,7 +90,11 @@ Exact damage kills (see Winning & Losing below) are the one place precision *is*
 
 ## Jesters
 
-Twice per run - once per Jester - you can discard your whole hand and draw a fresh one, on demand, in place of a normal turn. No cost beyond the charge itself. Flipping both Jesters (rather than zero or one) affects your final conquest tier - see Winning below.
+Twice per run - once per Jester - you can discard your whole hand and draw a fresh one, on demand. No cost beyond the charge itself. Flipping both Jesters (rather than zero or one) affects your final conquest tier - see Winning below.
+
+Crucially, a Jester can be flipped at **either** point in a turn: in place of a normal attack, **or** while an incoming attack is waiting to be covered. The second is what makes Jesters a genuine lifeline rather than a convenience - a hand that can't survive the hit in front of it becomes a fresh 8 cards that can.
+
+One edge case the engine resolves on your behalf: an empty hand with both Jesters already spent is unrecoverable (Diamonds need a card in hand to play in the first place), so yielding there ends the run rather than looping forever.
 
 ## Last Stand
 
@@ -90,7 +106,9 @@ The rally is a *draw*, not a return of the cards you just spent - those are by d
 
 * Defeat all **12 court cards** to **conquer the Necropolis** and win the run.
 * Fail to cover an attack with your entire hand a **second** time (Last Stand already spent) and the run **ends in a loss**.
-* Defeating a court card with the **exact** amount of damage recovers it face-down atop your tavern deck instead of sending it to the discard pile - a small edge for precise play.
+* Defeating a court card with the **exact** amount of damage recovers it face-down atop your tavern deck instead of sending it to the discard pile - so it's the very next card you draw, and it then fights *for* you.
+
+A recruited court card is worth its own **attack** stat in your hand - a **Jack is 10, a Queen 15, a King 20** - and triggers its suit power at that value. These are by far the largest cards in the game (no number card exceeds 10), which makes an exact kill a much bigger prize than "a small edge": a recruited King paired with an Animal Companion is the single strongest play available.
 
 ### Conquest Tier
 
