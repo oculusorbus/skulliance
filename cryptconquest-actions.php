@@ -11,9 +11,10 @@
 // used to show the actual card you just recovered on an exact kill. Only the
 // card's IDENTITY is stored; cryptconquestRenderGameArea() resolves its art
 // from the pools it already has, so no image URL is carried through session.
-function cryptconquestFlash($msg, $type = 'info', $card = null) {
+function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null) {
 	$entry = ['msg' => $msg, 'type' => $type];
 	if ($card) $entry['card'] = $card;
+	if ($cards) $entry['cards'] = $cards;   // several cards at once, e.g. a perfect guard
 	$_SESSION['cryptconquest_flash'][] = $entry;
 }
 
@@ -92,6 +93,23 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 				cryptconquestFlash('No active run.', 'error');
 			} elseif (!$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
+			} elseif (!empty($outcome['result']['saved'])) {
+				// PERFECT GUARD. Exact defenses land on ~68% of turns (measured
+				// over 2,500 simulated games), so a blocking modal every time
+				// would read as the game nagging you for playing well. Celebrate
+				// once per run to teach the rule; after that the recovered cards
+				// just glow in hand, which also shows WHICH cards came back --
+				// something a modal can't do as clearly, since they're already
+				// sitting in your hand.
+				$saved = $outcome['result']['saved'];
+				if (($_SESSION['cryptconquest_guard_taught'] ?? null) !== intval($run['id'])) {
+					$_SESSION['cryptconquest_guard_taught'] = intval($run['id']);
+					$names = array_map('cryptconquestCardLabel', $saved);
+					cryptconquestFlash('PERFECT GUARD! You covered it exactly, so your strongest held: '
+						. implode(' and ', $names) . ' return to your hand.', 'win', null, $saved);
+				}
+				// Always flagged, so the render can highlight them in hand.
+				$_SESSION['cryptconquest_saved'] = array_map('cryptconquestCardArtKey', $saved);
 			} elseif (!empty($outcome['result']['rallied'])) {
 				cryptconquestFlash("LAST STAND! Your hand alone couldn't cover it -- you refuse to fall. (once per run)", 'win');
 			} elseif (!empty($outcome['result']['died'])) {

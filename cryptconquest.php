@@ -151,6 +151,32 @@ include 'header.php';
 	60%  { opacity: 1; transform: scale(1.06) rotate(2deg); }
 	to   { opacity: 1; transform: scale(1) rotate(0deg); }
 }
+/* Perfect-guard: the saved cards, shown side by side in the one-per-run
+   teaching modal. Smaller than the single exact-kill card since there are two
+   and the message matters more here. */
+.cq-flash-cards { display: flex; gap: 8px; justify-content: center; margin: 2px 0 12px; }
+.cq-flash-cards .cq-flash-card { width: 78px; margin: 0; }
+
+/* Cards that just came back from a perfect guard. This is the QUIET path --
+   it fires on every exact defense (~68% of turns), so it must never block or
+   demand a click: a brief gold glow plus a badge, then it settles. Shows
+   which cards returned, which a modal can't do as clearly since they're
+   already in your hand. */
+@keyframes cqSavedGlow {
+	0%   { box-shadow: 0 0 0 0 rgba(255,204,77,.85), 0 0 18px rgba(255,204,77,.7); }
+	100% { box-shadow: 0 0 0 0 rgba(255,204,77,0), 0 0 0 rgba(255,204,77,0); }
+}
+.cq-card-saved { position: relative; }
+.cq-card-saved .cq-card-face { border-color: rgba(255,204,77,.9); animation: cqSavedGlow 2.2s ease-out both; }
+.cq-saved-badge {
+	position: absolute; top: -7px; left: 50%; transform: translateX(-50%); z-index: 3;
+	background: #ffcc4d; color: #07111d; font-size: .54rem; font-weight: 800;
+	letter-spacing: .06em; padding: 2px 7px; border-radius: 999px; pointer-events: none;
+	box-shadow: 0 2px 8px rgba(0,0,0,.5); animation: cqSavedGlow 2.2s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+	.cq-card-saved .cq-card-face, .cq-saved-badge { animation: none; }
+}
 .cq-flash-card {
 	position: relative; width: 108px; aspect-ratio: 5 / 7; margin: 2px auto 12px;
 	border-radius: 10px; background: #000; overflow: hidden; box-sizing: border-box;

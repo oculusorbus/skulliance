@@ -177,6 +177,10 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 
 	$flashes = $_SESSION['cryptconquest_flash'] ?? [];
 	$_SESSION['cryptconquest_flash'] = [];
+	// Card keys returned to hand by the most recent perfect guard -- read and
+	// cleared like a flash, so the glow shows for exactly one render.
+	$saved_keys = $_SESSION['cryptconquest_saved'] ?? [];
+	$_SESSION['cryptconquest_saved'] = [];
 
 	// Three art sources: court cards + number cards draw from Season 1
 	// (two held wallets pooled together, court and numbers split into
@@ -296,6 +300,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			// art here rather than in the action, since this is where the pools
 			// already are. Lookup is by card key, so it still works on the next
 			// render even though the enemy has moved on by then.
+			$f_cards = $f['cards'] ?? ($f['card'] ? [$f['card']] : []);
 			$f_card = $f['card'] ?? null;
 			$f_card_art = null;
 			if ($f_card) {
@@ -305,7 +310,25 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			?>
 			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
 				<div class="cq-flash-icon"><?php echo $f_card ? '🎯' : ($f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️')); ?></div>
-				<?php if ($f_card): ?>
+				<?php if ($f_cards): ?>
+				<div class="cq-flash-cards">
+					<?php foreach ($f_cards as $fc):
+						$fc_art = $enemy_art_pool[cryptconquestCardArtKey($fc)]
+							?? $player_art_pool[cryptconquestCardArtKey($fc)]
+							?? $companion_art_pool[cryptconquestCardArtKey($fc)] ?? null; ?>
+						<div class="cq-flash-card<?php echo $fc_art ? ' cq-has-art' : ''; ?>">
+							<?php if ($fc_art): ?>
+								<img class="cq-card-art-img" src="<?php echo htmlspecialchars($fc_art); ?>" alt="" loading="lazy" onerror="this.remove();">
+							<?php endif; ?>
+							<div class="cq-card-corner tl">
+								<div class="cq-corner-rank"><?php echo cryptconquestCornerRank($fc); ?></div>
+								<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$fc['suit']] ?? ''; ?></div>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<?php endif; ?>
+				<?php if (false): ?>
 				<!-- The recovered card itself, as the little celebration an exact
 				     kill earns. Same two-corner treatment as every other card
 				     face here so it reads as the card you just beat, not a
@@ -482,7 +505,9 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 					if ($is_court) $footer = 'recovered &middot; ' . $footer;
 					elseif ($is_companion) $footer = 'Companion &middot; ' . $footer;
 				?>
-					<label class="cq-card" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
+					<?php $is_saved = in_array(cryptconquestCardArtKey($card), $saved_keys, true); ?>
+					<label class="cq-card<?php echo $is_saved ? ' cq-card-saved' : ''; ?>" style="--cq-suit-color:<?php echo $CRYPTCONQUEST_SUIT_COLOR[$suit]; ?>;">
+						<?php if ($is_saved): ?><span class="cq-saved-badge">SAVED</span><?php endif; ?>
 						<input type="checkbox" name="card_indices[]" value="<?php echo $i; ?>" class="cq-card-check">
 						<!-- Unified card face: art (or plain black) + top-left/
 						     bottom-right corner index, same as Crypt Crawl's own

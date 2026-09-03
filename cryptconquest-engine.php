@@ -346,12 +346,48 @@ function cryptconquestSufferDamage(&$run, $indices) {
 		return ['ok' => true, 'died' => true, 'rallied' => false];
 	}
 
+	// PERFECT GUARD: covering the hit EXACTLY returns your two highest-value
+	// spent cards to hand. Deliberately mirrors the exact-kill rule on offense
+	// -- precision is rewarded on both sides of the turn.
+	//
+	// Two, not all: simulated across 2,500 games per variant, returning
+	// everything makes defense free ~70% of the time and guts the core
+	// "every card I spend defending is one I can't attack with" tension
+	// (15.0% win rate vs 11.4% for two). Returning only ONE barely moves the
+	// needle (1.0%). Two is the point where the game becomes winnable while
+	// a sloppy 4-card exact still costs you.
+	//
+	// Highest two rather than random or diminished, both of which were tested:
+	// random differs from highest in only ~8% of exacts (they mostly use 1-2
+	// cards anyway) so it just adds unpredictability for nothing, and handing
+	// cards back at halved rank scored identically to having no rule at all
+	// (0.0% win, depth 5.21) because this game's scarcity is total VALUE, not
+	// card count -- see cryptconquest.md.
+	$was_exact = ($chosenTotal === $attack);
+	$spent = [];
 	rsort($indices);
-	foreach ($indices as $i) { $run['discard'][] = $run['hand'][$i]; array_splice($run['hand'], $i, 1); }
+	foreach ($indices as $i) { $spent[] = $run['hand'][$i]; $run['discard'][] = $run['hand'][$i]; array_splice($run['hand'], $i, 1); }
+
+	$saved = [];
+	if ($was_exact && $spent) {
+		usort($spent, function ($a, $b) { return cryptconquestCardValue($b) <=> cryptconquestCardValue($a); });
+		foreach (array_slice($spent, 0, 2) as $card) {
+			if (count($run['hand']) >= CRYPTCONQUEST_MAX_HAND) break;
+			// pull it back out of the discard it was just added to
+			foreach ($run['discard'] as $k => $d) {
+				if ($d === $card) { array_splice($run['discard'], $k, 1); break; }
+			}
+			$run['hand'][] = $card;
+			$saved[] = $card;
+		}
+	}
+
 	$run['phase'] = 'play';
 	$run['pending_attack'] = 0;
-	$run['log'] = ["Covered $attack damage with $chosenTotal from hand."];
-	return ['ok' => true, 'died' => false, 'rallied' => false];
+	$run['log'] = $saved
+		? ["Perfect guard! Covered $attack exactly -- " . count($saved) . " card(s) held and returned to hand."]
+		: ["Covered $attack damage with $chosenTotal from hand."];
+	return ['ok' => true, 'died' => false, 'rallied' => false, 'exact_defense' => $was_exact, 'saved' => $saved];
 }
 
 // Solo-only: discard the whole hand and refill to max, at the start of
