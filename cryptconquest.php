@@ -1027,32 +1027,61 @@ include 'header.php';
 		}
 	})();
 
-	// Card sound effect. Deliberately reads the SAME sessionStorage keys the
-	// music player owns rather than getting a toggle of its own: a player who
-	// muted this page expects it to be silent, and one who set the volume to
-	// 20% doesn't want a card click at full blast. Kept out of the music IIFE
-	// so it stays a plain reader of that state -- no coupling, and it still
-	// works if the player element is absent.
+	// Card sound effects.
 	//
-	// Fires on the 'play' action only for now. Cover Damage and Yield also
-	// move cards, but they're a different beat and want their own sounds
-	// rather than borrowing this one.
+	// Volume follows the player's volume slider, but the effect deliberately
+	// does NOT respect the play/pause button. That button means "no music",
+	// not "no sound" -- gating on it shipped the effect silent for everyone
+	// who plays with the soundtrack off, which is most people (caught on the
+	// live site: cq_audio_enabled was '0' and the sound never fired). The
+	// slider is the mute path instead: drag it to 0 and the page goes fully
+	// quiet, music and effects together.
+	//
+	// A POOL of elements rather than one: Diamond draws fire a click per card
+	// 130ms apart (matching the --draw-i visual stagger) while the sound runs
+	// 439ms, so they genuinely overlap. One element can only restart, which
+	// would clip every card but the last into a stutter.
+	var SFX_POOL_SIZE = 5;
+	var sfxPool = [], sfxNext = 0;
+	function sfxVolume() {
+		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
+		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
+		return vol / 100;
+	}
 	function playCardSfx() {
-		var el = document.getElementById('cq-sfx-card');
-		if (!el) return;
+		var base = document.getElementById('cq-sfx-card');
+		if (!base) return;
+		var vol = sfxVolume();
+		if (vol === 0) return;
 		try {
-			var enabled = sessionStorage.getItem('cq_audio_enabled');
-			if (enabled === '0') return; // null (never set) means on, same default as the music
-			var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
-			el.volume = (vol >= 0 && vol <= 100 ? vol : 50) / 100;
-			// Restart rather than overlap -- plays are ~1/turn, and a retriggered
-			// click reads as a new action, not a doubled one.
+			if (!sfxPool.length) {
+				sfxPool.push(base);
+				for (var i = 1; i < SFX_POOL_SIZE; i++) {
+					var c = base.cloneNode(true);
+					c.removeAttribute('id'); // only the original is addressable by id
+					base.parentNode.appendChild(c);
+					sfxPool.push(c);
+				}
+			}
+			var el = sfxPool[sfxNext];
+			sfxNext = (sfxNext + 1) % sfxPool.length;
+			el.volume = vol;
 			el.currentTime = 0;
 			// Chrome rejects this promise if the tab has no user gesture yet;
 			// it's a sound effect, so a silent failure is the right outcome.
 			var p = el.play();
 			if (p && p.catch) p.catch(function() {});
 		} catch (e) {}
+	}
+	// One click per card drawn by Diamonds, stepped to match the .13s
+	// --draw-i stagger in the CSS so the sound lands with each card's
+	// animation rather than as one lump. Capped so a big Diamond into an
+	// empty hand is a flourish, not a machine-gun burst.
+	function playDrawSfx(count) {
+		var n = Math.min(count, 6);
+		for (var i = 0; i < n; i++) {
+			setTimeout(playCardSfx, i * 130);
+		}
 	}
 
 	function lockGameAreaBriefly() {
@@ -1095,14 +1124,20 @@ include 'header.php';
 		}
 
 		// Fired here, not on the response: the sound belongs to the click that
-		// played the card, and waiting for the round-trip would drift it a few
+		// moved the card, and waiting for the round-trip would drift it a few
 		// hundred ms late. This is also still inside the user-gesture window,
 		// which is what keeps browser autoplay policy from blocking it.
 		//
-		// Gated on a card actually being selected -- "Play Selected" with an
-		// empty selection is rejected server-side ("Select at least one
-		// card."), and a card sound in front of that error would be a lie.
-		if (formData.get('action') === 'play' && formData.getAll('card_indices[]').length) {
+		// Every action that moves cards. Deliberately NOT 'abandon' (a
+		// destructive confirm, not a card move) or 'start_run'.
+		var sfxAction = formData.get('action');
+		var movesCards = (sfxAction === 'play' || sfxAction === 'suffer' ||
+		                  sfxAction === 'yield' || sfxAction === 'flip_jester');
+		// 'play' and 'suffer' both need a selection to do anything -- an empty
+		// one is rejected server-side, and a card sound in front of that error
+		// would be a lie. Yield and Jester take no selection at all.
+		var needsSelection = (sfxAction === 'play' || sfxAction === 'suffer');
+		if (movesCards && (!needsSelection || formData.getAll('card_indices[]').length)) {
 			playCardSfx();
 		}
 
@@ -1124,6 +1159,14 @@ include 'header.php';
 				gameArea.innerHTML = html;
 				initGameArea();
 				lockGameAreaBriefly();
+				// Cards arriving from a Diamonds draw. Unlike the click sounds
+				// above this can only fire on the RESPONSE -- how many cards
+				// Diamonds pulled is decided server-side (hand space caps it,
+				// so a 9 into a full hand may draw one card or none), and the
+				// rendered .cq-card-drawn markers are the first place the
+				// client learns the real number.
+				var drawn = gameArea.querySelectorAll('.cq-card-drawn').length;
+				if (drawn) playDrawSfx(drawn);
 			})
 			.catch(function() {
 				// Genuine network failure -- fall back to a real form
