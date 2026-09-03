@@ -516,10 +516,10 @@ try {
 		if ($fallback_run && in_array($fallback_run['status'] ?? '', ['won', 'lost'], true)) {
 			cryptcrawlMinimalGameOverHtml($fallback_run, $user_id);
 		} else {
-			echo '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Something went wrong loading your delve. <a href="cryptcrawl.php" style="color:#00c8a0;">Try reloading</a>.</p>';
+			echo '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Something went wrong loading your crawl. <a href="cryptcrawl.php" style="color:#00c8a0;">Try reloading</a>.</p>';
 		}
 	} catch (\Throwable $e2) {
-		echo '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Something went wrong loading your delve. <a href="cryptcrawl.php" style="color:#00c8a0;">Try reloading</a>.</p>';
+		echo '<p style="text-align:center;opacity:0.6;padding:40px 20px;">Something went wrong loading your crawl. <a href="cryptcrawl.php" style="color:#00c8a0;">Try reloading</a>.</p>';
 	}
 }
 ?></div>

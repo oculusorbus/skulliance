@@ -1,8 +1,8 @@
 # Crypt Crawl
 
-Crypt Crawl is a **solo Scoundrel-style dungeon-delve card game**, played with a single 44-card deck reskinned in Crypties NFT art. No party, no dice - just the deck, your HP, and whatever crypt turns up next. Every one of the 44 cards is hand-assigned to a specific Crypties NFT (from the Crypties - Season 2 collection) rather than drawn from a shuffled art pool - the highest-ranking enemy cards use the rarest pieces the owner holds.
+Crypt Crawl is a **solo Scoundrel-style dungeon-crawl card game**, played with a single 44-card deck reskinned in Crypties NFT art. No party, no dice - just the deck, your HP, and whatever crypt turns up next. Every one of the 44 cards is hand-assigned to a specific Crypties NFT (from the Crypties - Season 2 collection) rather than drawn from a shuffled art pool - the highest-ranking enemy cards use the rarest pieces the owner holds.
 
-Crypt Crawl is two separate pages. `cryptcrawlgame.php` is the public marketing page you land on from the site nav or homepage - a standalone page (no site nav), same treatment as [[games-skull-swap]] and Monstrocity: hero, feature highlights, two counter-scrolling rows showing every Crypties NFT actually used as card art, mechanics/tips/FAQ, and a "Start Delve" button that starts a real delve on `cryptcrawl.php`, ending in a footer (same style as Skull Swap's own) - it's the front door, not a page you need an escape hatch from. `cryptcrawl.php` is the game itself, and unlike the marketing page it's a normal in-platform page with the regular site nav (same as Missions, Dashboard, or any other staking page) - a simple rules prompt if you don't have a delve going, the live board while one's in progress, and a result screen (win/loss, crypts cleared, CARBON earned) once it ends, with a "Delve Again" button. See `skullpaper/MAINTENANCE.md` for why it's a normal nav'd page rather than standalone - that was tried and reverted.
+Crypt Crawl is two separate pages. `cryptcrawlgame.php` is the public marketing page you land on from the site nav or homepage - a standalone page (no site nav), same treatment as [[games-skull-swap]] and Monstrocity: hero, feature highlights, two counter-scrolling rows showing every Crypties NFT actually used as card art, mechanics/tips/FAQ, and a "Start Crawl" button that starts a real crawl on `cryptcrawl.php`, ending in a footer (same style as Skull Swap's own) - it's the front door, not a page you need an escape hatch from. `cryptcrawl.php` is the game itself, and unlike the marketing page it's a normal in-platform page with the regular site nav (same as Missions, Dashboard, or any other staking page) - a simple rules prompt if you don't have a crawl going, the live board while one's in progress, and a result screen (win/loss, crypts cleared, CARBON earned) once it ends, with a "Crawl Again" button. See `skullpaper/MAINTENANCE.md` for why it's a normal nav'd page rather than standalone - that was tried and reverted.
 
 ## The Deck
 
@@ -33,29 +33,29 @@ Wisdom distilled from the game's own Discord community, not just house-written:
 
 ## Last Stand
 
-The **first hit that would take you to 0 HP** in a delve doesn't - it leaves you standing at **1 HP** instead. This happens automatically, once per delve, whether you're fighting bare-handed or with a weapon. It's the one guaranteed save for a genuinely bad stretch (weapon worn out, flee already spent, a run of big enemies back to back) - after that one save, the next lethal hit ends the delve for real.
+The **first hit that would take you to 0 HP** in a crawl doesn't - it leaves you standing at **1 HP** instead. This happens automatically, once per crawl, whether you're fighting bare-handed or with a weapon. It's the one guaranteed save for a genuinely bad stretch (weapon worn out, flee already spent, a run of big enemies back to back) - after that one save, the next lethal hit ends the crawl for real.
 
 ## Winning & Losing
 
-* Clear the entire 44-card deck to **win** the delve.
-* Run out of HP (after Last Stand is spent) and the delve **ends in a loss**.
-* Giving up mid-delve counts as a loss too - there's no separate "abandoned" outcome.
+* Clear the entire 44-card deck to **win** the crawl.
+* Run out of HP (after Last Stand is spent) and the crawl **ends in a loss**.
+* Giving up mid-crawl counts as a loss too - there's no separate "abandoned" outcome.
 
-## CARBON Per Delve
+## CARBON Per Crawl
 
-Every card you resolve - a weapon equipped, a medkit used, an enemy fought, win or lose - earns **10x its own rank** in CARBON, stacking up over the whole delve. A running total is visible right in the HUD as you play, and the moment your delve ends (cleared, died, or abandoned), the total is credited straight to your balance with a matching transaction and shown again on the game_over screen. Logged-in players only - a guest's delve still tracks the same total internally, but neither the HUD nor the result screen shows it, since there's no account to actually pay it into.
+Every card you resolve - a weapon equipped, a medkit used, an enemy fought, win or lose - earns **10x its own rank** in CARBON, stacking up over the whole crawl. A running total is visible right in the HUD as you play, and the moment your crawl ends (cleared, died, or abandoned), the total is credited straight to your balance with a matching transaction and shown again on the game_over screen. Logged-in players only - a guest's crawl still tracks the same total internally, but neither the HUD nor the result screen shows it, since there's no account to actually pay it into.
 
 ## Leaderboard & Rewards
 
-Every completed delve (won or lost - an in-progress one doesn't count yet) feeds the Crypt Crawl leaderboard, ranked by **wins first, then your best single delve's crypt depth, then fewest losses**. See [[platform-leaderboards]].
+Every completed crawl (won or lost - an in-progress one doesn't count yet) feeds the Crypt Crawl leaderboard, ranked by **wins first, then your best single crawl's crypt depth, then fewest losses**. See [[platform-leaderboards]].
 
 * **All-Time** shows your career totals.
 * **Weekly** resets each cycle and pays out - the **1st place** finisher earns **50,000 CARBON (= 500 DIAMOND)**, and the pool divides down the rankings from there (each rank gets roughly its share of the pool, same distribution [[games-gauntlets]] uses for its own weekly pool). Convertible to DIAMOND at 100:1 - see [[staking-crafting]].
 
-Every completed delve also counts toward the platform's **Activity** leaderboards (all-time,
+Every completed crawl also counts toward the platform's **Activity** leaderboards (all-time,
 monthly, and weekly) - see [[platform-leaderboards]].
 
-Every delve you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel: how deep you got, illustrated with the theme art for the crypt you reached, the CARBON you earned that delve, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
+Every crawl you finish while logged in - cleared or not - also posts a quick result to the Crypt Crawl Discord channel: how deep you got, illustrated with the theme art for the crypt you reached, the CARBON you earned that crawl, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
 
 ## Ambience
 
@@ -65,10 +65,10 @@ volume slider (starts at 50%, since the tracks are mixed loud). It's on by
 default; your on/off choice, current track, playback position, and volume
 stick for the rest of your browser session. Actions themselves no longer
 reload the page either - fighting, healing, fleeing, all of it updates in
-place - so the music just keeps playing straight through a delve instead of
+place - so the music just keeps playing straight through a crawl instead of
 restarting.
 
-The music also reacts to how the delve is actually going, automatically:
+The music also reacts to how the crawl is actually going, automatically:
 score a win and Triumph plays; die and it's Death instead. Land in a crypt
 where every enemy still standing would force your Last Stand no matter how
 well you play it, and the music turns Frantic; if Last Stand is already
@@ -92,4 +92,4 @@ Abandon Run confirmation) still shows regardless.
 
 ## Playing as a Guest
 
-Crypt Crawl is playable **logged out** - a guest's delve lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your delves saved to your account and counted toward both leaderboards.
+Crypt Crawl is playable **logged out** - a guest's crawl lives in their browser session only and is gone once that session ends, so it never reaches the leaderboard or earns a reward. Log in to have your crawls saved to your account and counted toward both leaderboards.

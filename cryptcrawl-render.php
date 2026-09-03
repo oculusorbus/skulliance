@@ -49,7 +49,7 @@
 	function cryptcrawlRulesHtml() { ?>
 		<div class="cc-rules-section">
 			<div class="cc-rules-label">🎯 The Goal</div>
-			<p>Clear the entire 44-card deck to win the delve.</p>
+			<p>Clear the entire 44-card deck to win the crawl.</p>
 		</div>
 
 		<div class="cc-rules-section">
@@ -68,7 +68,7 @@
 
 		<div class="cc-rules-section">
 			<div class="cc-rules-label">🛡️ Last Stand</div>
-			<p>The first hit that would take you to 0 HP each delve instead leaves you standing at 1 -- <span class="cc-second-wind">Last Stand</span>, once per delve, automatic.</p>
+			<p>The first hit that would take you to 0 HP each crawl instead leaves you standing at 1 -- <span class="cc-second-wind">Last Stand</span>, once per crawl, automatic.</p>
 		</div>
 
 		<div class="cc-rules-section">
@@ -131,7 +131,7 @@ function cryptcrawlMinimalGameOverHtml($run, $user_id) {
 			<?php endif; ?>
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Delve Again</button>
+			<button type="submit" class="cc-btn">💀 Crawl Again</button>
 		</form>
 		<!-- Shown on a WIN as well as a loss (fixed 2026-09-01): this was
 		     wrapped in if ($fell), so clearing the deck -- the exact moment a
@@ -282,7 +282,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 	<?php if ($state === 'no_run'): ?>
 		<div class="cc-rules"><?php cryptcrawlRulesHtml(); ?></div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Start Delve</button>
+			<button type="submit" class="cc-btn">💀 Start Crawl</button>
 		</form>
 
 	<?php elseif ($state === 'game_over'):
@@ -308,7 +308,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			<?php endif; ?>
 		</div>
 		<form method="post"><input type="hidden" name="action" value="start_run">
-			<button type="submit" class="cc-btn">💀 Delve Again</button>
+			<button type="submit" class="cc-btn">💀 Crawl Again</button>
 		</form>
 		<!-- Shown on a WIN as well as a loss (fixed 2026-09-01): this was
 		     wrapped in if ($fell), so clearing the deck -- the exact moment a
@@ -332,13 +332,13 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 				<div style="font-size:0.72rem;opacity:0.6;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 					<span>HP <?php echo $hp; ?> / <?php echo $max_hp; ?></span>
 					<?php if (intval($active_run['second_wind_used'] ?? 0) === 0): ?>
-						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this delve instead leaves you at 1 -- once per delve.">🛡️ Last Stand ready</span>
+						<span class="cc-second-wind" title="The first hit that would drop you to 0 HP this crawl instead leaves you at 1 -- once per crawl.">🛡️ Last Stand ready</span>
 					<?php else: ?>
 						<!-- Previously just vanished with no state to check -- a player
 						     couldn't glance at the HUD mid-run and confirm whether
 						     they'd already spent it (only a flash toast said so, and
 						     it auto-dismisses in 4s). Shown explicitly now instead. -->
-						<span class="cc-second-wind used" title="Already used this delve -- the next lethal hit ends it for real.">🛡️ Last Stand used</span>
+						<span class="cc-second-wind used" title="Already used this crawl -- the next lethal hit ends it for real.">🛡️ Last Stand used</span>
 					<?php endif; ?>
 					<?php if ($user_id > 0): ?>
 						<!-- Running total, updates every card (10x its rank -- see
@@ -352,7 +352,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 						     "earning" counter for something that'll never actually pay
 						     out reads as more misleading mid-game than it does as a
 						     one-time number on the result screen. -->
-						<span class="cc-hud-carbon" title="CARBON earned so far this delve">
+						<span class="cc-hud-carbon" title="CARBON earned so far this crawl">
 							<img src="icons/carbon.png" alt="" onerror="this.style.display='none';">+<?php echo number_format(intval($active_run['carbon_earned'] ?? 0)); ?>
 						</span>
 					<?php endif; ?>

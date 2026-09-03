@@ -34,7 +34,7 @@ records verified constants, and tracks what still needs to be written.
 | games-boss-battles.md *(new)*       | Boss encounters        | ajax/get-bosses.php, db.php:5139-5258 |
 | games-skull-swap.md *(new)*         | Match-3 score chase    | skullswap.php, db.php:5019-5136 |
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
-| games-cryptcrawl.md *(new)*         | Scoundrel-style delve  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
+| games-cryptcrawl.md *(new)*         | Scoundrel-style crawl  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
 | games-drop-ship.md                  | External game          | madballs.net (external) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
@@ -101,8 +101,19 @@ records verified constants, and tracks what still needs to be written.
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
   heal half (floor, min 1) instead of nothing. Last Stand: first hit that would hit 0 HP per
-  delve instead clamps to 1 HP, once per delve, automatic (internal column/var name stays
+  crawl instead clamps to 1 HP, once per crawl, automatic (internal column/var name stays
   second_wind_used - display-only rename, not worth a migration).
+  **"Delve" -> "Crawl" rename** (2026-09-03, same convention as the Jester -> Joker rename
+  above): "Delve"/"Start Delve"/"Delve Again" read as a mismatch against the game's own name,
+  so every PLAYER-VISIBLE instance across cryptcrawl-render.php, cryptcrawl-actions.php,
+  cryptcrawl.php, cryptcrawlgame.php, homepage.php, and games-cryptcrawl.md is now "crawl"/
+  "Start Crawl"/"Crawl Again". Nothing internal changed -- there was no column or session key
+  to preserve this time (unlike jesters_used above), just prose. Left alone on purpose: the
+  `#cc-start-delve-form` DOM id (cryptcrawlgame.php, still referenced by its own onclick
+  handler), and the JSON-LD `alternateName` "Crypt Crawl Dungeon Delve" (SEO-indexed structured
+  data -- not a place to make silent judgment calls). Code comments throughout still say
+  "delve" in places; this pass didn't touch them, matching the Jester/Joker precedent of
+  leaving non-player-visible text alone.
 - Crypt Crawl per-delve CARBON (db.php `cryptcrawlPayoutCarbon`, accrual in `cryptcrawlPlayCard`):
   every card resolved (any type) adds `10 * rank` to `carbon_earned` on the run row, regardless
   of outcome. Paid out via `updateBalance()` + `logCredit()` (project_id 15 = CARBON) in one lump

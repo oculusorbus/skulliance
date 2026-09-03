@@ -78,7 +78,7 @@ function cryptcrawlHandleAction($conn, $user_id, $post) {
 		// Last Stand fired this exact play if it was available going in
 		// and is now spent -- the only place that flag ever changes.
 		if ($second_wind_was_available && $updated && intval($updated['second_wind_used']) === 1) {
-			cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per delve)', 'win', 'laststand');
+			cryptcrawlFlash('LAST STAND! You refuse to fall - surviving at 1 HP. (once per crawl)', 'win', 'laststand');
 			cryptcrawlSfx('laststand');
 		}
 		return $updated;
