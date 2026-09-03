@@ -1043,10 +1043,20 @@ include 'header.php';
 	// would clip every card but the last into a stutter.
 	var SFX_POOL_SIZE = 5;
 	var sfxPool = [], sfxNext = 0;
+	// Effects play at twice the slider's music level, clamped to 1.0. A short
+	// click needs to cut through a sustained bed to read at the same loudness,
+	// and at the default slider position (50) the effect was only using half
+	// the available playback range -- so this is a real doubling that costs no
+	// audio quality, rather than gaining the FILE further. The file already
+	// peaks at -1.9dBFS; another +6dB there would have needed heavy limiting,
+	// which squashes the transient that IS the sound.
+	//
+	// Above slider 50 this is already at digital maximum and can't go louder.
+	var SFX_GAIN = 2;
 	function sfxVolume() {
 		var vol = parseInt(sessionStorage.getItem('cq_audio_volume'), 10);
 		if (!(vol >= 0 && vol <= 100)) vol = 50; // never set -> same default as the music
-		return vol / 100;
+		return Math.min(1, (vol / 100) * SFX_GAIN);
 	}
 	function playCardSfx() {
 		var base = document.getElementById('cq-sfx-card');
