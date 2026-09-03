@@ -291,8 +291,39 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 	<?php if ($flashes): ?>
 	<div class="cq-flash-backdrop" id="cq-flash-backdrop" onclick="this.remove();">
 		<?php foreach ($flashes as $f): ?>
+			<?php
+			// A flash may carry a card IDENTITY (exact kills do) -- resolve its
+			// art here rather than in the action, since this is where the pools
+			// already are. Lookup is by card key, so it still works on the next
+			// render even though the enemy has moved on by then.
+			$f_card = $f['card'] ?? null;
+			$f_card_art = null;
+			if ($f_card) {
+				$f_key = cryptconquestCardArtKey($f_card);
+				$f_card_art = $enemy_art_pool[$f_key] ?? null;
+			}
+			?>
 			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
-				<div class="cq-flash-icon"><?php echo $f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️'); ?></div>
+				<div class="cq-flash-icon"><?php echo $f_card ? '🎯' : ($f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️')); ?></div>
+				<?php if ($f_card): ?>
+				<!-- The recovered card itself, as the little celebration an exact
+				     kill earns. Same two-corner treatment as every other card
+				     face here so it reads as the card you just beat, not a
+				     decorative illustration. -->
+				<div class="cq-flash-card<?php echo $f_card_art ? ' cq-has-art' : ''; ?>">
+					<?php if ($f_card_art): ?>
+						<img class="cq-card-art-img" src="<?php echo htmlspecialchars($f_card_art); ?>" alt="" loading="lazy" onerror="this.remove();">
+					<?php endif; ?>
+					<div class="cq-card-corner tl">
+						<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($f_card['rank']); ?></div>
+						<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$f_card['suit']] ?? ''; ?></div>
+					</div>
+					<div class="cq-card-corner br">
+						<div class="cq-corner-rank"><?php echo cryptconquestRankBadge($f_card['rank']); ?></div>
+						<div class="cq-corner-suit"><?php echo $CRYPTCONQUEST_SUIT_SYMBOL[$f_card['suit']] ?? ''; ?></div>
+					</div>
+				</div>
+				<?php endif; ?>
 				<div class="cq-flash-text"><?php echo htmlspecialchars($f['msg']); ?></div>
 			</div>
 		<?php endforeach; ?>

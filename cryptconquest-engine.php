@@ -250,11 +250,19 @@ function cryptconquestPlay(&$run, $indices) {
 
 	if ($remaining <= 0) {
 		$exact = $remaining === 0;
-		$label = cryptconquestCardLabel(['type' => 'court', 'suit' => $run['current_enemy']['suit'], 'rank' => $run['current_enemy']['rank']]);
+		// Captured BEFORE cryptconquestDefeatEnemy() -- that call clears
+		// current_enemy (and on an exact kill pushes this very card onto the
+		// tavern deck), so afterwards there's nothing left to describe.
+		$defeated_card = ['type' => 'court', 'suit' => $run['current_enemy']['suit'], 'rank' => intval($run['current_enemy']['rank'])];
+		$label = cryptconquestCardLabel($defeated_card);
 		$log[] = $exact ? "Exact kill! $label recovered face-down atop the deck." : "$label defeated.";
 		cryptconquestDefeatEnemy($run, $exact);
 		$run['log'] = $log;
-		return ['ok' => true, 'defeated' => true, 'won' => $run['status'] === 'won'];
+		// 'exact'/'card'/'card_label' are for the UI: the caller announces
+		// whether the kill was exact and, when it was, shows the recovered
+		// card. The rules effect itself already happened above.
+		return ['ok' => true, 'defeated' => true, 'won' => $run['status'] === 'won',
+		        'exact' => $exact, 'card' => $defeated_card, 'card_label' => $label];
 	}
 
 	$attack = max(0, $enemyStats['attack'] - $run['current_enemy']['shield']);

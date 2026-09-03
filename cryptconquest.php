@@ -140,6 +140,25 @@ include 'header.php';
 }
 .cq-flash-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
 .cq-flash-text { font-size: 1rem; font-weight: 700; line-height: 1.4; }
+/* The recovered card shown inside an exact-kill flash. Same face treatment as
+   any other card here (black ground, two-corner index, art edge-to-edge) so
+   it reads as the card you just beat rather than an illustration. Sized to
+   sit comfortably inside the modal without pushing the message off a phone
+   screen, and it lands with a small pop -- this is the one moment in the game
+   that rewards precision, so it's allowed to feel like something. */
+@keyframes cqFlashCardIn {
+	from { opacity: 0; transform: scale(.72) rotate(-6deg); }
+	60%  { opacity: 1; transform: scale(1.06) rotate(2deg); }
+	to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.cq-flash-card {
+	position: relative; width: 108px; aspect-ratio: 5 / 7; margin: 2px auto 12px;
+	border-radius: 10px; background: #000; overflow: hidden; box-sizing: border-box;
+	border: 2px solid rgba(255,204,77,.85);
+	box-shadow: 0 0 22px rgba(255,204,77,.35), 0 10px 26px rgba(0,0,0,.55);
+	animation: cqFlashCardIn .45s cubic-bezier(.18,.89,.32,1.28) both;
+}
+@media (prefers-reduced-motion: reduce) { .cq-flash-card { animation: none; } }
 .cq-flash-modal.win { border: 1px solid rgba(0,200,160,.5); }
 .cq-flash-modal.win .cq-flash-text { color: #00c8a0; }
 .cq-flash-modal.error { border: 1px solid rgba(255,68,68,.5); }

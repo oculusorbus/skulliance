@@ -7,8 +7,14 @@
 // there's one copy of the actual game-action logic instead of two that
 // could quietly drift apart.
 
-function cryptconquestFlash($msg, $type = 'info') {
-	$_SESSION['cryptconquest_flash'][] = ['msg' => $msg, 'type' => $type];
+// $card: optional ['type','suit','rank'] to render alongside the message --
+// used to show the actual card you just recovered on an exact kill. Only the
+// card's IDENTITY is stored; cryptconquestRenderGameArea() resolves its art
+// from the pools it already has, so no image URL is carried through session.
+function cryptconquestFlash($msg, $type = 'info', $card = null) {
+	$entry = ['msg' => $msg, 'type' => $type];
+	if ($card) $entry['card'] = $card;
+	$_SESSION['cryptconquest_flash'][] = $entry;
 }
 
 // Performs one Crypt Conquest action (start_run/play/yield/suffer/
@@ -49,7 +55,18 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 			} elseif (!$outcome['result']['ok']) {
 				cryptconquestFlash($outcome['result']['error'], 'error');
 			} elseif (!empty($outcome['result']['defeated'])) {
-				cryptconquestFlash(!empty($outcome['result']['won']) ? '👑 The last King falls -- the Necropolis is yours!' : 'Enemy defeated!', 'win');
+				$r = $outcome['result'];
+				$card_label = $r['card_label'] ?? 'The court card';
+				if (!empty($r['won'])) {
+					cryptconquestFlash('👑 The last King falls -- the Necropolis is yours!', 'win');
+				} elseif (!empty($r['exact'])) {
+					// Exact kill: the card is recovered face-down on top of the deck,
+					// so show it. This is the game's one precision reward and it used
+					// to be indistinguishable from any other kill.
+					cryptconquestFlash('EXACT KILL! ' . $card_label . ' joins your deck, face-down on top -- you will draw it back.', 'win', $r['card'] ?? null);
+				} else {
+					cryptconquestFlash($card_label . ' defeated. Not an exact kill, so it goes to the discard pile.', 'win');
+				}
 			}
 		}
 
