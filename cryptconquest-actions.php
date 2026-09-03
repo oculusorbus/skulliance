@@ -11,10 +11,15 @@
 // used to show the actual card you just recovered on an exact kill. Only the
 // card's IDENTITY is stored; cryptconquestRenderGameArea() resolves its art
 // from the pools it already has, so no image URL is carried through session.
-function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null) {
+// $sfx names a sound the client should play when this flash renders (see the
+// data-sfx attribute in cryptconquest-render.php). Needed for outcomes the
+// SERVER decides rather than the click -- Last Stand fires on its own, so
+// there's no button press the client could hang a sound off.
+function cryptconquestFlash($msg, $type = 'info', $card = null, $cards = null, $sfx = null) {
 	$entry = ['msg' => $msg, 'type' => $type];
 	if ($card) $entry['card'] = $card;
 	if ($cards) $entry['cards'] = $cards;   // several cards at once, e.g. a perfect guard
+	if ($sfx) $entry['sfx'] = $sfx;
 	$_SESSION['cryptconquest_flash'][] = $entry;
 }
 
@@ -129,7 +134,7 @@ function cryptconquestHandleAction($conn, $user_id, $post) {
 					. 'but instead of falling, the blow is forgiven and you rally ' . count($ls_cards)
 					. ' fresh card' . (count($ls_cards) === 1 ? '' : 's') . ' from the crypt to fight on. '
 					. 'This can only happen once per run.',
-					'win', null, $ls_cards
+					'win', null, $ls_cards, 'laststand'
 				);
 			} elseif (!empty($outcome['result']['died'])) {
 				cryptconquestFlash('The crypt claims you.', 'error');

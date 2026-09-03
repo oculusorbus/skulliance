@@ -341,7 +341,12 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			// printed "Undefined array key" straight into the modal.
 			$f_cards = $f['cards'] ?? (isset($f['card']) ? [$f['card']] : []);
 			?>
-			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>">
+			<div class="cq-flash-modal <?php echo htmlspecialchars($f['type']); ?>"<?php
+				// Sound for outcomes the SERVER decides (Last Stand), which have
+				// no click for the client to hang a sound off. Read once after
+				// each swap -- see the SFX block in cryptconquest.php.
+				if (!empty($f['sfx'])) echo ' data-sfx="' . htmlspecialchars($f['sfx']) . '"';
+			?>>
 				<div class="cq-flash-icon"><?php echo $f_cards ? '🎯' : ($f['type'] === 'win' ? '⚔️' : ($f['type'] === 'error' ? '💀' : 'ℹ️')); ?></div>
 				<?php if ($f_cards): ?>
 				<div class="cq-flash-cards">

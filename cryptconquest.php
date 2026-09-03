@@ -558,6 +558,11 @@ include 'header.php';
      this fires on a click and any load delay would land it after the card
      has already visibly moved -- it's 8KB, so eager-loading it is free. -->
 <audio id="cq-sfx-card" preload="auto" src="audio/sounds/card.mp3"></audio>
+<!-- Stingers. preload="metadata", not "auto" like the click above: these are
+     ~150KB each and fire at most once or twice a run, so eagerly pulling both
+     on every page load would cost far more than it saves. -->
+<audio id="cq-sfx-jester" preload="metadata" src="audio/sounds/jester.mp3"></audio>
+<audio id="cq-sfx-laststand" preload="metadata" src="audio/sounds/laststand.mp3"></audio>
 </div>
 <script>
 (function() {
@@ -1083,6 +1088,35 @@ include 'header.php';
 			if (p && p.catch) p.catch(function() {});
 		} catch (e) {}
 	}
+
+	// Long one-shot stingers (Jester ~9.5s, Last Stand ~9.4s) as opposed to the
+	// card click. No pool: only one should ever be sounding, so starting either
+	// cuts off whichever is already running -- a Jester flipped during a Last
+	// Stand turn should replace that cue, not talk over it.
+	//
+	// Played at HALF the card click's level. These are already mastered near
+	// 0dBFS (jester peaks -0.3dB, laststand -1.0dB, against the click's -1.9dB
+	// AFTER its +6dB pass), so applying the same 2x gain would have made a
+	// 9-second cue overpower both the music and the click it follows.
+	var STINGER_GAIN = 0.5;
+	var currentStinger = null;
+	function playStinger(name) {
+		var el = document.getElementById('cq-sfx-' + name);
+		if (!el) return;
+		var vol = sfxVolume() * STINGER_GAIN;
+		if (vol <= 0) return;
+		try {
+			if (currentStinger && currentStinger !== el) {
+				currentStinger.pause();
+				currentStinger.currentTime = 0;
+			}
+			currentStinger = el;
+			el.volume = Math.min(1, vol);
+			el.currentTime = 0;
+			var p = el.play();
+			if (p && p.catch) p.catch(function() {});
+		} catch (e) {}
+	}
 	// One click per card drawn by Diamonds, stepped to match the .13s
 	// --draw-i stagger in the CSS so the sound lands with each card's
 	// animation rather than as one lump. Capped so a big Diamond into an
@@ -1092,6 +1126,16 @@ include 'header.php';
 		for (var i = 0; i < n; i++) {
 			setTimeout(playCardSfx, i * 130);
 		}
+	}
+	// Sounds the SERVER asked for, via data-sfx on a flash modal. Last Stand
+	// fires on its own during a Cover Damage turn -- there's no button press
+	// to hang it off, and the client can't know it happened until the response
+	// comes back. Sniffing the modal's TEXT would have worked too and would
+	// break the first time the wording changes.
+	function playFlashSfx(container) {
+		if (!container) return;
+		var el = container.querySelector('[data-sfx]');
+		if (el) playStinger(el.getAttribute('data-sfx'));
 	}
 
 	function lockGameAreaBriefly() {
@@ -1141,14 +1185,21 @@ include 'header.php';
 		// Every action that moves cards. Deliberately NOT 'abandon' (a
 		// destructive confirm, not a card move) or 'start_run'.
 		var sfxAction = formData.get('action');
-		var movesCards = (sfxAction === 'play' || sfxAction === 'suffer' ||
-		                  sfxAction === 'yield' || sfxAction === 'flip_jester');
-		// 'play' and 'suffer' both need a selection to do anything -- an empty
-		// one is rejected server-side, and a card sound in front of that error
-		// would be a lie. Yield and Jester take no selection at all.
-		var needsSelection = (sfxAction === 'play' || sfxAction === 'suffer');
-		if (movesCards && (!needsSelection || formData.getAll('card_indices[]').length)) {
-			playCardSfx();
+		if (sfxAction === 'flip_jester') {
+			// Its own stinger instead of the card click -- flipping a Jester
+			// discards and redeals the whole hand, so a single click would
+			// undersell it.
+			playStinger('jester');
+		} else {
+			var movesCards = (sfxAction === 'play' || sfxAction === 'suffer' ||
+			                  sfxAction === 'yield');
+			// 'play' and 'suffer' both need a selection to do anything -- an
+			// empty one is rejected server-side, and a card sound in front of
+			// that error would be a lie. Yield takes no selection at all.
+			var needsSelection = (sfxAction === 'play' || sfxAction === 'suffer');
+			if (movesCards && (!needsSelection || formData.getAll('card_indices[]').length)) {
+				playCardSfx();
+			}
 		}
 
 		fetch('ajax/cryptconquest-action.php', { method: 'POST', body: formData })
@@ -1163,6 +1214,7 @@ include 'header.php';
 					gameArea.style.display = 'none';
 					resultOverlay.style.display = '';
 					initGameArea();
+					playFlashSfx(resultOverlay); // no server sound ends a run today, but keep the paths symmetric
 					busy = false;
 					return;
 				}
@@ -1177,6 +1229,7 @@ include 'header.php';
 				// client learns the real number.
 				var drawn = gameArea.querySelectorAll('.cq-card-drawn').length;
 				if (drawn) playDrawSfx(drawn);
+				playFlashSfx(gameArea);
 			})
 			.catch(function() {
 				// Genuine network failure -- fall back to a real form
