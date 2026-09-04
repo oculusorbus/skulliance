@@ -74,7 +74,7 @@
 		  <div class="nav-dropdown">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">NFTs</span>
 		    <div class="nav-dropdown-menu">
-		      <a href="soldiers.php">Soldiers</a>
+		      <a href="soldiers.php"><?php echo evaluateText("Soldiers");?></a>
 		    </div>
 		  </div>
 
