@@ -55,7 +55,7 @@ include('credentials/webhooks_credentials.php');
 					/*
 		            "footer" => [
 		                "text" => "Drop Ship",
-		                "icon_url" => "https://skulliance.io/staking/dropship/drop-ship/images/vip.gif"
+		                "icon_url" => "https://skulliance.io/staking/dropship/images/vip.gif"
 		            ],*/
 
 		            // Embed image

@@ -29,7 +29,9 @@ function automate($conn, $project_id){
 	$list = ob_get_contents(); // Store buffer in variable
 	ob_end_clean(); // End buffering and clean up
 	$description = $list;
-	$imageurl = "https://skulliance.io/staking/dropship/".$prefix."/images/dropship.jpg";
+	// Flat, not per-theme -- confirmed live that assets sit directly under
+	// dropship/images/, not dropship/<prefix>/images/.
+	$imageurl = "https://skulliance.io/staking/dropship/images/dropship.jpg";
 	discordmsg($title, evaluateText($description), $imageurl, $_SESSION['userData']['dropship_project_id']);
 	deactivateGame($conn);
 
@@ -37,7 +39,9 @@ function automate($conn, $project_id){
 	createGame($conn, $prizes, 3);
 	$title = "New Game ".$prizes;
 	$description = "A new game of ".getProjectName($conn)." has been created.";
-	$imageurl = "https://skulliance.io/staking/dropship/".$prefix."/images/dropship.jpg";
+	// Flat, not per-theme -- confirmed live that assets sit directly under
+	// dropship/images/, not dropship/<prefix>/images/.
+	$imageurl = "https://skulliance.io/staking/dropship/images/dropship.jpg";
 	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 }
 ?>
