@@ -199,9 +199,12 @@ if($_SESSION['userData']['dropship_project_id'] == 4){
 						foreach($nfts AS $nft){
 							$nft_data = $nft;
 							$ipfs = substr($nft_data->image, 7, strlen($nft_data->image));
-							if($_SESSION['userData']['dropship_project_id'] == 1){
-								$ranks[$nft_data->Rank] = true;
-							}
+							// Was: $ranks[$nft_data->Rank] = true -- the on-chain
+							// Rank attribute (e.g. "Common"/"Legendary") never
+							// matched any of storeRank()'s tier names, so this
+							// never actually set a rank. Tier is by NFT COUNT
+							// now, assigned below alongside project 2/4's own
+							// count-based tiers, same pattern.
 							//$armor[$nft_data->Armor] = true;
 							//$gear[$nft_data->Gear] = true;
 							// Account for NFT with NaN value for asset name
@@ -249,7 +252,36 @@ if($_SESSION['userData']['dropship_project_id'] == 4){
 					} // End foreach
 				}// End if
 				} // End foreach
-				if($_SESSION['userData']['dropship_project_id'] == 2){
+				if($_SESSION['userData']['dropship_project_id'] == 1){
+					// Drop Ship's own military ladder, from storeRank()'s
+					// existing (until now unpopulated) tier names -- same
+					// count-threshold shape as project 2's Mayor/Don/Capo
+					// ladder, just with 10 rungs instead of 6 since that's
+					// how many names storeRank() already defines. Thresholds
+					// are a first pass, not measured against real holding
+					// distribution -- easy to retune, they're just numbers.
+					if($counter >= 55){
+						$ranks["Command Sergeant Major"] = true;
+					}else if($counter >= 40){
+						$ranks["Sergeant Major"] = true;
+					}else if($counter >= 30){
+						$ranks["First Sergeant"] = true;
+					}else if($counter >= 23){
+						$ranks["Master Sergeant"] = true;
+					}else if($counter >= 17){
+						$ranks["Sergeant First Class"] = true;
+					}else if($counter >= 12){
+						$ranks["Staff Sergeant"] = true;
+					}else if($counter >= 8){
+						$ranks["Sergeant"] = true;
+					}else if($counter >= 5){
+						$ranks["Corporal"] = true;
+					}else if($counter >= 3){
+						$ranks["Specialist"] = true;
+					}else if($counter >= 1){
+						$ranks["Private"] = true;
+					}
+				}else if($_SESSION['userData']['dropship_project_id'] == 2){
 					if($counter >= 40){
 						$ranks["Mayor"] = true;
 					}else if($counter >= 30){
@@ -619,13 +651,16 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 					</li>
 					<?php } ?>
 					<?php
-					// Hidden 2026-09-05, per the user: this was reading a role
-					// from Ohh Meed's Discord that isn't being handled/synced
-					// anymore, so the row was showing broken/stale data. Left
-					// in place rather than deleted -- flip `false &&` back off
-					// (just delete that bit) to unhide it if role handling ever
-					// comes back.
-					if(false && isset($_SESSION["userData"]["rank"]) && $_SESSION["userData"]["dropship_project_id"] != 4){?>
+					// Scoped to Drop Ship itself (project 1) only, not the
+					// other reskins -- Dread City/Filthy Mermaid (2/3) are
+					// still a work in progress (not in the theme dropdown
+					// yet), and Oculus Lounge (4) doesn't use this ladder at
+					// all. Was briefly hard-disabled (`false &&`) while this
+					// looked like a dead Discord-role dependency; turned out
+					// to be Drop Ship's own military rank ladder that just
+					// needed count-based tiers wired up (see the $counter
+					// thresholds above) -- real data now, not hidden.
+					if(isset($_SESSION["userData"]["rank"]) && $_SESSION["userData"]["rank"] !== "" && $_SESSION["userData"]["dropship_project_id"] == 1){?>
 						<li class="role"><img class="icon" src="icons/rank.png"/>
 							<?php echo "<strong>".$_SESSION["userData"]["rank"]."</strong>";?>
 						</li>
