@@ -671,6 +671,78 @@ include 'header.php';
 </div>
 <script>
 (function() {
+	// ── WEB AUDIO VOLUME (iOS fix) ───────────────────────────────────────
+	// Ported from cryptcrawl.php's own identical block (see that file's
+	// fuller comment) rather than reinvented -- both games' audio systems
+	// stay one mental model, same reasoning as the SFX architecture
+	// itself. Every volume control on this page -- SFX_LEVEL scaling, the
+	// music crossfade ramp, the slider, mute -- ultimately works by
+	// setting a 0-1 value, which normally means el.volume on an <audio>
+	// element. iOS Safari (and any WKWebView, including this PWA
+	// installed to a home screen) silently ignores
+	// HTMLMediaElement.volume outright -- always plays at 1.0 regardless
+	// what it's set to, no error, no event, only the hardware buttons/
+	// silent switch affect it, by Apple's own deliberate design. That's
+	// exactly what made SFX with a deliberately low SFX_LEVEL (kill,
+	// exactmatch, jester) blast out at full volume on iPhone instead of
+	// sitting under the music, per the user, while louder ones
+	// (laststand, victory) sounded about right -- there wasn't much
+	// attenuation to lose.
+	//
+	// Fix: route every <audio> element through a Web Audio GainNode
+	// instead of touching its own .volume. iOS DOES respect
+	// GainNode.gain, unlike element.volume -- the standard workaround
+	// (same one Howler.js and other audio libraries use for this exact
+	// problem). setElementVolume()/getElementVolume() below are drop-in
+	// replacements for every `el.volume = x` / `el.volume` site
+	// elsewhere in this file, INCLUDING the cloned sfxPool elements
+	// (playCardSfx()) -- each clone is its own distinct element, wrapped
+	// lazily the first time it's actually used, same as any other.
+	var audioCtx = null;
+	var gainNodes = (typeof WeakMap !== 'undefined') ? new WeakMap() : null;
+	function getAudioCtx() {
+		if (audioCtx) return audioCtx;
+		var AC = window.AudioContext || window.webkitAudioContext;
+		if (!AC) return null;
+		try { audioCtx = new AC(); } catch (e) { audioCtx = null; }
+		return audioCtx;
+	}
+	// AudioContext starts (or drops back to) 'suspended' until a trusted
+	// user gesture resumes it. Cheap to call redundantly (a no-op once
+	// already running), so this is called defensively at the top of
+	// every function that actually plays a sound, not just once -- e.g.
+	// a player with music OFF but SFX ON never fires the music player's
+	// own first-gesture unlock listener.
+	function unlockAudioCtx() {
+		var ctx = getAudioCtx();
+		if (ctx && ctx.state === 'suspended') ctx.resume().catch(function() {});
+	}
+	function getGain(el) {
+		if (!gainNodes) return null;
+		if (gainNodes.has(el)) return gainNodes.get(el);
+		var ctx = getAudioCtx();
+		if (!ctx) return null;
+		try {
+			var source = ctx.createMediaElementSource(el);
+			var gain = ctx.createGain();
+			source.connect(gain);
+			gain.connect(ctx.destination);
+			gainNodes.set(el, gain);
+			return gain;
+		} catch (e) {
+			return null; // leaves plain el.volume as this element's fallback path
+		}
+	}
+	function setElementVolume(el, vol) {
+		var gain = getGain(el);
+		if (gain) { gain.gain.value = vol; el.volume = 1; }
+		else { el.volume = vol; }
+	}
+	function getElementVolume(el) {
+		var gain = gainNodes && gainNodes.get(el);
+		return gain ? gain.gain.value : el.volume;
+	}
+
 	var gameArea = document.getElementById('cq-game-area');
 	var resultOverlay = document.getElementById('cq-result-overlay');
 
@@ -834,8 +906,8 @@ include 'header.php';
 		var enabled = getEnabled();
 		var targetVolume = getVolume() / 100;
 
-		players[0].volume = targetVolume;
-		players[1].volume = 0;
+		setElementVolume(players[0], targetVolume);
+		setElementVolume(players[1], 0);
 		if (volumeEl) volumeEl.value = getVolume();
 		// Reflects the CURRENT volume, not how muting happened -- a slider
 		// dragged to 0 by hand should look exactly as muted as the button
@@ -930,7 +1002,7 @@ include 'header.php';
 			nearEndTriggered = false;
 			var a = active();
 			a.loop = false;
-			a.volume = targetVolume;
+			setElementVolume(a, targetVolume);
 			trackIndex = index;
 			setTrackIndex(index);
 			setTrackName(TRACKS[index].name);
@@ -944,10 +1016,11 @@ include 'header.php';
 			}
 			a.load();
 			inactive().pause();
-			inactive().volume = 0;
+			setElementVolume(inactive(), 0);
 		}
 
 		function tryPlay() {
+			unlockAudioCtx();
 			var p = active().play();
 			if (p && p.catch) {
 				p.catch(function() { updateToggleIcon(); });
@@ -983,7 +1056,7 @@ include 'header.php';
 			var outgoing = active();
 			var incoming = inactive();
 			incoming.loop = !!opts.loop;
-			incoming.volume = 0;
+			setElementVolume(incoming, 0);
 			if (opts.name) setTrackName(opts.name);
 			incoming.src = src;
 			if (opts.resumeAt != null) {
@@ -996,21 +1069,22 @@ include 'header.php';
 			incoming.load();
 			activeIdx = 1 - activeIdx;
 
+			unlockAudioCtx();
 			var p = incoming.play();
 			if (p && p.catch) p.catch(function() { updateToggleIcon(); });
 
-			var startOutVol = outgoing.volume;
+			var startOutVol = getElementVolume(outgoing);
 			var startTs = null;
 			function step(ts) {
 				if (startTs === null) startTs = ts;
 				var t = Math.min(1, (ts - startTs) / FADE_MS);
-				incoming.volume = targetVolume * t;
-				outgoing.volume = startOutVol * (1 - t);
+				setElementVolume(incoming, targetVolume * t);
+				setElementVolume(outgoing, startOutVol * (1 - t));
 				if (t < 1) {
 					fadeRAF = requestAnimationFrame(step);
 				} else {
 					outgoing.pause();
-					outgoing.volume = targetVolume;
+					setElementVolume(outgoing, targetVolume);
 					fadeRAF = null;
 				}
 			}
@@ -1049,6 +1123,7 @@ include 'header.php';
 			var playerEl = document.getElementById('cq-player');
 			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
 			var unlockAudio = function(e) {
+				unlockAudioCtx();
 				unlockEvents.forEach(function(evt) { window.removeEventListener(evt, unlockAudio, true); });
 				if (playerEl && e && e.target && playerEl.contains(e.target)) return;
 				if (active().paused && getEnabled()) tryPlay();
@@ -1152,15 +1227,17 @@ include 'header.php';
 		});
 		if (volumeEl) {
 			volumeEl.addEventListener('input', function() {
+				unlockAudioCtx();
 				var v = parseInt(volumeEl.value, 10) || 0;
 				targetVolume = v / 100;
-				if (!fadeRAF) active().volume = targetVolume;
+				if (!fadeRAF) setElementVolume(active(), targetVolume);
 				setVolume(v);
 				updateMuteIcon();
 			});
 		}
 		if (muteBtn) {
 			muteBtn.addEventListener('click', function() {
+				unlockAudioCtx();
 				var v;
 				if (getVolume() === 0) {
 					// Unmute -- restore whatever it was before, defaulting to
@@ -1175,7 +1252,7 @@ include 'header.php';
 				setVolume(v);
 				if (volumeEl) volumeEl.value = v;
 				targetVolume = v / 100;
-				if (!fadeRAF) active().volume = targetVolume;
+				if (!fadeRAF) setElementVolume(active(), targetVolume);
 				updateMuteIcon();
 			});
 		}
@@ -1238,6 +1315,7 @@ include 'header.php';
 		return sfxVolume() * (lvl === undefined ? 1 : lvl);
 	}
 	function playCardSfx() {
+		unlockAudioCtx();
 		var base = document.getElementById('cq-sfx-card');
 		if (!base) return;
 		var vol = sfxVolumeFor('card');
@@ -1254,7 +1332,7 @@ include 'header.php';
 			}
 			var el = sfxPool[sfxNext];
 			sfxNext = (sfxNext + 1) % sfxPool.length;
-			el.volume = vol;
+			setElementVolume(el, vol);
 			el.currentTime = 0;
 			// Chrome rejects this promise if the tab has no user gesture yet;
 			// it's a sound effect, so a silent failure is the right outcome.
@@ -1277,6 +1355,7 @@ include 'header.php';
 	// despite very different source loudness (see the retune note above).
 	var currentStinger = null;
 	function playStinger(name) {
+		unlockAudioCtx();
 		var el = document.getElementById('cq-sfx-' + name);
 		if (!el) return;
 		var vol = sfxVolumeFor(name);
@@ -1287,7 +1366,7 @@ include 'header.php';
 				currentStinger.currentTime = 0;
 			}
 			currentStinger = el;
-			el.volume = Math.min(1, vol);
+			setElementVolume(el, Math.min(1, vol));
 			el.currentTime = 0;
 			var p = el.play();
 			if (p && p.catch) p.catch(function() {});
@@ -1331,12 +1410,13 @@ include 'header.php';
 	var STINGERS = { jester: 1, laststand: 1, death: 1, victory: 1 };
 	function playNamedSfx(name) {
 		if (STINGERS[name]) { playStinger(name); return; }
+		unlockAudioCtx();
 		var el = document.getElementById('cq-sfx-' + name);
 		if (!el) return;
 		var vol = sfxVolumeFor(name);
 		if (vol === 0) return;
 		try {
-			el.volume = Math.min(1, vol);
+			setElementVolume(el, Math.min(1, vol));
 			el.currentTime = 0;
 			var p = el.play();
 			if (p && p.catch) p.catch(function() {});

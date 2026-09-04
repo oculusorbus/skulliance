@@ -402,8 +402,8 @@ records verified constants, and tracks what still needs to be written.
   slider mid-fade is reflected immediately) before pausing and resetting the old `outgoing`. The
   first `step()` call **must** go through `requestAnimationFrame` (never invoked directly) - a
   direct call passes no timestamp, making `startTs` (and therefore every volume in that frame)
-  `NaN`, which `.volume` rejects outright (`IndexSizeError`); caught via a synthetic-timestamp
-  Node harness before shipping, not by manual testing. **Deliberately used only for transitions
+  `NaN`; caught via a synthetic-timestamp Node harness before shipping, not by manual testing.
+  **Deliberately used only for transitions
   the game forces on its own** (a mood change via `syncMood()`, a forced restart, the normal
   loop's own advance) - manual prev/next still goes through the older hard-cut `loadTrack()`
   unchanged, per the user: a deliberate skip should feel instant, not fade into place. The normal
@@ -415,6 +415,37 @@ records verified constants, and tracks what still needs to be written.
   (`audio.loop = true`). If audio is currently paused/off, `crossfadeTo()` skips the whole two-
   player dance and just silently repoints `active()` at the new track (nothing audible to fade),
   so turning audio back on later resumes the right thing instead of something stale.
+- Crypt Crawl/Crypt Conquest Web Audio volume routing (`setElementVolume()`/`getElementVolume()`/
+  `unlockAudioCtx()`, top of each file's own outer `(function(){...})()`, added 2026-09-03 -
+  "the PWA is unplayable unless the sound is off... some of the weapons [are] twice as loud as the
+  music," per the user): iOS Safari/WKWebView (so any home-screen-installed PWA too) silently
+  ignores `HTMLMediaElement.volume` outright - always plays at 1.0 no matter what it's set to, no
+  error, only the hardware buttons/silent switch actually affect it, by Apple's own deliberate
+  design. Every volume control on both game pages (SFX_LEVEL scaling, the music crossfade ramp,
+  the slider, mute) used to work by setting `el.volume` directly, so on iOS every sound with a
+  deliberately low SFX_LEVEL (`kill`, `machinegun`, `artillery`, `exactmatch`, etc.) played at full
+  blast instead of sitting under the music, while louder ones (`fist`, `laststand`) sounded about
+  right since there wasn't much attenuation lost. Fixed by routing every `<audio>` element (both
+  music players, every SFX element, including Conquest's cloned `sfxPool` elements - each clone is
+  its own distinct element, wrapped lazily the first time it's actually used) through a Web Audio
+  `GainNode` instead - iOS DOES respect `GainNode.gain`, unlike element volume (the standard
+  workaround, same one Howler.js uses). `setElementVolume(el, vol)`/`getElementVolume(el)` are
+  drop-in replacements for every `el.volume = x` / `el.volume` site in both files; once an element
+  is wrapped (lazily, memoized in a `WeakMap` keyed by the element - `createMediaElementSource()`
+  must only ever be called once per element) its own `.volume` is pinned to 1 permanently and the
+  `GainNode` becomes the sole source of truth for it, including across the crossfade's own
+  `.src`/`.load()` swaps (same graph, new audio through it, no re-wrapping needed). Falls back to
+  plain `el.volume` if Web Audio isn't available at all, or a specific element fails to wrap
+  (defensive - shouldn't actually happen, everything here is same-origin). `AudioContext` starts
+  suspended until a trusted user gesture resumes it (same restriction unmuted autoplay already
+  works around elsewhere in both files) - `unlockAudioCtx()` is called defensively at the top of
+  every function that actually plays a sound (both `tryPlay()`s, every `playNamedSfx()`/
+  `playCardSfx()`/`playStinger()`, the volume slider/mute handlers, and each file's own
+  first-gesture `unlockAudio` listener), not just once, since a player with music off but SFX on
+  never reaches the music player's own unlock path. Verified with a standalone Node harness
+  (mocked `AudioContext`) before shipping, not just `php -l`/`node --check` - confirms element
+  wrapping is idempotent (one `MediaElementSourceNode` per element, ever) and the no-Web-Audio
+  fallback path actually falls back.
 - Crypt Crawl theme-art Ken Burns drift (`#cc-theme-bg`, `.cc-theme-bg::before`, `--kb-*` custom
   properties, `#cc-audio-zoom-toggle`, re-added 2026-08-29 now that actions are AJAX, **then
   restructured the same day** - see below): background image lives on a `::before` pseudo (driven

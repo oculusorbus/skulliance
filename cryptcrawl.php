@@ -630,6 +630,85 @@ try {
 </div>
 <script>
 (function() {
+	// ── WEB AUDIO VOLUME (iOS fix) ───────────────────────────────────────
+	// Every volume control on this page -- SFX_LEVEL scaling, the music
+	// crossfade ramp, the slider, mute -- ultimately works by setting a
+	// 0-1 value, which normally means el.volume on an <audio> element.
+	// iOS Safari (and any WKWebView, including this PWA installed to a
+	// home screen) silently ignores HTMLMediaElement.volume outright --
+	// always plays at 1.0 regardless what it's set to, no error, no
+	// event, only the hardware buttons/silent switch affect it, by
+	// Apple's own deliberate design. That's exactly what made SFX with a
+	// deliberately low SFX_LEVEL (kill, machinegun, artillery, etc. --
+	// see below) blast out at full volume on iPhone instead of sitting
+	// under the music, per the user, while louder ones (fist, laststand)
+	// sounded about right -- there wasn't much attenuation to lose.
+	//
+	// Fix: route every <audio> element through a Web Audio GainNode
+	// instead of touching its own .volume. iOS DOES respect
+	// GainNode.gain, unlike element.volume -- the standard workaround
+	// (same one Howler.js and other audio libraries use for this exact
+	// problem). setElementVolume()/getElementVolume() below are drop-in
+	// replacements for every `el.volume = x` / `el.volume` site
+	// elsewhere in this file; call sites don't need to know or care
+	// whether Web Audio actually ended up available. Once an element is
+	// wrapped, its own .volume is pinned to 1 permanently and the
+	// GainNode becomes the sole source of truth for that element from
+	// then on -- swapping .src or calling .load() (the crossfade/track
+	// change code does both constantly) doesn't disturb the wrapping,
+	// same graph, new audio through it.
+	//
+	// Falls back to plain el.volume when Web Audio isn't available at
+	// all (very old browsers) or a specific element can't be wrapped for
+	// some reason (defensive -- everything here is a same-origin file,
+	// so createMediaElementSource shouldn't actually throw, but this
+	// isn't assumed safe).
+	var audioCtx = null;
+	var gainNodes = (typeof WeakMap !== 'undefined') ? new WeakMap() : null;
+	function getAudioCtx() {
+		if (audioCtx) return audioCtx;
+		var AC = window.AudioContext || window.webkitAudioContext;
+		if (!AC) return null;
+		try { audioCtx = new AC(); } catch (e) { audioCtx = null; }
+		return audioCtx;
+	}
+	// AudioContext starts (or drops back to) 'suspended' until a trusted
+	// user gesture resumes it -- the same restriction unmuted autoplay
+	// already has to work around elsewhere in this file. Cheap to call
+	// redundantly (a no-op once already running), so this is called
+	// defensively at the top of every function that actually plays a
+	// sound, not just once -- e.g. a player with music OFF but SFX ON
+	// never fires the music player's own first-gesture unlock listener.
+	function unlockAudioCtx() {
+		var ctx = getAudioCtx();
+		if (ctx && ctx.state === 'suspended') ctx.resume().catch(function() {});
+	}
+	function getGain(el) {
+		if (!gainNodes) return null;
+		if (gainNodes.has(el)) return gainNodes.get(el);
+		var ctx = getAudioCtx();
+		if (!ctx) return null;
+		try {
+			var source = ctx.createMediaElementSource(el);
+			var gain = ctx.createGain();
+			source.connect(gain);
+			gain.connect(ctx.destination);
+			gainNodes.set(el, gain);
+			return gain;
+		} catch (e) {
+			return null; // leaves plain el.volume as this element's fallback path
+		}
+	}
+	function setElementVolume(el, vol) {
+		var gain = getGain(el);
+		if (gain) { gain.gain.value = vol; el.volume = 1; }
+		else { el.volume = vol; }
+	}
+	function getElementVolume(el) {
+		var gain = gainNodes && gainNodes.get(el);
+		return gain ? gain.gain.value : el.volume;
+	}
+
 	var gameArea = document.getElementById('cc-game-area');
 	// Permanent, hidden sibling of gameArea -- see the markup comment where
 	// it's declared. A win/loss result gets dropped in here and revealed
@@ -758,6 +837,7 @@ try {
 		return sfxVolume() * (lvl === undefined ? 1 : lvl);
 	}
 	function playNamedSfx(name) {
+		unlockAudioCtx();
 		var el = document.getElementById('cc-sfx-' + name);
 		if (!el) return;
 		var vol = sfxVolumeFor(name);
@@ -770,7 +850,7 @@ try {
 				}
 				ccCurrentStinger = el;
 			}
-			el.volume = Math.min(1, vol);
+			setElementVolume(el, Math.min(1, vol));
 			el.currentTime = 0;
 			// Chrome rejects this promise with no user gesture yet; it's a
 			// sound effect, so a silent failure is the right outcome.
@@ -1313,8 +1393,8 @@ try {
 		var enabled = getEnabled();
 		var targetVolume = getVolume() / 100; // the user's actual volume setting -- what a fade ramps TOWARD, not necessarily what's playing right now mid-fade
 
-		players[0].volume = targetVolume;
-		players[1].volume = 0; // inactive by default; only ever raised by a crossfade
+		setElementVolume(players[0], targetVolume);
+		setElementVolume(players[1], 0); // inactive by default; only ever raised by a crossfade
 		if (volumeEl) volumeEl.value = getVolume();
 		// Reflects the CURRENT volume, not how muting happened -- a slider
 		// dragged to 0 by hand should look exactly as muted as the button
@@ -1439,7 +1519,7 @@ try {
 			nearEndTriggered = false;
 			var a = active();
 			a.loop = false;
-			a.volume = targetVolume;
+			setElementVolume(a, targetVolume);
 			trackIndex = index;
 			setTrackIndex(index);
 			setTrackName(TRACKS[index].name);
@@ -1453,10 +1533,11 @@ try {
 			}
 			a.load();
 			inactive().pause();
-			inactive().volume = 0;
+			setElementVolume(inactive(), 0);
 		}
 
 		function tryPlay() {
+			unlockAudioCtx();
 			var p = active().play();
 			if (p && p.catch) {
 				// Autoplay blocked -- normal on a fresh visit with no prior
@@ -1500,7 +1581,7 @@ try {
 			var outgoing = active();
 			var incoming = inactive();
 			incoming.loop = !!opts.loop;
-			incoming.volume = 0;
+			setElementVolume(incoming, 0);
 			if (opts.name) setTrackName(opts.name);
 			incoming.src = src;
 			if (opts.resumeAt != null) {
@@ -1513,27 +1594,27 @@ try {
 			incoming.load();
 			activeIdx = 1 - activeIdx; // incoming is the new "active" immediately, even mid-fade-in
 
+			unlockAudioCtx();
 			var p = incoming.play();
 			if (p && p.catch) p.catch(function() { updateToggleIcon(); });
 
-			var startOutVol = outgoing.volume;
+			var startOutVol = getElementVolume(outgoing);
 			var startTs = null;
 			// requestAnimationFrame always supplies a real timestamp to its
 			// callback -- calling step() directly (no rAF) would invoke it
 			// with ts=undefined on the first frame, making startTs itself
-			// undefined and every volume computation NaN (which .volume
-			// rejects outright, throwing). Always go through rAF, including
-			// for this first frame.
+			// undefined and every volume computation NaN. Always go through
+			// rAF, including for this first frame.
 			function step(ts) {
 				if (startTs === null) startTs = ts;
 				var t = Math.min(1, (ts - startTs) / FADE_MS);
-				incoming.volume = targetVolume * t;
-				outgoing.volume = startOutVol * (1 - t);
+				setElementVolume(incoming, targetVolume * t);
+				setElementVolume(outgoing, startOutVol * (1 - t));
 				if (t < 1) {
 					fadeRAF = requestAnimationFrame(step);
 				} else {
 					outgoing.pause();
-					outgoing.volume = targetVolume; // resting state for next time this element gets reused
+					setElementVolume(outgoing, targetVolume); // resting state for next time this element gets reused
 					fadeRAF = null;
 				}
 			}
@@ -1580,6 +1661,7 @@ try {
 			var playerEl = document.getElementById('cc-audio-player');
 			var unlockEvents = ['pointerdown', 'keydown', 'touchstart'];
 			var unlockAudio = function(e) {
+				unlockAudioCtx();
 				unlockEvents.forEach(function(evt) { window.removeEventListener(evt, unlockAudio, true); });
 				// Skip if the gesture landed on the player's own controls --
 				// their click handlers already start/stop playback correctly
@@ -1717,15 +1799,17 @@ try {
 		});
 		if (volumeEl) {
 			volumeEl.addEventListener('input', function() {
+				unlockAudioCtx();
 				var v = parseInt(volumeEl.value, 10) || 0;
 				targetVolume = v / 100;
-				if (!fadeRAF) active().volume = targetVolume; // mid-fade, the fade loop itself reads targetVolume fresh each frame -- don't stomp on it directly
+				if (!fadeRAF) setElementVolume(active(), targetVolume); // mid-fade, the fade loop itself reads targetVolume fresh each frame -- don't stomp on it directly
 				setVolume(v);
 				updateMuteIcon();
 			});
 		}
 		if (muteBtn) {
 			muteBtn.addEventListener('click', function() {
+				unlockAudioCtx();
 				var v;
 				if (getVolume() === 0) {
 					// Unmute -- restore whatever it was before, defaulting to
@@ -1740,7 +1824,7 @@ try {
 				setVolume(v);
 				if (volumeEl) volumeEl.value = v;
 				targetVolume = v / 100;
-				if (!fadeRAF) active().volume = targetVolume;
+				if (!fadeRAF) setElementVolume(active(), targetVolume);
 				updateMuteIcon();
 			});
 		}
