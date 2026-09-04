@@ -118,7 +118,23 @@ if(!isset($_SESSION['userData']['addresses_key']) || $_SESSION['userData']['addr
 }
 $_SESSION['userData']['addresses'] = $addresses;
 
-if(($address_changed == "true") || $project_id_changed == "true"){
+// Oculus Lounge (project_id 4) carved out of the wallet/Koios pipeline
+// entirely: it doesn't need $addresses at all now, holdings come straight
+// from Skulliance's own already-synced `nfts` table (see
+// dropshipSyncOculusLounge()'s own comment in db.php for why this changed
+// from the Koios round-trip every other reskin still uses). Still gated on
+// the same $address_changed/$project_id_changed trigger, since a wallet-set
+// change is still a reasonable signal to re-check -- Skulliance's own
+// nfts.user_id reflects whichever wallets are connected to that account,
+// same wallets $addresses is built from.
+if($_SESSION['userData']['dropship_project_id'] == 4){
+	if(($address_changed == "true") || $project_id_changed == "true"){
+		dropshipSyncOculusLounge($conn, $_SESSION['userData']['discord_id']);
+		$ranks["VIP"] = true;
+		$_SESSION['userData']['rank'] = "";
+		storeRank($ranks);
+	}
+}elseif(($address_changed == "true") || $project_id_changed == "true"){
 	if(!empty($addresses)){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));

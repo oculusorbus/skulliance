@@ -919,12 +919,12 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	if ($result->num_rows > 0) {
 	  // Buffered into an array (not the usual while/fetch_assoc streaming)
 	  // so the Oculus Lounge asset_names are known BEFORE rendering starts --
-	  // dropshipOhhMeedLocalImages() needs the whole list up front to do one
+	  // dropshipOculusLoungeLocalImages() needs the whole list up front to do one
 	  // batch query instead of one per soldier.
 	  $rows = $result->fetch_all(MYSQLI_ASSOC);
-	  $ohh_meed_images = array();
+	  $oculus_lounge_images = array();
 	  if ($_SESSION['userData']['dropship_project_id'] == 4) {
-		  $ohh_meed_images = dropshipOhhMeedLocalImages(array_column($rows, 'asset_name'));
+		  $oculus_lounge_images = dropshipOculusLoungeLocalImages(array_column($rows, 'asset_name'));
 	  }
 	  // output data of each row
 	  $troopcounter = 0;
@@ -935,11 +935,11 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 		echo "<span class='nft-name'>".substr($row["name"], 0, 19)."</span>";
 		if($_SESSION['userData']['dropship_project_id'] == 1){
 			echo "<span class='nft-image'><img src='images/nfts/".$row["asset_name"].".jpg'/></span>";
-		}elseif(isset($ohh_meed_images[$row["asset_name"]])){
+		}elseif(isset($oculus_lounge_images[$row["asset_name"]])){
 			// Cached locally on Skulliance -- Ohh Meed NFT Skulliance already
 			// has synced and cached. Falls through to jpgstoreapis.com below
 			// for any Oculus Lounge asset_name Skulliance doesn't have (yet).
-			echo "<span class='nft-image'><img src='".$ohh_meed_images[$row["asset_name"]]."'/></span>";
+			echo "<span class='nft-image'><img src='".$oculus_lounge_images[$row["asset_name"]]."'/></span>";
 		}else{
 			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}
@@ -1887,19 +1887,19 @@ function getResultsSoldiers($conn, $result_id){
 		$counter = 0;
 		echo "<div class='leaderboard-nfts'>";
 		// Same batch-before-loop shape as getSoldiers() -- see that
-		// function's own comment for why (dropshipOhhMeedLocalImages()
+		// function's own comment for why (dropshipOculusLoungeLocalImages()
 		// needs every asset_name up front for one query, not one per row).
 		$rows = $result->fetch_all(MYSQLI_ASSOC);
-		$ohh_meed_images = array();
+		$oculus_lounge_images = array();
 		if ($_SESSION['userData']['dropship_project_id'] == 4) {
-			$ohh_meed_images = dropshipOhhMeedLocalImages(array_column($rows, 'asset_name'));
+			$oculus_lounge_images = dropshipOculusLoungeLocalImages(array_column($rows, 'asset_name'));
 		}
 		foreach($rows as $row){
 			$counter++;
 			if($_SESSION['userData']['dropship_project_id'] == 1){
 				echo "<span class='leaderboard-nft'><img src='images/nfts/".$row["asset_name"].".jpg'/></span>";
-			}elseif(isset($ohh_meed_images[$row["asset_name"]])){
-				echo "<span class='leaderboard-nft'><img src='".$ohh_meed_images[$row["asset_name"]]."'/></span>";
+			}elseif(isset($oculus_lounge_images[$row["asset_name"]])){
+				echo "<span class='leaderboard-nft'><img src='".$oculus_lounge_images[$row["asset_name"]]."'/></span>";
 			}else{
 				echo "<span class='leaderboard-nft'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 			}
