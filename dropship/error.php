@@ -1,15 +1,10 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="dist/output.css" rel="stylesheet">
-</head>
-<body>
-    <div class="flex items-center justify-center h-screen bg-discord-gray flex-col">
-        <span class="text-white text-3xl">Sorry, you need to be logged in to view this page.</span>
-        <a href="index.php" class="mt-3 text-white underline">Back to home</a>
-    </div>
-
-</body>
-</html>
+<?php
+// Drop Ship no longer runs its own login -- accessing it now requires
+// signing in to Skulliance first (see dropship/db.php's session-gate
+// comment). Every path that used to land here (dropship.php's own
+// !logged_in check, db.php's own gate) now bounces one level further, to
+// Skulliance's own "you need to be logged in" page -- the same one every
+// other gated Skulliance page already uses, so a Drop Ship visitor sees the
+// exact same login prompt, not a dead-ended Drop Ship-specific one.
+header('Location: ../error.php');
+exit();

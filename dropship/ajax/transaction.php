@@ -1,7 +1,24 @@
 <?php
 include '../webhooks.php';
 include '../role.php';
-session_start();
+
+// Same gate as dropship/db.php (duplicated, not shared -- see that file's
+// comment for why): this endpoint verifies a real ADA transaction and
+// grants Discord VIP roles off $_SESSION['userData']['discord_id'], so it
+// needs the same login check the rest of Drop Ship gets via db.php, not a
+// bare session_start() trusting whatever's already there.
+if (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie'])) {
+	session_start();
+}
+if (!isset($_SESSION['logged_in'])) {
+	$cookie = isset($_COOKIE['SessionCookie']) ? json_decode($_COOKIE['SessionCookie'], true) : null;
+	if (is_array($cookie)) {
+		$_SESSION = array_merge((array)$_SESSION, $cookie);
+	} else {
+		header('Location: ../../error.php');
+		exit();
+	}
+}
 
 $discoin_policy_id = "5612bee388219c1b76fd527ed0fa5aa1d28652838bcab4ee4ee63197";
 

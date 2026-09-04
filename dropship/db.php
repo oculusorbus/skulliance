@@ -1,11 +1,41 @@
 <?php
 include 'credentials/db_credentials.php';
-session_start();
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-error_reporting(E_ALL ^ E_NOTICE);  
+error_reporting(E_ALL ^ E_NOTICE);
 
+// Drop Ship no longer runs its own Discord OAuth -- logging in requires
+// Skulliance's own login first (a prerequisite now, by design). This block
+// exists ONLY to read the session Skulliance's login already wrote.
+//
+// Deliberately does NOT include any of Skulliance's own PHP (db.php,
+// skulliance.php, webhooks.php...) to get that check -- those redeclare
+// ~15 function names Drop Ship also defines (discordmsg, checkUser,
+// logCredit, updateUser, and more), and including both in one request
+// would be a fatal "cannot redeclare function" error, not a silent bug.
+// This duplicates the handful of lines that matter instead (same shape as
+// Skulliance's own db.php + skulliance.php), kept in sync by hand.
+//
+// Conditional session_start(), not unconditional: matches Skulliance's own
+// db.php, avoiding one orphaned session file per cookieless bot/scraper hit.
+if (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie'])) {
+	session_start();
+}
+if (!isset($_SESSION['logged_in'])) {
+	// Mobile Safari ITP / PWA standalone routinely drops the native session
+	// cookie while keeping the 6-month SessionCookie -- same restore
+	// Skulliance's own skulliance.php does. Merge, never raw-assign: a raw
+	// $_SESSION = $cookie would wipe out any other session state a Drop Ship
+	// page had already written this request.
+	$cookie = isset($_COOKIE['SessionCookie']) ? json_decode($_COOKIE['SessionCookie'], true) : null;
+	if (is_array($cookie)) {
+		$_SESSION = array_merge((array)$_SESSION, $cookie);
+	} else {
+		header('Location: ../error.php');
+		exit();
+	}
+}
 
 if(isset($_SESSION['userData']['discord_id'])){
 	if($_SESSION['userData']['discord_id'] == $discordid_oculusorbus) {
