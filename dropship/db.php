@@ -624,32 +624,51 @@ function updateUser($conn) {
 	}
 }
 
-// Update user's Cardano address
-function updateAddress($conn, $address) {
-	$sql = "UPDATE users SET address='".$address."' WHERE id='".$_SESSION['userData']['dropship_user_id']."'";
-	if ($conn->query($sql) === TRUE) {
-	  //echo "New record created successfully";
-	} else {
-	  //echo "Error: " . $sql . "<br>" . $conn->error;
+// Reads the Cardano stake address(es) already connected to this player's
+// Skulliance account -- replaces Drop Ship's own former "connect a wallet"
+// flow entirely (used to be checkAddress()/updateAddress() here, reading/
+// writing Drop Ship's own users.address, plus a browser-extension connect
+// UI in dashboard.php). That was pure redundancy once Drop Ship required
+// Skulliance login: Skulliance already has this, already verified, in its
+// own `wallets` table -- no reason to make a player re-enable their wallet
+// extension and re-sign a connection a second time inside Drop Ship.
+//
+// Opens a SECOND, independent mysqli connection using Skulliance's own DB
+// credentials -- not included as PHP (same fatal-redeclare-function risk
+// this file's top comment already covers), just a second connection
+// object. Skulliance's credentials file redefines $servername/$username/
+// $password/$dbname (Drop Ship's own credentials file, included above,
+// already used those same names for Drop Ship's OWN db) -- safe only
+// because $conn is already a fully-built mysqli object by the time this
+// runs; overwriting the variables that built it doesn't reach back and
+// change it.
+//
+// Returns EVERY connected wallet's stake address, not just the primary --
+// a player's Ohh Meed/Drop Ship NFTs may not sit in the same wallet as
+// their main Skulliance one, and Koios' account_utxos endpoint already
+// accepts multiple _stake_addresses in one call (see dashboard.php), so
+// covering all of them costs nothing extra.
+function dropshipConnectedStakeAddresses($discord_id) {
+	$addresses = array();
+	include __DIR__ . '/../credentials/db_credentials.php';
+	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
+	if ($skulliance_conn->connect_error) {
+		return $addresses; // fail quiet, same as the old checkAddress() did for "nothing on file"
 	}
-}
-
-// Check user's Cardano address
-function checkAddress($conn) {
-	if(isset($_SESSION['userData']['dropship_user_id'])){
-		$sql = "SELECT address FROM users WHERE id='".$_SESSION['userData']['dropship_user_id']."'";
-		$result = $conn->query($sql);
-
-		if ($result->num_rows > 0) {
-		  // output data of each row
-		  while($row = $result->fetch_assoc()) {
-		    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-	    	return $row["address"];
-		  }
-		} else {
-		  //echo "0 results";
+	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
+	$result = $skulliance_conn->query("
+		SELECT w.stake_address
+		FROM wallets w
+		INNER JOIN users u ON u.id = w.user_id
+		WHERE u.discord_id = '$discord_id_esc' AND w.stake_address != ''
+	");
+	if ($result) {
+		while ($row = $result->fetch_assoc()) {
+			$addresses[] = $row['stake_address'];
 		}
 	}
+	$skulliance_conn->close();
+	return $addresses;
 }
 
 // Check to see if an active game exists. If not, unset session variable for game id.

@@ -101,40 +101,35 @@ function storeRank($ranks){
 $policy_id = getProjectPolicyId($conn);
 $ranks = array();
 
-// Handle wallet changes
+// Wallet connection is Skulliance's job now, not Drop Ship's -- pulls every
+// stake address already connected to this player's Skulliance account
+// instead of running its own separate browser-extension connect flow (see
+// dropshipConnectedStakeAddresses()'s own comment in db.php). Keyed by a
+// joined string, not the raw array, so the "did anything actually change"
+// check below is a simple string compare -- same shape the old single-
+// address flow used, just covering a settable now instead of one value.
+$addresses = dropshipConnectedStakeAddresses($_SESSION['userData']['discord_id']);
+$addresses_key = implode(',', $addresses);
+
 $address_changed = "false";
-if(!isset($_SESSION['userData']['address'])){
-	$address = checkAddress($conn);
-	if(isset($address)){
-		if($address != ""){
-			$_SESSION['userData']['address'] = $address;
-			$address_changed = "true";
-		}
-	}
+if(!isset($_SESSION['userData']['addresses_key']) || $_SESSION['userData']['addresses_key'] !== $addresses_key){
+	$address_changed = "true";
+	$_SESSION['userData']['addresses_key'] = $addresses_key;
 }
+$_SESSION['userData']['addresses'] = $addresses;
 
-// Handle wallet selection
-if(isset($_POST['address'])){
-	if(isset($_SESSION['userData']['address'])){
-		if($_SESSION['userData']['address'] != $_POST['address']){
-			$address_changed = "true";
-			updateAddress($conn, $_POST['address']);
-		}
-	}else{
-		$address_changed = "true";
-		updateAddress($conn, $_POST['address']);
-	}
-	$_SESSION['userData']['address'] = $_POST['address'];
-	$_SESSION['userData']['wallet'] = $_POST['wallet'];
-}
-
-if((isset($_SESSION['userData']['address']) && $address_changed == "true") || $project_id_changed == "true"){
-	if($_SESSION['userData']['address'] != ""){
-		//echo "<div class='current-address'><strong>Current Address:</strong><br>".$_SESSION['userData']['address']."</div>";
+if(($address_changed == "true") || $project_id_changed == "true"){
+	if(!empty($addresses)){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
 		curl_setopt( $ch, CURLOPT_POST, 1);
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, '{"_stake_addresses":["'.$_SESSION['userData']['address'].'"],"_extended":true}');
+		// All connected wallets in one call -- Koios' account_utxos already
+		// accepts multiple _stake_addresses, so this is the exact same
+		// request shape as before, just with N addresses instead of 1. Every
+		// asset from every wallet flows into the same $response the code
+		// below already loops over per-account, so no downstream logic
+		// (soldier creation, rank counting) needed to change at all.
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode(array("_stake_addresses" => $addresses, "_extended" => true)));
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt( $ch, CURLOPT_HEADER, 0);
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
@@ -264,9 +259,9 @@ if((isset($_SESSION['userData']['address']) && $address_changed == "true") || $p
 		$_SESSION['userData']['rank'] = "";
 		storeRank($ranks);
 	}
-// If address didn't change, load NFT data from the database to reduce loading times
-}else if(isset($_SESSION['userData']['address']) && $address_changed == "false"){
-	//echo "<div class='current-address'><strong>Current Address:</strong><br>".$_SESSION['userData']['address']."</div>";
+// If the connected wallet set didn't change, load NFT data from the
+// database to reduce loading times
+}else if(!empty($addresses) && $address_changed == "false"){
 	//getSoldiers($conn, 0);
 	// Old session stuff
 	/*
@@ -507,19 +502,9 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 			<h2><?php echo getProjectName($conn); ?></h2>
 			<div class="content" id="player-stats">
 				<ul>
-					<div class="wallet-connect">
-					<li class="role"><img class="icon" src="icons/wallet.png"/>
-						<label for="wallets"><strong>Connect</strong>&nbsp;</label>
-						<select onchange="javascript:connectWallet(this.options[this.selectedIndex].value);" name="wallets" id="wallets">
-							<option value="none">Wallet</option>
-						</select>
-						<form id="addressForm" action="dashboard.php#barracks" method="post">
-						  <input type="hidden" id="wallet" name="wallet" value="">	
-						  <input type="hidden" id="address" name="address" value="">
-						  <input type="submit" value="Submit" style="display:none;">
-						</form>
-					</li>
-					</div>
+					<!-- No more "Connect a wallet" here -- Skulliance's own
+					     connected wallet(s) are used automatically now, see
+					     dropshipConnectedStakeAddresses() in db.php. -->
 					<?php
 					$projects = getProjects($conn);
 					?>
@@ -755,6 +740,9 @@ if($_SESSION['userData']['dropship_project_id'] == 4){?>
 	<script type='text/javascript'>document.body.style.backgroundImage = "url('/oculus-lounge/oculusloungebackground.png')";</script>
 <?php }
 ?>
-<script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
+<!-- wallet.js no longer loaded -- its connectWallet()/sendAddress() drove the
+     removed "Connect a wallet" UI, dead now that wallet connection is
+     read from Skulliance's own account instead. File left in place,
+     unreferenced, rather than deleted outright. -->
 <script type="text/javascript" src="dropship.js?var=<?php echo rand(0,999); ?>"></script>
 </html>
