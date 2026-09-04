@@ -2164,7 +2164,13 @@ function logBalances($conn) {
 					    'rank' => $counter,
 						'project_id' => $_SESSION['userData']['dropship_project_id']
 					];
-					if(!str_contains($_SERVER['REQUEST_URI'], "test")){
+					// $_SERVER['REQUEST_URI'] doesn't exist at all under CLI --
+					// this fires from automate.php's cron run, not a real HTTP
+					// request, so the bare version used to warn/deprecate on
+					// every single weekly run (still landed on the correct
+					// "production" branch by accident, since PHP coerces the
+					// missing value to an empty string, but noisily).
+					if(!str_contains($_SERVER['REQUEST_URI'] ?? '', "test")){
 						$ch = curl_init('http://www.skulliance.io/staking/db.php');
 					}else{
 						$ch = curl_init('http://www.skulliance.io/testing/db.php');
