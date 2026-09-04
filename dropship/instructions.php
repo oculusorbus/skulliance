@@ -12,13 +12,14 @@ include 'header.php';
 					<p><?php echo evaluateText("Drop Ship");?> is a battlefield-style gamified raffle system. It requires that you stake your <?php echo evaluateText("Drop Ship");?> NFTs to receive the necessary Discord roles in order to participate in regular game sessions for coveted Shorty Verse NFT prizes.</p>
 
 					<h3>Game Mechanics</h3>
-					<p>Your squad's combined armor determines your odds of dying each round:</p>
+					<p>Your squad's combined armor determines your odds of dying each round &mdash; the more distinct armor types you stack together, the safer you are:</p>
 					<ul>
-						<li><?php echo evaluateText("Heavy")." + ".evaluateText("Medium")." + ".evaluateText("Light")." + ".evaluateText("Base")." Armor";?> &mdash; 20% chance of dying (1 in 5)</li>
-						<li><?php echo evaluateText("Medium")." + ".evaluateText("Light")." + ".evaluateText("Base")." Armor";?> &mdash; 25% chance of dying (1 in 4)</li>
+						<li><?php echo evaluateText("Heavy")." + ".evaluateText("Medium")." + ".evaluateText("Light")." + ".evaluateText("Base")." Armor";?> (the full set) &mdash; 20% chance of dying (1 in 5)</li>
+						<li><?php echo evaluateText("Heavy")." + ".evaluateText("Base");?>, or <?php echo evaluateText("Medium")." + ".evaluateText("Light")." + ".evaluateText("Base");?> &mdash; 25% chance of dying (1 in 4)</li>
 						<li><?php echo evaluateText("Light")." + ".evaluateText("Base")." Armor";?> &mdash; 33.33% chance of dying (1 in 3)</li>
-						<li><?php echo evaluateText("Base")." Armor";?> &mdash; 50% chance of dying (1 in 2)</li>
+						<li><?php echo evaluateText("Base")." Armor";?> alone &mdash; 50% chance of dying (1 in 2)</li>
 					</ul>
+					<p>There's more than one path to the same odds &mdash; a squad with <?php echo evaluateText("Heavy");?> and <?php echo evaluateText("Base");?> Armor survives just as well as one with <?php echo evaluateText("Medium");?>, <?php echo evaluateText("Light");?>, and <?php echo evaluateText("Base");?> Armor. What matters is the total, not any one specific combination.</p>
 
 					<p>Items shift the odds further:</p>
 					<ul>
@@ -50,9 +51,6 @@ include 'header.php';
 					</ul>
 
 					<p><em>The mechanics above are subject to change if the game needs further balancing or enhancements.</em></p>
-
-					<h3>Reference: Armor Stacking</h3>
-					<img src="<?php echo $prefix; ?>images/armor-stacking-calculations.png" alt="Armor stacking calculations chart" style="max-width:100%;border-radius:0.5rem;"/>
 
 					<h3>Where to Buy <?php echo evaluateText("Drop Ship");?> NFTs</h3>
 					<p><a href="https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c" target="_blank">wayup.io</a></p>
