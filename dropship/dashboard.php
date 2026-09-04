@@ -488,7 +488,7 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 							}else if($_SESSION['userData']['dropship_project_id'] == 3){ 
 								echo "<p><strong>You Must Have 5+ NFTs to Play</strong></p>";
 							}else if($_SESSION['userData']['dropship_project_id'] == 4){ 
-									echo "<p><strong>You Must Have a VIP Token to Play or <a href='/discoin.php'>Purchase a Temporary VIP Pass with DISCOIN</a></strong></p>";
+									echo "<p><strong>You Must Have a <a href='https://www.wayup.io/collection/3d250a78df7ad14e9472d9b63159ef2d099740c593c0ba53059f144a?do=true&f=JTdCJTIyUmFyaXR5JTNBJTIyJTNBJTdCJTIyTGVnZW5kYXJ5JTIwLSUyMFZJUCUyMiUzQXRydWUlN0QlN0Q%3D' target='_blank'>VIP Token</a> to Play or <a href='/discoin.php'>Purchase a Temporary VIP Pass with DISCOIN</a></strong></p>";
 							}else if($_SESSION['userData']['dropship_project_id'] != 3){ 
 								echo $play_button;
  							} ?>
