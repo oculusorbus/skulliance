@@ -163,13 +163,23 @@ include 'header.php';
 					// Oculus Lounge plays on the Disco Solaris NFT policy, a
 					// different collection entirely from Drop Ship's own -- see
 					// the same policy id used in dropshipSyncOculusLounge() in
-					// db.php. Every other project still points at Drop Ship's
-					// own wayup.io collection.
-					$nft_marketplace_url = ($_SESSION['userData']['dropship_project_id'] == 4)
-						? "https://www.wayup.io/collection/d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779"
-						: "https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c";
+					// db.php. It also has its own separate VIP Token listing
+					// (a specific rarity tier -- "Legendary - VIP" -- within a
+					// different collection, same one dashboard.php's own "You
+					// Must Have a VIP Token to Play" link points to) required
+					// for full/permanent access, on top of just holding a
+					// Disco Solaris NFT. Every other project still points at
+					// Drop Ship's own wayup.io collection, single link.
+					if ($_SESSION['userData']['dropship_project_id'] == 4) {
 					?>
-					<p><a href="<?php echo $nft_marketplace_url;?>" target="_blank">wayup.io</a></p>
+					<p>
+						<a href="https://www.wayup.io/collection/d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779" target="_blank">Disco Solaris NFTs</a>
+						&mdash;
+						<a href="https://www.wayup.io/collection/3d250a78df7ad14e9472d9b63159ef2d099740c593c0ba53059f144a?do=true&f=JTdCJTIyUmFyaXR5JTNBJTIyJTNBJTdCJTIyTGVnZW5kYXJ5JTIwLSUyMFZJUCUyMiUzQXRydWUlN0QlN0Q%3D" target="_blank">VIP Tokens</a>
+					</p>
+					<?php } else { ?>
+					<p><a href="https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c" target="_blank">wayup.io</a></p>
+					<?php } ?>
 
 					<p style="text-align:center;margin-top:20px;"><strong>Let the games begin. And remember, no one survives <?php echo evaluateText("Drop Ship");?>.</strong></p>
 
