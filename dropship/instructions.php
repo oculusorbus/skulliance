@@ -152,7 +152,17 @@ include 'header.php';
 					</div>
 
 					<h3>Where to Buy <?php echo evaluateText("Drop Ship");?> NFTs</h3>
-					<p><a href="https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c" target="_blank">wayup.io</a></p>
+					<?php
+					// Oculus Lounge plays on the Disco Solaris NFT policy, a
+					// different collection entirely from Drop Ship's own -- see
+					// the same policy id used in dropshipSyncOculusLounge() in
+					// db.php. Every other project still points at Drop Ship's
+					// own wayup.io collection.
+					$nft_marketplace_url = ($_SESSION['userData']['dropship_project_id'] == 4)
+						? "https://www.wayup.io/collection/d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779"
+						: "https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c";
+					?>
+					<p><a href="<?php echo $nft_marketplace_url;?>" target="_blank">wayup.io</a></p>
 
 					<p style="text-align:center;margin-top:20px;"><strong>Let the games begin. And remember, no one survives <?php echo evaluateText("Drop Ship");?>.</strong></p>
 
