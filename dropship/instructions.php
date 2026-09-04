@@ -95,6 +95,42 @@ include 'header.php';
 						<p><em>The game is luck-based &mdash; items only influence the outcome, they don't control it. Less powerful <?php echo strtolower(evaluateText("Soldiers"));?> can still get a lucky run, and powerful <?php echo strtolower(evaluateText("Soldiers"));?> can have a bad stroke of luck.</em></p>
 					</div>
 
+					<?php if ($_SESSION['userData']['dropship_project_id'] == 4) { ?>
+					<div class="instr-section">
+						<h3>Your Disco Solaris NFT &rarr; Your <?php echo evaluateText("Soldiers");?></h3>
+						<p>Armor and item aren't random &mdash; they're derived directly from your NFT's real on-chain traits, and update automatically to match.</p>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("heavy-armor");?>.png" alt=""/>
+							<span><strong>Best armor:</strong> more formal/elaborate outerwear (a jacket with all the trimmings)</span>
+						</div>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("medium-armor");?>.png" alt=""/>
+							<span><strong>Good armor:</strong> mid-weight jackets and coats</span>
+						</div>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("light-armor");?>.png" alt=""/>
+							<span><strong>Light armor:</strong> casual jackets</span>
+						</div>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("base-armor");?>.png" alt=""/>
+							<span><strong>Base armor:</strong> minimal or no outerwear trait at all</span>
+						</div>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("medkit");?>.png" alt=""/>
+							<span><strong>Best item:</strong> a Special or Hat trait</span>
+						</div>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("demolition");?>.png" alt=""/>
+							<span><strong>Good item:</strong> a Headphones trait</span>
+						</div>
+						<div class="instr-row">
+							<img class="instr-icon" src="icons/<?php echo evaluateText("melee");?>.png" alt=""/>
+							<span><strong>Light item:</strong> jewelry or eyewear (Necklace, Earrings, or Glasses)</span>
+						</div>
+						<p><em>No qualifying trait at all means no item &mdash; genuinely rare, not a default.</em></p>
+					</div>
+					<?php } ?>
+
 					<div class="instr-section">
 						<h3>Play for Free</h3>
 						<div class="instr-row">
