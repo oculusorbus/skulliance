@@ -11,7 +11,14 @@ body {
   font-family: Arial, sans-serif;
   color: #e8eaed;
   margin: 0;
-  background-color: #07111d;
+  /* Reverted to the ORIGINAL #36393F, not Skulliance's #07111d -- that
+     value combines with background-blend-mode:multiply below to darken
+     the background-image, and #07111d is dark enough to crush a real
+     photo toward near-invisibility (each channel gets multiplied down to
+     roughly 3-11% of its original brightness). #36393F was presumably
+     tuned to work with this specific image; keeping it is what the user
+     asked for when the teal/navy pass made the art disappear. */
+  background-color: #36393F;
   height:100%;
   background-image: url("../images/dropshipbackground.jpg"); /* The image used */
   background-position: center; /* Center the image */

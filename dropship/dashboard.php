@@ -619,7 +619,13 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 					</li>
 					<?php } ?>
 					<?php
-					if(isset($_SESSION["userData"]["rank"]) && $_SESSION["userData"]["dropship_project_id"] != 4){?>
+					// Hidden 2026-09-05, per the user: this was reading a role
+					// from Ohh Meed's Discord that isn't being handled/synced
+					// anymore, so the row was showing broken/stale data. Left
+					// in place rather than deleted -- flip `false &&` back off
+					// (just delete that bit) to unhide it if role handling ever
+					// comes back.
+					if(false && isset($_SESSION["userData"]["rank"]) && $_SESSION["userData"]["dropship_project_id"] != 4){?>
 						<li class="role"><img class="icon" src="icons/rank.png"/>
 							<?php echo "<strong>".$_SESSION["userData"]["rank"]."</strong>";?>
 						</li>
