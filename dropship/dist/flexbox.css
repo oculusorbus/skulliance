@@ -106,6 +106,99 @@ body {
   margin-left: auto;
 }
 
+/* ── Nav Dropdowns ──
+   Structure/mechanism ported from Skulliance's own dist/flexbox.css
+   verbatim (same class names, same toggleDropdown() in header.php); only
+   the accent color is Drop Ship's own (#ddd/black hover, matching
+   .navbar a:hover below) instead of Skulliance's teal. */
+.nav-dropdown {
+  position: relative;
+}
+.nav-dropdown-trigger {
+  color: white;
+  padding: 14px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  user-select: none;
+}
+.nav-dropdown-trigger::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid rgba(255,255,255,0.5);
+  border-bottom: 1.5px solid rgba(255,255,255,0.5);
+  transform: rotate(45deg);
+  margin-bottom: 3px;
+  transition: border-color 0.2s;
+}
+.nav-dropdown-trigger:hover {
+  background-color: #ddd;
+  color: black;
+}
+.nav-dropdown-trigger:hover::after {
+  border-color: black;
+}
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #202225;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-top: none;
+  min-width: 160px;
+  z-index: 100;
+  flex-direction: column;
+}
+.nav-dropdown-menu a {
+  padding: 12px 20px;
+  text-align: left;
+  white-space: nowrap;
+  display: block;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.nav-dropdown-menu a:last-child {
+  border-bottom: none;
+}
+.nav-dropdown-menu a:hover {
+  background-color: #ddd;
+  color: black;
+}
+@media screen and (min-width: 701px) {
+  .nav-dropdown:hover > .nav-dropdown-menu { display: flex; }
+}
+@media screen and (max-width: 700px) {
+  .nav-dropdown { width: 100%; }
+  .nav-dropdown-trigger {
+    width: 100%;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    box-sizing: border-box;
+    text-align: center;
+    white-space: normal;
+  }
+  .nav-dropdown-trigger:hover {
+    background-color: #ddd;
+    color: black;
+  }
+  .nav-dropdown-menu {
+    position: static;
+    border: none;
+    background-color: #161719;
+  }
+  .nav-dropdown-menu.open { display: flex; }
+  .nav-dropdown-menu a {
+    padding-left: 36px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .nav-dropdown-menu a:last-child { border-bottom: none; }
+}
+
 /* Change color on hover */
 .navbar a:hover {
   background-color: #ddd;

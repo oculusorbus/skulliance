@@ -7,6 +7,18 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <script>
+  // Toggle dropdown -- ported from Skulliance's own header.php verbatim.
+  // Above 700px the CSS opens a dropdown on :hover on its own (see
+  // dist/flexbox.css); this is what makes tapping the trigger work at any
+  // width, including the narrow case where :hover isn't a real gesture.
+  function toggleDropdown(el){
+    var menu = el.nextElementSibling;
+    var isOpen = menu.classList.contains('open');
+    document.querySelectorAll('.nav-dropdown-menu.open').forEach(function(m){ m.classList.remove('open'); });
+    if(!isOpen) menu.classList.add('open');
+  }
+  </script>
   <?php
   if($_SESSION["userData"]["dropship_project_id"] == 4){?>
 	<?php if(str_contains($_SERVER['PHP_SELF'], "battles.php")){?>
@@ -36,22 +48,53 @@
 	</div>
 	<div class="container">
 		<!-- Navigation Bar -->
+		<!-- Grouped into dropdowns mirroring Skulliance's own nav (Play/NFTs/
+		     Stats/Account, same class names and toggleDropdown() mechanism --
+		     see staking's own header.php + dist/flexbox.css) instead of one
+		     long jammed-full row of top-level links. -->
 		<div class="navbar">
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
 		  <a href="https://discord.gg/DHbGU9ZDyG"><?php echo $name;?></a>
-		  <a class="navbar-first" href="dashboard.php">Dashboard</a>
-		  <?php
-    	  if($_SESSION["userData"]["dropship_project_id"] == 4){?>
-			<a href="discoin.php">Buy Temp VIP</a>  
-		  <?php }
-		  ?>
-    	  <a href="dashboard.php#barracks"><?php echo evaluateText("Barracks");?></a>
-    	  <a href="dashboard.php#armory"><?php echo evaluateText("Armory");?></a>
-    	  <a href="battles.php"><?php echo evaluateText("Battles");?></a>
-    	  <a href="soldiers.php"><?php echo evaluateText("Soldiers");?></a>
-    	  <a href="leaderboards.php">Leaderboards</a>
-    	  <a href="achievements.php">Achievements</a>
-    	  <a href="transactions.php">Transactions</a>
+
+		  <!-- Play -->
+		  <div class="nav-dropdown navbar-first">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Play</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="dashboard.php">Dashboard</a>
+		      <a href="dashboard.php#barracks"><?php echo evaluateText("Barracks");?></a>
+		      <a href="dashboard.php#armory"><?php echo evaluateText("Armory");?></a>
+		      <a href="battles.php"><?php echo evaluateText("Battles");?></a>
+		      <?php if($_SESSION["userData"]["dropship_project_id"] == 4){?>
+		      <a href="discoin.php">Buy Temp VIP</a>
+		      <?php } ?>
+		    </div>
+		  </div>
+
+		  <!-- NFTs -->
+		  <div class="nav-dropdown">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">NFTs</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="soldiers.php">Soldiers</a>
+		    </div>
+		  </div>
+
+		  <!-- Stats -->
+		  <div class="nav-dropdown">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Stats</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="leaderboards.php">Leaderboards</a>
+		      <a href="achievements.php">Achievements</a>
+		    </div>
+		  </div>
+
+		  <!-- Account -->
+		  <div class="nav-dropdown">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Account</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="transactions.php">Transactions</a>
+		    </div>
+		  </div>
+
 		  <a href="../dashboard.php">&larr; Back to Skulliance</a>
 		</div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
