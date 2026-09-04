@@ -75,6 +75,16 @@ if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData
 include 'header.php';
 ?>
 <style>
+<?php if (!isset($name)): ?>
+/* header.php's own #burger-menu markup renders unconditionally -- only the
+   .navbar CONTENT inside it (Play/NFTs/Stats/Account, Logout, wallet
+   button) is gated on isset($name), same variable this page already
+   computes above. A guest gets a burger icon that opens on nothing, per
+   the user -- hidden here rather than in header.php itself, since that's
+   shared by every page on the site and this was reported specifically
+   for the two game pages, not as a site-wide ask. */
+#burger-menu { display: none; }
+<?php endif; ?>
 @keyframes cqResultPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes cqFlashIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes cqFlashBackdropIn { from { opacity: 0; } to { opacity: 1; } }

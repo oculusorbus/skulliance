@@ -87,6 +87,16 @@ include 'header.php';
 // endpoint too, not just this page's own initial GET.
 ?>
 <style>
+<?php if (!isset($name)): ?>
+/* header.php's own #burger-menu markup renders unconditionally -- only the
+   .navbar CONTENT inside it (Play/NFTs/Stats/Account, Logout, wallet
+   button) is gated on isset($name), same variable this page already
+   computes above. A guest gets a burger icon that opens on nothing, per
+   the user -- hidden here rather than in header.php itself, since that's
+   shared by every page on the site and this was reported specifically
+   for the two game pages, not as a site-wide ask. */
+#burger-menu { display: none; }
+<?php endif; ?>
 /* Card index numerals only — rest of the page stays the site's normal Arial.
    Poppins ExtraBold approximates the bold, slightly-rounded look of a
    classic playing-card corner index (not an exact clone of any specific
