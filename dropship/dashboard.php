@@ -252,36 +252,11 @@ if($_SESSION['userData']['dropship_project_id'] == 4){
 					} // End foreach
 				}// End if
 				} // End foreach
-				if($_SESSION['userData']['dropship_project_id'] == 1){
-					// Drop Ship's own military ladder, from storeRank()'s
-					// existing (until now unpopulated) tier names -- same
-					// count-threshold shape as project 2's Mayor/Don/Capo
-					// ladder, just with 10 rungs instead of 6 since that's
-					// how many names storeRank() already defines. Thresholds
-					// are a first pass, not measured against real holding
-					// distribution -- easy to retune, they're just numbers.
-					if($counter >= 55){
-						$ranks["Command Sergeant Major"] = true;
-					}else if($counter >= 40){
-						$ranks["Sergeant Major"] = true;
-					}else if($counter >= 30){
-						$ranks["First Sergeant"] = true;
-					}else if($counter >= 23){
-						$ranks["Master Sergeant"] = true;
-					}else if($counter >= 17){
-						$ranks["Sergeant First Class"] = true;
-					}else if($counter >= 12){
-						$ranks["Staff Sergeant"] = true;
-					}else if($counter >= 8){
-						$ranks["Sergeant"] = true;
-					}else if($counter >= 5){
-						$ranks["Corporal"] = true;
-					}else if($counter >= 3){
-						$ranks["Specialist"] = true;
-					}else if($counter >= 1){
-						$ranks["Private"] = true;
-					}
-				}else if($_SESSION['userData']['dropship_project_id'] == 2){
+				// Project 1's own rank tiers are computed unconditionally
+				// further down (dropshipSoldierCount()), not here -- see
+				// that function's own comment for why this Koios-gated
+				// block is the wrong place for it.
+				if($_SESSION['userData']['dropship_project_id'] == 2){
 					if($counter >= 40){
 						$ranks["Mayor"] = true;
 					}else if($counter >= 30){
@@ -324,6 +299,42 @@ if($_SESSION['userData']['dropship_project_id'] == 1 && isset($_SESSION['userDat
 	if(!checkDefaultSoldiers($conn)){
 		addDefaultSoldiers($conn);
 	}
+}
+
+// Drop Ship's own rank tier (Private...Command Sergeant Major), by total
+// NFTs held. Deliberately unconditional -- runs every page load, not just
+// when dropshipConnectedStakeAddresses()'s address set changed. See
+// dropshipSoldierCount()'s own comment in db.php: keying this off the
+// Koios-gated $counter meant a session that had already cached
+// "unchanged" addresses before this logic existed would never recompute
+// it at all, leaving the badge stuck hidden/empty. A plain COUNT against
+// the persisted soldiers table has no such staleness problem.
+if($_SESSION['userData']['dropship_project_id'] == 1 && isset($_SESSION['userData']['dropship_user_id'])){
+	$dropship_soldier_count = dropshipSoldierCount($conn);
+	$dropship_ranks = array();
+	if($dropship_soldier_count >= 55){
+		$dropship_ranks["Command Sergeant Major"] = true;
+	}else if($dropship_soldier_count >= 40){
+		$dropship_ranks["Sergeant Major"] = true;
+	}else if($dropship_soldier_count >= 30){
+		$dropship_ranks["First Sergeant"] = true;
+	}else if($dropship_soldier_count >= 23){
+		$dropship_ranks["Master Sergeant"] = true;
+	}else if($dropship_soldier_count >= 17){
+		$dropship_ranks["Sergeant First Class"] = true;
+	}else if($dropship_soldier_count >= 12){
+		$dropship_ranks["Staff Sergeant"] = true;
+	}else if($dropship_soldier_count >= 8){
+		$dropship_ranks["Sergeant"] = true;
+	}else if($dropship_soldier_count >= 5){
+		$dropship_ranks["Corporal"] = true;
+	}else if($dropship_soldier_count >= 3){
+		$dropship_ranks["Specialist"] = true;
+	}else if($dropship_soldier_count >= 1){
+		$dropship_ranks["Private"] = true;
+	}
+	$_SESSION['userData']['rank'] = "";
+	storeRank($dropship_ranks);
 }
 
 if($_SESSION['userData']['dropship_project_id'] == 1){

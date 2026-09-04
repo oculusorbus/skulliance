@@ -833,6 +833,28 @@ function killSquad($conn){
 }
 
 // Check squad count
+// Total soldiers (NFTs) this user holds for their current project -- NOT
+// filtered by active/deceased like checkSquadCount() below, since a rank
+// tier is about how many you hold overall, not your current active squad
+// size. Runs unconditionally on every page load (see where it's called in
+// dashboard.php) rather than only inside the wallet/Koios-gated block --
+// the original rank logic lived entirely inside that gate, keyed off the
+// live Koios $counter, which meant it only ever recomputed when
+// $address_changed was true. For an existing session whose addresses_key
+// was already cached as "unchanged" from before that logic existed, it
+// would never run again at all -- the rank badge would just stay stuck
+// hidden/empty indefinitely. Reading the count straight from the
+// persisted `soldiers` table instead means it's always accurate, every
+// load, with no dependency on that cache.
+function dropshipSoldierCount($conn){
+	$sql = "SELECT COUNT(id) AS total FROM soldiers WHERE user_id='".$_SESSION['userData']['dropship_user_id']."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
+	$result = $conn->query($sql);
+	if ($result && $result->num_rows > 0) {
+		return intval($result->fetch_assoc()['total']);
+	}
+	return 0;
+}
+
 function checkSquadCount($conn){
 	$sql = "SELECT COUNT(id) AS total FROM soldiers WHERE user_id='".$_SESSION['userData']['dropship_user_id']."' AND active = '1' AND deceased = '0' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
 	$result = $conn->query($sql);
