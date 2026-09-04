@@ -747,6 +747,37 @@ function dropshipOculusLoungeLocalImages($asset_names) {
 	return $images;
 }
 
+// Maps a Disco Solaris on-chain "Outerwear" trait value to a Drop Ship armor
+// tier, by garment formality/coverage -- full research, reasoning, and the
+// real-collection population counts behind these buckets are in
+// oculuslounge-nft-metadata.md at the repo root. A missing Outerwear trait
+// (null here) legitimately resolves to Base -- that's real on-chain absence
+// for ~8% of the collection, not a gap being papered over.
+function discosolarisArmorTier($outerwear) {
+	$heavy = array("Formal Jacket", "Formal Jacket With Phone", "Formal Jacket With Card", "Formal Jacket With Pack", "Formal Jacket With Floppy", "Formal Jacket With Green Console", "Formal Jacket With Grey Console", "Solar Jacket", "Custom");
+	$medium = array("Moss Jacket", "Moss Jacket With Flower", "Moss Jacket With Mushrooms", "Moss Jacket With Insect", "Leather Jacket With Cables", "Thick Pink Jacket", "Night Dress", "Lab Coat", "Black Coat", "Green Coat");
+	$light = array("Denim Jacket", "Bomber Jacket", "Badlands Jacket", "Fancy Shirt", "Soho Kids Jacket");
+	// Base (fallthrough): no Outerwear at all, Sleeveless Jacket, Tracksuit, Sweatshirt
+
+	if (in_array($outerwear, $heavy)) return "Heavy";
+	if (in_array($outerwear, $medium)) return "Medium";
+	if (in_array($outerwear, $light)) return "Light";
+	return "Base";
+}
+
+// Maps Disco Solaris's six accessory-type traits (Hat, Necklace, Earrings,
+// Glasses, Headphones, Special) onto Drop Ship's single gear slot via a
+// rarity-ranked precedence rule -- see oculuslounge-nft-metadata.md. Special/
+// Hat win first (rarest, and Special's costume/uniform values are a genuine
+// visual match for "Sexy Nurse"), then Headphones, then the common jewelry
+// fields; only a token with none of the six resolves to "None".
+function discosolarisGear($attributes) {
+	if (isset($attributes['Special']) || isset($attributes['Hat'])) return "Medkit";
+	if (isset($attributes['Headphones'])) return "Demolition";
+	if (isset($attributes['Glasses']) || isset($attributes['Necklace']) || isset($attributes['Earrings'])) return "Melee";
+	return "None";
+}
+
 // Replaces the Koios round-trip entirely for Oculus Lounge (project_id 4).
 // The bigger correction here: Drop Ship should not be independently
 // re-deriving wallet holdings via a live Koios call for a collection
@@ -758,18 +789,22 @@ function dropshipOculusLoungeLocalImages($asset_names) {
 // evidence those collections are tracked in Skulliance's own DB the way
 // Oculus Lounge's is, so this is scoped strictly to project_id 4.
 //
-// Does everything the old Koios branch did for project_id==4: creates any
-// missing `soldiers` row -- armor/gear were always a random roll here (not
-// derived from on-chain metadata even under the old Koios path), and rank
-// was always the fixed string "Neo Miami Citizen", so nothing about
-// soldier stats is lost by sourcing name/asset_name/ipfs from Skulliance
-// instead of Koios -- then calls updateSoldiers() same as before.
+// armor/gear used to be a flat rand(0,3) here, unrelated to the player's
+// actual NFT -- now derived from real on-chain Disco Solaris metadata via
+// one batched Koios asset_info call for everything the player holds (same
+// call shape the pre-migration Koios pipeline already used), run through
+// discosolarisArmorTier()/discosolarisGear() above. Applies to every held
+// asset every time this function runs (gated by dashboard.php on wallet/
+// project changes, not every page load) -- so an existing soldier's
+// old random roll gets corrected to the real value too, not just new ones.
+// rank stays the fixed string "Neo Miami Citizen", same as before.
 function dropshipSyncOculusLounge($conn, $discord_id) {
 	include __DIR__ . '/../credentials/db_credentials.php';
 	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
 	if ($skulliance_conn->connect_error) return;
 
-	$policy_esc = $skulliance_conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
+	$policy = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+	$policy_esc = $skulliance_conn->real_escape_string($policy);
 	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
 
 	$result = $skulliance_conn->query("
@@ -780,23 +815,73 @@ function dropshipSyncOculusLounge($conn, $discord_id) {
 		WHERE collections.policy = '$policy_esc' AND users.discord_id = '$discord_id_esc'
 	");
 
-	$asset_names = array();
+	$nft_rows = array();
 	if ($result) {
 		while ($row = $result->fetch_assoc()) {
-			$asset_names[] = $row['asset_name'];
-			if (!checkSoldier($conn, $row['asset_name'])) {
-				$armor_weight = array("Base" => 0, "Light" => 2, "Medium" => 4, "Heavy" => 6);
-				$gear_weight = array("None" => 1, "Melee" => 2, "Demolition" => 3, "Medkit" => 4);
-				$armor = array("Heavy", "Medium", "Light", "Base");
-				$gear = array("None", "Melee", "Demolition", "Medkit");
-				$armor_final = $armor[rand(0, 3)];
-				$gear_final = $gear[rand(0, 3)];
-				$level = $armor_weight[$armor_final] + $gear_weight[$gear_final];
-				createSoldier($conn, $row['asset_name'], $row['name'], null, "Neo Miami Citizen", $armor_final, $gear_final, $level, $row['ipfs']);
-			}
+			$nft_rows[$row['asset_name']] = $row;
 		}
 	}
 	$skulliance_conn->close();
+
+	// Batch-pull real traits for every held asset in one call.
+	$attributes_by_asset = array();
+	if (!empty($nft_rows)) {
+		$asset_list = array();
+		foreach ($nft_rows as $asset_name => $row) {
+			$asset_list[] = array($policy, bin2hex($asset_name));
+		}
+		$ch = curl_init("https://api.koios.rest/api/v1/asset_info");
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array("_asset_list" => $asset_list)));
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$response = curl_exec($ch);
+		curl_close($ch);
+		$response = json_decode($response);
+
+		if (is_array($response)) {
+			foreach ($response as $item) {
+				if (!isset($item->asset_name_ascii) || !isset($item->minting_tx_metadata) || !isset($item->policy_id)) continue;
+				$asset_name_ascii = $item->asset_name_ascii;
+				$item_policy_id = $item->policy_id;
+				foreach ($item->minting_tx_metadata as $metadata) {
+					if (!isset($metadata->$item_policy_id)) continue;
+					$nfts = $metadata->$item_policy_id;
+					foreach ($nfts as $nft) {
+						$attributes_by_asset[$asset_name_ascii] = isset($nft->attributes) ? (array)$nft->attributes : array();
+					}
+				}
+			}
+		}
+		// If the Koios call itself failed outright (bad JSON, network error),
+		// $attributes_by_asset stays empty and every asset below falls
+		// through discosolarisArmorTier(null)/discosolarisGear(array()) to
+		// Base/None -- a safe, sane fallback rather than a fatal error, at
+		// the cost of not correcting anything this particular sync.
+	}
+
+	$armor_weight = array("Base" => 0, "Light" => 2, "Medium" => 4, "Heavy" => 6);
+	$gear_weight = array("None" => 1, "Melee" => 2, "Demolition" => 3, "Medkit" => 4);
+
+	$asset_names = array();
+	foreach ($nft_rows as $asset_name => $row) {
+		$asset_names[] = $asset_name;
+		$attrs = isset($attributes_by_asset[$asset_name]) ? $attributes_by_asset[$asset_name] : array();
+		$armor_final = discosolarisArmorTier(isset($attrs['Outerwear']) ? $attrs['Outerwear'] : null);
+		$gear_final = discosolarisGear($attrs);
+		$level = $armor_weight[$armor_final] + $gear_weight[$gear_final];
+
+		if (!checkSoldier($conn, $asset_name)) {
+			createSoldier($conn, $asset_name, $row['name'], null, "Neo Miami Citizen", $armor_final, $gear_final, $level, $row['ipfs']);
+		} else {
+			$asset_name_esc = $conn->real_escape_string($asset_name);
+			$armor_esc = $conn->real_escape_string($armor_final);
+			$gear_esc = $conn->real_escape_string($gear_final);
+			$conn->query("UPDATE soldiers SET armor = '$armor_esc', gear = '$gear_esc', level = '$level' WHERE asset_name = '$asset_name_esc' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'");
+		}
+	}
 
 	if (!empty($asset_names)) {
 		updateSoldiers($conn, implode("', '", $asset_names));
