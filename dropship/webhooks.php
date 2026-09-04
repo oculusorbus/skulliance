@@ -96,17 +96,26 @@ include('credentials/webhooks_credentials.php');
 		    ]
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
-		// Mirrored: the existing project webhook (Ohh Meed's own server,
-		// unchanged -- that's where the actual playerbase is) PLUS
-		// Skulliance's own dedicated Drop Ship channel, per the user's
-		// decision to keep both rather than switch over to just one.
+		// Mirrored: the existing project webhook (e.g. Ohh Meed's own
+		// server for Drop Ship/Dread City -- unchanged, that's where the
+		// actual playerbase is) PLUS Skulliance's own dedicated channel for
+		// THIS project specifically, per the user's decision to keep both
+		// rather than switch over to just one. Skulliance has a separate
+		// channel (and credential function) per reskin, not one shared
+		// channel -- getSkullianceWebhook() was the first one added, since
+		// renamed/split into getSkullianceDropShipWebhook() and
+		// getSkullianceOculusLoungeWebhook(). Dread City/Filthy Mermaid
+		// (project 2/3) have no Skulliance channel yet -- still a work in
+		// progress -- so they get no mirror until one exists.
 		// function_exists guard the same way Skulliance's own discordmsg()
 		// guards a brand-new channel with no credential yet -- an
 		// undefined-function call would fatal every discordmsg() call, not
-		// just skip the mirror, if this were ever missing.
+		// just skip the mirror, if one of these were ever missing.
 		$dropship_webhooks = array($webhook);
-		if (function_exists('getSkullianceWebhook')) {
-			$dropship_webhooks[] = getSkullianceWebhook();
+		if ($project_id == 1 && function_exists('getSkullianceDropShipWebhook')) {
+			$dropship_webhooks[] = getSkullianceDropShipWebhook();
+		} elseif ($project_id == 4 && function_exists('getSkullianceOculusLoungeWebhook')) {
+			$dropship_webhooks[] = getSkullianceOculusLoungeWebhook();
 		}
 		foreach (array_unique(array_filter($dropship_webhooks)) as $target) {
 			$ch = curl_init( $target );
