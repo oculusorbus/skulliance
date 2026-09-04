@@ -29,9 +29,13 @@ function automate($conn, $project_id){
 	$list = ob_get_contents(); // Store buffer in variable
 	ob_end_clean(); // End buffering and clean up
 	$description = $list;
-	// Flat, not per-theme -- confirmed live that assets sit directly under
-	// dropship/images/, not dropship/<prefix>/images/.
-	$imageurl = "https://skulliance.io/staking/dropship/images/dropship.jpg";
+	// Drop Ship's own assets (prefix "drop-ship") sit flat under
+	// dropship/images/; every other reskin nests under its own
+	// dropship/<prefix>/images/ -- confirmed live via curl, see
+	// dropship.php's own $prefix comment for the full story.
+	$imageurl = ($prefix === "drop-ship")
+		? "https://skulliance.io/staking/dropship/images/dropship.jpg"
+		: "https://skulliance.io/staking/dropship/".$prefix."/images/dropship.jpg";
 	discordmsg($title, evaluateText($description), $imageurl, $_SESSION['userData']['dropship_project_id']);
 	deactivateGame($conn);
 
@@ -39,9 +43,13 @@ function automate($conn, $project_id){
 	createGame($conn, $prizes, 3);
 	$title = "New Game ".$prizes;
 	$description = "A new game of ".getProjectName($conn)." has been created.";
-	// Flat, not per-theme -- confirmed live that assets sit directly under
-	// dropship/images/, not dropship/<prefix>/images/.
-	$imageurl = "https://skulliance.io/staking/dropship/images/dropship.jpg";
+	// Drop Ship's own assets (prefix "drop-ship") sit flat under
+	// dropship/images/; every other reskin nests under its own
+	// dropship/<prefix>/images/ -- confirmed live via curl, see
+	// dropship.php's own $prefix comment for the full story.
+	$imageurl = ($prefix === "drop-ship")
+		? "https://skulliance.io/staking/dropship/images/dropship.jpg"
+		: "https://skulliance.io/staking/dropship/".$prefix."/images/dropship.jpg";
 	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 }
 ?>

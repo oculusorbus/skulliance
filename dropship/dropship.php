@@ -276,16 +276,17 @@ checkUser($conn);
 checkGame($conn);
 
 // Set project folder prefix
-// FLAT, not per-theme-subfolder: confirmed live (curl) that the uploaded
-// assets sit directly under dropship/images/, dropship/icons/, etc. --
-// NOT dropship/<slug>/images/. An earlier pass here assumed themes each got
-// their own nested subfolder ("themes inside dropship, not next to it" was
-// about dropship/ replacing madballs.net as the parent, not about adding a
-// slug level) and 404'd the game's own background image. $project_name is
-// no longer part of the path at all now -- kept the lookup only because
-// other code still calls getProjectName() for display text.
+// HYBRID, confirmed live via curl -- Drop Ship's own assets (project_id 1)
+// sit FLAT directly under dropship/images/, dropship/icons/, etc., but the
+// other three reskins each got their own named subfolder underneath it:
+// dropship/dread-city/, dropship/filthy-mermaid/, dropship/oculus-lounge/.
+// Two earlier passes here each got half of this right and the other half
+// wrong (one assumed every reskin nests by slug including Drop Ship's own,
+// the other assumed NONE of them do) -- this is the actual structure,
+// verified against all four project IDs, not inferred from either extreme.
 $project_name = getProjectName($conn);
-$prefix = "/staking/dropship/";
+$slug = isset($project_name) ? strtolower(str_replace(" ", "-", $project_name)) : "drop-ship";
+$prefix = ($slug === "drop-ship") ? "/staking/dropship/" : "/staking/dropship/".$slug."/";
 
 // Kill player
 function kill($dropshipMarkup, $counter) {
