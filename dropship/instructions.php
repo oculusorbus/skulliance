@@ -10,6 +10,13 @@ include 'header.php';
 		     card look (same border/background/radius as .inventory-item in
 		     dist/flexbox.css) rather than inventing a new visual language. -->
 		<style>
+		/* .main h3 is forced white in dist/flexbox.css for the live battle
+		   log's "Round N" headers -- a legitimate, load-bearing rule
+		   elsewhere, so it's not touched globally. Same specificity as the
+		   shared h3 rule (0,1,1), so re-asserting the platform's normal
+		   teal here (same value as the shared h3 rule) wins on source
+		   order without fighting that other page's styling. */
+		#row-instructions h3 { color: #00a882; }
 		.instr-section { background-color: #0a1929; border: 1px solid rgba(0,200,160,0.15); border-radius: 0.5rem; padding: 15px 20px; margin-bottom: 18px; }
 		.instr-section h3 { margin-top: 0; }
 		.instr-row { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
