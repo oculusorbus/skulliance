@@ -162,14 +162,14 @@ include 'header.php';
    just the Joker flip), so no corner index, no pool lookup, just the art.
    Same frame as a single .cq-flash-card (black ground, gold border). Was
    91x128 (card-sized, after an even-earlier 200px-wide pass got reported
-   as way oversized) -- widened back to 200px per the user, 2026-09-04;
-   height (281) scaled proportionally off that same 91:128 ratio rather
-   than left at 128, so object-fit:cover crops the art the same way, just
-   bigger, instead of squashing it into a wider box. No longer shared with
-   .cq-result-image (that got its own dedicated size once death.webp
-   replaced joker.webp on the loss screen specifically -- see that rule
-   below). */
-.cq-flash-image { margin: 2px auto 12px; width: 200px; height: 281px; position: relative;
+   as way oversized) -- widened back to 175px per the user, 2026-09-04
+   (a same-day 200px pass overshot, corrected down); height (246) scaled
+   proportionally off that same 91:128 ratio rather than left at 128, so
+   object-fit:cover crops the art the same way, just bigger, instead of
+   squashing it into a wider box. No longer shared with .cq-result-image
+   (that got its own dedicated size once death.webp replaced joker.webp
+   on the loss screen specifically -- see that rule below). */
+.cq-flash-image { margin: 2px auto 12px; width: 175px; height: 246px; position: relative;
 	border-radius: 10px; background: #000; overflow: hidden; box-sizing: border-box;
 	border: 2px solid rgba(255,204,77,.85);
 	box-shadow: 0 0 22px rgba(255,204,77,.35), 0 10px 26px rgba(0,0,0,.55);
