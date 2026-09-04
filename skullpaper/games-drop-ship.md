@@ -23,4 +23,4 @@ Track your ranks for the current game, all time high scores, and by levels and X
 
 Visit the Barracks of Registered Soldiers who have connected their wallets to Drop Ship and participated in games.
 
-Play Drop Ship at [madballs.net/drop-ship](https://www.madballs.net/drop-ship).
+Play Drop Ship from the site nav's Play menu, or head straight to [dropship/dashboard.php](dropship/dashboard.php) - signing in to Skulliance is required now.
