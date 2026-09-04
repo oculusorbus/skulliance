@@ -276,11 +276,17 @@ checkUser($conn);
 checkGame($conn);
 
 // Set project folder prefix
+// Themes now nest INSIDE the dropship/ app folder (not siblings of it, the
+// way madballs.net had /drop-ship/, /filthy-mermaid/, /oculus-lounge/ as
+// separate top-level folders) -- so every theme slug gets /staking/dropship/
+// prepended. Every existing "$prefix."images/...'" reference elsewhere
+// keeps working unchanged: $prefix still has both the leading and trailing
+// slash, just a longer absolute path now.
 $project_name = getProjectName($conn);
 if(isset($project_name)){
-	$prefix = "/".strtolower(str_replace(" ", "-", $project_name))."/";
+	$prefix = "/staking/dropship/".strtolower(str_replace(" ", "-", $project_name))."/";
 }else{
-	$prefix = "/"."drop-ship/";
+	$prefix = "/staking/dropship/drop-ship/";
 }
 
 // Kill player

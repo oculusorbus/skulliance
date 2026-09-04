@@ -7,7 +7,9 @@ include('credentials/webhooks_credentials.php');
 		global $prefix;
 		// Delay execution by 1 minute to allow the player to finish their game before sending results to Discord
 		if($url == ""){
-			$url = "https://madballs.net/drop-ship/index.php";
+			// dashboard.php, not index.php -- index.php is just a redirect
+			// into Skulliance's login now, a dead end as a Discord embed link.
+			$url = "https://skulliance.io/staking/dropship/dashboard.php";
 		}
 		$webhook = getWebhook($project_id);
 	    $timestamp = date("c", strtotime("now"));
@@ -53,7 +55,7 @@ include('credentials/webhooks_credentials.php');
 					/*
 		            "footer" => [
 		                "text" => "Drop Ship",
-		                "icon_url" => "https://www.madballs.net/drop-ship/images/vip.gif"
+		                "icon_url" => "https://skulliance.io/staking/dropship/drop-ship/images/vip.gif"
 		            ],*/
 
 		            // Embed image
@@ -63,14 +65,14 @@ include('credentials/webhooks_credentials.php');
 
 		            // thumbnail
 		            "thumbnail" => [
-		                "url" => "https://www.madballs.net/".$prefix."/images/vip.gif"
+		                "url" => "https://skulliance.io".$prefix."images/vip.gif"
 		            ],
 
 		            // Author name & url
 					/*
 		            "author" => [
 		                "name" => "Kill Bot",
-		                "url" => "https://www.madballs.net/dropship"
+		                "url" => "https://skulliance.io/staking/dropship"
 		            ],*/
 
 		            // Custom fields

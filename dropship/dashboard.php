@@ -32,7 +32,7 @@ if($_SESSION['userData']['discord_id'] == "772831523899965440") {
 		$list = ob_get_contents(); // Store buffer in variable
 		ob_end_clean(); // End buffering and clean up
 		$description = $list;
-		$imageurl = "https://www.madballs.net/".$prefix."/images/dropship.jpg";
+		$imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
 		discordmsg($title, evaluateText($description), $imageurl, $_SESSION['userData']['dropship_project_id']);
 		deactivateGame($conn);
 	}
@@ -40,7 +40,7 @@ if($_SESSION['userData']['discord_id'] == "772831523899965440") {
 		createGame($conn, $_POST['name'], $_POST['prizes']);
 		$title = "New Game ".$_POST['name'];
 		$description = "A new game of ".getProjectName($conn)." has been created.";
-		$imageurl = "https://www.madballs.net/".$prefix."/images/dropship.jpg";
+		$imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
 		discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 	}
 }
@@ -330,7 +330,7 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 							$list = ob_get_contents(); // Store buffer in variable
 							ob_end_clean(); // End buffering and clean up
 							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
-							$imageurl = "https://www.madballs.net".$prefix."images/die/".rand(1,3).".gif";
+							$imageurl = "https://skulliance.io".$prefix."images/die/".rand(1,3).".gif";
 							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']); 
 							$_SESSION['userData']['notification'] = "true";
 						}

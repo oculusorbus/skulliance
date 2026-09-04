@@ -375,7 +375,7 @@ function announceBattle($wager){
 	$title = "New Battle Created [Click to Attack]";
 	$description = $_SESSION['userData']['name']." created a new battle wagering ".$wager." $".evaluateText("SCRIP");
 	$imageurl = $avatar_url;
-	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id'], "https://madballs.net/drop-ship/battles.php");
+	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id'], "https://skulliance.io/staking/dropship/battles.php");
 }
 
 // Announce retreat
@@ -384,7 +384,7 @@ function announceRetreat($wager){
 	$title = "Retreat";
 	$description = $_SESSION['userData']['name']." retreated from battle retrieving a wager of ".$wager." $".evaluateText("SCRIP");
 	$imageurl = $avatar_url;
-	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id'], "https://madballs.net/drop-ship/battles.php");
+	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id'], "https://skulliance.io/staking/dropship/battles.php");
 }
 
 // Announce battle results using AJAX via separate PHP file in order to delay the Discord message

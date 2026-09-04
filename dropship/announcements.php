@@ -48,6 +48,6 @@ function announceBattleResults($type, $user_id, $battle_id, $name, $score, $avat
 		$description = $name." died during Round ".$score.$battle_markup." by ".$opponent;
 	}
 	$imageurl = $avatar_url;
-	discordmsg($title, $description, $imageurl, $project_id, "https://madballs.net/drop-ship/battles.php");
+	discordmsg($title, $description, $imageurl, $project_id, "https://skulliance.io/staking/dropship/battles.php");
 }
 ?>
