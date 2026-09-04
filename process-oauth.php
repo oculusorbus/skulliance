@@ -158,11 +158,14 @@ session_start();
 // undo their effect for this exact login.
 include_once 'db.php';
 
-$guild_IDs = array();
-// Skulliance Guild
-$guild_IDs[0] = '944002913443938306';
-// Ritual Guild
-$guild_IDs[1] = '1235869893664964608';
+$guild_ID = '944002913443938306';
+//$addUserToGuild = addUserToGuild($result['id'],$access_token,$guild_ID);
+
+// Skulliance, Ohh Meed (Drop Ship's original guild), Oculus Lounge (a Drop
+// Ship reskin, project_id 4 -- see dropship/db.php's evaluateText()). Ritual
+// Guild dropped: confirmed not referenced anywhere in Skulliance's own
+// credentials/role logic, so it wasn't doing anything here.
+$guild_IDs = array('944002913443938306', '925610311183130644', '966397496978964500');
 
 $_SESSION['logged_in'] = true;
 $_SESSION['userData'] = [
