@@ -95,20 +95,33 @@ include('credentials/webhooks_credentials.php');
 		        ]
 		    ]
 		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-        if($webhook != "") {
-            $ch = curl_init( $webhook );
-            curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-            curl_setopt( $ch, CURLOPT_POST, 1);
-            curl_setopt( $ch, CURLOPT_POSTFIELDS, $msg);
-            curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt( $ch, CURLOPT_HEADER, 0);
-            curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
- 
-            $response = curl_exec( $ch );
-            // If you need to debug, or find out why you can't send message uncomment line below, and execute script.
-            echo $response;
-            curl_close( $ch );
-        }
+
+		// Mirrored: the existing project webhook (Ohh Meed's own server,
+		// unchanged -- that's where the actual playerbase is) PLUS
+		// Skulliance's own dedicated Drop Ship channel, per the user's
+		// decision to keep both rather than switch over to just one.
+		// function_exists guard the same way Skulliance's own discordmsg()
+		// guards a brand-new channel with no credential yet -- an
+		// undefined-function call would fatal every discordmsg() call, not
+		// just skip the mirror, if this were ever missing.
+		$dropship_webhooks = array($webhook);
+		if (function_exists('getSkullianceWebhook')) {
+			$dropship_webhooks[] = getSkullianceWebhook();
+		}
+		foreach (array_unique(array_filter($dropship_webhooks)) as $target) {
+			$ch = curl_init( $target );
+			curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+			curl_setopt( $ch, CURLOPT_POST, 1);
+			curl_setopt( $ch, CURLOPT_POSTFIELDS, $msg);
+			curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
+			curl_setopt( $ch, CURLOPT_HEADER, 0);
+			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+
+			$response = curl_exec( $ch );
+			// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
+			echo $response;
+			curl_close( $ch );
+		}
     }
  
 //    discordmsg($msg, $webhook); // SENDS MESSAGE TO DISCORD
