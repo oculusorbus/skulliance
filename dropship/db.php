@@ -19,10 +19,20 @@ error_reporting(E_ALL ^ E_NOTICE);
 //
 // Conditional session_start(), not unconditional: matches Skulliance's own
 // db.php, avoiding one orphaned session file per cookieless bot/scraper hit.
-if (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie'])) {
+//
+// CLI is exempt from all of this -- automate.php runs as a cron job
+// (php -f automate.php automate=true), a trusted server-side batch job
+// with no browser, no cookies, and so no way to ever satisfy a login
+// check. $_COOKIE is always empty under CLI, so without this guard every
+// run would hit the "not logged in" branch below and exit() before
+// automate($conn, 1)/automate($conn, 4) ever ran -- same
+// php_sapi_name()==='cli' check cache-crypties-art.php/
+// cache-oculuslounge-art.php already use for the same reason.
+$is_cli = (php_sapi_name() === 'cli');
+if (!$is_cli && (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie']))) {
 	session_start();
 }
-if (!isset($_SESSION['logged_in'])) {
+if (!$is_cli && !isset($_SESSION['logged_in'])) {
 	// Mobile Safari ITP / PWA standalone routinely drops the native session
 	// cookie while keeping the 6-month SessionCookie -- same restore
 	// Skulliance's own skulliance.php does. Merge, never raw-assign: a raw
