@@ -506,6 +506,14 @@ include 'header.php';
 .cq-result.lost { box-shadow: 0 0 40px rgba(224,85,85,.15) inset, 0 0 1px rgba(224,85,85,.4); }
 .cq-result.won { box-shadow: 0 0 40px rgba(0,200,160,.15) inset, 0 0 1px rgba(0,200,160,.4); }
 .cq-result-icon { font-size: 3.2rem; margin-bottom: 10px; animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .1s both; }
+/* Loss state swaps the plain 💀 emoji for the real Skulliance mark instead
+   (skulliance-logo-icon.png, same file Crypt Crawl's own card back and the
+   header spinner already use -- white-on-transparent, no recolor needed),
+   per the user. Sized off the icon's own height to roughly match the
+   emoji's visual footprint at the existing 3.2rem font-size rather than
+   inheriting it directly -- an <img> doesn't respond to font-size the way
+   emoji text does. Win state (👑) is untouched, still plain emoji text. */
+.cq-result-icon img { height: 3.2rem; width: auto; vertical-align: middle; }
 .cq-result-title { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; animation: cqResultPop .5s cubic-bezier(.18,.89,.32,1.28) .2s both; }
 .cq-result.lost .cq-result-title { color: #ff7070; }
 .cq-result.won .cq-result-title { color: #00c8a0; }

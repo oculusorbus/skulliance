@@ -394,6 +394,14 @@ include 'header.php';
 .cc-result.lost { box-shadow: 0 0 40px rgba(224,85,85,.15) inset, 0 0 1px rgba(224,85,85,.4); }
 .cc-result.won  { box-shadow: 0 0 40px rgba(0,200,160,.15) inset, 0 0 1px rgba(0,200,160,.4); }
 .cc-result-icon  { font-size: 3.2rem; margin-bottom: 10px; animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .1s both; }
+/* Loss state swaps the plain 💀 emoji for the real Skulliance mark instead
+   (skulliance-logo-icon.png, same file the card back and header spinner
+   already use -- white-on-transparent, no recolor needed), per the user.
+   Sized off the icon's own height to roughly match the emoji's visual
+   footprint at the existing 3.2rem font-size rather than inheriting it
+   directly -- an <img> doesn't respond to font-size the way emoji text
+   does. Win state (🏆) is untouched, still plain emoji text. */
+.cc-result-icon img { height: 3.2rem; width: auto; vertical-align: middle; }
 .cc-result-title { font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; animation: ccResultPop .5s cubic-bezier(.18,.89,.32,1.28) .2s both; }
 .cc-result.lost .cc-result-title { color: #ff7070; }
 .cc-result.won  .cc-result-title { color: #00c8a0; }

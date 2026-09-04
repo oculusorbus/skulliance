@@ -7,4 +7,4 @@
 # showing a refresh prompt (or silently reloading) on a mismatch. Only
 # the mtime matters -- nothing parses this content -- but a timestamp
 # doubles as a human-readable deploy log via `git log -p VERSION`.
-2026-09-04T04:54:10Z
+2026-09-04T04:59:34Z

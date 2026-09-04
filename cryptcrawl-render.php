@@ -117,7 +117,7 @@ function cryptcrawlMinimalGameOverHtml($run, $user_id) {
 	<div id="cc-mood" data-mood="<?php echo $mood; ?>" data-restarted="0" data-theme-active="<?php echo $theme_active; ?>" data-theme-img="<?php echo htmlspecialchars($theme_img); ?>" data-sfx="<?php echo $fell ? 'death' : 'victory'; ?>" style="display:none;"></div>
 	<div class="cc-inner">
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>" data-run-id="<?php echo intval($run['id'] ?? 0); ?>">
-			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
+			<div class="cc-result-icon"><?php echo $fell ? '<img src="/staking/pwa/skulliance-logo-icon.png" alt="">' : '🏆'; ?></div>
 			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
 			<?php if ($fell): ?>
 				<div class="cc-result-image"><img src="images/death.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
@@ -292,7 +292,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 			$fell = ($recent_run['status'] === 'lost');
 		?>
 		<div class="cc-result <?php echo $fell ? 'lost' : 'won'; ?>" data-run-id="<?php echo intval($recent_run['id'] ?? 0); ?>">
-			<div class="cc-result-icon"><?php echo $fell ? '💀' : '🏆'; ?></div>
+			<div class="cc-result-icon"><?php echo $fell ? '<img src="/staking/pwa/skulliance-logo-icon.png" alt="">' : '🏆'; ?></div>
 			<div class="cc-result-title"><?php echo $fell ? 'You Died' : 'You Escaped'; ?></div>
 			<?php if ($fell): ?>
 				<div class="cc-result-image"><img src="images/death.webp" alt="" loading="lazy" onerror="this.parentElement.remove();"></div>
