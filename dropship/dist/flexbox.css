@@ -62,6 +62,14 @@ body {
   font-family: arial;
   -webkit-filter: drop-shadow(5px 5px 5px #202225);
   filter: drop-shadow(5px 5px 5px #202225);
+  /* Matches Skulliance's own .navbar exactly -- position+z-index here is
+     what actually keeps the dropdown menus above page content (the game
+     board), not .nav-dropdown-menu's own z-index:100 alone. Without an
+     explicit position on .navbar, it never establishes a stacking context
+     of its own, so its children's z-index gets compared against whatever
+     the rest of the page happens to use instead of reliably winning. */
+  position: relative;
+  z-index: 200;
 }
 
 /* Style the navigation bar links */
