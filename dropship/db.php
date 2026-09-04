@@ -671,32 +671,34 @@ function dropshipConnectedStakeAddresses($discord_id) {
 	return $addresses;
 }
 
-// Oculus Lounge (Drop Ship's own project_id 4) plays on Ohh Meed's NFTs,
-// which Skulliance already tracks and caches locally as its OWN project_id
-// 2 (see db.php's assignRole block for that number, unrelated to Drop
-// Ship's numbering -- Skulliance's project_id and Drop Ship's project_id
-// are two different numbering schemes that happen to share a name, same
-// reason dropship_project_id exists at all). Drop Ship's own soldiers
-// (project_id 1) are NOT this: their images are already genuinely local to
-// Drop Ship (images/nfts/{asset_name}.jpg), untouched by this function.
+// CORRECTED (2026-09-05): an earlier pass here assumed Oculus Lounge plays
+// on "Ohh Meed's" NFTs (Skulliance's own project_id 2) -- wrong. Oculus
+// Lounge is its own specific policy under the broader "Disco Solaris" brand
+// (which covers SEVERAL different policies -- moebiuspioneers, discosolaris,
+// AND oculuslounge are three separate collections, per monstrocity.php's own
+// project config). The policy that actually matters here:
+// d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779
+//
+// Looked up by policy (collections.policy), not by a project_id guess --
+// Skulliance's own getCollectionId() does the identical lookup, duplicated
+// here rather than called for the usual reason (can't include Skulliance's
+// PHP). Drop Ship's own soldiers (project_id 1) are NOT this: their images
+// are already genuinely local to Drop Ship (images/nfts/{asset_name}.jpg),
+// untouched by this function.
 //
 // One query for the WHOLE roster, not one per soldier -- getSoldiers()
-// calls this once before its render loop, not per row, so this is a single
-// second connection + single query regardless of squad size.
+// calls this once before its render loop.
 //
-// Keyed by asset_name: Drop Ship's own soldiers.asset_name (from Koios'
-// AssetName field) should match Skulliance's own nfts.asset_name (from
-// whatever sync populated it) for the SAME on-chain asset. This is the
-// join key, not a shared numeric id -- there isn't one, the two DBs have
-// never shared a PK space for NFTs any more than they do for users.
+// Keyed by asset_name (confirmed a real, consistently-used column in
+// Skulliance's own nfts table, e.g. getNFTs() in Skulliance's db.php).
 //
 // Returns a map: asset_name => local image URL (already glob-verified to
-// exist on disk, same check getIPFS() does), for every asset_name Skulliance
-// actually has BOTH a DB row AND a cached file for. Callers must fall back
-// to the existing jpgstoreapis.com URL for any asset_name missing from this
-// map -- Skulliance not having (or not yet having cached) a given Ohh Meed
-// NFT is expected, not an error.
-function dropshipOhhMeedLocalImages($asset_names) {
+// exist on disk, same check getIPFS() does). Callers fall back to
+// jpgstoreapis.com for anything missing -- see cache-ohhmeed-art.php's
+// successor for backfilling that gap in bulk (TODO: rename/rescope that
+// script to this policy instead of project_id=2, now that the real
+// collection is known).
+function dropshipOculusLoungeLocalImages($asset_names) {
 	$images = array();
 	if (empty($asset_names)) return $images;
 
@@ -704,15 +706,16 @@ function dropshipOhhMeedLocalImages($asset_names) {
 	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
 	if ($skulliance_conn->connect_error) return $images; // fail quiet -- callers fall back to jpgstoreapis.com
 
+	$policy_esc = $skulliance_conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
 	$in_list = implode(',', array_map(function($name) use ($skulliance_conn) {
 		return "'" . $skulliance_conn->real_escape_string($name) . "'";
 	}, $asset_names));
 
 	$result = $skulliance_conn->query("
-		SELECT nfts.asset_name, nfts.ipfs, nfts.collection_id
+		SELECT nfts.asset_name, nfts.ipfs, nfts.collection_id, collections.project_id
 		FROM nfts
 		INNER JOIN collections ON collections.id = nfts.collection_id
-		WHERE collections.project_id = 2 AND nfts.asset_name IN ($in_list)
+		WHERE collections.policy = '$policy_esc' AND nfts.asset_name IN ($in_list)
 	");
 	if ($result) {
 		while ($row = $result->fetch_assoc()) {
@@ -721,17 +724,73 @@ function dropshipOhhMeedLocalImages($asset_names) {
 			// here is the same fatal-redeclare risk as everywhere else in
 			// this file), so keep this in sync BY HAND if getIPFS()'s own
 			// convention ever changes.
-			$matches = glob(__DIR__ . '/../images/nfts/2/' . intval($row['collection_id']) . '/' . md5($row['ipfs']) . '.*');
+			$matches = glob(__DIR__ . '/../images/nfts/' . intval($row['project_id']) . '/' . intval($row['collection_id']) . '/' . md5($row['ipfs']) . '.*');
 			if (!empty($matches)) {
 				$ext = pathinfo($matches[0], PATHINFO_EXTENSION);
 				$mtime = @filemtime($matches[0]);
 				$bust = $mtime ? '?v=' . $mtime : '';
-				$images[$row['asset_name']] = 'https://skulliance.io/staking/images/nfts/2/' . intval($row['collection_id']) . '/' . md5($row['ipfs']) . '.' . $ext . $bust;
+				$images[$row['asset_name']] = 'https://skulliance.io/staking/images/nfts/' . intval($row['project_id']) . '/' . intval($row['collection_id']) . '/' . md5($row['ipfs']) . '.' . $ext . $bust;
 			}
 		}
 	}
 	$skulliance_conn->close();
 	return $images;
+}
+
+// Replaces the Koios round-trip entirely for Oculus Lounge (project_id 4).
+// The bigger correction here: Drop Ship should not be independently
+// re-deriving wallet holdings via a live Koios call for a collection
+// Skulliance has ALREADY synced into its own `nfts` table. Doing so was
+// duplicating work and produced two independently-synced pictures of the
+// same holder data -- which is exactly why images kept resolving wrong,
+// not just a caching gap. Dread City/Filthy Mermaid (project_id 2/3) are
+// UNCHANGED and still use the Koios pipeline in dashboard.php -- there's no
+// evidence those collections are tracked in Skulliance's own DB the way
+// Oculus Lounge's is, so this is scoped strictly to project_id 4.
+//
+// Does everything the old Koios branch did for project_id==4: creates any
+// missing `soldiers` row -- armor/gear were always a random roll here (not
+// derived from on-chain metadata even under the old Koios path), and rank
+// was always the fixed string "Neo Miami Citizen", so nothing about
+// soldier stats is lost by sourcing name/asset_name/ipfs from Skulliance
+// instead of Koios -- then calls updateSoldiers() same as before.
+function dropshipSyncOculusLounge($conn, $discord_id) {
+	include __DIR__ . '/../credentials/db_credentials.php';
+	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
+	if ($skulliance_conn->connect_error) return;
+
+	$policy_esc = $skulliance_conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
+	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
+
+	$result = $skulliance_conn->query("
+		SELECT nfts.name, nfts.asset_name, nfts.ipfs
+		FROM nfts
+		INNER JOIN users ON users.id = nfts.user_id
+		INNER JOIN collections ON collections.id = nfts.collection_id
+		WHERE collections.policy = '$policy_esc' AND users.discord_id = '$discord_id_esc'
+	");
+
+	$asset_names = array();
+	if ($result) {
+		while ($row = $result->fetch_assoc()) {
+			$asset_names[] = $row['asset_name'];
+			if (!checkSoldier($conn, $row['asset_name'])) {
+				$armor_weight = array("Base" => 0, "Light" => 2, "Medium" => 4, "Heavy" => 6);
+				$gear_weight = array("None" => 1, "Melee" => 2, "Demolition" => 3, "Medkit" => 4);
+				$armor = array("Heavy", "Medium", "Light", "Base");
+				$gear = array("None", "Melee", "Demolition", "Medkit");
+				$armor_final = $armor[rand(0, 3)];
+				$gear_final = $gear[rand(0, 3)];
+				$level = $armor_weight[$armor_final] + $gear_weight[$gear_final];
+				createSoldier($conn, $row['asset_name'], $row['name'], null, "Neo Miami Citizen", $armor_final, $gear_final, $level, $row['ipfs']);
+			}
+		}
+	}
+	$skulliance_conn->close();
+
+	if (!empty($asset_names)) {
+		updateSoldiers($conn, implode("', '", $asset_names));
+	}
 }
 
 // Check to see if an active game exists. If not, unset session variable for game id.
@@ -1879,7 +1938,7 @@ function checkLeaderboard($conn, $clean) {
 				$leaderboardCounter++;
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img onError='this.src=\"/drop-ship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					$avatar = "<img onError='this.src=\"/staking/dropship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 		    	echo "<li class='role'><table width='100%'><tr><td width='90%'>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong> (" . $row["score"]. ")";
 				checkResultsItems($conn, $row["id"], "false");
@@ -1926,7 +1985,7 @@ function checkATHLeaderboard($conn, $clean) {
 				$leaderboardCounter++;
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img onError='this.src=\"/drop-ship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					$avatar = "<img onError='this.src=\"/staking/dropship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 		    	echo "<li class='role'><table width='100%'><tr><td width='90%'>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]."</strong> (" . $row["max_score"]. ")";
 				$result_id = checkMaxScoreResultID($conn, $row["user_id"], $row["max_score"]);
@@ -2015,7 +2074,7 @@ function checkXPLeaderboard($conn, $clean) {
 				$level = floor($row["xp"]/100);
 				$avatar = "";
 				if($row["avatar"] != ""){
-					$avatar = "<img onError='this.src=\"/drop-ship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
+					$avatar = "<img onError='this.src=\"/staking/dropship/icons/xp.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='icon rounded-full'/>";
 				}
 		    	echo "<li>".$leaderboardCounter.". ".$avatar." <strong>".$row["username"]. "</strong>: <i>Lv. ".$level."</i> - (" . $row["xp"]. " XP)</li>";
 		  	}

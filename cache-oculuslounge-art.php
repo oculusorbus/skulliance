@@ -1,16 +1,24 @@
 <?php
-// cache-ohhmeed-art.php — bulk pre-cache of Ohh Meed artwork.
+// cache-oculuslounge-art.php — bulk pre-cache of Oculus Lounge artwork.
 //
 // WHY THIS EXISTS
 // Oculus Lounge (a Drop Ship reskin, migrated in from madballs.net) shows
-// each player's Ohh Meed NFTs as their in-game roster -- see
-// dropshipOhhMeedLocalImages() in dropship/db.php, which reads Skulliance's
-// own locally-cached copy instead of hotlinking jpgstoreapis.com. Same root
-// problem cache-crypties-art.php was built for: an NFT can have a `nfts` row
-// (metadata synced) with no image ever actually fetched to disk, especially
-// for players who never loaded a Skulliance page that renders it. Reported
-// live: a specific Oculus Lounge NFT still falling back to jpgstoreapis.com
-// even after dropshipOhhMeedLocalImages() shipped -- this is why.
+// each player's Oculus Lounge NFTs as their in-game roster -- see
+// dropshipOculusLoungeLocalImages()/dropshipSyncOculusLounge() in
+// dropship/db.php, which read Skulliance's own already-synced `nfts` data
+// (and its locally-cached images) instead of Drop Ship independently
+// hitting Koios and hotlinking jpgstoreapis.com. Same root problem
+// cache-crypties-art.php was built for: an nfts row can exist (metadata
+// synced) with no image ever actually fetched to disk, especially for
+// players who never loaded a Skulliance page that renders it.
+//
+// CORRECTED 2026-09-05: this file was originally named cache-ohhmeed-art.php
+// and filtered by collections.project_id = 2 ("Ohh Meed", Skulliance's own
+// numbering). That was wrong -- Oculus Lounge is its own specific policy
+// under the broader "Disco Solaris" brand (which covers several different
+// policies -- moebiuspioneers, discosolaris, and oculuslounge are three
+// separate collections, per monstrocity.php's own project config). Renamed
+// and rescoped to the correct policy.
 //
 // Deliberately NOT a live auto-heal-on-image-error trigger. That was tried
 // for the general NFT dashboard (healNFT() in skulliance.js) and had to be
@@ -20,9 +28,9 @@
 // per-request fetch.
 //
 // USAGE -- CLI ONLY (see the SAPI guard below; over HTTP this 404s):
-//   php cache-ohhmeed-art.php                       # dry run: just report
-//   php cache-ohhmeed-art.php run=1                 # cache everything missing
-//   php cache-ohhmeed-art.php run=1 limit=100       # do 100, then stop
+//   php cache-oculuslounge-art.php                       # dry run: just report
+//   php cache-oculuslounge-art.php run=1                 # cache everything missing
+//   php cache-oculuslounge-art.php run=1 limit=100       # do 100, then stop
 //
 // SAFE TO RE-RUN. Anything already on disk is skipped without a network call,
 // so repeat runs cost almost nothing and only pick up whatever is new or
@@ -47,27 +55,29 @@ if (!$is_cli) {
 	exit;
 }
 
-function oh_out($line) {
+function ol_out($line) {
 	echo $line . "\n";
 	if (ob_get_level() > 0) { @ob_flush(); }
 	@flush();
 }
 
-// Ohh Meed is Skulliance's own project_id 2 (see the assignRole block near
-// the top of db.php for where that number is defined) -- filtered by
-// project_id, not collection name, since that's the same key
-// dropshipOhhMeedLocalImages() joins on and is unambiguous regardless of
-// how any given collection happens to be named.
+// Oculus Lounge's actual on-chain policy -- same one
+// dropshipOculusLoungeLocalImages()/dropshipSyncOculusLounge() use, and the
+// same value monstrocity.php's own project config lists for
+// value="oculuslounge". Looked up by policy, not project_id/collection
+// name, since that's the one unambiguous key across both DBs.
+$policy = $conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
+
 $result = $conn->query("
 	SELECT n.id, n.ipfs, n.collection_id, c.project_id, c.name AS collection_name
 	FROM nfts n
 	INNER JOIN collections c ON c.id = n.collection_id
-	WHERE c.project_id = 2
+	WHERE c.policy = '$policy'
 	ORDER BY n.collection_id ASC, n.id ASC
 ");
 
 if (!$result) {
-	oh_out('Query failed: ' . $conn->error);
+	ol_out('Query failed: ' . $conn->error);
 	exit;
 }
 
@@ -75,7 +85,7 @@ $total = 0; $already = 0; $missing = 0;
 $todo = [];
 while ($row = $result->fetch_assoc()) {
 	$total++;
-	// Same on-disk lookup getIPFS()/dropshipOhhMeedLocalImages() use, so
+	// Same on-disk lookup getIPFS()/dropshipOculusLoungeLocalImages() use, so
 	// "already cached" here means exactly what the game means by it.
 	if (cryptconquestHasLocalArt($row['ipfs'], $row['collection_id'], $row['project_id'])) {
 		$already++;
@@ -85,25 +95,25 @@ while ($row = $result->fetch_assoc()) {
 	$todo[] = $row;
 }
 
-oh_out('Ohh Meed NFTs found : ' . $total);
-oh_out('Already cached      : ' . $already);
-oh_out('Missing artwork     : ' . $missing);
+ol_out('Oculus Lounge NFTs found : ' . $total);
+ol_out('Already cached           : ' . $already);
+ol_out('Missing artwork          : ' . $missing);
 
 if (!$do_run) {
-	oh_out('');
-	oh_out('Dry run -- nothing fetched. Re-run with run=1 to cache the missing ones.');
+	ol_out('');
+	ol_out('Dry run -- nothing fetched. Re-run with run=1 to cache the missing ones.');
 	$conn->close();
 	exit;
 }
 
 if ($limit > 0 && count($todo) > $limit) {
 	$todo = array_slice($todo, 0, $limit);
-	oh_out('Limiting this pass to ' . $limit . '.');
+	ol_out('Limiting this pass to ' . $limit . '.');
 }
 
-oh_out('');
-oh_out('Fetching ' . count($todo) . ' image(s). Already-cached files are never re-fetched.');
-oh_out('');
+ol_out('');
+ol_out('Fetching ' . count($todo) . ' image(s). Already-cached files are never re-fetched.');
+ol_out('');
 
 $ok = 0; $failed = 0; $skipped = 0; $i = 0;
 foreach ($todo as $row) {
@@ -126,25 +136,25 @@ foreach ($todo as $row) {
 		$status = $res['status'] ?? 'unknown';
 		if ($status === 'cached' || $status === 'exists') {
 			$ok++;
-			oh_out($label . ' OK');
+			ol_out($label . ' OK');
 		} elseif ($status === 'skipped') {
 			$skipped++;
-			oh_out($label . ' SKIP - ' . ($res['message'] ?? 'skipped'));
+			ol_out($label . ' SKIP - ' . ($res['message'] ?? 'skipped'));
 		} else {
 			$failed++;
-			oh_out($label . ' FAIL - ' . ($res['message'] ?? $status));
+			ol_out($label . ' FAIL - ' . ($res['message'] ?? $status));
 		}
 	} catch (\Throwable $e) {
 		// One bad row must never abort the batch.
 		$failed++;
-		oh_out($label . ' ERROR - ' . $e->getMessage());
+		ol_out($label . ' ERROR - ' . $e->getMessage());
 	}
 }
 
-oh_out('');
-oh_out('Done. cached=' . $ok . '  skipped=' . $skipped . '  failed=' . $failed);
+ol_out('');
+ol_out('Done. cached=' . $ok . '  skipped=' . $skipped . '  failed=' . $failed);
 if ($failed > 0) {
-	oh_out('Failures are usually a dead/unpinned CID or a gateway timeout.');
-	oh_out('Re-running is safe and will retry only what is still missing.');
+	ol_out('Failures are usually a dead/unpinned CID or a gateway timeout.');
+	ol_out('Re-running is safe and will retry only what is still missing.');
 }
 $conn->close();
