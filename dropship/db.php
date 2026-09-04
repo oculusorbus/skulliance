@@ -671,6 +671,69 @@ function dropshipConnectedStakeAddresses($discord_id) {
 	return $addresses;
 }
 
+// Oculus Lounge (Drop Ship's own project_id 4) plays on Ohh Meed's NFTs,
+// which Skulliance already tracks and caches locally as its OWN project_id
+// 2 (see db.php's assignRole block for that number, unrelated to Drop
+// Ship's numbering -- Skulliance's project_id and Drop Ship's project_id
+// are two different numbering schemes that happen to share a name, same
+// reason dropship_project_id exists at all). Drop Ship's own soldiers
+// (project_id 1) are NOT this: their images are already genuinely local to
+// Drop Ship (images/nfts/{asset_name}.jpg), untouched by this function.
+//
+// One query for the WHOLE roster, not one per soldier -- getSoldiers()
+// calls this once before its render loop, not per row, so this is a single
+// second connection + single query regardless of squad size.
+//
+// Keyed by asset_name: Drop Ship's own soldiers.asset_name (from Koios'
+// AssetName field) should match Skulliance's own nfts.asset_name (from
+// whatever sync populated it) for the SAME on-chain asset. This is the
+// join key, not a shared numeric id -- there isn't one, the two DBs have
+// never shared a PK space for NFTs any more than they do for users.
+//
+// Returns a map: asset_name => local image URL (already glob-verified to
+// exist on disk, same check getIPFS() does), for every asset_name Skulliance
+// actually has BOTH a DB row AND a cached file for. Callers must fall back
+// to the existing jpgstoreapis.com URL for any asset_name missing from this
+// map -- Skulliance not having (or not yet having cached) a given Ohh Meed
+// NFT is expected, not an error.
+function dropshipOhhMeedLocalImages($asset_names) {
+	$images = array();
+	if (empty($asset_names)) return $images;
+
+	include __DIR__ . '/../credentials/db_credentials.php';
+	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
+	if ($skulliance_conn->connect_error) return $images; // fail quiet -- callers fall back to jpgstoreapis.com
+
+	$in_list = implode(',', array_map(function($name) use ($skulliance_conn) {
+		return "'" . $skulliance_conn->real_escape_string($name) . "'";
+	}, $asset_names));
+
+	$result = $skulliance_conn->query("
+		SELECT nfts.asset_name, nfts.ipfs, nfts.collection_id
+		FROM nfts
+		INNER JOIN collections ON collections.id = nfts.collection_id
+		WHERE collections.project_id = 2 AND nfts.asset_name IN ($in_list)
+	");
+	if ($result) {
+		while ($row = $result->fetch_assoc()) {
+			// Same glob/md5/path convention as Skulliance's own getIPFS() in
+			// db.php -- duplicated (not called: including Skulliance's PHP
+			// here is the same fatal-redeclare risk as everywhere else in
+			// this file), so keep this in sync BY HAND if getIPFS()'s own
+			// convention ever changes.
+			$matches = glob(__DIR__ . '/../images/nfts/2/' . intval($row['collection_id']) . '/' . md5($row['ipfs']) . '.*');
+			if (!empty($matches)) {
+				$ext = pathinfo($matches[0], PATHINFO_EXTENSION);
+				$mtime = @filemtime($matches[0]);
+				$bust = $mtime ? '?v=' . $mtime : '';
+				$images[$row['asset_name']] = 'https://skulliance.io/staking/images/nfts/2/' . intval($row['collection_id']) . '/' . md5($row['ipfs']) . '.' . $ext . $bust;
+			}
+		}
+	}
+	$skulliance_conn->close();
+	return $images;
+}
+
 // Check to see if an active game exists. If not, unset session variable for game id.
 function checkGame($conn) {
 	if(isset($_SESSION['userData']['dropship_project_id'])){
@@ -795,15 +858,29 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
+	  // Buffered into an array (not the usual while/fetch_assoc streaming)
+	  // so the Oculus Lounge asset_names are known BEFORE rendering starts --
+	  // dropshipOhhMeedLocalImages() needs the whole list up front to do one
+	  // batch query instead of one per soldier.
+	  $rows = $result->fetch_all(MYSQLI_ASSOC);
+	  $ohh_meed_images = array();
+	  if ($_SESSION['userData']['dropship_project_id'] == 4) {
+		  $ohh_meed_images = dropshipOhhMeedLocalImages(array_column($rows, 'asset_name'));
+	  }
 	  // output data of each row
 	  $troopcounter = 0;
-	  while($row = $result->fetch_assoc()) {
+	  foreach($rows as $row){
 		$troopcounter++;
 	    echo "<div class='nft'><div class='nft-data ".(($row["deceased"]==1)?"deceased":"")."'>";
 	substr("abcdef", -3, 1);
 		echo "<span class='nft-name'>".substr($row["name"], 0, 19)."</span>";
 		if($_SESSION['userData']['dropship_project_id'] == 1){
 			echo "<span class='nft-image'><img src='images/nfts/".$row["asset_name"].".jpg'/></span>";
+		}elseif(isset($ohh_meed_images[$row["asset_name"]])){
+			// Cached locally on Skulliance -- Ohh Meed NFT Skulliance already
+			// has synced and cached. Falls through to jpgstoreapis.com below
+			// for any Oculus Lounge asset_name Skulliance doesn't have (yet).
+			echo "<span class='nft-image'><img src='".$ohh_meed_images[$row["asset_name"]]."'/></span>";
 		}else{
 			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}
@@ -1750,10 +1827,20 @@ function getResultsSoldiers($conn, $result_id){
 	if ($result->num_rows > 0) {
 		$counter = 0;
 		echo "<div class='leaderboard-nfts'>";
-		while($row = $result->fetch_assoc()) {
+		// Same batch-before-loop shape as getSoldiers() -- see that
+		// function's own comment for why (dropshipOhhMeedLocalImages()
+		// needs every asset_name up front for one query, not one per row).
+		$rows = $result->fetch_all(MYSQLI_ASSOC);
+		$ohh_meed_images = array();
+		if ($_SESSION['userData']['dropship_project_id'] == 4) {
+			$ohh_meed_images = dropshipOhhMeedLocalImages(array_column($rows, 'asset_name'));
+		}
+		foreach($rows as $row){
 			$counter++;
 			if($_SESSION['userData']['dropship_project_id'] == 1){
 				echo "<span class='leaderboard-nft'><img src='images/nfts/".$row["asset_name"].".jpg'/></span>";
+			}elseif(isset($ohh_meed_images[$row["asset_name"]])){
+				echo "<span class='leaderboard-nft'><img src='".$ohh_meed_images[$row["asset_name"]]."'/></span>";
 			}else{
 				echo "<span class='leaderboard-nft'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 			}
