@@ -52,7 +52,7 @@
     	  <a href="leaderboards.php">Leaderboards</a>
     	  <a href="achievements.php">Achievements</a>
     	  <a href="transactions.php">Transactions</a>
-		  <a href="logout.php">Logout</a>
+		  <a href="../dashboard.php">&larr; Back to Skulliance</a>
 		</div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
 <?php 
