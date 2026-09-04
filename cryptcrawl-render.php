@@ -408,7 +408,11 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 					$preview_weapon_name = cryptcrawlWeaponName($conn, $rank);
 					$preview_weapon_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $preview_weapon_name)) . '.png';
 				}
-				$medkit_icon = 'https://madballs.net/drop-ship/icons/medkit.png';
+				// Drop Ship migrated off madballs.net -- this icon now lives
+				// under its own theme's nested folder (see the Drop Ship
+				// migration notes: themes nest inside dropship/, not siblings
+				// of it), same as every other drop-ship/icons/... asset.
+				$medkit_icon = 'https://skulliance.io/staking/dropship/drop-ship/icons/medkit.png';
 			?>
 				<div class="cc-card" style="--cc-glow:<?php echo htmlspecialchars($glow_rgba); ?>;">
 					<div class="cc-card-flip">
