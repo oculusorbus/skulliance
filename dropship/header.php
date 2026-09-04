@@ -95,7 +95,7 @@
 		    </div>
 		  </div>
 
-		  <?php if($_SESSION["userData"]["dropship_project_id"] == 1 || $_SESSION["userData"]["dropship_project_id"] == 2){?>
+		  <?php if($_SESSION["userData"]["dropship_project_id"] == 1 || $_SESSION["userData"]["dropship_project_id"] == 2 || $_SESSION["userData"]["dropship_project_id"] == 4){?>
 		  <a href="instructions.php">How to Play</a>
 		  <?php } ?>
 		  <a href="../dashboard.php">&larr; Back to Skulliance</a>
