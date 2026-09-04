@@ -23,7 +23,18 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/staking/pwa/icon-192.png">
   <link rel="shortcut icon" href="/staking/pwa/favicon-32.png">
 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <!-- Self-hosted, not loaded from Google's CDN (ajax.googleapis.com) --
+       a staker on Brave couldn't use Missions/Realms at all for months:
+       Brave's Shields (or a filter list it ships) resolves that specific
+       host to nowhere (net::ERR_NAME_NOT_RESOLVED in their own console),
+       jQuery never loads, and every $-dependent script on the page --
+       skulliance.js, wallet.js, missions.php's own inline script --
+       throws "$ is not defined" and silently does nothing. Self-hosting
+       removes the cross-origin dependency entirely; nothing left for a
+       privacy blocklist to target by domain. dist/jquery-3.6.3.min.js
+       pulled directly from code.jquery.com (the jQuery Foundation's own
+       CDN, not a third-party mirror), unmodified. -->
+  <script src="dist/jquery-3.6.3.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
