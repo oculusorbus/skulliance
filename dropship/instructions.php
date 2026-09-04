@@ -85,14 +85,14 @@ include 'header.php';
 							<img class="instr-icon" src="icons/<?php echo evaluateText("supersoldier");?>.png" alt=""/>
 							<span><strong><?php echo evaluateText("Super Soldier");?> Squad</strong> &mdash; at least one of every armor type, plus a <?php echo evaluateText("Medkit");?>, <?php echo evaluateText("Melee");?>, and <?php echo evaluateText("Demolition");?>, all held collectively.</span>
 						</div>
-						<p><em>The game is luck-based &mdash; items only influence the outcome, they don't control it. Less powerful soldiers can still get a lucky run, and powerful soldiers can have a bad stroke of luck.</em></p>
+						<p><em>The game is luck-based &mdash; items only influence the outcome, they don't control it. Less powerful <?php echo strtolower(evaluateText("Soldiers"));?> can still get a lucky run, and powerful <?php echo strtolower(evaluateText("Soldiers"));?> can have a bad stroke of luck.</em></p>
 					</div>
 
 					<div class="instr-section">
 						<h3>Play for Free</h3>
 						<div class="instr-row">
 							<img class="instr-icon" src="icons/<?php echo evaluateText("supersoldier");?>.png" alt=""/>
-							<span>Every player gets <strong>4 free <?php echo evaluateText("Grunt");?> soldiers</strong> automatically &mdash; no NFT required, and each one carries full <?php echo evaluateText("Super Soldier");?> Squad power regardless of traits.</span>
+							<span>Every player gets <strong>4 free <?php echo evaluateText("Grunt");?> <?php echo strtolower(evaluateText("Soldiers"));?></strong> automatically &mdash; no NFT required, and each one carries full <?php echo evaluateText("Super Soldier");?> Squad power regardless of traits.</span>
 						</div>
 						<p>Send them in one at a time for full effect &mdash; that's 4 separate chances at winning, no purchase necessary. If you already hold <?php echo evaluateText("Drop Ship");?> NFTs, you'll still want to form your own <?php echo evaluateText("Super Soldier");?> Squad from them for the full item benefits above.</p>
 					</div>
