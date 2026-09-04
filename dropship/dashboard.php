@@ -385,8 +385,30 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 							ob_end_clean(); // End buffering and clean up
 							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
 							$imageurl = "https://skulliance.io".$prefix."images/die/".rand(1,3).".gif";
-							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']); 
+							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 							$_SESSION['userData']['notification'] = "true";
+
+							// Current leaderboard standings, posted automatically after
+							// every run -- replaces the old /leaderboard Discord bot
+							// command (per the user, no longer reliable). Same
+							// output-buffered checkLeaderboard() capture automate.php
+							// already uses for its own leaderboard posts, just fired
+							// per-run instead of on a cron cadence. Scoped to Drop Ship
+							// and Oculus Lounge specifically (what was asked for) --
+							// Dread City/Filthy Mermaid are still a work in progress.
+							// discordmsg()'s own $project_id routing (see webhooks.php)
+							// already sends this to the right Skulliance channel, no
+							// extra wiring needed here.
+							if(isset($_SESSION['userData']['game_id']) && ($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4)){
+								ob_start();
+								checkLeaderboard($conn, "true");
+								$leaderboard_list = ob_get_contents();
+								ob_end_clean();
+								if($leaderboard_list != ""){
+									$leaderboard_imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
+									discordmsg("📊 ".getProjectName($conn)." Leaderboard", $leaderboard_list, $leaderboard_imageurl, $_SESSION['userData']['dropship_project_id']);
+								}
+							}
 						}
 						?>
 						<!--<img class="rounded" src='gameover.gif'/>-->
