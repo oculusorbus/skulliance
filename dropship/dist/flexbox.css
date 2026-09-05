@@ -1056,9 +1056,46 @@ input:checked + .slider:before {
 		max-width: 100%;
 	}
 }
+/* Bottom quick-links bar (Game/Barracks/Armory/Stats) -- same visual
+   pattern as Missions/Realms' own #quick-menu on the main site, mobile
+   only (see the max-width:700px block below for display:flex).
+   IMPORTANT: this base rule must come BEFORE the media query that
+   overrides it -- a real bug this was, not just tidiness. Both rules
+   target #quick-menu with equal specificity, and media queries don't
+   grant priority on their own: for a tie, whichever rule is LATER in
+   the file wins, unconditionally, regardless of which media query
+   matched. This used to sit after the mobile block, so display:none
+   here always won even on real mobile widths -- the bar never showed
+   at all, anywhere, confirmed live on a real phone. */
+#quick-menu {
+	display: none;
+	position: fixed;
+	width: 100%;
+	text-align: center;
+	margin: 0 auto;
+	background-color: #040c16;
+	bottom: 0;
+	left: 0px;
+	padding: 5px;
+	padding-top: 10px;
+	z-index: 50;
+}
+#quick-menu img {
+	max-width: 65px;
+	width: 18%;
+	padding: 10px;
+}
+#quick-menu img:hover {
+	cursor: pointer;
+}
+#quick-menu img.selected {
+	border: 1px solid rgba(0,200,160,0.45);
+	border-radius: 8px;
+}
+
 /* Responsive layout - when the screen is less than 700px wide, make the two columns stack on top of each other instead of next to each other */
 @media screen and (max-width: 700px) {
-  .row, .navbar {   
+  .row, .navbar {
     flex-direction: column;
   }
   .navbar-first {
@@ -1163,35 +1200,6 @@ input:checked + .slider:before {
 	#burger-menu {
 		display: none;
 	}
-}
-
-/* Bottom quick-links bar (Game/Barracks/Armory/Stats) -- same visual
-   pattern as Missions/Realms' own #quick-menu on the main site, mobile
-   only (see the max-width:700px block above for display:flex). */
-#quick-menu {
-	display: none;
-	position: fixed;
-	width: 100%;
-	text-align: center;
-	margin: 0 auto;
-	background-color: #040c16;
-	bottom: 0;
-	left: 0px;
-	padding: 5px;
-	padding-top: 10px;
-	z-index: 50;
-}
-#quick-menu img {
-	max-width: 65px;
-	width: 18%;
-	padding: 10px;
-}
-#quick-menu img:hover {
-	cursor: pointer;
-}
-#quick-menu img.selected {
-	border: 1px solid rgba(0,200,160,0.45);
-	border-radius: 8px;
 }
 
 .show-menu {
