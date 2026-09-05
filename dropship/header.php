@@ -4,16 +4,16 @@
   <title>Drop Ship</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Self-hosted, not loaded from Google's CDN -- same fix as the main
-       Skulliance header.php (see that file's own comment): Brave's
-       Shields blocked ajax.googleapis.com outright for one staker,
-       breaking every $-dependent script on the page. Self-hosting
-       removes the cross-origin dependency entirely.
-       dropship/dist/jquery-3.6.3.min.js is the identical file (same
-       sha256) as the main site's dist/jquery-3.6.3.min.js -- this app
-       has its own separate dist/ folder, so it needed its own copy,
-       not a shared reference across the two. -->
-  <script src="dist/jquery-3.6.3.min.js"></script>
+  <!-- TEMPORARILY reverted to Google's CDN (2026-09-05): a self-hosted
+       dist/jquery-3.6.3.min.js reference was live here, but that file was
+       never actually uploaded to the server -- 404'd, breaking every
+       $-dependent script on the page (dropship.js included). The intent
+       (mirroring Skulliance's own header.php: Brave's Shields blocks
+       ajax.googleapis.com for some stakers) is still worth doing, but
+       needs the actual file deployed to dropship/dist/ first -- swap
+       this back to <script src="dist/jquery-3.6.3.min.js"></script>
+       once that file is confirmed live (curl it, don't assume). -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <script>
