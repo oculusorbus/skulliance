@@ -149,10 +149,20 @@
 		     dashboard.php page, and a URL fragment is never sent to the
 		     server at all, so $_SERVER['PHP_SELF'] alone can't tell
 		     "#barracks" apart from plain dashboard.php. -->
+		<?php
+		// Oculus Lounge-specific icon swaps -- not routed through
+		// evaluateText() since these are generic UI/nav icons, not
+		// in-game item names, so there's no existing replacement entry
+		// for them. Curl-verified all three live before using them.
+		$is_oculus_lounge = ($_SESSION['userData']['dropship_project_id'] == 4);
+		$qm_game_icon = $is_oculus_lounge ? 'money-gun' : 'dropship';
+		$qm_barracks_icon = $is_oculus_lounge ? 'nurse' : 'supersoldier';
+		$qm_armory_icon = $is_oculus_lounge ? 'grab-bag' : 'shield';
+		?>
 		<div id="quick-menu">
-			<a href="dashboard.php" title="Game"><img src="icons/dropship.png" data-page="dashboard.php" data-hash=""/></a>
-			<a href="dashboard.php#barracks" title="<?php echo evaluateText("Barracks");?>"><img src="icons/supersoldier.png" data-page="dashboard.php" data-hash="barracks"/></a>
-			<a href="dashboard.php#armory" title="<?php echo evaluateText("Armory");?>"><img src="icons/shield.png" data-page="dashboard.php" data-hash="armory"/></a>
+			<a href="dashboard.php" title="Game"><img src="icons/<?php echo $qm_game_icon;?>.png" data-page="dashboard.php" data-hash=""/></a>
+			<a href="dashboard.php#barracks" title="<?php echo evaluateText("Barracks");?>"><img src="icons/<?php echo $qm_barracks_icon;?>.png" data-page="dashboard.php" data-hash="barracks"/></a>
+			<a href="dashboard.php#armory" title="<?php echo evaluateText("Armory");?>"><img src="icons/<?php echo $qm_armory_icon;?>.png" data-page="dashboard.php" data-hash="armory"/></a>
 			<a href="leaderboards.php" title="Stats"><img src="icons/scoreboard.png" data-page="leaderboards.php" data-hash=""/></a>
 		</div>
 		<script>

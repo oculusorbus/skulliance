@@ -13,8 +13,9 @@ include 'header.php';
 		     full tables to reach the third; this shows one at a time
 		     instead, same icon-tab spirit as Missions/Realms' #quick-menu
 		     but scoped to this page's own three views, not site navigation. -->
+		<?php $lb_battle_icon = ($_SESSION['userData']['dropship_project_id'] == 4) ? 'money-gun' : 'dropship'; ?>
 		<div class="lb-view-switch">
-			<img src="icons/dropship.png" class="selected" onclick="lbSwitchView('current', this)" title="Current Game"/>
+			<img src="icons/<?php echo $lb_battle_icon;?>.png" class="selected" onclick="lbSwitchView('current', this)" title="Current Game"/>
 			<img src="icons/trophy.png" onclick="lbSwitchView('ath', this)" title="All Time High"/>
 			<img src="icons/xp.png" onclick="lbSwitchView('xp', this)" title="Levels / XP"/>
 		</div>
