@@ -1057,18 +1057,15 @@ input:checked + .slider:before {
 	}
 }
 /* Bottom quick-links bar (Game/Barracks/Armory/Stats) -- same visual
-   pattern as Missions/Realms' own #quick-menu on the main site, mobile
-   only (see the max-width:700px block below for display:flex).
-   IMPORTANT: this base rule must come BEFORE the media query that
-   overrides it -- a real bug this was, not just tidiness. Both rules
-   target #quick-menu with equal specificity, and media queries don't
-   grant priority on their own: for a tie, whichever rule is LATER in
-   the file wins, unconditionally, regardless of which media query
-   matched. This used to sit after the mobile block, so display:none
-   here always won even on real mobile widths -- the bar never showed
-   at all, anywhere, confirmed live on a real phone. */
+   pattern as Missions/Realms' own #quick-menu on the main site.
+   Realms' own version shows at every width, not just mobile (its
+   $(window).width()<=700 gate is commented out in realms.php) --
+   matching that here: display:flex unconditionally, no media query
+   involved at all for this rule any more. */
 #quick-menu {
-	display: none;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
 	position: fixed;
 	width: 100%;
 	text-align: center;
@@ -1080,6 +1077,12 @@ input:checked + .slider:before {
 	padding-top: 10px;
 	padding-bottom: 30px;
 	z-index: 50;
+}
+/* #quick-menu shows at every width now, not just mobile -- so this needs
+   to protect the tail end of a page's content on desktop too, not only
+   under the old mobile-only breakpoint. */
+.footer {
+	padding-bottom: 110px;
 }
 /* Fixed pixel size, not a percentage -- these <img>s are wrapped in <a>
    tags (real links, unlike Missions/Realms' own bare-<img> #quick-menu
@@ -1202,16 +1205,6 @@ input:checked + .slider:before {
 		height: auto;
 		padding-top: 5px;
 		padding-right: 10px;
-	}
-	#quick-menu {
-		display: flex;
-		justify-content: space-around;
-		align-items: center;
-	}
-	/* So a fixed #quick-menu doesn't sit on top of/hide the tail end of
-	   the page's own content or footer on any page it appears on. */
-	.footer {
-		padding-bottom: 110px;
 	}
 }
 @media screen and (min-width: 701px) {
