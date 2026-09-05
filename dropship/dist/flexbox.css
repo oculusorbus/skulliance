@@ -1080,9 +1080,19 @@ input:checked + .slider:before {
 	padding-top: 10px;
 	z-index: 50;
 }
+/* Fixed pixel size, not a percentage -- these <img>s are wrapped in <a>
+   tags (real links, unlike Missions/Realms' own bare-<img> #quick-menu
+   this was modeled on), so a % width resolves against an <a> that has
+   no width of its own to be a percentage OF. Confirmed live: rendered
+   invisible/near-zero-size on a real phone with width:18%. */
+#quick-menu a {
+	display: flex;
+	justify-content: center;
+	flex: 1;
+}
 #quick-menu img {
-	max-width: 65px;
-	width: 18%;
+	width: 60px;
+	height: 60px;
 	padding: 10px;
 }
 #quick-menu img:hover {
