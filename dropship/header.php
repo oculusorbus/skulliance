@@ -157,11 +157,21 @@
 		</div>
 		<script>
 		(function(){
-			var page = location.pathname.split('/').pop();
-			var hash = location.hash.replace('#', '');
-			document.querySelectorAll('#quick-menu img').forEach(function(img){
-				img.classList.toggle('selected', img.dataset.page === page && img.dataset.hash === hash);
-			});
+			// A same-page hash link (e.g. clicking Barracks while already on
+			// dashboard.php) never fires a real navigation/page load -- the
+			// browser just updates location.hash in place -- so this can't
+			// only run once at parse time, it has to re-run on 'hashchange'
+			// too, or Game -> Barracks/Armory within the same page load
+			// never updates which icon is highlighted.
+			function updateSelected(){
+				var page = location.pathname.split('/').pop();
+				var hash = location.hash.replace('#', '');
+				document.querySelectorAll('#quick-menu img').forEach(function(img){
+					img.classList.toggle('selected', img.dataset.page === page && img.dataset.hash === hash);
+				});
+			}
+			updateSelected();
+			window.addEventListener('hashchange', updateSelected);
 		})();
 		</script>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
