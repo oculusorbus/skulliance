@@ -1062,13 +1062,19 @@ input:checked + .slider:before {
    $(window).width()<=700 gate is commented out in realms.php) --
    matching that here: display:flex unconditionally, no media query
    involved at all for this rule any more. */
+/* display:block + text-align:center, NOT flexbox -- matches Missions/
+   Realms' own #quick-menu exactly. Flex with justify-content:space-around
+   was wrong: it spreads items evenly across the FULL container width,
+   which reads fine edge-to-edge on a narrow phone but sprawls the icons
+   apart on a wide desktop browser. text-align:center on a block
+   container just clusters its inline children together in the middle,
+   at any width -- confirmed against a real Realms screenshot on desktop
+   (icons clustered center) vs. Drop Ship's own (spread full-width). */
 #quick-menu {
-	display: flex;
-	justify-content: space-around;
-	align-items: center;
+	display: block;
+	text-align: center;
 	position: fixed;
 	width: 100%;
-	text-align: center;
 	margin: 0 auto;
 	background-color: #040c16;
 	bottom: 0;
@@ -1084,15 +1090,16 @@ input:checked + .slider:before {
 .footer {
 	padding-bottom: 110px;
 }
-/* Fixed pixel size, not a percentage -- these <img>s are wrapped in <a>
-   tags (real links, unlike Missions/Realms' own bare-<img> #quick-menu
-   this was modeled on), so a % width resolves against an <a> that has
-   no width of its own to be a percentage OF. Confirmed live: rendered
-   invisible/near-zero-size on a real phone with width:18%. */
+/* inline-block, not flex -- text-align:center on the parent only
+   centers inline/inline-block children, and these <img>s are wrapped
+   in <a> tags (real links, unlike Missions/Realms' own bare-<img>
+   version), so the <a> itself needs to participate in that inline
+   flow. Fixed pixel size on the img rather than a %, same reasoning
+   as before: a percentage on an <a> with no width of its own to be a
+   percentage OF is indeterminate (confirmed live: rendered at ~0 size). */
 #quick-menu a {
-	display: flex;
-	justify-content: center;
-	flex: 1;
+	display: inline-block;
+	vertical-align: middle;
 }
 #quick-menu img {
 	width: 60px;
