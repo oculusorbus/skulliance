@@ -1106,6 +1106,13 @@ input:checked + .slider:before {
 
 /* Responsive layout - when the screen is less than 700px wide, make the two columns stack on top of each other instead of next to each other */
 @media screen and (max-width: 700px) {
+  /* #burger-icon is position:fixed in the top-right corner, so it takes
+     no space in normal flow -- nothing was pushing the page's own
+     content down to clear it, so the game screen sat right underneath
+     and visually collided with it. */
+  .container {
+    padding-top: 60px;
+  }
   .row, .navbar {
     flex-direction: column;
   }
