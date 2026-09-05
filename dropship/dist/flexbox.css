@@ -1137,7 +1137,7 @@ input:checked + .slider:before {
     left: 0;
     width: 100%;
     height: 60px;
-    background-color: #040c16;
+    background-color: #36393F;
     z-index: 0;
   }
   .row, .navbar {
