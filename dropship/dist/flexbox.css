@@ -1116,11 +1116,23 @@ input:checked + .slider:before {
 		display: none;
 	}*/
 
-	/* Nav used to render full-height and always-visible on mobile --
-	   hidden by default now, same as Skulliance's own .navbar, and
-	   revealed via #burger-menu + .show-menu (toggleMenu() in header.php). */
+	/* Nav used to render full-height and always-visible on mobile, pushing
+	   the rest of the page down when opened -- hidden by default now, and
+	   (this part was missing the first time) made an actual fixed overlay
+	   when shown, matching Skulliance's own .navbar under this same
+	   breakpoint exactly: position:fixed + max-height/overflow-y so it
+	   sits on top of the page and scrolls internally instead of pushing
+	   content, not just toggling display. */
 	.navbar {
 		display: none;
+		position: fixed;
+		width: 100%;
+		max-height: 100%;
+		z-index: 1;
+		overflow-y: scroll;
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+		padding-right: env(safe-area-inset-right, 0px);
 	}
 	#burger-menu {
 		display: block;
@@ -1140,6 +1152,11 @@ input:checked + .slider:before {
 		display: flex;
 		justify-content: space-around;
 		align-items: center;
+	}
+	/* So a fixed #quick-menu doesn't sit on top of/hide the tail end of
+	   the page's own content or footer on any page it appears on. */
+	.footer {
+		padding-bottom: 110px;
 	}
 }
 @media screen and (min-width: 701px) {
@@ -1184,7 +1201,10 @@ input:checked + .slider:before {
 
 /* Leaderboard's own Current/All Time/XP view switch -- desktop keeps
    showing all three columns side by side unchanged (this whole block is
-   inert there), only takes effect under the mobile breakpoint. */
+   inert there), only takes effect under the mobile breakpoint. Styled
+   the same as #quick-menu (same fixed solid bar, same look), stacked
+   just above it (bottom: 100px, clear of #quick-menu's own ~100px
+   height) rather than sitting in-flow at the top of the page. */
 .lb-view-switch {
 	display: none;
 }
@@ -1192,10 +1212,18 @@ input:checked + .slider:before {
 	.lb-view-switch {
 		display: flex;
 		justify-content: space-around;
-		margin-bottom: 10px;
+		align-items: center;
+		position: fixed;
+		width: 100%;
+		left: 0px;
+		bottom: 100px;
+		background-color: #040c16;
+		padding: 5px;
+		z-index: 50;
 	}
 	.lb-view-switch img {
-		width: 50px;
+		max-width: 50px;
+		width: 18%;
 		padding: 10px;
 		cursor: pointer;
 	}
@@ -1205,5 +1233,10 @@ input:checked + .slider:before {
 	}
 	.lb-pane.lb-hidden {
 		display: none;
+	}
+	/* Room at the bottom of the page so content can scroll clear of both
+	   fixed bars (~200px combined) instead of ending up hidden under them. */
+	#row3 {
+		padding-bottom: 200px;
 	}
 }
