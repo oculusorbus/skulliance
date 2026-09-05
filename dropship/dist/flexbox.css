@@ -1123,6 +1123,23 @@ input:checked + .slider:before {
   .container {
     padding-top: 60px;
   }
+  /* That padding strip was just revealing body's own background-image/
+     wallpaper underneath instead of matching the site's normal dark nav
+     chrome -- .container itself has no background-color and is never
+     meant to (it's transparent everywhere else too, letting the
+     wallpaper show through behind content on the rest of the page, same
+     as desktop). A ::before painted strip covers just that top gap
+     without making the whole page opaque. */
+  .container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background-color: #040c16;
+    z-index: 0;
+  }
   .row, .navbar {
     flex-direction: column;
   }
