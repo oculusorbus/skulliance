@@ -1115,4 +1115,95 @@ input:checked + .slider:before {
 	.wallet-connect {
 		display: none;
 	}*/
+
+	/* Nav used to render full-height and always-visible on mobile --
+	   hidden by default now, same as Skulliance's own .navbar, and
+	   revealed via #burger-menu + .show-menu (toggleMenu() in header.php). */
+	.navbar {
+		display: none;
+	}
+	#burger-menu {
+		display: block;
+		position: relative;
+		z-index: 99;
+	}
+	#burger-menu #burger-icon {
+		position: fixed;
+		top: env(safe-area-inset-top, 0px);
+		right: env(safe-area-inset-right, 0px);
+		width: 50px;
+		height: auto;
+		padding-top: 5px;
+		padding-right: 10px;
+	}
+	#quick-menu {
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+	}
+}
+@media screen and (min-width: 701px) {
+	#burger-menu {
+		display: none;
+	}
+}
+
+/* Bottom quick-links bar (Game/Barracks/Armory/Stats) -- same visual
+   pattern as Missions/Realms' own #quick-menu on the main site, mobile
+   only (see the max-width:700px block above for display:flex). */
+#quick-menu {
+	display: none;
+	position: fixed;
+	width: 100%;
+	text-align: center;
+	margin: 0 auto;
+	background-color: #040c16;
+	bottom: 0;
+	left: 0px;
+	padding: 5px;
+	padding-top: 10px;
+	z-index: 50;
+}
+#quick-menu img {
+	max-width: 65px;
+	width: 18%;
+	padding: 10px;
+}
+#quick-menu img:hover {
+	cursor: pointer;
+}
+#quick-menu img.selected {
+	border: 1px solid rgba(0,200,160,0.45);
+	border-radius: 8px;
+}
+
+.show-menu {
+	display: flex !important;
+	z-index: 3 !important;
+}
+
+/* Leaderboard's own Current/All Time/XP view switch -- desktop keeps
+   showing all three columns side by side unchanged (this whole block is
+   inert there), only takes effect under the mobile breakpoint. */
+.lb-view-switch {
+	display: none;
+}
+@media screen and (max-width: 700px) {
+	.lb-view-switch {
+		display: flex;
+		justify-content: space-around;
+		margin-bottom: 10px;
+	}
+	.lb-view-switch img {
+		width: 50px;
+		padding: 10px;
+		cursor: pointer;
+	}
+	.lb-view-switch img.selected {
+		border: 1px solid rgba(0,200,160,0.45);
+		border-radius: 8px;
+	}
+	.lb-pane.lb-hidden {
+		display: none;
+	}
 }

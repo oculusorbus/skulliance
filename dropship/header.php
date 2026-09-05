@@ -4,7 +4,16 @@
   <title>Drop Ship</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <!-- Self-hosted, not loaded from Google's CDN -- same fix as the main
+       Skulliance header.php (see that file's own comment): Brave's
+       Shields blocked ajax.googleapis.com outright for one staker,
+       breaking every $-dependent script on the page. Self-hosting
+       removes the cross-origin dependency entirely.
+       dropship/dist/jquery-3.6.3.min.js is the identical file (same
+       sha256) as the main site's dist/jquery-3.6.3.min.js -- this app
+       has its own separate dist/ folder, so it needed its own copy,
+       not a shared reference across the two. -->
+  <script src="dist/jquery-3.6.3.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <script>
@@ -17,6 +26,21 @@
     var isOpen = menu.classList.contains('open');
     document.querySelectorAll('.nav-dropdown-menu.open').forEach(function(m){ m.classList.remove('open'); });
     if(!isOpen) menu.classList.add('open');
+  }
+  // Toggle burger menu -- ported from Skulliance's own header.php verbatim
+  // (same icon swap / show-menu class dance), so the nav is hidden by
+  // default on mobile instead of always rendered full-height like before.
+  // Reuses Skulliance's own menu/close icons (no local copies exist in
+  // dropship/images) -- same precedent as instructions.php's DREAD/MOON
+  // icons pointing at /staking/icons/ directly.
+  function toggleMenu(){
+    if(document.getElementById('burger-icon').src.indexOf('close.png') === -1){
+      document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/close.png";
+      document.getElementById("navbar").classList.add('show-menu');
+    }else{
+      document.getElementById('burger-icon').src = "https://www.skulliance.io/staking/images/menu.png";
+      document.getElementById("navbar").classList.remove('show-menu');
+    }
   }
   </script>
   <?php
@@ -47,12 +71,19 @@
 	  <img id="loading-image" src="<?php echo $prefix;?>images/loading.gif" alt="Loading..." />
 	</div>
 	<div class="container">
+		<div id="burger-menu">
+			<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>
+		</div>
 		<!-- Navigation Bar -->
 		<!-- Grouped into dropdowns mirroring Skulliance's own nav (Play/NFTs/
 		     Stats/Account, same class names and toggleDropdown() mechanism --
 		     see staking's own header.php + dist/flexbox.css) instead of one
-		     long jammed-full row of top-level links. -->
-		<div class="navbar">
+		     long jammed-full row of top-level links. Hidden by default on
+		     mobile now (id="navbar" + #burger-menu above), same as
+		     Skulliance's own -- it used to render full-height and always
+		     visible on narrow screens instead of collapsing behind a
+		     hamburger icon. -->
+		<div class="navbar" id="navbar">
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" />
 		  <a href="https://discord.gg/DHbGU9ZDyG"><?php echo $name;?></a>
 
@@ -99,6 +130,21 @@
 		  <a href="instructions.php">How to Play</a>
 		  <?php } ?>
 		  <a href="../dashboard.php">&larr; Back to Skulliance</a>
+		</div>
+		<?php
+		// Mobile bottom quick-links bar (icons/scoreboard.png etc. all
+		// curl-verified live) -- same visual pattern as Missions/Realms'
+		// own #quick-menu, but real links rather than in-page section
+		// toggling, since these four are genuinely different pages/anchors
+		// (Stats is a separate page, not a section of this one). Shown on
+		// every Drop Ship page via header.php, mobile-only via CSS.
+		$current_page = basename($_SERVER['PHP_SELF']);
+		?>
+		<div id="quick-menu">
+			<a href="dashboard.php" title="Game"><img src="icons/dropship.png" class="<?php echo ($current_page == 'dashboard.php') ? 'selected' : ''; ?>"/></a>
+			<a href="dashboard.php#barracks" title="<?php echo evaluateText("Barracks");?>"><img src="icons/supersoldier.png"/></a>
+			<a href="dashboard.php#armory" title="<?php echo evaluateText("Armory");?>"><img src="icons/shield.png"/></a>
+			<a href="leaderboards.php" title="Stats"><img src="icons/scoreboard.png" class="<?php echo ($current_page == 'leaderboards.php') ? 'selected' : ''; ?>"/></a>
 		</div>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
 <?php 
