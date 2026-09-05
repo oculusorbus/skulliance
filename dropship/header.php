@@ -15,7 +15,14 @@
        once that file is confirmed live (curl it, don't assume). -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
-  <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <!-- filemtime()-based cache-bust, not rand(0,999) -- a random 0-999 value
+       can (and, live-tested, DID) collide with one already sitting in a
+       browser's cache from before a real CSS change shipped, silently
+       serving stale styles. filemtime() only changes when the file
+       actually changes, so a fresh deploy always gets a fresh URL. Same
+       pattern the main site already uses for its PWA version banner
+       (header.php's own app-version meta tag). -->
+  <link href="dist/flexbox.css?var=<?php echo @filemtime(__DIR__ . '/dist/flexbox.css') ?: rand(0,999); ?>" rel="stylesheet">
   <script>
   // Toggle dropdown -- ported from Skulliance's own header.php verbatim.
   // Above 700px the CSS opens a dropdown on :hover on its own (see
