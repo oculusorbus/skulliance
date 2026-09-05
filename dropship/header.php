@@ -138,21 +138,32 @@
 		  <?php } ?>
 		  <a href="../dashboard.php">&larr; Back to Skulliance</a>
 		</div>
-		<?php
-		// Mobile bottom quick-links bar (icons/scoreboard.png etc. all
-		// curl-verified live) -- same visual pattern as Missions/Realms'
-		// own #quick-menu, but real links rather than in-page section
-		// toggling, since these four are genuinely different pages/anchors
-		// (Stats is a separate page, not a section of this one). Shown on
-		// every Drop Ship page via header.php, mobile-only via CSS.
-		$current_page = basename($_SERVER['PHP_SELF']);
-		?>
+		<!-- Mobile bottom quick-links bar (icons/scoreboard.png etc. all
+		     curl-verified live) -- same visual pattern as Missions/Realms'
+		     own #quick-menu, but real links rather than in-page section
+		     toggling, since these four are genuinely different pages/anchors
+		     (Stats is a separate page, not a section of this one). Shown on
+		     every Drop Ship page via header.php, mobile-only via CSS.
+		     Which icon is "selected" has to be decided client-side, not in
+		     PHP -- Barracks/Armory are hash anchors on this same
+		     dashboard.php page, and a URL fragment is never sent to the
+		     server at all, so $_SERVER['PHP_SELF'] alone can't tell
+		     "#barracks" apart from plain dashboard.php. -->
 		<div id="quick-menu">
-			<a href="dashboard.php" title="Game"><img src="icons/dropship.png" class="<?php echo ($current_page == 'dashboard.php') ? 'selected' : ''; ?>"/></a>
-			<a href="dashboard.php#barracks" title="<?php echo evaluateText("Barracks");?>"><img src="icons/supersoldier.png"/></a>
-			<a href="dashboard.php#armory" title="<?php echo evaluateText("Armory");?>"><img src="icons/shield.png"/></a>
-			<a href="leaderboards.php" title="Stats"><img src="icons/scoreboard.png" class="<?php echo ($current_page == 'leaderboards.php') ? 'selected' : ''; ?>"/></a>
+			<a href="dashboard.php" title="Game"><img src="icons/dropship.png" data-page="dashboard.php" data-hash=""/></a>
+			<a href="dashboard.php#barracks" title="<?php echo evaluateText("Barracks");?>"><img src="icons/supersoldier.png" data-page="dashboard.php" data-hash="barracks"/></a>
+			<a href="dashboard.php#armory" title="<?php echo evaluateText("Armory");?>"><img src="icons/shield.png" data-page="dashboard.php" data-hash="armory"/></a>
+			<a href="leaderboards.php" title="Stats"><img src="icons/scoreboard.png" data-page="leaderboards.php" data-hash=""/></a>
 		</div>
+		<script>
+		(function(){
+			var page = location.pathname.split('/').pop();
+			var hash = location.hash.replace('#', '');
+			document.querySelectorAll('#quick-menu img').forEach(function(img){
+				img.classList.toggle('selected', img.dataset.page === page && img.dataset.hash === hash);
+			});
+		})();
+		</script>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
 <?php 
 if($_SESSION['userData']['dropship_project_id'] == 4){?>
