@@ -1221,8 +1221,8 @@ input:checked + .slider:before {
    showing all three columns side by side unchanged (this whole block is
    inert there), only takes effect under the mobile breakpoint. Styled
    the same as #quick-menu (same fixed solid bar, same look), stacked
-   just above it (bottom: 100px, clear of #quick-menu's own ~100px
-   height) rather than sitting in-flow at the top of the page. */
+   just above it (bottom: 75px, tested live against #quick-menu's real
+   rendered height) rather than sitting in-flow at the top of the page. */
 .lb-view-switch {
 	display: none;
 }
@@ -1234,7 +1234,7 @@ input:checked + .slider:before {
 		position: fixed;
 		width: 100%;
 		left: 0px;
-		bottom: 100px;
+		bottom: 75px;
 		background-color: #040c16;
 		padding: 5px;
 		z-index: 50;
