@@ -243,6 +243,16 @@
       #hud { font-size: 0.7rem; padding: 6px 8px; }
       .desktop-hint { display: none; }
       .mobile-hint { display: inline; }
+      /* Overlaid on the canvas (like on desktop) it covered the right lane
+         and hid oncoming traffic -- on a phone screen there's no room to
+         spare. Drop it out of the overlay stack entirely and let it sit
+         above the canvas as its own block instead, so it can't cover any
+         part of the road. */
+      #minimap {
+        position: static;
+        margin: 0 auto 8px;
+        top: auto; right: auto;
+      }
       /* Press-and-hold buttons instead of a drag joystick -- switching
          direction on a drag control means your thumb's contact patch has
          to physically slide against the glass every single time, which
@@ -290,9 +300,10 @@
           <span id="last_lap_time"    class="hud">Last Lap: <span id="last_lap_time_value" class="value">0.0</span></span>
           <span id="fast_lap_time"    class="hud">Fastest Lap: <span id="fast_lap_time_value" class="value">0.0</span></span>
         </div>
-        <canvas id="canvas">
-          Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
-        </canvas>
+        <!-- Lives here in markup (before the canvas) so on mobile it can
+             become a plain in-flow block above the canvas via CSS alone --
+             on desktop it's still just an absolute overlay in the corner,
+             same as always. See #minimap's mobile override below. -->
         <div id="minimap">
           <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
             <polyline id="minimap-track" points="" />
@@ -300,6 +311,9 @@
             <circle id="minimap-dot" r="3.5" cx="0" cy="0" />
           </svg>
         </div>
+        <canvas id="canvas">
+          Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
+        </canvas>
         <div id="finish-overlay">
           <div id="finish-box">
             <h2>Race Complete</h2>
