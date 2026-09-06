@@ -189,9 +189,14 @@ records verified constants, and tracks what still needs to be written.
   gained a nullable ghost_trace LONGTEXT column (ALTER TABLE needed on an existing install -- see
   this file's own SKULL RACER comment block for the exact statement), written by
   skullRacerFinalizeRun() ONLY when a just-inserted run is immediately the new all-time best or the
-  new best among this week's reward=0 runs (checked against every OTHER row, so a lone first run
-  always qualifies) -- every other row's ghost_trace stays NULL, so storage grows only with actual
-  NEW records, not every race. The weekly slot rotates out on its own when resetSkullRacerRuns()
+  new best among this week's reward=0 runs -- checked against every OTHER row that ALSO has a
+  ghost_trace, not literally every row in the table (rows from before this column existed can never
+  have one; comparing against the true all-time min would let an old traceless fast run permanently
+  block any new run from ever qualifying). This means the first race submitted after the ALTER
+  TABLE automatically becomes both ghosts -- do NOT truncate skull_racer_runs to "start fresh," that
+  destroys real race/CARBON history for nothing, the scoped comparison already handles it. Every
+  other row's ghost_trace stays NULL, so storage grows only with actual NEW records, not every race.
+  The weekly slot rotates out on its own when resetSkullRacerRuns()
   flips reward to 1 (drops the row from every "AND reward = 0" query, ghost included) -- no separate
   reset job. skullRacerValidateGhostTrace() gates what's ever allowed to become a leader-ghost
   BEFORE it's stored (sample count vs. claimed lap duration at SKULLRACER_GHOST_TICK_RATE=60,

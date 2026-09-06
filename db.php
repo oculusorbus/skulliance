@@ -12526,7 +12526,19 @@ function cryptconquestAbandonRun($conn, $user_id) {
    job needed. The weekly slot naturally rotates out on its own too:
    resetSkullRacerRuns() flips reward to 1, which drops that row out of
    every "AND sr.reward = 0" query, ghost included, without needing a
-   separate reset step. */
+   separate reset step.
+
+   IMPORTANT: the "is this the new best" check for ghost purposes is
+   scoped to rows that ALREADY have a ghost_trace, not literally every
+   row in the table. Rows inserted before this column existed can never
+   have one -- if the check compared against the true all-time
+   MIN(total_time) across everything, an old fast run with no trace
+   would permanently block any new run from ever qualifying, and nobody
+   would ever see a ghost. This means the FIRST race submitted after
+   running the ALTER TABLE below automatically becomes both ghosts
+   (nothing to beat yet) -- do NOT truncate/wipe this table to "start
+   fresh for ghosts," that's unnecessary and destroys real race/CARBON
+   history for no benefit; the scoped comparison already handles it. */
 
 // Flat CARBON credit for simply FINISHING a race (any time), separate from
 // the weekly leaderboard pool below -- same two-tier shape as Crypt Crawl
@@ -12639,18 +12651,27 @@ function skullRacerFinalizeRun($conn, $user_id, $total_time, $fastest_lap, $laps
 
 	// Ghost -- only ever persisted if THIS run is immediately the new
 	// all-time best or the new best among this week's not-yet-paid-out
-	// runs (compared against every OTHER row, so a lone first-ever run
-	// always qualifies). See this table's own comment block above for why
-	// this keeps storage bounded without a cleanup job.
+	// runs. Deliberately compared against only OTHER rows that ALREADY
+	// have a ghost_trace, not literally every row -- rows from before this
+	// feature shipped never got a trace recorded and never can, so if this
+	// checked against the true all-time MIN(total_time) across everything,
+	// an old fast run with no trace would permanently block any new run
+	// from ever becoming a ghost, and nobody would ever see one. Comparing
+	// against only trace-having rows means the first race submitted after
+	// the ALTER TABLE automatically qualifies (nothing to beat yet), and it
+	// only gets replaced by something that's actually faster among
+	// ghost-eligible runs from then on. The real leaderboard rankings/
+	// payouts elsewhere are untouched -- this only decides who holds the
+	// ghost slot, not who's actually #1.
 	if ($ghost_trace_json !== null) {
 		$is_leader = false;
-		$best_r = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE id != $run_id");
+		$best_r = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE id != $run_id AND ghost_trace IS NOT NULL");
 		if ($best_r) {
 			$best_row = $best_r->fetch_assoc();
 			if ($best_row['best'] === null || $total_time <= floatval($best_row['best'])) $is_leader = true;
 		}
 		if (!$is_leader) {
-			$best_weekly_r = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE id != $run_id AND reward = 0");
+			$best_weekly_r = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE id != $run_id AND reward = 0 AND ghost_trace IS NOT NULL");
 			if ($best_weekly_r) {
 				$best_weekly_row = $best_weekly_r->fetch_assoc();
 				if ($best_weekly_row['best'] === null || $total_time <= floatval($best_weekly_row['best'])) $is_leader = true;
