@@ -173,8 +173,8 @@
 		      <a href="match3rpg.php">Monstrocity</a>
 		      <a href="monstrocity.php#boss">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
-		      <a href="dropship/dashboard.php">Drop Ship</a>
 		      <a href="skullracer.php">Skull Racer</a>
+		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
 		  </div>
 
