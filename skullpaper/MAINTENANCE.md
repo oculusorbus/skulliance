@@ -166,6 +166,18 @@ records verified constants, and tracks what still needs to be written.
   DESKTOP can't start auto-accelerating a keyboard player. The API only reveals a controller after a
   button on it is pressed once, even after Bluetooth pairing succeeds -- browser-level privacy
   behavior, not a bug to chase here if a freshly-paired controller doesn't do anything yet.
+  Gamepad audio unlock (Game.onFirstInteraction() in racing/common.js, shared by every page in
+  racing/ that calls it -- index.html/v4.final.html, dev.html, v1-v3 -- not just the live game):
+  that function's own browser-autoplay-unlock listener only covered
+  keydown/click/touchstart -- a controller-only player (paired over Bluetooth, never taps/clicks the
+  page or touches a keyboard) never fired any of the 3, so music/engine sound stayed silent until
+  they manually hit the mute icon, whose click was what ACTUALLY unlocked audio, nothing about the
+  icon itself. Added `gamepadconnected` as a 4th listener -- that event only ever fires after a
+  genuine physical button press on the controller (the same browser requirement noted in the Gamepad
+  entry above), so it's backed by a real user gesture, just one the other 3 had no way to see.
+  Whether the browser treats that gesture as sufficient to actually unlock audio (not just fire the
+  event) is a platform/browser-engine question outside this code's control -- solid on Chrome/Android
+  as of recent versions; unconfirmed on iOS Safari without an actual device test.
   Landscape-phone layout (racing/index.html's own `@media (orientation: landscape) and
   (max-height: 500px)`, placed AFTER the max-width:768px query so its overrides win where the two
   overlap on a narrower phone turned sideways): max-height not max-width, because a modern phone's

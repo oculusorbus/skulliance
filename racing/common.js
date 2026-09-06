@@ -278,6 +278,7 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
         document.removeEventListener('keydown', fire);
         document.removeEventListener('click', fire);
         document.removeEventListener('touchstart', fire);
+        window.removeEventListener('gamepadconnected', fire);
         Game._firstInteractionCallbacks.forEach(function(cb) { cb(); });
         Game._firstInteractionCallbacks = [];
       };
@@ -288,6 +289,15 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
       // the actual touch handler; the synthesized click a tap fires afterward
       // is too late for it, even though it's plenty trusted on desktop/Android.
       document.addEventListener('touchstart', fire, { passive: true });
+      // A controller-only player (paired over Bluetooth, never taps/clicks
+      // the page or touches a keyboard) never fires any of the 3 above --
+      // audio stayed silent until they manually hit the mute icon, whose
+      // own click was what ACTUALLY unlocked it, not anything about the
+      // icon itself. gamepadconnected only ever fires after a genuine
+      // physical button press on the controller (see racing/index.html's
+      // own comment on that same requirement) -- a real gesture, just one
+      // the other 3 listeners have no way to see.
+      window.addEventListener('gamepadconnected', fire);
     }
   }
 
