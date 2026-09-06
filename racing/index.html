@@ -216,7 +216,7 @@
       </div>
       <div id="instructions">
         <span class="desktop-hint">Use the <b>arrow keys</b> to drive.</span>
-        <span class="mobile-hint">Touch and slide the bar below to drive.</span>
+        <span class="mobile-hint">Touch the bar below and rock left/right to drive.</span>
       </div>
       <div id="touch-controls">
         <div id="touch-track">
@@ -311,9 +311,13 @@
     //=========================================================================
     // TOUCH CONTROLS (mobile) -- drives the exact same keyLeft/keyRight/
     // keyFaster flags the keyboard bindings below set, just from touch
-    // position instead. Touching the strip anywhere floors it; where you
-    // touch relative to its center steers, same feel as holding an arrow
-    // key. #touch-track is display:none outside the mobile media query, so
+    // instead. Joystick-style, not a fixed slider: wherever the finger
+    // first lands becomes "center" for that touch, and steering is based
+    // on movement away from THAT point, not absolute position on the
+    // strip. The finger can stay put and just rock a few pixels either
+    // way to switch between left/right -- no need to track down where the
+    // strip's actual center is or drag all the way to an edge.
+    // #touch-track is display:none outside the mobile media query, so
     // this is a no-op on desktop -- nothing can touch a hidden element.
     //=========================================================================
 
@@ -321,24 +325,27 @@
       var track = Dom.get('touch-track');
       var thumb = Dom.get('touch-thumb');
       if (!track) return;
-      var deadZone = 0.12; // fraction of half-width treated as "straight ahead", no steering
+      var deadPx  = 10; // px of movement from the touch's start point before it counts as a direction -- small and immediate, not a wide drag
+      var maxPx   = 40; // clamp for the thumb's own visual travel only, doesn't affect the steering threshold above
+      var anchorX = null;
 
       function fromTouch(e) {
         e.preventDefault(); // stop the page itself from scrolling/zooming while steering
         var touch = e.touches[0];
-        var rect  = track.getBoundingClientRect();
-        var relX  = Util.limit(((touch.clientX - rect.left) / rect.width) * 2 - 1, -1, 1); // -1 (left edge) .. 1 (right edge)
+        if (anchorX === null) anchorX = touch.clientX; // set once per touch, on the touchstart that starts it
+        var deltaX = touch.clientX - anchorX;
         keyFaster = true;
         keySlower = false;
-        keyLeft   = relX < -deadZone;
-        keyRight  = relX >  deadZone;
-        thumb.style.left      = (50 + relX * 50) + '%';
+        keyLeft   = deltaX < -deadPx;
+        keyRight  = deltaX >  deadPx;
+        thumb.style.left = (50 + (Util.limit(deltaX, -maxPx, maxPx) / maxPx) * 50) + '%';
         Dom.addClassName(track, 'active');
       }
 
       function endTouch(e) {
         e.preventDefault();
         keyFaster = keyLeft = keyRight = false;
+        anchorX = null;
         thumb.style.left = '50%';
         Dom.removeClassName(track, 'active');
       }
