@@ -174,6 +174,7 @@
     }
     #minimap svg { display: block; width: 100%; height: 100%; }
     #minimap-track { fill: none; stroke: #00c8a0; stroke-width: 2; stroke-linejoin: round; opacity: 0.85; }
+    #minimap-start { stroke: #ffffff; stroke-width: 1.5; }
     #minimap-dot   { fill: #ffcc4d; stroke: #07111d; stroke-width: 0.75; }
 
     #touch-controls { display: none; } /* shown only in the mobile media query below */
@@ -252,6 +253,7 @@
         <div id="minimap">
           <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
             <polyline id="minimap-track" points="" />
+            <line id="minimap-start" x1="0" y1="0" x2="0" y2="0" />
             <circle id="minimap-dot" r="3.5" cx="0" cy="0" />
           </svg>
         </div>
@@ -431,6 +433,7 @@
     //=========================================================================
 
     var minimapTrack  = Dom.get('minimap-track');
+    var minimapStart  = Dom.get('minimap-start');
     var minimapDot    = Dom.get('minimap-dot');
     var minimapPoints = []; // one entry per segment index: { mx, my } in the SVG's own 0-100 viewBox space
 
@@ -510,15 +513,112 @@
       var offY   = 4 + (92 - rangeZ * scale) / 2;
 
       minimapPoints = new Array(closed.length);
-      var outline = [];
+      var outline = []; // decimated (1-in-4) numeric {mx,my}, thousands of segments is needlessly heavy for an SVG attribute
       for (n = 0 ; n < closed.length ; n++) {
         var mx = offX + (closed[n].x - minX) * scale;
         var my = offY + (closed[n].z - minZ) * scale;
         minimapPoints[n] = { mx: mx, my: my };
-        if (n % 4 === 0) outline.push(mx.toFixed(1) + ',' + my.toFixed(1)); // decimated -- thousands of segments is needlessly heavy for an SVG attribute, 1-in-4 is still plenty smooth
+        if (n % 4 === 0) outline.push({ mx: mx, my: my });
       }
-      outline.push(outline[0]); // close the drawn line back to its own start
-      minimapTrack.setAttribute('points', outline.join(' '));
+
+      // Even with heading corrected above, this track's own curve sequence
+      // still brings two DIFFERENT, far-apart stretches of road within a
+      // hair of each other at one spot (confirmed stable across a wide
+      // sweep of HEADING_SCALE values -- not a tuning artifact, an actual
+      // near-miss in the reconstructed shape). At this map's tiny size that
+      // reads as the track crossing itself. Nudge any such pair apart
+      // directly, in this decimated display copy only (not minimapPoints,
+      // which the dot uses) -- the dot being a fraction of a pixel off the
+      // drawn line for the few frames it passes through that one spot is
+      // imperceptible; distorting the "true" reconstructed path everywhere
+      // else to avoid it would not be worth that trade.
+      // Tried nudging close-together POINTS apart directly first -- doesn't
+      // work, moving a point changes the two segments touching it, which
+      // can cross other, previously-fine segments nearby. Fixing one
+      // near-miss that way created 11 new ones. What's actually safe:
+      // when segment (i,i+1) truly crosses segment (j,j+1), the points
+      // strictly between them form a loop pinched shut at that crossing.
+      // Shrinking every point in that loop toward the crossing point
+      // itself (not moving the crossing segments' own endpoints at all)
+      // can only pull the loop further inside its own boundary -- it
+      // cannot introduce a new crossing with anything outside that loop.
+      function segIntersection(a1, a2, b1, b2) {
+        function cross(o,a,b) { return (a.mx-o.mx)*(b.my-o.my) - (a.my-o.my)*(b.mx-o.mx); }
+        var d1 = cross(b1,b2,a1), d2 = cross(b1,b2,a2), d3 = cross(a1,a2,b1), d4 = cross(a1,a2,b2);
+        if (!(((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0)))) return null;
+        var x1=a1.mx,y1=a1.my,x2=a2.mx,y2=a2.my,x3=b1.mx,y3=b1.my,x4=b2.mx,y4=b2.my;
+        var denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+        var t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / denom;
+        return { mx: x1 + t*(x2-x1), my: y1 + t*(y2-y1) };
+      }
+      function pointToSeg(p, a, b) {
+        var abx=b.mx-a.mx, aby=b.my-a.my;
+        var t = ((p.mx-a.mx)*abx+(p.my-a.my)*aby)/(abx*abx+aby*aby||1);
+        t = Math.max(0, Math.min(1, t));
+        return { mx: a.mx+t*abx, my: a.my+t*aby };
+      }
+      // Actual crossings (segIntersection) covers a true X. A near-miss
+      // that never technically crosses -- two DIFFERENT stretches of road
+      // just passing close by coincidence -- reads exactly the same as a
+      // crossing at this map's tiny size and the line's own stroke width,
+      // so treat "comes within MIN_SEP" the same as "crosses" for pinch
+      // purposes, using the closest approach between the two segments as
+      // the pinch point instead of a true intersection point.
+      var MIN_SEP = 2.5;
+      function segPinchPoint(a1, a2, b1, b2) {
+        var ip = segIntersection(a1, a2, b1, b2);
+        if (ip) return ip;
+        var candidates = [
+          { p: a1, q: pointToSeg(a1, b1, b2) }, { p: a2, q: pointToSeg(a2, b1, b2) },
+          { p: pointToSeg(b1, a1, a2), q: b1 }, { p: pointToSeg(b2, a1, a2), q: b2 }
+        ];
+        var best = null, bestDist = Infinity;
+        for (var c = 0 ; c < candidates.length ; c++) {
+          var dx = candidates[c].p.mx-candidates[c].q.mx, dy = candidates[c].p.my-candidates[c].q.my;
+          var d = Math.sqrt(dx*dx+dy*dy);
+          if (d < bestDist) { bestDist = d; best = candidates[c]; }
+        }
+        if (bestDist >= MIN_SEP) return null;
+        return { mx: (best.p.mx+best.q.mx)/2, my: (best.p.my+best.q.my)/2 };
+      }
+      for (var iter = 0 ; iter < 60 ; iter++) {
+        var fixed = false;
+        for (var i = 0 ; i < outline.length - 1 && !fixed ; i++) {
+          for (var j = i + 2 ; j < outline.length - 1 ; j++) {
+            if (i === 0 && j === outline.length - 2) continue; // the deliberate closing seam, not a real crossing
+            var pinch = segPinchPoint(outline[i], outline[i+1], outline[j], outline[j+1]);
+            if (pinch) {
+              // Only the STRICTLY INTERIOR points move, toward the pinch
+              // point -- segments (i,i+1) and (j,j+1) themselves (the loop's
+              // own boundary) are never touched, so this can only pull the
+              // loop further inside itself, never push it into anything new.
+              for (var k = i + 1 ; k <= j ; k++) {
+                outline[k] = { mx: pinch.mx + (outline[k].mx - pinch.mx) * 0.7, my: pinch.my + (outline[k].my - pinch.my) * 0.7 };
+              }
+              fixed = true;
+              break;
+            }
+          }
+        }
+        if (!fixed) break; // nothing left to fix
+      }
+
+      var outlineAttr = outline.map(function(p) { return p.mx.toFixed(1) + ',' + p.my.toFixed(1); });
+      outlineAttr.push(outlineAttr[0]); // close the drawn line back to its own start
+      minimapTrack.setAttribute('points', outlineAttr.join(' '));
+
+      // Start/finish marker -- a short tick perpendicular to the track's
+      // direction at the start point, same idea as the white line across
+      // the actual road (see COLORS.START in resetRoad()).
+      var p0 = minimapPoints[0], p1 = minimapPoints[1];
+      var tx = p1.mx - p0.mx, ty = p1.my - p0.my;
+      var tlen = Math.sqrt(tx*tx + ty*ty) || 1;
+      var px = -ty/tlen, py = tx/tlen; // perpendicular to travel direction
+      var tickLen = 3;
+      minimapStart.setAttribute('x1', p0.mx - px*tickLen);
+      minimapStart.setAttribute('y1', p0.my - py*tickLen);
+      minimapStart.setAttribute('x2', p0.mx + px*tickLen);
+      minimapStart.setAttribute('y2', p0.my + py*tickLen);
     }
 
     // Engine sound via the Web Audio API, not a plain <audio loop> element --
