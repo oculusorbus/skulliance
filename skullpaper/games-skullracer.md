@@ -19,7 +19,15 @@ Carrying near-top speed over a steep enough rise sends your car briefly airborne
 
 Each boost pad has its own jump ramp waiting further down that same straightaway, same lane as the pad so grabbing the boost lines you up for it automatically. It's the same jump as cresting a hill, just deliberately placed instead of left to chance - so a well-timed ramp jump is the difference between keeping your 180 mph run alive and getting knocked out of it by a car in the way.
 
-Each of the track's four longest straightaways hides a bright striped power-up strip laid across one lane, right at the start of the straight. Drive over it and you're instantly boosted to 180 mph for the rest of that straightaway, dropping back to normal top speed the moment it ends. Which lane it's in is random every race, so you can't just memorize a line and ignore the road - you have to actually react.
+Each of the track's four longest straightaways hides a bright striped power-up strip laid across one lane, right at the start of the straight. Drive over it and you're instantly boosted to 180 mph for the rest of that straightaway, dropping back to normal top speed the moment it ends. Which lane it's in is random every race, so you can't just memorize a line and ignore the road - you have to actually react. Crash while boosting and the boost ends outright - you only keep the full run by staying crash-free.
+
+## Traffic
+
+Tuck in close behind a car in your lane for a moment and you'll draft it - a small, continuous top-speed bump for as long as you hold the position. Break off or crash and it's gone; get back on someone's bumper and it builds again.
+
+Traffic passing close by gets a quick, panned engine blip as it goes - a car passing on your left sounds like it's on your left, not just louder - so the road feels populated even with your eyes on what's ahead.
+
+A crash doesn't just snap your speed anymore - it's a brief, decaying fishtail, a screen shake, and a puff of dust at the point of impact. The car's own art is a fixed rear-view sprite (no side or front angle exists to turn into), so it's not an actual spin - same "shake and a puff" trick era-appropriate arcade racers leaned on instead of true rotation.
 
 ## Controls
 

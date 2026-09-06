@@ -574,6 +574,110 @@
 
     var jumpRamps = []; // set by resetJumpRamps()
 
+    //=========================================================================
+    // CRASH REACTION -- a collision used to be just a speed snap and a
+    // position teleport, nothing about it read as an actual hit. A real
+    // spin (rotating the car to show its side/front) isn't possible: every
+    // player sprite is a fixed rear-view billboard (straight/left/right,
+    // each with an uphill variant) -- there's no side or front art to turn
+    // into, so rotating one past a few degrees just looks like a flat
+    // image spinning in place, not a car turning. Faked instead with three
+    // things that don't need new art: a brief, decaying fishtail (the
+    // existing left/right/straight frames swapped fast, capped small) plus
+    // a screen shake plus a dust burst -- the same "shake and a puff, not
+    // an actual rotation" trick era-appropriate arcade racers used.
+    //=========================================================================
+    var CRASH_REACT_DURATION  = 0.5;  // seconds the wobble/shake decay over
+    var CRASH_WOBBLE_FREQ     = 28;   // radians/sec -- fast enough to read as "losing it", not a slow sway
+    var CRASH_SHAKE_MAGNITUDE = 6;    // peak screen shake, pixels
+
+    var crashReactTimer = 0;    // counts down from CRASH_REACT_DURATION, 0 = normal
+    var crashWobbleSteer = 0;   // synthetic steer fed to Render.player() while reacting (overrides real key state)
+    var crashShakeX = 0;        // read by render(), applied as a canvas translate for the whole frame
+    var crashShakeY = 0;
+
+    //=========================================================================
+    // PARTICLES -- dust/smoke, screen-space only. Spawned at roughly the
+    // player's own screen position, which barely moves frame to frame in
+    // this engine (Render.player() draws it at a fixed destX of width/2 --
+    // steering shifts the WORLD under a visually-centered car, not the
+    // car's own screen position), so a fixed spawn point is close enough
+    // without duplicating render()'s own hill-bob projection math.
+    //=========================================================================
+    var PARTICLE_SPAWN_Y_FRAC = 0.82; // fraction of canvas height the car sits at on screen
+    var PARTICLE_GRAVITY       = 40;   // slight downward drift, px/s^2 -- a screen-space feel, not real physics
+
+    var particles = []; // {x, y, vx, vy, life, maxLife, size, color}
+
+    function spawnParticles(x, y, count, opts) {
+      opts = opts || {};
+      for (var n = 0 ; n < count ; n++) {
+        particles.push({
+          x: x + (Math.random()-0.5) * (opts.spreadX || 10),
+          y: y + (Math.random()-0.5) * (opts.spreadY || 6),
+          vx: (Math.random()-0.5) * (opts.speed || 60),
+          vy: -(Math.random() * (opts.speed || 60) * 0.5) - (opts.lift || 10),
+          life: opts.life || 0.5,
+          maxLife: opts.life || 0.5,
+          size: (opts.size || 3) + Math.random()*2,
+          color: opts.color || '160,160,150'
+        });
+      }
+    }
+
+    function updateParticles(dt) {
+      for (var n = particles.length - 1 ; n >= 0 ; n--) {
+        var p = particles[n];
+        p.life -= dt;
+        if (p.life <= 0) { particles.splice(n, 1); continue; }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += PARTICLE_GRAVITY * dt;
+      }
+    }
+
+    function renderParticles(ctx) {
+      for (var n = 0 ; n < particles.length ; n++) {
+        var p     = particles[n];
+        var alpha = Math.max(0, p.life / p.maxLife);
+        ctx.fillStyle = 'rgba(' + p.color + ',' + (alpha * 0.6).toFixed(2) + ')';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (0.5 + alpha * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    //=========================================================================
+    // DRAFTING -- sustained close proximity directly behind a car in
+    // (roughly) your own lane grants a small, continuous top-speed bonus.
+    // Checked a few segments ahead of the player rather than just the
+    // player's own current segment (same idea as the boost pad/jump ramp
+    // lookahead), since "behind a car" is naturally a few segments' worth
+    // of following distance, not literally the same 200-unit segment.
+    //=========================================================================
+    var DRAFT_WINDOW_SEGMENTS = 3;    // how far ahead of the player to look for a car to draft
+    var DRAFT_LANE_OVERLAP    = 1.0;  // generous overlap percent -- doesn't need to be a near-collision, just "roughly lined up"
+    var DRAFT_BUILD_TIME      = 0.6;  // seconds of sustained proximity before the bonus kicks in
+    var DRAFT_SPEED_BONUS     = 2000; // added to the effective top speed cap while drafting (maxSpeed is 12000)
+
+    var draftTimer  = 0;
+    var draftActive = false;
+
+    //=========================================================================
+    // PASSING-CAR SOUND -- a quick, stereo-panned engine blip when a
+    // traffic car is right alongside the player, so nearby traffic feels
+    // present instead of just visible. No dedicated "whoosh" sound file
+    // exists, so this reuses the SAME decoded engine sample already loaded
+    // for the player's own engine hum (see engineBuffer below) through its
+    // own short-lived source/gain/panner chain -- pitched up so it doesn't
+    // just sound like a second copy of your own engine. One-shot per car
+    // per approach via a per-car cooldown timestamp, not a full enter/exit
+    // tracked flag -- simpler, and "a car sitting next to you for 10
+    // seconds re-triggers every couple seconds" is a fine, unobtrusive
+    // fallback if it ever does linger that long.
+    //=========================================================================
+    var PASS_SOUND_COOLDOWN = 2.0; // seconds before the same car can re-trigger it
+
     var keyLeft        = false;
     var keyRight       = false;
     var keyFaster      = false;
@@ -843,6 +947,28 @@
 
     var engineMuted = (Dom.storage.muted === "true");
 
+    // Passing-car sound -- see this feature's own top-of-file comment
+    // (PASSING-CAR SOUND). `pan` is -1 (fully left) to 1 (fully right);
+    // callers pass the car's lane offset relative to the player, already
+    // clamped to that range.
+    function playPassSound(pan) {
+      if (!engineBuffer || engineMuted) return; // not decoded yet, or muted -- same gate as the player's own engine
+      var src    = audioCtx.createBufferSource();
+      var gain   = audioCtx.createGain();
+      var panner = audioCtx.createStereoPanner();
+      src.buffer = engineBuffer;
+      src.playbackRate.value = 1.6; // distinctly higher than the player's own 0.8-1.6x range, so it doesn't just sound like a second copy of your own engine
+      panner.pan.value = pan;
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.06);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.45);
+      src.connect(gain);
+      gain.connect(panner);
+      panner.connect(audioCtx.destination);
+      src.start(0);
+      src.stop(audioCtx.currentTime + 0.5);
+    }
+
     function playCollisionSound() {
       collisionSound.currentTime = 0;
       collisionSound.play();
@@ -973,6 +1099,73 @@
         }
       }
 
+      // Crash reaction -- see this feature's own top-of-file comment
+      // (CRASH REACTION). Purely cosmetic, same spirit as the jump: never
+      // touches speed/position/collision beyond what the collision checks
+      // above already did.
+      if (crashed) {
+        crashReactTimer = CRASH_REACT_DURATION;
+        spawnParticles(width/2, height * PARTICLE_SPAWN_Y_FRAC, 14, {
+          color: '120,110,100', life: 0.6, speed: 140, spreadX: 20, spreadY: 10, size: 4
+        });
+      }
+      if (crashReactTimer > 0) {
+        crashReactTimer = Math.max(0, crashReactTimer - dt);
+        var crashElapsed = CRASH_REACT_DURATION - crashReactTimer;
+        var crashDecay    = crashReactTimer / CRASH_REACT_DURATION; // 1 -> 0, settles the wobble/shake back to normal
+        crashWobbleSteer  = Math.sin(crashElapsed * CRASH_WOBBLE_FREQ) * crashDecay;
+        crashShakeX       = (Math.random() - 0.5) * 2 * CRASH_SHAKE_MAGNITUDE * crashDecay;
+        crashShakeY       = (Math.random() - 0.5) * 2 * CRASH_SHAKE_MAGNITUDE * crashDecay;
+      } else {
+        crashWobbleSteer = 0;
+        crashShakeX = 0;
+        crashShakeY = 0;
+      }
+
+      // Tire smoke / dust -- hard braking or driving off-road, a few
+      // particles a frame rather than a single burst (see spawnParticles()
+      // above). Off-road gets a dustier tan tint, braking a grayer one.
+      if (keySlower && speed > maxSpeed * 0.3) {
+        spawnParticles(width/2, height * PARTICLE_SPAWN_Y_FRAC, 1, { color: '180,180,175', life: 0.35, speed: 50, size: 2.5 });
+      }
+      if ((playerX < -1 || playerX > 1) && speed > offRoadLimit) {
+        spawnParticles(width/2, height * PARTICLE_SPAWN_Y_FRAC, 1, { color: '150,130,90', life: 0.4, speed: 70, size: 3 });
+      }
+      updateParticles(dt);
+
+      // Drafting -- see this feature's own top-of-file comment (DRAFTING).
+      // Looked for across a short window ahead of the player, not just the
+      // current segment, since "behind a car" naturally spans more than
+      // one 200-unit segment.
+      var draftedThisFrame = false;
+      for (var dk = 0 ; dk < DRAFT_WINDOW_SEGMENTS && !draftedThisFrame ; dk++) {
+        var draftSeg = segments[(playerSegment.index + dk) % segments.length];
+        for (var dn = 0 ; dn < draftSeg.cars.length ; dn++) {
+          var draftCar = draftSeg.cars[dn];
+          if (Util.overlap(playerX, playerW, draftCar.offset, draftCar.sprite.w * SPRITES.SCALE, DRAFT_LANE_OVERLAP)) {
+            draftedThisFrame = true;
+            break;
+          }
+        }
+      }
+      if (draftedThisFrame && !crashed) {
+        draftTimer += dt;
+        if (draftTimer >= DRAFT_BUILD_TIME) draftActive = true;
+      } else {
+        draftTimer = 0;
+        draftActive = false;
+      }
+
+      // Passing-car sound -- one-shot per car per approach (see this
+      // feature's own top-of-file comment, PASSING-CAR SOUND).
+      for (n = 0 ; n < playerSegment.cars.length ; n++) {
+        car = playerSegment.cars[n];
+        if (!car.lastPassSoundAt || (raceElapsed - car.lastPassSoundAt) > PASS_SOUND_COOLDOWN) {
+          playPassSound(Util.limit(car.offset - playerX, -1, 1));
+          car.lastPassSoundAt = raceElapsed;
+        }
+      }
+
       // Boost pad pickup/expiry -- checked against the player's CURRENT
       // segment, same timing as the off-road/car collision checks just
       // above. Instant surge on pickup (never slows you down if you were
@@ -1002,7 +1195,8 @@
       }
 
       playerX = Util.limit(playerX, -3, 3);     // dont ever let it go too far out of bounds
-      speed   = Util.limit(speed, 0, boostActive ? BOOST_SPEED : maxSpeed); // or exceed maxSpeed (BOOST_SPEED while a boost pad's still active)
+      var speedCap = boostActive ? BOOST_SPEED : (maxSpeed + (draftActive ? DRAFT_SPEED_BONUS : 0)); // boost always wins outright; drafting just nudges the normal cap
+      speed   = Util.limit(speed, 0, speedCap);
 
       updateEngineSound(speed/maxSpeed);
 
@@ -1185,6 +1379,13 @@
 
       ctx.clearRect(0, 0, width, height);
 
+      // Crash shake -- a plain canvas translate for the whole frame, applied
+      // (and cleared) before/after everything below. Doesn't touch the HUD
+      // or minimap -- those are separate DOM elements, not canvas draws, so
+      // only the "world" shakes, not the UI on top of it.
+      ctx.save();
+      ctx.translate(crashShakeX, crashShakeY);
+
       Render.background(ctx, background, width, height, BACKGROUND.SKY,   skyOffset,  resolution * skySpeed  * playerY);
       Render.background(ctx, background, width, height, BACKGROUND.HILLS, hillOffset, resolution * hillSpeed * playerY);
       Render.background(ctx, background, width, height, BACKGROUND.TREES, treeOffset, resolution * treeSpeed * playerY);
@@ -1306,15 +1507,23 @@
         }
 
         if (segment == playerSegment) {
+          // Fishtail wobble overrides the normal steer-from-keys sprite
+          // pick while reacting to a crash (see CRASH REACTION) -- both
+          // just need a sign (left/right/straight), the actual magnitude
+          // doesn't matter to Render.player()'s own branching.
+          var playerSteer = crashReactTimer > 0 ? crashWobbleSteer : speed * (keyLeft ? -1 : keyRight ? 1 : 0);
           Render.player(ctx, width, height, resolution, roadWidth, sprites, speed/maxSpeed,
                         cameraDepth/playerZ,
                         width/2,
                         (height/2) - (cameraDepth/playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
-                        speed * (keyLeft ? -1 : keyRight ? 1 : 0),
+                        playerSteer,
                         playerSegment.p2.world.y - playerSegment.p1.world.y,
                         jumpOffset);
         }
       }
+
+      renderParticles(ctx);
+      ctx.restore();
     }
 
     function findSegment(z) {

@@ -122,6 +122,30 @@ records verified constants, and tracks what still needs to be written.
   straight. Triggers the identical jump state machine as a hill crest (playerSegment.jumpRamp
   check added to the same jumpCooldownTimer/speedPercent gate in update()) -- not a separate
   mechanic, just a second, deliberately-placed way to fire it.
+  Drafting (DRAFT_* constants/draftTimer/draftActive in racing/index.html): sustained lane-overlap
+  with a car across a DRAFT_WINDOW_SEGMENTS-segment lookahead for DRAFT_BUILD_TIME seconds adds
+  DRAFT_SPEED_BONUS to the effective top-speed cap (ignored while boostActive, which already
+  exceeds it); breaks instantly on losing the overlap or on any crash.
+  Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
+  whenever `crashed` is set by either collision check in update() -- a decaying sine-driven
+  synthetic steer value (crashWobbleSteer, overrides the real key-based steer fed to
+  Render.player() only while reacting) plus a canvas-translate screen shake (crashShakeX/Y,
+  applied via ctx.save()/translate()/restore() wrapping the whole of render()) plus a
+  spawnParticles() burst. No new sprite art -- rotating the existing rear-view-only player frames
+  past a few degrees looks broken (no side/front art to turn into), so this fakes a spin with
+  wobble+shake+dust instead of true rotation.
+  Particles (particles array, spawnParticles()/updateParticles()/renderParticles() in
+  racing/index.html): generic screen-space system, spawn origin is a fixed (width/2, height *
+  PARTICLE_SPAWN_Y_FRAC) rather than the real projected player position -- close enough since
+  Render.player() itself draws at a near-fixed screen spot (steering moves the world, not the
+  car's own screen X). Used by the crash burst above and by continuous tire smoke/dust while hard
+  braking or off-road.
+  Passing-car sound (playPassSound() in racing/index.html): no dedicated "whoosh" sound file
+  exists, so this reuses the same decoded engineBuffer as the player's own engine hum through its
+  own one-shot BufferSourceNode -> GainNode (fade envelope) -> StereoPannerNode chain, pitched up
+  (1.6x) so it doesn't just sound like a second copy of your own engine. Panned by the car's lane
+  offset relative to playerX, clamped to StereoPannerNode's -1..1 range. One-shot per car per
+  approach via car.lastPassSoundAt + PASS_SOUND_COOLDOWN, not full enter/exit tracking.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
