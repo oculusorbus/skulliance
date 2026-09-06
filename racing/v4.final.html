@@ -346,6 +346,14 @@
         -webkit-touch-callout: none; /* the actual long-press popup switch -- user-select alone doesn't stop it on iOS */
         touch-action: none; /* stop the page from scrolling/zooming while a button is held */
       }
+      /* The label glyph (◀/BRAKE/▶) is wrapped in its own <span> specifically
+         so this rule can make IT invisible to touch -- without it, tapping
+         directly on the character itself (as opposed to the button's empty
+         padding around it) could miss and register nothing at all, since
+         the touch's actual target was the text run, not the button div the
+         listeners are bound to. This forces every tap anywhere in the
+         button, glyph included, to resolve to the same .touch-btn element. */
+      .touch-btn span { pointer-events: none; }
       .touch-btn.pressed { background-color: #00c8a0; color: #07111d; }
       #btn-brake { font-size: 0.8rem; }
       #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
@@ -400,9 +408,9 @@
         <span class="mobile-hint">Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.</span>
       </div>
       <div id="touch-controls">
-        <div class="touch-btn" id="btn-left">&#9664;</div>
-        <div class="touch-btn" id="btn-brake">BRAKE</div>
-        <div class="touch-btn" id="btn-right">&#9654;</div>
+        <div class="touch-btn" id="btn-left"><span>&#9664;</span></div>
+        <div class="touch-btn" id="btn-brake"><span>BRAKE</span></div>
+        <div class="touch-btn" id="btn-right"><span>&#9654;</span></div>
       </div>
     </div>
 
