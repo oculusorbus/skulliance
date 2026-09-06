@@ -46,7 +46,14 @@
     }
     .box-art {
       display: block;
-      max-height: 340px;
+      /* No max-height here on purpose -- .cartridge-art below has none
+         either, so both are constrained by ONLY max-width (the same
+         variable), which guarantees identical rendered widths by
+         construction. A max-height here (tried first) can cut in before
+         max-width does on this portrait-shaped image, rendering it
+         NARROWER than the more square cartridge below it -- the two
+         fighting over which cap binds first is exactly what made the
+         cartridge end up wider. */
       width: auto;
       max-width: var(--box-col-width);
       border-radius: 0.5rem;
