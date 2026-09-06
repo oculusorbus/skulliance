@@ -124,8 +124,21 @@
          even though a big monitor had enough OTHER slack -- the 1800px cap
          below -- to hide the shortfall entirely) -- 88px, now 118px. See
          the 1300px query below for what happens when there isn't room for
-         both at all, rather than almost enough. */
-      width: min(calc(100vw - (2 * var(--box-col-width)) - 118px), 85vh * 4 / 3);
+         both at all, rather than almost enough.
+         100vw itself went stale once this page started also getting
+         embedded in skullracer.php (no more iframe -- see that file's own
+         comment): the real page there lives inside the shared site CSS's
+         .container, which caps out at max-width:2000px and centers itself
+         with auto margins on anything wider. This formula had no idea that
+         cap existed, kept reasoning off the full 100vw regardless, so on
+         any monitor wider than ~2000px it believed there was more room
+         than .container actually handed it -- the box art plus the game
+         added up to more than .container's real width and the right-hand
+         column wrapped below, same failure mode as the 88px/118px one
+         above, just from a different direction. min(100vw, 2000px) matches
+         that real ceiling; a no-op everywhere narrower, since min() just
+         returns 100vw there same as before. */
+      width: min(calc(min(100vw, 2000px) - (2 * var(--box-col-width)) - 118px), 85vh * 4 / 3);
       max-width: 1800px; /* sane ceiling on an ultrawide/4K display */
       line-height: 0; /* kill the baseline gap under the canvas */
     }
