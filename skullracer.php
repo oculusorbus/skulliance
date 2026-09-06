@@ -56,10 +56,14 @@ include 'header.php';
   padding: 24px 16px;
 }
 #skullracer-frame {
+  /* Was capped at max-width:1400px/height:900px -- an arbitrary conservative
+     box from before racing/index.html itself tried to fill its own window.
+     Now that it does, this needs to actually give it the room: the box art
+     flanking the game inside the iframe wraps to its own line (looking
+     broken) if the iframe itself isn't wide enough for both, regardless of
+     how generous the inner page's own sizing is. */
   width: 100%;
-  max-width: 1400px;
-  height: 900px;
-  max-height: 85vh;
+  height: 85vh;
   border: 0;
   border-radius: 0.75rem;
 }

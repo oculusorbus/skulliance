@@ -50,8 +50,15 @@
          converted to an equivalent width (*4/3) so a tall/narrow window is
          limited by height, a short/wide one by width, and it's never
          bigger than either. Was a flat 640px; a big monitor just had empty
-         space around a small fixed game area. */
-      width: min(92vw, 85vh * 4 / 3);
+         space around a small fixed game area.
+         The -640px reserves room for the two flanking box-art panels (up
+         to 260px each) plus #stage's gaps -- without it, this claims
+         space right up to the box art's own edge, and the two competing
+         for the same pixels is what made #stage's flex-wrap kick in and
+         dump the right-hand art onto its own line (see the 1300px query
+         below for what happens when there isn't enough width for both
+         at all, rather than almost enough). */
+      width: min(calc(100vw - 640px), 85vh * 4 / 3);
       max-width: 1800px; /* sane ceiling on an ultrawide/4K display */
       line-height: 0; /* kill the baseline gap under the canvas */
     }
@@ -156,6 +163,20 @@
 
     #touch-controls { display: none; } /* shown only in the mobile media query below */
     .mobile-hint { display: none; }
+
+    /* Not enough width for the game AND both box-art panels side by side --
+       hide the art and let the game take the full width, rather than
+       #stage's flex-wrap dumping the right-hand panel onto its own
+       (visibly broken-looking) line. This is a plain container-width
+       check, so it applies just the same whether that width comes from a
+       narrow browser window or from being embedded in skullracer.php's
+       iframe. */
+    @media (max-width: 1300px) {
+      .box-art { display: none; }
+      #stage { gap: 0; }
+      #frame { width: 100%; }
+      #racer { width: 100%; }
+    }
 
     @media (max-width: 768px) {
       body { padding: 8px; }
