@@ -498,7 +498,7 @@
       </div>
       <div id="instructions">
         <span class="desktop-hint">Use the <b>arrow keys</b> to drive.</span>
-        <span class="mobile-hint">Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.</span>
+        <span class="mobile-hint" id="mobile-hint">Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.</span>
       </div>
       <div id="touch-controls">
         <div class="touch-btn" id="btn-left"><span>&#9664;</span></div>
@@ -1056,6 +1056,79 @@
                           function() { keySlower = false; keyFaster = true;  });
     })();
 
+    //=========================================================================
+    // GAMEPAD -- a PS4/PS5 controller paired over Bluetooth (phone or
+    // desktop), read through the standard Gamepad API. Same shared
+    // keyLeft/keyRight/keyFaster/keySlower flags as keyboard/touch above,
+    // just a third source setting them -- nothing downstream needs to know
+    // which input actually drove a given frame.
+    //
+    // Unlike keyboard/touch, the API has no press/release EVENTS for held
+    // buttons/axes (only connect/disconnect) -- it's polled, so pollGamepad()
+    // runs once a tick from update() and just sets all 4 flags outright from
+    // the controller's CURRENT state. That means once a controller is
+    // connected it's the sole source of truth for its own tick -- touch/
+    // keyboard input on the same device would get overwritten a frame later
+    // anyway, which is fine, nobody's expected to use both at once.
+    //
+    // Square = gas, Cross = brake (not the triggers) -- specifically asked
+    // for over R2/L2 so a thumb resting on the face buttons can rock
+    // straight between the two for quick on/off braking. R2/L2 still work
+    // too, as alternates, since a trigger-preferring player loses nothing
+    // by leaving them live.
+    //
+    // The browser only reveals a controller after a button on it is
+    // actually pressed once (a privacy/fingerprinting mitigation, not a
+    // bug here) -- gamepadconnected won't fire from just pairing over
+    // Bluetooth alone.
+    //=========================================================================
+    var gamepadIndex = null; // navigator.getGamepads() index of the active controller, or null
+
+    window.addEventListener('gamepadconnected', function(e) {
+      gamepadIndex = e.gamepad.index;
+      // Mobile's own auto-gas (keyFaster set true above) exists so there's
+      // nothing to hold just to go forward with only 3 touch buttons -- a
+      // controller has an actual gas button, so that default no longer
+      // applies once one's live.
+      keyFaster = false;
+      var hint = Dom.get('mobile-hint');
+      if (hint) hint.innerHTML = 'Controller connected -- <b>D-pad</b>/<b>stick</b> to steer, <b>□</b> gas, <b>✕</b> brake.';
+    });
+    window.addEventListener('gamepaddisconnected', function(e) {
+      if (e.gamepad.index !== gamepadIndex) return; // some OTHER pad disconnecting, not the active one
+      gamepadIndex = null;
+      // Restore mobile's auto-gas ONLY if that's actually the control
+      // scheme in play (same visibility check the touch-controls setup
+      // above uses) -- a controller disconnecting on DESKTOP must not
+      // suddenly start auto-accelerating a keyboard player who never asked
+      // for that.
+      var touchContainer = Dom.get('touch-controls');
+      if (touchContainer && getComputedStyle(touchContainer).display !== 'none') keyFaster = true;
+      var hint = Dom.get('mobile-hint');
+      if (hint) hint.innerHTML = 'Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.';
+    });
+
+    function pollGamepad() {
+      if (gamepadIndex === null) return;
+      var pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      var gp   = pads[gamepadIndex];
+      if (!gp) return; // browsers keep the slot but null the entry between the connect event and first poll, sometimes
+
+      var STICK_DEADZONE = 0.25; // ignore drift/noise around center, same idea as any analog-stick game
+      var dpadLeft  = !!(gp.buttons[14] && gp.buttons[14].pressed);
+      var dpadRight = !!(gp.buttons[15] && gp.buttons[15].pressed);
+      var stickX    = gp.axes[0] || 0;
+      keyLeft  = dpadLeft  || stickX < -STICK_DEADZONE;
+      keyRight = dpadRight || stickX >  STICK_DEADZONE;
+
+      var square = !!(gp.buttons[2] && gp.buttons[2].pressed); // gas
+      var cross  = !!(gp.buttons[0] && gp.buttons[0].pressed); // brake
+      var r2     = !!(gp.buttons[7] && gp.buttons[7].pressed); // gas, alternate
+      var l2     = !!(gp.buttons[6] && gp.buttons[6].pressed); // brake, alternate
+      keyFaster  = square || r2;
+      keySlower  = cross  || l2;
+    }
+
     var hud = {
       speed:            { value: null, dom: Dom.get('speed_value')            },
       lap:              { value: null, dom: Dom.get('lap_value')              },
@@ -1315,6 +1388,8 @@
     function update(dt) {
 
       if (raceFinished) return; // Game.stop() halts the loop after finishRace(), but belt-and-suspenders
+
+      pollGamepad(); // no-op if none connected -- see that function's own comment
 
       var n, car, carW, sprite, spriteW;
       var crashed       = false; // set true by either collision check below -- ends an active boost

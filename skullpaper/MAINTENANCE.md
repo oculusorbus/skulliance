@@ -150,6 +150,22 @@ records verified constants, and tracks what still needs to be written.
   changes, not just appends new ones at the end) and did the full by-hand re-sync of common.js's
   SPRITES object this project's own resprite-sync convention requires (see that var's own comment)
   -- every coordinate in it changed, not just the 6 new entries.
+  Gamepad (gamepadIndex/pollGamepad() in racing/index.html): standard Gamepad API, polled once a
+  tick from update() (no press/release events for held buttons/axes, only connect/disconnect) and
+  written straight into the same keyLeft/keyRight/keyFaster/keySlower flags keyboard/touch already
+  use -- a third input source, not a separate code path downstream. D-pad (buttons[14]/[15]) or left
+  stick (axes[0], STICK_DEADZONE=0.25) steers; (Square) buttons[2] or R2 buttons[7] is gas; (Cross)
+  buttons[0] or L2 buttons[6] is brake -- Square/Cross over the triggers specifically so a thumb on
+  the face buttons can rock straight between them for quick on/off braking, triggers left live too
+  as alternates. Standard mapping button indices (W3C spec), same as any other browser gamepad
+  support -- PS4/PS5 controllers register under that mapping on current iOS/Android/desktop browsers,
+  not anything sniffed or negotiated here. gamepadconnected sets keyFaster = false (turns OFF
+  mobile's own auto-gas the instant a real gas button exists) and swaps #mobile-hint's text;
+  gamepaddisconnected sets keyFaster = true again ONLY if the touch-controls container is actually
+  visible (same display-check the touch-controls setup itself uses) so a controller disconnecting on
+  DESKTOP can't start auto-accelerating a keyboard player. The API only reveals a controller after a
+  button on it is pressed once, even after Bluetooth pairing succeeds -- browser-level privacy
+  behavior, not a bug to chase here if a freshly-paired controller doesn't do anything yet.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of
