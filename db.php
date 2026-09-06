@@ -12476,4 +12476,306 @@ function cryptconquestAbandonRun($conn, $user_id) {
 /* ============================================================
    END CRYPT CONQUEST
    ============================================================ */
+
+/* ============================================================
+   SKULL RACER
+   Pseudo-3D endless-highway racer (racing/index.html) -- reskinned
+   from Jake Gordon's MIT-licensed "javascript-racer" engine, fully
+   client-side (no server round-trip per frame, unlike Crypt Crawl's
+   per-card action model). The ONLY server interaction is this one:
+   a single fire-and-forget POST after the client has already shown
+   its own "Race Complete" screen (ajax/skullracer-finalize.php),
+   same "client already rendered the result, this is purely
+   afterward" shape as cryptcrawl-finalize.php, just without needing
+   the separate-request-for-CDN-buffering reason Crypt Crawl's split
+   was for -- there's no OTHER slow game logic sharing this request
+   to begin with.
+
+   Requires table `skull_racer_runs`:
+     CREATE TABLE skull_racer_runs (
+       id            INT AUTO_INCREMENT PRIMARY KEY,
+       user_id       INT NOT NULL,
+       total_time    FLOAT NOT NULL,
+       fastest_lap   FLOAT NOT NULL,
+       laps          INT NOT NULL,
+       carbon_earned INT NOT NULL DEFAULT 0,
+       reward        TINYINT NOT NULL DEFAULT 0,
+       created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       INDEX (user_id),
+       INDEX (reward)
+     );
+   ============================================================ */
+
+// Flat CARBON credit for simply FINISHING a race (any time), separate from
+// the weekly leaderboard pool below -- same two-tier shape as Crypt Crawl
+// (which pays per-card regardless of win/loss, on top of its own weekly
+// pool). Starting value, not derived from anything -- adjust to taste.
+define('SKULLRACER_CARBON_PER_RACE', 1000);
+
+// Sanity floor, NOT a real physics simulation -- rejects an obviously
+// fabricated submission (a hand-crafted POST straight to
+// ajax/skullracer-finalize.php claiming a 5-second race) without needing
+// to re-simulate the actual run server-side. Derived from the track's own
+// constants in racing/index.html: trackLength (1341000) / maxSpeed (12000)
+// = ~111.75s for one lap at an impossible constant top speed with zero
+// curves, collisions, or braking -- the fastest any lap could EVER be,
+// even for a theoretical perfect run. Floored to 100s/lap (a hair under
+// that theoretical impossible minimum, so it never false-rejects a
+// genuine top-tier run) and 3 laps' worth for the whole-race floor.
+// MANUALLY kept in sync with racing/index.html's own constants -- nothing
+// enforces that automatically, same caveat as common.js's SPRITES object
+// (see racing/common.js's own comment on that one). If trackLength,
+// maxSpeed, or the lap count ever change there, update these too.
+define('SKULLRACER_MIN_LAP_TIME', 100);
+define('SKULLRACER_MIN_TOTAL_TIME', 300);
+define('SKULLRACER_EXPECTED_LAPS', 3);
+
+// Called from ajax/skullracer-finalize.php. $token is a client-generated
+// one-time string (Date.now()+Math.random(), see racing/index.html) purely
+// to guard against the same fetch() firing twice (a flaky connection
+// retry, a double-tap on "Race Again" racing to finishRace() twice) --
+// not a security boundary, just deduping, same spirit as Crypt Crawl's
+// $_SESSION['cryptcrawl_finalized_runs'] guard. Capped list so a long
+// session (many races) doesn't grow this unbounded.
+function skullRacerFinalizeRun($conn, $user_id, $total_time, $fastest_lap, $laps, $token) {
+	$user_id = intval($user_id);
+	if ($user_id <= 0) return; // guest -- no session, nothing to save
+
+	$token = trim(strval($token));
+	if ($token !== '') {
+		if (!empty($_SESSION['skullracer_finalized_tokens'][$token])) return; // already processed this exact submission
+		$_SESSION['skullracer_finalized_tokens'][$token] = true;
+		if (count($_SESSION['skullracer_finalized_tokens']) > 20) {
+			// Drop the oldest entries -- only recent duplicates are worth
+			// guarding against, not a lifetime ledger in the session.
+			$_SESSION['skullracer_finalized_tokens'] = array_slice($_SESSION['skullracer_finalized_tokens'], -20, null, true);
+		}
+	}
+
+	$total_time  = floatval($total_time);
+	$fastest_lap = floatval($fastest_lap);
+	$laps        = intval($laps);
+
+	// Reject anything that isn't a plausible finished race BEFORE it ever
+	// touches the table -- see SKULLRACER_MIN_*'s own comment for where
+	// these floors come from.
+	if ($laps !== SKULLRACER_EXPECTED_LAPS) return;
+	if ($total_time < SKULLRACER_MIN_TOTAL_TIME) return;
+	if ($fastest_lap < SKULLRACER_MIN_LAP_TIME) return;
+	if ($fastest_lap > $total_time) return; // a single lap can't be longer than the whole race
+
+	$carbon = SKULLRACER_CARBON_PER_RACE;
+	$conn->query("
+		INSERT INTO skull_racer_runs (user_id, total_time, fastest_lap, laps, carbon_earned, reward, created_at)
+		VALUES ($user_id, $total_time, $fastest_lap, $laps, $carbon, 0, NOW())
+	");
+	$run_id = $conn->insert_id;
+	if ($run_id <= 0) return;
+
+	updateBalance($conn, $user_id, 15, $carbon); // 15 = CARBON, same project_id every other weekly-leaderboard game credits through
+	logCredit($conn, $user_id, $carbon, 15);
+
+	$run = ['id' => $run_id, 'user_id' => $user_id, 'total_time' => $total_time, 'fastest_lap' => $fastest_lap, 'carbon_earned' => $carbon];
+	try {
+		skullRacerAnnounceResult($conn, $run);
+	} catch (\Throwable $e) {
+		error_log('skullRacerAnnounceResult failed for run ' . $run_id . ': ' . $e->getMessage());
+	}
+}
+
+// True if $total_time beats this user's best among their OTHER runs (lower
+// is better here, opposite of cryptcrawlIsNewBestDepth's "deeper is
+// better" -- same exclude-the-just-saved-row-by-id reasoning as that one).
+function skullRacerIsNewBest($conn, $user_id, $current_run_id, $total_time) {
+	$user_id = intval($user_id);
+	$current_run_id = intval($current_run_id);
+	$result = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE user_id = $user_id AND id != $current_run_id");
+	if ($result && $result->num_rows > 0) {
+		$row = $result->fetch_assoc();
+		if ($row['best'] === null) return true; // no prior runs at all -- first finish is your best by definition
+		return floatval($total_time) < floatval($row['best']);
+	}
+	return true;
+}
+
+// user_id currently in 1st (lowest best total_time) -- same shape as
+// cryptcrawlLeaderboardLeaderUserId, ranking direction flipped since a
+// race is won by being FASTEST, not by accumulating the most wins.
+function skullRacerLeaderboardLeaderUserId($conn, $weekly = false) {
+	$where = $weekly ? "AND sr.reward = 0" : "";
+	$result = $conn->query("
+		SELECT u.id AS user_id
+		FROM skull_racer_runs sr
+		INNER JOIN users u ON u.id = sr.user_id
+		WHERE 1=1 $where
+		GROUP BY u.id
+		ORDER BY MIN(sr.total_time) ASC
+		LIMIT 1
+	");
+	if ($result && $result->num_rows > 0) {
+		return intval($result->fetch_assoc()['user_id']);
+	}
+	return null;
+}
+
+// Live "just finished a race" Discord post -- same shape as
+// cryptcrawlAnnounceResult (fresh DB lookup by user_id, never
+// $_SESSION['userData'], for the same mobile-Safari-session-restore
+// reason documented there). Posts to the "skullracer" channel (see
+// webhooks.php) -- the weekly leaderboard summary below posts to the
+// default/notifications webhook instead, same split every other game
+// here uses.
+function skullRacerAnnounceResult($conn, $run) {
+	$sr_user_id = intval($run['user_id']);
+	if ($sr_user_id <= 0) return;
+	$user_r = $conn->query("SELECT username, discord_id, avatar FROM users WHERE id = $sr_user_id LIMIT 1");
+	if (!$user_r || !$user_r->num_rows) return;
+	$user_row = $user_r->fetch_assoc();
+	if (empty($user_row['discord_id'])) return;
+
+	$sr_username   = !empty($user_row['username']) ? $user_row['username'] : 'Unknown';
+	$sr_discord    = $user_row['discord_id'];
+	$sr_avatar     = $user_row['avatar'] ?? '';
+	$sr_avatar_url = ($sr_discord && $sr_avatar) ? "https://cdn.discordapp.com/avatars/" . $sr_discord . "/" . $sr_avatar . ".png" : "";
+	$sr_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($sr_username);
+	$sr_mention    = "<@" . $sr_discord . ">";
+	$sr_author     = array("name" => $sr_username, "icon_url" => $sr_avatar_url, "url" => $sr_profile);
+
+	// Checked AFTER this run is already saved, so "best"/"leader" both
+	// reflect the world including this very run -- same ordering
+	// cryptcrawlAnnounceResult uses for the same reason.
+	$badges = array();
+	if (skullRacerIsNewBest($conn, $sr_user_id, intval($run['id']), floatval($run['total_time']))) {
+		$badges[] = "🏅 **New personal best!**";
+	}
+	if (skullRacerLeaderboardLeaderUserId($conn, false) === $sr_user_id) {
+		$badges[] = "👑 **#1 All-Time!**";
+	}
+	if (skullRacerLeaderboardLeaderUserId($conn, true) === $sr_user_id) {
+		$badges[] = "🔥 **#1 This Week!**";
+	}
+	$sr_badge_text = $badges ? ("\n\n" . implode("\n", $badges)) : "";
+
+	$sr_carbon = intval($run['carbon_earned'] ?? 0);
+	$sr_footer = ["text" => "+" . number_format($sr_carbon) . " CARBON earned", "icon_url" => "https://skulliance.io/staking/icons/carbon.png"];
+	$sr_desc   = $sr_mention . " finished a race! 🏁\n\n⏱️ **Total Time:** " . number_format(floatval($run['total_time']), 1) . "s\n🏎️ **Fastest Lap:** " . number_format(floatval($run['fastest_lap']), 1) . "s" . $sr_badge_text;
+
+	discordmsg("🏁 Skull Racer Finished", $sr_desc, "", "https://skulliance.io/staking/skullracer.php", "skullracer", $sr_avatar_url, "00C8A0", $sr_author, $sr_footer);
+}
+
+// Skull Racer leaderboard -- same shape as checkCryptCrawlLeaderboard,
+// ranked by each user's own BEST (lowest) total_time instead of most wins,
+// fastest_lap as the tiebreak. $weekly filters to runs not yet counted
+// toward a payout (reward=0, reset by resetSkullRacerRuns() below);
+// $rewards actually pays out and is only ever called from rewards.php's
+// cron-triggered endpoint.
+function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
+	$carbon = 50000;
+	$where  = ($weekly || $rewards) ? "AND sr.reward = 0" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			MIN(sr.total_time)  AS best_time,
+			MIN(sr.fastest_lap) AS best_lap,
+			COUNT(*)            AS races
+		FROM skull_racer_runs sr
+		INNER JOIN users u ON u.id = sr.user_id
+		WHERE 1=1 $where
+		GROUP BY u.id
+		ORDER BY best_time ASC, best_lap ASC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			// Composite score tuple for tie-detection -- rounded to 0.1s so
+			// two runs that differ only in float noise below display
+			// precision don't spuriously split into separate ranks.
+			$score = [round(floatval($row['best_time']), 1), round(floatval($row['best_lap']), 1)];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format(floatval($row['best_time']), 1) . 's',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
+			$stats      = [
+				'Best Time'   => number_format(floatval($row['best_time']), 1) . 's',
+				'Best Lap'    => number_format(floatval($row['best_lap']), 1) . 's',
+				'Races' => number_format($row['races']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Best Time: " . number_format(floatval($row['best_time']), 1) . "s, Best Lap: " . number_format(floatval($row['best_lap']), 1) . "s\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			resetSkullRacerRuns($conn);
+			discordmsg("🏁 Weekly Skull Racer Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($weekly || $rewards) ? "for the week" : "";
+		echo "<p>No Skull Racer races have been completed yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="skullracer"><input type="submit" class="small-button" value="View All Skull Racer Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+function resetSkullRacerRuns($conn) {
+	$sql = "UPDATE skull_racer_runs SET reward = 1 WHERE reward = 0";
+	if ($conn->query($sql) !== TRUE) {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+/* ============================================================
+   END SKULL RACER
+   ============================================================ */
 ?>

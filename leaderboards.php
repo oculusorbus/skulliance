@@ -215,6 +215,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
 			           $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" &&
 		           $filterby != "cryptconquest" && $filterby != "monthly-cryptconquest" && $filterby != "realms" &&
+		           $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
@@ -307,6 +308,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = date("F") . " Crypt Conquest";
 				        $filterby = "monthly-cryptconquest";
 				        break;
+				    case ($filterby == "skullracer"):
+				        $title = "All Skull Racer";
+				        $filterby = "skullracer";
+				        break;
+				    case ($filterby == "weekly-skullracer"):
+				        $title = "Weekly Skull Racer";
+				        $filterby = "weekly-skullracer";
+				        break;
 				    case ($filterby == "activity-ath"):
 				        $title = "All-Time Activity";
 				        $filterby = "activity-ath";
@@ -341,6 +350,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "gauntlets" && $filterby != "weekly-gauntlets" &&
 				              $filterby != "cryptcrawl" && $filterby != "weekly-cryptcrawl" &&
 				              $filterby != "cryptconquest" && $filterby != "monthly-cryptconquest" && $filterby != "realms" &&
+				              $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
@@ -407,6 +417,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "monthly-cryptconquest"):
 				            checkCryptConquestLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "skullracer"):
+				            checkSkullRacerLeaderboard($conn);
+				            break;
+				        case ($filterby == "weekly-skullracer"):
+				            checkSkullRacerLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "activity-ath"):
 				            checkActivityLeaderboard($conn, 'ath');

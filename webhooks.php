@@ -63,6 +63,12 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// Safe to remove this guard once getCryptConquestWebhook() is
 			// actually added.
 			$webhook = function_exists('getCryptConquestWebhook') ? getCryptConquestWebhook() : "";
+		}else if($channel == "skullracer"){
+			// Same not-yet-configured situation as cryptconquest above --
+			// getSkullRacerWebhook() doesn't exist in
+			// credentials/webhooks_credentials.php yet. Safe to remove
+			// this guard once it's added.
+			$webhook = function_exists('getSkullRacerWebhook') ? getSkullRacerWebhook() : "";
 		}else{
 			$webhook = getWebhook();
 		}

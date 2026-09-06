@@ -398,6 +398,14 @@
     var lapNumber      = 1;                       // current lap (1-indexed)
     var raceElapsed    = 0;                       // total race time, counts continuously across all laps
     var raceFinished   = false;                   // true once the final lap is crossed -- update() stops doing anything
+    // One per page load -- "Race Again" reloads the whole page (see
+    // finish-replay's click handler below), so a fresh token every load
+    // already means a fresh token every race attempt without needing to
+    // regenerate it mid-session. Purely a dedup key for
+    // ajax/skullracer-finalize.php (guards against the same finish firing
+    // its submission twice, e.g. a flaky connection retry) -- not a
+    // security boundary, the server re-validates the actual time itself.
+    var raceToken      = Date.now() + '-' + Math.random().toString(36).slice(2);
 
     var keyLeft        = false;
     var keyRight       = false;
@@ -796,6 +804,24 @@
       Dom.addClassName('finish-overlay', 'show');
 
       Game.stop(); // the track loops forever otherwise -- this is the actual finish line
+
+      // Fire-and-forget, after the finish screen above is already showing --
+      // same "client already rendered the result, this is purely
+      // afterward" shape as Crypt Crawl's own finalize call. The server
+      // (ajax/skullracer-finalize.php) re-validates everything itself
+      // (session for who's actually logged in, a sanity floor against an
+      // obviously fabricated time) rather than trusting any of this --
+      // nothing here needs a response, and a guest or offline player just
+      // silently doesn't get saved, exactly like every other real-
+      // account-only leaderboard on this platform.
+      fetch('../ajax/skullracer-finalize.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'total_time=' + encodeURIComponent(raceElapsed) +
+              '&fastest_lap=' + encodeURIComponent(Util.toFloat(Dom.storage.fast_lap_time)) +
+              '&laps=' + encodeURIComponent(totalLaps) +
+              '&token=' + encodeURIComponent(raceToken)
+      }).catch(function() {});
     }
 
     //-------------------------------------------------------------------------

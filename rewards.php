@@ -46,6 +46,12 @@ if(isset($_GET['gauntlets'])){
 if(isset($_GET['cryptcrawl'])){
 	checkCryptCrawlLeaderboard($conn, false, true);
 }
+if(isset($_GET['skullracer'])){
+	// Weekly, same cadence as Crypt Crawl -- needs its own crontab entry
+	// hitting rewards.php?skullracer=1 once a week. Nothing in this
+	// codebase schedules that itself, same as every other ?X=1 case here.
+	checkSkullRacerLeaderboard($conn, false, true);
+}
 if(isset($_GET['cryptconquest'])){
 	// Monthly, not weekly -- needs its OWN crontab entry hitting
 	// rewards.php?cryptconquest=1 once a month (e.g. midnight on the 1st),

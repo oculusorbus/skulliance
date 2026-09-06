@@ -36,6 +36,7 @@ records verified constants, and tracks what still needs to be written.
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
 | games-cryptcrawl.md *(new)*         | Scoundrel-style crawl  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
+| games-skullracer.md *(new)*         | Pseudo-3D racer        | skullracer.php (nav wrapper + iframe), racing/index.html (game, client-side), ajax/skullracer-finalize.php, db.php SKULL RACER block (end of file) |
 | games-drop-ship.md                  | NFT battler, now in-platform | dropship/ (migrated from madballs.net; requires Skulliance login) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
@@ -89,6 +90,7 @@ records verified constants, and tracks what still needs to be written.
 - Skull Swap weekly LB: 25,000 CARBON (db.php:5020).
 - Gauntlets weekly LB: 25,000 CARBON (db.php:5264).
 - Boss Battles weekly LB: CLAW/CARBON split by damage (db.php:5139-5258).
+- Skull Racer weekly LB: 50,000 CARBON (db.php SKULL RACER block, end of file).
 
 ### Games constants
 - Gauntlets (db.php:9877-9888): hand size 6, win at 3 wins (no loss = "sweep"), 100 points/win.
@@ -97,6 +99,15 @@ records verified constants, and tracks what still needs to be written.
 - Skull Swap (ajax/save-swap-score.php): 25 matches/game, max score 25,000, min 60s anti-cheat.
 - Monstrocity: 28 campaign levels, 35+ NFT themes; character traits health/strength/speed/tactics/size/powerup.
 - CLAW is a real point type (Monstrocity/Boss reward), separate from CARBON/DIAMOND.
+- Skull Racer (db.php SKULL RACER block, racing/index.html): 3 laps/race, 1,000 CARBON flat
+  per finished race (SKULLRACER_CARBON_PER_RACE) on top of the weekly LB pool above. Leaderboard
+  ranks by each user's own best (lowest) total_time, not wins -- opposite direction from every
+  other game's leaderboard here. Server-side sanity floor (SKULLRACER_MIN_TOTAL_TIME=300s,
+  SKULLRACER_MIN_LAP_TIME=100s) rejects an obviously fabricated submission without re-simulating
+  the run; derived from racing/index.html's own trackLength/maxSpeed constants and must be
+  updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
+  see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
+  configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
