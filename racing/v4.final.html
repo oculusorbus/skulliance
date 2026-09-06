@@ -85,14 +85,18 @@
          space around a small fixed game area.
          The reserve is 2x --box-col-width (the two flanking columns) plus
          #stage's 2 gaps (24px each) plus body's own padding (20px each
-         side) -- derived from the SAME variable the box art itself sizes
-         from (see :root above), not a separately hardcoded number, so
-         growing the art can't silently reopen the old bug where the two
-         competed for the same pixels and #stage's flex-wrap dumped the
-         right-hand art onto its own line (see the 1300px query below for
-         what happens when there isn't room for both at all, rather than
-         almost enough). */
-      width: min(calc(100vw - (2 * var(--box-col-width)) - 88px), 85vh * 4 / 3);
+         side) plus #frame's own padding+border (14px+1px each side) --
+         derived from the SAME variable the box art itself sizes from (see
+         :root above) rather than a separately hardcoded number, so growing
+         the art can't silently reopen the old bug where the two competed
+         for the same pixels and #stage's flex-wrap dumped the right-hand
+         art onto its own line. That reserve was short by #frame's own 30px
+         of chrome for a while (still wrapped at some in-between widths,
+         even though a big monitor had enough OTHER slack -- the 1800px cap
+         below -- to hide the shortfall entirely) -- 88px, now 118px. See
+         the 1300px query below for what happens when there isn't room for
+         both at all, rather than almost enough. */
+      width: min(calc(100vw - (2 * var(--box-col-width)) - 118px), 85vh * 4 / 3);
       max-width: 1800px; /* sane ceiling on an ultrawide/4K display */
       line-height: 0; /* kill the baseline gap under the canvas */
     }
