@@ -12,33 +12,31 @@
     body {
       margin: 0;
       min-height: 100vh;
-      position: relative; /* anchor point for #frame's absolute centering below */
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background-color: #07111d;
       font-family: Arial, sans-serif;
       color: #e8eaed;
       padding: 20px;
     }
-    #title-art {
-      /* Positioned independently of #frame on purpose -- stacking it inline
-         above the frame (in normal flow) shifted the actual game off-center
-         vertically, since the centered block then included the art's height.
-         Pinning it near the top instead keeps #frame's centering untouched. */
+    #stage {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap; /* narrow viewports stack instead of overflowing sideways */
+    }
+    .box-art {
       display: block;
-      position: absolute;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      max-height: 220px;
+      max-height: 480px;
       width: auto;
-      max-width: 90%;
+      max-width: 260px;
       border-radius: 0.5rem;
       box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      flex-shrink: 0;
     }
     #frame {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       background-color: #0a1929;
       border: 1px solid rgba(0,200,160,0.25);
       border-radius: 0.75rem;
@@ -153,32 +151,38 @@
 </head>
 <body>
 
-  <img id="title-art" src="images/skullracer.jpg" alt="Skull Racer">
+  <div id="stage">
+    <img class="box-art" id="box-art-left"  src="images/skullracer.jpg" alt="Skull Racer box art -- front">
 
-  <div id="frame">
-    <div id="racer">
-      <div id="hud">
-        <span id="lap"              class="hud">Lap <span id="lap_value" class="value">1</span>/<span id="total_laps_value" class="value">2</span></span>
-        <span id="speed"            class="hud"><span id="speed_value" class="value">0</span> mph</span>
-        <span id="current_lap_time" class="hud">Time: <span id="current_lap_time_value" class="value">0.0</span></span>
-        <span id="last_lap_time"    class="hud">Last Lap: <span id="last_lap_time_value" class="value">0.0</span></span>
-        <span id="fast_lap_time"    class="hud">Fastest Lap: <span id="fast_lap_time_value" class="value">0.0</span></span>
-      </div>
-      <canvas id="canvas">
-        Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
-      </canvas>
-      <div id="finish-overlay">
-        <div id="finish-box">
-          <h2>Race Complete</h2>
-          <p class="finish-row">Total Time <span id="finish_total_time" class="value">0.0</span></p>
-          <p class="finish-row">Fastest Lap <span id="finish_fastest_lap" class="value">0.0</span></p>
-          <button id="finish-replay" type="button">Race Again</button>
+    <div id="frame">
+      <div id="racer">
+        <div id="hud">
+          <span id="lap"              class="hud">Lap <span id="lap_value" class="value">1</span>/<span id="total_laps_value" class="value">2</span></span>
+          <span id="speed"            class="hud"><span id="speed_value" class="value">0</span> mph</span>
+          <span id="current_lap_time" class="hud">Time: <span id="current_lap_time_value" class="value">0.0</span></span>
+          <span id="last_lap_time"    class="hud">Last Lap: <span id="last_lap_time_value" class="value">0.0</span></span>
+          <span id="fast_lap_time"    class="hud">Fastest Lap: <span id="fast_lap_time_value" class="value">0.0</span></span>
+        </div>
+        <canvas id="canvas">
+          Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
+        </canvas>
+        <div id="finish-overlay">
+          <div id="finish-box">
+            <h2>Race Complete</h2>
+            <p class="finish-row">Total Time <span id="finish_total_time" class="value">0.0</span></p>
+            <p class="finish-row">Fastest Lap <span id="finish_fastest_lap" class="value">0.0</span></p>
+            <button id="finish-replay" type="button">Race Again</button>
+          </div>
         </div>
       </div>
+      <div id="instructions">
+        Use the <b>arrow keys</b> to drive.
+      </div>
     </div>
-    <div id="instructions">
-      Use the <b>arrow keys</b> to drive.
-    </div>
+
+    <!-- Same front art on both sides for now -- swap this src for the box's
+         back-cover art once it exists. -->
+    <img class="box-art" id="box-art-right" src="images/skullracer.jpg" alt="Skull Racer box art -- back">
   </div>
 
   <audio id='music'>
