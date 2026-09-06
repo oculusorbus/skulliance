@@ -435,31 +435,65 @@
     var minimapPoints = []; // one entry per segment index: { mx, my } in the SVG's own 0-100 viewBox space
 
     function buildMinimap() {
-      var raw = [], x = 0, dx = 0, n;
+      // First pass: a REAL top-down path -- curve accumulates into a
+      // heading (steering angle), and each segment advances by that
+      // heading's own sin/cos, not "curve into an x-offset, distance-
+      // traveled into the other axis" (the first version of this, which
+      // always produced a diagonal line since distance-traveled only ever
+      // increases, straight or not).
+      var HEADING_SCALE = 0.006; // this track's "curve" units are an arbitrary per-segment perspective-shift value, not radians -- tuned by eye for a reasonable-looking turn radius
+      var raw = [], heading = 0, x = 0, z = 0, n;
       for (n = 0 ; n < segments.length ; n++) {
-        raw.push({ x: x, z: segments[n].p1.world.z });
-        dx = dx + segments[n].curve;
-        x  = x + dx;
+        raw.push({ x: x, z: z });
+        heading += segments[n].curve * HEADING_SCALE;
+        x += Math.sin(heading) * segmentLength;
+        z += Math.cos(heading) * segmentLength;
+      }
+
+      // The track is an open path underneath -- it "loops" only by
+      // teleporting the camera position back to 0 at the end, not by
+      // actually curving back around to meet itself (nothing in
+      // resetRoad() makes the total curve sum to a full 360 degrees). Close
+      // it for the map by bleeding off the total start->end drift linearly
+      // across every point: point 0 stays put, the last point lands
+      // exactly back on point 0, everything between gets a proportional
+      // nudge -- same idea as a closing spline.
+      var last   = raw[raw.length - 1];
+      var driftX = last.x - raw[0].x;
+      var driftZ = last.z - raw[0].z;
+      var closed = new Array(raw.length);
+      for (n = 0 ; n < raw.length ; n++) {
+        var t = n / (raw.length - 1);
+        closed[n] = { x: raw[n].x - t * driftX, z: raw[n].z - t * driftZ };
       }
 
       var minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-      for (n = 0 ; n < raw.length ; n++) {
-        if (raw[n].x < minX) minX = raw[n].x;
-        if (raw[n].x > maxX) maxX = raw[n].x;
-        if (raw[n].z < minZ) minZ = raw[n].z;
-        if (raw[n].z > maxZ) maxZ = raw[n].z;
+      for (n = 0 ; n < closed.length ; n++) {
+        if (closed[n].x < minX) minX = closed[n].x;
+        if (closed[n].x > maxX) maxX = closed[n].x;
+        if (closed[n].z < minZ) minZ = closed[n].z;
+        if (closed[n].z > maxZ) maxZ = closed[n].z;
       }
       var rangeX = Math.max(1, maxX - minX);
       var rangeZ = Math.max(1, maxZ - minZ);
+      // Both axes are real spatial coordinates now (not one arbitrary +
+      // one monotonic distance), so scale them EQUALLY -- by whichever
+      // range is larger -- and center the shorter axis, rather than
+      // stretching each to fill 92x92 independently and distorting the
+      // loop's actual shape.
+      var scale  = 92 / Math.max(rangeX, rangeZ);
+      var offX   = 4 + (92 - rangeX * scale) / 2;
+      var offY   = 4 + (92 - rangeZ * scale) / 2;
 
-      minimapPoints = new Array(raw.length);
+      minimapPoints = new Array(closed.length);
       var outline = [];
-      for (n = 0 ; n < raw.length ; n++) {
-        var mx = 4 + ((raw[n].x - minX) / rangeX) * 92;
-        var my = 4 + ((raw[n].z - minZ) / rangeZ) * 92;
+      for (n = 0 ; n < closed.length ; n++) {
+        var mx = offX + (closed[n].x - minX) * scale;
+        var my = offY + (closed[n].z - minZ) * scale;
         minimapPoints[n] = { mx: mx, my: my };
         if (n % 4 === 0) outline.push(mx.toFixed(1) + ',' + my.toFixed(1)); // decimated -- thousands of segments is needlessly heavy for an SVG attribute, 1-in-4 is still plenty smooth
       }
+      outline.push(outline[0]); // close the drawn line back to its own start
       minimapTrack.setAttribute('points', outline.join(' '));
     }
 
