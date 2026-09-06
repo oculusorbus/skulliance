@@ -821,9 +821,29 @@
     var ghostPlayback    = null; // the stored best lap's trace, or null if none recorded yet
     var ghostFrameIndex  = 0;    // how far into the current lap playback has advanced
 
+    // Re-bases a recorded lap trace so its own frame 0 is always [0,0].
+    // Util.increase() wraps `position` at a lap boundary to
+    // (old position + dt*speed - trackLength) -- a small positive
+    // REMAINDER, not a clean 0, since the crossing happens mid-tick. Any
+    // trace whose fastest lap wasn't lap 1 (the common case -- lap 1
+    // includes accelerating from a dead stop) has that remainder, plus
+    // whatever playerX you happened to be holding at that exact tick,
+    // baked into frame 0 forever. Replayed against a brand-new race
+    // (which really is [0,0] at the line), that shows up as the ghost
+    // sitting a car length ahead and shifted to one side from the green
+    // light. Subtracting frame 0's own values from every sample keeps the
+    // lap's shape intact, just re-based so playback always starts flush
+    // with you. A no-op for a trace that already starts at [0,0] (lap 1).
+    function normalizeGhostTrace(trace) {
+      if (!trace || !trace.length) return trace;
+      var origin0 = trace[0][0], origin1 = trace[0][1];
+      if (!origin0 && !origin1) return trace;
+      return trace.map(function(f) { return [f[0] - origin0, f[1] - origin1]; });
+    }
+
     try {
       var storedGhost = Dom.storage.ghost_lap;
-      if (storedGhost) ghostPlayback = JSON.parse(storedGhost);
+      if (storedGhost) ghostPlayback = normalizeGhostTrace(JSON.parse(storedGhost));
     } catch (e) { ghostPlayback = null; }
 
     // This race's own fastest lap (separate from the all-time personal
@@ -861,12 +881,12 @@
       .then(function(data) {
         if (!data) return;
         if (data.weekly)  {
-          weeklyGhost.playback = data.weekly.trace;
+          weeklyGhost.playback = normalizeGhostTrace(data.weekly.trace);
           weeklyGhost.id       = data.weekly.id;
           weeklyGhost.rate     = Util.limit((weeklyGhost.playback.length / fps) / (data.weekly.total_time / totalLaps), 0, 1);
         }
         if (data.alltime) {
-          alltimeGhost.playback = data.alltime.trace;
+          alltimeGhost.playback = normalizeGhostTrace(data.alltime.trace);
           alltimeGhost.id       = data.alltime.id;
           alltimeGhost.rate     = Util.limit((alltimeGhost.playback.length / fps) / (data.alltime.total_time / totalLaps), 0, 1);
         }
@@ -1512,6 +1532,11 @@
           lastLapTime    = currentLapTime;
           currentLapTime = 0;
           playLapSound(); // every finish-line crossing that completes a lap, including the last one
+          // Re-based to start at [0,0] before it becomes anyone's stored
+          // ghost -- see normalizeGhostTrace()'s own comment for why frame
+          // 0 otherwise carries a small leftover offset from wherever this
+          // lap actually started.
+          ghostRecording = normalizeGhostTrace(ghostRecording);
           if (lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time)) {
             Dom.storage.fast_lap_time = lastLapTime;
             updateHud('fast_lap_time', formatTime(lastLapTime));
