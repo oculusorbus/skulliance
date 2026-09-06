@@ -174,7 +174,7 @@
 		      <a href="monstrocity.php#boss">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
-		      <a href="racing/index.html">Skull Racer</a>
+		      <a href="skullracer.php">Skull Racer</a>
 		    </div>
 		  </div>
 
