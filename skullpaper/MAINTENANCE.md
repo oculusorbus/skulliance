@@ -179,7 +179,12 @@ records verified constants, and tracks what still needs to be written.
   no per-frame steer-direction inference). Deliberately has zero interaction with update()'s
   collision logic -- it's a recorded trace, not a simulated car, so it can't crash or be crashed
   into, and doesn't know or care whether this race's boost pad/jump ramp landed in the same lane
-  the recorded lap saw.
+  the recorded lap saw. All three ghosts' frameIndex only advance once position > playerZ (the same
+  threshold raceElapsed/currentLapTime already gate on for "the race has actually begun") --
+  update() runs continuously from page load regardless of input, so advancing unconditionally meant
+  a ghost's clock was already ticking the whole time a player sat at the start line before touching
+  a key, making it look like it launched ahead of them. Recording itself stays unconditional (fine
+  to record the standing-still start too); only playback advancement is gated.
   Ghost, weekly/all-time leader (weeklyGhost/alltimeGhost in racing/index.html, skullRacerGetGhosts()/
   skullRacerValidateGhostTrace()/skullRacerFinalizeRun() in db.php, ajax/skullracer-ghosts.php):
   same rendering technique as the personal ghost (gold via ctx.filter =

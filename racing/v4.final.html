@@ -1433,16 +1433,25 @@
       hillOffset = Util.increase(hillOffset, hillSpeed * playerSegment.curve * (position-startPosition)/segmentLength, 1);
       treeOffset = Util.increase(treeOffset, treeSpeed * playerSegment.curve * (position-startPosition)/segmentLength, 1);
 
-      // Ghost -- record this tick, advance playback in lockstep (see this
-      // feature's own top-of-file comment). Both unconditional, both reset
-      // together at the lap crossing below, so they always stay aligned to
-      // the same "how far into this lap" clock.
+      // Ghost -- record this tick unconditionally (harmless to record the
+      // standing-still start too), but only ADVANCE playback once the race
+      // has actually started (see this feature's own top-of-file comment).
+      // update() runs continuously from page load regardless of whether
+      // you've touched a key yet -- advancing playback unconditionally
+      // meant the ghost's own clock was already ticking the whole time you
+      // sat at the start line, so it looked like it launched ahead of you
+      // the moment you finally hit the gas. Gated on the same
+      // position > playerZ threshold the game's own lap clock
+      // (raceElapsed/currentLapTime) already uses for "the race has
+      // meaningfully begun" -- frozen at frame 0 until then, so the ghost
+      // waits at the line with you instead of racing off on its own.
       ghostRecording.push([position, playerX]);
-      if (ghostPlayback && ghostFrameIndex < ghostPlayback.length - 1) ghostFrameIndex++;
-      if (weeklyGhost.playback  && weeklyGhost.frameIndex  < weeklyGhost.playback.length - 1)  weeklyGhost.frameIndex++;
-      if (alltimeGhost.playback && alltimeGhost.frameIndex < alltimeGhost.playback.length - 1) alltimeGhost.frameIndex++;
 
       if (position > playerZ) {
+        if (ghostPlayback && ghostFrameIndex < ghostPlayback.length - 1) ghostFrameIndex++;
+        if (weeklyGhost.playback  && weeklyGhost.frameIndex  < weeklyGhost.playback.length - 1)  weeklyGhost.frameIndex++;
+        if (alltimeGhost.playback && alltimeGhost.frameIndex < alltimeGhost.playback.length - 1) alltimeGhost.frameIndex++;
+
         raceElapsed += dt; // unlike currentLapTime, this never resets -- it's the total race clock shown at the finish
         if (currentLapTime && (startPosition < playerZ)) {
           lastLapTime    = currentLapTime;
