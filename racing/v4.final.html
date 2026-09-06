@@ -12,25 +12,33 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      position: relative; /* anchor point for #frame's absolute centering below */
       background-color: #07111d;
       font-family: Arial, sans-serif;
       color: #e8eaed;
       padding: 20px;
     }
-    h1 {
-      font-weight: 300;
-      font-size: 1.8rem;
-      color: #00c8a0;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin: 0 0 16px;
-      text-align: center;
+    #title-art {
+      /* Positioned independently of #frame on purpose -- stacking it inline
+         above the frame (in normal flow) shifted the actual game off-center
+         vertically, since the centered block then included the art's height.
+         Pinning it near the top instead keeps #frame's centering untouched. */
+      display: block;
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-height: 220px;
+      width: auto;
+      max-width: 90%;
+      border-radius: 0.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
     }
     #frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background-color: #0a1929;
       border: 1px solid rgba(0,200,160,0.25);
       border-radius: 0.75rem;
@@ -145,7 +153,7 @@
 </head>
 <body>
 
-  <h1>Skull Racer</h1>
+  <img id="title-art" src="images/skullracer.jpg" alt="Skull Racer">
 
   <div id="frame">
     <div id="racer">
