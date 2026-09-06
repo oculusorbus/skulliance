@@ -475,6 +475,10 @@
     var boostPads          = []; // set by resetBoostPads()
     var boostActive         = false;
     var boostStraightEndIdx = null;
+    var boostCrashedPad     = null; // set if a crash happens while still physically on a pad's
+                                     // own segments -- blocks that specific pad from re-granting
+                                     // the boost if the crash's own reposition lands back on it,
+                                     // clears again once you're off it (fresh try next lap)
 
     var keyLeft        = false;
     var keyRight       = false;
@@ -764,6 +768,7 @@
       if (raceFinished) return; // Game.stop() halts the loop after finishRace(), but belt-and-suspenders
 
       var n, car, carW, sprite, spriteW;
+      var crashed       = false; // set true by either collision check below -- ends an active boost
       var playerSegment = findSegment(position+playerZ);
       var playerW       = SPRITES.PLAYER_STRAIGHT.w * SPRITES.SCALE;
       var speedPercent  = speed/maxSpeed;
@@ -832,6 +837,7 @@
             speed = maxSpeed/5;
             position = Util.increase(playerSegment.p1.world.z, -playerZ, trackLength); // stop in front of sprite (at front of segment)
             playCollisionSound();
+            crashed = true;
             break;
           }
         }
@@ -845,6 +851,7 @@
             speed    = car.speed * (car.speed/speed);
             position = Util.increase(car.z, -playerZ, trackLength);
             playCollisionSound();
+            crashed = true;
             break;
           }
         }
@@ -854,11 +861,25 @@
       // segment, same timing as the off-road/car collision checks just
       // above. Instant surge on pickup (never slows you down if you were
       // somehow already faster), holds until the straightaway that pad
-      // was placed on actually ends.
-      if (!boostActive && playerSegment.boostPad && Util.overlap(playerX, playerW, playerSegment.boostPad.offset, 0.5)) {
+      // was placed on actually ends -- or until a crash cuts it short:
+      // you only keep the full boost by staying crash-free, so a hit this
+      // frame ends it outright instead of letting normal acceleration
+      // climb back up to BOOST_SPEED for the rest of the straightaway.
+      if (crashed) {
+        boostActive = false;
+        // If the crash itself happened while still on the pad's own segments
+        // (e.g. you hit a car parked right on it), the collision's own
+        // reposition can land you right back on it -- block just this one
+        // pad until you're clear of it, so the crash can't be shrugged off
+        // by an instant re-pickup.
+        if (playerSegment.boostPad) boostCrashedPad = playerSegment.boostPad;
+      } else if (!boostActive && playerSegment.boostPad && playerSegment.boostPad !== boostCrashedPad && Util.overlap(playerX, playerW, playerSegment.boostPad.offset, 0.5)) {
         boostActive = true;
         boostStraightEndIdx = playerSegment.boostPad.straightEndIndex;
         speed = Math.max(speed, BOOST_SPEED);
+      }
+      if (boostCrashedPad && playerSegment.boostPad !== boostCrashedPad) {
+        boostCrashedPad = null;
       }
       if (boostActive && playerSegment.index >= boostStraightEndIdx) {
         boostActive = false;
