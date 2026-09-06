@@ -1256,6 +1256,21 @@
       addRoad(10, 10, 10, 0, -2);
     }
 
+    // A second, differently-shaped bump section -- resetRoad() hits a bumpy
+    // stretch twice per lap, and addBumps() alone is a fixed sequence, so
+    // reusing it verbatim made the two crest-jumps feel like the exact same
+    // spot (players noticed). Same character, different actual numbers.
+    function addBumps2() {
+      addRoad(10, 10, 10, 0,  7);
+      addRoad(10, 10, 10, 0, -4);
+      addRoad(10, 10, 10, 0,  6);
+      addRoad(10, 10, 10, 0, -3);
+      addRoad(10, 10, 10, 0,  9);
+      addRoad(10, 10, 10, 0, -5);
+      addRoad(10, 10, 10, 0,  4);
+      addRoad(10, 10, 10, 0, -6);
+    }
+
     function addDownhillToEnd(num) {
       num = num || 200;
       addRoad(num, num, num, -ROAD.CURVE.EASY, -lastY()/segmentLength);
@@ -1277,7 +1292,7 @@
       addCurve(ROAD.LENGTH.LONG, -ROAD.CURVE.MEDIUM, ROAD.HILL.NONE);
       addHill(ROAD.LENGTH.LONG, ROAD.HILL.HIGH);
       addCurve(ROAD.LENGTH.LONG, ROAD.CURVE.MEDIUM, -ROAD.HILL.LOW);
-      addBumps();
+      addBumps2();
       addHill(ROAD.LENGTH.LONG, -ROAD.HILL.MEDIUM);
       addStraight();
       addSCurves();
