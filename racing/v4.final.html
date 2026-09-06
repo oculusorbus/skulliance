@@ -343,8 +343,16 @@
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
-        -webkit-touch-callout: none; /* the actual long-press popup switch -- user-select alone doesn't stop it on iOS */
         touch-action: none; /* stop the page from scrolling/zooming while a button is held */
+        /* NOT -webkit-touch-callout:none here (removed) -- on some iOS
+           versions it's a documented quirk to interfere with tap
+           recognition on the element it's set on, which is exactly what
+           broke: taps landing squarely on the label stopped registering.
+           e.preventDefault() inside touchstart below already suppresses
+           the long-press popup for these buttons on its own -- that's the
+           standard mechanism, touch-callout was redundant insurance that
+           cost more than it gave here. Still set on #frame further up for
+           everywhere that DOESN'T have JS actively handling the touch. */
       }
       /* The label glyph (◀/BRAKE/▶) is wrapped in its own <span> specifically
          so this rule can make IT invisible to touch -- without it, tapping
