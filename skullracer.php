@@ -90,6 +90,24 @@ $racing_style = str_replace(
    page than it needs to. Similar proportions to what the old iframe used
    (height: 85vh). */
 #skullracer-embed { min-height: 85vh; }
+
+/* Phone turned landscape (same threshold as racing/index.html's own
+   landscape query above, for the exact same reason -- max-height, not
+   max-width, so it catches a real phone in landscape without matching an
+   ordinary desktop window). racing/index.html's own landscape rules
+   (embedded in $racing_style above) already size the GAME's internal
+   layout to fit -- but that page has no idea it's sitting below
+   header.php's site nav here, only the standalone racing/index.html's own
+   markup. The nav itself (#burger-menu/#navbar), the version-update
+   banner, and the floating back-to-top button are all header.php's, not
+   the game's, so they need hiding from HERE, not from racing/'s own CSS
+   -- exactly what was reported: the game screen fit, but the site's own
+   menu was still sitting there taking up the rest of the height, the one
+   thing a controller-and-TV setup has zero use for. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #burger-menu, #navbar, #app-version-banner, #back-to-top-button { display: none !important; }
+  #skullracer-embed { min-height: 100vh; }
+}
 </style>
 <div id="skullracer-embed">
 <?php echo $racing_body; ?>

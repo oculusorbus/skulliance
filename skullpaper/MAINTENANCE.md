@@ -194,6 +194,18 @@ records verified constants, and tracks what still needs to be written.
   and #hud/#minimap revert to their normal desktop overlay-on-canvas placement (the portrait-mobile
   minimap-as-separate-block treatment exists to stop it covering the right lane on a NARROW canvas --
   a width problem, and width is exactly what landscape has back).
+  This query only reaches racing/index.html's OWN markup though -- visited through skullracer.php
+  (the real path most players use, Play > Skull Racer, not the standalone file), header.php's site
+  nav (#burger-menu/#navbar), #app-version-banner, and #back-to-top-button all sit OUTSIDE what
+  $racing_style/$racing_body extract from racing/index.html entirely (see skullracer.php's own
+  comment on that split), so none of the above touches them -- confirmed missing when reported
+  (game screen fit, but the site's own menu still sat there taking the rest of the height). Fixed
+  with a SEPARATE copy of the same `@media (orientation: landscape) and (max-height: 500px)`
+  condition in skullracer.php's own `<style>` block (after $racing_style is echoed), forcing all 4
+  of those to `display: none !important` and bumping #skullracer-embed's min-height from 85vh (sized
+  assuming the nav above it is visible) to 100vh. Deliberately duplicated rather than shared -- the
+  condition needs to independently exist in both places, since each file hides a different set of
+  elements the other has no reference to.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of
