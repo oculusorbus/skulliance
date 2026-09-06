@@ -9,6 +9,16 @@
        readout still exists at dev.html, for tuning work, not for players. -->
   <style>
     * { box-sizing: border-box; }
+    :root {
+      /* Was a flat 190px regardless of screen size -- on a big monitor
+         that left large empty margins beside the game instead of using
+         the room for bigger art. Grows with the viewport (capped so it
+         doesn't get silly on an ultrawide) instead. #racer's own width
+         formula below reserves space for this SAME variable (times 2 +
+         gaps + body padding), so the two can't drift out of sync the way
+         a second hardcoded number would risk. */
+      --box-col-width: min(18vw, 260px);
+    }
     body {
       margin: 0;
       min-height: 100vh;
@@ -38,7 +48,7 @@
       display: block;
       max-height: 340px;
       width: auto;
-      max-width: 190px; /* was 260 -- shrunk to leave room for the cartridge below without the column towering over the frame */
+      max-width: var(--box-col-width);
       border-radius: 0.5rem;
       box-shadow: 0 8px 30px rgba(0,0,0,0.5);
       flex-shrink: 0;
@@ -46,7 +56,7 @@
     .cartridge-art {
       display: block;
       width: auto;
-      max-width: 190px; /* matches .box-art so the pair reads as one stack, not two different widths */
+      max-width: var(--box-col-width); /* matches .box-art so the pair reads as one stack, not two different widths */
       border-radius: 0.3rem;
       box-shadow: 0 6px 20px rgba(0,0,0,0.45);
       flex-shrink: 0;
@@ -66,14 +76,16 @@
          limited by height, a short/wide one by width, and it's never
          bigger than either. Was a flat 640px; a big monitor just had empty
          space around a small fixed game area.
-         The -640px reserves room for the two flanking box-art panels (up
-         to 260px each) plus #stage's gaps -- without it, this claims
-         space right up to the box art's own edge, and the two competing
-         for the same pixels is what made #stage's flex-wrap kick in and
-         dump the right-hand art onto its own line (see the 1300px query
-         below for what happens when there isn't enough width for both
-         at all, rather than almost enough). */
-      width: min(calc(100vw - 640px), 85vh * 4 / 3);
+         The reserve is 2x --box-col-width (the two flanking columns) plus
+         #stage's 2 gaps (24px each) plus body's own padding (20px each
+         side) -- derived from the SAME variable the box art itself sizes
+         from (see :root above), not a separately hardcoded number, so
+         growing the art can't silently reopen the old bug where the two
+         competed for the same pixels and #stage's flex-wrap dumped the
+         right-hand art onto its own line (see the 1300px query below for
+         what happens when there isn't room for both at all, rather than
+         almost enough). */
+      width: min(calc(100vw - (2 * var(--box-col-width)) - 88px), 85vh * 4 / 3);
       max-width: 1800px; /* sane ceiling on an ultrawide/4K display */
       line-height: 0; /* kill the baseline gap under the canvas */
     }
