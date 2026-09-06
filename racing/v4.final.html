@@ -435,29 +435,53 @@
     var minimapPoints = []; // one entry per segment index: { mx, my } in the SVG's own 0-100 viewBox space
 
     function buildMinimap() {
-      // First pass: a REAL top-down path -- curve accumulates into a
-      // heading (steering angle), and each segment advances by that
-      // heading's own sin/cos, not "curve into an x-offset, distance-
-      // traveled into the other axis" (the first version of this, which
-      // always produced a diagonal line since distance-traveled only ever
-      // increases, straight or not).
-      var HEADING_SCALE = 0.006; // this track's "curve" units are an arbitrary per-segment perspective-shift value, not radians -- tuned by eye for a reasonable-looking turn radius
-      var raw = [], heading = 0, x = 0, z = 0, n;
+      // Real top-down path -- curve accumulates into a heading (steering
+      // angle), and each segment advances by that heading's own sin/cos,
+      // not "curve into an x-offset, distance-traveled into the other
+      // axis" (the first version of this, which always produced a
+      // diagonal line since distance-traveled only ever increases,
+      // straight or not).
+      // This track's "curve" units are an arbitrary per-segment
+      // perspective-shift value, not radians, so there's no one physically
+      // "correct" scale -- tuned empirically instead, by actually counting
+      // self-intersections in the resulting shape across a sweep of values
+      // (0.006 -> 15 crossings, 0.001 -> 1, smaller than that -> still 1).
+      // That last crossing is stable at every scale tested -- it's two of
+      // the track's big sweeping bends genuinely passing near the same
+      // spot (like a highway interchange), not a tuning artifact.
+      var HEADING_SCALE = 0.0015;
+      var n;
+
+      // This track's total curve does NOT sum to 0 -- confirmed by summing
+      // every segment's curve directly (~550, not ~0), so by the last
+      // segment the raw heading above has actually rotated ~190 degrees
+      // off from where it started. Only correcting the final X/Z position
+      // to close the loop (an earlier version of this) ignored that the
+      // path is still facing a totally different direction there, which is
+      // what made it fold back on itself into a self-intersecting shape at
+      // the seam instead of a clean loop. Spread a small opposite curve
+      // across every segment first so total curve -- and so total heading
+      // change -- comes out to exactly 0: the path is still facing the
+      // same way at both ends before it ever gets drawn.
+      var totalCurve = 0;
+      for (n = 0 ; n < segments.length ; n++) totalCurve += segments[n].curve;
+      var curveCorrection = -totalCurve / segments.length;
+
+      var raw = [], heading = 0, x = 0, z = 0;
       for (n = 0 ; n < segments.length ; n++) {
         raw.push({ x: x, z: z });
-        heading += segments[n].curve * HEADING_SCALE;
+        heading += (segments[n].curve + curveCorrection) * HEADING_SCALE;
         x += Math.sin(heading) * segmentLength;
         z += Math.cos(heading) * segmentLength;
       }
 
-      // The track is an open path underneath -- it "loops" only by
-      // teleporting the camera position back to 0 at the end, not by
-      // actually curving back around to meet itself (nothing in
-      // resetRoad() makes the total curve sum to a full 360 degrees). Close
-      // it for the map by bleeding off the total start->end drift linearly
-      // across every point: point 0 stays put, the last point lands
-      // exactly back on point 0, everything between gets a proportional
-      // nudge -- same idea as a closing spline.
+      // Heading now returns to its starting direction, but a heading that
+      // comes back to "facing north" again doesn't guarantee ending up back
+      // at the same spot (a real road can do the same -- face the same way
+      // twice from two different places). Belt-and-suspenders position fix
+      // on top, same linear bleed-off as before -- with heading already
+      // consistent at the seam this time, it's a gentle nudge rather than
+      // the sharp fold from correcting position alone.
       var last   = raw[raw.length - 1];
       var driftX = last.x - raw[0].x;
       var driftZ = last.z - raw[0].z;
