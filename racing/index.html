@@ -160,6 +160,21 @@
       font-size: 0.85rem;
     }
     #finish-replay:hover { background-color: #00e0b4; }
+    #minimap {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      z-index: 2;
+      width: 96px;
+      height: 96px;
+      background: rgba(7,17,29,0.75);
+      border: 1px solid rgba(0,200,160,0.4);
+      border-radius: 0.4rem;
+      pointer-events: none;
+    }
+    #minimap svg { display: block; width: 100%; height: 100%; }
+    #minimap-track { fill: none; stroke: #00c8a0; stroke-width: 2; stroke-linejoin: round; opacity: 0.85; }
+    #minimap-dot   { fill: #ffcc4d; stroke: #07111d; stroke-width: 0.75; }
 
     #touch-controls { display: none; } /* shown only in the mobile media query below */
     .mobile-hint { display: none; }
@@ -234,6 +249,12 @@
         <canvas id="canvas">
           Sorry, this example cannot be run because your browser does not support the &lt;canvas&gt; element
         </canvas>
+        <div id="minimap">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <polyline id="minimap-track" points="" />
+            <circle id="minimap-dot" r="3.5" cx="0" cy="0" />
+          </svg>
+        </div>
         <div id="finish-overlay">
           <div id="finish-box">
             <h2>Race Complete</h2>
@@ -399,6 +420,49 @@
     var collisionSound = Dom.get('collision-sound');
     collisionSound.volume = 0.25; // was unset (1.0), then 0.4 -- still louder than music, dropped again
 
+    //=========================================================================
+    // MINIMAP -- track shape traced once from the same curve values render()
+    // itself uses (segment.curve accumulated into a heading, then a
+    // position, exactly like render()'s own x/dx accumulation, just for the
+    // whole track at once instead of frame-by-frame from the camera). Not a
+    // real-world-accurate top-down projection (independently normalized on
+    // each axis so a long/straight-ish track doesn't reduce to a sliver
+    // line), just enough shape to see corners coming and orient the dot.
+    //=========================================================================
+
+    var minimapTrack  = Dom.get('minimap-track');
+    var minimapDot    = Dom.get('minimap-dot');
+    var minimapPoints = []; // one entry per segment index: { mx, my } in the SVG's own 0-100 viewBox space
+
+    function buildMinimap() {
+      var raw = [], x = 0, dx = 0, n;
+      for (n = 0 ; n < segments.length ; n++) {
+        raw.push({ x: x, z: segments[n].p1.world.z });
+        dx = dx + segments[n].curve;
+        x  = x + dx;
+      }
+
+      var minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (n = 0 ; n < raw.length ; n++) {
+        if (raw[n].x < minX) minX = raw[n].x;
+        if (raw[n].x > maxX) maxX = raw[n].x;
+        if (raw[n].z < minZ) minZ = raw[n].z;
+        if (raw[n].z > maxZ) maxZ = raw[n].z;
+      }
+      var rangeX = Math.max(1, maxX - minX);
+      var rangeZ = Math.max(1, maxZ - minZ);
+
+      minimapPoints = new Array(raw.length);
+      var outline = [];
+      for (n = 0 ; n < raw.length ; n++) {
+        var mx = 4 + ((raw[n].x - minX) / rangeX) * 92;
+        var my = 4 + ((raw[n].z - minZ) / rangeZ) * 92;
+        minimapPoints[n] = { mx: mx, my: my };
+        if (n % 4 === 0) outline.push(mx.toFixed(1) + ',' + my.toFixed(1)); // decimated -- thousands of segments is needlessly heavy for an SVG attribute, 1-in-4 is still plenty smooth
+      }
+      minimapTrack.setAttribute('points', outline.join(' '));
+    }
+
     // Engine sound via the Web Audio API, not a plain <audio loop> element --
     // AudioBufferSourceNode.loop is sample-accurate (genuinely gapless);
     // <audio loop> is not, in most browsers it actually restarts with a
@@ -561,6 +625,11 @@
 
       updateHud('speed',            5 * Math.round(speed/500));
       updateHud('current_lap_time', formatTime(currentLapTime));
+
+      if (minimapPoints[playerSegment.index]) {
+        minimapDot.setAttribute('cx', minimapPoints[playerSegment.index].mx);
+        minimapDot.setAttribute('cy', minimapPoints[playerSegment.index].my);
+      }
     }
 
     //-------------------------------------------------------------------------
@@ -1003,8 +1072,10 @@
       resolution             = height/480;
       // No tuning UI on this page (dev.html has it) -- nothing to refresh.
 
-      if ((segments.length==0) || (options.segmentLength) || (options.rumbleLength))
+      if ((segments.length==0) || (options.segmentLength) || (options.rumbleLength)) {
         resetRoad(); // only rebuild road when necessary
+        buildMinimap();
+      }
     }
 
     //=========================================================================
