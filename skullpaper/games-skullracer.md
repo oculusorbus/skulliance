@@ -36,6 +36,8 @@ Every finished race feeds the Skull Racer leaderboard, ranked by **your own best
 
 Every race you finish while logged in also posts a quick result to the Skull Racer Discord channel - your total time and fastest lap, plus a callout if it's a new personal best or puts you in 1st place (all-time and/or this week).
 
+The race-complete screen has a **Weekly Leaderboard** button right next to Race Again, so you can check where your run landed without hunting through the site's own leaderboard filters.
+
 ## Playing as a Guest
 
 Skull Racer is playable **logged out** - a guest's race finishes and shows a result screen same as anyone else's, it just never reaches the leaderboard or earns CARBON. Log in to have your races saved to your account and counted toward the leaderboard.

@@ -185,7 +185,6 @@
     }
     #finish-box .value { color: #00c8a0; font-weight: bold; margin-left: 6px; }
     #finish-replay {
-      margin-top: 16px;
       padding: 8px 20px;
       background-color: #00c8a0;
       border: none;
@@ -198,6 +197,28 @@
       font-size: 0.85rem;
     }
     #finish-replay:hover { background-color: #00e0b4; }
+    #finish-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    #finish-leaderboard {
+      display: inline-block;
+      padding: 8px 20px;
+      background-color: transparent;
+      border: 1px solid #00c8a0;
+      border-radius: 0.4rem;
+      color: #00c8a0;
+      font-weight: bold;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    #finish-leaderboard:hover { background-color: rgba(0,200,160,0.12); }
     #minimap {
       position: absolute;
       right: 10px;
@@ -240,7 +261,29 @@
       #stage { gap: 0; width: 100%; }
       #frame { width: 100%; padding: 8px; }
       #racer { width: 100%; }
-      #hud { font-size: 0.7rem; padding: 6px 8px; }
+      #hud {
+        font-size: 0.7rem;
+        padding: 6px 8px;
+        line-height: normal; /* #racer sets line-height:0 to kill the gap
+                                 under the canvas -- inherited here, a HUD
+                                 item that wrapped to a 2nd line (growing
+                                 digits as the race goes on, e.g. "Time:"
+                                 vs. a longer elapsed value, in the tighter
+                                 mobile width) collapsed the value right on
+                                 top of its own label instead of stacking
+                                 below it. Same root cause #finish-box hit. */
+      }
+      #hud .hud { white-space: nowrap; } /* keep "Label: value" as one unit --
+                                             if it doesn't fit, the whole item
+                                             wraps to a new flex row instead of
+                                             the words within it wrapping and
+                                             overlapping mid-phrase */
+      #hud { flex-wrap: wrap; row-gap: 2px; }
+      /* The mute icon's normal top-right spot (in the IFRAME's own corner)
+         lands directly under the site's real hamburger menu (in the actual
+         page, outside the iframe) on a phone -- unreachable, can't tap
+         through it. Move it to the opposite corner on mobile only. */
+      #mute { left: 10px; right: auto; }
       .desktop-hint { display: none; }
       .mobile-hint { display: inline; }
       /* Overlaid on the canvas (like on desktop) it covered the right lane
@@ -319,7 +362,13 @@
             <h2>Race Complete</h2>
             <p class="finish-row">Total Time <span id="finish_total_time" class="value">0.0</span></p>
             <p class="finish-row">Fastest Lap <span id="finish_fastest_lap" class="value">0.0</span></p>
-            <button id="finish-replay" type="button">Race Again</button>
+            <div id="finish-buttons">
+              <button id="finish-replay" type="button">Race Again</button>
+              <!-- target="_top" -- this page is loaded in skullracer.php's
+                   iframe, so a plain click would try to load leaderboards.php
+                   INTO the small iframe instead of navigating the actual tab -->
+              <a id="finish-leaderboard" href="../leaderboards.php?filterby=weekly-skullracer" target="_top">Weekly Leaderboard</a>
+            </div>
           </div>
         </div>
       </div>
