@@ -400,16 +400,24 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer, updown, jumpOffset) {
+  player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer, updown, jumpOffset, braking) {
 
     var bounce = (1.5 * Math.random() * speedPercent * resolution) * Util.randomChoice([-1,1]);
-    var sprite;
+    var name;
     if (steer < 0)
-      sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_LEFT : SPRITES.PLAYER_LEFT;
+      name = (updown > 0) ? 'PLAYER_UPHILL_LEFT' : 'PLAYER_LEFT';
     else if (steer > 0)
-      sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_RIGHT : SPRITES.PLAYER_RIGHT;
+      name = (updown > 0) ? 'PLAYER_UPHILL_RIGHT' : 'PLAYER_RIGHT';
     else
-      sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_STRAIGHT : SPRITES.PLAYER_STRAIGHT;
+      name = (updown > 0) ? 'PLAYER_UPHILL_STRAIGHT' : 'PLAYER_STRAIGHT';
+    // braking (optional, undefined on every page but index.html/
+    // v4.final.html's own brake-light feature) swaps to that same angle's
+    // _BRAKE sprite -- identical car, just the tail-light pixels recolored
+    // brighter (see racing/images/sprites/ and this project's own
+    // SPRITE-REPLACEMENT-BRIEF.md) -- rather than a separate lighting
+    // effect layered on top.
+    if (braking) name += '_BRAKE';
+    var sprite = SPRITES[name];
 
     // jumpOffset (optional, undefined on every page but index.html/
     // v4.final.html's own crest-jump feature -- see that page's own
@@ -487,40 +495,46 @@ var BACKGROUND = {
 // x/y instead. Always paste images/sprites.js's SPRITES object here again
 // after every rake resprite.
 var SPRITES = {
-  PALM_TREE:              { x:    5, y:    5, w:  215, h:  540 },
-  TREE1:                  { x:  230, y:    5, w:  360, h:  360 },
-  DEAD_TREE1:             { x:  600, y:    5, w:  135, h:  332 },
-  BOULDER3:               { x:  745, y:    5, w:  320, h:  220 },
-  COLUMN:                 { x:    5, y:  555, w:  200, h:  315 },
-  BOULDER2:               { x:  745, y:  235, w:  298, h:  140 },
-  TREE2:                  { x:  215, y:  555, w:  282, h:  295 },
-  DEAD_TREE2:             { x:  507, y:  555, w:  150, h:  260 },
-  BOULDER1:               { x:  667, y:  555, w:  168, h:  248 },
-  BUSH1:                  { x:  745, y:  385, w:  240, h:  155 },
-  CACTUS:                 { x:  230, y:  375, w:  235, h:  118 },
-  BUSH2:                  { x:    5, y:  880, w:  232, h:  152 },
-  BILLBOARD02:            { x: 1075, y:    5, w:  230, h:  220 },
-  BILLBOARD06:            { x: 1075, y:  235, w:  230, h:  220 },
-  BILLBOARD07:            { x: 1075, y:  465, w:  230, h:  220 },
-  BILLBOARD08:            { x: 1075, y:  695, w:  230, h:  220 },
-  BILLBOARD09:            { x:    5, y: 1042, w:  230, h:  220 },
-  BILLBOARD01:            { x:  245, y: 1042, w:  230, h:  220 },
-  BILLBOARD04:            { x:  485, y: 1042, w:  230, h:  220 },
-  BILLBOARD03:            { x:  725, y: 1042, w:  230, h:  220 },
-  BILLBOARD05:            { x:  965, y: 1042, w:  230, h:  220 },
-  STUMP:                  { x:  845, y:  555, w:  195, h:  140 },
-  SEMI:                   { x:  600, y:  347, w:  122, h:  144 },
-  TRUCK:                  { x: 1075, y:  925, w:  100, h:   78 },
-  CAR03:                  { x: 1185, y:  925, w:   88, h:   55 },
-  CAR02:                  { x:  475, y:  375, w:   80, h:   59 },
-  CAR04:                  { x:  845, y:  705, w:   80, h:   57 },
-  CAR01:                  { x:  935, y:  705, w:   80, h:   56 },
-  PLAYER_UPHILL_RIGHT:    { x:  475, y:  444, w:   80, h:   45 },
-  PLAYER_UPHILL_STRAIGHT: { x:  247, y:  880, w:   80, h:   45 },
-  PLAYER_UPHILL_LEFT:     { x:  337, y:  880, w:   80, h:   45 },
-  PLAYER_LEFT:            { x:  600, y:  501, w:   80, h:   41 },
-  PLAYER_STRAIGHT:        { x:  230, y:  503, w:   80, h:   41 },
-  PLAYER_RIGHT:           { x:  320, y:  503, w:   80, h:   41 }
+  PALM_TREE:                    { x:    5, y:    5, w:  215, h:  540 },
+  TREE1:                        { x:  230, y:    5, w:  360, h:  360 },
+  DEAD_TREE1:                   { x:  600, y:    5, w:  135, h:  332 },
+  BOULDER3:                     { x:  745, y:    5, w:  320, h:  220 },
+  COLUMN:                       { x:    5, y:  555, w:  200, h:  315 },
+  BOULDER2:                     { x:  745, y:  235, w:  298, h:  140 },
+  TREE2:                        { x:  215, y:  555, w:  282, h:  295 },
+  DEAD_TREE2:                   { x:  507, y:  555, w:  150, h:  260 },
+  BOULDER1:                     { x:  667, y:  555, w:  168, h:  248 },
+  BUSH1:                        { x:  745, y:  385, w:  240, h:  155 },
+  CACTUS:                       { x:  230, y:  375, w:  235, h:  118 },
+  BUSH2:                        { x:    5, y:  880, w:  232, h:  152 },
+  BILLBOARD01:                  { x: 1075, y:    5, w:  230, h:  220 },
+  BILLBOARD02:                  { x: 1075, y:  235, w:  230, h:  220 },
+  BILLBOARD03:                  { x: 1075, y:  465, w:  230, h:  220 },
+  BILLBOARD04:                  { x: 1075, y:  695, w:  230, h:  220 },
+  BILLBOARD05:                  { x:    5, y: 1042, w:  230, h:  220 },
+  BILLBOARD06:                  { x:  245, y: 1042, w:  230, h:  220 },
+  BILLBOARD07:                  { x:  485, y: 1042, w:  230, h:  220 },
+  BILLBOARD08:                  { x:  725, y: 1042, w:  230, h:  220 },
+  BILLBOARD09:                  { x:  965, y: 1042, w:  230, h:  220 },
+  STUMP:                        { x:  845, y:  555, w:  195, h:  140 },
+  SEMI:                         { x:  600, y:  347, w:  122, h:  144 },
+  TRUCK:                        { x: 1075, y:  925, w:  100, h:   78 },
+  CAR03:                        { x: 1185, y:  925, w:   88, h:   55 },
+  CAR02:                        { x:  475, y:  375, w:   80, h:   59 },
+  CAR04:                        { x:  845, y:  705, w:   80, h:   57 },
+  CAR01:                        { x:  935, y:  705, w:   80, h:   56 },
+  PLAYER_UPHILL_STRAIGHT_BRAKE: { x:  475, y:  444, w:   80, h:   45 },
+  PLAYER_UPHILL_LEFT:           { x:  247, y:  880, w:   80, h:   45 },
+  PLAYER_UPHILL_LEFT_BRAKE:     { x:  337, y:  880, w:   80, h:   45 },
+  PLAYER_UPHILL_RIGHT:          { x:  427, y:  880, w:   80, h:   45 },
+  PLAYER_UPHILL_RIGHT_BRAKE:    { x:  517, y:  880, w:   80, h:   45 },
+  PLAYER_UPHILL_STRAIGHT:       { x:  607, y:  880, w:   80, h:   45 },
+  PLAYER_LEFT:                  { x:  600, y:  501, w:   80, h:   41 },
+  PLAYER_STRAIGHT_BRAKE:        { x:  230, y:  503, w:   80, h:   41 },
+  PLAYER_RIGHT_BRAKE:           { x:  320, y:  503, w:   80, h:   41 },
+  PLAYER_RIGHT:                 { x:  410, y:  503, w:   80, h:   41 },
+  PLAYER_LEFT_BRAKE:            { x:  500, y:  503, w:   80, h:   41 },
+  PLAYER_STRAIGHT:              { x:  697, y:  880, w:   80, h:   41 }
 };
 
 SPRITES.SCALE = 0.3 * (1/SPRITES.PLAYER_STRAIGHT.w) // the reference sprite width should be 1/3rd the (half-)roadWidth

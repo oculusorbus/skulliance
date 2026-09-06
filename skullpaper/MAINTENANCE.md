@@ -134,6 +134,22 @@ records verified constants, and tracks what still needs to be written.
   with a car across a DRAFT_WINDOW_SEGMENTS-segment lookahead for DRAFT_BUILD_TIME seconds adds
   DRAFT_SPEED_BONUS to the effective top-speed cap (ignored while boostActive, which already
   exceeds it); breaks instantly on losing the overlap or on any crash.
+  Brake lights (Render.player()'s `braking` param in racing/common.js, passed `keySlower` from
+  racing/index.html's own render() call): swaps to a _BRAKE-suffixed sprite for whichever angle/hill
+  variant would otherwise be drawn (PLAYER_LEFT -> PLAYER_LEFT_BRAKE, etc.) -- looked up by name
+  string (`if (braking) name += '_BRAKE'`) rather than a parallel if/else chain, so it's one flag
+  applied after the existing steer/updown branch picks the base name, not a second copy of it. The
+  6 new _BRAKE sprites (images/sprites/player_*_brake.png) are pixel-identical to their normal
+  counterparts except the two tail-light housings recolored brighter (found via connected-component
+  detection on the exact 3 tail-light red/orange tones, NOT a blanket color swap -- the skull grille's
+  eye-glow highlight and a roof-beacon dot happen to reuse one of those same 3 tones, and a blanket
+  swap brightened those too before this was caught). Solid on/off with the brake key, not a timed
+  flash/strobe. This is the first sprite ADDED to images/sprites/ since the original art replacement
+  (see SPRITE-REPLACEMENT-BRIEF.md) rather than one of the existing 34 being edited -- ran an actual
+  `rake resprite` (SpriteFactory's :packed layout reflows EVERY sprite's x/y when the file set
+  changes, not just appends new ones at the end) and did the full by-hand re-sync of common.js's
+  SPRITES object this project's own resprite-sync convention requires (see that var's own comment)
+  -- every coordinate in it changed, not just the 6 new entries.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of

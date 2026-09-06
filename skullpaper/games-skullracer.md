@@ -33,7 +33,7 @@ A crash doesn't just snap your speed anymore - it's a screen shake and a puff of
 
 ## Controls
 
-**Desktop:** arrow keys or WASD to steer/accelerate/brake, space bar also brakes - the very first keypress just works, no click into the game window needed first. **Mobile:** driving is automatic (no need to hold anything just to go forward) - the ◀/BRAKE/▶ buttons below the game view are tall (30% of your screen height, not a thin strip), so there's much less empty margin around them where a stray tap can land on the page instead and pop up your phone's copy/select menu. Hold to steer or brake, any combination at once (steer left while braking, etc.) works exactly like holding multiple keys would on a keyboard.
+**Desktop:** arrow keys or WASD to steer/accelerate/brake, space bar also brakes - the very first keypress just works, no click into the game window needed first. **Mobile:** driving is automatic (no need to hold anything just to go forward) - the ◀/BRAKE/▶ buttons below the game view are tall (30% of your screen height, not a thin strip), so there's much less empty margin around them where a stray tap can land on the page instead and pop up your phone's copy/select menu. Hold to steer or brake, any combination at once (steer left while braking, etc.) works exactly like holding multiple keys would on a keyboard. Your own car's tail lights light up bright orange the instant you brake, same car sprite otherwise - visual feedback for the one control that has none of its own sound effect.
 
 ## CARBON & Leaderboard
 
