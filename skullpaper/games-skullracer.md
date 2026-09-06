@@ -31,7 +31,7 @@ A crash doesn't just snap your speed anymore - it's a screen shake and a puff of
 
 ## Controls
 
-**Desktop:** arrow keys or WASD to steer/accelerate/brake, space bar also brakes. **Mobile:** driving is automatic (no need to hold anything just to go forward) - hold the ◀/▶ buttons to steer, hold BRAKE to slow down, any combination at once (steer left while braking, etc.) works exactly like holding multiple keys would on a keyboard.
+**Desktop:** arrow keys or WASD to steer/accelerate/brake, space bar also brakes - the very first keypress just works, no click into the game window needed first. **Mobile:** driving is automatic (no need to hold anything just to go forward) - hold the ◀/▶ buttons to steer, hold BRAKE to slow down, any combination at once (steer left while braking, etc.) works exactly like holding multiple keys would on a keyboard.
 
 ## CARBON & Leaderboard
 

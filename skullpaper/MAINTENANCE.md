@@ -146,6 +146,12 @@ records verified constants, and tracks what still needs to be written.
   (1.6x) so it doesn't just sound like a second copy of your own engine. Panned by the car's lane
   offset relative to playerX, clamped to StereoPannerNode's -1..1 range. One-shot per car per
   approach via car.lastPassSoundAt + PASS_SOUND_COOLDOWN, not full enter/exit tracking.
+  Iframe keyboard focus (skullracer.php): racing/index.html binds its driving keys to its own
+  document (Game.setKeyListener in racing/common.js) -- an iframe doesn't get keyboard focus
+  automatically on load, so without an explicit contentWindow.focus() call, a player's first
+  keypress went nowhere until they clicked into the game first. skullracer.php now focuses the
+  iframe on load (and immediately, in case it's already loaded/cached) -- same-origin, so no
+  gesture is required for focus() itself.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt

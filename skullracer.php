@@ -72,3 +72,22 @@ include 'header.php';
 <div class="skullracer-wrap">
   <iframe id="skullracer-frame" src="racing/index.html" title="Skull Racer" allow="autoplay"></iframe>
 </div>
+<script>
+// racing/index.html binds its driving keys to its OWN document (see
+// Game.setKeyListener in racing/common.js) -- that only ever receives
+// keydown events once the iframe actually has keyboard focus, and an
+// iframe does NOT get that automatically on page load. Without this, a
+// player's first keypress goes nowhere (focus is still on this outer
+// page), so they'd have to click into the game first, then reach for
+// the keyboard -- confusing, and an extra step right at the start of a
+// race. Same-origin (this page and racing/index.html are both under
+// /staking/), so contentWindow.focus() is allowed with no gesture needed.
+(function() {
+  var frame = document.getElementById('skullracer-frame');
+  function focusFrame() {
+    try { frame.contentWindow.focus(); } catch (e) {}
+  }
+  frame.addEventListener('load', focusFrame);
+  focusFrame(); // in case the iframe's already loaded (e.g. cached) by the time this runs
+})();
+</script>
