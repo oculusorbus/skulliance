@@ -488,6 +488,24 @@
                                      // the boost if the crash's own reposition lands back on it,
                                      // clears again once you're off it (fresh try next lap)
 
+    //=========================================================================
+    // JUMP RAMPS -- one placed partway down each of the same 4 boost
+    // straightaways (see resetJumpRamps(), defined alongside
+    // resetBoostPads()), same lane as that straightaway's own boost pad so
+    // grabbing the boost naturally lines you up for it too. Driving over
+    // one triggers the exact same jump as cresting a hill (same state
+    // machine, same JUMP_DURATION/JUMP_HEIGHT/JUMP_COOLDOWN, same traffic-
+    // collision-bypass while airborne) -- it's a second, deliberately
+    // placed way to trigger it, not a separate mechanic. The point: a
+    // player can now see a jump coming and use it on purpose to save a
+    // boost run from a car in the way, instead of only ever getting one
+    // by accident on a steep hill.
+    //=========================================================================
+    var RAMP_LENGTH = 5;   // segments long, same visual scale as a boost pad
+    var RAMP_WIDTH  = 0.3; // half-width of the drawn wedge, same offset units as BOOST_PAD_WIDTH
+
+    var jumpRamps = []; // set by resetJumpRamps()
+
     var keyLeft        = false;
     var keyRight       = false;
     var keyFaster      = false;
@@ -793,20 +811,28 @@
           jumpCooldownTimer = JUMP_COOLDOWN;
         }
       } else if (jumpCooldownTimer <= 0 && speedPercent >= JUMP_MIN_SPEED_FRAC) {
-        var idx = playerSegment.index, nearSum = 0, farSum = 0, k, seg;
-        for (k = 0 ; k < JUMP_NEAR_SEGMENTS ; k++) {
-          seg = segments[(idx + k) % segments.length];
-          nearSum += (seg.p2.world.y - seg.p1.world.y) / segmentLength;
-        }
-        for (k = JUMP_NEAR_SEGMENTS ; k < JUMP_NEAR_SEGMENTS + JUMP_FAR_SEGMENTS ; k++) {
-          seg = segments[(idx + k) % segments.length];
-          farSum += (seg.p2.world.y - seg.p1.world.y) / segmentLength;
-        }
-        var slopeNear = nearSum / JUMP_NEAR_SEGMENTS;
-        var slopeFar  = farSum / JUMP_FAR_SEGMENTS;
-        if (slopeNear - slopeFar > JUMP_SLOPE_THRESHOLD) {
+        if (playerSegment.jumpRamp) {
+          // A placed ramp launches you outright at qualifying speed --
+          // no slope math, it's not detected from the road's shape, it's
+          // just there (see resetJumpRamps()).
           jumping = true;
           jumpElapsed = 0;
+        } else {
+          var idx = playerSegment.index, nearSum = 0, farSum = 0, k, seg;
+          for (k = 0 ; k < JUMP_NEAR_SEGMENTS ; k++) {
+            seg = segments[(idx + k) % segments.length];
+            nearSum += (seg.p2.world.y - seg.p1.world.y) / segmentLength;
+          }
+          for (k = JUMP_NEAR_SEGMENTS ; k < JUMP_NEAR_SEGMENTS + JUMP_FAR_SEGMENTS ; k++) {
+            seg = segments[(idx + k) % segments.length];
+            farSum += (seg.p2.world.y - seg.p1.world.y) / segmentLength;
+          }
+          var slopeNear = nearSum / JUMP_NEAR_SEGMENTS;
+          var slopeFar  = farSum / JUMP_FAR_SEGMENTS;
+          if (slopeNear - slopeFar > JUMP_SLOPE_THRESHOLD) {
+            jumping = true;
+            jumpElapsed = 0;
+          }
         }
       }
       // A single hump (sin from 0 to π), peaking at the midpoint of the
@@ -1145,6 +1171,26 @@
                           padColor);
         }
 
+        if (segment.jumpRamp) {
+          // Same tapered-strip technique as the boost pad above, just its
+          // own hazard-stripe color scheme (red/black, not yellow/orange)
+          // so the two read as clearly different objects.
+          var rampScale1  = segment.p1.screen.scale;
+          var rampScale2  = segment.p2.screen.scale;
+          var rampCenter1 = segment.p1.screen.x + (rampScale1 * segment.jumpRamp.offset * roadWidth * width/2);
+          var rampCenter2 = segment.p2.screen.x + (rampScale2 * segment.jumpRamp.offset * roadWidth * width/2);
+          var rampHalf1   = rampScale1 * RAMP_WIDTH * roadWidth * width/2;
+          var rampHalf2   = (segment.jumpRampLocalIndex === RAMP_LENGTH - 1) ? 0 :
+                             rampScale2 * RAMP_WIDTH * roadWidth * width/2;
+          var rampColor   = (segment.jumpRampLocalIndex % 2) ? '#cc1a1a' : '#1a1a1a';
+          Render.polygon(ctx,
+                          rampCenter1 - rampHalf1, segment.p1.screen.y,
+                          rampCenter1 + rampHalf1, segment.p1.screen.y,
+                          rampCenter2 + rampHalf2, segment.p2.screen.y,
+                          rampCenter2 - rampHalf2, segment.p2.screen.y,
+                          rampColor);
+        }
+
         maxy = segment.p1.screen.y;
       }
 
@@ -1323,6 +1369,7 @@
       resetSprites();
       resetCars();
       resetBoostPads();
+      resetJumpRamps();
 
       segments[findSegment(playerZ).index + 2].color = COLORS.START;
       segments[findSegment(playerZ).index + 3].color = COLORS.START;
@@ -1427,6 +1474,7 @@
         var pad = {
           offset: Util.randomChoice(laneOffsets),
           length: BOOST_PAD_LENGTH,
+          padStart: padStart,
           straightEndIndex: run.start + run.length
         };
         boostPads.push(pad);
@@ -1434,6 +1482,35 @@
           var seg = segments[(padStart + n) % segments.length];
           seg.boostPad = pad;
           seg.boostPadLocalIndex = n;
+        }
+      });
+    }
+
+    // Jump ramps -- one per boost pad, placed further down that same
+    // straightaway (must run after resetBoostPads() so boostPads is
+    // populated). Same lane as the paired pad; positioned partway through
+    // the remaining straight so there's room to already be at speed
+    // before it and room to land and keep driving before the straight
+    // ends. Skips a pad if its straightaway doesn't leave enough room
+    // (shouldn't happen on the 4 longest straights, but don't assume it).
+    function resetJumpRamps() {
+      jumpRamps = [];
+
+      boostPads.forEach(function(pad) {
+        var padEnd    = pad.padStart + BOOST_PAD_LENGTH; // first segment past the pad itself
+        var available = pad.straightEndIndex - padEnd;
+        if (available < RAMP_LENGTH + 40) return; // not enough straight left to place one safely
+
+        var rampStart = padEnd + Math.floor(available * 0.4);
+        rampStart = Math.min(rampStart, pad.straightEndIndex - RAMP_LENGTH - 20); // room to land before the straight ends
+        rampStart = Math.max(rampStart, padEnd + 5); // room to clear the pad itself first
+
+        var ramp = { offset: pad.offset, length: RAMP_LENGTH };
+        jumpRamps.push(ramp);
+        for (var n = 0 ; n < RAMP_LENGTH ; n++) {
+          var seg = segments[(rampStart + n) % segments.length];
+          seg.jumpRamp = ramp;
+          seg.jumpRampLocalIndex = n;
         }
       });
     }

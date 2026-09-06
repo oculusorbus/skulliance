@@ -15,7 +15,9 @@ A race is **3 laps** of a fixed, curvy highway - sized against the game's own 4-
 
 ## Crests & Boost Pads
 
-Carrying near-top speed over a steep enough rise sends your car briefly airborne - it never touches steering or speed, but while you're up there traffic can't touch you either. Time a jump right over a car in your lane and you sail clean over it instead of crashing, which matters most mid-boost: a well-placed jump is the difference between keeping your 180 mph run alive and getting knocked out of it. Off-road obstacles (billboards, rocks) are unaffected by a jump - those are a lane mistake, not something you're meant to dodge.
+Carrying near-top speed over a steep enough rise sends your car briefly airborne - it never touches steering or speed, but while you're up there traffic can't touch you either. Time a jump right over a car in your lane and you sail clean over it instead of crashing. Off-road obstacles (billboards, rocks) are unaffected by a jump - those are a lane mistake, not something you're meant to dodge.
+
+Each boost pad has its own jump ramp waiting further down that same straightaway, same lane as the pad so grabbing the boost lines you up for it automatically. It's the same jump as cresting a hill, just deliberately placed instead of left to chance - so a well-timed ramp jump is the difference between keeping your 180 mph run alive and getting knocked out of it by a car in the way.
 
 Each of the track's four longest straightaways hides a bright striped power-up strip laid across one lane, right at the start of the straight. Drive over it and you're instantly boosted to 180 mph for the rest of that straightaway, dropping back to normal top speed the moment it ends. Which lane it's in is random every race, so you can't just memorize a line and ignore the road - you have to actually react.
 

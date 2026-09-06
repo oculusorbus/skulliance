@@ -117,6 +117,11 @@ records verified constants, and tracks what still needs to be written.
   until that straightaway ends. BOOST_SPEED deliberately exceeds maxSpeed's own "at most one
   segment per frame" collision-detection invariant -- accepted as a rare/minor trade-off rather
   than restructuring the movement loop, see that block's own comment in racing/index.html.
+  Jump ramps (resetJumpRamps(), runs after resetBoostPads() since it reads pad.padStart/
+  straightEndIndex): one per boost pad, same lane, placed ~40% of the way down the remaining
+  straight. Triggers the identical jump state machine as a hill crest (playerSegment.jumpRamp
+  check added to the same jumpCooldownTimer/speedPercent gate in update()) -- not a separate
+  mechanic, just a second, deliberately-placed way to fire it.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
