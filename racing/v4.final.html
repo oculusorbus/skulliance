@@ -201,7 +201,9 @@
     #minimap {
       position: absolute;
       right: 10px;
-      bottom: 10px;
+      top: 48px; /* below the HUD row + mute icon (was bottom:10px -- hid the
+                    right lane right where you're actually driving, worst on
+                    small/mobile screens where the canvas itself is smaller */
       z-index: 2;
       width: 96px;
       height: 96px;
