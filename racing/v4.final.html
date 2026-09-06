@@ -353,8 +353,31 @@
          just visually busy, so that's out. Back to living below the
          canvas, just much taller than 68px: 30% of the viewport height
          instead, so there's far less empty margin around the buttons for
-         a stray press to land on, without touching the game view at all.) */
-      #touch-controls { display: flex; gap: 8px; margin-top: 10px; height: 30vh; }
+         a stray press to land on, without touching the game view at all.)
+
+         Reported still failing to register presses specifically inside an
+         installed (standalone) PWA, while working fine in an ordinary
+         mobile Safari tab with the exact same code -- the concrete
+         difference between those two is that header.php (whose <head>
+         this page inherits when served through skullracer.php) requests
+         viewport-fit=cover, so the page draws edge-to-edge with no
+         automatic OS inset. A normal browser TAB still has its own
+         toolbar occupying the bottom of the screen regardless, so nothing
+         ever reaches the true edge there -- but a standalone PWA has no
+         toolbar, so content extends all the way down into the zone iOS
+         reserves for the home-indicator swipe gesture, which can consume
+         the very start of a touch before the page's own JS ever sees it.
+         That's exactly where these buttons live. header.php already
+         accounts for the TOP safe area on its own banners
+         (env(safe-area-inset-top)) but nothing accounted for the bottom
+         one, which is what these buttons actually need. */
+      #touch-controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        height: 30vh;
+        margin-bottom: env(safe-area-inset-bottom, 0px);
+      }
       .touch-btn {
         flex: 1;
         height: 100%;
