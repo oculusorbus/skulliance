@@ -200,9 +200,16 @@ records verified constants, and tracks what still needs to be written.
   flips reward to 1 (drops the row from every "AND reward = 0" query, ghost included) -- no separate
   reset job. skullRacerValidateGhostTrace() gates what's ever allowed to become a leader-ghost
   BEFORE it's stored (sample count vs. claimed lap duration at SKULLRACER_GHOST_TICK_RATE=60,
-  playerX within the in-game clamp, no position deltas that would mean teleporting) since these
-  traces get rendered to EVERY player, not just shown back to whoever submitted them -- a bad trace
-  here is everyone's problem, unlike a bad personal-ghost which only ever affects that one browser.
+  playerX within the in-game clamp, forward position deltas capped at 500/tick) since these traces
+  get rendered to EVERY player, not just shown back to whoever submitted them -- a bad trace here is
+  everyone's problem, unlike a bad personal-ghost which only ever affects that one browser. The
+  delta cap is FORWARD-only, not symmetric -- a real collision (hitting a car or an off-road sprite,
+  see position = Util.increase(car.z, -playerZ, ...) in racing/index.html) resets position to just
+  behind whatever was hit, which can be a large BACKWARD jump in a single tick if you were going
+  fast. That's normal, honest gameplay, not fabrication; a symmetric bound here rejected real
+  human races that crashed even once during their best lap, silently, with no error surfaced
+  anywhere. Forward progress has no legitimate reason to jump like that (BOOST_SPEED is ~300
+  units/tick), so only that direction needed capping.
   Client uploads ITS OWN race's fastest lap as ghost_trace/ghost_lap_time on every finalize call
   (raceFastestLapTrace/-Time, tracked separately from the personal-best-ever check above, and
   deliberately NOT reusing the existing fastest_lap POST field -- that one is this browser's

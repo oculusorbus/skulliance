@@ -12597,7 +12597,18 @@ function skullRacerValidateGhostTrace($trace_json, $claimed_lap_time) {
 		if ($player_x < -3.5 || $player_x > 3.5) return null; // matches the in-game Util.limit(playerX, -3, 3) clamp, with a little float slack
 		if ($last_pos !== null) {
 			$delta = floatval($pos) - $last_pos;
-			if ($delta < -1000 || $delta > 1000) return null; // no teleporting -- generous bound (BOOST_SPEED covers ~300 units/frame at 50fps), still catches wild fabrication
+			// Forward-only cap -- a real collision (hitting a car or an
+			// off-road sprite) resets position to just behind whatever was
+			// hit, which can be a large BACKWARD jump if you were going fast
+			// and the obstacle was some distance down the track from your
+			// immediately-preceding position. That's normal, honest,
+			// frequent gameplay, not fabrication -- a symmetric bound here
+			// rejected real human races that crashed even once during their
+			// best lap. Forward progress has no legitimate reason to ever
+			// jump like that (BOOST_SPEED is ~300 units/tick, generous
+			// headroom at 500), so only that direction is worth capping --
+			// there's no cheating incentive to fake a backward jump either.
+			if ($delta > 500) return null;
 		}
 		$last_pos = floatval($pos);
 	}
