@@ -37,6 +37,8 @@ A crash doesn't just snap your speed anymore - it's a screen shake and a puff of
 
 **Controller:** a PS4/PS5 controller paired over Bluetooth (phone or desktop) works too, no app or extra setup beyond pairing it in your device's own Bluetooth settings - press any button on it once to let the game notice it. D-pad or the left stick steers, □ is gas, ✕ is brake (rock your thumb between them for quick on/off braking); R2/L2 work too as alternates. Connecting one turns mobile's auto-gas off automatically - gas becomes a button you hold, like a real racing game - and turns it back on if you disconnect.
 
+**Landscape on a phone** switches to a controller-first layout - the game screen itself is what's sized to actually fit the shorter, wider view (rather than the portrait layout's math just running into the ceiling), and the touch buttons/control hint step aside since a sideways phone strongly implies a controller in hand instead, freeing up the space they'd otherwise take. Built with connecting to a TV in mirroring mode in mind - flip the phone sideways for a bigger view on the big screen, controller in hand.
+
 ## CARBON & Leaderboard
 
 Finishing a race (any time) earns a flat CARBON credit, paid the moment the race ends - separate from the leaderboard pool below, same two-tier shape [[games-cryptcrawl]] uses (a per-action reward on top of a weekly pool). Logged-in players only; a guest's race still finishes and shows a result, there's just no account to save it to or pay into.

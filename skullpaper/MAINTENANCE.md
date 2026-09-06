@@ -166,6 +166,22 @@ records verified constants, and tracks what still needs to be written.
   DESKTOP can't start auto-accelerating a keyboard player. The API only reveals a controller after a
   button on it is pressed once, even after Bluetooth pairing succeeds -- browser-level privacy
   behavior, not a bug to chase here if a freshly-paired controller doesn't do anything yet.
+  Landscape-phone layout (racing/index.html's own `@media (orientation: landscape) and
+  (max-height: 500px)`, placed AFTER the max-width:768px query so its overrides win where the two
+  overlap on a narrower phone turned sideways): max-height not max-width, because a modern phone's
+  landscape WIDTH (812-932px+) sails past the 768px query entirely, dropping back to the full
+  desktop layout otherwise -- box art columns and a canvas width formula (85vh*4/3 minus box-column
+  reserves) built assuming abundant vh from a tall portrait phone. 500px matches real phones in
+  landscape (roughly 320-430px tall) without ever matching a desktop/laptop window, even a short
+  one. Portrait mobile's whole layout assumes width is scarce and height is abundant; landscape
+  flips that, so #racer's width formula here is constrained by height instead
+  (`min(100%, calc((100vh - 32px) * 4/3))`, 32px = body+#frame's 8px padding doubled top/bottom) --
+  the opposite of every other mobile rule. #touch-controls and #instructions are hidden outright
+  (landscape-on-a-phone is a controller-first mode -- see the Gamepad entry above -- so the touch UI
+  is just dead weight competing with the canvas for the one dimension that's actually scarce now),
+  and #hud/#minimap revert to their normal desktop overlay-on-canvas placement (the portrait-mobile
+  minimap-as-separate-block treatment exists to stop it covering the right lane on a NARROW canvas --
+  a width problem, and width is exactly what landscape has back).
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of

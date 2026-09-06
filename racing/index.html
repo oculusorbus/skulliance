@@ -436,6 +436,60 @@
       #btn-brake { font-size: 0.8rem; }
       #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
     }
+
+    /* Phone rotated to landscape (a controller-driven "bigger view, mirror
+       to a TV" setup, not touch) -- max-height, not max-width, since a
+       modern phone's landscape WIDTH (812-932px+) sails right past the
+       768px query above, dropping it back to the full desktop layout
+       (box art columns, a canvas width formula built around abundant
+       vh from a tall portrait phone). 500px comfortably covers real phones
+       in landscape (roughly 320-430px tall) while never matching an
+       ordinary desktop/laptop window, even a short one -- browsers don't
+       get resized to under 500px tall in practice.
+
+       The 768px query's rules still apply too on a narrower phone turned
+       sideways (e.g. an SE at 667px landscape width) -- this block comes
+       after it in the stylesheet specifically so its overrides win where
+       they conflict, rather than the two fighting based on source order
+       being accidental.
+
+       Portrait mobile's whole layout assumes WIDTH is the tight dimension
+       and height is abundant -- true held upright, backwards held
+       sideways: HEIGHT is now what's scarce, and there's width to spare.
+       Only the game screen matters here (the user's own words) -- a
+       controller is already assumed in this mode (that's the whole point
+       of turning the phone sideways to mirror it), so the touch buttons
+       and control hint are just dead weight competing with the canvas for
+       vertical space, not a fallback anyone needs. Minimap and HUD revert
+       to their normal desktop overlay-on-canvas placement for the same
+       reason portrait mobile moved the minimap OUT of the canvas in the
+       first place doesn't apply here -- that was about a narrow canvas'
+       right lane getting covered, a width problem, and width is exactly
+       what landscape has back. */
+    @media (orientation: landscape) and (max-height: 500px) {
+      body { padding: 8px; }
+      .box-column { display: none; }
+      #stage { gap: 0; width: 100%; }
+      #frame { width: 100%; padding: 8px; }
+      /* Constrained by HEIGHT, not 100% width -- the opposite of every
+         other mobile rule above, because landscape flips which dimension
+         is scarce. 32px reserve = body's 8px padding + #frame's 8px
+         padding, doubled for both top and bottom (a few px of slack past
+         #frame's 1px border, deliberately -- better a hair of empty
+         margin than the canvas overflowing the viewport and forcing a
+         scroll, which would defeat the entire point of this block). The
+         100% ceiling is belt-and-suspenders for a landscape viewport
+         that's unusually tall for its width, so this can never demand
+         more width than the screen actually has either. */
+      #racer { width: min(100%, calc((100vh - 32px) * 4 / 3)); margin: 0 auto; }
+      #hud { top: 0; } /* undo the 768px block's 104px minimap-as-block offset -- minimap's back to overlaying the canvas below */
+      #instructions, #touch-controls { display: none; }
+      #minimap {
+        position: absolute;
+        top: 48px; right: 10px;
+        margin: 0;
+      }
+    }
   </style>
 </head>
 <body>
