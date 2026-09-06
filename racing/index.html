@@ -338,6 +338,14 @@
   <audio id='collision-sound'>
     <source src="sounds/collision.wav" type="audio/wav">
   </audio>
+  <!-- Lap-complete chime -- Crypt Crawl's own "heal" sound
+       (audio/sounds/heal.mp3 at the repo root), copied into this game's
+       own sounds/ folder as lap.mp3 rather than referenced across
+       folders, same self-contained-assets convention every other racing/
+       sound and image already follows. -->
+  <audio id='lap-sound'>
+    <source src="sounds/lap.mp3" type="audio/mpeg">
+  </audio>
   <span id="mute"></span>
 
   <script src="common.js"></script>
@@ -504,6 +512,9 @@
 
     var collisionSound = Dom.get('collision-sound');
     collisionSound.volume = 0.25; // was unset (1.0), then 0.4 -- still louder than music, dropped again
+
+    var lapSound = Dom.get('lap-sound');
+    lapSound.volume = 0.3;
 
     //=========================================================================
     // MINIMAP -- track shape traced once from the same curve values render()
@@ -709,6 +720,11 @@
       collisionSound.play();
     }
 
+    function playLapSound() {
+      lapSound.currentTime = 0;
+      lapSound.play();
+    }
+
     //=========================================================================
     // UPDATE THE GAME WORLD
     //=========================================================================
@@ -818,6 +834,7 @@
         if (currentLapTime && (startPosition < playerZ)) {
           lastLapTime    = currentLapTime;
           currentLapTime = 0;
+          playLapSound(); // every finish-line crossing that completes a lap, including the last one
           if (lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time)) {
             Dom.storage.fast_lap_time = lastLapTime;
             updateHud('fast_lap_time', formatTime(lastLapTime));
@@ -1286,9 +1303,9 @@
         // second listener on the same element/event (both fire) rather
         // than touching that shared function. Engine mute is a gain-node
         // value (Web Audio), not an <audio>.muted property.
-        collisionSound.muted = engineMuted;
+        collisionSound.muted = lapSound.muted = engineMuted;
         Dom.on('mute', 'click', function() {
-          engineMuted = collisionSound.muted = (Dom.storage.muted === "true");
+          engineMuted = collisionSound.muted = lapSound.muted = (Dom.storage.muted === "true");
         });
         // Same deferred-start reasoning as Game.playMusic() in common.js --
         // starting audio here directly gets silently blocked by the
