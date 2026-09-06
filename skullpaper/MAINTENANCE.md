@@ -108,8 +108,10 @@ records verified constants, and tracks what still needs to be written.
   updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
   see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
   configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
-  Client-side only (racing/index.html): crest jump is purely cosmetic (screen-space sprite
-  offset, never touches steering/speed/collision). Boost pads sit on the 4 longest genuine
+  Client-side only (racing/index.html): crest jump is a screen-space sprite offset that never
+  touches steering/speed, but DOES suppress the car-collision loop while `jumping` is true (added
+  so a well-timed jump can save a boost run from a car in your lane) -- off-road sprite collision
+  is untouched by it, only traffic cars. Boost pads sit on the 4 longest genuine
   straightaways (real curve===0 runs, excluding the start/finish straight), random lane each
   race, BOOST_SPEED=18000 (displays as exactly "180" via the existing speed HUD formula) held
   until that straightaway ends. BOOST_SPEED deliberately exceeds maxSpeed's own "at most one

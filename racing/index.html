@@ -859,16 +859,22 @@
 
       if (!spriteCollided) lastCollidedSprite = null; // clear so hitting it again later still plays the sound
 
-      for(n = 0 ; n < playerSegment.cars.length ; n++) {
-        car  = playerSegment.cars[n];
-        carW = car.sprite.w * SPRITES.SCALE;
-        if (speed > car.speed) {
-          if (Util.overlap(playerX, playerW, car.offset, carW, 0.8)) {
-            speed    = car.speed * (car.speed/speed);
-            position = Util.increase(car.z, -playerZ, trackLength);
-            playCollisionSound();
-            crashed = true;
-            break;
+      // While airborne (the crest jump), you clear traffic entirely -- lets
+      // a well-timed jump save a boost run instead of getting knocked out of
+      // it by a car in your lane. Off-road obstacles above are unaffected:
+      // those are a lane mistake, not something you're meant to dodge.
+      if (!jumping) {
+        for(n = 0 ; n < playerSegment.cars.length ; n++) {
+          car  = playerSegment.cars[n];
+          carW = car.sprite.w * SPRITES.SCALE;
+          if (speed > car.speed) {
+            if (Util.overlap(playerX, playerW, car.offset, carW, 0.8)) {
+              speed    = car.speed * (car.speed/speed);
+              position = Util.increase(car.z, -playerZ, trackLength);
+              playCollisionSound();
+              crashed = true;
+              break;
+            }
           }
         }
       }
