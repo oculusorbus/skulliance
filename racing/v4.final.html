@@ -787,6 +787,32 @@
     //=========================================================================
     var PASS_SOUND_COOLDOWN = 2.0; // seconds before the same car can re-trigger it
 
+    //=========================================================================
+    // GHOST -- a translucent replay of your own best lap, driving alongside
+    // you every lap. No collision, no interaction with anything else in
+    // update() at all -- it's rendered from a recorded {position, playerX}
+    // trace, not actually simulated, so it can't crash, can't be crashed
+    // into, and doesn't care whether this race's boost pad/jump ramp
+    // landed in the same lane the recorded lap saw. That's fine -- it's a
+    // ghost.
+    //
+    // Recorded every update() tick during the CURRENT lap (ghostRecording).
+    // At each lap crossing, if that lap beat the stored best (same
+    // condition that already updates fast_lap_time), the just-finished
+    // recording replaces both the in-memory playback buffer AND
+    // Dom.storage.ghost_lap -- so a new best takes over immediately, not
+    // just next race. Either way, playback restarts from frame 0 for the
+    // new lap, and a fresh recording buffer starts alongside it.
+    //=========================================================================
+    var ghostRecording  = [];   // samples for the lap in progress: [[position, playerX], ...]
+    var ghostPlayback    = null; // the stored best lap's trace, or null if none recorded yet
+    var ghostFrameIndex  = 0;    // how far into the current lap playback has advanced
+
+    try {
+      var storedGhost = Dom.storage.ghost_lap;
+      if (storedGhost) ghostPlayback = JSON.parse(storedGhost);
+    } catch (e) { ghostPlayback = null; }
+
     var keyLeft        = false;
     var keyRight       = false;
     var keyFaster      = false;
@@ -1370,6 +1396,13 @@
       hillOffset = Util.increase(hillOffset, hillSpeed * playerSegment.curve * (position-startPosition)/segmentLength, 1);
       treeOffset = Util.increase(treeOffset, treeSpeed * playerSegment.curve * (position-startPosition)/segmentLength, 1);
 
+      // Ghost -- record this tick, advance playback in lockstep (see this
+      // feature's own top-of-file comment). Both unconditional, both reset
+      // together at the lap crossing below, so they always stay aligned to
+      // the same "how far into this lap" clock.
+      ghostRecording.push([position, playerX]);
+      if (ghostPlayback && ghostFrameIndex < ghostPlayback.length - 1) ghostFrameIndex++;
+
       if (position > playerZ) {
         raceElapsed += dt; // unlike currentLapTime, this never resets -- it's the total race clock shown at the finish
         if (currentLapTime && (startPosition < playerZ)) {
@@ -1381,11 +1414,17 @@
             updateHud('fast_lap_time', formatTime(lastLapTime));
             Dom.addClassName('fast_lap_time', 'fastest');
             Dom.addClassName('last_lap_time', 'fastest');
+            // New personal best -- this lap's own recording becomes the
+            // ghost immediately (not just for next race).
+            ghostPlayback = ghostRecording;
+            try { Dom.storage.ghost_lap = JSON.stringify(ghostRecording); } catch (e) {}
           }
           else {
             Dom.removeClassName('fast_lap_time', 'fastest');
             Dom.removeClassName('last_lap_time', 'fastest');
           }
+          ghostRecording = [];
+          ghostFrameIndex = 0;
           updateHud('last_lap_time', formatTime(lastLapTime));
           Dom.show('last_lap_time');
 
@@ -1540,6 +1579,17 @@
       var playerY       = Util.interpolate(playerSegment.p1.world.y, playerSegment.p2.world.y, playerPercent);
       var maxy          = height;
 
+      // Ghost -- same +playerZ convention the player itself uses (the
+      // recorded position is the same kind of value playerSegment above is
+      // already built from), so it sits in the same camera-to-car
+      // relationship the real player would at that position.
+      var ghostFrame, ghostSegment, ghostPercent;
+      if (ghostPlayback && ghostPlayback[ghostFrameIndex]) {
+        ghostFrame   = ghostPlayback[ghostFrameIndex];
+        ghostSegment = findSegment(ghostFrame[0] + playerZ);
+        ghostPercent = Util.percentRemaining(ghostFrame[0] + playerZ, segmentLength);
+      }
+
       var x  = 0;
       var dx = - (baseSegment.curve * basePercent);
 
@@ -1670,6 +1720,16 @@
           spriteX     = segment.p1.screen.x + (spriteScale * sprite.offset * roadWidth * width/2);
           spriteY     = segment.p1.screen.y;
           Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.offset < 0 ? -1 : 0), -1, segment.clip);
+        }
+
+        if (ghostSegment && segment == ghostSegment) {
+          spriteScale = Util.interpolate(ghostSegment.p1.screen.scale, ghostSegment.p2.screen.scale, ghostPercent);
+          spriteX     = Util.interpolate(ghostSegment.p1.screen.x,     ghostSegment.p2.screen.x,     ghostPercent) + (spriteScale * ghostFrame[1] * roadWidth * width/2);
+          spriteY     = Util.interpolate(ghostSegment.p1.screen.y,     ghostSegment.p2.screen.y,     ghostPercent);
+          ctx.save();
+          ctx.globalAlpha = 0.4; // translucent -- reads as a ghost, not a real car, no separate tinted sprite needed
+          Render.sprite(ctx, width, height, resolution, roadWidth, sprites, SPRITES.PLAYER_STRAIGHT, spriteScale, spriteX, spriteY, -0.5, -1, ghostSegment.clip);
+          ctx.restore();
         }
 
         if (segment == playerSegment) {

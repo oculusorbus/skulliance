@@ -169,6 +169,17 @@ records verified constants, and tracks what still needs to be written.
   value -- same net effect. Never force-reloads while visible/mid-race, only silently reloads on
   the next visibilitychange-to-visible after a mismatch was found while backgrounded, matching
   header.php's own restraint.
+  Ghost (ghostRecording/ghostPlayback/ghostFrameIndex in racing/index.html): personal-best-lap
+  replay, 100% client-side. Records [position, playerX] every update() tick during the lap in
+  progress; at the same lap-crossing check that already updates Dom.storage.fast_lap_time, if this
+  lap beat the stored best the just-finished recording becomes both the in-memory playback buffer
+  AND Dom.storage.ghost_lap (JSON) -- takes over immediately, not just next race. Rendered in
+  render()'s existing per-segment car-drawing loop (same +playerZ convention playerSegment already
+  uses, same Render.sprite() traffic cars use, just alpha 0.4 and always SPRITES.PLAYER_STRAIGHT --
+  no per-frame steer-direction inference). Deliberately has zero interaction with update()'s
+  collision logic -- it's a recorded trace, not a simulated car, so it can't crash or be crashed
+  into, and doesn't know or care whether this race's boost pad/jump ramp landed in the same lane
+  the recorded lap saw.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
