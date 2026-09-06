@@ -183,8 +183,9 @@ records verified constants, and tracks what still needs to be written.
   Ghost, weekly/all-time leader (weeklyGhost/alltimeGhost in racing/index.html, skullRacerGetGhosts()/
   skullRacerValidateGhostTrace()/skullRacerFinalizeRun() in db.php, ajax/skullracer-ghosts.php):
   same rendering technique as the personal ghost (gold via ctx.filter =
-  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)', all-time additionally gets a 🏆
-  drawn at the sprite's own top edge -- destH/offsetY math copied from Render.sprite()'s internal
+  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)'). All three tiers get their own icon
+  drawn at the sprite's own top edge (🎖️ personal, 🥇 weekly, 🏆 all-time) -- destH/offsetY math copied
+  from Render.sprite()'s internal
   formula so it tracks the sprite at any distance). Data is server-side though: skull_racer_runs
   gained a nullable ghost_trace LONGTEXT column (ALTER TABLE needed on an existing install -- see
   this file's own SKULL RACER comment block for the exact statement), written by

@@ -1818,19 +1818,19 @@
           }
           Render.sprite(ctx, width, height, resolution, roadWidth, sprites, SPRITES.PLAYER_STRAIGHT, spriteScale, spriteX, spriteY, -0.5, -1, ghost.segment.clip);
           ctx.restore();
-          if (ghost.style === 'alltime') {
-            // Trophy above the all-time leader specifically -- same
-            // destH/offsetY math Render.sprite() itself uses internally to
-            // find the sprite's own top edge, so this tracks it at any
-            // distance/scale instead of a fixed pixel offset.
-            var ghostDestH = (SPRITES.PLAYER_STRAIGHT.h * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
-            var ghostTopY  = spriteY - ghostDestH;
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
-            ctx.fillText('🏆', spriteX, ghostTopY - 6);
-            ctx.restore();
-          }
+          // One icon per tier so it's obvious which ghost is which at a
+          // glance, not just "translucent" vs "gold" -- same destH/offsetY
+          // math Render.sprite() itself uses internally to find the
+          // sprite's own top edge, so this tracks it at any distance/scale
+          // instead of a fixed pixel offset.
+          var ghostIcon = ghost.style === 'alltime' ? '🏆' : ghost.style === 'weekly' ? '🥇' : '🎖️';
+          var ghostDestH = (SPRITES.PLAYER_STRAIGHT.h * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
+          var ghostTopY  = spriteY - ghostDestH;
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
+          ctx.fillText(ghostIcon, spriteX, ghostTopY - 6);
+          ctx.restore();
         }
 
         if (segment == playerSegment) {

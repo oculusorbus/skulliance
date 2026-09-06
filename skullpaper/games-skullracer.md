@@ -12,7 +12,7 @@ A race is **3 laps** of a fixed, curvy highway - sized against the game's own ch
 * **Total Time** is the sum of all 3 laps - the number the leaderboard actually ranks on.
 * A **minimap** in the corner traces the track's real shape (reconstructed from the same curve data the 3D view renders from) with a dot marking your current position and a white tick at the start/finish line.
 * Crossing the finish line after lap 3 ends the race outright - no infinite loop, no restart without choosing to.
-* Up to **three translucent ghosts** drive alongside you every lap: your own fastest lap (plain), the current weekly leader's (gold), and the current all-time leader's (gold, with a 🏆 above it). Beat your own and it updates immediately, right there in the same race. All three are pure visual references, not real cars - driving through one (or it through a boost pad/jump ramp that wasn't there when it was recorded) is normal, not a bug. If you're currently holding both the weekly and all-time record, you'll only see one gold ghost, not two stacked on top of each other.
+* Up to **three translucent ghosts** drive alongside you every lap, each with its own icon so you can tell them apart at a glance: your own fastest lap (🎖️, plain), the current weekly leader's (🥇, gold), and the current all-time leader's (🏆, gold). Beat your own and it updates immediately, right there in the same race. All three are pure visual references, not real cars - driving through one (or it through a boost pad/jump ramp that wasn't there when it was recorded) is normal, not a bug. If you're currently holding both the weekly and all-time record, you'll only see the all-time one, not two gold ghosts stacked on top of each other.
 
 ## Crests & Boost Pads
 
