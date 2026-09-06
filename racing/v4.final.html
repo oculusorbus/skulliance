@@ -800,6 +800,17 @@
     //=========================================================================
     var PASS_SOUND_COOLDOWN = 2.0; // seconds before the same car can re-trigger it
 
+    // [x0, y0, x1, y1] as a fraction of PLAYER_STRAIGHT's own w/h -- the
+    // light faceplate panel behind the car's built-in skull eyes/teeth,
+    // measured directly off the live sprite sheet (cropped PLAYER_STRAIGHT/
+    // LEFT/RIGHT and eyeballed the panel's edges; it sits in effectively
+    // the same spot across all three lean variants, so one box covers
+    // every case). Used to decal a weekly/alltime racer's own avatar right
+    // onto their ghost's grille -- see that render loop's own comment.
+    // Deliberately stops above the teeth (y1 < the jagged bottom edge) so
+    // they stay visible below the decal instead of getting covered by it.
+    var GHOST_AVATAR_BOX = [0.32, 0.37, 0.66, 0.83];
+
     //=========================================================================
     // GHOST -- a translucent replay of your own best lap, driving alongside
     // you every lap. No collision, no interaction with anything else in
@@ -874,21 +885,42 @@
     // that total_time (already true, or this wouldn't be the ghost) also
     // means beating it across the line. Always <=1 (a slowdown, never a
     // speedup) since the best lap can only be <= the race's own average.
-    var weeklyGhost  = { playback: null, frameIndex: 0, frameProgress: 0, rate: 1, id: null };
-    var alltimeGhost = { playback: null, frameIndex: 0, frameProgress: 0, rate: 1, id: null };
+    var weeklyGhost  = { playback: null, frameIndex: 0, frameProgress: 0, rate: 1, id: null, avatarImg: null };
+    var alltimeGhost = { playback: null, frameIndex: 0, frameProgress: 0, rate: 1, id: null, avatarImg: null };
+
+    // Kicks off loading a weekly/alltime racer's Discord avatar so it can be
+    // decaled onto their ghost car's grille (see the render loop's own
+    // comment on GHOST_AVATAR_BOX for where and why). Returns the <img>
+    // immediately, not a promise -- the render loop just checks
+    // img.complete/naturalWidth each frame instead of waiting on it, so a
+    // slow-loading or missing avatar simply falls back to that ghost's
+    // plain trophy/medal icon (see the render loop) until/unless it loads.
+    // crossOrigin because it's Discord's CDN, not our own origin -- fine
+    // either way since nothing on this canvas ever reads pixels back
+    // (no getImageData/toDataURL), just drawImage.
+    function loadGhostAvatar(url) {
+      if (!url) return null;
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      return img;
+    }
+
     fetch('/staking/ajax/skullracer-ghosts.php', { cache: 'no-store' })
       .then(function(r) { return r.ok ? r.json() : null; })
       .then(function(data) {
         if (!data) return;
         if (data.weekly)  {
-          weeklyGhost.playback = normalizeGhostTrace(data.weekly.trace);
-          weeklyGhost.id       = data.weekly.id;
-          weeklyGhost.rate     = Util.limit((weeklyGhost.playback.length / fps) / (data.weekly.total_time / totalLaps), 0, 1);
+          weeklyGhost.playback  = normalizeGhostTrace(data.weekly.trace);
+          weeklyGhost.id        = data.weekly.id;
+          weeklyGhost.rate      = Util.limit((weeklyGhost.playback.length / fps) / (data.weekly.total_time / totalLaps), 0, 1);
+          weeklyGhost.avatarImg = loadGhostAvatar(data.weekly.avatar_url);
         }
         if (data.alltime) {
-          alltimeGhost.playback = normalizeGhostTrace(data.alltime.trace);
-          alltimeGhost.id       = data.alltime.id;
-          alltimeGhost.rate     = Util.limit((alltimeGhost.playback.length / fps) / (data.alltime.total_time / totalLaps), 0, 1);
+          alltimeGhost.playback  = normalizeGhostTrace(data.alltime.trace);
+          alltimeGhost.id        = data.alltime.id;
+          alltimeGhost.rate      = Util.limit((alltimeGhost.playback.length / fps) / (data.alltime.total_time / totalLaps), 0, 1);
+          alltimeGhost.avatarImg = loadGhostAvatar(data.alltime.avatar_url);
         }
         // Same duplicate-ghost problem as the weekly/alltime same-run skip
         // below, one tier further down: if THIS browser's own personal-best
@@ -1899,6 +1931,22 @@
           spriteScale = Util.interpolate(ghost.segment.p1.screen.scale, ghost.segment.p2.screen.scale, ghost.percent);
           spriteX     = Util.interpolate(ghost.segment.p1.screen.x,     ghost.segment.p2.screen.x,     ghost.percent) + (spriteScale * ghost.frame[1] * roadWidth * width/2);
           spriteY     = Util.interpolate(ghost.segment.p1.screen.y,     ghost.segment.p2.screen.y,     ghost.percent);
+          // Same destW/destH/offsetX/offsetY math Render.sprite() itself
+          // uses internally, replicated here so the avatar decal and
+          // fallback icon below can both find the sprite's own edges at
+          // any distance/scale instead of a fixed pixel offset.
+          var ghostDestW = (SPRITES.PLAYER_STRAIGHT.w * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
+          var ghostDestH = (SPRITES.PLAYER_STRAIGHT.h * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
+          var ghostTopY  = spriteY - ghostDestH;
+          var ghostLeftX = spriteX - ghostDestW/2;
+
+          // weekly/alltime only -- personal has no server row/avatar of its
+          // own (it's always you). Not ready until the <img> has actually
+          // finished loading; a slow or missing avatar just leaves this
+          // null and the plain trophy/medal icon below keeps showing.
+          var ghostAvatar = ghost.style === 'weekly' ? weeklyGhost.avatarImg : ghost.style === 'alltime' ? alltimeGhost.avatarImg : null;
+          var avatarReady = ghostAvatar && ghostAvatar.complete && ghostAvatar.naturalWidth > 0;
+
           ctx.save();
           ctx.globalAlpha = 0.4; // translucent -- reads as a ghost, not a real car, no separate tinted sprite needed
           if (ghost.style !== 'personal') {
@@ -1908,20 +1956,38 @@
             ctx.filter = 'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)';
           }
           Render.sprite(ctx, width, height, resolution, roadWidth, sprites, SPRITES.PLAYER_STRAIGHT, spriteScale, spriteX, spriteY, -0.5, -1, ghost.segment.clip);
+          if (avatarReady) {
+            // Decaled right onto the car's own built-in skull faceplate on
+            // its rear bumper -- GHOST_AVATAR_BOX is that faceplate's own
+            // rect (the light panel behind the eyes/teeth), measured
+            // directly off the live sprite sheet as a fraction of the
+            // sprite's own w/h (checked against PLAYER_STRAIGHT/LEFT/RIGHT
+            // -- the panel sits in effectively the same spot on all three,
+            // so one box works for every lean). Stretched to fill that
+            // exact rect (no aspect-correct cropping) -- close enough at
+            // this size/distance, and staying inside ghostDestW/ghostDestH
+            // means it can never spill off the car onto the road, no clip
+            // needed. Drawn inside the same save/restore as the car body
+            // so it picks up the same alpha/gold-tint filter, reading as
+            // part of the ghost rather than a sticker floating on top of it.
+            ctx.drawImage(ghostAvatar,
+              ghostLeftX + GHOST_AVATAR_BOX[0] * ghostDestW,
+              ghostTopY  + GHOST_AVATAR_BOX[1] * ghostDestH,
+              (GHOST_AVATAR_BOX[2] - GHOST_AVATAR_BOX[0]) * ghostDestW,
+              (GHOST_AVATAR_BOX[3] - GHOST_AVATAR_BOX[1]) * ghostDestH);
+          }
           ctx.restore();
-          // One icon per tier so it's obvious which ghost is which at a
-          // glance, not just "translucent" vs "gold" -- same destH/offsetY
-          // math Render.sprite() itself uses internally to find the
-          // sprite's own top edge, so this tracks it at any distance/scale
-          // instead of a fixed pixel offset.
-          var ghostIcon = ghost.style === 'alltime' ? '🏆' : ghost.style === 'weekly' ? '🥇' : '🎖️';
-          var ghostDestH = (SPRITES.PLAYER_STRAIGHT.h * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
-          var ghostTopY  = spriteY - ghostDestH;
-          ctx.save();
-          ctx.textAlign = 'center';
-          ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
-          ctx.fillText(ghostIcon, spriteX, ghostTopY - 6);
-          ctx.restore();
+          if (!avatarReady) {
+            // One icon per tier so it's obvious which ghost is which at a
+            // glance when there's no avatar decal on the car to do that
+            // job instead.
+            var ghostIcon = ghost.style === 'alltime' ? '🏆' : ghost.style === 'weekly' ? '🥇' : '🎖️';
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
+            ctx.fillText(ghostIcon, spriteX, ghostTopY - 6);
+            ctx.restore();
+          }
         }
 
         if (segment == playerSegment) {

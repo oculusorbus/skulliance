@@ -12731,11 +12731,22 @@ function skullRacerIsNewBest($conn, $user_id, $current_run_id, $total_time) {
 // own id so the client can tell when the weekly and all-time ghost are
 // literally the same run (one person holding both records at once) and
 // skip rendering the lower tier's duplicate on top of the higher one.
+// avatar_url: same discord_id+avatar -> CDN URL convention used by every
+// other leaderboard on the platform (see e.g. the realm leaderboard around
+// db.php's own $avatar_url = ".../avatars/".$discord_id."/".$avatar.".jpg"
+// building), except null instead of the usual skull.png fallback -- the
+// racer's own car sprite already IS a skull (see racing/index.html's
+// avatar-decal comment), so "no avatar linked" should just leave that
+// skull alone rather than stamp a second, generic one on top of it.
+function skullRacerAvatarUrl($discord_id, $avatar) {
+	return ($discord_id && $avatar) ? "https://cdn.discordapp.com/avatars/".$discord_id."/".$avatar.".jpg" : null;
+}
+
 function skullRacerGetGhosts($conn) {
 	$ghosts = ['weekly' => null, 'alltime' => null];
 
 	$alltime_r = $conn->query("
-		SELECT sr.id, sr.total_time, sr.ghost_trace, u.username
+		SELECT sr.id, sr.total_time, sr.ghost_trace, u.username, u.discord_id, u.avatar
 		FROM skull_racer_runs sr
 		INNER JOIN users u ON u.id = sr.user_id
 		WHERE sr.ghost_trace IS NOT NULL
@@ -12744,11 +12755,11 @@ function skullRacerGetGhosts($conn) {
 	");
 	if ($alltime_r && $alltime_r->num_rows > 0) {
 		$row = $alltime_r->fetch_assoc();
-		$ghosts['alltime'] = ['id' => intval($row['id']), 'username' => $row['username'], 'total_time' => floatval($row['total_time']), 'trace' => json_decode($row['ghost_trace'], true)];
+		$ghosts['alltime'] = ['id' => intval($row['id']), 'username' => $row['username'], 'total_time' => floatval($row['total_time']), 'trace' => json_decode($row['ghost_trace'], true), 'avatar_url' => skullRacerAvatarUrl($row['discord_id'], $row['avatar'])];
 	}
 
 	$weekly_r = $conn->query("
-		SELECT sr.id, sr.total_time, sr.ghost_trace, u.username
+		SELECT sr.id, sr.total_time, sr.ghost_trace, u.username, u.discord_id, u.avatar
 		FROM skull_racer_runs sr
 		INNER JOIN users u ON u.id = sr.user_id
 		WHERE sr.ghost_trace IS NOT NULL AND sr.reward = 0
@@ -12757,7 +12768,7 @@ function skullRacerGetGhosts($conn) {
 	");
 	if ($weekly_r && $weekly_r->num_rows > 0) {
 		$row = $weekly_r->fetch_assoc();
-		$ghosts['weekly'] = ['id' => intval($row['id']), 'username' => $row['username'], 'total_time' => floatval($row['total_time']), 'trace' => json_decode($row['ghost_trace'], true)];
+		$ghosts['weekly'] = ['id' => intval($row['id']), 'username' => $row['username'], 'total_time' => floatval($row['total_time']), 'trace' => json_decode($row['ghost_trace'], true), 'avatar_url' => skullRacerAvatarUrl($row['discord_id'], $row['avatar'])];
 	}
 
 	return $ghosts;

@@ -188,10 +188,34 @@ records verified constants, and tracks what still needs to be written.
   Ghost, weekly/all-time leader (weeklyGhost/alltimeGhost in racing/index.html, skullRacerGetGhosts()/
   skullRacerValidateGhostTrace()/skullRacerFinalizeRun() in db.php, ajax/skullracer-ghosts.php):
   same rendering technique as the personal ghost (gold via ctx.filter =
-  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)'). All three tiers get their own icon
+  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)'). All three tiers get a fallback icon
   drawn at the sprite's own top edge (🎖️ personal, 🥇 weekly, 🏆 all-time) -- destH/offsetY math copied
-  from Render.sprite()'s internal
-  formula so it tracks the sprite at any distance). Data is server-side though: skull_racer_runs
+  from Render.sprite()'s internal formula so it tracks the sprite at any distance -- but weekly/
+  alltime show a decaled avatar instead whenever that racer has one: skullRacerGetGhosts() now also
+  returns avatar_url (discord_id+avatar -> CDN URL, same convention as every other leaderboard, except
+  null instead of the usual skull.png fallback -- the car's own rear grille already IS a skull, see
+  GHOST_AVATAR_BOX below), loaded client-side via a plain `new Image()` (no promise -- the render loop
+  just checks img.complete/naturalWidth each frame and falls back to the tier icon until/unless it
+  loads) and drawn inside the same save/restore as the car body so it picks up the same alpha/gold
+  filter. GHOST_AVATAR_BOX ([0.32,0.37,0.66,0.83], fraction of PLAYER_STRAIGHT's own w/h) is the car's
+  built-in faceplate panel behind its skull eyes/teeth, measured directly off the live sprite sheet --
+  sits in effectively the same spot on PLAYER_STRAIGHT/LEFT/RIGHT, so one box covers every lean, and
+  stops above the jagged teeth edge so they stay visible below the decal. Personal never gets a decal
+  (no server row/avatar of its own -- it's always you).
+  Every stored trace is re-based through normalizeGhostTrace() (subtracts frame 0's own
+  [position, playerX] from every sample) before it's used for playback, both when a freshly-completed
+  lap becomes someone's new best AND when an already-stored trace is loaded (localStorage for
+  personal, the ghosts fetch for weekly/alltime) -- Util.increase() wraps `position` at a lap boundary
+  to a small positive remainder, not a clean 0, so any trace whose fastest lap wasn't lap 1 otherwise
+  has that remainder plus whatever playerX was held at that exact tick baked into frame 0 forever,
+  showing up as the ghost sitting visibly ahead/to one side of you at the start of every loop.
+  weeklyGhost/alltimeGhost also carry a `rate` (<=1, playback-length-in-seconds divided by
+  total_time/totalLaps, clamped via Util.limit) -- the leaderboard ranks by TOTAL race time but the
+  trace is only ever that run's single fastest LAP (looped every lap, same convention as the personal
+  ghost), so looping it at a flat 1 frame/tick could finish faster than the total_time it's supposed
+  to represent whenever the run's other 2 laps were slower than its best one. `rate` stretches
+  playback (frameProgress tracks the fractional position frameIndex alone can't) so 3 loops take
+  exactly total_time/totalLaps each, matching the real total_time. Data is server-side though: skull_racer_runs
   gained a nullable ghost_trace LONGTEXT column (ALTER TABLE needed on an existing install -- see
   this file's own SKULL RACER comment block for the exact statement), written by
   skullRacerFinalizeRun() ONLY when a just-inserted run is immediately the new all-time best or the
@@ -223,8 +247,11 @@ records verified constants, and tracks what still needs to be written.
   against it would frequently mismatch); the server decides whether it's actually leader-worthy,
   the client doesn't get to assume. ajax/skullracer-ghosts.php is a public GET (same visibility as
   the leaderboard) returning {weekly, alltime}, each null if nobody's set a qualifying time with a
-  valid trace yet. Client dedupes by row id if the same run holds both records at once, so only the
-  higher tier (all-time, with trophy) renders, not both stacked on the same spot.
+  valid trace yet. Client dedupes weekly against alltime by row id if the same run holds both records
+  at once, so only the higher tier renders, not both stacked on the same spot; personal has no row id
+  to match by, so it's dedupe against weekly/alltime by trace content instead (JSON.stringify equality
+  on the already-normalized arrays) -- catches the same-run case (your own localStorage best IS the
+  server's stored trace) without needing to know it's the same run in advance.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
