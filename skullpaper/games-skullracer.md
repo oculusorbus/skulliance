@@ -27,7 +27,7 @@ Tuck in close behind a car in your lane for a moment and you'll draft it - a sma
 
 Traffic passing close by gets a quick, panned engine blip as it goes - a car passing on your left sounds like it's on your left, not just louder - so the road feels populated even with your eyes on what's ahead.
 
-A crash doesn't just snap your speed anymore - it's a brief, decaying fishtail, a screen shake, and a puff of dust at the point of impact. The car's own art is a fixed rear-view sprite (no side or front angle exists to turn into), so it's not an actual spin - same "shake and a puff" trick era-appropriate arcade racers leaned on instead of true rotation.
+A crash doesn't just snap your speed anymore - it's a screen shake and a puff of dust at the point of impact. The car's own art is a fixed rear-view sprite (no side or front angle exists to turn into), so it's not an actual spin - same "shake and a puff" trick era-appropriate arcade racers leaned on instead of true rotation.
 
 ## Controls
 

@@ -581,18 +581,16 @@
     // player sprite is a fixed rear-view billboard (straight/left/right,
     // each with an uphill variant) -- there's no side or front art to turn
     // into, so rotating one past a few degrees just looks like a flat
-    // image spinning in place, not a car turning. Faked instead with three
-    // things that don't need new art: a brief, decaying fishtail (the
-    // existing left/right/straight frames swapped fast, capped small) plus
-    // a screen shake plus a dust burst -- the same "shake and a puff, not
-    // an actual rotation" trick era-appropriate arcade racers used.
+    // image spinning in place, not a car turning. Faked instead with a
+    // screen shake plus a dust burst -- the same "shake and a puff, not an
+    // actual rotation" trick era-appropriate arcade racers used. (A third
+    // trick, swapping the existing left/right/straight frames fast to fake
+    // a fishtail, was tried and dropped -- felt wrong, not a good look.)
     //=========================================================================
-    var CRASH_REACT_DURATION  = 0.5;  // seconds the wobble/shake decay over
-    var CRASH_WOBBLE_FREQ     = 28;   // radians/sec -- fast enough to read as "losing it", not a slow sway
+    var CRASH_REACT_DURATION  = 0.5;  // seconds the shake decays over
     var CRASH_SHAKE_MAGNITUDE = 6;    // peak screen shake, pixels
 
     var crashReactTimer = 0;    // counts down from CRASH_REACT_DURATION, 0 = normal
-    var crashWobbleSteer = 0;   // synthetic steer fed to Render.player() while reacting (overrides real key state)
     var crashShakeX = 0;        // read by render(), applied as a canvas translate for the whole frame
     var crashShakeY = 0;
 
@@ -1111,13 +1109,10 @@
       }
       if (crashReactTimer > 0) {
         crashReactTimer = Math.max(0, crashReactTimer - dt);
-        var crashElapsed = CRASH_REACT_DURATION - crashReactTimer;
-        var crashDecay    = crashReactTimer / CRASH_REACT_DURATION; // 1 -> 0, settles the wobble/shake back to normal
-        crashWobbleSteer  = Math.sin(crashElapsed * CRASH_WOBBLE_FREQ) * crashDecay;
-        crashShakeX       = (Math.random() - 0.5) * 2 * CRASH_SHAKE_MAGNITUDE * crashDecay;
-        crashShakeY       = (Math.random() - 0.5) * 2 * CRASH_SHAKE_MAGNITUDE * crashDecay;
+        var crashDecay = crashReactTimer / CRASH_REACT_DURATION; // 1 -> 0, settles the shake back to normal
+        crashShakeX    = (Math.random() - 0.5) * 2 * CRASH_SHAKE_MAGNITUDE * crashDecay;
+        crashShakeY    = (Math.random() - 0.5) * 2 * CRASH_SHAKE_MAGNITUDE * crashDecay;
       } else {
-        crashWobbleSteer = 0;
         crashShakeX = 0;
         crashShakeY = 0;
       }
@@ -1507,16 +1502,11 @@
         }
 
         if (segment == playerSegment) {
-          // Fishtail wobble overrides the normal steer-from-keys sprite
-          // pick while reacting to a crash (see CRASH REACTION) -- both
-          // just need a sign (left/right/straight), the actual magnitude
-          // doesn't matter to Render.player()'s own branching.
-          var playerSteer = crashReactTimer > 0 ? crashWobbleSteer : speed * (keyLeft ? -1 : keyRight ? 1 : 0);
           Render.player(ctx, width, height, resolution, roadWidth, sprites, speed/maxSpeed,
                         cameraDepth/playerZ,
                         width/2,
                         (height/2) - (cameraDepth/playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
-                        playerSteer,
+                        speed * (keyLeft ? -1 : keyRight ? 1 : 0),
                         playerSegment.p2.world.y - playerSegment.p1.world.y,
                         jumpOffset);
         }

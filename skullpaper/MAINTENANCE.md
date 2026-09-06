@@ -127,13 +127,13 @@ records verified constants, and tracks what still needs to be written.
   DRAFT_SPEED_BONUS to the effective top-speed cap (ignored while boostActive, which already
   exceeds it); breaks instantly on losing the overlap or on any crash.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
-  whenever `crashed` is set by either collision check in update() -- a decaying sine-driven
-  synthetic steer value (crashWobbleSteer, overrides the real key-based steer fed to
-  Render.player() only while reacting) plus a canvas-translate screen shake (crashShakeX/Y,
-  applied via ctx.save()/translate()/restore() wrapping the whole of render()) plus a
-  spawnParticles() burst. No new sprite art -- rotating the existing rear-view-only player frames
-  past a few degrees looks broken (no side/front art to turn into), so this fakes a spin with
-  wobble+shake+dust instead of true rotation.
+  whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
+  screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of
+  render()) plus a spawnParticles() burst. No new sprite art -- rotating the existing rear-view-
+  only player frames past a few degrees looks broken (no side/front art to turn into), so this
+  fakes a hit with shake+dust instead of true rotation. A third trick (rapidly swapping the
+  existing left/right/straight frames to fake a fishtail wobble) was tried and removed -- felt
+  wrong in practice, per direct user feedback.
   Particles (particles array, spawnParticles()/updateParticles()/renderParticles() in
   racing/index.html): generic screen-space system, spawn origin is a fixed (width/2, height *
   PARTICLE_SPAWN_Y_FRAC) rather than the real projected player position -- close enough since
