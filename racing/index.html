@@ -870,6 +870,27 @@
           alltimeGhost.id       = data.alltime.id;
           alltimeGhost.rate     = Util.limit((alltimeGhost.playback.length / fps) / (data.alltime.total_time / totalLaps), 0, 1);
         }
+        // Same duplicate-ghost problem as the weekly/alltime same-run skip
+        // below, one tier further down: if THIS browser's own personal-best
+        // lap (loaded above, before this fetch even went out) IS the lap
+        // that's now the weekly and/or all-time record -- the common case
+        // right after you set one -- drawing it a third time as its own
+        // "personal" ghost isn't just noise, it's misleading: personal
+        // plays back at a flat, unstretched 1 frame/tick (correct for ITS
+        // own job, your best single LAP, not a total-race-time record), so
+        // it visibly races ahead of the correctly-paced weekly/alltime
+        // ghost showing that exact same lap -- the higher tier should
+        // always be what you see yourself racing, never eclipsed by a
+        // lower one that's really just a copy of it. Content-compared, not
+        // ID-compared -- the personal ghost has no server row of its own to
+        // match against.
+        var personalTrace = ghostPlayback && JSON.stringify(ghostPlayback);
+        if (personalTrace && (
+              (alltimeGhost.playback && personalTrace === JSON.stringify(alltimeGhost.playback)) ||
+              (weeklyGhost.playback  && personalTrace === JSON.stringify(weeklyGhost.playback))
+            )) {
+          ghostPlayback = null;
+        }
       })
       .catch(function() {});
 
