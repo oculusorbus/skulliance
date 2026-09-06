@@ -159,7 +159,7 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
       var name = names[n];
       result[n] = document.createElement('img');
       Dom.on(result[n], 'load', onload);
-      result[n].src = "images/" + name + ".png";
+      result[n].src = "/staking/racing/images/" + name + ".png";
     }
   },
 
@@ -230,9 +230,9 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
     // and got dropped, the original 3 renamed to 2 in its place; all mp3
     // now too, the stray .wav's were a mistake.)
     var playlist = [
-      'music/skull-racer-theme.mp3',
-      'music/skull-racer-1.mp3',
-      'music/skull-racer-2.mp3'
+      '/staking/racing/music/skull-racer-theme.mp3',
+      '/staking/racing/music/skull-racer-1.mp3',
+      '/staking/racing/music/skull-racer-2.mp3'
     ];
     var index    = 0;
     music.loop  = false;

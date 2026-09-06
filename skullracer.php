@@ -2,18 +2,21 @@
 // SKULL RACER -- wrapper page. Linked in nav (Play > Skull Racer). The game
 // itself is a self-contained static build (racing/index.html: its own
 // HTML/CSS/JS, no PHP, no session) -- this page's only job is to put the
-// normal Skulliance header/nav around it for a logged-in staker, then embed
-// the game in an iframe.
+// normal Skulliance header/nav around it for a logged-in staker.
 //
-// Why an iframe instead of including header.php directly into racing/'s own
-// markup: header.php's nav links are bare-relative (href="cryptcrawlgame.php"
-// etc.), which only resolves correctly for a page living at the repo root.
-// racing/index.html lives in its own subfolder, so every asset reference in
-// it (images/, music/, sounds/, common.js) is written relative to THAT
-// folder. Iframing it keeps both sides working unmodified: this page gets
-// the real nav (its own links resolve fine, it's at the root), and the game
-// keeps resolving its own assets relative to racing/ exactly as it does when
-// visited directly at racing/index.html.
+// Used to iframe racing/index.html instead of inlining it directly, because
+// header.php's nav links are bare-relative (only resolve from the repo
+// root) while racing/'s own asset references were folder-relative (only
+// resolve from racing/ itself) -- mutually incompatible in one document.
+// Fixed at the source instead of worked around: every asset reference in
+// racing/index.html and racing/common.js is now root-absolute
+// (/staking/racing/...), so the exact same file resolves correctly whether
+// visited directly at racing/index.html or read and re-served from here.
+// No iframe now -- an iframe is its own document with its own focus and
+// scroll, which caused real bugs for no remaining benefit once the actual
+// path conflict was fixed: keyboard input needed an explicit click first
+// (a player's first keypress went nowhere until they clicked into the
+// iframe), and a leaderboard link needed target="_top" just to escape it.
 include_once 'db.php';
 
 // Same session-restore pattern as cryptcrawl.php/skullswap.php/match3rpg.php
@@ -47,47 +50,47 @@ if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData
 $page_title_override = 'Skull Racer - Skulliance';
 
 include 'header.php';
+
+// Pull racing/index.html's <style> and <body> content directly from the
+// one canonical file at request time -- not a copy-pasted duplicate kept
+// in sync by hand, so there's nothing here that can drift out of sync
+// with it. header.php has already emitted </head><body> by this point
+// (same as every other page here that adds its own CSS after including
+// it), so this <style> block lands in the body -- valid HTML5, applies
+// identically to one placed in <head>.
+$racing_html = file_get_contents(__DIR__ . '/racing/index.html');
+$style_start  = strpos($racing_html, '<style>') + strlen('<style>');
+$style_end    = strpos($racing_html, '</style>');
+$racing_style = substr($racing_html, $style_start, $style_end - $style_start);
+
+$body_start  = strpos($racing_html, '<body>') + strlen('<body>');
+$body_end    = strpos($racing_html, '</body>');
+$racing_body = substr($racing_html, $body_start, $body_end - $body_start);
+
+// racing/index.html is meant to also work as its own complete page (visited
+// directly at /staking/racing/index.html), where styling the real <body>
+// (flex-centered, min-height:100vh, its own dark background) is exactly
+// right -- it IS the whole page there. Embedded here, the real <body> is
+// shared with the header/nav above it; letting those same rules target it
+// would blow away the site's own page layout. Scope them to the wrapper
+// div below instead -- #skullracer-embed stands in for racing/index.html's
+// own <body> as this stylesheet's "page root" for everything the game does.
+$racing_style = str_replace(
+    ['body {', 'body { padding: 8px; }'],
+    ['#skullracer-embed {', '#skullracer-embed { padding: 8px; }'],
+    $racing_style
+);
 ?>
 <style>
 #burger-menu { <?php echo isset($name) ? '' : 'display: none;'; ?> } /* same guest-hide as cryptcrawl.php/cryptconquest.php */
-.skullracer-wrap {
-  display: flex;
-  justify-content: center;
-  padding: 24px 16px;
-}
-#skullracer-frame {
-  /* Was capped at max-width:1400px/height:900px -- an arbitrary conservative
-     box from before racing/index.html itself tried to fill its own window.
-     Now that it does, this needs to actually give it the room: the box art
-     flanking the game inside the iframe wraps to its own line (looking
-     broken) if the iframe itself isn't wide enough for both, regardless of
-     how generous the inner page's own sizing is. */
-  width: 100%;
-  height: 85vh;
-  border: 0;
-  border-radius: 0.75rem;
-}
+<?php echo $racing_style; ?>
+/* The standalone page's own min-height:100vh is sized to fill an entire
+   browser window by itself -- here it's below a real header/nav, so a
+   full 100vh would push the game a full screen's height further down the
+   page than it needs to. Similar proportions to what the old iframe used
+   (height: 85vh). */
+#skullracer-embed { min-height: 85vh; }
 </style>
-
-<div class="skullracer-wrap">
-  <iframe id="skullracer-frame" src="racing/index.html" title="Skull Racer" allow="autoplay"></iframe>
+<div id="skullracer-embed">
+<?php echo $racing_body; ?>
 </div>
-<script>
-// racing/index.html binds its driving keys to its OWN document (see
-// Game.setKeyListener in racing/common.js) -- that only ever receives
-// keydown events once the iframe actually has keyboard focus, and an
-// iframe does NOT get that automatically on page load. Without this, a
-// player's first keypress goes nowhere (focus is still on this outer
-// page), so they'd have to click into the game first, then reach for
-// the keyboard -- confusing, and an extra step right at the start of a
-// race. Same-origin (this page and racing/index.html are both under
-// /staking/), so contentWindow.focus() is allowed with no gesture needed.
-(function() {
-  var frame = document.getElementById('skullracer-frame');
-  function focusFrame() {
-    try { frame.contentWindow.focus(); } catch (e) {}
-  }
-  frame.addEventListener('load', focusFrame);
-  focusFrame(); // in case the iframe's already loaded (e.g. cached) by the time this runs
-})();
-</script>

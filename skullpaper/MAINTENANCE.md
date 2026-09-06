@@ -36,7 +36,7 @@ records verified constants, and tracks what still needs to be written.
 | games-gauntlets.md *(new)*          | NFT roguelike          | gauntlets.php, db.php:9874-10341 |
 | games-cryptcrawl.md *(new)*         | Scoundrel-style crawl  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
-| games-skullracer.md *(new)*         | Pseudo-3D racer        | skullracer.php (nav wrapper + iframe), racing/index.html (game, client-side), ajax/skullracer-finalize.php, db.php SKULL RACER block (end of file) |
+| games-skullracer.md *(new)*         | Pseudo-3D racer        | skullracer.php (nav wrapper, inlines racing/index.html's style+body server-side -- no iframe), racing/index.html (game, client-side, also works visited standalone), ajax/skullracer-finalize.php, db.php SKULL RACER block (end of file) |
 | games-drop-ship.md                  | NFT battler, now in-platform | dropship/ (migrated from madballs.net; requires Skulliance login) |
 | games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
@@ -146,12 +146,20 @@ records verified constants, and tracks what still needs to be written.
   (1.6x) so it doesn't just sound like a second copy of your own engine. Panned by the car's lane
   offset relative to playerX, clamped to StereoPannerNode's -1..1 range. One-shot per car per
   approach via car.lastPassSoundAt + PASS_SOUND_COOLDOWN, not full enter/exit tracking.
-  Iframe keyboard focus (skullracer.php): racing/index.html binds its driving keys to its own
-  document (Game.setKeyListener in racing/common.js) -- an iframe doesn't get keyboard focus
-  automatically on load, so without an explicit contentWindow.focus() call, a player's first
-  keypress went nowhere until they clicked into the game first. skullracer.php now focuses the
-  iframe on load (and immediately, in case it's already loaded/cached) -- same-origin, so no
-  gesture is required for focus() itself.
+  No iframe (skullracer.php): used to iframe racing/index.html because header.php's nav links
+  are root-relative while racing/'s own asset references were folder-relative -- incompatible in
+  one document. Fixed by making every asset reference in racing/index.html and racing/common.js
+  root-absolute (/staking/racing/...) instead, so the same file resolves correctly either visited
+  directly or read server-side. skullracer.php now file_get_contents()s racing/index.html at
+  request time and re-serves its <style> and <body> content directly (not a copy kept in sync by
+  hand -- one canonical file). racing/index.html's own body{} rule (flex-centered,
+  min-height:100vh -- correct when it IS the whole page) is renamed to #skullracer-embed via
+  str_replace before being echoed, since applying that to the REAL <body> here would blow away
+  the shared header/nav layout; #skullracer-embed wraps the echoed body content and gets its own
+  min-height:85vh override afterward (roughly the old iframe's proportions). Checked for id="..."
+  and top-level function name collisions between racing/index.html and header.php before doing
+  this -- none found, but worth re-checking if either file gains a very generic new one (things
+  like #mute, #frame, #stage were the real risk).
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
