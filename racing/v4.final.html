@@ -407,6 +407,37 @@
     // security boundary, the server re-validates the actual time itself.
     var raceToken      = Date.now() + '-' + Math.random().toString(36).slice(2);
 
+    //=========================================================================
+    // CREST JUMP -- purely visual, matches the original OutRun's own
+    // signature move: cresting a steep enough hill at speed launches the
+    // car briefly into the air. Doesn't touch steering/speed/collision at
+    // all, just the player sprite's own screen-space Y offset -- the car
+    // is still exactly "on" the road underneath the whole time.
+    //
+    // "Crest" is detected from the track's own real elevation data, not
+    // faked: compare the average slope over a few segments right at the
+    // player's position against a few segments further ahead. A steep
+    // hill's own ease-in-out shape means slope rises then falls even
+    // within a single climb (steepest at the midpoint, flattening on both
+    // sides), so "slope right here is notably bigger than slope a bit
+    // further ahead" fires right at a genuine crest without needing an
+    // uphill-into-downhill sign flip -- confirmed against this actual
+    // track's real segment data (10 distinct crests/lap clear this
+    // threshold, out of a max possible value of ~0.23).
+    //=========================================================================
+    var JUMP_NEAR_SEGMENTS  = 4;    // window right at the player, in segments
+    var JUMP_FAR_SEGMENTS   = 10;   // window further ahead, in segments
+    var JUMP_SLOPE_THRESHOLD = 0.15; // (near-slope - far-slope) needed to count as crest-worthy
+    var JUMP_MIN_SPEED_FRAC = 0.9;  // must be carrying near-max speed, not just any speed
+    var JUMP_DURATION = 0.5;        // seconds in the air
+    var JUMP_HEIGHT   = 70;         // peak screen-space lift in pixels -- tuned by eye against the existing `bounce` effect's own scale (a few px), 900 (the first guess) sent the car clean off the top of the canvas
+    var JUMP_COOLDOWN = 1.0;        // seconds after landing before another jump can trigger -- stops one crest re-firing every frame while still over it
+
+    var jumping          = false;
+    var jumpElapsed       = 0;
+    var jumpCooldownTimer = 0;
+    var jumpOffset        = 0; // read by render() every frame, set by update()
+
     var keyLeft        = false;
     var keyRight       = false;
     var keyFaster      = false;
@@ -692,6 +723,37 @@
       var speedPercent  = speed/maxSpeed;
       var dx            = dt * 2 * speedPercent; // at top speed, should be able to cross from left to right (-1 to 1) in 1 second
       var startPosition = position;
+
+      // Crest jump -- see this block's own top-of-file comment for how
+      // "crest-worthy" is actually detected from the road's real shape.
+      if (jumpCooldownTimer > 0) jumpCooldownTimer -= dt;
+      if (jumping) {
+        jumpElapsed += dt;
+        if (jumpElapsed >= JUMP_DURATION) {
+          jumping = false;
+          jumpCooldownTimer = JUMP_COOLDOWN;
+        }
+      } else if (jumpCooldownTimer <= 0 && speedPercent >= JUMP_MIN_SPEED_FRAC) {
+        var idx = playerSegment.index, nearSum = 0, farSum = 0, k, seg;
+        for (k = 0 ; k < JUMP_NEAR_SEGMENTS ; k++) {
+          seg = segments[(idx + k) % segments.length];
+          nearSum += (seg.p2.world.y - seg.p1.world.y) / segmentLength;
+        }
+        for (k = JUMP_NEAR_SEGMENTS ; k < JUMP_NEAR_SEGMENTS + JUMP_FAR_SEGMENTS ; k++) {
+          seg = segments[(idx + k) % segments.length];
+          farSum += (seg.p2.world.y - seg.p1.world.y) / segmentLength;
+        }
+        var slopeNear = nearSum / JUMP_NEAR_SEGMENTS;
+        var slopeFar  = farSum / JUMP_FAR_SEGMENTS;
+        if (slopeNear - slopeFar > JUMP_SLOPE_THRESHOLD) {
+          jumping = true;
+          jumpElapsed = 0;
+        }
+      }
+      // A single hump (sin from 0 to π), peaking at the midpoint of the
+      // jump's duration -- rises and falls smoothly, no separate "landing"
+      // handling needed since the car's actual position never left the road.
+      jumpOffset = jumping ? JUMP_HEIGHT * Math.sin(Math.PI * jumpElapsed / JUMP_DURATION) : 0;
 
       updateCars(dt, playerSegment, playerW);
 
@@ -993,7 +1055,8 @@
                         width/2,
                         (height/2) - (cameraDepth/playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
                         speed * (keyLeft ? -1 : keyRight ? 1 : 0),
-                        playerSegment.p2.world.y - playerSegment.p1.world.y);
+                        playerSegment.p2.world.y - playerSegment.p1.world.y,
+                        jumpOffset);
         }
       }
     }

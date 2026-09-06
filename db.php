@@ -12618,6 +12618,20 @@ function skullRacerLeaderboardLeaderUserId($conn, $weekly = false) {
 	return null;
 }
 
+// Random box-art image for a Discord post's embed image -- front cover,
+// back cover, or the front cartridge, picked fresh each call so repeated
+// notifications don't all look identical. Back CARTRIDGE deliberately left
+// out (it's a plain gray cartridge back with just a caution label -- not
+// worth showing off in a notification the way the other three are).
+function skullRacerRandomBoxArt() {
+	$options = array(
+		"https://skulliance.io/staking/racing/images/skullracer.jpg",       // front cover
+		"https://skulliance.io/staking/racing/images/backcover.jpg",        // back cover
+		"https://skulliance.io/staking/racing/images/front-cartridge.png",  // front cartridge
+	);
+	return $options[array_rand($options)];
+}
+
 // Live "just finished a race" Discord post -- same shape as
 // cryptcrawlAnnounceResult (fresh DB lookup by user_id, never
 // $_SESSION['userData'], for the same mobile-Safari-session-restore
@@ -12660,7 +12674,7 @@ function skullRacerAnnounceResult($conn, $run) {
 	$sr_footer = ["text" => "+" . number_format($sr_carbon) . " CARBON earned", "icon_url" => "https://skulliance.io/staking/icons/carbon.png"];
 	$sr_desc   = $sr_mention . " finished a race! 🏁\n\n⏱️ **Total Time:** " . number_format(floatval($run['total_time']), 1) . "s\n🏎️ **Fastest Lap:** " . number_format(floatval($run['fastest_lap']), 1) . "s" . $sr_badge_text;
 
-	discordmsg("🏁 Skull Racer Finished", $sr_desc, "", "https://skulliance.io/staking/skullracer.php", "skullracer", $sr_avatar_url, "00C8A0", $sr_author, $sr_footer);
+	discordmsg("🏁 Skull Racer Finished", $sr_desc, skullRacerRandomBoxArt(), "https://skulliance.io/staking/skullracer.php", "skullracer", $sr_avatar_url, "00C8A0", $sr_author, $sr_footer);
 }
 
 // Skull Racer leaderboard -- same shape as checkCryptCrawlLeaderboard,
@@ -12756,7 +12770,7 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 
 		if ($rewards) {
 			resetSkullRacerRuns($conn);
-			discordmsg("🏁 Weekly Skull Racer Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+			discordmsg("🏁 Weekly Skull Racer Leaderboard Results", $description, skullRacerRandomBoxArt(), "https://skulliance.io/staking/leaderboards.php");
 		}
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();

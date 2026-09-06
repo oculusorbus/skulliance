@@ -398,7 +398,7 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer, updown) {
+  player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer, updown, jumpOffset) {
 
     var bounce = (1.5 * Math.random() * speedPercent * resolution) * Util.randomChoice([-1,1]);
     var sprite;
@@ -409,7 +409,11 @@ var Render = {
     else
       sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_STRAIGHT : SPRITES.PLAYER_STRAIGHT;
 
-    Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, -0.5, -1);
+    // jumpOffset (optional, undefined on every page but index.html/
+    // v4.final.html's own crest-jump feature -- see that page's own
+    // comment) lifts the sprite in screen-space only, same idea as
+    // `bounce` just driven by the road's actual shape instead of noise.
+    Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce - (jumpOffset || 0), -0.5, -1);
   },
 
   //---------------------------------------------------------------------------
