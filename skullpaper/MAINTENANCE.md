@@ -108,6 +108,13 @@ records verified constants, and tracks what still needs to be written.
   updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
   see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
   configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
+  Client-side only (racing/index.html): crest jump is purely cosmetic (screen-space sprite
+  offset, never touches steering/speed/collision). Boost pads sit on the 4 longest genuine
+  straightaways (real curve===0 runs, excluding the start/finish straight), random lane each
+  race, BOOST_SPEED=18000 (displays as exactly "180" via the existing speed HUD formula) held
+  until that straightaway ends. BOOST_SPEED deliberately exceeds maxSpeed's own "at most one
+  segment per frame" collision-detection invariant -- accepted as a rare/minor trade-off rather
+  than restructuring the movement loop, see that block's own comment in racing/index.html.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt

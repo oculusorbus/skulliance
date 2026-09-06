@@ -13,6 +13,12 @@ A race is **3 laps** of a fixed, curvy highway - sized against the game's own 4-
 * A **minimap** in the corner traces the track's real shape (reconstructed from the same curve data the 3D view renders from) with a dot marking your current position and a white tick at the start/finish line.
 * Crossing the finish line after lap 3 ends the race outright - no infinite loop, no restart without choosing to.
 
+## Crests & Boost Pads
+
+Carrying near-top speed over a steep enough rise sends your car briefly airborne - purely cosmetic, it never touches steering, speed, or collision, it's just the road telling you that you're driving fast enough to feel it.
+
+Each of the track's four longest straightaways hides a bright striped power-up strip laid across one lane, right at the start of the straight. Drive over it and you're instantly boosted to 180 mph for the rest of that straightaway, dropping back to normal top speed the moment it ends. Which lane it's in is random every race, so you can't just memorize a line and ignore the road - you have to actually react.
+
 ## Controls
 
 **Desktop:** arrow keys or WASD to steer/accelerate/brake, space bar also brakes. **Mobile:** driving is automatic (no need to hold anything just to go forward) - hold the ◀/▶ buttons to steer, hold BRAKE to slow down, any combination at once (steer left while braking, etc.) works exactly like holding multiple keys would on a keyboard.

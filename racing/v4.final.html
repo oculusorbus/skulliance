@@ -446,6 +446,36 @@
     var jumpCooldownTimer = 0;
     var jumpOffset        = 0; // read by render() every frame, set by update()
 
+    //=========================================================================
+    // BOOST PADS -- a striped strip laid across one random lane near the
+    // start of each of the track's longest straightaways (see
+    // resetBoostPads(), defined alongside resetCars()/resetSprites()).
+    // Driving over one instantly boosts to BOOST_SPEED and holds it there
+    // until the straightaway ends, then the normal maxSpeed cap resumes.
+    //
+    // BOOST_SPEED is picked to display as exactly "180" via the existing
+    // speed HUD formula (5 * Math.round(speed/500)) -- and deliberately
+    // exceeds maxSpeed (which is itself defined as segmentLength/step,
+    // i.e. "the fastest speed that still moves at most one segment per
+    // frame, to make collision detection easier" per that var's own
+    // comment). At BOOST_SPEED the player moves ~300 world units/frame,
+    // more than one 200-unit segment -- meaning the off-road/car collision
+    // checks below (which only ever look at the CURRENT playerSegment)
+    // could in principle skip over a segment's own obstacle entirely
+    // while boosted. Accepted rather than restructuring the core movement/
+    // collision loop into sub-steps for this: worst case is a rare phase-
+    // through, not a crash or an exploit, and it only matters for the
+    // handful of boosted stretches to begin with.
+    //=========================================================================
+    var BOOST_PAD_COUNT   = 4;    // one per longest straightaway
+    var BOOST_PAD_LENGTH  = 5;    // segments long
+    var BOOST_SPEED       = 18000; // displays as 180 (5 * Math.round(18000/500) = 180)
+    var BOOST_PAD_WIDTH   = 0.3;   // half-width of the drawn strip, same offset units as playerX/car.offset
+
+    var boostPads          = []; // set by resetBoostPads()
+    var boostActive         = false;
+    var boostStraightEndIdx = null;
+
     var keyLeft        = false;
     var keyRight       = false;
     var keyFaster      = false;
@@ -820,8 +850,22 @@
         }
       }
 
+      // Boost pad pickup/expiry -- checked against the player's CURRENT
+      // segment, same timing as the off-road/car collision checks just
+      // above. Instant surge on pickup (never slows you down if you were
+      // somehow already faster), holds until the straightaway that pad
+      // was placed on actually ends.
+      if (!boostActive && playerSegment.boostPad && Util.overlap(playerX, playerW, playerSegment.boostPad.offset, 0.5)) {
+        boostActive = true;
+        boostStraightEndIdx = playerSegment.boostPad.straightEndIndex;
+        speed = Math.max(speed, BOOST_SPEED);
+      }
+      if (boostActive && playerSegment.index >= boostStraightEndIdx) {
+        boostActive = false;
+      }
+
       playerX = Util.limit(playerX, -3, 3);     // dont ever let it go too far out of bounds
-      speed   = Util.limit(speed, 0, maxSpeed); // or exceed maxSpeed
+      speed   = Util.limit(speed, 0, boostActive ? BOOST_SPEED : maxSpeed); // or exceed maxSpeed (BOOST_SPEED while a boost pad's still active)
 
       updateEngineSound(speed/maxSpeed);
 
@@ -1038,6 +1082,26 @@
                        segment.fog,
                        segment.color);
 
+        if (segment.boostPad) {
+          var padScale1  = segment.p1.screen.scale;
+          var padScale2  = segment.p2.screen.scale;
+          var padCenter1 = segment.p1.screen.x + (padScale1 * segment.boostPad.offset * roadWidth * width/2);
+          var padCenter2 = segment.p2.screen.x + (padScale2 * segment.boostPad.offset * roadWidth * width/2);
+          var padHalf1   = padScale1 * BOOST_PAD_WIDTH * roadWidth * width/2;
+          // Taper the strip to a point on its farthest segment (the "top"
+          // from the driver's forward perspective) instead of just letting
+          // it get thin from distance falloff like everything else does.
+          var padHalf2   = (segment.boostPadLocalIndex === BOOST_PAD_LENGTH - 1) ? 0 :
+                            padScale2 * BOOST_PAD_WIDTH * roadWidth * width/2;
+          var padColor   = (segment.boostPadLocalIndex % 2) ? '#ffcc00' : '#ff6600';
+          Render.polygon(ctx,
+                          padCenter1 - padHalf1, segment.p1.screen.y,
+                          padCenter1 + padHalf1, segment.p1.screen.y,
+                          padCenter2 + padHalf2, segment.p2.screen.y,
+                          padCenter2 - padHalf2, segment.p2.screen.y,
+                          padColor);
+        }
+
         maxy = segment.p1.screen.y;
       }
 
@@ -1200,6 +1264,7 @@
 
       resetSprites();
       resetCars();
+      resetBoostPads();
 
       segments[findSegment(playerZ).index + 2].color = COLORS.START;
       segments[findSegment(playerZ).index + 3].color = COLORS.START;
@@ -1269,6 +1334,50 @@
         segment.cars.push(car);
         cars.push(car);
       }
+    }
+
+    // Boost pads -- one placed near the start of each of the track's
+    // longest genuine straightaways (a real run of curve===0 segments,
+    // not a fixed script position), in a random lane each race so it
+    // can't be memorized. The start/finish straight (run.start === 0) is
+    // deliberately excluded -- placing one right where the lap-crossing
+    // logic and start line already live isn't worth the interaction risk.
+    function resetBoostPads() {
+      boostPads = [];
+
+      var runs = [], runStart = null, i;
+      for (i = 0 ; i < segments.length ; i++) {
+        if (segments[i].curve === 0) {
+          if (runStart === null) runStart = i;
+        } else {
+          if (runStart !== null && runStart > 0) runs.push({ start: runStart, length: i - runStart });
+          runStart = null;
+        }
+      }
+      if (runStart !== null && runStart > 0) runs.push({ start: runStart, length: segments.length - runStart });
+      runs.sort(function(a, b) { return b.length - a.length; });
+
+      // Lane centers in the same -1..1 offset convention playerX/car.offset
+      // already use (see Render.segment()'s own lane-marker math in
+      // common.js: for `lanes` equal lanes, lane index L's center sits at
+      // -1 + (2/lanes)*(L+0.5) of the road's half-width).
+      var laneOffsets = [];
+      for (var L = 0 ; L < lanes ; L++) laneOffsets.push(-1 + (2/lanes) * (L + 0.5));
+
+      runs.slice(0, BOOST_PAD_COUNT).forEach(function(run) {
+        var padStart = run.start + 8; // a little buffer past the curve exit so it's not right at the transition
+        var pad = {
+          offset: Util.randomChoice(laneOffsets),
+          length: BOOST_PAD_LENGTH,
+          straightEndIndex: run.start + run.length
+        };
+        boostPads.push(pad);
+        for (var n = 0 ; n < BOOST_PAD_LENGTH ; n++) {
+          var seg = segments[(padStart + n) % segments.length];
+          seg.boostPad = pad;
+          seg.boostPadLocalIndex = n;
+        }
+      });
     }
 
     //=========================================================================
