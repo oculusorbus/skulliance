@@ -6,7 +6,7 @@ Skull Racer is a **pseudo-3D endless-highway racer** - press the gas, hold your 
 
 ## The Race
 
-A race is **3 laps** of a fixed, curvy highway - sized against the game's own 4-track chiptune soundtrack (~505 seconds back to back), so a typical race runs long enough to hear all four tracks start without dragging on. Traffic cars and roadside obstacles are randomized each lap, so no two races play out quite the same way even on the same track - a genuine "luck factor" alongside raw driving skill.
+A race is **3 laps** of a fixed, curvy highway - sized against the game's own chiptune soundtrack (a theme plus 2 more tracks, ~392 seconds back to back), so a typical race runs long enough to hear all of it start without dragging on. Traffic cars and roadside obstacles are randomized each lap, so no two races play out quite the same way even on the same track - a genuine "luck factor" alongside raw driving skill.
 
 * **Lap** and **Fastest Lap** track in the HUD as you drive, same convention as the underlying engine's own dev build.
 * **Total Time** is the sum of all 3 laps - the number the leaderboard actually ranks on.

@@ -225,12 +225,14 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
     // Crawl's own tracks temporarily, now replaced with Skull Racer's own
     // original chiptune set. Distinct songs, not a single track's format
     // fallback, so this cycles through them instead of looping just the
-    // first one forever. Theme plays first, then 1/2/3 cycle in after.
+    // first one forever. Theme plays first, then 1/2 cycle in after.
+    // (Was 4 files/1-3 -- the original 2 turned out to be a duplicate of 1
+    // and got dropped, the original 3 renamed to 2 in its place; all mp3
+    // now too, the stray .wav's were a mistake.)
     var playlist = [
       'music/skull-racer-theme.mp3',
       'music/skull-racer-1.mp3',
-      'music/skull-racer-2.wav',
-      'music/skull-racer-3.wav'
+      'music/skull-racer-2.mp3'
     ];
     var index    = 0;
     music.loop  = false;
