@@ -1,0 +1,5 @@
+# The original Jake Gordon "javascript-racer" tutorial's own sample sprite/
+# background art (SEGA OutRun-derived) -- MIT covers the engine code, not
+# this art. Kept on disk only as a dimension/format reference while building
+# our own replacement art (see SPRITE-REPLACEMENT-BRIEF.md); never committed.
+images/sprites-reference/
