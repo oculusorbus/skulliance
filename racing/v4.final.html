@@ -321,13 +321,13 @@
     var lastLapTime    = null;                    // last lap time
 
     // The original codebase had no finish -- the track just looped forever.
-    // 2 laps is sized against the music: the 4 chiptune tracks run ~505s back
-    // to back (159s theme + 114s + 114s + 119s, confirmed via afinfo), and the
-    // game's own placeholder "fastest lap" default (see Dom.storage.fast_lap_time
-    // below) has always assumed ~180s as a normal lap time. 2 laps lands most
-    // players' races in the 360-500s range -- long enough to hear all 4 tracks
-    // at least start, short enough not to be a slog for a first-look build.
-    var totalLaps      = 2;                       // laps to complete before the race ends
+    // Sized against the music: the 4 chiptune tracks run ~505s back to back
+    // (159s theme + 114s + 114s + 119s, confirmed via afinfo). Started at 2
+    // laps based on the game's own placeholder "fastest lap" default of
+    // ~180s/lap (see Dom.storage.fast_lap_time below), but real play runs
+    // noticeably faster than that placeholder assumed -- 2 laps ended well
+    // before all 4 tracks got through. Bumped to 3.
+    var totalLaps      = 3;                       // laps to complete before the race ends
     var lapNumber      = 1;                       // current lap (1-indexed)
     var raceElapsed    = 0;                       // total race time, counts continuously across all laps
     var raceFinished   = false;                   // true once the final lap is crossed -- update() stops doing anything
