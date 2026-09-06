@@ -446,14 +446,22 @@ var KEY = {
 
 // Not sprite-based -- these are hardcoded fill colors for the
 // procedurally-drawn road/grass/fog, so replacing every image asset never
-// touched them. Bright greens (#10AA10/#009A00 grass, #005108 fog) swapped
-// for a scorched-earth palette to match the dark wasteland theme.
+// touched them. First pass swapped the original bright greens for a
+// generic "scorched-earth" brown; this pass samples the actual box art
+// (images/skullracer.jpg -- cracked charcoal-brown pavement, near-black
+// rocky ground) for the real values instead of an approximation. Kept the
+// original's alternating-contrast PATTERN (road stays close to constant
+// between light/dark segments, rumble strips swing hard between much
+// darker and much lighter than the road for the "flashing curb" motion
+// cue, grass stays darkest throughout) -- only retinted into the box
+// art's family, not restructured, so it doesn't get any harder to read
+// the road at speed than it already was.
 var COLORS = {
   SKY:  '#72D7EE',
   TREE: '#2a1d16',
-  FOG:  '#3a2216',
-  LIGHT:  { road: '#6B6B6B', grass: '#4a2e1f', rumble: '#555555', lane: '#CCCCCC'  },
-  DARK:   { road: '#696969', grass: '#3a2216', rumble: '#BBBBBB'                   },
+  FOG:  '#241a10',
+  LIGHT:  { road: '#4a3d2c', grass: '#201808', rumble: '#241c10', lane: '#d9c8a0'  },
+  DARK:   { road: '#453825', grass: '#170f06', rumble: '#9c8a68'                   },
   START:  { road: 'white',   grass: 'white',   rumble: 'white'                     },
   FINISH: { road: 'black',   grass: 'black',   rumble: 'black'                     }
 };
