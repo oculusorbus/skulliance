@@ -839,14 +839,37 @@
     // ghost above, just two more of them, fetched once here rather than
     // recorded locally. skullracer-ghosts.php is public (no login needed),
     // same visibility as the leaderboard itself.
-    var weeklyGhost  = { playback: null, frameIndex: 0, id: null };
-    var alltimeGhost = { playback: null, frameIndex: 0, id: null };
+    //
+    // rate: the leaderboard ranks by TOTAL race time, but the trace itself
+    // is only ever that run's single FASTEST lap (see GHOSTS' own comment
+    // in db.php) -- looped at a flat 1 frame/tick, 3 loops of it can easily
+    // finish faster than the total_time it's supposed to represent, if that
+    // run's other 2 laps were slower than its best one (a rough lap, an
+    // off-road hit, anything). Reported directly: someone beat their own
+    // all-time total by 6s and still watched this ghost cross the line
+    // first, because its best-lap pace alone was faster than their new
+    // race's genuinely-faster-overall pace. rate stretches playback so 3
+    // loops take exactly total_time/totalLaps each -- i.e. 3 full loops
+    // add up to the ACTUAL total_time this ghost represents, so beating
+    // that total_time (already true, or this wouldn't be the ghost) also
+    // means beating it across the line. Always <=1 (a slowdown, never a
+    // speedup) since the best lap can only be <= the race's own average.
+    var weeklyGhost  = { playback: null, frameIndex: 0, frameProgress: 0, rate: 1, id: null };
+    var alltimeGhost = { playback: null, frameIndex: 0, frameProgress: 0, rate: 1, id: null };
     fetch('/staking/ajax/skullracer-ghosts.php', { cache: 'no-store' })
       .then(function(r) { return r.ok ? r.json() : null; })
       .then(function(data) {
         if (!data) return;
-        if (data.weekly)  { weeklyGhost.playback  = data.weekly.trace;  weeklyGhost.id  = data.weekly.id; }
-        if (data.alltime) { alltimeGhost.playback = data.alltime.trace; alltimeGhost.id = data.alltime.id; }
+        if (data.weekly)  {
+          weeklyGhost.playback = data.weekly.trace;
+          weeklyGhost.id       = data.weekly.id;
+          weeklyGhost.rate     = Util.limit((weeklyGhost.playback.length / fps) / (data.weekly.total_time / totalLaps), 0, 1);
+        }
+        if (data.alltime) {
+          alltimeGhost.playback = data.alltime.trace;
+          alltimeGhost.id       = data.alltime.id;
+          alltimeGhost.rate     = Util.limit((alltimeGhost.playback.length / fps) / (data.alltime.total_time / totalLaps), 0, 1);
+        }
       })
       .catch(function() {});
 
@@ -1449,8 +1472,19 @@
 
       if (position > playerZ) {
         if (ghostPlayback && ghostFrameIndex < ghostPlayback.length - 1) ghostFrameIndex++;
-        if (weeklyGhost.playback  && weeklyGhost.frameIndex  < weeklyGhost.playback.length - 1)  weeklyGhost.frameIndex++;
-        if (alltimeGhost.playback && alltimeGhost.frameIndex < alltimeGhost.playback.length - 1) alltimeGhost.frameIndex++;
+        // weekly/alltime advance at their own stretched rate (<=1 frame/tick,
+        // see this feature's own comment above) instead of a flat 1, so 3
+        // loops of their best-lap trace take exactly as long as the real
+        // total_time they represent -- frameProgress tracks the fractional
+        // position that frameIndex alone can't.
+        if (weeklyGhost.playback  && weeklyGhost.frameIndex  < weeklyGhost.playback.length - 1) {
+          weeklyGhost.frameProgress = Math.min(weeklyGhost.playback.length - 1, weeklyGhost.frameProgress + weeklyGhost.rate);
+          weeklyGhost.frameIndex = Math.floor(weeklyGhost.frameProgress);
+        }
+        if (alltimeGhost.playback && alltimeGhost.frameIndex < alltimeGhost.playback.length - 1) {
+          alltimeGhost.frameProgress = Math.min(alltimeGhost.playback.length - 1, alltimeGhost.frameProgress + alltimeGhost.rate);
+          alltimeGhost.frameIndex = Math.floor(alltimeGhost.frameProgress);
+        }
 
         raceElapsed += dt; // unlike currentLapTime, this never resets -- it's the total race clock shown at the finish
         if (currentLapTime && (startPosition < playerZ)) {
@@ -1487,7 +1521,9 @@
           ghostRecording = [];
           ghostFrameIndex = 0;
           weeklyGhost.frameIndex  = 0;
+          weeklyGhost.frameProgress  = 0;
           alltimeGhost.frameIndex = 0;
+          alltimeGhost.frameProgress = 0;
           updateHud('last_lap_time', formatTime(lastLapTime));
           Dom.show('last_lap_time');
 
