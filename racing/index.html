@@ -259,7 +259,13 @@
       body { padding: 8px; }
       .box-column { display: none; } /* no room next to the game on a phone -- focus on the canvas + touch controls */
       #stage { gap: 0; width: 100%; }
-      #frame { width: 100%; padding: 8px; }
+      #frame {
+        width: 100%;
+        padding: 8px;
+        -webkit-touch-callout: none; /* belt-and-suspenders -- the touch buttons below cover the whole canvas so a stray press shouldn't reach anywhere else, but a thumb slipping past the edge onto the instructions text/margin shouldn't pop up a Copy/Select menu either */
+        -webkit-user-select: none;
+        user-select: none;
+      }
       #racer { width: 100%; }
       #hud {
         font-size: 0.7rem;
@@ -283,7 +289,7 @@
          lands directly under the site's real hamburger menu (in the actual
          page, outside the iframe) on a phone -- unreachable, can't tap
          through it. Move it to the opposite corner on mobile only. */
-      #mute { left: 10px; right: auto; }
+      #mute { left: 10px; right: auto; z-index: 3; } /* above #touch-controls (z-index:2), which now overlaps this same top-left corner -- don't rely on DOM order alone to keep it tappable */
       .desktop-hint { display: none; }
       .mobile-hint { display: inline; }
       /* Overlaid on the canvas (like on desktop) it covered the right lane
@@ -300,29 +306,44 @@
          direction on a drag control means your thumb's contact patch has
          to physically slide against the glass every single time, which
          adds up over a whole race. A press-and-hold button is just contact
-         vs. no contact, no scrubbing. */
-      #touch-controls { display: flex; gap: 8px; margin-top: 10px; }
+         vs. no contact, no scrubbing.
+
+         Was a short row below the canvas -- a stray press landing just
+         outside a button (easy to do at 68px tall) hit the page itself
+         instead, and iOS/Android's long-press-to-select kicked in, popping
+         up a Copy/Select menu that then had to be dismissed before playing
+         could continue. Now the three buttons overlay the canvas directly,
+         full height, so there's no page background near them left to miss
+         onto -- any press anywhere on the game view lands on a button. */
+      #touch-controls {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex;
+        z-index: 2;
+      }
       .touch-btn {
         flex: 1;
-        height: 68px;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(0,200,160,0.08);
-        border: 1px solid rgba(0,200,160,0.3);
-        border-radius: 0.5rem;
+        border-left: 1px solid rgba(0,200,160,0.2);
         color: #00c8a0;
         font-size: 1.5rem;
         font-weight: bold;
         letter-spacing: 0.05em;
+        line-height: normal; /* #racer sets line-height:0 -- harmless here since the label text never wraps, but same inherited gotcha #hud and #finish-box both hit, so reset it anyway rather than rely on that */
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
+        -webkit-touch-callout: none; /* the actual long-press popup switch -- user-select alone doesn't stop it on iOS */
         touch-action: none; /* stop the page from scrolling/zooming while a button is held */
       }
-      .touch-btn.pressed { background-color: #00c8a0; color: #07111d; }
+      #btn-left { border-left: none; }
+      .touch-btn.pressed { background-color: rgba(0,200,160,0.35); }
       #btn-brake { font-size: 0.8rem; }
-      #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
+      #btn-brake.pressed { background-color: rgba(255,77,77,0.35); }
     }
   </style>
 </head>
@@ -364,22 +385,21 @@
             <p class="finish-row">Fastest Lap <span id="finish_fastest_lap" class="value">0.0</span></p>
             <div id="finish-buttons">
               <button id="finish-replay" type="button">Race Again</button>
-              <!-- target="_top" -- this page is loaded in skullracer.php's
-                   iframe, so a plain click would try to load leaderboards.php
-                   INTO the small iframe instead of navigating the actual tab -->
               <a id="finish-leaderboard" href="/staking/leaderboards.php?filterby=weekly-skullracer">Weekly Leaderboard</a>
             </div>
           </div>
+        </div>
+        <!-- Lives inside #racer (not below it) so it can overlay the canvas
+             on mobile -- see #touch-controls' own mobile CSS below for why. -->
+        <div id="touch-controls">
+          <div class="touch-btn" id="btn-left">&#9664;</div>
+          <div class="touch-btn" id="btn-brake">BRAKE</div>
+          <div class="touch-btn" id="btn-right">&#9654;</div>
         </div>
       </div>
       <div id="instructions">
         <span class="desktop-hint">Use the <b>arrow keys</b> to drive.</span>
         <span class="mobile-hint">Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.</span>
-      </div>
-      <div id="touch-controls">
-        <div class="touch-btn" id="btn-left">&#9664;</div>
-        <div class="touch-btn" id="btn-brake">BRAKE</div>
-        <div class="touch-btn" id="btn-right">&#9654;</div>
       </div>
     </div>
 
