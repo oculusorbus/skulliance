@@ -186,9 +186,23 @@ records verified constants, and tracks what still needs to be written.
   reserves) built assuming abundant vh from a tall portrait phone. 500px matches real phones in
   landscape (roughly 320-430px tall) without ever matching a desktop/laptop window, even a short
   one. Portrait mobile's whole layout assumes width is scarce and height is abundant; landscape
-  flips that, so #racer's width formula here is constrained by height instead
-  (`min(100%, calc((100vh - 32px) * 4/3))`, 32px = body+#frame's 8px padding doubled top/bottom) --
-  the opposite of every other mobile rule. #touch-controls and #instructions are hidden outright
+  flips that, so #racer's width formula here is constrained by height instead of width -- the
+  opposite of every other mobile rule -- via `min(100%, calc((100dvh - 56px) * 4/3))` (a vh-based
+  version of the same declaration precedes it, for a browser that doesn't understand dvh -- an
+  invalid calc() drops the WHOLE declaration for it, so it just keeps the vh line instead of losing
+  sizing entirely). dvh not vh, and #frame reduced to border:none/padding:4px (was 8px, matching
+  #frame's own separate max-width:768px reduction) rather than just its width -- both fixes for the
+  same report on an iPhone 16 ("almost fits, have to scroll a bit"): (1) 100vh on iOS Safari reports
+  the viewport as if the address bar weren't there, taller than what's actually visible -- dvh tracks
+  the real, currently-visible height; (2) the reserve constant (56px: real chrome of body+#frame's 4px
+  padding doubled = 16px, PLUS a deliberate 40px of extra slack) was, in an earlier version of this
+  fix, accidentally a couple px SMALLER than the actual chrome then in play -- backwards, since
+  undershooting the reserve makes the COMPUTED canvas larger, not smaller, so it overflowed instead
+  of leaving margin. The 40px of slack is deliberate headroom now, not an accident, partly to hedge
+  against whatever the embedded skullracer.php context adds above this that racing/index.html has no
+  visibility into (see that file's own entry below for the matching dvh fix at ITS level -- a
+  min-height set from an overestimated 100vh forces the whole page taller than the real visible area
+  regardless of how well the canvas fits inside it). #touch-controls and #instructions are hidden outright
   (landscape-on-a-phone is a controller-first mode -- see the Gamepad entry above -- so the touch UI
   is just dead weight competing with the canvas for the one dimension that's actually scarce now),
   and #hud/#minimap revert to their normal desktop overlay-on-canvas placement (the portrait-mobile
@@ -203,9 +217,13 @@ records verified constants, and tracks what still needs to be written.
   with a SEPARATE copy of the same `@media (orientation: landscape) and (max-height: 500px)`
   condition in skullracer.php's own `<style>` block (after $racing_style is echoed), forcing all 4
   of those to `display: none !important` and bumping #skullracer-embed's min-height from 85vh (sized
-  assuming the nav above it is visible) to 100vh. Deliberately duplicated rather than shared -- the
-  condition needs to independently exist in both places, since each file hides a different set of
-  elements the other has no reference to.
+  assuming the nav above it is visible) to 100vh, then a SECOND `#skullracer-embed { min-height:
+  100dvh; }` declaration right after it -- same vh-overestimates-the-visible-area / dvh-tracks-it-for-
+  real fix as racing/index.html's own landscape query, and for the same reason it matters at this
+  outer level too: a min-height sized off the overestimate forces the whole EMBEDDING page taller
+  than what's actually visible, forcing a scroll regardless of how well the canvas fits inside it.
+  Deliberately duplicated rather than shared -- the condition needs to independently exist in both
+  places, since each file hides a different set of elements the other has no reference to.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of

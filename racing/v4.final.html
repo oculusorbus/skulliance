@@ -467,21 +467,47 @@
        right lane getting covered, a width problem, and width is exactly
        what landscape has back. */
     @media (orientation: landscape) and (max-height: 500px) {
-      body { padding: 8px; }
+      body { padding: 4px; }
       .box-column { display: none; }
       #stage { gap: 0; width: 100%; }
-      #frame { width: 100%; padding: 8px; }
+      #frame { width: 100%; padding: 4px; border: none; border-radius: 0; box-shadow: none; } /* the rounded-card look costs real pixels here for zero benefit on a screen this short -- border alone was only 1px/side, but it's one more thing gone */
       /* Constrained by HEIGHT, not 100% width -- the opposite of every
          other mobile rule above, because landscape flips which dimension
-         is scarce. 32px reserve = body's 8px padding + #frame's 8px
-         padding, doubled for both top and bottom (a few px of slack past
-         #frame's 1px border, deliberately -- better a hair of empty
-         margin than the canvas overflowing the viewport and forcing a
-         scroll, which would defeat the entire point of this block). The
-         100% ceiling is belt-and-suspenders for a landscape viewport
+         is scarce.
+
+         Reserve is real chrome (body's 4px padding + #frame's 4px padding,
+         doubled for top+bottom = 16px) plus a deliberate 40px of EXTRA
+         slack on top of that, not a few px of it shaved off -- an earlier
+         version of this reserve was accidentally a couple px SMALLER than
+         the actual chrome (backwards: undershooting the reserve makes the
+         computed canvas LARGER, not smaller, so it overflowed instead of
+         leaving margin), reported as "almost fits, have to scroll a bit"
+         on an iPhone 16. The generous fixed slack here isn't just fixing
+         that arithmetic -- it's also a hedge against whatever the embedded
+         skullracer.php context adds above this that racing/index.html has
+         no visibility into (its own nested containers, real <body>'s own
+         safe-area padding, etc.), same reasoning as the dvh swap below:
+         better a few px of empty margin than a scroll that defeats this
+         block's entire point.
+
+         100dvh, not 100vh, for the same "almost fits, need to scroll"
+         symptom -- classic iOS Safari behavior where 100vh reports the
+         viewport as if the address bar weren't there, taller than what's
+         actually visible. dvh tracks the real, currently-visible height
+         instead. Listed AFTER the vh version specifically so a browser
+         that doesn't understand dvh (the whole calc() becomes invalid to
+         it) just keeps the vh line already set, rather than losing sizing
+         entirely -- iOS 15.4+ (every real iPhone at this point) uses the
+         dvh line.
+
+         The 100% ceiling is belt-and-suspenders for a landscape viewport
          that's unusually tall for its width, so this can never demand
          more width than the screen actually has either. */
-      #racer { width: min(100%, calc((100vh - 32px) * 4 / 3)); margin: 0 auto; }
+      #racer {
+        width: min(100%, calc((100vh  - 56px) * 4 / 3));
+        width: min(100%, calc((100dvh - 56px) * 4 / 3));
+        margin: 0 auto;
+      }
       #hud { top: 0; } /* undo the 768px block's 104px minimap-as-block offset -- minimap's back to overlaying the canvas below */
       #instructions, #touch-controls { display: none; }
       #minimap {

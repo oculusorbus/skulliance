@@ -106,7 +106,18 @@ $racing_style = str_replace(
    thing a controller-and-TV setup has zero use for. */
 @media (orientation: landscape) and (max-height: 500px) {
   #burger-menu, #navbar, #app-version-banner, #back-to-top-button { display: none !important; }
+  /* dvh, not vh, same reason racing/index.html's own landscape query just
+     switched for the SAME symptom (reported: "almost fits, have to scroll
+     a bit" on an iPhone 16) -- iOS Safari's 100vh reports the viewport as
+     if its address bar weren't there, taller than what's actually
+     visible. A min-height set from that overestimate forces the whole
+     page taller than the real visible area regardless of how well
+     anything INSIDE it fits, which is exactly the kind of scroll this
+     whole block exists to prevent. Two declarations, not one -- a browser
+     that doesn't understand dvh drops that whole line and keeps the vh
+     one already set, rather than losing the min-height outright. */
   #skullracer-embed { min-height: 100vh; }
+  #skullracer-embed { min-height: 100dvh; }
 }
 </style>
 <div id="skullracer-embed">
