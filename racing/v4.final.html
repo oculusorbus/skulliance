@@ -45,8 +45,14 @@
     }
     #racer {
       position: relative;
-      width: 640px;
-      max-width: 100%;
+      /* Fill as much of the browser window as the 4:3 canvas aspect ratio
+         allows, in whichever dimension is the tighter constraint -- 85vh
+         converted to an equivalent width (*4/3) so a tall/narrow window is
+         limited by height, a short/wide one by width, and it's never
+         bigger than either. Was a flat 640px; a big monitor just had empty
+         space around a small fixed game area. */
+      width: min(92vw, 85vh * 4 / 3);
+      max-width: 1800px; /* sane ceiling on an ultrawide/4K display */
       line-height: 0; /* kill the baseline gap under the canvas */
     }
     #hud {
@@ -160,36 +166,33 @@
       #hud { font-size: 0.7rem; padding: 6px 8px; }
       .desktop-hint { display: none; }
       .mobile-hint { display: inline; }
-      #touch-controls { display: block; margin-top: 10px; }
-      #touch-track {
-        position: relative;
-        height: 64px;
+      /* Press-and-hold buttons instead of a drag joystick -- switching
+         direction on a drag control means your thumb's contact patch has
+         to physically slide against the glass every single time, which
+         adds up over a whole race. A press-and-hold button is just contact
+         vs. no contact, no scrubbing. */
+      #touch-controls { display: flex; gap: 8px; margin-top: 10px; }
+      .touch-btn {
+        flex: 1;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background: rgba(0,200,160,0.08);
         border: 1px solid rgba(0,200,160,0.3);
         border-radius: 0.5rem;
-        overflow: hidden;
-        touch-action: none; /* stop the page from scrolling/zooming while steering */
+        color: #00c8a0;
+        font-size: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 0.05em;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none; /* stop the page from scrolling/zooming while a button is held */
       }
-      #touch-thumb {
-        position: absolute;
-        top: 6px;
-        bottom: 6px;
-        width: 25%;
-        max-width: 70px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #00c8a0;
-        border-radius: 0.4rem;
-        pointer-events: none;
-        box-shadow: 0 0 0 rgba(0,200,160,0);
-        /* Eases between the 3 fixed positions (left/center/right) instead of
-           snapping instantly -- a direct 1:1 finger-position mapping made it
-           visibly flash between the extremes since real fingers jitter a lot
-           at the few-pixel resolution the steering dead zone works at. */
-        transition: left 0.1s ease-out, background-color 0.1s, box-shadow 0.15s;
-      }
-      #touch-track.active #touch-thumb { box-shadow: 0 0 16px rgba(0,200,160,0.7); }
-      #touch-track.braking #touch-thumb { background-color: #ff4d4d; }
+      .touch-btn.pressed { background-color: #00c8a0; color: #07111d; }
+      #btn-brake { font-size: 0.8rem; }
+      #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
     }
   </style>
 </head>
@@ -221,12 +224,12 @@
       </div>
       <div id="instructions">
         <span class="desktop-hint">Use the <b>arrow keys</b> to drive.</span>
-        <span class="mobile-hint">Touch the bar below -- rock left/right to steer, pull down to brake.</span>
+        <span class="mobile-hint">Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.</span>
       </div>
       <div id="touch-controls">
-        <div id="touch-track">
-          <div id="touch-thumb"></div>
-        </div>
+        <div class="touch-btn" id="btn-left">&#9664;</div>
+        <div class="touch-btn" id="btn-brake">BRAKE</div>
+        <div class="touch-btn" id="btn-right">&#9654;</div>
       </div>
     </div>
 
@@ -316,70 +319,45 @@
     //=========================================================================
     // TOUCH CONTROLS (mobile) -- drives the exact same keyLeft/keyRight/
     // keyFaster/keySlower flags the keyboard bindings below set, just from
-    // touch instead. Joystick-style, not a fixed slider: wherever the
-    // finger first lands becomes "center" for that touch, and both axes
-    // are read as movement away from THAT point, not absolute position on
-    // the strip.
-    //   - left/right: rock a few pixels either way to steer -- no need to
-    //     track down where the strip's actual center is or drag all the
-    //     way to an edge.
-    //   - up/down: independent of steering, so holding a turn doesn't cost
-    //     you the ability to slow down mid-corner. Default (or pushed up)
-    //     is still "touching = go", matching how this worked before;
-    //     pulling down past its own (larger, deliberate-pull) threshold
-    //     brakes instead, at whatever left/right the same finger is
-    //     currently holding.
-    // #touch-track is display:none outside the mobile media query, so
-    // this is a no-op on desktop -- nothing can touch a hidden element.
+    // 3 press-and-hold buttons instead of a drag joystick. A drag control
+    // (tried first) meant switching direction required your thumb's
+    // contact patch to physically slide against the glass every single
+    // time, repeatedly, over a whole race -- a real, reported physical
+    // annoyance. A hold-button is just contact vs. no contact, nothing to
+    // drag. Driving is automatic (keyFaster stays true) so there's nothing
+    // to hold just to go forward -- only touch when you need to steer or
+    // brake, and any combination of left/right + brake at once works, same
+    // as holding multiple arrow keys together.
+    //
+    // These 3 buttons exist in the DOM on every page load, mobile or not
+    // (so no separate "is this mobile" JS check is needed for THEM), but
+    // are display:none outside the mobile media query -- that's what the
+    // computed-style check below actually guards against, since a hidden
+    // element still exists and touch listeners on it would otherwise
+    // silently do nothing useful.
     //=========================================================================
 
     (function() {
-      var track = Dom.get('touch-track');
-      var thumb = Dom.get('touch-thumb');
-      if (!track) return;
-      var steerDeadPx = 10; // px of horizontal movement before it counts as a steering direction -- small and immediate, not a wide drag
-      var brakeDeadPx = 18; // px of downward movement before it counts as braking -- bigger than the steer dead zone, a deliberate pull rather than a light rock
-      var anchorX = null, anchorY = null;
+      var btnLeft   = Dom.get('btn-left');
+      var btnRight  = Dom.get('btn-right');
+      var btnBrake  = Dom.get('btn-brake');
+      var container = Dom.get('touch-controls');
+      if (!btnLeft || getComputedStyle(container).display === 'none') return; // desktop -- arrow keys handle it instead
 
-      function fromTouch(e) {
-        e.preventDefault(); // stop the page itself from scrolling/zooming while steering
-        var touch = e.touches[0];
-        if (anchorX === null) { anchorX = touch.clientX; anchorY = touch.clientY; } // set once per touch, on the touchstart that starts it
-        var deltaX = touch.clientX - anchorX;
-        var deltaY = touch.clientY - anchorY;
+      keyFaster = true; // see comment above -- mobile drives automatically unless braking
 
-        keyLeft  = deltaX < -steerDeadPx;
-        keyRight = deltaX >  steerDeadPx;
-
-        if (deltaY > brakeDeadPx) {
-          keySlower = true;
-          keyFaster = false;
-        } else {
-          keySlower = false;
-          keyFaster = true;
-        }
-
-        // 3 fixed positions, eased by the CSS transition on #touch-thumb --
-        // not a continuous 1:1 mapping to finger position (see that
-        // transition's own comment for why).
-        thumb.style.left = keyLeft ? '15%' : keyRight ? '85%' : '50%';
-        Dom.addClassName(track, 'active');
-        Dom.toggleClassName(track, 'braking', keySlower);
+      function bindHold(el, onPress, onRelease) {
+        function press(e)   { e.preventDefault(); onPress();   Dom.addClassName(el, 'pressed'); }
+        function release(e) { e.preventDefault(); onRelease(); Dom.removeClassName(el, 'pressed'); }
+        el.addEventListener('touchstart',  press,   { passive: false });
+        el.addEventListener('touchend',    release, { passive: false });
+        el.addEventListener('touchcancel', release, { passive: false });
       }
 
-      function endTouch(e) {
-        e.preventDefault();
-        keyFaster = keyLeft = keyRight = keySlower = false;
-        anchorX = anchorY = null;
-        thumb.style.left = '50%';
-        Dom.removeClassName(track, 'active');
-        Dom.removeClassName(track, 'braking');
-      }
-
-      track.addEventListener('touchstart',  fromTouch, { passive: false });
-      track.addEventListener('touchmove',   fromTouch, { passive: false });
-      track.addEventListener('touchend',    endTouch,  { passive: false });
-      track.addEventListener('touchcancel', endTouch,  { passive: false });
+      bindHold(btnLeft,  function() { keyLeft  = true;  }, function() { keyLeft  = false; });
+      bindHold(btnRight, function() { keyRight = true;  }, function() { keyRight = false; });
+      bindHold(btnBrake, function() { keySlower = true;  keyFaster = false; },
+                          function() { keySlower = false; keyFaster = true;  });
     })();
 
     var hud = {
