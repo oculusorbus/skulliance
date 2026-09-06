@@ -120,8 +120,16 @@ records verified constants, and tracks what still needs to be written.
   Jump ramps (resetJumpRamps(), runs after resetBoostPads() since it reads pad.padStart/
   straightEndIndex): one per boost pad, same lane, placed ~40% of the way down the remaining
   straight. Triggers the identical jump state machine as a hill crest (playerSegment.jumpRamp
-  check added to the same jumpCooldownTimer/speedPercent gate in update()) -- not a separate
-  mechanic, just a second, deliberately-placed way to fire it.
+  check in update()), gated on speedPercent >= JUMP_MIN_SPEED_FRAC but deliberately NOT on
+  jumpCooldownTimer the way the natural crest branch is -- that cooldown used to be shared across
+  both, and one of the 4 ramps sits right after addBumps2()'s run of 8 natural crests on the same
+  boosted straight, so landing off one of those bumps could leave the cooldown still counting down
+  by the time you reached the ramp and block its supposedly-guaranteed trigger outright. Distance
+  to the ramp from the last bump is fixed, not time -- covering it FASTER (boosted) left LESS real
+  time for that cooldown to expire, not more, so it reproduced as "never triggers boosted, works
+  unboosted" rather than intermittently. Safe to bypass: JUMP_MIN_SPEED_FRAC alone requires enough
+  speed that JUMP_DURATION's airtime always covers well past RAMP_LENGTH*segmentLength, so there's
+  no realistic way to still be on the ramp's own segments by the time you land and could re-fire.
   Drafting (DRAFT_* constants/draftTimer/draftActive in racing/index.html): sustained lane-overlap
   with a car across a DRAFT_WINDOW_SEGMENTS-segment lookahead for DRAFT_BUILD_TIME seconds adds
   DRAFT_SPEED_BONUS to the effective top-speed cap (ignored while boostActive, which already

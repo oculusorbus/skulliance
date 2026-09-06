@@ -1332,14 +1332,33 @@
           jumping = false;
           jumpCooldownTimer = JUMP_COOLDOWN;
         }
-      } else if (jumpCooldownTimer <= 0 && speedPercent >= JUMP_MIN_SPEED_FRAC) {
+      } else if (speedPercent >= JUMP_MIN_SPEED_FRAC) {
         if (playerSegment.jumpRamp) {
           // A placed ramp launches you outright at qualifying speed --
           // no slope math, it's not detected from the road's shape, it's
-          // just there (see resetJumpRamps()).
+          // just there (see resetJumpRamps()) -- deliberately NOT gated on
+          // jumpCooldownTimer the way the natural crest check below is.
+          // That cooldown exists to stop one natural crest from re-firing
+          // every frame while still over it, but it's shared with every
+          // OTHER jump too, including a genuinely different natural crest
+          // just before this one -- and at least one of the 4 placed ramps
+          // sits right after addBumps2()'s run of 8 natural crests, all on
+          // the same boosted straightaway. Landing off one of those bumps
+          // starts a fresh 1s cooldown, and reaching the ramp is a fixed
+          // DISTANCE away, not a fixed TIME -- so covering that distance
+          // faster (boosted) leaves LESS real time for the earlier bump's
+          // cooldown to expire before the ramp, not more, and it was
+          // observed blocking the ramp outright every time. A discrete,
+          // 5-segment ramp has no real re-fire risk to guard against in
+          // the first place: JUMP_MIN_SPEED_FRAC alone requires enough
+          // speed that JUMP_DURATION's airtime always covers well past
+          // RAMP_LENGTH*segmentLength before landing, so you're already
+          // clear of the ramp's own segments by the time cooldown would
+          // even matter. Bypassing it here just makes what's documented
+          // above ("it's just there") actually true unconditionally.
           jumping = true;
           jumpElapsed = 0;
-        } else {
+        } else if (jumpCooldownTimer <= 0) {
           var idx = playerSegment.index, nearSum = 0, farSum = 0, k, seg;
           for (k = 0 ; k < JUMP_NEAR_SEGMENTS ; k++) {
             seg = segments[(idx + k) % segments.length];
