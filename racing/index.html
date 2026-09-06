@@ -503,6 +503,7 @@
     //=========================================================================
     var RAMP_LENGTH = 5;   // segments long, same visual scale as a boost pad
     var RAMP_WIDTH  = 0.3; // half-width of the drawn wedge, same offset units as BOOST_PAD_WIDTH
+    var RAMP_RISE   = 600; // synthetic world-space height the far/peak segment appears to reach -- visual only, doesn't touch real road elevation. Comparable to addBumps()'s own per-segment climb (a few hundred to ~1000 world-Y units); tune up/down if it looks too subtle or too steep
 
     var jumpRamps = []; // set by resetJumpRamps()
 
@@ -1182,12 +1183,22 @@
           var rampHalf1   = rampScale1 * RAMP_WIDTH * roadWidth * width/2;
           var rampHalf2   = (segment.jumpRampLocalIndex === RAMP_LENGTH - 1) ? 0 :
                              rampScale2 * RAMP_WIDTH * roadWidth * width/2;
-          var rampColor   = (segment.jumpRampLocalIndex % 2) ? '#cc1a1a' : '#1a1a1a';
+          // Rise from road level at the ramp's base to RAMP_RISE (a synthetic
+          // world-space height -- doesn't touch the road's actual elevation,
+          // same trick the player's own crest-jump lift already uses) at its
+          // far/peak segment, using the exact same scale*height/2 conversion
+          // Util.project() uses for real elevation, so it stays perspective-
+          // correct instead of just a flat decal on the road surface.
+          var riseFrac1 = segment.jumpRampLocalIndex / RAMP_LENGTH;
+          var riseFrac2 = (segment.jumpRampLocalIndex + 1) / RAMP_LENGTH;
+          var rampY1    = segment.p1.screen.y - (rampScale1 * RAMP_RISE * riseFrac1 * height/2);
+          var rampY2    = segment.p2.screen.y - (rampScale2 * RAMP_RISE * riseFrac2 * height/2);
+          var rampColor = (segment.jumpRampLocalIndex % 2) ? '#cc1a1a' : '#1a1a1a';
           Render.polygon(ctx,
-                          rampCenter1 - rampHalf1, segment.p1.screen.y,
-                          rampCenter1 + rampHalf1, segment.p1.screen.y,
-                          rampCenter2 + rampHalf2, segment.p2.screen.y,
-                          rampCenter2 - rampHalf2, segment.p2.screen.y,
+                          rampCenter1 - rampHalf1, rampY1,
+                          rampCenter1 + rampHalf1, rampY1,
+                          rampCenter2 + rampHalf2, rampY2,
+                          rampCenter2 - rampHalf2, rampY2,
                           rampColor);
         }
 
