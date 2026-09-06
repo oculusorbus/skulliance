@@ -12500,11 +12500,33 @@ function cryptconquestAbandonRun($conn, $user_id) {
        laps          INT NOT NULL,
        carbon_earned INT NOT NULL DEFAULT 0,
        reward        TINYINT NOT NULL DEFAULT 0,
+       ghost_trace   LONGTEXT NULL,
        created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
        INDEX (user_id),
        INDEX (reward)
      );
-   ============================================================ */
+   For an existing install that already has this table:
+     ALTER TABLE skull_racer_runs ADD COLUMN ghost_trace LONGTEXT NULL;
+
+   GHOSTS (weekly-leader / all-time-leader, personal-best is 100%
+   client-side and never touches this table -- see racing/index.html's
+   own comment on ghostRecording/ghostPlayback). ghost_trace is a JSON
+   array of [position, playerX] samples for whichever lap of the race
+   was that run's OWN fastest -- not the run's full 3 laps, matching the
+   same "loop your best single lap, every lap" ghost convention the
+   personal-best ghost already uses, just showing someone else's best
+   lap instead of your own. Only ever written for a row that, AT INSERT
+   TIME, is immediately the new all-time best or the new best among
+   this week's not-yet-paid-out runs (skullRacerFinalizeRun() checks
+   both right after inserting) -- every other row's ghost_trace stays
+   NULL, so storage never grows per-race, only per NEW record actually
+   set. A row that gets dethroned later just sits there with a trace
+   nobody queries again (the leader lookups always take the current
+   MIN(total_time), never a specific row) -- self-limiting, no cleanup
+   job needed. The weekly slot naturally rotates out on its own too:
+   resetSkullRacerRuns() flips reward to 1, which drops that row out of
+   every "AND sr.reward = 0" query, ghost included, without needing a
+   separate reset step. */
 
 // Flat CARBON credit for simply FINISHING a race (any time), separate from
 // the weekly leaderboard pool below -- same two-tier shape as Crypt Crawl
@@ -12530,6 +12552,46 @@ define('SKULLRACER_MIN_LAP_TIME', 100);
 define('SKULLRACER_MIN_TOTAL_TIME', 300);
 define('SKULLRACER_EXPECTED_LAPS', 3);
 
+// Ghost trace recording rate -- racing/index.html's own `fps` constant
+// (update() ticks/sec, one [position, playerX] sample per tick). Same
+// manual-sync caveat as the constants above: kept in sync by hand, nothing
+// enforces it automatically.
+define('SKULLRACER_GHOST_TICK_RATE', 60);
+define('SKULLRACER_GHOST_MAX_SAMPLES', 20000); // ~5.5min of recording -- generous upper bound, just to reject an absurdly oversized payload outright
+
+// Structural sanity check on an uploaded ghost trace, NOT a physics replay
+// -- same "reject obviously fabricated, don't re-simulate" spirit as the
+// SKULLRACER_MIN_* floors above. Returns the decoded array on success, or
+// null if anything about it looks wrong. Checked before a trace is ever
+// allowed to become a weekly/all-time leader-ghost, since those get
+// rendered client-side to EVERY other player, not just shown back to
+// whoever submitted it -- a bad trace here is a bad experience for
+// everyone, not just self-inflicted.
+function skullRacerValidateGhostTrace($trace_json, $claimed_lap_time) {
+	if (!is_string($trace_json) || $trace_json === '') return null;
+	$trace = json_decode($trace_json, true);
+	if (!is_array($trace) || count($trace) < 10 || count($trace) > SKULLRACER_GHOST_MAX_SAMPLES) return null;
+
+	$claimed_lap_time = floatval($claimed_lap_time);
+	if ($claimed_lap_time < SKULLRACER_MIN_LAP_TIME) return null; // same impossible-lap floor as the fastest_lap field elsewhere -- a trace can be internally consistent and still claim a physically impossible time
+	$expected = $claimed_lap_time * SKULLRACER_GHOST_TICK_RATE;
+	if (abs(count($trace) - $expected) > $expected * 0.25) return null; // sample count should roughly match the claimed lap duration
+
+	$last_pos = null;
+	foreach ($trace as $sample) {
+		if (!is_array($sample) || count($sample) !== 2) return null;
+		list($pos, $player_x) = array_values($sample);
+		if (!is_numeric($pos) || !is_numeric($player_x)) return null;
+		if ($player_x < -3.5 || $player_x > 3.5) return null; // matches the in-game Util.limit(playerX, -3, 3) clamp, with a little float slack
+		if ($last_pos !== null) {
+			$delta = floatval($pos) - $last_pos;
+			if ($delta < -1000 || $delta > 1000) return null; // no teleporting -- generous bound (BOOST_SPEED covers ~300 units/frame at 50fps), still catches wild fabrication
+		}
+		$last_pos = floatval($pos);
+	}
+	return $trace;
+}
+
 // Called from ajax/skullracer-finalize.php. $token is a client-generated
 // one-time string (Date.now()+Math.random(), see racing/index.html) purely
 // to guard against the same fetch() firing twice (a flaky connection
@@ -12537,7 +12599,7 @@ define('SKULLRACER_EXPECTED_LAPS', 3);
 // not a security boundary, just deduping, same spirit as Crypt Crawl's
 // $_SESSION['cryptcrawl_finalized_runs'] guard. Capped list so a long
 // session (many races) doesn't grow this unbounded.
-function skullRacerFinalizeRun($conn, $user_id, $total_time, $fastest_lap, $laps, $token) {
+function skullRacerFinalizeRun($conn, $user_id, $total_time, $fastest_lap, $laps, $token, $ghost_trace_json = null, $ghost_lap_time = 0) {
 	$user_id = intval($user_id);
 	if ($user_id <= 0) return; // guest -- no session, nothing to save
 
@@ -12575,6 +12637,34 @@ function skullRacerFinalizeRun($conn, $user_id, $total_time, $fastest_lap, $laps
 	updateBalance($conn, $user_id, 15, $carbon); // 15 = CARBON, same project_id every other weekly-leaderboard game credits through
 	logCredit($conn, $user_id, $carbon, 15);
 
+	// Ghost -- only ever persisted if THIS run is immediately the new
+	// all-time best or the new best among this week's not-yet-paid-out
+	// runs (compared against every OTHER row, so a lone first-ever run
+	// always qualifies). See this table's own comment block above for why
+	// this keeps storage bounded without a cleanup job.
+	if ($ghost_trace_json !== null) {
+		$is_leader = false;
+		$best_r = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE id != $run_id");
+		if ($best_r) {
+			$best_row = $best_r->fetch_assoc();
+			if ($best_row['best'] === null || $total_time <= floatval($best_row['best'])) $is_leader = true;
+		}
+		if (!$is_leader) {
+			$best_weekly_r = $conn->query("SELECT MIN(total_time) AS best FROM skull_racer_runs WHERE id != $run_id AND reward = 0");
+			if ($best_weekly_r) {
+				$best_weekly_row = $best_weekly_r->fetch_assoc();
+				if ($best_weekly_row['best'] === null || $total_time <= floatval($best_weekly_row['best'])) $is_leader = true;
+			}
+		}
+		if ($is_leader) {
+			$validated_trace = skullRacerValidateGhostTrace($ghost_trace_json, $ghost_lap_time);
+			if ($validated_trace !== null) {
+				$escaped_trace = $conn->real_escape_string(json_encode($validated_trace));
+				$conn->query("UPDATE skull_racer_runs SET ghost_trace = '$escaped_trace' WHERE id = $run_id");
+			}
+		}
+	}
+
 	$run = ['id' => $run_id, 'user_id' => $user_id, 'total_time' => $total_time, 'fastest_lap' => $fastest_lap, 'carbon_earned' => $carbon];
 	try {
 		skullRacerAnnounceResult($conn, $run);
@@ -12596,6 +12686,49 @@ function skullRacerIsNewBest($conn, $user_id, $current_run_id, $total_time) {
 		return floatval($total_time) < floatval($row['best']);
 	}
 	return true;
+}
+
+// Fetches the CURRENT weekly-leader and all-time-leader ghost traces (each
+// possibly null if nobody's set a qualifying time with a valid trace yet).
+// Deliberately keyed off "best run that HAS a stored trace" rather than
+// literally re-deriving the leaderboard's own #1 spot -- in virtually all
+// cases they're the same row (skullRacerFinalizeRun() writes the trace
+// exactly when a run becomes a leader), but if a submission's trace ever
+// failed validation or never uploaded, this quietly falls back to the best
+// run that DID save one rather than showing nothing. Includes each row's
+// own id so the client can tell when the weekly and all-time ghost are
+// literally the same run (one person holding both records at once) and
+// skip rendering the lower tier's duplicate on top of the higher one.
+function skullRacerGetGhosts($conn) {
+	$ghosts = ['weekly' => null, 'alltime' => null];
+
+	$alltime_r = $conn->query("
+		SELECT sr.id, sr.total_time, sr.ghost_trace, u.username
+		FROM skull_racer_runs sr
+		INNER JOIN users u ON u.id = sr.user_id
+		WHERE sr.ghost_trace IS NOT NULL
+		ORDER BY sr.total_time ASC
+		LIMIT 1
+	");
+	if ($alltime_r && $alltime_r->num_rows > 0) {
+		$row = $alltime_r->fetch_assoc();
+		$ghosts['alltime'] = ['id' => intval($row['id']), 'username' => $row['username'], 'total_time' => floatval($row['total_time']), 'trace' => json_decode($row['ghost_trace'], true)];
+	}
+
+	$weekly_r = $conn->query("
+		SELECT sr.id, sr.total_time, sr.ghost_trace, u.username
+		FROM skull_racer_runs sr
+		INNER JOIN users u ON u.id = sr.user_id
+		WHERE sr.ghost_trace IS NOT NULL AND sr.reward = 0
+		ORDER BY sr.total_time ASC
+		LIMIT 1
+	");
+	if ($weekly_r && $weekly_r->num_rows > 0) {
+		$row = $weekly_r->fetch_assoc();
+		$ghosts['weekly'] = ['id' => intval($row['id']), 'username' => $row['username'], 'total_time' => floatval($row['total_time']), 'trace' => json_decode($row['ghost_trace'], true)];
+	}
+
+	return $ghosts;
 }
 
 // user_id currently in 1st (lowest best total_time) -- same shape as

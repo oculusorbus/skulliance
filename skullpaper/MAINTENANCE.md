@@ -169,7 +169,7 @@ records verified constants, and tracks what still needs to be written.
   value -- same net effect. Never force-reloads while visible/mid-race, only silently reloads on
   the next visibilitychange-to-visible after a mismatch was found while backgrounded, matching
   header.php's own restraint.
-  Ghost (ghostRecording/ghostPlayback/ghostFrameIndex in racing/index.html): personal-best-lap
+  Ghost, personal (ghostRecording/ghostPlayback/ghostFrameIndex in racing/index.html): best-lap
   replay, 100% client-side. Records [position, playerX] every update() tick during the lap in
   progress; at the same lap-crossing check that already updates Dom.storage.fast_lap_time, if this
   lap beat the stored best the just-finished recording becomes both the in-memory playback buffer
@@ -180,6 +180,33 @@ records verified constants, and tracks what still needs to be written.
   collision logic -- it's a recorded trace, not a simulated car, so it can't crash or be crashed
   into, and doesn't know or care whether this race's boost pad/jump ramp landed in the same lane
   the recorded lap saw.
+  Ghost, weekly/all-time leader (weeklyGhost/alltimeGhost in racing/index.html, skullRacerGetGhosts()/
+  skullRacerValidateGhostTrace()/skullRacerFinalizeRun() in db.php, ajax/skullracer-ghosts.php):
+  same rendering technique as the personal ghost (gold via ctx.filter =
+  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)', all-time additionally gets a 🏆
+  drawn at the sprite's own top edge -- destH/offsetY math copied from Render.sprite()'s internal
+  formula so it tracks the sprite at any distance). Data is server-side though: skull_racer_runs
+  gained a nullable ghost_trace LONGTEXT column (ALTER TABLE needed on an existing install -- see
+  this file's own SKULL RACER comment block for the exact statement), written by
+  skullRacerFinalizeRun() ONLY when a just-inserted run is immediately the new all-time best or the
+  new best among this week's reward=0 runs (checked against every OTHER row, so a lone first run
+  always qualifies) -- every other row's ghost_trace stays NULL, so storage grows only with actual
+  NEW records, not every race. The weekly slot rotates out on its own when resetSkullRacerRuns()
+  flips reward to 1 (drops the row from every "AND reward = 0" query, ghost included) -- no separate
+  reset job. skullRacerValidateGhostTrace() gates what's ever allowed to become a leader-ghost
+  BEFORE it's stored (sample count vs. claimed lap duration at SKULLRACER_GHOST_TICK_RATE=60,
+  playerX within the in-game clamp, no position deltas that would mean teleporting) since these
+  traces get rendered to EVERY player, not just shown back to whoever submitted them -- a bad trace
+  here is everyone's problem, unlike a bad personal-ghost which only ever affects that one browser.
+  Client uploads ITS OWN race's fastest lap as ghost_trace/ghost_lap_time on every finalize call
+  (raceFastestLapTrace/-Time, tracked separately from the personal-best-ever check above, and
+  deliberately NOT reusing the existing fastest_lap POST field -- that one is this browser's
+  all-time PB as of now, not necessarily from this race, so validating the trace's sample count
+  against it would frequently mismatch); the server decides whether it's actually leader-worthy,
+  the client doesn't get to assume. ajax/skullracer-ghosts.php is a public GET (same visibility as
+  the leaderboard) returning {weekly, alltime}, each null if nobody's set a qualifying time with a
+  valid trace yet. Client dedupes by row id if the same run holds both records at once, so only the
+  higher tier (all-time, with trophy) renders, not both stacked on the same spot.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt

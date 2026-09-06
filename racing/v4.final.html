@@ -813,6 +813,30 @@
       if (storedGhost) ghostPlayback = JSON.parse(storedGhost);
     } catch (e) { ghostPlayback = null; }
 
+    // This race's own fastest lap (separate from the all-time personal
+    // best above) -- what finishRace() uploads as ghost_trace, since the
+    // server decides weekly/all-time leader status against everyone else,
+    // not against this browser's own localStorage.
+    var raceFastestLapTime  = null;
+    var raceFastestLapTrace = null;
+
+    // Weekly-leader / all-time-leader ghosts -- server-provided, everyone
+    // sees the same two (or none, if nobody's set a qualifying time with a
+    // valid trace yet). Same {playback, frameIndex} shape as the personal
+    // ghost above, just two more of them, fetched once here rather than
+    // recorded locally. skullracer-ghosts.php is public (no login needed),
+    // same visibility as the leaderboard itself.
+    var weeklyGhost  = { playback: null, frameIndex: 0, id: null };
+    var alltimeGhost = { playback: null, frameIndex: 0, id: null };
+    fetch('/staking/ajax/skullracer-ghosts.php', { cache: 'no-store' })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data) return;
+        if (data.weekly)  { weeklyGhost.playback  = data.weekly.trace;  weeklyGhost.id  = data.weekly.id; }
+        if (data.alltime) { alltimeGhost.playback = data.alltime.trace; alltimeGhost.id = data.alltime.id; }
+      })
+      .catch(function() {});
+
     var keyLeft        = false;
     var keyRight       = false;
     var keyFaster      = false;
@@ -1402,6 +1426,8 @@
       // the same "how far into this lap" clock.
       ghostRecording.push([position, playerX]);
       if (ghostPlayback && ghostFrameIndex < ghostPlayback.length - 1) ghostFrameIndex++;
+      if (weeklyGhost.playback  && weeklyGhost.frameIndex  < weeklyGhost.playback.length - 1)  weeklyGhost.frameIndex++;
+      if (alltimeGhost.playback && alltimeGhost.frameIndex < alltimeGhost.playback.length - 1) alltimeGhost.frameIndex++;
 
       if (position > playerZ) {
         raceElapsed += dt; // unlike currentLapTime, this never resets -- it's the total race clock shown at the finish
@@ -1423,8 +1449,23 @@
             Dom.removeClassName('fast_lap_time', 'fastest');
             Dom.removeClassName('last_lap_time', 'fastest');
           }
+          // This race's OWN fastest lap, independent of the all-time
+          // personal best above -- a first-time player can still turn in
+          // the fastest lap on the server this week/ever without it
+          // beating their own (nonexistent) prior best. This is what
+          // finishRace() uploads as ghost_trace; the server decides
+          // whether it's actually good enough to become the weekly/
+          // all-time leader-ghost, this just makes sure the RIGHT trace
+          // (this race's best, not just its last or its first lap) is
+          // what gets offered up.
+          if (raceFastestLapTime === null || lastLapTime < raceFastestLapTime) {
+            raceFastestLapTime  = lastLapTime;
+            raceFastestLapTrace = ghostRecording;
+          }
           ghostRecording = [];
           ghostFrameIndex = 0;
+          weeklyGhost.frameIndex  = 0;
+          alltimeGhost.frameIndex = 0;
           updateHud('last_lap_time', formatTime(lastLapTime));
           Dom.show('last_lap_time');
 
@@ -1473,13 +1514,23 @@
       // nothing here needs a response, and a guest or offline player just
       // silently doesn't get saved, exactly like every other real-
       // account-only leaderboard on this platform.
+      // ghost_trace/ghost_lap_time are this RACE's own fastest lap
+      // (raceFastestLapTrace/-Time), deliberately separate from the
+      // fastest_lap field above -- that one is this browser's all-time
+      // personal best as of right now (unchanged, existing leaderboard
+      // semantics), which isn't necessarily from THIS race at all if it
+      // didn't beat an older one. The trace has to be validated against
+      // the duration of the SAME lap it actually recorded, not whatever
+      // fastest_lap happens to mean.
       fetch('/staking/ajax/skullracer-finalize.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'total_time=' + encodeURIComponent(raceElapsed) +
               '&fastest_lap=' + encodeURIComponent(Util.toFloat(Dom.storage.fast_lap_time)) +
               '&laps=' + encodeURIComponent(totalLaps) +
-              '&token=' + encodeURIComponent(raceToken)
+              '&token=' + encodeURIComponent(raceToken) +
+              '&ghost_lap_time=' + encodeURIComponent(raceFastestLapTime || 0) +
+              '&ghost_trace=' + encodeURIComponent(JSON.stringify(raceFastestLapTrace || []))
       }).catch(function() {});
     }
 
@@ -1579,16 +1630,32 @@
       var playerY       = Util.interpolate(playerSegment.p1.world.y, playerSegment.p2.world.y, playerPercent);
       var maxy          = height;
 
-      // Ghost -- same +playerZ convention the player itself uses (the
+      // Ghosts -- personal-best (plain, this browser's own), weekly-leader
+      // and all-time-leader (gold-tinted, server-provided, same for every
+      // player). Same +playerZ convention the player itself uses (the
       // recorded position is the same kind of value playerSegment above is
-      // already built from), so it sits in the same camera-to-car
-      // relationship the real player would at that position.
-      var ghostFrame, ghostSegment, ghostPercent;
-      if (ghostPlayback && ghostPlayback[ghostFrameIndex]) {
-        ghostFrame   = ghostPlayback[ghostFrameIndex];
-        ghostSegment = findSegment(ghostFrame[0] + playerZ);
-        ghostPercent = Util.percentRemaining(ghostFrame[0] + playerZ, segmentLength);
+      // already built from), so each sits in the same camera-to-car
+      // relationship the real player would at that position. Prepped once
+      // here (segment/percent don't change during the segment loop below),
+      // not per-iteration.
+      var ghostsToRender = [];
+      function prepGhost(playback, frameIndex, style) {
+        if (!playback || !playback[frameIndex]) return;
+        var frame = playback[frameIndex];
+        ghostsToRender.push({
+          frame:   frame,
+          segment: findSegment(frame[0] + playerZ),
+          percent: Util.percentRemaining(frame[0] + playerZ, segmentLength),
+          style:   style
+        });
       }
+      prepGhost(ghostPlayback, ghostFrameIndex, 'personal');
+      // Same run holding both records at once -- skip the lower tier's
+      // duplicate rather than draw two identical ghosts on top of each other.
+      if (!(weeklyGhost.id !== null && weeklyGhost.id === alltimeGhost.id)) {
+        prepGhost(weeklyGhost.playback, weeklyGhost.frameIndex, 'weekly');
+      }
+      prepGhost(alltimeGhost.playback, alltimeGhost.frameIndex, 'alltime');
 
       var x  = 0;
       var dx = - (baseSegment.curve * basePercent);
@@ -1606,7 +1673,7 @@
       Render.background(ctx, background, width, height, BACKGROUND.HILLS, hillOffset, resolution * hillSpeed * playerY);
       Render.background(ctx, background, width, height, BACKGROUND.TREES, treeOffset, resolution * treeSpeed * playerY);
 
-      var n, i, segment, car, sprite, spriteScale, spriteX, spriteY;
+      var n, i, gi, segment, car, sprite, spriteScale, spriteX, spriteY, ghost;
 
       for(n = 0 ; n < drawDistance ; n++) {
 
@@ -1722,14 +1789,35 @@
           Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.offset < 0 ? -1 : 0), -1, segment.clip);
         }
 
-        if (ghostSegment && segment == ghostSegment) {
-          spriteScale = Util.interpolate(ghostSegment.p1.screen.scale, ghostSegment.p2.screen.scale, ghostPercent);
-          spriteX     = Util.interpolate(ghostSegment.p1.screen.x,     ghostSegment.p2.screen.x,     ghostPercent) + (spriteScale * ghostFrame[1] * roadWidth * width/2);
-          spriteY     = Util.interpolate(ghostSegment.p1.screen.y,     ghostSegment.p2.screen.y,     ghostPercent);
+        for (gi = 0 ; gi < ghostsToRender.length ; gi++) {
+          ghost = ghostsToRender[gi];
+          if (ghost.segment !== segment) continue;
+          spriteScale = Util.interpolate(ghost.segment.p1.screen.scale, ghost.segment.p2.screen.scale, ghost.percent);
+          spriteX     = Util.interpolate(ghost.segment.p1.screen.x,     ghost.segment.p2.screen.x,     ghost.percent) + (spriteScale * ghost.frame[1] * roadWidth * width/2);
+          spriteY     = Util.interpolate(ghost.segment.p1.screen.y,     ghost.segment.p2.screen.y,     ghost.percent);
           ctx.save();
           ctx.globalAlpha = 0.4; // translucent -- reads as a ghost, not a real car, no separate tinted sprite needed
-          Render.sprite(ctx, width, height, resolution, roadWidth, sprites, SPRITES.PLAYER_STRAIGHT, spriteScale, spriteX, spriteY, -0.5, -1, ghostSegment.clip);
+          if (ghost.style !== 'personal') {
+            // Gold tint for the server-provided leader ghosts, purely via
+            // canvas filter -- no separate tinted sprite art needed, same
+            // player sprite as everyone else, just recolored on the way in.
+            ctx.filter = 'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)';
+          }
+          Render.sprite(ctx, width, height, resolution, roadWidth, sprites, SPRITES.PLAYER_STRAIGHT, spriteScale, spriteX, spriteY, -0.5, -1, ghost.segment.clip);
           ctx.restore();
+          if (ghost.style === 'alltime') {
+            // Trophy above the all-time leader specifically -- same
+            // destH/offsetY math Render.sprite() itself uses internally to
+            // find the sprite's own top edge, so this tracks it at any
+            // distance/scale instead of a fixed pixel offset.
+            var ghostDestH = (SPRITES.PLAYER_STRAIGHT.h * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
+            var ghostTopY  = spriteY - ghostDestH;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
+            ctx.fillText('🏆', spriteX, ghostTopY - 6);
+            ctx.restore();
+          }
         }
 
         if (segment == playerSegment) {

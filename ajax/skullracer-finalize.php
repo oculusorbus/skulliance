@@ -44,7 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user_id > 0) {
 		$_POST['total_time']  ?? 0,
 		$_POST['fastest_lap'] ?? 0,
 		$_POST['laps']        ?? 0,
-		$_POST['token']       ?? ''
+		$_POST['token']       ?? '',
+		$_POST['ghost_trace']    ?? null, // JSON [position, playerX] samples for THIS RACE's own fastest lap -- only ever persisted server-side if this run turns out to be a new weekly/all-time leader, see skullRacerFinalizeRun()'s own comment
+		$_POST['ghost_lap_time'] ?? 0     // that lap's own duration, for validating the trace -- deliberately NOT the fastest_lap field above (this browser's all-time PB, not necessarily from this race)
 	);
 }
 // 204: nothing to render, and there's no client-side handler waiting on a
