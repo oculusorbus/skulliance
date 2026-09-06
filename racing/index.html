@@ -485,10 +485,24 @@
          on an iPhone 16. The generous fixed slack here isn't just fixing
          that arithmetic -- it's also a hedge against whatever the embedded
          skullracer.php context adds above this that racing/index.html has
-         no visibility into (its own nested containers, real <body>'s own
-         safe-area padding, etc.), same reasoning as the dvh swap below:
-         better a few px of empty margin than a scroll that defeats this
-         block's entire point.
+         no visibility into (its own nested containers, the real page
+         body's own safe-area padding, etc.), same reasoning as the dvh
+         swap below: better a few px of empty margin than a scroll that
+         defeats this block's entire point.
+
+         NOTE for whoever edits this comment block again: this file's own
+         style and body sections get sliced out by skullracer.php via a
+         plain substring search for their real opening/closing tags (see
+         that file's own comment) -- typing either tag's exact bracketed
+         form out ANYWHERE in this file, even in a comment, gets matched by
+         that search too, and whichever occurrence comes FIRST in the file
+         wins, comment or not. That's exactly what happened here once
+         already: this same sentence used to spell one out in full while
+         explaining a different bug, and every player routed through
+         skullracer.php (Play > Skull Racer -- the normal way in, not
+         visiting this file directly) got a
+         garbled page, this comment's own tail text spilling out past a
+         phantom cut point instead of the actual game.
 
          100dvh, not 100vh, for the same "almost fits, need to scroll"
          symptom -- classic iOS Safari behavior where 100vh reports the
