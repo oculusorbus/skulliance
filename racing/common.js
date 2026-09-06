@@ -364,7 +364,7 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  sprite: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY) {
+  sprite: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY, flip) {
 
                     //  scale for projection AND relative to roadWidth (for tweakUI)
     var destW  = (sprite.w * scale * width/2) * (SPRITES.SCALE * roadWidth);
@@ -374,8 +374,25 @@ var Render = {
     destY = destY + (destH * (offsetY || 0));
 
     var clipH = clipY ? Math.max(0, destY+destH-clipY) : 0;
-    if (clipH < destH)
-      ctx.drawImage(sprites, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), destX, destY, destW, destH - clipH);
+    var drawH = destH - clipH;
+    if (clipH < destH) {
+      if (flip) {
+        // Traffic cars are a single static sprite drawn at a fixed
+        // perspective angle -- always looks like it's leaning into the
+        // same turn regardless of which way the road actually curves
+        // there. Mirroring horizontally (around its own destX..destX+destW
+        // span, not the whole canvas) flips that lean the other way, so
+        // the sprite reads as banking into whichever direction the road
+        // is actually curving at that point.
+        ctx.save();
+        ctx.translate(destX + destW, destY);
+        ctx.scale(-1, 1);
+        ctx.drawImage(sprites, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), 0, 0, destW, drawH);
+        ctx.restore();
+      } else {
+        ctx.drawImage(sprites, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), destX, destY, destW, drawH);
+      }
+    }
 
   },
 
