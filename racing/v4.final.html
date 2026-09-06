@@ -446,6 +446,14 @@
     var jumpCooldownTimer = 0;
     var jumpOffset        = 0; // read by render() every frame, set by update()
 
+    // Stationary off-road obstacles (billboards, rocks, etc) pin the car in
+    // place every frame you're still stuck against them -- unlike a car hit,
+    // nothing here naturally clears the exact same overlap check next frame,
+    // so playCollisionSound() would otherwise refire 60x/sec until you steer
+    // clear. Remembers which sprite you're currently stuck on so the sound
+    // only plays once per collision, not once per frame of being stuck.
+    var lastCollidedSprite = null;
+
     //=========================================================================
     // BOOST PADS -- a striped strip laid across one random lane near the
     // start of each of the track's longest straightaways (see
@@ -548,7 +556,7 @@
     collisionSound.volume = 0.25; // was unset (1.0), then 0.4 -- still louder than music, dropped again
 
     var lapSound = Dom.get('lap-sound');
-    lapSound.volume = 0.3;
+    lapSound.volume = 0.45; // bumped up from 0.3, still under collisionSound
 
     //=========================================================================
     // MINIMAP -- track shape traced once from the same curve values render()
@@ -744,7 +752,7 @@
       // music). Source is now a deeper 60Hz tone and only ranges up to 1.6x
       // (96Hz), staying a low rumble even at top speed.
       engineSourceNode.playbackRate.value = 0.8 + speedPercent * 0.8;
-      engineGain.gain.value = engineMuted ? 0 : (0.05 + speedPercent * 0.12);
+      engineGain.gain.value = engineMuted ? 0 : (0.07 + speedPercent * 0.17); // bumped up from 0.05 + 0.12
     }
 
     var engineMuted = (Dom.storage.muted === "true");
@@ -825,6 +833,8 @@
         speed = Util.accelerate(speed, decel, dt);
 
 
+      var spriteCollided = false; // did we hit an obstacle THIS frame -- see lastCollidedSprite above
+
       if ((playerX < -1) || (playerX > 1)) {
 
         if (speed > offRoadLimit)
@@ -836,12 +846,18 @@
           if (Util.overlap(playerX, playerW, sprite.offset + spriteW/2 * (sprite.offset > 0 ? 1 : -1), spriteW)) {
             speed = maxSpeed/5;
             position = Util.increase(playerSegment.p1.world.z, -playerZ, trackLength); // stop in front of sprite (at front of segment)
-            playCollisionSound();
+            spriteCollided = true;
+            if (sprite !== lastCollidedSprite) {
+              playCollisionSound(); // only once per collision, not once per frame you're still stuck on it
+              lastCollidedSprite = sprite;
+            }
             crashed = true;
             break;
           }
         }
       }
+
+      if (!spriteCollided) lastCollidedSprite = null; // clear so hitting it again later still plays the sound
 
       for(n = 0 ; n < playerSegment.cars.length ; n++) {
         car  = playerSegment.cars[n];
