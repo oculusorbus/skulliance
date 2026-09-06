@@ -202,10 +202,9 @@ records verified constants, and tracks what still needs to be written.
   against whatever the embedded skullracer.php context adds above this that racing/index.html has no
   visibility into (see that file's own entry below for the matching dvh fix at ITS level -- a
   min-height set from an overestimated 100vh forces the whole page taller than the real visible area
-  regardless of how well the canvas fits inside it). #touch-controls and #instructions are hidden outright
-  (landscape-on-a-phone is a controller-first mode -- see the Gamepad entry above -- so the touch UI
-  is just dead weight competing with the canvas for the one dimension that's actually scarce now),
-  and #hud/#minimap revert to their normal desktop overlay-on-canvas placement (the portrait-mobile
+  regardless of how well the canvas fits inside it). #instructions is hidden outright (no room for
+  hint text, and see the Gamepad/touch-controls entries above/below for why the control scheme is
+  usually already obvious in this mode); #hud/#minimap revert to their normal desktop overlay-on-canvas placement (the portrait-mobile
   minimap-as-separate-block treatment exists to stop it covering the right lane on a NARROW canvas --
   a width problem, and width is exactly what landscape has back).
   This query only reaches racing/index.html's OWN markup though -- visited through skullracer.php
@@ -224,6 +223,26 @@ records verified constants, and tracks what still needs to be written.
   than what's actually visible, forcing a scroll regardless of how well the canvas fits inside it.
   Deliberately duplicated rather than shared -- the condition needs to independently exist in both
   places, since each file hides a different set of elements the other has no reference to.
+  Landscape touch controls (same `@media (orientation: landscape) and (max-height: 500px)` block,
+  racing/index.html -- same #btn-left/#btn-right/#btn-brake elements and touchstart/touchend
+  listeners portrait mobile already set up, none of that JS duplicated, only repositioned via CSS):
+  height-constraining the canvas leaves real WIDTH to spare on either side of it on a landscape
+  phone (opposite of portrait, where width is what's scarce) -- #touch-controls becomes a
+  position:fixed, inset:0 full-viewport overlay (pointer-events:none on the overlay itself,
+  re-enabled per .touch-btn, so the empty middle over the canvas never eats a tap meant for
+  something else) instead of portrait's normal-flow height:30vh row below the canvas, which has no
+  floor to sit on here. #btn-left/#btn-right stack on the LEFT edge (steering under one thumb), one
+  tall #btn-brake alone on the RIGHT edge (under the other) -- deliberately NOT left-button-left-
+  edge/right-button-right-edge, which would pair brake with only one steering direction and leave
+  braking mid-turn the OTHER way needing that same thumb to do two things at once. display:block is
+  set explicitly, not left to fall through from the 768px/1300px queries (neither applies on a phone
+  this wide in landscape) -- matters beyond the visual: the portrait setup IIFE's own auto-gas/
+  listener-binding both gate on this exact computed display value being non-'none', checked ONCE at
+  load, so a player opening the game already sideways would otherwise get invisible, unbound buttons.
+  Same gate is also why a disconnected gamepad correctly falls back to a fully playable touch scheme
+  in this mode now, not just auto-gas with no way to steer (see the Gamepad entry's own
+  gamepaddisconnected -- it already checked touch-controls' visibility before this existed, it was
+  just never true in landscape before now).
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of

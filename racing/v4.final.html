@@ -523,12 +523,66 @@
         margin: 0 auto;
       }
       #hud { top: 0; } /* undo the 768px block's 104px minimap-as-block offset -- minimap's back to overlaying the canvas below */
-      #instructions, #touch-controls { display: none; }
+      #instructions { display: none; }
       #minimap {
         position: absolute;
         top: 48px; right: 10px;
         margin: 0;
       }
+
+      /* Touch controls, back on -- but reworked entirely, not just carried
+         over from portrait's row-below-the-canvas layout, which has no
+         floor to sit ON here (there IS no floor -- the canvas already
+         claims the full available height by design). Height-constraining
+         the canvas leaves real, usable width to spare on either side of
+         it though (a landscape phone is far wider than a 4:3 canvas needs
+         once it's sized off height instead), which is exactly what a
+         controller has zero use for but a touch/handheld player can put
+         to work: steering on the left thumb (stacked ◀ on top, ▶ below --
+         a rocker, same "adjacent, quick to alternate between" idea as the
+         gamepad's own Square/Cross rocking-brake mapping above, just for
+         steering instead), one big dedicated BRAKE zone under the right
+         thumb alone. Deliberately NOT left-button-left-edge/right-button-
+         right-edge -- that pairs brake with only ONE steering direction,
+         so braking mid-turn the OTHER way means the same thumb doing two
+         things at once. Grouping both steering buttons under one thumb
+         and giving the other thumb nothing but brake means brake is
+         always free no matter which way you're already turning.
+
+         #touch-controls becomes a full-viewport fixed overlay (position/
+         inset, not the portrait row's normal-flow height:30vh) so it can
+         float over the side margins without disturbing the canvas's own
+         centered layout at all -- pointer-events:none on the overlay
+         itself, re-enabled per-button, so the empty middle of it (over
+         the canvas) never intercepts a tap meant for anything else.
+
+         display:block here matters, not just cosmetic -- the base rule
+         is display:none, and NEITHER the 768px nor 1300px query (the only
+         other two that would normally turn it on) applies on a phone this
+         wide in landscape. Without setting it explicitly, a player who
+         opens the game already sideways would get invisible, uninitialized
+         buttons: the setup code that binds their touchstart/touchend
+         listeners AND flips on mobile's auto-gas both key off this exact
+         computed display value at load, one time. */
+      #touch-controls {
+        display: block;
+        position: fixed;
+        inset: 0;
+        height: auto;
+        margin: 0;
+        pointer-events: none;
+        z-index: 3;
+      }
+      .touch-btn {
+        position: absolute;
+        flex: none;
+        height: auto;
+        width: clamp(64px, 12vw, 120px);
+        pointer-events: auto;
+      }
+      #btn-left  { left: 10px; top: 6%;    bottom: 52%; }
+      #btn-right { left: 10px; top: 52%;   bottom: 6%;  }
+      #btn-brake { right: 10px; top: 6%;   bottom: 6%;  font-size: 1rem; }
     }
   </style>
 </head>
