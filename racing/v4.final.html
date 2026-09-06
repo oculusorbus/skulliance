@@ -505,7 +505,7 @@
     //=========================================================================
     var RAMP_LENGTH = 5;   // segments long, same visual scale as a boost pad
     var RAMP_WIDTH  = 0.3; // half-width of the drawn wedge, same offset units as BOOST_PAD_WIDTH
-    var RAMP_RISE   = 600; // synthetic world-space height the far/peak segment appears to reach -- visual only, doesn't touch real road elevation. Comparable to addBumps()'s own per-segment climb (a few hundred to ~1000 world-Y units); tune up/down if it looks too subtle or too steep
+    var RAMP_RISE   = 900; // synthetic world-space height the far/peak segment appears to reach -- visual only, doesn't touch real road elevation. Bumped up from 600 (first pass read as barely-there); the eased curve below concentrates most of this near the lip, not spread evenly, so it stays reasonable up close -- tune up/down if it still looks too subtle or too steep
 
     var jumpRamps = []; // set by resetJumpRamps()
 
@@ -1175,24 +1175,32 @@
         }
 
         if (segment.jumpRamp) {
-          // Same tapered-strip technique as the boost pad above, just its
-          // own hazard-stripe color scheme (red/black, not yellow/orange)
-          // so the two read as clearly different objects.
+          // Same strip technique as the boost pad above, own hazard-stripe
+          // color scheme (red/black, not yellow/orange) so the two read as
+          // clearly different objects. Unlike the boost pad, this does NOT
+          // taper to a point at the far segment -- that made the ramp's
+          // one raised, most-visible edge shrink to a thin sliver right
+          // where it needed to read as a solid ramp face, which is what
+          // made the whole thing look like a barely-there blip. Full width
+          // the whole length instead.
           var rampScale1  = segment.p1.screen.scale;
           var rampScale2  = segment.p2.screen.scale;
           var rampCenter1 = segment.p1.screen.x + (rampScale1 * segment.jumpRamp.offset * roadWidth * width/2);
           var rampCenter2 = segment.p2.screen.x + (rampScale2 * segment.jumpRamp.offset * roadWidth * width/2);
           var rampHalf1   = rampScale1 * RAMP_WIDTH * roadWidth * width/2;
-          var rampHalf2   = (segment.jumpRampLocalIndex === RAMP_LENGTH - 1) ? 0 :
-                             rampScale2 * RAMP_WIDTH * roadWidth * width/2;
+          var rampHalf2   = rampScale2 * RAMP_WIDTH * roadWidth * width/2;
           // Rise from road level at the ramp's base to RAMP_RISE (a synthetic
           // world-space height -- doesn't touch the road's actual elevation,
           // same trick the player's own crest-jump lift already uses) at its
           // far/peak segment, using the exact same scale*height/2 conversion
           // Util.project() uses for real elevation, so it stays perspective-
-          // correct instead of just a flat decal on the road surface.
-          var riseFrac1 = segment.jumpRampLocalIndex / RAMP_LENGTH;
-          var riseFrac2 = (segment.jumpRampLocalIndex + 1) / RAMP_LENGTH;
+          // correct instead of just a flat decal on the road surface. Eased
+          // (squared) rather than linear so the first couple of segments
+          // stay close to road level (a visible flat "runway") and the rise
+          // is concentrated toward the lip, reading more like an actual
+          // ramp profile than a uniform tilt.
+          var riseFrac1 = Math.pow(segment.jumpRampLocalIndex / RAMP_LENGTH, 2);
+          var riseFrac2 = Math.pow((segment.jumpRampLocalIndex + 1) / RAMP_LENGTH, 2);
           var rampY1    = segment.p1.screen.y - (rampScale1 * RAMP_RISE * riseFrac1 * height/2);
           var rampY2    = segment.p2.screen.y - (rampScale2 * RAMP_RISE * riseFrac2 * height/2);
           var rampColor = (segment.jumpRampLocalIndex % 2) ? '#cc1a1a' : '#1a1a1a';
