@@ -1956,6 +1956,7 @@
             ctx.filter = 'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)';
           }
           Render.sprite(ctx, width, height, resolution, roadWidth, sprites, SPRITES.PLAYER_STRAIGHT, spriteScale, spriteX, spriteY, -0.5, -1, ghost.segment.clip);
+          ctx.restore();
           if (avatarReady) {
             // Decaled right onto the car's own built-in skull faceplate on
             // its rear bumper -- GHOST_AVATAR_BOX is that faceplate's own
@@ -1967,27 +1968,29 @@
             // exact rect (no aspect-correct cropping) -- close enough at
             // this size/distance, and staying inside ghostDestW/ghostDestH
             // means it can never spill off the car onto the road, no clip
-            // needed. Drawn inside the same save/restore as the car body
-            // so it picks up the same alpha/gold-tint filter, reading as
-            // part of the ghost rather than a sticker floating on top of it.
+            // needed. Deliberately its OWN save/restore, full alpha/no
+            // filter -- unlike the car body, the avatar needs to read in
+            // full color up close so it's actually recognizable, not just
+            // another translucent gold shape.
+            ctx.save();
             ctx.drawImage(ghostAvatar,
               ghostLeftX + GHOST_AVATAR_BOX[0] * ghostDestW,
               ghostTopY  + GHOST_AVATAR_BOX[1] * ghostDestH,
               (GHOST_AVATAR_BOX[2] - GHOST_AVATAR_BOX[0]) * ghostDestW,
               (GHOST_AVATAR_BOX[3] - GHOST_AVATAR_BOX[1]) * ghostDestH);
-          }
-          ctx.restore();
-          if (!avatarReady) {
-            // One icon per tier so it's obvious which ghost is which at a
-            // glance when there's no avatar decal on the car to do that
-            // job instead.
-            var ghostIcon = ghost.style === 'alltime' ? '🏆' : ghost.style === 'weekly' ? '🥇' : '🎖️';
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
-            ctx.fillText(ghostIcon, spriteX, ghostTopY - 6);
             ctx.restore();
           }
+          // One icon per tier, always -- not just a fallback for when
+          // there's no avatar decal. This is what stays visible tracking a
+          // ghost through the road terrain, over a hill, past the draw-
+          // distance horizon, etc.; the avatar is the close-up complement
+          // to it, not a replacement.
+          var ghostIcon = ghost.style === 'alltime' ? '🏆' : ghost.style === 'weekly' ? '🥇' : '🎖️';
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.font = Math.max(10, 22 * spriteScale) + 'px sans-serif';
+          ctx.fillText(ghostIcon, spriteX, ghostTopY - 6);
+          ctx.restore();
         }
 
         if (segment == playerSegment) {

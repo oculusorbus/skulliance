@@ -188,20 +188,23 @@ records verified constants, and tracks what still needs to be written.
   Ghost, weekly/all-time leader (weeklyGhost/alltimeGhost in racing/index.html, skullRacerGetGhosts()/
   skullRacerValidateGhostTrace()/skullRacerFinalizeRun() in db.php, ajax/skullracer-ghosts.php):
   same rendering technique as the personal ghost (gold via ctx.filter =
-  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)'). All three tiers get a fallback icon
-  drawn at the sprite's own top edge (🎖️ personal, 🥇 weekly, 🏆 all-time) -- destH/offsetY math copied
-  from Render.sprite()'s internal formula so it tracks the sprite at any distance -- but weekly/
-  alltime show a decaled avatar instead whenever that racer has one: skullRacerGetGhosts() now also
-  returns avatar_url (discord_id+avatar -> CDN URL, same convention as every other leaderboard, except
-  null instead of the usual skull.png fallback -- the car's own rear grille already IS a skull, see
-  GHOST_AVATAR_BOX below), loaded client-side via a plain `new Image()` (no promise -- the render loop
-  just checks img.complete/naturalWidth each frame and falls back to the tier icon until/unless it
-  loads) and drawn inside the same save/restore as the car body so it picks up the same alpha/gold
-  filter. GHOST_AVATAR_BOX ([0.32,0.37,0.66,0.83], fraction of PLAYER_STRAIGHT's own w/h) is the car's
-  built-in faceplate panel behind its skull eyes/teeth, measured directly off the live sprite sheet --
-  sits in effectively the same spot on PLAYER_STRAIGHT/LEFT/RIGHT, so one box covers every lean, and
-  stops above the jagged teeth edge so they stay visible below the decal. Personal never gets a decal
-  (no server row/avatar of its own -- it's always you).
+  'sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15)'). All three tiers ALWAYS get their own
+  icon drawn at the sprite's own top edge (🎖️ personal, 🥇 weekly, 🏆 all-time) -- destH/offsetY math
+  copied from Render.sprite()'s internal formula so it tracks the sprite at any distance -- that's
+  what stays visible tracking a ghost through terrain/over a hill/past the draw-distance horizon, so
+  it's never replaced by anything, only ever added to. On top of that, weekly/alltime ALSO decal that
+  racer's own avatar onto the car when they have one: skullRacerGetGhosts() returns avatar_url
+  (discord_id+avatar -> CDN URL, same convention as every other leaderboard, except null instead of
+  the usual skull.png fallback -- the car's own rear grille already IS a skull, see GHOST_AVATAR_BOX
+  below), loaded client-side via a plain `new Image()` (no promise -- the render loop just checks
+  img.complete/naturalWidth each frame and simply doesn't draw a decal until/unless it loads).
+  GHOST_AVATAR_BOX ([0.32,0.37,0.66,0.83], fraction of PLAYER_STRAIGHT's own w/h) is the car's built-in
+  faceplate panel behind its skull eyes/teeth, measured directly off the live sprite sheet -- sits in
+  effectively the same spot on PLAYER_STRAIGHT/LEFT/RIGHT, so one box covers every lean, and stops
+  above the jagged teeth edge so they stay visible below the decal. Drawn in its OWN save/restore, full
+  alpha and no filter -- deliberately NOT tinted/translucent like the car body, so it reads as an
+  actual recognizable photo up close instead of another gold shape. Personal never gets a decal (no
+  server row/avatar of its own -- it's always you).
   Every stored trace is re-based through normalizeGhostTrace() (subtracts frame 0's own
   [position, playerX] from every sample) before it's used for playback, both when a freshly-completed
   lap becomes someone's new best AND when an already-stored trace is loaded (localStorage for
