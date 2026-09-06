@@ -269,11 +269,17 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
         Game._firstInteractionFired = true;
         document.removeEventListener('keydown', fire);
         document.removeEventListener('click', fire);
+        document.removeEventListener('touchstart', fire);
         Game._firstInteractionCallbacks.forEach(function(cb) { cb(); });
         Game._firstInteractionCallbacks = [];
       };
       document.addEventListener('keydown', fire);
       document.addEventListener('click', fire);
+      // touchstart, not just click -- iOS Safari only counts an AudioContext
+      // .resume()/media .play() as gesture-triggered when it happens inside
+      // the actual touch handler; the synthesized click a tap fires afterward
+      // is too late for it, even though it's plenty trusted on desktop/Android.
+      document.addEventListener('touchstart', fire, { passive: true });
     }
   }
 

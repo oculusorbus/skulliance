@@ -147,6 +147,45 @@
       font-size: 0.85rem;
     }
     #finish-replay:hover { background-color: #00e0b4; }
+
+    #touch-controls { display: none; } /* shown only in the mobile media query below */
+    .mobile-hint { display: none; }
+
+    @media (max-width: 768px) {
+      body { padding: 8px; }
+      .box-art { display: none; } /* no room next to the game on a phone -- focus on the canvas + touch controls */
+      #stage { gap: 0; width: 100%; }
+      #frame { width: 100%; padding: 8px; }
+      #racer { width: 100%; }
+      #hud { font-size: 0.7rem; padding: 6px 8px; }
+      .desktop-hint { display: none; }
+      .mobile-hint { display: inline; }
+      #touch-controls { display: block; margin-top: 10px; }
+      #touch-track {
+        position: relative;
+        height: 64px;
+        background: rgba(0,200,160,0.08);
+        border: 1px solid rgba(0,200,160,0.3);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        touch-action: none; /* stop the page from scrolling/zooming while steering */
+      }
+      #touch-thumb {
+        position: absolute;
+        top: 6px;
+        bottom: 6px;
+        width: 25%;
+        max-width: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #00c8a0;
+        border-radius: 0.4rem;
+        pointer-events: none;
+        box-shadow: 0 0 0 rgba(0,200,160,0);
+        transition: box-shadow 0.15s;
+      }
+      #touch-track.active #touch-thumb { box-shadow: 0 0 16px rgba(0,200,160,0.7); }
+    }
   </style>
 </head>
 <body>
@@ -176,7 +215,13 @@
         </div>
       </div>
       <div id="instructions">
-        Use the <b>arrow keys</b> to drive.
+        <span class="desktop-hint">Use the <b>arrow keys</b> to drive.</span>
+        <span class="mobile-hint">Touch and slide the bar below to drive.</span>
+      </div>
+      <div id="touch-controls">
+        <div id="touch-track">
+          <div id="touch-thumb"></div>
+        </div>
       </div>
     </div>
 
@@ -262,6 +307,47 @@
     var keyRight       = false;
     var keyFaster      = false;
     var keySlower      = false;
+
+    //=========================================================================
+    // TOUCH CONTROLS (mobile) -- drives the exact same keyLeft/keyRight/
+    // keyFaster flags the keyboard bindings below set, just from touch
+    // position instead. Touching the strip anywhere floors it; where you
+    // touch relative to its center steers, same feel as holding an arrow
+    // key. #touch-track is display:none outside the mobile media query, so
+    // this is a no-op on desktop -- nothing can touch a hidden element.
+    //=========================================================================
+
+    (function() {
+      var track = Dom.get('touch-track');
+      var thumb = Dom.get('touch-thumb');
+      if (!track) return;
+      var deadZone = 0.12; // fraction of half-width treated as "straight ahead", no steering
+
+      function fromTouch(e) {
+        e.preventDefault(); // stop the page itself from scrolling/zooming while steering
+        var touch = e.touches[0];
+        var rect  = track.getBoundingClientRect();
+        var relX  = Util.limit(((touch.clientX - rect.left) / rect.width) * 2 - 1, -1, 1); // -1 (left edge) .. 1 (right edge)
+        keyFaster = true;
+        keySlower = false;
+        keyLeft   = relX < -deadZone;
+        keyRight  = relX >  deadZone;
+        thumb.style.left      = (50 + relX * 50) + '%';
+        Dom.addClassName(track, 'active');
+      }
+
+      function endTouch(e) {
+        e.preventDefault();
+        keyFaster = keyLeft = keyRight = false;
+        thumb.style.left = '50%';
+        Dom.removeClassName(track, 'active');
+      }
+
+      track.addEventListener('touchstart',  fromTouch, { passive: false });
+      track.addEventListener('touchmove',   fromTouch, { passive: false });
+      track.addEventListener('touchend',    endTouch,  { passive: false });
+      track.addEventListener('touchcancel', endTouch,  { passive: false });
+    })();
 
     var hud = {
       speed:            { value: null, dom: Dom.get('speed_value')            },
