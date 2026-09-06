@@ -166,20 +166,26 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
   //---------------------------------------------------------------------------
 
   setKeyListener: function(keys) {
-    var onkey = function(keyCode, mode) {
+    var onkey = function(ev, mode) {
       var n, k;
       for(n = 0 ; n < keys.length ; n++) {
         k = keys[n];
         k.mode = k.mode || 'up';
-        if ((k.key == keyCode) || (k.keys && (k.keys.indexOf(keyCode) >= 0))) {
+        if ((k.key == ev.keyCode) || (k.keys && (k.keys.indexOf(ev.keyCode) >= 0))) {
+          // Space bar's default action is a full page-down scroll, arrow
+          // keys scroll a line at a time -- neither is wanted while one of
+          // these is actually driving the game instead. Only suppresses it
+          // for keys a page actually bound here, not e.g. Tab or a browser
+          // shortcut.
+          ev.preventDefault();
           if (k.mode == mode) {
             k.action.call();
           }
         }
       }
     };
-    Dom.on(document, 'keydown', function(ev) { onkey(ev.keyCode, 'down'); } );
-    Dom.on(document, 'keyup',   function(ev) { onkey(ev.keyCode, 'up');   } );
+    Dom.on(document, 'keydown', function(ev) { onkey(ev, 'down'); } );
+    Dom.on(document, 'keyup',   function(ev) { onkey(ev, 'up');   } );
   },
 
   //---------------------------------------------------------------------------
@@ -414,6 +420,7 @@ var KEY = {
   UP:    38,
   RIGHT: 39,
   DOWN:  40,
+  SPACE: 32,
   A:     65,
   D:     68,
   S:     83,
