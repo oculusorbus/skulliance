@@ -160,6 +160,15 @@ records verified constants, and tracks what still needs to be written.
   and top-level function name collisions between racing/index.html and header.php before doing
   this -- none found, but worth re-checking if either file gains a very generic new one (things
   like #mute, #frame, #stage were the real risk).
+  Version-check/auto-refresh (racing/index.html): this file has no PHP/session, so it never got
+  header.php's site-wide version-check banner -- added its own equivalent (#racer-version-banner,
+  guarded by `if (document.getElementById('app-version-banner')) return;` so it's a no-op when
+  inlined into skullracer.php, which already has header.php's own). Polls /staking/version.php on
+  the same 30s-then-5min cadence; no baked-in version to compare against (no PHP to render a meta
+  tag), so the first poll just establishes a baseline instead of comparing against a page-load
+  value -- same net effect. Never force-reloads while visible/mid-race, only silently reloads on
+  the next visibilitychange-to-visible after a mismatch was found while backgrounded, matching
+  header.php's own restraint.
 - Crypt Crawl (db.php:10451-10805): 44-card deck (26 monsters clubs/spades 2-14, 9 weapons
   diamonds 2-10, 9 medkits hearts 2-10), max HP 20. Weapon degrades to "equal or lesser" rank
   after each kill. First medkit per crypt heals full rank; any after that in the same crypt
